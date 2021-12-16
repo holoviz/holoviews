@@ -120,7 +120,7 @@ STYLE_ALIASES = {'alpha': 'opacity',
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
-_subplot_re = re.compile('\D*(\d+)')
+_subplot_re = re.compile(r'\D*(\d+)')
 
 
 def _get_subplot_number(subplot_val):

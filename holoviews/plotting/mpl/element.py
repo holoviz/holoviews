@@ -174,7 +174,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if self.logy:
                     axis.set_yscale('log')
 
-                if not self.projection == '3d':
+                if not isinstance(self.projection, str) and self.projection == '3d':
                     self._set_axis_position(axis, 'x', self.xaxis)
                     self._set_axis_position(axis, 'y', self.yaxis)
 
@@ -211,7 +211,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._set_axis_formatter(axis.xaxis, xdim, self.xformatter)
         if ydim:
             self._set_axis_formatter(axis.yaxis, ydim, self.yformatter)
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             zdim = dimensions[2] if ndims > 2 else None
             if zdim or self.zformatter is not None:
                 self._set_axis_formatter(axis.zaxis, zdim, self.zformatter)
@@ -224,7 +224,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._set_axis_ticks(axis.yaxis, yticks, log=self.logy,
                              rotation=self.yrotation)
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             zticks = zticks if zticks else self.zticks
             self._set_axis_ticks(axis.zaxis, zticks, log=self.logz,
                                  rotation=self.zrotation)
@@ -298,7 +298,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             return
 
         if ((isinstance(aspect, util.basestring) and aspect != 'square') or
@@ -327,10 +327,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             return
 
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
-        coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
+        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.NaN for coord in extents]
         coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
                   for c in coords]
-        if self.projection == '3d' or len(extents) == 6:
+        if isinstance(self.projection, str) and self.projection == '3d' or len(extents) == 6:
             l, b, zmin, r, t, zmax = coords
             if self.invert_zaxis or any(p.invert_zaxis for p in subplots):
                 zmin, zmax = zmax, zmin
@@ -1086,7 +1086,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for handle, label in zip(all_handles, all_labels):
             # Ensure that artists with multiple handles are supported
             if isinstance(handle, list): handle = tuple(handle)
-            handle = tuple(h for h in handle if not isinstance(h, AxesImage))
+            handle = tuple(h for h in handle if not isinstance(h, (AxesImage, list)))
             if not handle:
                 continue
             if handle and (handle not in data) and label and label not in used_labels:

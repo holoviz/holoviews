@@ -86,7 +86,7 @@ class GraphTests(ComparisonTestCase):
     def test_constructor_with_nodes_and_paths_dimension_mismatch(self):
         paths = Graph(((self.source, self.target), self.nodes)).edgepaths
         exception = 'Ensure that the first two key dimensions on Nodes and EdgePaths match: x != x2'
-        with self.assertRaisesRegexp(ValueError, exception):
+        with self.assertRaisesRegex(ValueError, exception):
             Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
 
     def test_graph_clone_static_plot_id(self):

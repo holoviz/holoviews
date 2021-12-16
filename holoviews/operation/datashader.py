@@ -27,8 +27,9 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay, OrderedDict, Store)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
-    Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config)
+    Iterable, LooseVersion, basestring, cast_array_to_int64, cftime_types, cftime_to_timestamp,
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config
+)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
@@ -414,18 +415,22 @@ class aggregate(AggregationOperation):
 
         is_custom = isinstance(df, dd.DataFrame) or cuDFInterface.applies(df)
         if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-               df[d.name].dtype.kind == 'M' for d in (x, y)):
+               df[d.name].dtype.kind in ["M", "u"] for d in (x, y)):
             df = df.copy()
 
         for d in (x, y):
             vals = df[d.name]
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
-            elif df[d.name].dtype.kind == 'M':
+            elif vals.dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
+            elif vals.dtype == np.uint64:
+                raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
+            elif vals.dtype.kind == 'u':
+                pass  # To convert to int64
             else:
                 continue
-            df[d.name] = vals.astype('int64')
+            df[d.name] = cast_array_to_int64(vals)
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
@@ -467,7 +472,14 @@ class aggregate(AggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         dfdata = PandasInterface.as_dframe(data)
-        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
+        # Suppress numpy warning emitted by dask:
+        # https://github.com/dask/dask/issues/8439
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                action='ignore', message='casting datetime64',
+                category=FutureWarning
+            )
+            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
@@ -713,7 +725,7 @@ class spikes_aggregate(AggregationOperation):
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
-            df[x.name] = df[x.name].astype('datetime64[us]').astype('int64')
+            df[x.name] = cast_array_to_int64(df[x.name].astype('datetime64[us]'))
 
         params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
@@ -750,11 +762,11 @@ class geom_aggregate(AggregationOperation):
 
         df = element.interface.as_dframe(element)
         if xtype == 'datetime':
-            df[x0d.name] = df[x0d.name].astype('datetime64[us]').astype('int64')
-            df[x1d.name] = df[x1d.name].astype('datetime64[us]').astype('int64')
+            df[x0d.name] = cast_array_to_int64(df[x0d.name].astype('datetime64[us]'))
+            df[x1d.name] = cast_array_to_int64(df[x1d.name].astype('datetime64[us]'))
         if ytype == 'datetime':
-            df[y0d.name] = df[y0d.name].astype('datetime64[us]').astype('int64')
-            df[y1d.name] = df[y1d.name].astype('datetime64[us]').astype('int64')
+            df[y0d.name] = cast_array_to_int64(df[y0d.name].astype('datetime64[us]'))
+            df[y1d.name] = cast_array_to_int64(df[y1d.name].astype('datetime64[us]'))
 
         if isinstance(agg_fn, ds.count_cat) and df[agg_fn.column].dtype.name != 'category':
             df[agg_fn.column] = df[agg_fn.column].astype('category')

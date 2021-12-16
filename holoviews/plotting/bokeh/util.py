@@ -401,7 +401,7 @@ def font_size_to_pixels(size):
     if size is None or not isinstance(size, basestring):
         return
     conversions = {'em': 16, 'pt': 16/12.}
-    val = re.findall('\d+', size)
+    val = re.findall(r'\d+', size)
     unit = re.findall('[a-z]+', size)
     if (val and not unit) or (val and unit[0] == 'px'):
         return int(val[0])
@@ -589,7 +589,7 @@ def py2js_tickformatter(formatter, msg=''):
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
-    match = re.search('(formatter \= function flx_formatter \(.*\))', jsfunc)
+    match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
     return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
 

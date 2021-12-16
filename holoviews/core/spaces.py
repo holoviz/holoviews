@@ -15,7 +15,7 @@ import param
 from . import traversal, util
 from .accessors import Opts, Redim
 from .dimension import OrderedDict, Dimension, ViewableElement
-from .layout import Layout, AdjointLayout, NdLayout, Empty
+from .layout import Layout, AdjointLayout, NdLayout, Empty, Layoutable
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
@@ -23,7 +23,7 @@ from ..streams import Stream, Params, streams_list_from_dict
 
 
 
-class HoloMap(UniformNdMapping, Overlayable):
+class HoloMap(Layoutable, UniformNdMapping, Overlayable):
     """
     A HoloMap is an n-dimensional mapping of viewable elements or
     overlays. Each item in a HoloMap has an tuple key defining the
@@ -304,12 +304,6 @@ class HoloMap(UniformNdMapping, Overlayable):
             return self.clone(items, label=self._label, group=self._group)
         else:
             return NotImplemented
-
-
-    def __add__(self, obj):
-        "Composes HoloMap with other object into a Layout"
-        return Layout([self, obj])
-
 
     def __lshift__(self, other):
         "Adjoin another object to this one returning an AdjointLayout"
@@ -890,7 +884,7 @@ class DynamicMap(HoloMap):
        will then be automatically converted to the equivalent list
        format.""")
 
-    cache_size = param.Integer(default=500, doc="""
+    cache_size = param.Integer(default=500, bounds=(1, None), doc="""
        The number of entries to cache for fast access. This is an LRU
        cache where the least recently used item is overwritten once
        the cache is full.""")
@@ -954,6 +948,8 @@ class DynamicMap(HoloMap):
 
         self.periodic = periodic(self)
 
+        self._current_key = None
+
     @property
     def opts(self):
         return Opts(self, mode='dynamicmap')
@@ -980,6 +976,11 @@ class DynamicMap(HoloMap):
             if None in kdim.range:
                 unbounded_dims.append(str(kdim))
         return unbounded_dims
+
+    @property
+    def current_key(self):
+        """Returns the current key value."""
+        return self._current_key
 
     def _stream_parameters(self):
         return util.stream_parameters(
@@ -1298,6 +1299,8 @@ class DynamicMap(HoloMap):
             otherwise returns cloned DynamicMap containing the cross-
             product of evaluated items.
         """
+        self._current_key = key
+
         # Split key dimensions and data slices
         sample = False
         if key is Ellipsis:
@@ -1856,7 +1859,7 @@ class DynamicMap(HoloMap):
 
 
 
-class GridSpace(UniformNdMapping):
+class GridSpace(Layoutable, UniformNdMapping):
     """
     Grids are distinct from Layouts as they ensure all contained
     elements to be of the same type. Unlike Layouts, which have
@@ -1968,12 +1971,6 @@ class GridSpace(UniformNdMapping):
         count the full set of keys.
         """
         return max([(len(v) if hasattr(v, '__len__') else 1) for v in self.values()] + [0])
-
-
-    def __add__(self, obj):
-        "Composes the GridSpace with another object into a Layout."
-        return Layout([self, obj])
-
 
     @property
     def shape(self):

@@ -209,6 +209,26 @@ class XArrayInterface(GridInterface):
                             "for all defined kdims, %s coordinates not found."
                             % not_found, cls)
 
+        for vdim in vdims:
+            if packed:
+                continue
+            da = data[vdim.name]
+            # Do not enforce validation for irregular arrays since they
+            # not need to be canonicalized
+            if any(len(da.coords[c].shape) > 1 for c in da.coords):
+                continue
+            undeclared = [
+                c for c in da.coords if c not in kdims and len(da[c].shape) == 1 and
+                da[c].shape[0] > 1]
+            if undeclared:
+                raise DataError(
+                    'The coordinates on the %r DataArray do not match the '
+                    'provided key dimensions (kdims). The following coords '
+                    'were left unspecified: %r. If you are requesting a '
+                    'lower dimensional view such as a histogram cast '
+                    'the xarray to a columnar format using the .to_dataframe '
+                    'or .to_dask_dataframe methods before providing it to '
+                    'HoloViews.' % (vdim.name, undeclared))
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 

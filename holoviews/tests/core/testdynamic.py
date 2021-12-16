@@ -45,9 +45,9 @@ class DynamicMapConstructor(ComparisonTestCase):
             DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
-        regexp = ("Callback '<lambda>' signature over \['x'\] does not accommodate "
-                  "required kdims \['x', 'y'\]")
-        with self.assertRaisesRegexp(KeyError, regexp):
+        regexp = (r"Callback '<lambda>' signature over \['x'\] does not accommodate "
+                  r"required kdims \['x', 'y'\]")
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(lambda x: x, kdims=['x','y'])
 
     def test_simple_constructor_streams(self):
@@ -543,6 +543,36 @@ class DynamicMapUnboundedProperty(ComparisonTestCase):
         self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
 
 
+class DynamicMapCurrentKeyProperty(ComparisonTestCase):
+
+    def test_current_key_None_on_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        self.assertIsNone(dmap.current_key)
+
+    def test_current_key_one_dimension(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        dmap[0]
+        self.assertEqual(dmap.current_key, 0)
+        dmap[1]
+        self.assertEqual(dmap.current_key, 1)
+        dmap[0]
+        self.assertEqual(dmap.current_key, 0)
+        self.assertNotEqual(dmap.current_key, dmap.last_key)
+
+    def test_current_key_multiple_dimensions(self):
+        fn = lambda i, j: Curve([i, j])
+        dmap=DynamicMap(fn, kdims=[Dimension('i', range=(0,5)), Dimension('j', range=(0,5))])
+        dmap[0, 2]
+        self.assertEqual(dmap.current_key, (0, 2))
+        dmap[5, 5]
+        self.assertEqual(dmap.current_key, (5, 5))
+        dmap[0, 2]
+        self.assertEqual(dmap.current_key, (0, 2))
+        self.assertNotEqual(dmap.current_key, dmap.last_key)
+
+
 class DynamicTransferStreams(ComparisonTestCase):
 
     def setUp(self):
@@ -593,15 +623,15 @@ class DynamicTransferStreams(ComparisonTestCase):
         self.assertEqual(dmap[(0, 3)].label, 'custom label')
 
     def test_dynamic_util_inherits_dim_streams_clash(self):
-        exception = ("The supplied stream objects PointerX\(x=None\) and "
-                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegexp(Exception, exception):
+        exception = (r"The supplied stream objects PointerX\(x=None\) and "
+                     r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
+        with self.assertRaisesRegex(Exception, exception):
             Dynamic(self.dmap, streams=[PointerX])
 
     def test_dynamic_util_inherits_dim_streams_clash_dict(self):
-        exception = ("The supplied stream objects PointerX\(x=None\) and "
-                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegexp(Exception, exception):
+        exception = (r"The supplied stream objects PointerX\(x=None\) and "
+                     r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
+        with self.assertRaisesRegex(Exception, exception):
             Dynamic(self.dmap, streams=dict(x=PointerX.param.x))
 
 

@@ -30,17 +30,26 @@ class TilePlot(ElementPlot):
         if url:
             layer = {}
             opts["layers"] = [layer]
-            for v in ["X", "Y", "Z"]:
-                url = url.replace("{%s}" % v, "{%s}" % v.lower())
-            layer["source"] = [url]
+
+            # element.data is xyzservices.TileProvider
+            if isinstance(element.data, dict):
+                layer["source"] = [element.data.build_url(scale_factor="@2x")]
+                layer['sourceattribution'] = element.data.html_attribution
+                layer['minzoom'] = element.data.get("min_zoom", 0)
+                layer['maxzoom'] = element.data.get("max_zoom", 20)
+            else:
+                for v in ["X", "Y", "Z"]:
+                    url = url.replace("{%s}" % v, "{%s}" % v.lower())
+                layer["source"] = [url]
+
+                for key, attribution in _ATTRIBUTIONS.items():
+                    if all(k in element.data for k in key):
+                        layer['sourceattribution'] = attribution
+
             layer["below"] = 'traces'
             layer["sourcetype"] = "raster"
             # Remaining style options are layer options
             layer.update({STYLE_ALIASES.get(k, k): v for k, v in style.items()})
-
-            for key, attribution in _ATTRIBUTIONS.items():
-                if all(k in element.data for k in key):
-                    layer['sourceattribution'] = attribution
 
         return opts
 

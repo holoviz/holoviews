@@ -5,6 +5,7 @@ examples.
 from __future__ import division
 
 from distutils.version import LooseVersion
+import warnings
 
 import numpy as np
 import param
@@ -762,8 +763,17 @@ class histogram(Operation):
                 edges = edges.astype('datetime64[ns]').astype('int64')
         else:
             hist_range = self.p.bin_range or element.range(selected_dim)
+            # Suppress a warning emitted by Numpy when datetime or timedelta scalars
+            # are compared. See https://github.com/numpy/numpy/issues/10095 and
+            # https://github.com/numpy/numpy/issues/9210. 
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    action='ignore', message='elementwise comparison failed',
+                    category=DeprecationWarning
+                )
+                null_hist_range = hist_range == (0, 0)
             # Avoids range issues including zero bin range and empty bins
-            if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
+            if null_hist_range or any(not isfinite(r) for r in hist_range):
                 hist_range = (0, 1)
             steps = self.p.num_bins + 1
             start, end = hist_range

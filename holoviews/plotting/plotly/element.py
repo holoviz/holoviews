@@ -527,7 +527,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 mapbox["zoom"] = min(max_x_zoom, max_y_zoom)
             layout["mapbox"] = mapbox
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             scene = dict(xaxis=xaxis, yaxis=yaxis)
             if zdim:
                 zrange = [z1, z0] if self.invert_zaxis else [z0, z1]

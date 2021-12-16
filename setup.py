@@ -48,14 +48,6 @@ extras_require["examples"] = extras_require["recommended"] + [
     "scikit-image"
 ]
 
-if sys.version_info.major > 2:
-    extras_require["examples"].extend(
-        [
-            "pyarrow",
-            "ibis-framework >=1.3",
-        ]  # spatialpandas incompatibility
-    )
-
 # Extra third-party libraries
 extras_require["extras"] = extras_require["examples"] + [
     "pscript ==0.7.1",
@@ -70,13 +62,26 @@ extras_require['tests'] = [
     'path.py',
     'matplotlib >=3',
     'nbsmoke >=0.2.0',
-    'nbconvert <6',
+    'nbconvert',
     'twine',
     'rfc3986',
     'keyring'
 ]
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
+
+# Moving ibis-framework from `examples` to `unit_tests`
+# because it could not be installed on Linux with conda-forge
+# (https://github.com/conda-forge/ibis-framework-feedstock/issues/54)
+# which was blocking the docs build. ibis-framework isn't
+# required to build the docs anyway.
+if sys.version_info.major > 2:
+    extras_require["unit_tests"].extend(
+        [
+            "pyarrow",
+            "ibis-framework >=1.3",
+        ]  # spatialpandas incompatibility
+    )
 
 extras_require["basic_tests"] = (
     extras_require["tests"]
@@ -86,19 +91,19 @@ extras_require["basic_tests"] = (
 
 extras_require["nbtests"] = extras_require["recommended"] + [
     "nose",
-    "awscli",
     "deepdiff",
 ]
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.6.8a36',
+    'nbsite >=0.7.1',
     'sphinx',
-    'sphinx_holoviz_theme',
     'mpl_sample_data >=3.1.3',
-    'awscli',
     'pscript',
     'graphviz',
-    'bokeh >2.2'
+    'bokeh >2.2',
+    'pydata-sphinx-theme',
+    'sphinx-copybutton',
+    'pooch',
 ]
 
 extras_require["build"] = [

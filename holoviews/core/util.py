@@ -275,7 +275,7 @@ def deprecated_opts_signature(args, kwargs):
     if len(args) > 0 and isinstance(args[0], dict):
         apply_groups = True
         if (not set(args[0]).issubset(groups) and
-            all(isinstance(v, dict) and not set(v).issubset(groups)
+            all(isinstance(v, dict) and (not set(v).issubset(groups) or not v)
                 for v in args[0].values())):
             apply_groups = False
         elif set(args[0].keys()) <= groups:
@@ -382,6 +382,8 @@ def tree_attribute(identifier):
     These custom attributes start with a capitalized character when
     applicable (not applicable to underscore or certain unicode characters)
     """
+    if identifier == '':
+        return True
     if identifier[0].upper().isupper() is False and identifier[0] != '_':
         return True
     else:
@@ -793,7 +795,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         "Accumulate blocks of hex and separate blocks by underscores"
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception("Please use a raw string or escape control code '\%s'"
+            raise Exception(r"Please use a raw string or escape control code '\%s'"
                             % invalid[cc])
         sanitized, chars = [], ''
         for split in name.split():
@@ -1826,7 +1828,10 @@ def capitalize(string):
     """
     Capitalizes the first letter of a string.
     """
-    return string[0].upper() + string[1:]
+    if string:
+        return string[0].upper() + string[1:]
+    else:
+        return string
 
 
 def get_path(item):
@@ -2040,8 +2045,9 @@ def bound_range(vals, density, time_unit='us'):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
             full_precision_density = compute_density(low, high, len(vals)-1)
-            density = round(full_precision_density, sys.float_info.dig)
-        if density == 0:
+            with np.errstate(over='ignore'):
+                density = round(full_precision_density, sys.float_info.dig)
+        if density == 0 or density == np.inf:
             density = full_precision_density
     if density == 0:
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
@@ -2268,3 +2274,23 @@ def closest_match(match, specs, depth=0):
             return None
         else:
             return sorted(match_lengths, key=lambda x: -x[1])[0][0]
+
+
+def cast_array_to_int64(array):
+    """
+    Convert a numpy array  to `int64`. Suppress the following warning
+    emitted by Numpy, which as of 12/2021 has been extensively discussed
+    (https://github.com/pandas-dev/pandas/issues/22384)
+    and whose fate (possible revert) has not yet been settled:
+
+        FutureWarning: casting datetime64[ns] values to int64 with .astype(...)
+        is deprecated and will raise in a future version. Use .view(...) instead.
+
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action='ignore',
+            message='casting datetime64',
+            category=FutureWarning,
+        )
+        return array.astype('int64')

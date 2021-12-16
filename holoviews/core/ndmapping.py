@@ -1044,7 +1044,10 @@ class UniformNdMapping(NdMapping):
 
         overlayed_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]
-        return self.clone(overlayed_items)
+        try:
+            return self.clone(overlayed_items)
+        except NotImplementedError:
+            return NotImplemented
 
 
     def __rmul__(self, other):

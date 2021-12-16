@@ -202,7 +202,8 @@ class ViolinPlot(BoxPlot):
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            data.append(group[group.vdims[0]])
+            d = group[group.vdims[0]]
+            data.append(d[np.isfinite(d)])
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = list(range(len(data)))
@@ -213,6 +214,7 @@ class ViolinPlot(BoxPlot):
             element = element.aggregate(function=np.mean)
         else:
             element = element.clone([(element.aggregate(function=np.mean),)])
+
         new_style = self._apply_transforms(element, ranges, style)
         style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}
