@@ -465,7 +465,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_expanded_dimvals_ht(self):
         # This will run unique(), which for pandas return
         # in order of appearance, but can be sorted for other
-        # interface like cudf.
+        # interfaces like cudf.
         #   pd.Series(["M", "M", "F"]).unique()   -> ["M", "F"]
         #   cudf.Series(["M", "M", "F"]).unique() -> ["F", "M"]
         data = self.table.dimension_values('Gender', expanded=False)

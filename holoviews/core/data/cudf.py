@@ -245,7 +245,7 @@ class cuDFInterface(PandasInterface):
 
         indexed = cls.indexed(dataset, selection)
         if selection_mask is not None:
-            df = df.loc[selection_mask]
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
