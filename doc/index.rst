@@ -139,5 +139,4 @@ After you have successfully installed and configured HoloViews, please see `Gett
    API <reference_manual/index>
    FAQ
    Roadmap <roadmap>
-   Github source <https://github.com/holoviz/holoviews>
    About <about>
