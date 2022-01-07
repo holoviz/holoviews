@@ -12,7 +12,10 @@ try:
     arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                  '-': None}
 except:
-    from bokeh.models.arrow_heads import OpenHead, NormalHead
+    try:
+        from bokeh.models.arrow_heads import OpenHead, NormalHead
+    except:
+        from bokeh.models.annotations.arrows import OpenHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
                  '-': None}
