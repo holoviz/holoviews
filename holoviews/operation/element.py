@@ -2,7 +2,6 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
-from distutils.version import LooseVersion
 import warnings
 
 import numpy as np
@@ -15,7 +14,7 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
 from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
-    group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
+    LooseVersion, group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
     dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
 )
 from ..element.chart import Histogram, Scatter
@@ -717,7 +716,7 @@ class histogram(Operation):
         is_cupy = is_cupy_array(data)
         if is_cupy:
             import cupy
-            full_cupy_support = LooseVersion(cupy.__version__) > '8.0'
+            full_cupy_support = LooseVersion(cupy.__version__) > LooseVersion('8.0')
             if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False

@@ -31,7 +31,7 @@ from .tabular import * # noqa (API import)
 from .renderer import MPLRenderer
 
 
-mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
+mpl_ge_150 = LooseVersion(mpl.__version__) >= LooseVersion('1.5.0')
 
 if pd:
     try:
