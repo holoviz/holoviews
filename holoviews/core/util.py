@@ -13,8 +13,8 @@ import datetime as dt
 from collections.abc import Iterable # noqa
 from collections import defaultdict, OrderedDict # noqa (compatibility)
 from contextlib import contextmanager
-from distutils.version import LooseVersion
 from functools import partial
+from packaging.version import Version
 from threading import Thread, Event
 from types import FunctionType
 
@@ -26,6 +26,43 @@ basestring = str
 long = int
 unicode = str
 cmp = lambda a, b: (a>b)-(a<b)
+
+
+class LooseVersion(Version):
+    """
+    Subclassed to allow string comparisons.
+    """
+
+    def __lt__(self, other):
+        if isinstance(other, basestring):
+            other = LooseVersion(other)
+        return super().__lt__(other)
+
+    def __gt__(self, other):
+        if isinstance(other, basestring):
+            other = LooseVersion(other)
+        return super().__gt__(other)
+
+    def __le__(self, other):
+        if isinstance(other, basestring):
+            other = LooseVersion(other)
+        return super().__le__(other)
+
+    def __ge__(self, other):
+        if isinstance(other, basestring):
+            other = LooseVersion(other)
+        return super().__ge__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, basestring):
+            other = LooseVersion(other)
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        if isinstance(other, basestring):
+            other = LooseVersion(other)
+        return super().__ne__(other)
+
 
 get_keywords = operator.attrgetter('varkw')
 generator_types = (zip, range, types.GeneratorType)
