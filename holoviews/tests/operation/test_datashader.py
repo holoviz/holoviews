@@ -20,7 +20,7 @@ try:
     import xarray as xr
     from holoviews.core.util import pd
     from holoviews.operation.datashader import (
-        aggregate, regrid, ds_version, stack, directly_connect_edges,
+        LooseVersion, aggregate, regrid, ds_version, stack, directly_connect_edges,
         shade, spread, rasterize, datashade, AggregationOperation,
         inspect, inspect_points, inspect_polygons
     )

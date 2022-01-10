@@ -20,7 +20,7 @@ from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
 from .styles import base_properties, fill_properties, line_properties
-from .util import bokeh_version, decode_bytes
+from .util import LooseVersion, bokeh_version, decode_bytes
 
 
 class DistributionPlot(AreaPlot):
