@@ -1505,14 +1505,15 @@ def is_param_method(obj, has_deps=False):
 def resolve_dependent_value(value):
     """Resolves parameter dependencies on the supplied value
 
-    Resolves parameter values, Parameterized instance methods and
-    parameterized functions with dependencies on the supplied value.
+    Resolves parameter values, Parameterized instance methods,
+    parameterized functions with dependencies on the supplied value,
+    including such parameters embedded in a list or tuple.
 
     Args:
        value: A value which will be resolved
 
     Returns:
-       A new dictionary where any parameter dependencies have been
+       A new value where any parameter dependencies have been
        resolved.
     """
     range_widget = False
@@ -1552,7 +1553,7 @@ def resolve_dependent_kwargs(kwargs):
        kwargs (dict): A dictionary of keyword arguments
 
     Returns:
-       A new dictionary with where any parameter dependencies have been
+       A new dictionary where any parameter dependencies have been
        resolved.
     """
     return {k: resolve_dependent_value(v) for k, v in kwargs.items()}
