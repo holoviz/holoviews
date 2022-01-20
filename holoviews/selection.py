@@ -620,7 +620,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
     def _apply_style_callback(self, element, layer_number, colors, cmap, alpha, **kwargs):
         opts = {}
-        if layer_number == 0:
+        if not layer_number:
             opts['colorbar'] = False
         else:
             alpha = 1
