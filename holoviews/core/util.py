@@ -1517,8 +1517,15 @@ def resolve_dependent_value(value):
        resolved.
     """
     range_widget = False
-    if isinstance(value, (tuple, list)):
+    if isinstance(value, list):
         value = [resolve_dependent_value(v) for v in value]
+    elif isinstance(value, tuple):
+        value = tuple(resolve_dependent_value(v) for v in value)
+    elif isinstance(value, dict):
+        value = {
+            resolve_dependent_value(k): resolve_dependent_value(v) for k, v in value.items()
+        }
+
     if 'panel' in sys.modules:
         from panel.widgets import RangeSlider, Widget
         range_widget = isinstance(value, RangeSlider)
