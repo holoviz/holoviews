@@ -5,6 +5,7 @@ from collections import defaultdict
 from unittest import SkipTest
 
 import param
+from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import LooseVersion, pd
@@ -311,6 +312,18 @@ class TestParamsStream(LoggingComparisonTestCase):
         tap.event(x=1, y=2)
 
         assert values == [{'x': 0, 'y': 1}, {'x': 1, 'y': 2}]
+
+    def test_params_no_names(self):
+        a = IntSlider()
+        b = IntSlider()
+        p = Params(parameters=[a.param.value, b.param.value])
+        assert len(p.hashkey) == 3  # the two widgets + _memoize_key
+
+    def test_params_identical_names(self):
+        a = IntSlider(name="Name")
+        b = IntSlider(name="Name")
+        p = Params(parameters=[a.param.value, b.param.value])
+        assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
 
 class TestParamMethodStream(ComparisonTestCase):
