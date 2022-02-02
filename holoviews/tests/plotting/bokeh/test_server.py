@@ -1,8 +1,6 @@
 import time
-import threading
 
 from unittest import SkipTest
-from threading import Event
 
 import param
 
@@ -14,20 +12,16 @@ from holoviews.plotting import Renderer
 from holoviews.streams import Stream, RangeXY, PlotReset
 
 try:
-    from bokeh.application.handlers import FunctionHandler
-    from bokeh.application import Application
     from bokeh.client import pull_session
     from bokeh.document import Document
     from bokeh.io.doc import curdoc, set_curdoc
     from bokeh.models import ColumnDataSource
-    from bokeh.server.server import Server
 
     from holoviews.plotting.bokeh.callbacks import (
         Callback, RangeXYCallback, ResetCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
     from panel.widgets import DiscreteSlider, FloatSlider
-    from panel.io.server import StoppableThread
     from panel.io.state import state
     from panel import serve
     bokeh_renderer = BokehRenderer.instance(mode='server')
