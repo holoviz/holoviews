@@ -30,7 +30,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters, isfinite
+from ..core.util import LooseVersion, stream_parameters, isfinite
 from ..element import Table, Graph
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
@@ -112,7 +112,7 @@ class Plot(param.Parameterized):
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
             from .bokeh.util import bokeh_version
-            if self._document and bokeh_version >= '2.4.0':
+            if self._document and bokeh_version >= LooseVersion('2.4.0'):
                 if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
                     self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
                 else:

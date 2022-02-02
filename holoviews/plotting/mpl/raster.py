@@ -7,7 +7,7 @@ from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
 from .element import ElementPlot, ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
-from .util import get_raster_array, mpl_version
+from .util import LooseVersion, get_raster_array, mpl_version
 
 
 class RasterBasePlot(ElementPlot):
@@ -167,7 +167,7 @@ class QuadMeshPlot(ColorbarPlot):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
-        if colorbar and mpl_version < '3.1':
+        if colorbar and mpl_version < LooseVersion('3.1'):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
                 # Compatibility with mpl < 3

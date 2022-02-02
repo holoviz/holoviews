@@ -25,7 +25,7 @@ from .callbacks import *             # noqa (API import)
 from .shapes import *                # noqa (API import)
 from .images import *                # noqa (API import)
 
-if LooseVersion(plotly.__version__) < '4.0.0':
+if LooseVersion(plotly.__version__) < LooseVersion('4.0.0'):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
         "please upgrade from plotly %s to a more recent version."

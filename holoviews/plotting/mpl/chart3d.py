@@ -10,7 +10,7 @@ from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
 from .path import PathPlot
-from .util import mpl_version
+from .util import LooseVersion, mpl_version
 
 
 class Plot3D(ColorbarPlot):
@@ -78,7 +78,7 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        if mpl_version <= '1.5.9':
+        if mpl_version <= LooseVersion('1.5.9'):
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
