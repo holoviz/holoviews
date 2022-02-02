@@ -183,7 +183,6 @@ class TestBokehServer(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = bokeh_renderer._validate(dmap, None)
         server, session = self._launcher(obj, port=6005)
-        print(obj._documents)
         [(doc, _)] = obj._documents.items()
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
