@@ -79,7 +79,7 @@ if sys.version_info.major > 2:
         [
             "pyarrow",
             # ibis-sqlite on conda, see setup.cfg
-            "ibis[sqlite]",
+            "ibis-framework",
         ]  # spatialpandas incompatibility
     )
 
