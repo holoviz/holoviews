@@ -171,7 +171,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if self.logy:
                     axis.set_yscale('log')
 
-                if not isinstance(self.projection, str) and self.projection == '3d':
+                if not (isinstance(self.projection, str) and self.projection == '3d'):
                     self._set_axis_position(axis, 'x', self.xaxis)
                     self._set_axis_position(axis, 'y', self.yaxis)
 
