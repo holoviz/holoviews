@@ -81,7 +81,8 @@ if sys.version_info.major > 2:
     extras_require["unit_tests"].extend(
         [
             "pyarrow",
-            "ibis-framework >=1.3",
+            # ibis-sqlite on conda, see setup.cfg
+            "ibis[sqlite]",
         ]  # spatialpandas incompatibility
     )
 
