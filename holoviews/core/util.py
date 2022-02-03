@@ -2228,3 +2228,30 @@ def cast_array_to_int64(array):
             category=FutureWarning,
         )
         return array.astype('int64')
+
+
+def flatten(line):
+    """
+    Flatten an arbitrarily nested sequence.
+
+    Inspired by: pd.core.common.flatten
+
+    Parameters
+    ----------
+    line : sequence
+        The sequence to flatten
+
+    Notes
+    -----
+    This only flattens list, tuple, and dict sequences.
+
+    Returns
+    -------
+    flattened : generator
+    """
+
+    for element in line:
+        if any(isinstance(element, tp) for tp in (list, tuple, dict)):
+            yield from flatten(element)
+        else:
+            yield element
