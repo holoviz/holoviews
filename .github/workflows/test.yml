@@ -26,6 +26,8 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Used by doit env_create
+      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: actions/checkout@v2
         with:
