@@ -38,7 +38,7 @@ jobs:
           auto-update-conda: true
           miniconda-version: "latest"
           channel-priority: strict
-          channels: pyviz/label/dev,bokeh,defaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
