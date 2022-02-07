@@ -3,7 +3,7 @@ import panel as pn
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
 from holoviews.core.options import Cycle
-from holoviews.element import Curve, Points, ErrorBars, Scatter, Text, VLine
+from holoviews.element import Bars, Curve, ErrorBars, HLine, Points, Scatter, Text, VLine
 from holoviews.streams import Stream, Tap
 from holoviews.util import Dynamic
 
@@ -11,7 +11,7 @@ from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
-    from bokeh.models import FixedTicker, HoverTool, FactorRange, Range1d
+    from bokeh.models import FixedTicker, HoverTool, FactorRange, Span, Range1d
 except:
     pass
 
@@ -191,6 +191,16 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         error_plot = plot.subplots[('ErrorBars', 'I')]
         for xs, factor in zip(error_plot.handles['source'].data['base'], factors):
             self.assertEqual(factor, xs)
+
+    def test_overlay_categorical_two_level(self):
+        bars = Bars([('A', 'a', 1), ('B', 'b', 2), ('A', 'b', 3), ('B', 'a', 4)],
+                    kdims=['Upper', 'Lower'])
+
+        plot = bokeh_renderer.get_plot(bars * HLine(2))
+        x_range = plot.handles['x_range']
+        assert isinstance(x_range, FactorRange)
+        assert x_range.factors == [('A', 'a'), ('A', 'b'), ('B', 'a'), ('B', 'b')]
+        assert isinstance(plot.state.renderers[-1], Span)
 
     def test_points_errorbars_text_ndoverlay_categorical_xaxis_invert_axes(self):
         overlay = NdOverlay({i: Points(([chr(65+i)]*10,np.random.randn(10)))

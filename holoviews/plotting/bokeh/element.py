@@ -1,5 +1,6 @@
 import warnings
 
+from itertools import chain
 from types import FunctionType
 
 import param
@@ -2287,13 +2288,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if el is not None:
                 elranges = util.match_spec(el, ranges)
                 xfs, yfs = sp._get_factors(el, elranges)
-                xfactors.append(xfs)
-                yfactors.append(yfs)
-        if xfactors:
-            xfactors = np.concatenate(xfactors)
-        if yfactors:
-            yfactors = np.concatenate(yfactors)
-        return util.unique_array(xfactors), util.unique_array(yfactors)
+                if len(xfs):
+                    xfactors.append(xfs)
+                if len(yfs):
+                    yfactors.append(yfs)
+        xfactors = list(util.unique_iterator(chain(*xfactors)))
+        yfactors = list(util.unique_iterator(chain(*yfactors)))
+        return xfactors, yfactors
 
     def _get_axis_dims(self, element):
         subplots = list(self.subplots.values())
