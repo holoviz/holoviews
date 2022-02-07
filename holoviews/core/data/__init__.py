@@ -797,7 +797,7 @@ argument to specify a selection specification""")
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Table, Curve
-        datatype = ['dataframe', 'dictionary', 'dask', 'ibis']
+        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
