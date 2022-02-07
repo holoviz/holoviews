@@ -1569,17 +1569,27 @@ def is_param_method(obj, has_deps=False):
 def resolve_dependent_value(value):
     """Resolves parameter dependencies on the supplied value
 
-    Resolves parameter values, Parameterized instance methods and
-    parameterized functions with dependencies on the supplied value.
+    Resolves parameter values, Parameterized instance methods,
+    parameterized functions with dependencies on the supplied value,
+    including such parameters embedded in a list or tuple.
 
     Args:
        value: A value which will be resolved
 
     Returns:
-       A new dictionary where any parameter dependencies have been
+       A new value where any parameter dependencies have been
        resolved.
     """
     range_widget = False
+    if isinstance(value, list):
+        value = [resolve_dependent_value(v) for v in value]
+    elif isinstance(value, tuple):
+        value = tuple(resolve_dependent_value(v) for v in value)
+    elif isinstance(value, dict):
+        value = {
+            resolve_dependent_value(k): resolve_dependent_value(v) for k, v in value.items()
+        }
+
     if 'panel' in sys.modules:
         from panel.widgets import RangeSlider, Widget
         range_widget = isinstance(value, RangeSlider)
@@ -1614,7 +1624,7 @@ def resolve_dependent_kwargs(kwargs):
        kwargs (dict): A dictionary of keyword arguments
 
     Returns:
-       A new dictionary with where any parameter dependencies have been
+       A new dictionary where any parameter dependencies have been
        resolved.
     """
     return {k: resolve_dependent_value(v) for k, v in kwargs.items()}
@@ -2294,3 +2304,30 @@ def cast_array_to_int64(array):
             category=FutureWarning,
         )
         return array.astype('int64')
+
+
+def flatten(line):
+    """
+    Flatten an arbitrarily nested sequence.
+
+    Inspired by: pd.core.common.flatten
+
+    Parameters
+    ----------
+    line : sequence
+        The sequence to flatten
+
+    Notes
+    -----
+    This only flattens list, tuple, and dict sequences.
+
+    Returns
+    -------
+    flattened : generator
+    """
+
+    for element in line:
+        if any(isinstance(element, tp) for tp in (list, tuple, dict)):
+            yield from flatten(element)
+        else:
+            yield element
