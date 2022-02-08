@@ -768,7 +768,7 @@ class Params(Stream):
         for p in self.parameters:
             pkey = (p.owner, p.name)
             pname = self._rename.get(pkey, p.name)
-            key = ' '.join([p.owner.name, pname])
+            key = ' '.join([str(id(p.owner)), pname])
             if self._rename.get(pkey, True) is not None:
                 hashkey[key] = getattr(p.owner, p.name)
         hashkey['_memoize_key'] = self._memoize_counter

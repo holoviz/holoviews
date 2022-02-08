@@ -463,8 +463,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     # Test literal formats
 
     def test_dataset_expanded_dimvals_ht(self):
-        self.assertEqual(self.table.dimension_values('Gender', expanded=False),
-                         np.array(['M', 'F']))
+        # This will run unique(), which for pandas return
+        # in order of appearance, but can be sorted for other
+        # interfaces like cudf.
+        #   pd.Series(["M", "M", "F"]).unique()   -> ["M", "F"]
+        #   cudf.Series(["M", "M", "F"]).unique() -> ["F", "M"]
+        data = self.table.dimension_values('Gender', expanded=False)
+        self.assertEqual(np.sort(data), np.array(['F', 'M']))
 
     def test_dataset_implicit_indexing_init(self):
         dataset = Scatter(self.ys, kdims=['x'], vdims=['y'])

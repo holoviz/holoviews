@@ -59,6 +59,14 @@ class TestElementPlot(TestMPLPlot):
         self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 24)
         self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
 
+    def test_element_no_xaxis_yaxis(self):
+        element = Curve(range(10)).options(xaxis=None, yaxis=None)
+        axes = mpl_renderer.get_plot(element).handles['axis']
+        xaxis = axes.get_xaxis()
+        yaxis = axes.get_yaxis()
+        self.assertEqual(xaxis.get_visible(), False)
+        self.assertEqual(yaxis.get_visible(), False)
+
     def test_element_xlabel(self):
         element = Curve(range(10)).options(xlabel='custom x-label')
         axes = mpl_renderer.get_plot(element).handles['axis']
