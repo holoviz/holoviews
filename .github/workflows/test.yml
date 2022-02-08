@@ -15,7 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ['3.6', '3.10']
+        # python-version: [3.6, 3.7, 3.8, 3.9]
     timeout-minutes: 60
     defaults:
       run:
@@ -25,9 +26,8 @@ jobs:
       HV_REQUIREMENTS: "-o unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       MPLBACKEND: "Agg"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Used by doit env_create
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -37,18 +37,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-update-conda: true
           miniconda-version: "latest"
-          channel-priority: strict
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          conda config --set always_yes True
-          conda install "pyctdev>=0.5"
-          doit ecosystem_setup
-          doit env_create --python=${{ matrix.python-version }}
+          conda update -n base -c defaults conda
+          conda create ${{ env.CHANS_DEV }} -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
@@ -58,9 +53,8 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1"
           conda list
-          doit develop_install ${{ env.HV_REQUIREMENTS }}
+          doit develop_install ${{ env.CHANS_DEV }} ${{ env.HV_REQUIREMENTS }}
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
@@ -74,7 +68,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "panel=0.12"
+          conda install ${{ env.CHANS_DEV }} "panel=0.12"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
