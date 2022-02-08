@@ -11,7 +11,7 @@ import datetime as dt
 
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
-from packaging.version import Version as LooseVersion
+from packaging.version import Version as LooseVersion as _LooseVersion
 from functools import partial
 from threading import Thread, Event
 from types import FunctionType
