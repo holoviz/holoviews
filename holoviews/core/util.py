@@ -11,7 +11,7 @@ import datetime as dt
 
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
-from packaging.version import Version as LooseVersion as _LooseVersion
+from packaging.version import Version as LooseVersion
 from functools import partial
 from threading import Thread, Event
 from types import FunctionType
@@ -49,23 +49,6 @@ else:
     RecursionError = RuntimeError
     _getargspec = inspect.getargspec
     get_keywords = operator.attrgetter('keywords')
-
-    class LooseVersion(_LooseVersion):
-        """
-        Subclassed to avoid unicode issues in python2
-        """
-
-        def __init__ (self, vstring=None):
-            if isinstance(vstring, unicode):
-                vstring = str(vstring)
-            self.parse(vstring)
-
-        def __cmp__(self, other):
-            if isinstance(other, unicode):
-                other = str(other)
-            if isinstance(other, basestring):
-                other = LooseVersion(other)
-            return cmp(self.version, other.version)
 
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
