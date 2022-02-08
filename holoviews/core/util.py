@@ -37,7 +37,6 @@ if sys.version_info.major >= 3:
     RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
     _getargspec = inspect.getfullargspec
     get_keywords = operator.attrgetter('varkw')
-    LooseVersion = _LooseVersion
 else:
     import __builtin__ as builtins # noqa (compatibility)
     from collections import Iterable # noqa (compatibility)
