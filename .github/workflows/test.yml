@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.6', '3.10']
+        python-version: ['3.6', '3.7', '3.10']
         # python-version: [3.6, 3.7, 3.8, 3.9]
     timeout-minutes: 60
     defaults:
@@ -40,8 +40,15 @@ jobs:
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
-      - name: conda setup
+      - name: conda setup 3.6
+        if: matrix.python-version == '3.6'
         run: |
+          eval "$(conda shell.bash hook)"
+          conda create -c pyviz/label/dev -c bokeh -n test-environment python=${{ matrix.python-version }} pyctdev
+      - name: conda setup > 3.6
+        if: matrix.python-version != '3.6'
+        run: |
+          eval "$(conda shell.bash hook)"
           conda update -n base -c defaults conda
           conda create ${{ env.CHANS_DEV }} -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
@@ -49,7 +56,20 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
-      - name: doit develop_install
+      - name: doit develop_install 3.6
+        if: matrix.python-version == '3.6'
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+          doit develop_install -c pyviz/label/dev -c bokeh ${{ env.HV_REQUIREMENTS }}
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
+          echo "======"
+          conda list
+      - name: doit develop_install > 3.6
+        if: matrix.python-version != '3.6'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
@@ -68,7 +88,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "panel=0.12"
+          conda install -c pyviz/label/dev -c bokeh "panel=0.12"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
