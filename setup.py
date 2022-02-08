@@ -69,17 +69,10 @@ extras_require['tests'] = [
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
 
-# Moving ibis-framework from `examples` to `unit_tests`
-# because it could not be installed on Linux with conda-forge
-# (https://github.com/conda-forge/ibis-framework-feedstock/issues/54)
-# which was blocking the docs build. ibis-framework isn't
-# required to build the docs anyway.
 if sys.version_info.major > 2:
     extras_require["unit_tests"].extend(
         [
             "pyarrow",
-            # ibis-sqlite on conda, see setup.cfg
-            "ibis-framework",
         ]  # spatialpandas incompatibility
     )
 

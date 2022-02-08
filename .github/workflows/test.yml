@@ -63,6 +63,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install -c pyviz/label/dev -c bokeh ${{ env.HV_REQUIREMENTS }}
+          conda install -c pyviz/label/dev -c bokeh ibis-framework "panel=0.12"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
@@ -75,6 +76,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV }} ${{ env.HV_REQUIREMENTS }}
+          conda install ${{ env.CHANS_DEV }} ibis-sqlite
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
@@ -83,12 +85,12 @@ jobs:
       # Pin panel on Python 3.6 because one or more dev releases on the 0.13.* series
       # can be installed on Python 3.6 but are actually not compatible with Python 3.6
       # Panel 0.13 will support Python >= 3.7 only so the pin here can stay indefinitely.
-      - name: Pin panel on py36
-        if: matrix.python-version == '3.6'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install -c pyviz/label/dev -c bokeh "panel=0.12"
+      # - name: Pin panel on py36
+      #   if: matrix.python-version == '3.6'
+      #   run: |
+      #     eval "$(conda shell.bash hook)"
+      #     conda activate test-environment
+      #     conda install -c pyviz/label/dev -c bokeh "panel=0.12"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
