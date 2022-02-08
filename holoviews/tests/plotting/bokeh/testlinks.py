@@ -7,7 +7,7 @@ from holoviews.element import Curve, Polygons, Table, Scatter, Path, Points
 from holoviews.plotting.links import (Link, RangeToolLink, DataLink)
 
 try:
-    from holoviews.plotting.bokeh.util import bokeh_version
+    from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
     from bokeh.models import ColumnDataSource
 except:
     pass
@@ -18,7 +18,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 class TestLinkCallbacks(TestBokehPlot):
 
     def setUp(self):
-        if not bokeh_renderer or bokeh_version < '0.13':
+        if not bokeh_renderer or bokeh_version < LooseVersion('0.13'):
             raise SkipTest('RangeTool requires bokeh version >= 0.13')
         super(TestLinkCallbacks, self).setUp()
 

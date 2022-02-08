@@ -31,11 +31,12 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
+
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import bokeh_version, convert_timestamp
+from .util import LooseVersion, bokeh_version, convert_timestamp
 
-if bokeh_version >= '2.3.0':
+if bokeh_version >= LooseVersion('2.3.0'):
     CUSTOM_TOOLTIP = 'description'
 else:
     CUSTOM_TOOLTIP = 'custom_tooltip'

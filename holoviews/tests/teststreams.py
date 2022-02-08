@@ -313,7 +313,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if LooseVersion(param.__version__) < '1.8.0':
+        if LooseVersion(param.__version__) < LooseVersion('1.8.0'):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):

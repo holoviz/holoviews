@@ -11,7 +11,7 @@ import datetime as dt
 
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
-from distutils.version import LooseVersion as _LooseVersion
+from packaging.version import Version as LooseVersion
 from functools import partial
 from threading import Thread, Event
 from types import FunctionType
@@ -83,13 +83,13 @@ except ImportError:
 if pd:
     pandas_version = LooseVersion(pd.__version__)
     try:
-        if pandas_version >= '1.3.0':
+        if pandas_version >= LooseVersion('1.3.0'):
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
-        elif pandas_version >= '0.24.0':
+        elif pandas_version >= LooseVersion('0.24.0'):
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-        elif pandas_version > '0.20.0':
+        elif pandas_version > LooseVersion('0.20.0'):
             from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
         else:
@@ -100,10 +100,10 @@ if pd:
         datetime_types = datetime_types + pandas_datetime_types
         timedelta_types = timedelta_types + pandas_timedelta_types
         arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-        if pandas_version > '0.23.0':
+        if pandas_version > LooseVersion('0.23.0'):
             from pandas.core.dtypes.generic import ABCExtensionArray
             arraylike_types = arraylike_types + (ABCExtensionArray,)
-        if pandas_version > '1.0':
+        if pandas_version > LooseVersion('1.0'):
             from pandas.core.arrays.masked import BaseMaskedArray
             masked_types = (BaseMaskedArray,)
     except Exception as e:
@@ -864,7 +864,7 @@ def isnat(val):
     """
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
-        if numpy_version >= '1.13':
+        if numpy_version >= LooseVersion('1.13'):
             return np.isnat(val)
         else:
             return val.view('i8') == nat_as_integer
@@ -902,7 +902,7 @@ def isfinite(val):
         elif val.dtype.kind in 'US':
             return ~pd.isna(val) if pd else np.ones_like(val, dtype=bool)
         finite = np.isfinite(val)
-        if pd and pandas_version >= '1.0.0':
+        if pd and pandas_version >= LooseVersion('1.0.0'):
             finite &= ~pd.isna(val)
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
@@ -910,7 +910,7 @@ def isfinite(val):
     elif isinstance(val, (basestring, bytes)):
         return True
     finite = np.isfinite(val)
-    if pd and pandas_version >= '1.0.0':
+    if pd and pandas_version >= LooseVersion('1.0.0'):
         if finite is pd.NA:
             return False
         return finite & (~pd.isna(val))

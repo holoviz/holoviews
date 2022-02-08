@@ -48,7 +48,7 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
+    LooseVersion, TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
@@ -65,12 +65,12 @@ try:
 except ImportError:
     BinnedTicker = None
 
-if bokeh_version >= '2.0.1':
+if bokeh_version >= LooseVersion('2.0.1'):
     try:
         TOOLS_MAP = Tool._known_aliases
     except Exception:
         TOOLS_MAP = TOOL_TYPES
-elif bokeh_version >= '2.0.0':
+elif bokeh_version >= LooseVersion('2.0.0'):
     from bokeh.plotting._tools import TOOLS_MAP
 else:
     from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
@@ -623,7 +623,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
         if title_font != '12pt':
-            title_font = title_font if bokeh_version > '2.2.3' else value(title_font)
+            title_font = title_font if bokeh_version > LooseVersion('2.2.3') else value(title_font)
             opts['text_font_size'] = title_font
         return opts
 
@@ -659,7 +659,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare', 'bare'])):
-            zero_pt = '0pt' if bokeh_version > '2.2.3' else value('0pt')
+            zero_pt = '0pt' if bokeh_version > LooseVersion('2.2.3') else value('0pt')
             axis_props['axis_label_text_font_size'] = zero_pt
             axis_props['major_label_text_font_size'] = zero_pt
             axis_props['major_tick_line_color'] = None
@@ -670,8 +670,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['axis_label_text_font_size'] = labelsize
             ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
             if ticksize:
-                ticksize = ticksize if bokeh_version > '2.2.3' else value(ticksize)
-                axis_props['major_label_text_font_size'] = ticksize 
+                ticksize = ticksize if bokeh_version > LooseVersion('2.2.3') else value(ticksize)
+                axis_props['major_label_text_font_size'] = ticksize
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)
@@ -1174,7 +1174,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     field = k
                 if categorical and getattr(self, 'show_legend', False):
-                    legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+                    legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
                     new_style[legend_prop] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
@@ -1226,7 +1226,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 legend = element.label
             if legend and self.overlaid:
-                legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
+                legend_prop = 'legend_label' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
                 properties[legend_prop] = legend
         return properties
 
@@ -1254,7 +1254,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        legend_props = ('legend_field', 'legend_label') if bokeh_version >= '1.3.5' else ('legend',)
+        legend_props = ('legend_field', 'legend_label') if bokeh_version >= LooseVersion('1.3.5') else ('legend',)
         for lp in legend_props:
             legend = merged.pop(lp, None)
             if legend is not None:
@@ -1302,7 +1302,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 event = ModelChangedEvent(self.document, source, 'data',
                                           source.data, empty_data, empty_data,
                                           setter='empty')
-                if bokeh_version >= '2.4.0':
+                if bokeh_version >= LooseVersion('2.4.0'):
                     self.document.callbacks._held_events.append(event)
                 else:
                     self.document._held_events.append(event)
@@ -1982,7 +1982,7 @@ class ColorbarPlot(ElementPlot):
 
         data[field] = cdata
         if factors is not None and self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+            legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
             mapping[legend_prop] = field
         mapping[name] = {'field': field, 'transform': mapper}
 
