@@ -411,7 +411,7 @@ class Renderer(Exporter):
                 if embed:
                     return render_model(model, comm)
                 args = (model, doc, comm)
-                if panel_version > '0.9.3':
+                if panel_version > LooseVersion('0.9.3'):
                     from panel.models.comm_manager import CommManager
                     ref = model.ref['id']
                     manager = CommManager(comm_id=comm.id, plot_id=ref)
