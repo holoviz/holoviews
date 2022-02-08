@@ -65,6 +65,7 @@ extras_require['tests'] = [
     'matplotlib >=3',
     'nbsmoke >=0.2.0',
     'nbconvert',
+    'codecov',
 ]
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
