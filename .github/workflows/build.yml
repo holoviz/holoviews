@@ -89,6 +89,8 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit develop_install $CHANS_DEV -o unit_tests
+          # See https://github.com/holoviz/holoviews/issues/5167
+          conda install $CHANS_DEV "nbconvert<6"
           pip uninstall -y holoviews
           doit pip_on_conda
       - name: pip build
