@@ -52,11 +52,10 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda update -n base -c defaults conda
           conda config --show
-          conda config --remove-key channels
-          conda config --set channels pyviz/label/dev
-          conda config --append channels bokeh
-          conda config --append channels conda-forge
-          conda config --append channels nodefaults
+          conda config --prepend channels pyviz/label/dev
+          conda config --prepend channels bokeh
+          conda config --prepend channels conda-forge
+          conda config --prepend channels nodefaults
           conda config --show channels
           conda create -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
