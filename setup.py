@@ -65,6 +65,8 @@ extras_require['tests'] = [
     'nbsmoke >=0.2.0',
     'nbconvert',
     'codecov',
+    # Numba currently incompatible with this Numpy version
+    'numpy<1.22',
 ]
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
