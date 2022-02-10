@@ -60,7 +60,6 @@ extras_require['tests'] = [
     'pytest-cov',
     'mock',
     'flake8',
-    'coveralls',
     'path.py',
     'matplotlib >=3',
     'nbsmoke >=0.2.0',
