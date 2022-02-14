@@ -247,7 +247,7 @@ class cuDFInterface(PandasInterface):
 
         indexed = cls.indexed(dataset, selection)
         if selection_mask is not None:
-            df = df.loc[selection_mask]
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
@@ -284,7 +284,13 @@ class cuDFInterface(PandasInterface):
             if not hasattr(reindexed, agg):
                 raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
             agg = getattr(reindexed, agg)()
-            data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
+            try:
+                data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_numpy())))
+            except Exception:
+                # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
+                # Consider using `to_numpy` instead.'
+                # Seen in cudf=21.12.01
+                data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
             df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
