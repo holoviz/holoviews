@@ -1553,7 +1553,7 @@ def resolve_dependent_value(value):
 
     Resolves parameter values, Parameterized instance methods,
     parameterized functions with dependencies on the supplied value,
-    including such parameters embedded in a list or tuple.
+    including such parameters embedded in a list, tuple, or dictionary.
 
     Args:
        value: A value which will be resolved
