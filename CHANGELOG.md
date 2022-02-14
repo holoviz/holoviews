@@ -1,3 +1,34 @@
+Version 1.14.8
+==============
+**February 15, 2022**
+
+This release contains a small number of important bug fixes as well as
+fixes required for Python 3.9 and 3.10 support. Many thanks to @Hoxbro,
+@maximlt, @jlstevens, @jbednar, and @philippjfr.
+ 
+Bug fixes:
+
+- Fixed xarray validation for aliased coordinate
+  ([#5169](https://github.com/holoviz/holoviews/pull/5169))
+- Fixed xaxis/yaxis options with Matplotlib
+  ([#5200](https://github.com/holoviz/holoviews/pull/5200))
+- Fixed nested widgets by handling list or tuple values in
+  `resolve_dependent_value` utility
+  ([#5184](https://github.com/holoviz/holoviews/pull/5184))
+- Fixed issue handling multiple widgets without names
+  ([#5185](https://github.com/holoviz/holoviews/pull/5185))
+- Fix overlay of two-level categorical plots and HLine
+  ([#5203](https://github.com/holoviz/holoviews/pull/5203))
+- Added support for Ibis > 2.0
+  ([#5204](https://github.com/holoviz/holoviews/pull/5204))
+- Miscellaneous fixes to unit tests, including cudf test fixes as well
+  as addition of Python 3.9 and 3.10 to the test matrix
+  ([#5166](https://github.com/holoviz/holoviews/pull/5166),
+  [#5199](https://github.com/holoviz/holoviews/pull/5199),
+  [#5201](https://github.com/holoviz/holoviews/pull/5201),
+  [#5206](https://github.com/holoviz/holoviews/pull/5206))
+
+
 Version 1.14.7
 ==============
 **December 16, 2021**
