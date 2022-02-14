@@ -15,17 +15,17 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.6, 3.7, 3.8]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
     timeout-minutes: 60
     defaults:
       run:
         shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
-      HV_REQUIREMENTS: "unit_tests"
+      HV_REQUIREMENTS: "-o unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       MPLBACKEND: "Agg"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
@@ -39,60 +39,52 @@ jobs:
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
-      - name: conda setup
+      - name: conda setup 3.6
+        if: matrix.python-version == '3.6'
         run: |
-          conda config --set always_yes True
-          conda install -c pyviz "pyctdev>=0.5"
-          doit ecosystem_setup
-          doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
+          eval "$(conda shell.bash hook)"
+          conda create -c pyviz/label/dev -c bokeh -n test-environment python=${{ matrix.python-version }} pyctdev
+      - name: conda setup > 3.6
+        if: matrix.python-version != '3.6'
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda update -n base -c defaults conda
+          conda config --prepend channels pyviz/label/dev
+          conda config --prepend channels bokeh
+          conda config --prepend channels conda-forge
+          conda config --prepend channels nodefaults
+          conda config --remove channels defaults
+          conda create -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
-      - name: doit develop_install
-        if: matrix.os != 'macos-latest'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
-          conda list
-          doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }}
-          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
-          echo "-----"
-          git describe
-          echo "======"
-          conda list
-        # Temporary step for Mac only due doit to develop_install failing
-      - name: doit develop_install on Mac
-        if: matrix.os == 'macos-latest'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
-          conda list
-          doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }} || echo "Keep going"
-          pip install --no-deps --no-build-isolation -e .
-          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
-          echo "-----"
-          git describe
-          echo "======"
-          conda list
-      # Pin panel on Python 3.6 because one or more dev releases on the 0.13.* series
-      # can be installed on Python 3.6 but are actually not compatible with Python 3.6
-      # Panel 0.13 will support Python >= 3.7 only so the pin here can stay indefinitely.
-      - name: Pin panel on py36
+      - name: doit develop_install 3.6
         if: matrix.python-version == '3.6'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install -c pyviz "panel=0.12"
-      - name: Patch - do not install cffi 1.15.0 on macos and for python != 3.6
-        if: matrix.os == 'macos-latest' && matrix.python-version != '3.6'
+          conda list
+          doit develop_install -c pyviz/label/dev -c bokeh ${{ env.HV_REQUIREMENTS }}
+          # Pin panel on Python 3.6 because one or more dev releases on the 0.13.* series
+          # can be installed on Python 3.6 but are actually not compatible with Python 3.6
+          # Install ibis-framework instead of ibis-sqlite as it's only available starting from Python 3.7
+          conda install -c pyviz/label/dev -c bokeh ibis-framework "panel=0.12"
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
+      - name: doit develop_install > 3.6
+        if: matrix.python-version != '3.6'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install ${{ env.CHANS_DEV}} "cffi!=1.15.0"
+          conda list
+          doit develop_install ${{ env.HV_REQUIREMENTS }}
+          conda install ibis-sqlite
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
@@ -113,10 +105,8 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_examples
-      - name: run coveralls
-        env:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: codecov
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          coveralls --service=github
+          codecov
