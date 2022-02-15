@@ -29,7 +29,7 @@ from .annotation import (
 )
 from ..plot import PlotSelector
 from ..util import fire
-from .callbacks import Callback # noqa (API import)
+from .callbacks import Callback, LinkCallback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
