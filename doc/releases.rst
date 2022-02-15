@@ -30,6 +30,8 @@ Bug fixes:
    (`#5204 <https://github.com/holoviz/holoviews/pull/5204>`__)
 -  Allow lower dimensional views on arbitrary dimensioned elements
    (`#5208 <https://github.com/holoviz/holoviews/pull/5208>`__)
+-  Fix escaping of HTML on Div element
+   (`#5209 <https://github.com/holoviz/holoviews/pull/5209>`__)
 -  Miscellaneous fixes to unit tests, including cudf test fixes as well
    as addition of Python 3.9 and 3.10 to the test matrix
    (`#5166 <https://github.com/holoviz/holoviews/pull/5166>`__,
