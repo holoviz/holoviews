@@ -337,7 +337,10 @@ class GridInterface(DictInterface):
         dropped = [dims.index(d) for d in dims
                    if d not in dataset.kdims+virtual_coords]
         if dropped:
-            data = np.squeeze(data, axis=tuple(dropped))
+            if len(dropped) == data.ndim:
+                data = data.flatten()
+            else:
+                data = np.squeeze(data, axis=tuple(dropped))
 
         if not any(cls.irregular(dataset, d) for d in dataset.kdims):
             inds = [dims.index(kd.name) for kd in dataset.kdims]

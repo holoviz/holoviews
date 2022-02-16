@@ -16,6 +16,7 @@ install_requires = [
     "pyviz_comms >=0.7.4",
     "panel >=0.8.0",
     "colorcet",
+    "packaging",
     "pandas >=0.20.0",
 ]
 
@@ -58,28 +59,21 @@ extras_require['tests'] = [
     'nose',
     'mock',
     'flake8',
-    'coveralls',
     'path.py',
     'matplotlib >=3',
     'nbsmoke >=0.2.0',
     'nbconvert',
-    'twine',
-    'rfc3986',
-    'keyring'
+    'codecov',
+    # Numba currently incompatible with this Numpy version
+    'numpy<1.22',
 ]
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
 
-# Moving ibis-framework from `examples` to `unit_tests`
-# because it could not be installed on Linux with conda-forge
-# (https://github.com/conda-forge/ibis-framework-feedstock/issues/54)
-# which was blocking the docs build. ibis-framework isn't
-# required to build the docs anyway.
 if sys.version_info.major > 2:
     extras_require["unit_tests"].extend(
         [
             "pyarrow",
-            "ibis-framework >=1.3",
         ]  # spatialpandas incompatibility
     )
 

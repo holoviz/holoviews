@@ -668,7 +668,7 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    if bokeh_version >= '2.4':
+    if bokeh_version >= LooseVersion('2.4'):
         old_policy = document.callbacks.hold_value
         document.callbacks._hold = policy
     else:
@@ -679,7 +679,7 @@ def hold_policy(document, policy, server=False):
     finally:
         if server and not old_policy:
             document.unhold()
-        elif bokeh_version >= '2.4':
+        elif bokeh_version >= LooseVersion('2.4'):
             document.callbacks._hold = old_policy
         else:
             document._hold = old_policy
@@ -729,7 +729,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             source.data.clear()
             if doc:
-                event_obj = doc.callbacks if bokeh_version >= '2.4' else doc
+                event_obj = doc.callbacks if bokeh_version >= LooseVersion('2.4') else doc
                 event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)

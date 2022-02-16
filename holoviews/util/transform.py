@@ -10,8 +10,7 @@ import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import basestring, pd, resolve_dependent_value, unique_iterator
-
+from ..core.util import basestring, flatten, pd, resolve_dependent_value, unique_iterator
 
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
@@ -332,6 +331,7 @@ class dim(object):
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
+            op_args = flatten(op_args)
             for op_arg in op_args:
                 if 'panel' in sys.modules:
                     from panel.widgets.base import Widget

@@ -23,7 +23,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
+from .util import LooseVersion, EqHistNormalize, mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -130,7 +130,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                if mpl_version <= '1.5.9':
+                if mpl_version <= LooseVersion('1.5.9'):
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)
@@ -174,7 +174,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if self.logy:
                     axis.set_yscale('log')
 
-                if not isinstance(self.projection, str) and self.projection == '3d':
+                if not (isinstance(self.projection, str) and self.projection == '3d'):
                     self._set_axis_position(axis, 'x', self.xaxis)
                     self._set_axis_position(axis, 'y', self.yaxis)
 
@@ -330,7 +330,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.NaN for coord in extents]
         coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
                   for c in coords]
-        if isinstance(self.projection, str) and self.projection == '3d' or len(extents) == 6:
+        if (isinstance(self.projection, str) and self.projection == '3d') or len(extents) == 6:
             l, b, zmin, r, t, zmax = coords
             if self.invert_zaxis or any(p.invert_zaxis for p in subplots):
                 zmin, zmax = zmax, zmin

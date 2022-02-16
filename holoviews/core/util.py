@@ -11,7 +11,7 @@ import datetime as dt
 
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
-from distutils.version import LooseVersion as _LooseVersion
+from packaging.version import Version as LooseVersion
 from functools import partial
 from threading import Thread, Event
 from types import FunctionType
@@ -37,7 +37,6 @@ if sys.version_info.major >= 3:
     RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
     _getargspec = inspect.getfullargspec
     get_keywords = operator.attrgetter('varkw')
-    LooseVersion = _LooseVersion
 else:
     import __builtin__ as builtins # noqa (compatibility)
     from collections import Iterable # noqa (compatibility)
@@ -49,23 +48,6 @@ else:
     RecursionError = RuntimeError
     _getargspec = inspect.getargspec
     get_keywords = operator.attrgetter('keywords')
-
-    class LooseVersion(_LooseVersion):
-        """
-        Subclassed to avoid unicode issues in python2
-        """
-
-        def __init__ (self, vstring=None):
-            if isinstance(vstring, unicode):
-                vstring = str(vstring)
-            self.parse(vstring)
-
-        def __cmp__(self, other):
-            if isinstance(other, unicode):
-                other = str(other)
-            if isinstance(other, basestring):
-                other = LooseVersion(other)
-            return cmp(self.version, other.version)
 
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
@@ -83,13 +65,13 @@ except ImportError:
 if pd:
     pandas_version = LooseVersion(pd.__version__)
     try:
-        if pandas_version >= '1.3.0':
+        if pandas_version >= LooseVersion('1.3.0'):
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
-        elif pandas_version >= '0.24.0':
+        elif pandas_version >= LooseVersion('0.24.0'):
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-        elif pandas_version > '0.20.0':
+        elif pandas_version > LooseVersion('0.20.0'):
             from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
         else:
@@ -100,10 +82,10 @@ if pd:
         datetime_types = datetime_types + pandas_datetime_types
         timedelta_types = timedelta_types + pandas_timedelta_types
         arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-        if pandas_version > '0.23.0':
+        if pandas_version > LooseVersion('0.23.0'):
             from pandas.core.dtypes.generic import ABCExtensionArray
             arraylike_types = arraylike_types + (ABCExtensionArray,)
-        if pandas_version > '1.0':
+        if pandas_version > LooseVersion('1.0'):
             from pandas.core.arrays.masked import BaseMaskedArray
             masked_types = (BaseMaskedArray,)
     except Exception as e:
@@ -864,7 +846,7 @@ def isnat(val):
     """
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
-        if numpy_version >= '1.13':
+        if numpy_version >= LooseVersion('1.13'):
             return np.isnat(val)
         else:
             return val.view('i8') == nat_as_integer
@@ -902,7 +884,7 @@ def isfinite(val):
         elif val.dtype.kind in 'US':
             return ~pd.isna(val) if pd else np.ones_like(val, dtype=bool)
         finite = np.isfinite(val)
-        if pd and pandas_version >= '1.0.0':
+        if pd and pandas_version >= LooseVersion('1.0.0'):
             finite &= ~pd.isna(val)
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
@@ -910,7 +892,7 @@ def isfinite(val):
     elif isinstance(val, (basestring, bytes)):
         return True
     finite = np.isfinite(val)
-    if pd and pandas_version >= '1.0.0':
+    if pd and pandas_version >= LooseVersion('1.0.0'):
         if finite is pd.NA:
             return False
         return finite & (~pd.isna(val))
@@ -1569,17 +1551,27 @@ def is_param_method(obj, has_deps=False):
 def resolve_dependent_value(value):
     """Resolves parameter dependencies on the supplied value
 
-    Resolves parameter values, Parameterized instance methods and
-    parameterized functions with dependencies on the supplied value.
+    Resolves parameter values, Parameterized instance methods,
+    parameterized functions with dependencies on the supplied value,
+    including such parameters embedded in a list, tuple, or dictionary.
 
     Args:
        value: A value which will be resolved
 
     Returns:
-       A new dictionary where any parameter dependencies have been
+       A new value where any parameter dependencies have been
        resolved.
     """
     range_widget = False
+    if isinstance(value, list):
+        value = [resolve_dependent_value(v) for v in value]
+    elif isinstance(value, tuple):
+        value = tuple(resolve_dependent_value(v) for v in value)
+    elif isinstance(value, dict):
+        value = {
+            resolve_dependent_value(k): resolve_dependent_value(v) for k, v in value.items()
+        }
+
     if 'panel' in sys.modules:
         from panel.widgets import RangeSlider, Widget
         range_widget = isinstance(value, RangeSlider)
@@ -1614,7 +1606,7 @@ def resolve_dependent_kwargs(kwargs):
        kwargs (dict): A dictionary of keyword arguments
 
     Returns:
-       A new dictionary with where any parameter dependencies have been
+       A new dictionary where any parameter dependencies have been
        resolved.
     """
     return {k: resolve_dependent_value(v) for k, v in kwargs.items()}
@@ -2294,3 +2286,30 @@ def cast_array_to_int64(array):
             category=FutureWarning,
         )
         return array.astype('int64')
+
+
+def flatten(line):
+    """
+    Flatten an arbitrarily nested sequence.
+
+    Inspired by: pd.core.common.flatten
+
+    Parameters
+    ----------
+    line : sequence
+        The sequence to flatten
+
+    Notes
+    -----
+    This only flattens list, tuple, and dict sequences.
+
+    Returns
+    -------
+    flattened : generator
+    """
+
+    for element in line:
+        if any(isinstance(element, tp) for tp in (list, tuple, dict)):
+            yield from flatten(element)
+        else:
+            yield element

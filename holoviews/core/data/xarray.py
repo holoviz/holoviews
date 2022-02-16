@@ -217,10 +217,18 @@ class XArrayInterface(GridInterface):
             # not need to be canonicalized
             if any(len(da.coords[c].shape) > 1 for c in da.coords):
                 continue
-            undeclared = [
-                c for c in da.coords if c not in kdims and len(da[c].shape) == 1 and
-                da[c].shape[0] > 1]
-            if undeclared:
+            undeclared = []
+            for c in da.coords:
+                if c in kdims or len(da[c].shape) != 1 or da[c].shape[0] <= 1:
+                    # Skip if coord is declared, represents irregular coordinates or is constant
+                    continue
+                elif all(d in kdims for d in da[c].dims):
+                    continue # Skip if coord is alias for another dimension
+                elif any(all(d in da[kd.name].dims for d in da[c].dims) for kd in kdims):
+                    # Skip if all the dims on the coord are present on another coord
+                    continue
+                undeclared.append(c)
+            if undeclared and eltype.param.kdims.bounds[1] not in (0, None):
                 raise DataError(
                     'The coordinates on the %r DataArray do not match the '
                     'provided key dimensions (kdims). The following coords '

@@ -2,6 +2,11 @@ from __future__ import absolute_import, division, unicode_literals
 
 from collections import defaultdict
 
+try:
+    from html import escape
+except:
+    from cgi import escape
+
 import param
 import numpy as np
 
@@ -450,7 +455,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         self.current_key = key
 
         data, _, _ = self.get_data(element, ranges, {})
-        div = HTML(text=data, width=self.width, height=self.height,
+        div = HTML(text=escape(data), width=self.width, height=self.height,
                    sizing_mode=self.sizing_mode)
         self.handles['plot'] = div
         self._execute_hooks(element)

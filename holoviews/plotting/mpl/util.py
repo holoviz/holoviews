@@ -85,7 +85,7 @@ def get_old_rcparams():
     ]
     old_rcparams = {
         k: v for k, v in matplotlib.rcParams.items()
-        if mpl_version < '3.0' or k not in deprecated_rcparams
+        if mpl_version < LooseVersion('3.0') or k not in deprecated_rcparams
     }
     return old_rcparams
 

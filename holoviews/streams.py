@@ -675,7 +675,7 @@ class Params(Stream):
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-        if util.param_version < '1.8.0' and watch:
+        if util.param_version < util.LooseVersion('1.8.0') and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         if parameters is None:
@@ -770,7 +770,7 @@ class Params(Stream):
         for p in self.parameters:
             pkey = (p.owner, p.name)
             pname = self._rename.get(pkey, p.name)
-            key = ' '.join([p.owner.name, pname])
+            key = ' '.join([str(id(p.owner)), pname])
             if self._rename.get(pkey, True) is not None:
                 hashkey[key] = getattr(p.owner, p.name)
         hashkey['_memoize_key'] = self._memoize_counter

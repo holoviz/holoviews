@@ -5,6 +5,7 @@ from collections import defaultdict
 from unittest import SkipTest
 
 import param
+from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import LooseVersion, pd
@@ -272,7 +273,7 @@ class TestParamsStream(LoggingComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'%s action' % inner.name, '_memoize_key'})
+                             {'%s action' % id(inner), '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -288,7 +289,7 @@ class TestParamsStream(LoggingComparisonTestCase):
             values.append(kwargs)
             self.assertEqual(
                 set(stream.hashkey),
-                {'%s action' % inner.name, '%s x' % inner.name, '_memoize_key'})
+                {'%s action' % id(inner), '%s x' % id(inner), '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -296,11 +297,23 @@ class TestParamsStream(LoggingComparisonTestCase):
         self.assertEqual(values, [{'action': inner.action, 'x': 0}])
 
 
+    def test_params_no_names(self):
+        a = IntSlider()
+        b = IntSlider()
+        p = Params(parameters=[a.param.value, b.param.value])
+        assert len(p.hashkey) == 3  # the two widgets + _memoize_key
+
+    def test_params_identical_names(self):
+        a = IntSlider(name="Name")
+        b = IntSlider(name="Name")
+        p = Params(parameters=[a.param.value, b.param.value])
+        assert len(p.hashkey) == 3  # the two widgets + _memoize_key
+
 
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if LooseVersion(param.__version__) < '1.8.0':
+        if LooseVersion(param.__version__) < LooseVersion('1.8.0'):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):
@@ -501,7 +514,7 @@ class TestParamMethodStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'%s action' % inner.name, '_memoize_key'})
+                             {'%s action' % id(inner), '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -521,7 +534,7 @@ class TestParamMethodStream(ComparisonTestCase):
             values.append(kwargs)
             self.assertEqual(
                 set(stream.hashkey),
-                {'%s action' % inner.name, '%s x' % inner.name, '_memoize_key'})
+                {'%s action' % id(inner), '%s x' % id(inner), '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         stream.add_subscriber(lambda **kwargs: dmap[()])
