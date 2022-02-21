@@ -192,11 +192,12 @@ class notebook_extension(extension):
                                                   "hv-extension-comm")
 
         # Create a message for the logo (if shown)
-        self.load_hvjs(logo=p.logo,
-                       bokeh_logo=  p.logo and ('bokeh' in resources),
-                       mpl_logo=    p.logo and (('matplotlib' in resources)
-                                                or resources==['holoviews']),
-                       plotly_logo= p.logo and ('plotly' in resources))
+        if p.logo:
+            self.load_hvjs(logo=p.logo,
+                        bokeh_logo=  p.logo and ('bokeh' in resources),
+                        mpl_logo=    p.logo and (('matplotlib' in resources)
+                                                    or resources==['holoviews']),
+                        plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
