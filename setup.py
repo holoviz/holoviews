@@ -150,6 +150,9 @@ setup_args.update(
         platforms=["Windows", "Mac OS X", "Linux"],
         license="BSD",
         url="https://www.holoviews.org",
+        project_urls={
+            "Source": "https://github.com/holoviz/holoviews",
+        },
         entry_points={"console_scripts": ["holoviews = holoviews.util.command:main"]},
         packages=find_packages(),
         include_package_data=True,
