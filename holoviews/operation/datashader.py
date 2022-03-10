@@ -361,6 +361,11 @@ class aggregate(AggregationOperation):
     the linked plot.
     """
 
+    linewidth = param.Number(default=None, allow_None=True, doc="""
+      Width of lines to render with Datashader. Line widths>0 are
+      antialiased, while linewidth=0 draws each pixel as either on or
+      off.""")
+
     @classmethod
     def get_agg_data(cls, obj, category=None):
         """
@@ -477,6 +482,10 @@ class aggregate(AggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         dfdata = PandasInterface.as_dframe(data)
+        agg_kwargs = {}
+        if ds_version > LooseVersion('0.13.0') and glyph == 'line':
+            agg_kwargs['linewidth'] = self.linewidth
+
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
         with warnings.catch_warnings():
@@ -484,7 +493,7 @@ class aggregate(AggregationOperation):
                 action='ignore', message='casting datetime64',
                 category=FutureWarning
             )
-            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
+            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
@@ -683,6 +692,12 @@ class spikes_aggregate(AggregationOperation):
     over the entire y_range if no value dimension is defined and
     between zero and the y-value if one is defined.
     """
+
+    linewidth = param.Number(default=None, allow_None=True, doc="""
+      Width of lines to render with Datashader. Line widths>0 are
+      antialiased, while linewidth=0 draws each pixel as either on or
+      off.""")
+
     spike_length = param.Number(default=None, allow_None=True, doc="""
       If numeric, specifies the length of each spike, overriding the
       vdims values (if present).""")
@@ -740,7 +755,8 @@ class spikes_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1).rename(rename_dict)
+        agg_kwargs = {'linewidth': self.linewidth} if ds_version > LooseVersion('0.13.0') else {}
+        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, **agg_kwargs).rename(rename_dict)
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
 
