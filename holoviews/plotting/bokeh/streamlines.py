@@ -25,14 +25,18 @@ class streamline_integration(Operation):
     density = param.Number(default=1., doc="The density of the streamlines.")
 
     def _process(self, element, key=None):
-        inds = (1, 0, 2, 3) if self.p.invert_axes else (0, 1, 2, 3)
-        xx, yy, u, v = (element.dimension_values(d, flat=False) for d in inds)
-        if self.p.invert_axes:
-            x_coord, y_coord = xx[:, 0], yy[0, :]
+        inds = (1, 0, 2, 3) if self.invert_axes else (0, 1, 2, 3)
+        xx, yy, uu, vv = (element.dimension_values(d, flat=False) for d in inds)
+        if self.invert_axes:
+            x, y = xx[:, 0], yy[0, :]
+            u = vv.T
+            v = uu.T
         else:
-            x_coord, y_coord = xx[0, :], yy[:, 0]
+            x, y = xx[0, :], yy[:, 0]
+            u, v = uu, vv
 
-        xs, ys = self._streamlines(x_coord, y_coord, u, v, self.p.density)
+
+        xs, ys = self._streamlines(x, y, u, v, self.p.density)
         path_xy = [{'x': x, 'y': y} for x, y in zip(xs, ys)]
         point_xy = [(0, 0)]
 
