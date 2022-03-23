@@ -2,16 +2,9 @@ import param
 import numpy as np
 
 from .path import PathPlot
-from .chart import VectorFieldPlot
-from .element import ColorbarPlot
-from ...core import Dimension, Operation
+from ...core import Operation
 from ...core.options import Compositor
-from ...element import Streamlines, Path, Points
-from .styles import (
-    expand_batched_style, base_properties, line_properties, fill_properties,
-    mpl_to_bokeh, validate
-)
-from .util import LooseVersion, bokeh_version, multi_polygons_data
+from ...element import Streamlines, Path
 
 
 class streamline_integration(Operation):
@@ -38,7 +31,6 @@ class streamline_integration(Operation):
 
         xs, ys = self._streamlines(x, y, u, v, self.p.density)
         path_xy = [{'x': x, 'y': y} for x, y in zip(xs, ys)]
-        point_xy = [(0, 0)]
 
         # path = element.clone(data=[], new_type=Path)
         paths = Path(path_xy)
