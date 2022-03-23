@@ -25,7 +25,6 @@ class streamline_integration(Operation):
     density = param.Number(default=1., doc="The density of the streamlines.")
 
     def _process(self, element, key=None):
-        # self.param.warning(f'start : {self.p}, {element}')
         inds = (1, 0, 2, 3) if self.p.invert_axes else (0, 1, 2, 3)
         xx, yy, u, v = (element.dimension_values(d, flat=False) for d in inds)
         if self.p.invert_axes:
@@ -33,8 +32,6 @@ class streamline_integration(Operation):
         else:
             x_coord, y_coord = xx[0, :], yy[:, 0]
 
-        # self.param.warning(str(x_coord))
-        # self.param.warning(f'shapes: {x.shape, y.shape, u.shape, v.shape}')
         xs, ys = self._streamlines(x_coord, y_coord, u, v, self.p.density)
         path_xy = [{'x': x, 'y': y} for x, y in zip(xs, ys)]
         point_xy = [(0, 0)]
@@ -55,7 +52,7 @@ class streamline_integration(Operation):
         Minimally adapted from https://docs.bokeh.org/en/latest/docs/gallery/streamline.html
         '''
         u, v = u.T, v.T
-        
+
         ## Set up some constants - size of the grid used.
         NGX = len(x)
         NGY = len(y)
