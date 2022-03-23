@@ -7,7 +7,7 @@ from param import concrete_descendents
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, GridMatrix, NdLayout, config)
-from ...element import (Curve, Points, Scatter, Image, Raster, Path,
+from ...element import (Curve, Points, Scatter, Image, Raster, Path, Streamlines,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, HSpan, VSpan, Spline, Spikes,
@@ -38,6 +38,7 @@ from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
 from .links import LinkCallback # noqa (API import)
 from .path import PathPlot, PolygonPlot, ContourPlot
+from .streamlines import StreamlinePlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
@@ -92,6 +93,7 @@ associations = {Overlay: OverlayPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+                Streamlines: StreamlinePlot,
 
                 # Geometry
                 Rectangles:    RectanglesPlot,

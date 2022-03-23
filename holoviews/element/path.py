@@ -16,6 +16,13 @@ from .geom import Geometry
 from .selection import SelectionPolyExpr
 
 
+class Streamlines(SelectionPolyExpr, Geometry):
+
+    vdims = param.List(default=[Dimension('u'), Dimension('v')])
+
+    group = param.String(default='Streamlines', constant=True)
+
+
 class Path(SelectionPolyExpr, Geometry):
     """
     The Path element represents one or more of path geometries with
