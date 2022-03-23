@@ -826,6 +826,43 @@ class VectorFieldPlot(ColorbarPlot):
         return axis_kwargs
 
 
+class StreamlinePlot(ColorbarPlot):
+
+    density = param.ClassSelector(default=1., class_=(float, tuple),
+        doc="The density of the streamlines.")
+
+    _plot_methods = dict(single='streamplot')
+
+    style_opts = ['density', 'linewidth', 'color', 'cmap', 'norm', 'arrowsize',
+                  'arrowstyle', 'minlength', 'start_points',
+                  'maxlength', 'integration_direction']
+
+    _nonvectorized_styles = ['density', 'cmap', 'norm', 'arrowsize',
+                             'arrowstyle', 'minlength', 'start_points',
+                             'maxlength', 'integration_direction']
+
+    def get_data(self, element, ranges, style):
+        inds = (1, 0, 2, 3) if self.invert_axes else (0, 1, 2, 3)
+        xx, yy, uu, vv = (element.dimension_values(d, flat=False) for d in inds)
+        if self.invert_axes:
+            x, y = xx[:, 0], yy[0, :]
+            u = vv.T
+            v = uu.T
+        else:
+            x, y = xx[0, :], yy[:, 0]
+            u, v = uu, vv
+
+        plot_data = x, y, u, v
+
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
+        plot_kwargs = style
+        plot_kwargs.pop('label') # matplotlib's streamplot cannot handle this
+        axis_kwargs = {'dimensions': element.dimensions()}
+
+        return plot_data, plot_kwargs, axis_kwargs
+
 
 class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 

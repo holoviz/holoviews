@@ -183,6 +183,7 @@ Store.register({Curve: CurvePlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+                Streamlines: StreamlinePlot,
 
                 # Geometry plots
                 Rectangles: RectanglesPlot,
