@@ -38,7 +38,6 @@ class streamline_integration(Operation):
 
         # path = element.clone(data=[], new_type=Path)
         paths = Path(path_xy)
-        points = Points(point_xy)
         return paths
 
 
