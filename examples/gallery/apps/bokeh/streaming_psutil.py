@@ -1,11 +1,10 @@
-import datetime as dt
-
 import psutil
+import panel as pn
 import pandas as pd
 import holoviews as hv
 from holoviews import dim, opts
 
-renderer = hv.renderer('bokeh')
+hv.extension("bokeh")
 
 # Define functions to get memory and CPU usage
 def get_mem_data():
@@ -36,10 +35,6 @@ def cpu_box(data):
 cpu_stream = hv.streams.Buffer(get_cpu_data(), 800, index=False)
 mem_stream = hv.streams.Buffer(get_mem_data())
 
-def cb():
-    cpu_stream.send(get_cpu_data())
-    mem_stream.send(get_mem_data())
-
 # Define DynamicMaps and display plot
 cpu_dmap = hv.DynamicMap(cpu_box, streams=[cpu_stream])
 mem_dmap = hv.DynamicMap(mem_stack, streams=[mem_stream])
@@ -50,6 +45,13 @@ plot = (cpu_dmap + mem_dmap).opts(
                     width=500, height=400, ylim=(0, 100))
 )
 
-# Render plot and attach periodic callback
-doc = renderer.server_doc(plot)
-doc.add_periodic_callback(cb, 0.05)
+# Create PeriodicCallback which run every 500 milliseconds
+def cb():
+    cpu_stream.send(get_cpu_data())
+    mem_stream.send(get_mem_data())
+
+callback = pn.io.PeriodicCallback(callback=cb, period=500)
+callback.start()
+
+# Show plot inside notebook
+plot
