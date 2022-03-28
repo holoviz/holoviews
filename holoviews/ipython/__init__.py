@@ -183,9 +183,10 @@ class notebook_extension(extension):
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
-        Renderer.load_nb(inline=p.inline)
+        if not same_cell_execution:
+            for r in [r for r in resources if r != 'holoviews']:
+                Store.renderers[r].load_nb(inline=p.inline)
+            Renderer.load_nb(inline=p.inline)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
