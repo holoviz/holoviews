@@ -183,6 +183,7 @@ class notebook_extension(extension):
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
+        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
         if not same_cell_execution:
             for r in [r for r in resources if r != 'holoviews']:
                 Store.renderers[r].load_nb(inline=p.inline)
@@ -192,7 +193,6 @@ class notebook_extension(extension):
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
-        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
         # Create a message for the logo (if shown)
         if not same_cell_execution:
             self.load_hvjs(logo=p.logo,
