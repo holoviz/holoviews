@@ -191,12 +191,14 @@ class notebook_extension(extension):
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
+        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
         # Create a message for the logo (if shown)
-        self.load_hvjs(logo=p.logo,
-                       bokeh_logo=  p.logo and ('bokeh' in resources),
-                       mpl_logo=    p.logo and (('matplotlib' in resources)
-                                                or resources==['holoviews']),
-                       plotly_logo= p.logo and ('plotly' in resources))
+        if not same_cell_execution:
+            self.load_hvjs(logo=p.logo,
+                           bokeh_logo=  p.logo and ('bokeh' in resources),
+                           mpl_logo=    p.logo and (('matplotlib' in resources)
+                                                    or resources==['holoviews']),
+                           plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
