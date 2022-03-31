@@ -183,21 +183,23 @@ class notebook_extension(extension):
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
-        Renderer.load_nb(inline=p.inline)
+        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
+        if not same_cell_execution:
+            for r in [r for r in resources if r != 'holoviews']:
+                Store.renderers[r].load_nb(inline=p.inline)
+            Renderer.load_nb(inline=p.inline)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
         # Create a message for the logo (if shown)
-        if p.logo:
+        if not same_cell_execution and p.logo:
             self.load_hvjs(logo=p.logo,
-                        bokeh_logo=  p.logo and ('bokeh' in resources),
-                        mpl_logo=    p.logo and (('matplotlib' in resources)
+                           bokeh_logo=  p.logo and ('bokeh' in resources),
+                           mpl_logo=    p.logo and (('matplotlib' in resources)
                                                     or resources==['holoviews']),
-                        plotly_logo= p.logo and ('plotly' in resources))
+                           plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
