@@ -195,7 +195,7 @@ class notebook_extension(extension):
 
         # Create a message for the logo (if shown)
         if not same_cell_execution and p.logo:
-            self.load_hvjs(logo=p.logo,
+            self.load_logo(logo=p.logo,
                            bokeh_logo=  p.logo and ('bokeh' in resources),
                            mpl_logo=    p.logo and (('matplotlib' in resources)
                                                     or resources==['holoviews']),
@@ -247,10 +247,9 @@ class notebook_extension(extension):
         return resources
 
     @classmethod
-    def load_hvjs(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False,
-                  JS=True, message='HoloViewsJS successfully loaded.'):
+    def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
         """
-        Displays javascript and CSS to initialize HoloViews widgets.
+        Allow to display Holoviews' logo and the plotting extensions' logo.
         """
         import jinja2
 
@@ -260,8 +259,7 @@ class notebook_extension(extension):
         html = template.render({'logo':        logo,
                                 'bokeh_logo':  bokeh_logo,
                                 'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo,
-                                'message':     message})
+                                'plotly_logo': plotly_logo})
         publish_display_data(data={'text/html': html})
 
 
