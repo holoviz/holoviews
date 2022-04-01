@@ -5,7 +5,7 @@ Version 1.14.8
 This release contains a small number of important bug fixes as well as
 fixes required for Python 3.9 and 3.10 support. Many thanks to @Hoxbro,
 @maximlt, @jlstevens, @jbednar, and @philippjfr.
- 
+
 Bug fixes:
 
 - Fixed xarray validation for aliased coordinate
@@ -38,7 +38,7 @@ Version 1.14.7
 **December 16, 2021**
 
 This release contains a small number of important bug fixes. Many thanks
-to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt, 
+to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt,
 @jlstevens, @jbednar, and @philippjfr.
 
 Bug fixes:
@@ -94,7 +94,7 @@ Bug fixes:
       ([#5098](https://github.com/holoviz/holoviews/pull/5098))
 - Improved docs:
     * Switch to the Pydata Sphinx theme
-      ([#5163](https://github.com/holoviz/holoviews/pull/5163)) 
+      ([#5163](https://github.com/holoviz/holoviews/pull/5163))
 
 Version 1.14.6
 ==============
@@ -119,7 +119,7 @@ Bug fixes:
 - Improvements to linked selections including support for linked
   selection lasso for cudf and improved warnings
   ([#5044](https://github.com/holoviz/holoviews/pull/5044),
-   [#5051](https://github.com/holoviz/holoviews/pull/5051)) 
+   [#5051](https://github.com/holoviz/holoviews/pull/5051))
 - Respect apply_ranges at range computation level
   ([#5081](https://github.com/holoviz/holoviews/pull/5081))
 - Keep ordering of kdim when stacking Areas
@@ -130,7 +130,7 @@ Bug fixes:
 Version 1.14.5
 ==============
 **July 16, 2021**
-	
+
 This is a hotfix release with a number of important bug fixes. Most
 importantly, this version supports for the recent pandas 1.3.0
 release. Many thanks to @kgullikson88, @philippjfr and @jlstevens for
