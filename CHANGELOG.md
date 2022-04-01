@@ -1,3 +1,27 @@
+Version 1.14.9
+==============
+**April XXX, 2022**
+
+This release contains a small number of important bug fixes as well as
+support for the newly added antialiasing option for line rendering in
+datashader. Many thanks to @Hoxbro, @stas-sl, @andriyot, @maximlt,
+@jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+- Improvements to extension loading, improving visual appearance in
+  JupyterLab when no logo is used and a check to avoid loading
+  unnecessary JavaScript.
+  ([#5216](https://github.com/holoviz/holoviews/pull/5216),
+   [#5249](https://github.com/holoviz/holoviews/pull/5249))
+- Fix to respect series order in stacked area plot
+  ([#5236](https://github.com/holoviz/holoviews/pull/5236))
+- Declared GitHub project URL in setup.py
+  ([#5227](https://github.com/holoviz/holoviews/pull/5227))
+- Fixed streaming Psutil example application
+  ([#5243](https://github.com/holoviz/holoviews/pull/5243))
+
+
 Version 1.14.8
 ==============
 **February 15, 2022**
