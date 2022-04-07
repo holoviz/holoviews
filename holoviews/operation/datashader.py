@@ -1246,6 +1246,13 @@ class shade(LinkableOperation):
         undersaturation, i.e. poorly visible low-value datapoints, at
         the expense of the overall dynamic range..""")
 
+    rescale_discrete_levels = param.Boolean(default=False, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the ``cmap`` range, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``.""")
 
     @classmethod
     def concatenate(cls, overlay):
@@ -1330,11 +1337,14 @@ class shade(LinkableOperation):
         array = element.data[vdim]
         kdims = element.kdims
 
+        shade_opts = dict(
+            how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
+        )
+        if ds_version >= LooseVersion('0.14.0'):
+            shade_opts['rescale_discrete_levels'] = self.p.rescale_discrete_levels
+
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=self.p.cnorm,
-                          min_alpha=self.p.min_alpha,
-                          alpha=self.p.alpha)
         if element.ndims > 2:
             kdims = element.kdims[1:]
             categories = array.shape[-1]
