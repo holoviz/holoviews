@@ -331,7 +331,24 @@ class AggregationOperation(ResamplingOperation):
 
 
 
-class aggregate(AggregationOperation):
+class LineAggregationOperation(AggregationOperation):
+
+    line_width = param.Number(default=None, bounds=(0, None), doc="""
+        Width of the line to draw, in pixels. If zero, the default,
+        lines are drawn using a simple algorithm with a blocky
+        single-pixel width based on whether the line passes through
+        each pixel or does not. If greater than one, lines are drawn
+        with the specified width using a slower and more complex
+        antialiasing algorithm with fractional values along each edge,
+        so that lines have a more uniform visual appearance across all
+        angles. Line widths between 0 and 1 effectively use a
+        line_width of 1 pixel but with a proportionate reduction in
+        the strength of each pixel, approximating the visual
+        appearance of a subpixel line width.""")
+
+
+
+class aggregate(LineAggregationOperation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
@@ -471,6 +488,10 @@ class aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
+        agg_kwargs = {}
+        if self.p.line_width and glyph == 'line' and ds_version >= LooseVersion('0.14.0'):
+            agg_kwargs['line_width'] = self.p.line_width
+
         dfdata = PandasInterface.as_dframe(data)
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
@@ -479,7 +500,7 @@ class aggregate(AggregationOperation):
                 action='ignore', message='casting datetime64',
                 category=FutureWarning
             )
-            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
+            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
@@ -672,12 +693,13 @@ class spread_aggregate(area_aggregate):
 
 
 
-class spikes_aggregate(AggregationOperation):
+class spikes_aggregate(LineAggregationOperation):
     """
     Aggregates Spikes elements by drawing individual line segments
     over the entire y_range if no value dimension is defined and
     between zero and the y-value if one is defined.
     """
+
     spike_length = param.Number(default=None, allow_None=True, doc="""
       If numeric, specifies the length of each spike, overriding the
       vdims values (if present).""")
@@ -735,7 +757,11 @@ class spikes_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1).rename(rename_dict)
+        agg_kwargs = {}
+        if ds_version >= LooseVersion('0.14.0'):
+            agg_kwargs['line_width'] = self.p.line_width
+
+        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, **agg_kwargs).rename(rename_dict)
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
 
@@ -802,13 +828,17 @@ class geom_aggregate(AggregationOperation):
             return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
 
 
-class segments_aggregate(geom_aggregate):
+class segments_aggregate(geom_aggregate, LineAggregationOperation):
     """
     Aggregates Segments elements.
     """
 
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
-        return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1)
+        agg_kwargs = {}
+        if ds_version >= LooseVersion('0.14.0'):
+            agg_kwargs['line_width'] = self.p.line_width
+
+        return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1, **agg_kwargs)
 
 
 class rectangle_aggregate(geom_aggregate):
@@ -1216,6 +1246,13 @@ class shade(LinkableOperation):
         undersaturation, i.e. poorly visible low-value datapoints, at
         the expense of the overall dynamic range..""")
 
+    rescale_discrete_levels = param.Boolean(default=False, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the ``cmap`` range, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``.""")
 
     @classmethod
     def concatenate(cls, overlay):
@@ -1313,11 +1350,14 @@ class shade(LinkableOperation):
         else:
             cnorm = self.p.cnorm
 
+        shade_opts = dict(
+            how=cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
+        )
+        if ds_version >= LooseVersion('0.14.0'):
+            shade_opts['rescale_discrete_levels'] = self.p.rescale_discrete_levels
+
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=cnorm,
-                          min_alpha=self.p.min_alpha,
-                          alpha=self.p.alpha)
         if element.ndims > 2:
             kdims = element.kdims[1:]
             categories = array.shape[-1]
