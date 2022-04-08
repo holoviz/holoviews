@@ -1246,13 +1246,14 @@ class shade(LinkableOperation):
         undersaturation, i.e. poorly visible low-value datapoints, at
         the expense of the overall dynamic range..""")
 
-    rescale_discrete_levels = param.Boolean(default=False, doc="""
+    rescale_discrete_levels = param.Boolean(default=True, doc="""
         If ``cnorm='eq_hist`` and there are only a few discrete values,
-        then ``rescale_discrete_levels=True`` decreases the lower
-        limit of the autoranged span so that the values are rendering
-        towards the (more visible) top of the ``cmap`` range, thus
-        avoiding washout of the lower values.  Has no effect if
-        ``cnorm!=`eq_hist``.""")
+        then ``rescale_discrete_levels=True`` (the default) decreases
+        the lower limit of the autoranged span so that the values are
+        rendering towards the (more visible) top of the ``cmap`` range, 
+        thus avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``. Set to False to match historical unscaled
+        behavior, prior to HoloViews 1.14.4.""")
 
     @classmethod
     def concatenate(cls, overlay):
