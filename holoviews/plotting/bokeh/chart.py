@@ -923,7 +923,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         y0, y1 = ranges.get(ydim.name, {'combined': (None, None)})['combined']
         if self.logy:
-            bottom = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
+            bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))
         else:
             bottom = 0
         # Map attributes to data
