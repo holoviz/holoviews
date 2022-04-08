@@ -463,7 +463,7 @@ class aggregate(LineAggregationOperation):
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
-        if overlay_aggregate.applies(element, agg_fn):
+        if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width):
             params = dict(
                 {p: v for p, v in self.param.get_param_values() if p != 'name'},
                 dynamic=False, **{p: v for p, v in self.p.items()
@@ -539,20 +539,21 @@ class overlay_aggregate(aggregate):
     """
 
     @classmethod
-    def applies(cls, element, agg_fn):
+    def applies(cls, element, agg_fn, line_width=None):
         return (isinstance(element, NdOverlay) and
+                (element.type is not Curve or line_width is None) and
                 ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and
                   (agg_fn.column is None or agg_fn.column not in element.kdims)) or
                  (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims)))
 
-
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
 
-        if not self.applies(element, agg_fn):
-            raise ValueError('overlay_aggregate only handles aggregation '
-                             'of NdOverlay types with count, sum or mean '
-                             'reduction.')
+        if not self.applies(element, agg_fn, line_width=self.p.line_width):
+            raise ValueError(
+                'overlay_aggregate only handles aggregation of NdOverlay types '
+                ' with count, sum or mean reduction.'
+            )
 
         # Compute overall bounds
         dims = element.last.dimensions()[0:2]
