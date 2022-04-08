@@ -130,7 +130,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.19999999999999996)
         self.assertEqual(x_range.end, 3.8)
-        self.assertEqual(y_range.start, 0.033483695221017122)
+        self.assertEqual(y_range.start, 0.01)
         self.assertEqual(y_range.end, 3.3483695221017129)
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
