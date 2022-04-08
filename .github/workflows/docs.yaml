@@ -1,17 +1,15 @@
 name: docs
 on:
   push:
-    branches:    
-      - 'faster_docs_build'
-    # tags:
-    # - 'v[0-9]+.[0-9]+.[0-9]+'
-    # - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
-    # - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-    # - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+    tags:
+    - 'v[0-9]+.[0-9]+.[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
   workflow_dispatch:
     inputs:
       target:
-        description: 'Site to build and deploy'
+        description: 'Site to build and deploy, or dry-run'
         type: choice
         options:
         - dev
@@ -87,19 +85,19 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews
-      # - name: upload dev
-      #   if: |
-      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-      #     (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-      #   run: |
-      #     eval "$(conda shell.bash hook)"
-      #     conda activate test-environment
-      #     aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
-      # - name: upload main
-      #   if: |
-      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-      #     (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-      #   run: |
-      #     eval "$(conda shell.bash hook)"
-      #     conda activate test-environment
-      #     aws s3 sync --quiet ./builtdocs s3://holoviews.org/
+      - name: upload dev
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
+      - name: upload main
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          aws s3 sync --quiet ./builtdocs s3://holoviews.org/
