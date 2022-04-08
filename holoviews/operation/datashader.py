@@ -542,7 +542,7 @@ class overlay_aggregate(aggregate):
     def applies(cls, element, agg_fn, line_width=None):
         return (isinstance(element, NdOverlay) and
                 (element.type is not Curve or line_width is None) and
-                ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and
+                ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any)) and
                   (agg_fn.column is None or agg_fn.column not in element.kdims)) or
                  (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims)))
 
@@ -552,7 +552,7 @@ class overlay_aggregate(aggregate):
         if not self.applies(element, agg_fn, line_width=self.p.line_width):
             raise ValueError(
                 'overlay_aggregate only handles aggregation of NdOverlay types '
-                ' with count, sum or mean reduction.'
+                'with count, sum or mean reduction.'
             )
 
         # Compute overall bounds
@@ -596,11 +596,11 @@ class overlay_aggregate(aggregate):
         else:
             agg_fn1 = aggregate.instance(**agg_params)
             agg_fn2 = None
-        is_sum = isinstance(agg_fn1.aggregator, ds.sum)
+        is_sum = isinstance(agg_fn, ds.sum)
+        is_any = isinstance(agg_fn, ds.any)
 
         # Accumulate into two aggregates and mask
         agg, agg2, mask = None, None, None
-        mask = None
         for v in element:
             # Compute aggregates and mask
             new_agg = agg_fn1.process_element(v, None)
@@ -615,7 +615,10 @@ class overlay_aggregate(aggregate):
                 if is_sum: mask = new_mask
                 if agg_fn2: agg2 = new_agg2
             else:
-                agg.data += new_agg.data
+                if is_any:
+                    agg.data |= new_agg.data
+                else:
+                    agg.data += new_agg.data
                 if is_sum: mask &= new_mask
                 if agg_fn2: agg2.data += new_agg2.data
 
