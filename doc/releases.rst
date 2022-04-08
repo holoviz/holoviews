@@ -4,6 +4,42 @@ Releases
 Version 1.14
 ~~~~~~~~~~~~
 
+Version 1.14.9
+**************
+
+**April 8, 2022**
+
+This release contains a small number of important bug fixes as well as
+support for the newly added antialiasing option for line rendering in
+datashader. Many thanks to @andriyot, @Hoxbro, @pepijndevos, @stas-sl,
+@TheoMathurin, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+-  Improvements to extension loading, improving visual appearance in
+   JupyterLab when no logo is used and a check to avoid loading
+   unnecessary JavaScript.
+   (`#5216 <https://github.com/holoviz/holoviews/pull/5216>`__,
+   `#5249 <https://github.com/holoviz/holoviews/pull/5249>`__)
+-  Add support for setting antialiased line_width on datashader line
+   aggregation
+   (`#5264 <https://github.com/holoviz/holoviews/pull/5264>`__)
+-  Added options to customize hover line_(width|join|cap|dash)
+   properties
+   (`#5211 <https://github.com/holoviz/holoviews/pull/5211>`__)
+-  Fix to respect series order in stacked area plot
+   (`#5236 <https://github.com/holoviz/holoviews/pull/5236>`__)
+-  Support buffer streams of unspecified length (#5247)
+   (`#5247 <https://github.com/holoviz/holoviews/pull/5247>`__)
+-  Fixed log axis lower bound when data minimum is <= 0
+   (`#5246 <https://github.com/holoviz/holoviews/pull/5246>`__)
+-  Declared GitHub project URL in setup.py
+   (`#5227 <https://github.com/holoviz/holoviews/pull/5227>`__)
+-  Fixed streaming Psutil example application
+   (`#5243 <https://github.com/holoviz/holoviews/pull/5243>`__)
+-  Respecting Renderer’s center property for HoloViews pane
+   (`#5197 <https://github.com/holoviz/holoviews/pull/5197>`__)
+
 Version 1.14.8
 **************
 
