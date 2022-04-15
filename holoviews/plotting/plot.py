@@ -17,7 +17,10 @@ import param
 from panel.config import config
 from panel.io.notebook import push
 from panel.io.state import state
-from panel.io.server import unlocked
+try:
+    from panel.io.document import unlocked
+except Exception:
+    from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
 
 from ..selection import NoOpSelectionDisplay
