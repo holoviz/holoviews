@@ -2012,7 +2012,7 @@ class inspect_polygons(inspect_base):
 
 class inspect_curve(inspect_base):
     """
-    Selects on of multiple datashaded curves by drawing a vertical line
+    Selects one of multiple datashaded curves by drawing a vertical line
     at the x-position and identifying all points of intersection of
     that line on the rasterized plot. The intersection closest to the
     specified y-coordinate is picked and the data of all rasterized
@@ -2022,6 +2022,7 @@ class inspect_curve(inspect_base):
     x = param.Parameter()
 
     def _process(self, raster, key=None):
+        # For an RGB image, select based on the alpha channel
         if isinstance(raster, hv.RGB):
             raster = raster[..., raster.vdims[-1]]
         (x0, x1), (y0, y1) = raster.range(0), raster.range(1)
@@ -2073,5 +2074,6 @@ class inspect_curve(inspect_base):
     
 inspect._dispatch = {
     Points: inspect_points,
-    Polygons: inspect_polygons
+    Polygons: inspect_polygons,
+    Curve: inspect_curve
 }
