@@ -1451,7 +1451,6 @@ class geometry_rasterize(LineAggregationOperation):
         elif isinstance(element, Path):
             if self.p.line_width and ds_version >= LooseVersion('0.14.0'):
                 agg_kwargs['line_width'] = self.p.line_width
-            print(agg_kwargs, self.p.line_width, ds_version)
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
             agg = cvs.points(data, **agg_kwargs)
