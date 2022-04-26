@@ -71,7 +71,7 @@ jobs:
           # Pin panel on Python 3.6 because one or more dev releases on the 0.13.* series
           # can be installed on Python 3.6 but are actually not compatible with Python 3.6
           # Install ibis-framework instead of ibis-sqlite as it's only available starting from Python 3.7
-          conda install -c pyviz/label/dev -c bokeh ibis-framework "panel=0.12"
+          conda install $CHANS_DEV "ibis-framework=2" "panel=0.12"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
@@ -82,7 +82,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.HV_REQUIREMENTS }}
-          conda install ibis-sqlite
+          conda install $CHANS_DEV "ibis-sqlite=2"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
