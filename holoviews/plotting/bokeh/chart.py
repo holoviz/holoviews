@@ -189,13 +189,13 @@ class StickPlot(ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of dimension value transform on color option,
         e.g. `color=dim('Magnitude')`.
         """)
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of the magnitude option, e.g.
         `magnitude=dim('Magnitude')`.
