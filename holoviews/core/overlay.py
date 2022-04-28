@@ -7,25 +7,28 @@ Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
 
+from collections import OrderedDict
 from functools import reduce
 import numpy as np
 
 import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
-from .layout import Composable, Layout, AdjointLayout
-from .util import config, sanitize_identifier, unique_array
+from .layout import Composable, Layout, AdjointLayout, Layoutable
+from .util import sanitize_identifier, unique_array, dimensioned_streams
 
 
-class Overlayable(object):
+class Overlayable:
     """
     Overlayable provides a mix-in class to support the
     mul operation for overlaying multiple elements.
     """
-
     def __mul__(self, other):
         "Overlay object with other object."
-        if type(other).__name__ == 'DynamicMap':
+        # Local import to break the import cyclic dependency
+        from .spaces import DynamicMap
+
+        if isinstance(other, DynamicMap):
             from .spaces import Callable
             def dynamic_mul(*args, **kwargs):
                 element = other[args]
@@ -33,15 +36,22 @@ class Overlayable(object):
             callback = Callable(dynamic_mul, inputs=[self, other])
             callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
-                               streams=[])
-        if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items)
-        elif isinstance(other, (AdjointLayout, ViewableTree)) and not isinstance(other, Overlay):
-            return NotImplemented
+                               streams=dimensioned_streams(other))
+        else:
+            if isinstance(self, Overlay):
+                if not isinstance(other, ViewableElement):
+                    return NotImplemented
+            else:
+                if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
+                    items = [(k, self * v) for (k, v) in other.items()]
+                    return other.clone(items)
+                elif isinstance(other, (AdjointLayout, ViewableTree)) and not isinstance(other, Overlay):
+                    return NotImplemented
 
-        return Overlay([self, other])
-
+            try:
+                return Overlay([self, other])
+            except NotImplementedError:
+                return NotImplemented
 
 
 class CompositeOverlay(ViewableElement, Composable):
@@ -52,44 +62,70 @@ class CompositeOverlay(ViewableElement, Composable):
     _deep_indexable = True
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
-             adjoin=True, index=0, **kwargs):
+             adjoin=True, index=None, show_legend=False, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
 
         Defaults to first value dimension if present otherwise falls
         back to first key dimension.
 
         Args:
-            dimension: Dimension(s) to compute histogram on
+            dimension: Dimension(s) to compute histogram on,
+                Falls back the plot dimensions by default.
             num_bins (int, optional): Number of bins
             bin_range (tuple optional): Lower and upper bounds of bins
             adjoin (bool, optional): Whether to adjoin histogram
             index (int, optional): Index of layer to apply hist to
+            show_legend (bool, optional): Show legend in histogram
+                (don't show legend by default).
 
         Returns:
             AdjointLayout of element and histogram or just the
             histogram
         """
-        valid_ind = isinstance(index, int) and (0 <= index < len(self))
-        valid_label = index in [el.label for el in self]
-        if not any([valid_ind, valid_label]):
-            raise TypeError("Please supply a suitable index or label for the histogram data")
-
-        hists = self.get(index).hist(
-            adjoin=False, dimension=dimension, bin_range=bin_range,
-            num_bins=num_bins, **kwargs)
-        if not isinstance(hists, Layout):
-            hists = [hists]
-        if not isinstance(dimension, list):
-            dimension = ['Default']
+        # Get main layer to get plot dimensions
+        main_layer_int_index = getattr(self, "main_layer", None) or 0
+        # Validate index, and extract as integer if not None
+        if index is not None:
+            valid_ind = isinstance(index, int) and (0 <= index < len(self))
+            valid_label = index in [el.label for el in self]
+            if not any([valid_ind, valid_label]):
+                raise TypeError("Please supply a suitable index or label for the histogram data")
+            if valid_ind:
+                main_layer_int_index = index
+            if valid_label:
+                main_layer_int_index = self.keys().index(index)
+        if dimension is None:
+            # Fallback to default dimensions of main element
+            dimension = [dim.name for dim in self.values()[main_layer_int_index].kdims]
+        # Compute histogram for each dimension and each element in OverLay
+        hists_per_dim = {
+            dim: OrderedDict([  # All histograms for a given dimension
+                (
+                    elem_key, elem.hist(
+                        adjoin=False, dimension=dim, bin_range=bin_range,
+                        num_bins=num_bins, **kwargs
+                    )
+                )
+                for i, (elem_key, elem) in enumerate(self.items())
+                if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
+            ])
+            for dim in dimension
+        }
+        # Create new Overlays of histograms
+        hists_overlay_per_dim = {
+            dim: self.clone(hists).opts(show_legend=show_legend)
+            for dim, hists in hists_per_dim.items()
+        }
         if adjoin:
             layout = self
-            for hist in hists:
-                layout = layout << hist
-            layout.main_layer = index
+            for dim in reversed(self.values()[main_layer_int_index].kdims):
+                if dim.name in hists_overlay_per_dim:
+                    layout = layout << hists_overlay_per_dim[dim.name]
+            layout.main_layer = main_layer_int_index
         elif len(dimension) > 1:
-            layout = hists
+            layout = Layout(list(hists_overlay_per_dim.values()))
         else:
-            layout = hists[0]
+            layout = hists_overlay_per_dim[0]
         return layout
 
 
@@ -116,7 +152,7 @@ class CompositeOverlay(ViewableElement, Composable):
                 values.append(el.dimension_values(dimension))
                 found = True
         if not found:
-            return super(CompositeOverlay, self).dimension_values(dimension, expanded, flat)
+            return super().dimension_values(dimension, expanded, flat)
         values = [v for v in values if v is not None and len(v)]
         if not values:
             return np.array()
@@ -124,7 +160,7 @@ class CompositeOverlay(ViewableElement, Composable):
         return vals if expanded else unique_array(vals)
 
 
-class Overlay(ViewableTree, CompositeOverlay):
+class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
     """
     An Overlay consists of multiple Elements (potentially of
     heterogeneous type) presented one on top each other with a
@@ -140,7 +176,7 @@ class Overlay(ViewableTree, CompositeOverlay):
         self.__dict__['_fixed'] = False
         self.__dict__['_group'] = group
         self.__dict__['_label'] = label
-        super(Overlay, self).__init__(items, **params)
+        super().__init__(items, **params)
 
     def __getitem__(self, key):
         """
@@ -169,29 +205,7 @@ class Overlay(ViewableTree, CompositeOverlay):
                 return values[identifier]
             else:
                 return default
-        return super(Overlay, self).get(identifier, default)
-
-
-    def __add__(self, other):
-        "Composes Overlay with other object into a Layout"
-        return Layout([self, other])
-
-
-    def __mul__(self, other):
-        "Adds layer(s) from other object to Overlay"
-        if type(other).__name__ == 'DynamicMap':
-            from .spaces import Callable
-            def dynamic_mul(*args, **kwargs):
-                element = other[args]
-                return self * element
-            callback = Callable(dynamic_mul, inputs=[self, other])
-            callback._is_overlay = True
-            return other.clone(shared_data=False, callback=callback,
-                               streams=[])
-        elif not isinstance(other, ViewableElement):
-            return NotImplemented
-        return Overlay([self, other])
-
+        return super().get(identifier, default)
 
     def collate(self):
         """
@@ -199,6 +213,24 @@ class Overlay(ViewableTree, CompositeOverlay):
         the recommended nesting structure.
         """
         return reduce(lambda x,y: x*y, self.values())
+
+    def decollate(self):
+        """Packs Overlay of DynamicMaps into a single DynamicMap that returns an Overlay
+
+        Decollation allows packing an Overlay of DynamicMaps into a single DynamicMap
+        that returns an Overlay of simple (non-dynamic) elements. All nested streams
+        are lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns an Overlay
+        """
+        from .decollate import decollate
+        return decollate(self)
 
     @property
     def group(self):
@@ -258,26 +290,6 @@ class Overlay(ViewableTree, CompositeOverlay):
     def shape(self):
         raise NotImplementedError
 
-    # Deprecated methods
-
-    def collapse(self, function):
-        "Deprecated method to collapse layers in the Overlay."
-        if config.future_deprecations:
-            self.param.warning('Overlay.collapse is deprecated, to'
-                               'collapse multiple elements use a HoloMap.')
-
-        elements = list(self)
-        types = [type(el) for el in elements]
-        values = [el.group for el in elements]
-        if not len(set(types)) == 1 and len(set(values)) == 1:
-            raise Exception("Overlay is not homogeneous in type or group "
-                            "and cannot be collapsed.")
-        else:
-            return elements[0].clone(types[0].collapse_data([el.data for el in elements],
-                                                            function, self.kdims))
-
-
-
 
 class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     """
@@ -292,7 +304,26 @@ class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     _deep_indexable = True
 
     def __init__(self, overlays=None, kdims=None, **params):
-        super(NdOverlay, self).__init__(overlays, kdims=kdims, **params)
+        super().__init__(overlays, kdims=kdims, **params)
+
+    def decollate(self):
+        """Packs NdOverlay of DynamicMaps into a single DynamicMap that returns an
+        NdOverlay
+
+        Decollation allows packing a NdOverlay of DynamicMaps into a single DynamicMap
+        that returns an NdOverlay of simple (non-dynamic) elements. All nested streams
+        are lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns an NdOverlay
+        """
+        from .decollate import decollate
+        return decollate(self)
 
 
 __all__ = list(set([_k for _k, _v in locals().items()

@@ -8,10 +8,10 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
-from __future__ import division
-import param
 from itertools import groupby
+
 import numpy as np
+import param
 import pyparsing as pp
 
 from ..core.options import Options, Cycle, Palette
@@ -20,7 +20,7 @@ from ..operation import Compositor
 from .transform import dim
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
+allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
 
 
 # To generate warning in the standard param style
@@ -96,7 +96,7 @@ class Parser(object):
             if val is False:
                 elements =list(items)
                 # Assume anything before ) or } can be joined with commas
-                # (e.g tuples with spaces in them)
+                # (e.g. tuples with spaces in them)
                 joiner=',' if any(((')' in el) or ('}' in el))
                                   for el in elements) else ''
                 grouped[-1] += joiner + joiner.join(elements)
@@ -214,7 +214,7 @@ class OptsSpec(Parser):
                'show_xaxis':      'xaxis',
                'show_yaxis':      'yaxis'}
 
-    deprecations = [('GridImage', 'Image')]
+    deprecations = []
 
     @classmethod
     def process_normalization(cls, parse_group):

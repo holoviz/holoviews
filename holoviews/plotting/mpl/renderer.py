@@ -1,14 +1,13 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import os
-import sys
 import base64
+
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 from itertools import chain
 
 import param
+
 import matplotlib as mpl
 
 from matplotlib import pyplot as plt
@@ -17,19 +16,10 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .widgets import MPLSelectionWidget, MPLScrubberWidget
-from .util import get_tight_bbox, mpl_version
+from .util import get_tight_bbox, get_old_rcparams
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
-
-mpl_msg_handler = """
-/* Backend specific body of the msg_handler, updates displayed frame */
-var target = $('#fig_{plot_id}');
-var img = $('<div />').html(msg);
-target.children().each(function () {{ $(this).remove() }})
-target.append(img)
-"""
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
@@ -37,12 +27,9 @@ ANIMATION_OPTS = {
              ['-vcodec', 'libvpx-vp9', '-b', '1000k']),
     'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
             ['-pix_fmt', 'yuv420p']),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, []),
+    'gif': ('pillow', 'gif', {'fps': 10}, []),
     'scrubber': ('html', None, {'fps': 5}, None)
 }
-
-if mpl_version >= '2.2':
-    ANIMATION_OPTS['gif'] = ('pillow', 'gif', {'fps': 10}, [])
 
 
 class MPLRenderer(Renderer):
@@ -66,7 +53,8 @@ class MPLRenderer(Renderer):
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto',
-                               objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
+                               objects=['png', 'svg', 'pdf', 'pgf',
+                                        'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
@@ -82,37 +70,11 @@ class MPLRenderer(Renderer):
     mode = param.ObjectSelector(default='default', objects=['default'])
 
 
-    mode_formats = {'fig':     {'default': ['png', 'svg', 'pdf', 'html', None, 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'webm','mp4', 'gif',
-                                            'html', None, 'auto']}}
+    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'pgf', 'html', None, 'auto'],
+                    'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                'html', None, 'auto']}
 
     counter = 0
-
-    # Define appropriate widget classes
-    widgets = {'scrubber': MPLScrubberWidget,
-               'widgets': MPLSelectionWidget}
-
-    # Define the handler for updating matplotlib plots
-    comm_msg_handler = mpl_msg_handler
-
-    def __call__(self, obj, fmt='auto'):
-        """
-        Render the supplied HoloViews component or MPLPlot instance
-        using matplotlib.
-        """
-        plot, fmt =  self._validate(obj, fmt)
-        if plot is None: return
-
-        if isinstance(plot, tuple(self.widgets.values())):
-            data = plot()
-        else:
-            with mpl.rc_context(rc=plot.fig_rcparams):
-                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
-
-        data = self._apply_post_render_hooks(data, obj, fmt)
-        return data, {'file-ext':fmt,
-                      'mime_type':MIME_TYPES[fmt]}
-
 
     def show(self, obj):
         """
@@ -170,18 +132,7 @@ class MPLRenderer(Renderer):
         return (int(w*dpi), int(h*dpi))
 
 
-    def diff(self, plot):
-        """
-        Returns the latest plot data to update an existing plot.
-        """
-        if self.fig == 'auto':
-            figure_format = self.params('fig').objects[0]
-        else:
-            figure_format = self.fig
-        return self.html(plot, figure_format)
-
-
-    def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
         """
         Render matplotlib figure object and return the corresponding
         data.  If as_script is True, the content will be split in an
@@ -191,8 +142,6 @@ class MPLRenderer(Renderer):
         any IPython dependency.
         """
         if fmt in ['gif', 'mp4', 'webm']:
-            if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-                raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
             with mpl.rc_context(rc=plot.fig_rcparams):
                 anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
@@ -200,8 +149,10 @@ class MPLRenderer(Renderer):
             fig = plot.state
 
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-            extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
-                                         if artists is not None]))
+            extra_artists = list(
+                chain.from_iterable(artists for artists in plot.traverse(traverse_fn)
+                                    if artists is not None)
+            )
 
             kw = dict(
                 format=fmt,
@@ -227,7 +178,7 @@ class MPLRenderer(Renderer):
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
             html = tag.format(src=src, mime_type=mime_type, css='')
-            return html, ''
+            return html
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
@@ -280,10 +231,7 @@ class MPLRenderer(Renderer):
     @classmethod
     @contextmanager
     def state(cls):
-        deprecated = ['text.latex.unicode', 'examples.directory']
-        old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
-                        if mpl_version < '3.0' or k not in deprecated}
-    
+        old_rcparams = get_old_rcparams()
         try:
             cls._rcParams = old_rcparams
             yield

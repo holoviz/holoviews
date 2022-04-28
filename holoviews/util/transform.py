@@ -1,17 +1,37 @@
-from __future__ import division
-
 import operator
+import sys
+
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import param
 
+from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import basestring, unique_iterator
-from ..element import Graph
+from ..core.util import flatten, pd, resolve_dependent_value, unique_iterator
 
-function_types = (
-    BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc)
+
+def _maybe_map(numpy_fn):
+    def fn(values, *args, **kwargs):
+        series_like = hasattr(values, 'index') and not isinstance(values, list)
+        map_fn = (getattr(values, 'map_partitions', None) or
+                  getattr(values, 'map_blocks', None))
+        if map_fn:
+            if series_like:
+                return map_fn(
+                    lambda s: type(s)(numpy_fn(s, *args, **kwargs),
+                                      index=s.index))
+            else:
+                return map_fn(lambda s: numpy_fn(s, *args, **kwargs))
+        else:
+            if series_like:
+                return type(values)(
+                    numpy_fn(values, *args, **kwargs),
+                    index=values.index,
+                )
+            else:
+                return numpy_fn(values, *args, **kwargs)
+    return fn
 
 
 def norm(values, min=None, max=None):
@@ -32,6 +52,42 @@ def norm(values, min=None, max=None):
     return (values - min) / (max-min)
 
 
+def lognorm(values, min=None, max=None):
+    """Unity-based normalization on log scale.
+       Apply the same transformation as matplotlib.colors.LogNorm
+
+    Args:
+        values: Array of values to be normalized
+        min (float, optional): Lower bound of normalization range
+        max (float, optional): Upper bound of normalization range
+
+    Returns:
+        Array of normalized values
+    """
+    min = np.log(np.min(values)) if min is None else np.log(min)
+    max = np.log(np.max(values)) if max is None else np.log(max)
+    return (np.log(values) - min) / (max-min)
+
+
+class iloc(object):
+    """Implements integer array indexing for dim expressions.
+    """
+
+    __name__ = 'iloc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values[self.index]
+
+
+@_maybe_map
 def bin(values, bins, labels=None):
     """Bins data into declared bins
 
@@ -61,6 +117,7 @@ def bin(values, bins, labels=None):
     return binned
 
 
+@_maybe_map
 def categorize(values, categories, default=None):
     """Maps discrete values to supplied categories.
 
@@ -87,8 +144,27 @@ def categorize(values, categories, default=None):
         else:
             cat = categories.get(c, default)
         cats.append(cat)
-    return np.asarray(cats)
+    result = np.asarray(cats)
+    # Convert unicode to object type like pandas does
+    if result.dtype.kind in ['U', 'S']:
+        result = result.astype('object')
+    return result
 
+
+digitize = _maybe_map(np.digitize)
+isin = _maybe_map(np.isin)
+astype = _maybe_map(np.asarray)
+round_ = _maybe_map(np.round)
+
+def _python_isin(array, values):
+    return [v in values for v in array]
+
+python_isin = _maybe_map(_python_isin)
+
+function_types = (
+    BuiltinFunctionType, BuiltinMethodType, FunctionType,
+    MethodType, np.ufunc, iloc
+)
 
 
 class dim(object):
@@ -100,22 +176,34 @@ class dim(object):
     """
 
     _binary_funcs = {
-        operator.add: '+', operator.and_: '&', operator.eq: '=',
+        operator.add: '+', operator.and_: '&', operator.eq: '==',
         operator.floordiv: '//', operator.ge: '>=', operator.gt: '>',
         operator.le: '<=', operator.lshift: '<<', operator.lt: '<',
         operator.mod: '%', operator.mul: '*', operator.ne: '!=',
         operator.or_: '|', operator.pow: '**', operator.rshift: '>>',
         operator.sub: '-', operator.truediv: '/'}
 
-    _builtin_funcs = {abs: 'abs', round: 'round'}
+    _builtin_funcs = {abs: 'abs', round_: 'round'}
 
-    _custom_funcs = {norm: 'norm', bin: 'bin', categorize: 'categorize'}
+    _custom_funcs = {
+        norm: 'norm',
+        lognorm: 'lognorm',
+        bin: 'bin',
+        categorize: 'categorize',
+        digitize: 'digitize',
+        isin: 'isin',
+        python_isin: 'isin',
+        astype: 'astype',
+        round_: 'round',
+        iloc: 'iloc',
+    }
 
     _numpy_funcs = {
-        np.any: 'any', np.all: 'all', np.asarray: 'astype',
+        np.any: 'any', np.all: 'all',
         np.cumprod: 'cumprod', np.cumsum: 'cumsum', np.max: 'max',
-        np.mean: 'mean', np.min: 'min', np.round: 'round',
-        np.sum: 'sum', np.std: 'std', np.var: 'var'}
+        np.mean: 'mean', np.min: 'min',
+        np.sum: 'sum', np.std: 'std', np.var: 'var', np.log: 'log',
+        np.log10: 'log10'}
 
     _unary_funcs = {operator.pos: '+', operator.neg: '-', operator.not_: '~'}
 
@@ -124,12 +212,23 @@ class dim(object):
 
     _namespaces = {'numpy': 'np'}
 
+    namespace = 'numpy'
+
+    _accessor = None
+
     def __init__(self, obj, *args, **kwargs):
+        from panel.widgets import Widget
         ops = []
-        if isinstance(obj, basestring):
+        self._ns = np.ndarray
+        self.coerce = kwargs.get('coerce', True)
+        if isinstance(obj, str):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
             self.dimension = obj
+        elif isinstance(obj, param.Parameter):
+            self.dimension = obj
+        elif isinstance(obj, Widget):
+            self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
             ops = obj.ops
@@ -138,13 +237,85 @@ class dim(object):
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types) or
+            if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
             ops = ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+    @property
+    def _current_accessor(self):
+        if self.ops and self.ops[-1]['kwargs'].get('accessor'):
+            return self.ops[-1]['fn']
+
+    def __call__(self, *args, **kwargs):
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
+            'accessor' not in self.ops[-1]['kwargs']):
+            raise ValueError("Cannot call method on %r expression. "
+                             "Only methods accessed via namspaces, "
+                             "e.g. dim(...).df or dim(...).xr), "
+                             "can be called. " % self)
+        op = self.ops[-1]
+        if op['fn'] == 'str':
+            new_op = dict(op, fn=astype, args=(str,), kwargs={})
+        else:
+            new_op = dict(op, args=args, kwargs=kwargs)
+        return self.clone(self.dimension, self.ops[:-1]+[new_op])
+
+    def __getattribute__(self, attr):
+        self_dict = super().__getattribute__('__dict__')
+        if '_ns' not in self_dict: # Not yet initialized
+            return super().__getattribute__(attr)
+        ns = self_dict['_ns']
+        ops = super().__getattribute__('ops')
+        if ops and ops[-1]['kwargs'].get('accessor'):
+            try:
+                ns = getattr(ns, ops[-1]['fn'])
+            except Exception:
+                # If the namespace doesn't know the method we are
+                # calling then we are using custom API of the dim
+                # transform itself, so set namespace to None
+                ns = None
+        extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
+        if attr in extras and attr not in super(dim, self).__dir__():
+            return type(self)(self, attr, accessor=True)
+        else:
+            return super().__getattribute__(attr)
+
+    def __dir__(self):
+        ns = self._ns
+        if self._current_accessor:
+            ns = getattr(ns, self._current_accessor)
+        extras = {attr for attr in dir(ns) if not attr.startswith('_')}
+        try:
+            return sorted(set(super(dim, self).__dir__()) | extras)
+        except Exception:
+            return sorted(set(dir(type(self))) | set(self.__dict__) | extras)
+
+    def __hash__(self):
+        return hash(repr(self))
+
+    def clone(self, dimension=None, ops=None, dim_type=None):
+        """
+        Creates a clone of the dim expression optionally overriding
+        the dim and ops.
+        """
+        dim_type = dim_type or type(self)
+        if dimension is None:
+            dimension = self.dimension
+        new_dim = dim_type(dimension)
+        if ops is None:
+            ops = list(self.ops)
+        new_dim.ops = ops
+        return new_dim
 
     @classmethod
     def register(cls, key, function):
@@ -154,76 +325,132 @@ class dim(object):
         """
         cls._custom_funcs[key] = function
 
+    @property
+    def params(self):
+        params = {}
+        for op in self.ops:
+            op_args = list(op['args'])+list(op['kwargs'].values())
+            op_args = flatten(op_args)
+            for op_arg in op_args:
+                if 'panel' in sys.modules:
+                    from panel.widgets.base import Widget
+                    if isinstance(op_arg, Widget):
+                        op_arg = op_arg.param.value
+                if isinstance(op_arg, dim):
+                    params.update(op_arg.params)
+                elif isinstance(op_arg, slice):
+                    if isinstance(op_arg.start, param.Parameter):
+                        params[op_arg.start.name+str(id(op_arg.start))] = op_arg.start
+                    if isinstance(op_arg.stop, param.Parameter):
+                        params[op_arg.stop.name+str(id(op_arg.stop))] = op_arg.stop
+                    if isinstance(op_arg.step, param.Parameter):
+                        params[op_arg.step.name+str(id(op_arg.step))] = op_arg.step
+                if (isinstance(op_arg, param.Parameter) and
+                    isinstance(op_arg.owner, param.Parameterized)):
+                    params[op_arg.name+str(id(op_arg))] = op_arg
+
+        return params
+
+    # Namespace properties
+    @property
+    def df(self):
+        return self.clone(dim_type=df_dim)
+
+    @property
+    def np(self):
+        return self.clone(dim_type=dim)
+
+    @property
+    def xr(self):
+        return self.clone(dim_type=xr_dim)
+
+    def __getitem__(self, *index):
+        return type(self)(self, operator.getitem, *index)
+
     # Builtin functions
-    def __abs__(self):            return dim(self, abs)
+    def __abs__(self):            return type(self)(self, abs)
     def __round__(self, ndigits=None):
         args = () if ndigits is None else (ndigits,)
-        return dim(self, round, *args)
+        return type(self)(self, round_, *args)
 
     # Unary operators
-    def __neg__(self): return dim(self, operator.neg)
-    def __not__(self): return dim(self, operator.not_)
-    def __pos__(self): return dim(self, operator.pos)
+    def __neg__(self): return type(self)(self, operator.neg)
+    def __not__(self): return type(self)(self, operator.not_)
+    def __invert__(self): return type(self)(self, operator.inv)
+    def __pos__(self): return type(self)(self, operator.pos)
 
     # Binary operators
-    def __add__(self, other):       return dim(self, operator.add, other)
-    def __and__(self, other):       return dim(self, operator.and_, other)
-    def __div__(self, other):       return dim(self, operator.div, other)
-    def __eq__(self, other):        return dim(self, operator.eq, other)
-    def __floordiv__(self, other):  return dim(self, operator.floordiv, other)
-    def __ge__(self, other):        return dim(self, operator.ge, other)
-    def __gt__(self, other):        return dim(self, operator.gt, other)
-    def __le__(self, other):        return dim(self, operator.le, other)
-    def __lt__(self, other):        return dim(self, operator.lt, other)
-    def __lshift__(self, other):    return dim(self, operator.lshift, other)
-    def __mod__(self, other):       return dim(self, operator.mod, other)
-    def __mul__(self, other):       return dim(self, operator.mul, other)
-    def __ne__(self, other):        return dim(self, operator.ne, other)
-    def __or__(self, other):        return dim(self, operator.or_, other)
-    def __rshift__(self, other):    return dim(self, operator.rshift, other)
-    def __pow__(self, other):       return dim(self, operator.pow, other)
-    def __sub__(self, other):       return dim(self, operator.sub, other)
-    def __truediv__(self, other):   return dim(self, operator.truediv, other)
+    def __add__(self, other):       return type(self)(self, operator.add, other)
+    def __and__(self, other):       return type(self)(self, operator.and_, other)
+    def __div__(self, other):       return type(self)(self, operator.div, other)
+    def __eq__(self, other):        return type(self)(self, operator.eq, other)
+    def __floordiv__(self, other):  return type(self)(self, operator.floordiv, other)
+    def __ge__(self, other):        return type(self)(self, operator.ge, other)
+    def __gt__(self, other):        return type(self)(self, operator.gt, other)
+    def __le__(self, other):        return type(self)(self, operator.le, other)
+    def __lt__(self, other):        return type(self)(self, operator.lt, other)
+    def __lshift__(self, other):    return type(self)(self, operator.lshift, other)
+    def __mod__(self, other):       return type(self)(self, operator.mod, other)
+    def __mul__(self, other):       return type(self)(self, operator.mul, other)
+    def __ne__(self, other):        return type(self)(self, operator.ne, other)
+    def __or__(self, other):        return type(self)(self, operator.or_, other)
+    def __rshift__(self, other):    return type(self)(self, operator.rshift, other)
+    def __pow__(self, other):       return type(self)(self, operator.pow, other)
+    def __sub__(self, other):       return type(self)(self, operator.sub, other)
+    def __truediv__(self, other):   return type(self)(self, operator.truediv, other)
 
     # Reverse binary operators
-    def __radd__(self, other):      return dim(self, operator.add, other, reverse=True)
-    def __rand__(self, other):      return dim(self, operator.and_, other)
-    def __rdiv__(self, other):      return dim(self, operator.div, other, reverse=True)
-    def __rfloordiv__(self, other): return dim(self, operator.floordiv, other, reverse=True)
-    def __rlshift__(self, other):   return dim(self, operator.rlshift, other)
-    def __rmod__(self, other):      return dim(self, operator.mod, other, reverse=True)
-    def __rmul__(self, other):      return dim(self, operator.mul, other, reverse=True)
-    def __ror__(self, other):       return dim(self, operator.or_, other, reverse=True)
-    def __rpow__(self, other):      return dim(self, operator.pow, other, reverse=True)
-    def __rrshift__(self, other):   return dim(self, operator.rrshift, other)
-    def __rsub__(self, other):      return dim(self, operator.sub, other, reverse=True)
-    def __rtruediv__(self, other):  return dim(self, operator.truediv, other, reverse=True)
+    def __radd__(self, other):      return type(self)(self, operator.add, other, reverse=True)
+    def __rand__(self, other):      return type(self)(self, operator.and_, other)
+    def __rdiv__(self, other):      return type(self)(self, operator.div, other, reverse=True)
+    def __rfloordiv__(self, other): return type(self)(self, operator.floordiv, other, reverse=True)
+    def __rlshift__(self, other):   return type(self)(self, operator.rlshift, other)
+    def __rmod__(self, other):      return type(self)(self, operator.mod, other, reverse=True)
+    def __rmul__(self, other):      return type(self)(self, operator.mul, other, reverse=True)
+    def __ror__(self, other):       return type(self)(self, operator.or_, other, reverse=True)
+    def __rpow__(self, other):      return type(self)(self, operator.pow, other, reverse=True)
+    def __rrshift__(self, other):   return type(self)(self, operator.rrshift, other)
+    def __rsub__(self, other):      return type(self)(self, operator.sub, other, reverse=True)
+    def __rtruediv__(self, other):  return type(self)(self, operator.truediv, other, reverse=True)
 
     ## NumPy operations
     def __array_ufunc__(self, *args, **kwargs):
         ufunc = args[0]
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return dim(self, ufunc, **kwargs)
+        return type(self)(self, ufunc, **kwargs)
 
     def clip(self, min=None, max=None):
         if min is None and max is None:
             raise ValueError('One of max or min must be given.')
-        return dim(self, np.clip, a_min=min, a_max=max)
+        return type(self)(self, np.clip, a_min=min, a_max=max)
 
-    def any(self, **kwargs):     return dim(self, np.any, **kwargs)
-    def all(self, **kwargs):     return dim(self, np.all, **kwargs)
-    def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
-    def cumprod(self, **kwargs): return dim(self, np.cumprod, **kwargs)
-    def cumsum(self, **kwargs):  return dim(self, np.cumsum, **kwargs)
-    def max(self, **kwargs):     return dim(self, np.max, **kwargs)
-    def mean(self, **kwargs):    return dim(self, np.mean, **kwargs)
-    def min(self, **kwargs):     return dim(self, np.min, **kwargs)
-    def round(self, decimals=0): return dim(self, np.round, decimals=decimals)
-    def sum(self, **kwargs):     return dim(self, np.sum, **kwargs)
-    def std(self, **kwargs):     return dim(self, np.std, **kwargs)
-    def var(self, **kwargs):     return dim(self, np.var, **kwargs)
+    def any(self, *args, **kwargs):      return type(self)(self, np.any, *args, **kwargs)
+    def all(self, *args, **kwargs):      return type(self)(self, np.all, *args, **kwargs)
+    def cumprod(self, *args, **kwargs):  return type(self)(self, np.cumprod,  *args, **kwargs)
+    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args,
+                                                           axis=kwargs.pop('axis',0),
+                                                           **kwargs)
+    def max(self, *args, **kwargs):      return type(self)(self, np.max, *args, **kwargs)
+    def mean(self, *args, **kwargs):     return type(self)(self, np.mean, *args, **kwargs)
+    def min(self, *args, **kwargs):      return type(self)(self, np.min, *args, **kwargs)
+    def sum(self, *args, **kwargs):      return type(self)(self, np.sum, *args, **kwargs)
+    def std(self, *args, **kwargs):      return type(self)(self, np.std, *args, **kwargs)
+    def var(self, *args, **kwargs):      return type(self)(self, np.var, *args, **kwargs)
+    def log(self, *args, **kwargs):      return type(self)(self, np.log, *args, **kwargs)
+    def log10(self, *args, **kwargs):    return type(self)(self, np.log10, *args, **kwargs)
 
     ## Custom functions
+    def astype(self, dtype): return type(self)(self, astype, dtype=dtype)
+    def round(self, decimals=0): return type(self)(self, round_, decimals=decimals)
+    def digitize(self, *args, **kwargs): return type(self)(self, digitize, *args, **kwargs)
+    def isin(self, *args, **kwargs):
+        if kwargs.pop('object', None):
+            return type(self)(self, python_isin, *args, **kwargs)
+        return type(self)(self, isin, *args, **kwargs)
+
+    @property
+    def iloc(self):
+        return iloc(self)
 
     def bin(self, bins, labels=None):
         """Bins continuous values.
@@ -237,7 +464,7 @@ class dim(object):
             labels: List of labels to assign to each bin
                 If the bins are length N the labels should be length N-1
         """
-        return dim(self, bin, bins, labels=labels)
+        return type(self)(self, bin, bins, labels=labels)
 
     def categorize(self, categories, default=None):
         """Replaces discrete values with supplied categories
@@ -249,7 +476,19 @@ class dim(object):
             categories: List or dict of categories to map inputs to
             default: Default value to assign if value not in categories
         """
-        return dim(self, categorize, categories=categories, default=default)
+        return type(self)(self, categorize, categories=categories, default=default)
+
+    def lognorm(self, limits=None):
+        """Unity-based normalization log scale.
+           Apply the same transformation as matplotlib.colors.LogNorm
+
+        Args:
+            limits: tuple of (min, max) defining the normalization range
+        """
+        kwargs = {}
+        if limits is not None:
+            kwargs = {'min': limits[0], 'max': limits[1]}
+        return type(self)(self, lognorm, **kwargs)
 
     def norm(self, limits=None):
         """Unity-based normalization to scale data into 0-1 range.
@@ -262,26 +501,48 @@ class dim(object):
         kwargs = {}
         if limits is not None:
             kwargs = {'min': limits[0], 'max': limits[1]}
-        return dim(self, norm, **kwargs)
+        return type(self)(self, norm, **kwargs)
 
+    @classmethod
+    def pipe(cls, func, *args, **kwargs):
+        """
+        Wrapper to give multidimensional transforms a more intuitive syntax.
+        For a custom function 'func' with signature (*args, **kwargs), call as
+        dim.pipe(func, *args, **kwargs).
+        """
+        args = list(args) # make mutable
+        for k, arg in enumerate(args):
+            if isinstance(arg, str):
+                args[k] = cls(arg)
+        return cls(args[0], func, *args[1:], **kwargs)
+
+    @property
     def str(self):
-        "Casts values to strings."
-        return self.astype(str)
+        "Casts values to strings or provides str accessor."
+        return type(self)(self, 'str', accessor=True)
 
     # Other methods
 
-    def applies(self, dataset):
+    def applies(self, dataset, strict=False):
         """
         Determines whether the dim transform can be applied to the
         Dataset, i.e. whether all referenced dimensions can be
         resolved.
         """
-        if isinstance(self.dimension, dim):
+        from ..element import Graph
+
+        if isinstance(self.dimension, param.Parameter):
+            applies = True
+        elif isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
+        elif self.dimension.name == '*':
+            applies = True
         else:
-            applies = dataset.get_dimension(self.dimension) is not None
+            lookup = self.dimension if strict else self.dimension.name
+            applies = dataset.get_dimension(lookup) is not None
             if isinstance(dataset, Graph) and not applies:
-                applies = dataset.nodes.get_dimension(self.dimension) is not None
+                applies = dataset.nodes.get_dimension(lookup) is not None
+
         for op in self.ops:
             args = op.get('args')
             if not args:
@@ -289,9 +550,112 @@ class dim(object):
             for arg in args:
                 if isinstance(arg, dim):
                     applies &= arg.applies(dataset)
+            kwargs = op.get('kwargs')
+            for kwarg in kwargs.values():
+                if isinstance(kwarg, dim):
+                    applies &= kwarg.applies(dataset)
         return applies
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False):
+    def interface_applies(self, dataset, coerce):
+        return True
+
+    def _resolve_op(self, op, dataset, data, flat, expanded, ranges,
+                    all_values, keep_index, compute, strict):
+        args = op['args']
+        fn = op['fn']
+        kwargs = dict(op['kwargs'])
+        fn_name = self._numpy_funcs.get(fn)
+        if fn_name and hasattr(data, fn_name):
+            if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
+                kwargs['axis'] = None
+            fn = fn_name
+
+        if isinstance(fn, str):
+            accessor = kwargs.pop('accessor', None)
+            fn_args = []
+        else:
+            accessor = False
+            fn_args = [data]
+
+        for arg in args:
+            if isinstance(arg, dim):
+                arg = arg.apply(
+                    dataset, flat, expanded, ranges, all_values,
+                    keep_index, compute, strict
+                )
+            elif isinstance(arg, slice):
+                arg = slice(
+                    resolve_dependent_value(arg.start),
+                    resolve_dependent_value(arg.stop),
+                    resolve_dependent_value(arg.step)
+                )
+            arg = resolve_dependent_value(arg)
+            fn_args.append(arg)
+        fn_kwargs = {}
+        for k, v in kwargs.items():
+            if isinstance(v, dim):
+                v = v.apply(
+                    dataset, flat, expanded, ranges, all_values,
+                    keep_index, compute, strict
+                )
+            elif isinstance(v, slice):
+                v = slice(
+                    resolve_dependent_value(v.start),
+                    resolve_dependent_value(v.stop),
+                    resolve_dependent_value(v.step)
+                )
+            fn_kwargs[k] = resolve_dependent_value(v)
+        args = tuple(fn_args[::-1] if op['reverse'] else fn_args)
+        kwargs = dict(fn_kwargs)
+        return fn, fn_name, args, kwargs, accessor
+
+    def _apply_fn(self, dataset, data, fn, fn_name, args, kwargs, accessor, drange):
+        if (((fn is norm) or (fn is lognorm)) and drange != {} and
+            not ('min' in kwargs and 'max' in kwargs)):
+            data = fn(data, *drange)
+        elif isinstance(fn, str):
+            method = getattr(data, fn, None)
+            if method is None:
+                mtype = 'attribute' if accessor else 'method'
+                raise AttributeError(
+                    "%r could not be applied to '%r', '%s' %s "
+                    "does not exist on %s type."
+                    % (self, dataset, fn, mtype, type(data).__name__)
+                )
+            if accessor:
+                data = method
+            else:
+                try:
+                    data = method(*args, **kwargs)
+                except Exception as e:
+                    if 'axis' in kwargs:
+                        kwargs.pop('axis')
+                        data = method(*args, **kwargs)
+                    else:
+                        raise e
+        else:
+            data = fn(*args, **kwargs)
+
+        return data
+
+    def _compute_data(self, data, drop_index, compute):
+        """
+        Implements conversion of data from namespace specific object,
+        e.g. pandas Series to NumPy array.
+        """
+        if hasattr(data, 'compute') and compute:
+            data = data.compute()
+        return data
+
+    def _coerce(self, data):
+        """
+        Implements coercion of data from current data format to the
+        namespace specific datatype.
+        """
+        return data
+
+    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+              keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
         Args:
@@ -303,69 +667,132 @@ class dim(object):
                Whether to evaluate on all available values, for some
                element types, such as Graphs, this may include values
                not included in the referenced column
+           keep_index: For data types that support indexes, whether the index
+               should be preserved in the result.
+           compute: For data types that support lazy evaluation, whether
+               the result should be computed before it is returned.
+           strict: Whether to strictly check for dimension matches
+               (if False, counts any dimensions with matching names as the same)
 
         Returns:
             values: NumPy array computed by evaluating the expression
         """
+        from ..element import Graph
+
         dimension = self.dimension
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
-                            (dataset.interface.multi and dataset.interface.isscalar(dataset, dimension)))
+                            (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
+
+        if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
+            raise KeyError("One or more dimensions in the expression %r "
+                           "could not resolve on '%s'. Ensure all "
+                           "dimensions referenced by the expression are "
+                           "present on the supplied object." % (self, dataset))
+        if not self.interface_applies(dataset, coerce=self.coerce):
+            if self.coerce:
+                raise ValueError("The expression %r assumes a %s-like "
+                                 "API but the dataset contains %s data "
+                                 "and cannot be coerced." %
+                                 (self, self.namespace, dataset.interface.datatype))
+            else:
+                raise ValueError("The expression %r assumes a %s-like "
+                                 "API but the dataset contains %s data "
+                                 "and coercion is disabled." %
+                                 (self, self.namespace, dataset.interface.datatype))
+
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
                 dimension = dataset.nodes.kdims[2]
             dataset = dataset if dimension in dataset else dataset.nodes
-        data = dataset.dimension_values(dimension, expanded=expanded, flat=flat)
-        for o in self.ops:
-            args = o['args']
-            fn_args = [data]
-            for arg in args:
-                if isinstance(arg, dim):
-                    arg = arg.apply(dataset, flat, expanded, ranges, all_values)
-                fn_args.append(arg)
-            args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
-            eldim = dataset.get_dimension(dimension)
-            drange = ranges.get(eldim.name, {})
+
+        dataset = self._coerce(dataset)
+        if self.namespace != 'numpy':
+            compute_for_compute = False
+            keep_index_for_compute = True
+        else:
+            compute_for_compute = compute
+            keep_index_for_compute = keep_index
+
+        if dimension.name == '*':
+            data = dataset.data
+            eldim = None
+        elif isinstance(dimension, param.Parameter):
+            data = getattr(dimension.owner, dimension.name)
+            eldim = None
+        else:
+            lookup = dimension if strict else dimension.name
+            eldim = dataset.get_dimension(lookup).name
+            data = dataset.interface.values(
+                dataset, lookup, expanded=expanded, flat=flat,
+                compute=compute_for_compute, keep_index=keep_index_for_compute
+            )
+        for op in self.ops:
+            fn, fn_name, args, kwargs, accessor = self._resolve_op(
+                op, dataset, data, flat, expanded, ranges, all_values,
+                keep_index_for_compute, compute_for_compute, strict
+            )
+            drange = ranges.get(eldim, {})
             drange = drange.get('combined', drange)
-            kwargs = o['kwargs']
-            if o['fn'] is norm and drange != {} and not ('min' in kwargs and 'max' in kwargs):
-                data = o['fn'](data, *drange)
-            else:
-                data = o['fn'](*args, **kwargs)
+            data = self._apply_fn(dataset, data, fn, fn_name, args,
+                                  kwargs, accessor, drange)
+        drop_index = keep_index_for_compute and not keep_index
+        compute = not compute_for_compute and compute
+        if (drop_index or compute):
+            data = self._compute_data(data, drop_index, compute)
         return data
 
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
-        for o in self.ops:
-            if 'dim(' in op_repr:
-                prev = '{repr}' if op_repr.endswith(')') else '({repr})'
+        accessor = False
+        for i, o in enumerate(self.ops):
+            if i == 0:
+                prev = 'dim({repr}'
+            elif accessor:
+                prev = '{repr}'
             else:
-                prev = 'dim({repr})'
+                prev = '({repr}'
             fn = o['fn']
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
-            kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
+            kwargs = o['kwargs']
+            prev_accessor = accessor
+            accessor = kwargs.pop('accessor', None)
+            kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
+            kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
                     format_string = '{args}{fn}'+prev
                 else:
-                    format_string = prev+'{fn}{args}'
+                    format_string = prev+'){fn}{args}'
+                if any(isinstance(a, dim) for a in o['args']):
+                    format_string = format_string.replace('{args}', '({args})')
             elif fn in self._unary_funcs:
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
             else:
-                fn_name = fn.__name__
+                if isinstance(fn, str):
+                    fn_name = fn
+                else:
+                    fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
+                elif isinstance(fn, str):
+                    if accessor:
+                        sep = '' if op_repr.endswith(')') or prev_accessor else ')'
+                        format_string = prev+sep+'.{fn}'
+                    else:
+                        format_string = prev+').{fn}('
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
-                    format_string = prev+'.{fn}('
+                    format_string = prev+').{fn}('
+                elif isinstance(fn, iloc):
+                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
-                    format_string = prev+'.{fn}('
+                    format_string = prev+').{fn}('
                 elif ufunc:
                     fn_name = str(fn)[8:-2]
                     if not (prev.startswith('dim') or prev.endswith(')')):
@@ -376,13 +803,179 @@ class dim(object):
                         format_string = '.'.join([self._namespaces['numpy'], format_string])
                 else:
                     format_string = prev+', {fn}'
-                if args:
-                    format_string += ', {args}'
+                if accessor:
+                    pass
+                elif args:
+                    if not format_string.endswith('('):
+                        format_string += ', '
+                    format_string += '{args}'
                     if kwargs:
                         format_string += ', {kwargs}'
                 elif kwargs:
+                    if not format_string.endswith('('):
+                        format_string += ', '
                     format_string += '{kwargs}'
-                format_string += ')'
+
+            # Insert accessor
+            if i == 0 and self._accessor and ')' in format_string:
+                idx = format_string.index(')')
+                format_string = ''.join([
+                    format_string[:idx], ').', self._accessor,
+                    format_string[idx+1:]
+                ])
+
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
+            if op_repr.count('(') - op_repr.count(')') > 0:
+                op_repr += ')'
+        if not self.ops:
+            op_repr = 'dim({repr})'.format(repr=op_repr)
+        if op_repr.count('(') - op_repr.count(')') > 0:
+            op_repr += ')'
         return op_repr
+
+
+class df_dim(dim):
+    """
+    A subclass of dim which provides access to the DataFrame namespace
+    along with tab-completion and type coercion allowing the expression
+    to be applied on any columnar dataset.
+    """
+
+    namespace = 'dataframe'
+
+    _accessor = 'pd'
+
+    def __init__(self, obj, *args, **kwargs):
+        super().__init__(obj, *args, **kwargs)
+        self._ns = pd.Series
+
+    def interface_applies(self, dataset, coerce):
+        return (not dataset.interface.gridded and
+                (coerce or isinstance(dataset.interface, PandasInterface)))
+
+    def _compute_data(self, data, drop_index, compute):
+        if hasattr(data, 'compute') and compute:
+            data = data.compute()
+        if not drop_index:
+            return data
+        if compute and hasattr(data, 'to_numpy'):
+            return data.to_numpy()
+        return data.values
+
+    def _coerce(self, dataset):
+        if self.interface_applies(dataset, coerce=False):
+            return dataset
+        pandas_interfaces = param.concrete_descendents(PandasInterface)
+        datatypes = [intfc.datatype for intfc in pandas_interfaces.values()
+                     if dataset.interface.multi == intfc.multi]
+        return dataset.clone(datatype=datatypes)
+
+
+
+class xr_dim(dim):
+    """
+    A subclass of dim which provides access to the xarray DataArray
+    namespace along with tab-completion and type coercion allowing
+    the expression to be applied on any gridded dataset.
+    """
+
+    namespace = 'xarray'
+
+    _accessor = 'xr'
+
+    def __init__(self, obj, *args, **kwargs):
+        try:
+            import xarray as xr
+        except ImportError:
+            raise ImportError("XArray could not be imported, dim().xr "
+                              "requires the xarray to be available.")
+        super().__init__(obj, *args, **kwargs)
+        self._ns = xr.DataArray
+
+    def interface_applies(self, dataset, coerce):
+        return (dataset.interface.gridded and
+                (coerce or dataset.interface.datatype == 'xarray'))
+
+    def _compute_data(self, data, drop_index, compute):
+        if drop_index:
+            data = data.data
+        if hasattr(data, 'compute') and compute:
+            data = data.compute()
+        return data
+
+    def _coerce(self, dataset):
+        if self.interface_applies(dataset, coerce=False):
+            return dataset
+        return dataset.clone(datatype=['xarray'])
+
+
+def lon_lat_to_easting_northing(longitude, latitude):
+    """
+    Projects the given longitude, latitude values into Web Mercator
+    (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+    Longitude and latitude can be provided as scalars, Pandas columns,
+    or Numpy arrays, and will be returned in the same form.  Lists
+    or tuples will be converted to Numpy arrays.
+
+    Args:
+        longitude
+        latitude
+
+    Returns:
+        (easting, northing)
+
+    Examples:
+       easting, northing = lon_lat_to_easting_northing(-74,40.71)
+
+       easting, northing = lon_lat_to_easting_northing(
+           np.array([-74]),np.array([40.71])
+       )
+
+       df=pandas.DataFrame(dict(longitude=np.array([-74]),latitude=np.array([40.71])))
+       df.loc[:, 'longitude'], df.loc[:, 'latitude'] = lon_lat_to_easting_northing(
+           df.longitude,df.latitude
+       )
+    """
+    if isinstance(longitude, (list, tuple)):
+        longitude = np.array(longitude)
+    if isinstance(latitude, (list, tuple)):
+        latitude = np.array(latitude)
+
+    origin_shift = np.pi * 6378137
+    easting = longitude * origin_shift / 180.0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        northing = np.log(
+            np.tan((90 + latitude) * np.pi / 360.0)
+        ) * origin_shift / np.pi
+    return easting, northing
+
+
+def easting_northing_to_lon_lat(easting, northing):
+    """
+    Projects the given easting, northing values into
+    longitude, latitude coordinates.
+
+    easting and northing values are assumed to be in Web Mercator
+    (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+    Args:
+        easting
+        northing
+
+    Returns:
+        (longitude, latitude)
+    """
+    if isinstance(easting, (list, tuple)):
+        easting = np.array(easting)
+    if isinstance(northing, (list, tuple)):
+        northing = np.array(northing)
+
+    origin_shift = np.pi * 6378137
+    longitude = easting * 180.0 / origin_shift
+    with np.errstate(divide='ignore'):
+        latitude = np.arctan(
+            np.exp(northing * np.pi / origin_shift)
+        ) * 360.0 / np.pi - 90
+    return longitude, latitude

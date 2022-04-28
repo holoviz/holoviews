@@ -9,17 +9,17 @@ can be evaluated with eval; such representations would typically be
 far too large to be practical. Instead, all HoloViews objects can be
 represented as tree structures, showing how to access and index into
 your data.
-
-In addition, there are several different ways of
 """
 
-import sys, re
+import re
 import textwrap
+
 import param
-# IPython not required to import ParamPager
+
 from param.ipython import ParamPager
 from param.parameterized import bothmethod
-from holoviews.core.util import group_sanitizer, label_sanitizer
+
+from .util import group_sanitizer, label_sanitizer
 
 
 
@@ -44,16 +44,17 @@ class ParamFilter(param.ParameterizedFunction):
 
         name = obj.__name__ if isinstance(obj,type) else obj.__class__.__name__
         class_proxy = type(name, (param.Parameterized,),
-                      {k:v for k,v in obj.params().items() if filter_fn(k,v)})
+                      {k:v for k,v in obj.param.objects('existing').items()
+                       if filter_fn(k,v)})
 
         if isinstance(obj,type):
             return class_proxy
         else:
-            instance_params = obj.get_param_values()
+            instance_params = obj.param.get_param_values()
             obj_proxy = class_proxy()
             filtered = {k:v for k,v in instance_params
-                        if (k in obj_proxy.params())
-                            and not obj_proxy.params(k).constant}
+                        if (k in obj_proxy.param)
+                            and not obj_proxy.param.objects('existing')[k].constant}
             obj_proxy.param.set_param(**filtered)
             return obj_proxy
 
@@ -94,7 +95,7 @@ class InfoPrinter(object):
         if cls.ppager is None: return ''
         if pattern is not None:
             obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-            if len(obj.params()) <=1:
+            if len(obj.param) <= 1:
                 return None
         param_info = cls.ppager.get_param_info(obj)
         param_list = cls.ppager.param_docstrings(param_info)
@@ -124,7 +125,7 @@ class InfoPrinter(object):
     @classmethod
     def highlight(cls, pattern, string):
         if pattern is None: return string
-        return re.sub(pattern, '\033[43;1;30m\g<0>\x1b[0m',
+        return re.sub(pattern, r'\033[43;1;30m\g<0>\x1b[0m',
                       string, flags=re.IGNORECASE)
 
 
@@ -150,7 +151,7 @@ class InfoPrinter(object):
         if visualization is False or plot_class is None:
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-                if len(obj.params()) <=1:
+                if len(obj.param) <= 1:
                     return ('No %r parameters found matching specified pattern %r'
                             % (name, pattern))
             info = param.ipython.ParamPager()(obj)
@@ -276,12 +277,7 @@ class PrettyPrinter(param.Parameterized):
 
     @bothmethod
     def pprint(cls_or_slf, node):
-        reprval = cls_or_slf.serialize(cls_or_slf.recurse(node))
-        if sys.version_info.major == 2:
-            return str(reprval.encode("utf8"))
-        else:
-            return str(reprval)
-
+        return cls_or_slf.serialize(cls_or_slf.recurse(node))
 
     @bothmethod
     def serialize(cls_or_slf, lines):

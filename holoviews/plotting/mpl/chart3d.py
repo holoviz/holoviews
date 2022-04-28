@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 import param
 import matplotlib.cm as cm
@@ -7,12 +5,12 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
-from ...core.util import basestring
+from ...util.transform import dim as dim_expr
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
 from .path import PathPlot
-from .util import mpl_version
+from .util import LooseVersion, mpl_version
 
 
 class Plot3D(ColorbarPlot):
@@ -80,12 +78,11 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        if mpl_version <= '1.5.9':
+        if mpl_version <= LooseVersion('1.5.9'):
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
-        return super(Plot3D, self)._finalize_axis(key, **kwargs)
-
+        return super()._finalize_axis(key, **kwargs)
 
     def _draw_colorbar(self, element=None, dim=None, redraw=True):
         if element is None:
@@ -95,6 +92,8 @@ class Plot3D(ColorbarPlot):
         fig = self.handles['fig']
         ax = self.handles['axis']
         # Get colorbar label
+        if isinstance(dim, dim_expr):
+            dim = dim.dimension
         if dim is None:
             if hasattr(self, 'color_index'):
                 dim = element.get_dimension(self.color_index)
@@ -104,6 +103,7 @@ class Plot3D(ColorbarPlot):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
+        self.handles['cbar'] = cbar
         self.handles['cax'] = cbar.ax
         self._adjust_cbar(cbar, label, dim)
 
@@ -116,11 +116,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -131,6 +131,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
         self._compute_styles(element, ranges, style)
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
+        if style.get('edgecolors') == 'none':
+            style.pop('edgecolors')
         return (xs, ys, zs), style, {}
 
     def update_handles(self, key, axis, element, ranges, style):

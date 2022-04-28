@@ -11,7 +11,8 @@ from holoviews import Dataset, HoloMap, Dimension
 from holoviews.core.data import concat
 from holoviews.core.data.interface import DataError
 from holoviews.element import Scatter, Curve
-from holoviews.element.comparison import ComparisonTestCase 
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.util.transform import dim
 
 from collections import OrderedDict
 
@@ -78,12 +79,14 @@ class InterfaceTests(ComparisonTestCase):
         pass
 
 
-            
+
 class HomogeneousColumnTests(object):
     """
     Tests for data formats that require all dataset to have the same
-    type (e.g numpy arrays)
+    type (e.g. numpy arrays)
     """
+
+    __test__ = False
 
     def init_column_data(self):
         self.xs = np.array(range(11))
@@ -102,6 +105,10 @@ class HomogeneousColumnTests(object):
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
+
+    def test_dataset_dtypes(self):
+        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'x'), np.dtype(int))
+        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'y'), np.dtype(int))
 
     def test_dataset_array_init_hm_tuple_dims(self):
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
@@ -289,10 +296,6 @@ class HomogeneousColumnTests(object):
     def test_dataset_index_column_ht(self):
         self.compare_arrays(self.dataset_hm['y'], self.y_ints)
 
-    def test_dataset_array_ht(self):
-        self.assertEqual(self.dataset_hm.array(),
-                         np.column_stack([self.xs, self.y_ints]))
-
     # Tabular indexing
 
     def test_dataset_iloc_slice_rows(self):
@@ -377,10 +380,6 @@ class HomogeneousColumnTests(object):
                         kdims=['x'], vdims=['y'], datatype=['dictionary'])
         self.assertEqual(sliced, table)
 
-    def test_dataset_get_array(self):
-        arr = self.dataset_hm.array()
-        self.assertEqual(arr, np.column_stack([self.xs, self.y_ints]))
-
     def test_dataset_get_array_by_dimension(self):
         arr = self.dataset_hm.array(['x'])
         self.assertEqual(arr, self.xs[:, np.newaxis])
@@ -396,12 +395,24 @@ class HomogeneousColumnTests(object):
         df = self.dataset_hm.dframe(['x'])
         self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes[0]))
 
+    def test_dataset_transform_replace_hm(self):
+        transformed = self.dataset_hm.transform(y=dim('y')*2)
+        expected = Dataset((self.xs, self.y_ints*2), 'x', 'y')
+        self.assertEqual(transformed, expected)
+
+    def test_dataset_transform_add_hm(self):
+        transformed = self.dataset_hm.transform(y2=dim('y')*2)
+        expected = Dataset((self.xs, self.y_ints, self.y_ints*2), 'x', ['y', 'y2'])
+        self.assertEqual(transformed, expected)
+
 
 
 class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
     Tests for data formats that allow dataset to have varied types
     """
+
+    __test__ = False
 
     def init_column_data(self):
         self.kdims = ['Gender', 'Age']
@@ -418,7 +429,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                                     'weight':self.weight, 'height':self.height},
                                    kdims=self.alias_kdims, vdims=self.alias_vdims)
 
-        super(HeterogeneousColumnTests, self).init_column_data()
+        super().init_column_data()
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
         self.dataset_ht = Dataset({'x':self.xs, 'y':self.ys},
@@ -440,11 +451,25 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                           kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
+    # Test dtypes
+
+    def test_dataset_dataset_ht_dtypes(self):
+        ds = self.table
+        self.assertEqual(ds.interface.dtype(ds, 'Gender'), np.dtype('object'))
+        self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype(int))
+        self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype(int))
+        self.assertEqual(ds.interface.dtype(ds, 'Height'), np.dtype('float64'))
+
     # Test literal formats
 
     def test_dataset_expanded_dimvals_ht(self):
-        self.assertEqual(self.table.dimension_values('Gender', expanded=False),
-                         np.array(['M', 'F']))
+        # This will run unique(), which for pandas return
+        # in order of appearance, but can be sorted for other
+        # interfaces like cudf.
+        #   pd.Series(["M", "M", "F"]).unique()   -> ["M", "F"]
+        #   cudf.Series(["M", "M", "F"]).unique() -> ["F", "M"]
+        data = self.table.dimension_values('Gender', expanded=False)
+        self.assertEqual(np.sort(data), np.array(['F', 'M']))
 
     def test_dataset_implicit_indexing_init(self):
         dataset = Scatter(self.ys, kdims=['x'], vdims=['y'])
@@ -494,7 +519,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
         ds = Dataset(dt64, [Dimension('Date', range=(dt64[0], dt64[-1]))])
         self.assertEqual(ds.range('Date'), (dt64[0], dt64[-1]))
-        
+
     # Operations
 
     @pd_skip
@@ -509,6 +534,10 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
         self.assertEqual(ds.range(0), ('A', 'C'))
+
+    def test_dataset_nodata_range(self):
+        table = self.table.clone(vdims=[Dimension('Weight', nodata=10), 'Height'])
+        self.assertEqual(table.range('Weight'), (15, 18))
 
     def test_dataset_sort_vdim_ht(self):
         dataset = Dataset({'x':self.xs, 'y':-self.ys},
@@ -603,7 +632,6 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
                           kdims=['Gender'], sort=False)
-        print(grouped.keys())
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
     def test_dataset_groupby_alias(self):
@@ -668,21 +696,28 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                            'Weight':[10], 'Height':[0.8]},
                           kdims=self.kdims, vdims=self.vdims)
         row = self.table['F',:]
-        self.assertEquals(row, indexed)
+        self.assertEqual(row, indexed)
 
     def test_dataset_index_rows_gender_male(self):
         row = self.table['M',:]
         indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
                            'Weight':[15,18], 'Height':[0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
-        self.assertEquals(row, indexed)
+        self.assertEqual(row, indexed)
 
     def test_dataset_select_rows_gender_male(self):
         row = self.table.select(Gender='M')
         indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
                            'Weight':[15,18], 'Height':[0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
-        self.assertEquals(row, indexed)
+        self.assertEqual(row, indexed)
+
+    def test_dataset_select_rows_gender_male_expr(self):
+        row = self.table.select(selection_expr=dim('Gender') == 'M')
+        indexed = Dataset({'Gender': ['M', 'M'], 'Age': [10, 16],
+                           'Weight': [15, 18], 'Height': [0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(row, indexed)
 
     def test_dataset_select_rows_gender_male_alias(self):
         row = self.alias_table.select(Gender='M')
@@ -690,26 +725,26 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
                            'weight':[15,18], 'height':[0.8,0.6]},
                           kdims=self.alias_kdims, vdims=self.alias_vdims)
-        self.assertEquals(row, indexed)
-        self.assertEquals(alias_row, indexed)
+        self.assertEqual(row, indexed)
+        self.assertEqual(alias_row, indexed)
 
     def test_dataset_index_row_age(self):
         indexed = Dataset({'Gender':['F'], 'Age':[12],
                            'Weight':[10], 'Height':[0.8]},
                           kdims=self.kdims, vdims=self.vdims)
-        self.assertEquals(self.table[:, 12], indexed)
+        self.assertEqual(self.table[:, 12], indexed)
 
     def test_dataset_index_item_table(self):
         indexed = Dataset({'Gender':['F'], 'Age':[12],
                            'Weight':[10], 'Height':[0.8]},
                           kdims=self.kdims, vdims=self.vdims)
-        self.assertEquals(self.table['F', 12], indexed)
+        self.assertEqual(self.table['F', 12], indexed)
 
     def test_dataset_index_value1(self):
-        self.assertEquals(self.table['F', 12, 'Weight'], 10)
+        self.assertEqual(self.table['F', 12, 'Weight'], 10)
 
     def test_dataset_index_value2(self):
-        self.assertEquals(self.table['F', 12, 'Height'], 0.8)
+        self.assertEqual(self.table['F', 12, 'Height'], 0.8)
 
     def test_dataset_index_column_ht(self):
         self.compare_arrays(self.dataset_ht['y'], self.ys)
@@ -719,18 +754,18 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
                            'Weight':[15,18], 'Height':[0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
-        self.assertEquals(row, indexed)
+        self.assertEqual(row, indexed)
 
     def test_dataset_value_dim_index(self):
         row = self.table[:, :, 'Weight']
         indexed = Dataset({'Gender':['M', 'M', 'F'], 'Age':[10, 16, 12],
                            'Weight':[15,18, 10]},
                           kdims=self.kdims, vdims=self.vdims[:1])
-        self.assertEquals(row, indexed)
+        self.assertEqual(row, indexed)
 
     def test_dataset_value_dim_scalar_index(self):
         row = self.table['M', 10, 'Weight']
-        self.assertEquals(row, 15)
+        self.assertEqual(row, 15)
 
     # Tabular indexing
 
@@ -823,12 +858,34 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertEqual(self.dataset_ht.array(),
                          np.column_stack([self.xs, self.ys]))
 
+    # Transforms
+
+    def test_dataset_transform_replace_ht(self):
+        transformed = self.table.transform(
+            Age=dim('Age')**2, Weight=dim('Weight')*2, Height=dim('Height')/2.
+        )
+        expected = Dataset({'Gender':self.gender, 'Age':self.age**2,
+                            'Weight':self.weight*2, 'Height':self.height/2.},
+                           kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(transformed, expected)
+
+    def test_dataset_transform_add_ht(self):
+        transformed = self.table.transform(combined=dim('Age')*dim('Weight'))
+        expected = Dataset({'Gender':self.gender, 'Age':self.age,
+                              'Weight':self.weight, 'Height':self.height,
+                              'combined': self.age*self.weight},
+                             kdims=self.kdims, vdims=self.vdims+['combined'])
+        self.assertEqual(transformed, expected)
+
+
 
 class ScalarColumnTests(object):
     """
     Tests for interfaces that allow on or more columns to be of scalar
     types.
     """
+
+    __test__ = False
 
     def test_dataset_scalar_constructor(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
@@ -846,9 +903,23 @@ class ScalarColumnTests(object):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
         self.assertEqual(ds.select(A=1).dimension_values('B'), np.arange(10))
 
+    def test_dataset_scalar_select_expr(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(
+            ds.select(selection_expr=dim('A') == 1).dimension_values('B'),
+            np.arange(10)
+        )
+
     def test_dataset_scalar_empty_select(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
         self.assertEqual(ds.select(A=0).dimension_values('B'), np.array([]))
+
+    def test_dataset_scalar_empty_select_expr(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(
+            ds.select(selection_expr=dim('A') == 0).dimension_values('B'),
+            np.array([])
+        )
 
     def test_dataset_scalar_sample(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
@@ -873,6 +944,8 @@ class GriddedInterfaceTests(object):
     """
     Tests for the grid interfaces
     """
+
+    __test__ = False
 
     def init_grid_data(self):
         self.grid_xs = np.array([0, 1])
@@ -901,6 +974,12 @@ class GriddedInterfaceTests(object):
         self.assertEqual(dataset.dimension_values('z', flat=False),
                          canonical)
 
+    def test_gridded_dtypes(self):
+        ds = self.dataset_grid
+        self.assertEqual(ds.interface.dtype(ds, 'x'), np.dtype(int))
+        self.assertEqual(ds.interface.dtype(ds, 'y'), np.float64)
+        self.assertEqual(ds.interface.dtype(ds, 'z'), np.dtype(int))
+
     def test_select_slice(self):
         ds = self.element(
             (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
@@ -912,6 +991,10 @@ class GriddedInterfaceTests(object):
             (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
         )
         self.assertEqual(self.dataset_grid.select(y=(0, 0.25)), ds)
+
+    def test_nodata_range(self):
+        ds = self.dataset_grid.clone(vdims=[Dimension('z', nodata=0)])
+        self.assertEqual(ds.range('z'), (1, 5))
 
     def test_dataset_ndloc_index(self):
         xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)

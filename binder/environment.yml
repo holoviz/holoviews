@@ -1,0 +1,35 @@
+name: holoviews
+
+channels:
+  - conda-forge
+
+dependencies:
+  - pyviz::holoviews=1.13.2
+  # Install requires
+  - pyviz::param>=1.9.3,<2.0
+  - pyviz::pyviz_comms>=0.7.3
+  - pyviz::panel>=0.8.0
+  - numpy>=1.0
+  - pandas
+  # Notebook dependencies already installedc by binder
+  #
+  # Recommended installs
+  - matplotlib>=2.2
+  - bokeh>=1.1.0
+  # To run all the examples
+  - pyviz::spatialpandas
+  - networkx
+  - pillow
+  - xarray>=0.10.4
+  - plotly>=4.0
+  - pyviz::datashader
+  - selenium
+  - phantomjs
+  - ffmpeg
+  - streamz>=0.5.0
+  - cftime
+  - netcdf4
+  - bzip2
+  - dask
+  - scipy
+  - ibis-framework >= 1.3

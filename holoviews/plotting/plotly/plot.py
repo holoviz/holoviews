@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from holoviews.plotting.util import attach_streams
@@ -8,18 +6,22 @@ from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
 from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
-    GenericElementPlot
-from .util import figure_grid
+from ..plot import (
+    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
+    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+)
+from .util import figure_grid, configure_matching_axes_from_dims
 
 
-class PlotlyPlot(DimensionedPlot):
+class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     backend = 'plotly'
 
     width = param.Integer(default=400)
 
     height = param.Integer(default=400)
+
+    unsupported_geo_style_opts = []
 
     @property
     def state(self):
@@ -39,28 +41,35 @@ class PlotlyPlot(DimensionedPlot):
             self.current_frame = None
 
 
-    def initialize_plot(self, ranges=None):
-        return self.generate_plot(self.keys[-1], ranges)
+    def initialize_plot(self, ranges=None, is_geo=False):
+        return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
 
 
-    def update_frame(self, key, ranges=None):
-        return self.generate_plot(key, ranges)
+    def update_frame(self, key, ranges=None, is_geo=False):
+        return self.generate_plot(key, ranges, is_geo=is_geo)
 
 
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
-    hspacing = param.Number(default=0.15, bounds=(0, 1))
+    hspacing = param.Number(default=120, bounds=(0, None))
 
-    vspacing = param.Number(default=0.15, bounds=(0, 1))
+    vspacing = param.Number(default=100, bounds=(0, None))
+
+    adjoint_spacing = param.Number(default=20, bounds=(0, None))
+
+    shared_axes = param.Boolean(default=True, doc="""
+            Whether axes should be shared across plots""")
+
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes ranges should be shared across the layout, if
+        disabled switches axiswise normalization option on globally.""")
 
     def __init__(self, layout, **params):
-        super(LayoutPlot, self).__init__(layout, **params)
+        super().__init__(layout, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -184,69 +193,52 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         return subplots, adjoint_clone
 
 
-    def generate_plot(self, key, ranges=None):
+    def generate_plot(self, key, ranges=None, is_geo=False):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
-        insert_rows, insert_cols = [], []
+        insert_rows = []
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
-                subplots = subplot.generate_plot(key, ranges=ranges)
+                subplots = subplot.generate_plot(key, ranges=ranges, is_geo=is_geo)
 
                 # Computes plotting offsets depending on
                 # number of adjoined plots
                 offset = sum(r >= ir for ir in insert_rows)
                 if len(subplots) > 2:
-                    # Add pad column in this position
-                    insert_cols.append(c)
-                    if r not in insert_rows:
-                        # Insert and pad marginal row if none exists
-                        plots.insert(r+offset, [None for _ in range(len(plots[r]))])
-                        # Pad previous rows
-                        for ir in range(r):
-                            plots[ir].insert(c+1, None)
-                        # Add to row offset
-                        insert_rows.append(r)
-                        offset += 1
-                    # Add top marginal
-                    plots[r+offset-1] += [subplots.pop(-1), None]
+                    subplot = figure_grid([[subplots[0], subplots[1]],
+                                           [subplots[2], None]],
+                                          column_spacing=self.adjoint_spacing,
+                                          row_spacing=self.adjoint_spacing)
                 elif len(subplots) > 1:
-                    # Add pad column in this position
-                    insert_cols.append(c)
-                    # Pad previous rows
-                    for ir in range(r):
-                        plots[r].insert(c+1, None)
-                    # Pad top marginal if one exists
-                    if r in insert_rows:
-                        plots[r+offset-1] += 2*[None]
+                    subplot = figure_grid([subplots],
+                                          column_spacing=self.adjoint_spacing,
+                                          row_spacing=self.adjoint_spacing)
                 else:
-                    # Pad top marginal if one exists
-                    if r in insert_rows:
-                        plots[r+offset-1] += [None] * (1+(c in insert_cols))
-                plots[r+offset] += subplots
-                if len(subplots) == 1 and c in insert_cols:
-                    plots[r+offset].append(None)
+                    subplot = subplots[0]
 
-        width, height = self._get_size()
+                plots[r + offset] += [subplot]
 
-        fig = figure_grid(list(reversed(plots)),
-                          column_spacing=self.hspacing,
-                          row_spacing=self.vspacing)
+        fig = figure_grid(
+            list(reversed(plots)),
+            column_spacing=self.hspacing,
+            row_spacing=self.vspacing
+        )
 
-        fig['layout'].update(height=height, width=width,
-                             title=self._format_title(key))
+        # Configure axis matching
+        if self.shared_axes:
+            configure_matching_axes_from_dims(fig)
+
+        fig['layout'].update(title=self._format_title(key))
 
         self.drawn = True
+
         self.handles['fig'] = fig
         return self.handles['fig']
 
 
 
-class AdjointLayoutPlot(PlotlyPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 
@@ -258,10 +250,9 @@ class AdjointLayoutPlot(PlotlyPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
+        super().__init__(subplots=subplots, **params)
 
-
-    def initialize_plot(self, ranges=None):
+    def initialize_plot(self, ranges=None, is_geo=False):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -269,17 +260,18 @@ class AdjointLayoutPlot(PlotlyPlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
-        return self.generate_plot(self.keys[-1], ranges)
+        return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
 
-
-    def generate_plot(self, key, ranges=None):
+    def generate_plot(self, key, ranges=None, is_geo=False):
         adjoined_plots = []
         for pos in ['main', 'right', 'top']:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
-                adjoined_plots.append(subplot.generate_plot(key, ranges=ranges))
+                adjoined_plots.append(
+                    subplot.generate_plot(key, ranges=ranges, is_geo=is_geo)
+                )
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
 
@@ -291,21 +283,23 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
     object.
     """
 
-    hspacing = param.Number(default=0.05, bounds=(0, 1))
+    hspacing = param.Number(default=15, bounds=(0, None))
 
-    vspacing = param.Number(default=0.05, bounds=(0, 1))
+    vspacing = param.Number(default=15, bounds=(0, None))
+
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes ranges should be shared across the layout, if
+        disabled switches axiswise normalization option on globally.""")
 
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -351,29 +345,34 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         return subplots, collapsed_layout
 
 
-    def generate_plot(self, key, ranges=None):
+    def generate_plot(self, key, ranges=None, is_geo=False):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for r in range(self.cols)]
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
             subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
-                plot = subplot.initialize_plot(ranges=ranges)
+                plot = subplot.initialize_plot(ranges=ranges, is_geo=is_geo)
                 plots[r].append(plot)
             else:
                 plots[r].append(None)
+
+        # Compute final width/height
+        w, h = self._get_size(subplot.width, subplot.height)
 
         fig = figure_grid(plots,
                           column_spacing=self.hspacing,
                           row_spacing=self.vspacing,
                           share_xaxis=True,
-                          share_yaxis=True)
+                          share_yaxis=True,
+                          width=w,
+                          height=h
+                          )
 
-        w, h = self._get_size(subplot.width, subplot.height)
-        fig['layout'].update(width=w, height=h,
-                             title=self._format_title(key))
+        fig['layout'].update(title=self._format_title(key))
 
         self.drawn = True
+
         self.handles['fig'] = fig
         return self.handles['fig']
 

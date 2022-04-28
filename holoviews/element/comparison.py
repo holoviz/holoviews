@@ -28,7 +28,7 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
-from ..core.util import pd, datetime_types, dt_to_int
+from ..core.util import pd, cast_array_to_int64, datetime_types, dt_to_int
 
 
 class ComparisonInterface(object):
@@ -65,11 +65,8 @@ class ComparisonInterface(object):
         if type(first) is type(second):
             asserter = cls.equality_type_funcs.get(type(first))
 
-            try:              basestring = basestring # Python 2
-            except NameError: basestring = str        # Python 3
-
             if asserter is not None:
-                if isinstance(asserter, basestring):
+                if isinstance(asserter, str):
                     asserter = getattr(cls, asserter)
 
         if asserter is None:
@@ -101,7 +98,6 @@ class Comparison(ComparisonInterface):
 
         # Float comparisons
         cls.equality_type_funcs[float] =        cls.compare_floats
-        cls.equality_type_funcs[np.float] =     cls.compare_floats
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
@@ -134,6 +130,8 @@ class Comparison(ComparisonInterface):
         # Annotations
         cls.equality_type_funcs[VLine] =       cls.compare_vline
         cls.equality_type_funcs[HLine] =       cls.compare_hline
+        cls.equality_type_funcs[VSpan] =       cls.compare_vspan
+        cls.equality_type_funcs[HSpan] =       cls.compare_hspan
         cls.equality_type_funcs[Spline] =      cls.compare_spline
         cls.equality_type_funcs[Arrow] =       cls.compare_arrow
         cls.equality_type_funcs[Text] =        cls.compare_text
@@ -156,6 +154,10 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Surface] =     cls.compare_surface
         cls.equality_type_funcs[HeatMap] =     cls.compare_dataset
 
+        # Geometries
+        cls.equality_type_funcs[Segments] =    cls.compare_segments
+        cls.equality_type_funcs[Rectangles] =       cls.compare_boxes
+
         # Charts
         cls.equality_type_funcs[Dataset] =      cls.compare_dataset
         cls.equality_type_funcs[Curve] =        cls.compare_curve
@@ -165,7 +167,6 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[TriSurface] =   cls.compare_trisurface
-        cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
         cls.equality_type_funcs[Spikes] =       cls.compare_spikes
@@ -251,9 +252,9 @@ class Comparison(ComparisonInterface):
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
             if arr1.dtype.kind == 'M':
-                arr1 = arr1.astype('datetime64[ns]').astype('int64')
+                arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
             if arr2.dtype.kind == 'M':
-                arr2 = arr2.astype('datetime64[ns]').astype('int64')
+                arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
         except:
             try:
@@ -294,20 +295,16 @@ class Comparison(ComparisonInterface):
                                        % (dim1.label, dim2.label))
 
         # 'Deep' equality of dimension metadata (all parameters)
-        dim1_params = dict(dim1.get_param_values())
-        dim2_params = dict(dim2.get_param_values())
-
-        # Special handling of deprecated 'initial' values argument
-        dim1_params['values'] = [] if dim1.values=='initial' else dim1.values
-        dim2_params['values'] = [] if dim2.values=='initial' else dim2.values
+        dim1_params = dict(dim1.param.get_param_values())
+        dim2_params = dict(dim2.param.get_param_values())
 
         if set(dim1_params.keys()) != set(dim2_params.keys()):
             raise cls.failureException("Dimension parameter sets mismatched: %s != %s"
                                        % (set(dim1_params.keys()), set(dim2_params.keys())))
 
         for k in dim1_params.keys():
-            if (dim1.params(k).__class__.__name__ == 'Callable'
-                and dim2.params(k).__class__.__name__ == 'Callable'):
+            if (dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
+                and dim2.param.objects('existing')[k].__class__.__name__ == 'Callable'):
                 continue
             try:  # This is needed as two lists are not compared by contents using ==
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
@@ -450,6 +447,14 @@ class Comparison(ComparisonInterface):
         cls.compare_annotation(el1, el2, msg=msg)
 
     @classmethod
+    def compare_vspan(cls, el1, el2, msg='VSpan'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_hspan(cls, el1, el2, msg='HSpan'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
     def compare_spline(cls, el1, el2, msg='Spline'):
         cls.compare_annotation(el1, el2, msg=msg)
 
@@ -508,9 +513,16 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dataset(cls, el1, el2, msg='Dataset'):
         cls.compare_dimensioned(el1, el2)
+        tabular = not (el1.interface.gridded and el2.interface.gridded)
+        dimension_data = [(d, el1.dimension_values(d, expanded=tabular),
+                           el2.dimension_values(d, expanded=tabular))
+                          for d in el1.kdims]
+        dimension_data += [(d, el1.dimension_values(d, flat=tabular),
+                            el2.dimension_values(d, flat=tabular))
+                            for d in el1.vdims]
         if el1.shape[0] != el2.shape[0]:
-            raise AssertionError("%s not of matching length." % msg)
-        dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
+            raise AssertionError("%s not of matching length, %d vs. %d."
+                                 % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
                 cls.failureException("%s %s columns have different type." % (msg, dim.pprint_label)
@@ -577,6 +589,18 @@ class Comparison(ComparisonInterface):
     def compare_boxwhisker(cls, el1, el2, msg='BoxWhisker'):
         cls.compare_dataset(el1, el2, msg)
 
+
+    #============#
+    # Geometries #
+    #============#
+
+    @classmethod
+    def compare_segments(cls, el1, el2, msg='Segments'):
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
+    def compare_boxes(cls, el1, el2, msg='Rectangles'):
+        cls.compare_dataset(el1, el2, msg)
 
     #=========#
     # Graphs  #
@@ -667,7 +691,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_dataframe(cls, df1, df2, msg='DFrame'):
-        from pandas.util.testing import assert_frame_equal
+        from pandas.testing import assert_frame_equal
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:

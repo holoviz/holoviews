@@ -3,7 +3,7 @@ import numpy as np
 
 from ..core import Dimension, Dataset, NdOverlay
 from ..core.operation import Operation
-from ..core.util import basestring, cartesian_product, isfinite
+from ..core.util import cartesian_product, isfinite
 from ..element import (Curve, Area, Image, Distribution, Bivariate,
                        Contours, Polygons)
 
@@ -53,8 +53,10 @@ class univariate_kde(Operation):
     n_samples = param.Integer(default=100, doc="""
         Number of samples to compute the KDE over.""")
 
-    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+    groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
+
+    _per_element = True
 
     def _process(self, element, key=None):
         if self.p.groupby:
@@ -78,7 +80,7 @@ class univariate_kde(Operation):
             params['label'] = element.label
             vdim = element.vdims[0]
             vdim_name = '{}_density'.format(selected_dim.name)
-            vdims = [vdim(vdim_name, label='Density') if vdim.name == 'Density' else vdim]
+            vdims = [vdim.clone(vdim_name, label='Density') if vdim.name == 'Density' else vdim]
         else:
             if self.p.dimension:
                 selected_dim = element.get_dimension(self.p.dimension)
@@ -165,6 +167,8 @@ class bivariate_kde(Operation):
     y_range  = param.NumericTuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
+
+    _per_element = True
 
     def _process(self, element, key=None):
         try:

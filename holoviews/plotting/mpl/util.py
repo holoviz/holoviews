@@ -1,20 +1,26 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import inspect
 import re
 import warnings
 
 import numpy as np
 import matplotlib
+
 from matplotlib import units as munits
 from matplotlib import ticker
-from matplotlib.colors import cnames
+from matplotlib.colors import Normalize, cnames
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from matplotlib.rcsetup import (
-    validate_capstyle, validate_fontsize, validate_fonttype, validate_hatch,
-    validate_joinstyle)
+    validate_fontsize, validate_fonttype, validate_hatch)
+
+try:  # starting Matplotlib 3.4.0
+    from matplotlib._enums import CapStyle as validate_capstyle
+    from matplotlib._enums import JoinStyle as validate_joinstyle
+except:  # before Matplotlib 3.4.0
+    from matplotlib.rcsetup import (
+    validate_capstyle, validate_joinstyle)
 
 try:
     from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
@@ -25,7 +31,8 @@ except:
     nc_axis_available = False
 
 from ...core.util import (
-    LooseVersion, _getargspec, basestring, cftime_types, is_number)
+    LooseVersion, arraylike_types, cftime_types, is_number
+)
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
@@ -36,7 +43,7 @@ def is_color(color):
     """
     Checks if supplied object is a valid color spec.
     """
-    if not isinstance(color, basestring):
+    if not isinstance(color, str):
         return False
     elif RGB_HEX_REGEX.match(color):
         return True
@@ -56,10 +63,31 @@ validators = {
     'joinstyle': validate_joinstyle,
     'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
                          or isinstance(x, Path) or
-                         (isinstance(x, basestring) and x.startswith('$')
+                         (isinstance(x, str) and x.startswith('$')
                           and x.endswith('$'))),
     's': lambda x: is_number(x) and (x >= 0)
 }
+
+def get_old_rcparams():
+    deprecated_rcparams = [
+        'text.latex.unicode',
+        'examples.directory',
+        'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
+        'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
+        'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
+        'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
+        'text.latex.preview', # deprecated in MPL 3.3.1
+        'animation.avconv_args', # deprecated in MPL 3.3.1
+        'animation.avconv_path', # deprecated in MPL 3.3.1
+        'animation.html_args', # deprecated in MPL 3.3.1
+        'keymap.all_axes', # deprecated in MPL 3.3.1
+        'savefig.jpeg_quality' # deprecated in MPL 3.3.1
+    ]
+    old_rcparams = {
+        k: v for k, v in matplotlib.rcParams.items()
+        if mpl_version < LooseVersion('3.0') or k not in deprecated_rcparams
+    }
+    return old_rcparams
 
 
 def get_validator(style):
@@ -89,7 +117,7 @@ def validate(style, value, vectorized=True):
     validator = get_validator(style)
     if validator is None:
         return None
-    if isinstance(value, (np.ndarray, list)) and vectorized:
+    if isinstance(value, arraylike_types+(list,)) and vectorized:
         return all(validator(v) for v in value)
     try:
         valid = validator(value)
@@ -142,14 +170,14 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        args = [arg for arg in _getargspec(formatter).args
+        args = [arg for arg in inspect.getfullargspec(formatter).args
                 if arg != 'self']
         wrapped = formatter
         if len(args) == 1:
             def wrapped(val, pos=None):
                 return formatter(val)
         return ticker.FuncFormatter(wrapped)
-    elif isinstance(formatter, basestring):
+    elif isinstance(formatter, str):
         if re.findall(r"\{(\w+)\}", formatter):
             return ticker.StrMethodFormatter(formatter)
         else:
@@ -371,7 +399,74 @@ class CFTimeConverter(NetCDFTimeConverter):
             value = CalendarDateTime(value.datetime, value.calendar)
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
-        return super(CFTimeConverter, cls).convert(value, unit, axis)
+        return super().convert(value, unit, axis)
+
+
+class EqHistNormalize(Normalize):
+
+    def __init__(self, vmin=None, vmax=None, clip=False, nbins=256**2, ncolors=256):
+        super().__init__(vmin, vmax, clip)
+        self._nbins = nbins
+        self._bin_edges = None
+        self._ncolors = ncolors
+        self._color_bins = np.linspace(0, 1, ncolors)
+
+    def binning(self, data, n=256):
+        low = data.min() if self.vmin is None else self.vmin
+        high = data.max() if self.vmax is None else self.vmax
+        nbins = self._nbins
+        eq_bin_edges = np.linspace(low, high, nbins+1)
+        hist, _ = np.histogram(data, eq_bin_edges)
+
+        eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
+        cdf = np.cumsum(hist)
+        cdf_max = cdf[-1]
+        norm_cdf = cdf/cdf_max
+
+        # Iteratively find as many finite bins as there are colors
+        finite_bins = n-1
+        binning = []
+        iterations = 0
+        guess = n*2
+        while ((finite_bins != n) and (iterations < 4) and (finite_bins != 0)):
+            ratio = guess/finite_bins
+            if (ratio > 1000):
+                #Abort if distribution is extremely skewed
+                break
+            guess = np.round(max(n*ratio, n))
+
+            # Interpolate
+            palette_edges = np.arange(0, guess)
+            palette_cdf = norm_cdf*(guess-1)
+            binning = np.interp(palette_edges, palette_cdf, eq_bin_centers)
+
+            # Evaluate binning
+            uniq_bins = np.unique(binning)
+            finite_bins = len(uniq_bins)-1
+            iterations += 1
+        if (finite_bins == 0):
+            binning = [low]+[high]*(n-1)
+        else:
+            binning = binning[-n:]
+            if (finite_bins != n):
+                warnings.warn("EqHistColorMapper warning: Histogram equalization did not converge.")
+        return binning
+
+    def __call__(self, data, clip=None):
+        return self.process_value(data)[0]
+
+    def process_value(self, data):
+        if isinstance(data, np.ndarray):
+            self._bin_edges = self.binning(data, self._ncolors)
+        isscalar = np.isscalar(data)
+        data = np.array([data]) if isscalar else data
+        interped = np.interp(data, self._bin_edges, self._color_bins)
+        return np.ma.array(interped), isscalar
+
+    def inverse(self, value):
+        if self._bin_edges is None:
+            raise ValueError("Not invertible until eq_hist has been computed")
+        return np.interp([value], self._color_bins, self._bin_edges)[0]
 
 
 for cft in cftime_types:

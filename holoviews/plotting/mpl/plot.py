@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from itertools import chain
 from contextlib import contextmanager
 
@@ -9,17 +7,18 @@ import matplotlib as mpl
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 from matplotlib import pyplot as plt
-from matplotlib import gridspec, animation
+from matplotlib import gridspec, animation, rcParams
+from matplotlib.font_manager import font_scalings
 
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix, Layout)
 from ...core.options import Store, SkipRendering
-from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_streams
+from ...core.util import int_to_roman, int_to_alpha, wrap_tuple_streams
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-                    GenericElementPlot)
+                    GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect, mpl_version
+from .util import compute_ratios, fix_aspect, get_old_rcparams
 
 
 @contextmanager
@@ -27,9 +26,7 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    deprecated = ['text.latex.unicode', 'examples.directory']
-    old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
-                    if mpl_version < '3.0' or k not in deprecated}
+    old_rcparams = get_old_rcparams()
     mpl.rcParams.clear()
     mpl.rcParams.update(dict(old_rcparams, **rcparams))
     try:
@@ -95,14 +92,6 @@ class MPLPlot(DimensionedPlot):
         plot object and the displayed object; other plotting handles
         can be accessed via plot.handles.""")
 
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
-
-    hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing a plot. The
-        hook is passed the plot object and the displayed element, and
-        other plotting handles can be accessed via plot.handles.""")
-
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
@@ -126,7 +115,7 @@ class MPLPlot(DimensionedPlot):
 
     def __init__(self, fig=None, axis=None, **params):
         self._create_fig = True
-        super(MPLPlot, self).__init__(**params)
+        super().__init__(**params)
         # List of handles to matplotlib objects for animation update
         self.fig_scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
@@ -174,6 +163,23 @@ class MPLPlot(DimensionedPlot):
             axis = fig.add_subplot(111, projection=self.projection)
             axis.set_aspect('auto')
         return fig, axis
+
+
+    def _get_fontsize_defaults(self):
+        base = rcParams['font.size']
+        sizes = {
+            "label": rcParams['axes.labelsize'],
+            "title": rcParams['axes.titlesize'],
+            "xticks": rcParams['xtick.labelsize'],
+            "yticks": rcParams['ytick.labelsize'],
+            "legend": rcParams['legend.fontsize'],
+        }
+        scaled = dict(sizes)
+        for k, v in sizes.items():
+            if isinstance(v, str):
+                scaled[k] = base * font_scalings[v]
+        scaled['ticks'] = scaled['xticks']
+        return scaled
 
 
     def _subplot_label(self, axis):
@@ -251,6 +257,10 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
     subplots to form a Layout.
     """
 
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes ranges should be shared across the layout, if
+        disabled switches axiswise normalization option on globally.""")
+
     def _link_dimensioned_streams(self):
         """
         Should perform any linking required to update titles when dimensioned
@@ -270,7 +280,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         title = self._format_title(key) if self.show_title else ''
         if 'title' in self.handles:
             self.handles['title'].set_text(title)
-        else:
+        elif 'axis' in self.handles and self.handles['axis'].figure is not None:
             title = self.handles['axis'].set_title(title, **self._fontsize('title'))
             self.handles['title'] = title
 
@@ -326,8 +336,8 @@ class GridPlot(CompositePlot):
                  layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout, layout_num=layout_num,
-                                       ranges=ranges, keys=keys, **params)
+        super().__init__(layout, layout_num=layout_num,
+                         ranges=ranges, keys=keys, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
         if axis is not None:
@@ -344,8 +354,6 @@ class GridPlot(CompositePlot):
             self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
                                                                              ranges, create_axes)
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -372,7 +380,7 @@ class GridPlot(CompositePlot):
 
     def _create_subplots(self, layout, axis, ranges, create_axes):
         norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = all(norm_opts['axiswise'])
+        axiswise = all(norm_opts.get('axiswise', []))
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
@@ -607,14 +615,9 @@ class GridPlot(CompositePlot):
 
 
 
-class AdjointLayoutPlot(MPLPlot):
+class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
     """
-    LayoutPlot allows placing up to three Views in a number of
-    predefined and fixed layouts, which are defined by the layout_dict
-    class attribute. This allows placing subviews next to a main plot
-    in either a 'top' or 'right' position.
-
-    Initially, a LayoutPlot computes an appropriate layout based for
+    Initially, a AdjointLayoutPlot computes an appropriate layout based for
     the number of Views in the AdjointLayout object it has been given, but
     when embedded in a NdLayout, it can recompute the layout to
     match the number of rows and columns as part of a larger grid.
@@ -634,8 +637,7 @@ class AdjointLayoutPlot(MPLPlot):
 
         # The supplied (axes, view) objects as indexed by position
         self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions)}
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -659,7 +661,6 @@ class AdjointLayoutPlot(MPLPlot):
 
         self.adjust_positions()
         self.drawn = True
-
 
     def adjust_positions(self, redraw=True):
         """
@@ -708,14 +709,12 @@ class AdjointLayoutPlot(MPLPlot):
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
 
-
     @mpl_rc_context
     def update_frame(self, key, ranges=None):
         for pos in self.view_positions:
             subplot = self.subplots.get(pos)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-
 
     def __len__(self):
         return max([1 if self.keys is None else len(self.keys), 1])
@@ -762,15 +761,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     v17_layout_format = True
 
     def __init__(self, layout, keys=None, **params):
-        super(LayoutPlot, self).__init__(layout=layout, keys=keys, **params)
+        super().__init__(layout=layout, keys=keys, **params)
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
-
 
     def _compute_gridspec(self, layout):
         """
@@ -804,7 +800,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             main = layout_view.main
             main = main.last if isinstance(main, HoloMap) else main
             main_options = self.lookup_options(main, 'plot').options if main else {}
-            if main and not isinstance(main_options.get('aspect', 1), basestring):
+            if main and not isinstance(main_options.get('aspect', 1), str):
                 main_aspect = np.nan if isinstance(main, Empty) else main_options.get('aspect', 1)
                 main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
             else:
@@ -835,7 +831,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             else:
                 height_ratios = [4]
 
-            if not isinstance(main_aspect, (basestring, type(None))):
+            if not isinstance(main_aspect, (str, type(None))):
                 width_ratios = [wratio * main_aspect for wratio in width_ratios]
                 height_ratios = [hratio * inv_aspect for hratio in height_ratios]
             layout_shape = (len(width_ratios), len(height_ratios))
@@ -979,7 +975,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
         return layout_subplots, layout_axes, collapsed_layout
 
-
     def grid_situate(self, current_idx, layout_type, subgrid_width):
         """
         Situate the current AdjointLayoutPlot in a LayoutPlot. The
@@ -1012,7 +1007,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                               bottom_idx, bottom_idx+1]
 
         return start, inds
-
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}, num=1, create=True):
         """
@@ -1049,7 +1043,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             override_opts = {}
             sublabel_opts = {}
             if pos == 'main':
-                own_params = self.get_param_values(onlychanged=True)
+                own_params = self.param.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
             elif pos == 'right':
@@ -1102,8 +1096,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
             and self.v17_layout_format):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-            extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
-                                         if artists is not None]))
+            extra_artists = list(
+                chain.from_iterable(artists for artists in self.traverse(traverse_fn)
+                                    if artists is not None)
+            )
             fix_aspect(fig, self.rows, self.cols,
                        title_obj, extra_artists,
                        vspace=self.vspace*self.fig_scale,

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 try:
     import itertools.izip as zip
 except ImportError:
@@ -14,6 +12,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
+from .util import finite_range
 
 
 class PandasInterface(Interface):
@@ -30,11 +29,12 @@ class PandasInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        element_params = eltype.params()
+        element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_series(data):
-            data = data.to_frame()
+            name = data.name or util.anonymous_dimension_label
+            data = data.to_frame(name=name)
         if util.is_dataframe(data):
             ncols = len(data.columns)
             index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
@@ -91,7 +91,7 @@ class PandasInterface(Interface):
             # Then use defined data type
             kdims = kdims if kdims else kdim_param.default
             vdims = vdims if vdims else vdim_param.default
-            columns = [dimension_name(d) for d in kdims+vdims]
+            columns = list(util.unique_iterator([dimension_name(d) for d in kdims+vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
@@ -121,7 +121,14 @@ class PandasInterface(Interface):
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
-                if not cls.expanded(data):
+                min_dims = (kdim_param.bounds[0] or 0) + (vdim_param.bounds[0] or 0)
+                if any(d.ndim > 1 for d in data):
+                    raise ValueError('PandasInterface cannot interpret multi-dimensional arrays.')
+                elif len(data) < min_dims:
+                    raise DataError('Data contains fewer columns than the %s element expects. Expected '
+                                    'at least %d columns but found only %d columns.' %
+                                    (eltype.__name__, min_dims, len(data)))
+                elif not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame(dict(zip(columns, data)), columns=columns)
             elif ((isinstance(data, dict) and any(c not in data for c in columns)) or
@@ -142,7 +149,8 @@ class PandasInterface(Interface):
     def validate(cls, dataset, vdims=True):
         dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
-        not_found = [d for d in dimensions if d not in dataset.data.columns]
+        cols = list(dataset.data.columns)
+        not_found = [d for d in dimensions if d not in cols]
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
@@ -151,19 +159,36 @@ class PandasInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
-                util.LooseVersion(pd.__version__) < '0.17.0'):
+                util.LooseVersion(pd.__version__) < util.LooseVersion('0.17.0')):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
-            column = column[~column.isin([None])]
+            try:
+                column = column[~column.isin([None])]
+            except:
+                pass
             if not len(column):
                 return np.NaN, np.NaN
             return column.iloc[0], column.iloc[-1]
         else:
-            return (column.min(), column.max())
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
+            cmin, cmax = finite_range(column, column.min(), column.max())
+            if column.dtype.kind == 'M' and getattr(column.dtype, 'tz', None):
+                return (cmin.to_pydatetime().replace(tzinfo=None),
+                        cmax.to_pydatetime().replace(tzinfo=None))
+            return cmin, cmax
+
+
+    @classmethod
+    def concat_fn(cls, dataframes, **kwargs):
+        if util.pandas_version >= util.LooseVersion('0.23.0'):
+            kwargs['sort'] = False
+        return pd.concat(dataframes, **kwargs)
 
 
     @classmethod
@@ -174,8 +199,7 @@ class PandasInterface(Interface):
             for d, k in zip(dimensions, key):
                 data[d.name] = k
             dataframes.append(data)
-        kwargs = dict(sort=False) if util.pandas_version >= '0.23.0' else {}
-        return pd.concat(dataframes, **kwargs)
+        return cls.concat_fn(dataframes)
 
 
     @classmethod
@@ -189,6 +213,9 @@ class PandasInterface(Interface):
             group_kwargs = dict(util.get_param_values(dataset),
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
+
+        # Propagate dataset
+        group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
@@ -245,6 +272,14 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = dataset.data.copy()
+        cols = [vd.name for vd in dataset.vdims]
+        masked.loc[mask, cols] = mask_value
+        return masked
+
+
+    @classmethod
     def redim(cls, dataset, dimensions):
         column_renames = {k: v.name for k, v in dimensions.items()}
         return dataset.data.rename(columns=column_renames)
@@ -256,7 +291,7 @@ class PandasInterface(Interface):
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(dataset.data, pd.DataFrame) or
-            util.LooseVersion(pd.__version__) < '0.17.0'):
+            util.LooseVersion(pd.__version__) < util.LooseVersion('0.17.0')):
             return dataset.data.sort(columns=cols, ascending=not reverse)
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 
@@ -266,32 +301,56 @@ class PandasInterface(Interface):
         df = dataset.data
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
+
         indexed = cls.indexed(dataset, selection)
-        df = df.iloc[selection_mask]
+        if isinstance(selection_mask, pd.Series):
+            df = df[selection_mask]
+        else:
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(
+            cls,
+            dataset,
+            dim,
+            expanded=True,
+            flat=True,
+            compute=True,
+            keep_index=False,
+    ):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
+        if keep_index:
+            return data
+        if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
+            dts = [dt.replace(tzinfo=None) for dt in data.dt.to_pydatetime()]
+            data = np.array(dts, dtype=data.dtype.base)
         if not expanded:
-            return data.unique()
-        return data.values
+            return pd.unique(data)
+        return data.values if hasattr(data, 'values') else data
 
 
     @classmethod
     def sample(cls, dataset, samples=[]):
         data = dataset.data
-        mask = False
+        mask = None
         for sample in samples:
-            sample_mask = True
+            sample_mask = None
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                sample_mask = np.logical_and(sample_mask, data.iloc[:, i]==v)
-            mask |= sample_mask
+                submask = data.iloc[:, i]==v
+                if sample_mask is None:
+                    sample_mask = submask
+                else:
+                    sample_mask &= submask
+            if mask is None:
+                mask = sample_mask
+            else:
+                mask |= sample_mask
         return data[mask]
 
 
@@ -302,6 +361,9 @@ class PandasInterface(Interface):
             data.insert(dim_pos, dimension.name, values)
         return data
 
+    @classmethod
+    def assign(cls, dataset, new_data):
+        return dataset.data.assign(**new_data)
 
     @classmethod
     def as_dframe(cls, dataset):

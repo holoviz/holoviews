@@ -1,7 +1,10 @@
 import weakref
+
 from collections import defaultdict
 
 import param
+
+from ..core.util import dimension_sanitizer
 
 
 class Link(param.Parameterized):
@@ -40,7 +43,7 @@ class Link(param.Parameterized):
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
         self._target = None if target is None else weakref.ref(target)
-        super(Link, self).__init__(**params)
+        super().__init__(**params)
         self.link()
 
     @classmethod
@@ -66,10 +69,10 @@ class Link(param.Parameterized):
         if self.source in self.registry:
             links = self.registry[self.source]
             params = {
-                k: v for k, v in self.get_param_values() if k != 'name'}
+                k: v for k, v in self.param.get_param_values() if k != 'name'}
             for link in links:
                 link_params = {
-                    k: v for k, v in link.get_param_values() if k != 'name'}
+                    k: v for k, v in link.param.get_param_values() if k != 'name'}
                 if (type(link) is type(self) and link.source is self.source
                     and link.target is self.target and params == link_params):
                     return
@@ -106,6 +109,39 @@ class DataLink(Link):
     DataLink defines a link in the data between two objects allowing
     them to be selected together. In order for a DataLink to be
     established the source and target data must be of the same length.
+    """
+
+    _requires_target = True
+
+
+class SelectionLink(Link):
+    """
+    Links the selection between two glyph renderers.
+    """
+
+    _requires_target = True
+
+
+class VertexTableLink(Link):
+    """
+    Defines a Link between a Path type and a Table that will
+    display the vertices of selected path.
+    """
+
+    vertex_columns = param.List(default=[])
+
+    _requires_target = True
+
+    def __init__(self, source, target, **params):
+        if 'vertex_columns' not in params:
+            dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
+            params['vertex_columns'] = dimensions
+        super().__init__(source, target, **params)
+
+
+class RectanglesTableLink(Link):
+    """
+    Links a Rectangles element to a Table.
     """
 
     _requires_target = True

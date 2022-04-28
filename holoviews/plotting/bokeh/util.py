@@ -1,23 +1,28 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import re
-import time
-import sys
 import calendar
 import datetime as dt
+import inspect
+import re
+import time
 
 from collections import defaultdict
 from contextlib import contextmanager
+from types import FunctionType
 
 import param
 import bokeh
 import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
-from bokeh.core.properties import value
+from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
-from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
+from bokeh.models import (
+    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis
+)
+from bokeh.models.formatters import (
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+)
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -27,16 +32,12 @@ try:
 except:
     built_in_themes = {}
 
-try:
-    from bkcharts import Chart
-except:
-    Chart = type(None) # Create stub for isinstance check
-
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
-    LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric)
+    LooseVersion, arraylike_types, callable_name, cftime_types,
+    cftime_to_timestamp, isnumeric, pd, unique_array
+)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -91,13 +92,21 @@ def convert_timestamp(timestamp):
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
+def prop_is_none(value):
+    """
+    Checks if property value is None.
+    """
+    return (value is None or
+            (isinstance(value, dict) and 'value' in value
+             and value['value'] is None))
+
+
 def decode_bytes(array):
     """
     Decodes an array, list or tuple of bytestrings to avoid python 3
     bokeh serialization errors
     """
-    if (sys.version_info.major == 2 or not len(array) or
-        (isinstance(array, np.ndarray) and array.dtype.kind != 'O')):
+    if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -157,7 +166,7 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
-    elif isinstance(plot, (Figure, Chart)):
+    elif isinstance(plot, Figure):
         if plot.plot_width:
             width = plot.plot_width
         else:
@@ -201,7 +210,10 @@ def compute_layout_properties(
     fixed_width = (explicit_width or frame_width)
     fixed_height = (explicit_height or frame_height)
     fixed_aspect = aspect or data_aspect
-    aspect = 1 if aspect == 'square' else aspect
+    if aspect == 'square':
+        aspect = 1
+    elif aspect == 'equal':
+        data_aspect = 1
 
     # Plot dimensions
     height = None if height is None else int(height*size_multiplier)
@@ -247,18 +259,30 @@ def compute_layout_properties(
                 else:
                     sizing_mode = 'stretch_both'
 
+
     if fixed_aspect:
+        if ((explicit_width and not frame_width) != (explicit_height and not frame_height)) and logger:
+            logger.warning('Due to internal constraints, when aspect and '
+                           'width/height is set, the bokeh backend uses '
+                           'those values as frame_width/frame_height instead. '
+                           'This ensures the aspect is respected, but means '
+                           'that the plot might be slightly larger than '
+                           'anticipated. Set the frame_width/frame_height '
+                           'explicitly to suppress this warning.')
+
         aspect_type = 'data_aspect' if data_aspect else 'aspect'
-        if fixed_width and fixed_height:
-            if not data_aspect:
+        if fixed_width and fixed_height and aspect:
+            if aspect == 'equal':
+                data_aspect = 1
+            elif not data_aspect:
                 aspect = None
-            if logger:
-                logger.warning(
-                    "%s value was ignored because absolute width and "
-                    "height values were provided. Either supply "
-                    "explicit frame_width and frame_height to achieve "
-                    "desired aspect OR supply a combination of width "
-                    "or height and an aspect value." % aspect_type)
+                if logger:
+                    logger.warning(
+                        "%s value was ignored because absolute width and "
+                        "height values were provided. Either supply "
+                        "explicit frame_width and frame_height to achieve "
+                        "desired aspect OR supply a combination of width "
+                        "or height and an aspect value." % aspect_type)
         elif fixed_width and responsive:
             height = None
             responsive = False
@@ -278,7 +302,6 @@ def compute_layout_properties(
         elif responsive == 'height':
             sizing_mode = 'scale_height'
 
-
     if responsive == 'width' and fixed_width:
         responsive = False
         if logger:
@@ -293,13 +316,13 @@ def compute_layout_properties(
     match_aspect = False
     aspect_scale = 1
     aspect_ratio = None
-    if (fixed_width and fixed_height):
-        pass
-    elif data_aspect or aspect == 'equal':
+    if data_aspect:
         match_aspect = True
-        if fixed_width or not fixed_height:
+        if (fixed_width and fixed_height):
+            frame_width, frame_height = frame_width or width, frame_height or height
+        elif fixed_width or not fixed_height:
             height = None
-        if fixed_height or not fixed_width:
+        elif fixed_height or not fixed_width:
             width = None
 
         aspect_scale = data_aspect
@@ -307,6 +330,8 @@ def compute_layout_properties(
             aspect_scale = 1
         elif responsive:
             aspect_ratio = aspect
+    elif (fixed_width and fixed_height):
+        pass
     elif isnumeric(aspect):
         if responsive:
             aspect_ratio = aspect
@@ -333,6 +358,20 @@ def compute_layout_properties(
              'plot_width'  : width})
 
 
+@contextmanager
+def silence_warnings(*warnings):
+    """
+    Context manager for silencing bokeh validation warnings.
+    """
+    for warning in warnings:
+        silence(warning)
+    try:
+        yield
+    finally:
+        for warning in warnings:
+            silence(warning, False)
+
+
 def empty_plot(width, height):
     """
     Creates an empty and invisible plot of the specified size.
@@ -340,14 +379,26 @@ def empty_plot(width, height):
     return Spacer(width=width, height=height)
 
 
+def remove_legend(plot, legend):
+    """
+    Removes a legend from a bokeh plot.
+    """
+    valid_places = ['left', 'right', 'above', 'below', 'center']
+    plot.legend[:] = [l for l in plot.legend if l is not legend]
+    for place in valid_places:
+        place = getattr(plot, place)
+        if legend in place:
+            place.remove(legend)
+
+
 def font_size_to_pixels(size):
     """
     Convert a fontsize to a pixel value
     """
-    if size is None or not isinstance(size, basestring):
+    if size is None or not isinstance(size, str):
         return
     conversions = {'em': 16, 'pt': 16/12.}
-    val = re.findall('\d+', size)
+    val = re.findall(r'\d+', size)
     unit = re.findall('[a-z]+', size)
     if (val and not unit) or (val and unit[0] == 'px'):
         return int(val[0])
@@ -363,13 +414,14 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
     reset = "range.setv({start: 0, end: range.factors.length})"
-    ranges.callback = CustomJS(args=dict(range=ranges), code=reset)
+    customjs = CustomJS(args=dict(range=ranges), code=reset)
+    ranges.js_on_change('start', customjs)
 
     axis_props = {}
     if label_size:
-        axis_props['axis_label_text_font_size'] = value(label_size)
+        axis_props['axis_label_text_font_size'] = label_size
     if tick_size:
-        axis_props['major_label_text_font_size'] = value(tick_size)
+        axis_props['major_label_text_font_size'] = tick_size
 
     tick_px = font_size_to_pixels(tick_size)
     if tick_px is None:
@@ -400,6 +452,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     p.grid.grid_line_alpha = 0
 
     if axis == 'x':
+        p.align = 'end'
         p.yaxis.visible = False
         axis = p.xaxis[0]
         if flip:
@@ -512,14 +565,14 @@ def filter_toolboxes(plots):
 
 def py2js_tickformatter(formatter, msg=''):
     """
-    Uses flexx.pyscript to compile a python tick formatter to JS code
+    Uses py2js to compile a python tick formatter to JS code
     """
     try:
-        from flexx.pyscript import py2js
+        from pscript import py2js
     except ImportError:
         param.main.param.warning(
-            msg+'Ensure Flexx is installed ("conda install -c bokeh flexx" '
-            'or "pip install flexx")')
+            msg+'Ensure pscript is installed ("conda install pscript" '
+            'or "pip install pscript")')
         return
     try:
         jscode = py2js(formatter, 'formatter')
@@ -529,11 +582,11 @@ def py2js_tickformatter(formatter, msg=''):
         param.main.param.warning(msg+error)
         return
 
-    args = _getargspec(formatter).args
+    args = inspect.getfullargspec(formatter).args
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
-    match = re.search('(formatter \= function \(.*\))', jsfunc )
+    match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
     return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
 
@@ -547,7 +600,7 @@ def get_tab_title(key, frame, overlay):
             title = []
             if frame.label:
                 title.append(frame.label)
-                if frame.group != frame.params('group').default:
+                if frame.group != frame.param.objects('existing')['group'].default:
                     title.append(frame.group)
             else:
                 title.append(frame.group)
@@ -559,6 +612,18 @@ def get_tab_title(key, frame, overlay):
                             zip(overlay.kdims, key)])
     return title
 
+
+def get_default(model, name, theme=None):
+    """
+    Looks up the default value for a bokeh model property.
+    """
+    overrides = None
+    if theme is not None:
+        if isinstance(theme, str):
+            theme = built_in_themes[theme]
+        overrides = theme._for_class(model)
+    descriptor = model.lookup(name)
+    return descriptor.property.themed_default(model, name, overrides)
 
 
 def filter_batched_data(data, mapping):
@@ -572,7 +637,7 @@ def filter_batched_data(data, mapping):
             if 'transform' in v:
                 continue
             v = v['field']
-        elif not isinstance(v, basestring):
+        elif not isinstance(v, str):
             continue
         values = data[v]
         try:
@@ -588,7 +653,8 @@ def cds_column_replace(source, data):
     needs to be updated. A replacement is required if untouched
     columns are not the same length as the columns being updated.
     """
-    current_length = [len(v) for v in source.data.values() if isinstance(v, (list, np.ndarray))]
+    current_length = [len(v) for v in source.data.values()
+                      if isinstance(v, (list,)+arraylike_types)]
     new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
@@ -599,13 +665,19 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    old_policy = document._hold
-    document._hold = policy
+    if bokeh_version >= LooseVersion('2.4'):
+        old_policy = document.callbacks.hold_value
+        document.callbacks._hold = policy
+    else:
+        old_policy = document._hold
+        document._hold = policy
     try:
         yield
     finally:
         if server and not old_policy:
             document.unhold()
+        elif bokeh_version >= LooseVersion('2.4'):
+            document.callbacks._hold = old_policy
         else:
             document._hold = old_policy
 
@@ -625,8 +697,16 @@ def recursive_model_update(model, props):
                 nested_props = v.properties_with_values(include_defaults=False)
                 recursive_model_update(nested_model, nested_props)
             else:
-                setattr(model, k, v)
+                try:
+                    setattr(model, k, v)
+                except Exception as e:
+                    if isinstance(v, dict) and 'value' in v:
+                        setattr(model, k, v['value'])
+                    else:
+                        raise e
         elif k in valid_properties and v != valid_properties[k]:
+            if isinstance(v, dict) and 'value' in v:
+                v = v['value']
             updates[k] = v
     model.update(**updates)
 
@@ -642,10 +722,12 @@ def update_shared_sources(f):
     def wrapper(self, *args, **kwargs):
         source_cols = self.handles.get('source_cols', {})
         shared_sources = self.handles.get('shared_sources', [])
+        doc = self.document
         for source in shared_sources:
             source.data.clear()
-            if self.document and self.document._held_events:
-                self.document._held_events = self.document._held_events[:-1]
+            if doc:
+                event_obj = doc.callbacks if bokeh_version >= LooseVersion('2.4') else doc
+                event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)
 
@@ -828,8 +910,7 @@ def multi_polygons_data(element):
     representation. Multi-polygons split by nans are expanded and the
     correct list of holes is assigned to each sub-polygon.
     """
-    paths = element.split(datatype='array', dimensions=element.kdims)
-    xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+    xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
     holes = element.holes()
     xsh, ysh = [], []
     for x, y, multi_hole in zip(xs, ys, holes):
@@ -866,3 +947,35 @@ def match_dim_specs(specs1, specs2):
             if s1 != s2:
                 return False
     return True
+
+
+def match_ax_type(ax, range_type):
+    """
+    Ensure the range_type matches the axis model being matched.
+    """
+    if isinstance(ax[0], CategoricalAxis):
+        return range_type == 'categorical'
+    elif isinstance(ax[0], DatetimeAxis):
+        return range_type == 'datetime'
+    else:
+        return range_type in ('auto', 'log')
+
+
+def wrap_formatter(formatter, axis):
+    """
+    Wraps formatting function or string in
+    appropriate bokeh formatter type.
+    """
+    if isinstance(formatter, TickFormatter):
+        pass
+    elif isinstance(formatter, FunctionType):
+        msg = ('%sformatter could not be '
+               'converted to tick formatter. ' % axis)
+        jsfunc = py2js_tickformatter(formatter, msg)
+        if jsfunc:
+            formatter = FuncTickFormatter(code=jsfunc)
+        else:
+            formatter = None
+    else:
+        formatter = PrintfTickFormatter(format=formatter)
+    return formatter

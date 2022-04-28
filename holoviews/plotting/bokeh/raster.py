@@ -6,38 +6,47 @@ import param
 from bokeh.models import DatetimeAxis, CustomJSHover
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
-from ...element import Raster, RGB, HSV
+from ...element import Raster
 from .element import ElementPlot, ColorbarPlot
-from .styles import line_properties, fill_properties, mpl_to_bokeh
-from .util import bokeh_version, colormesh
+from .selection import BokehOverlaySelectionDisplay
+from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
+from .util import colormesh
 
 
 class RasterPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['cmap', 'alpha']
+    style_opts = base_properties + ['cmap', 'alpha']
 
     _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image')
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
         tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]
-        if bokeh_version >= '0.12.16' and not isinstance(element, (RGB, HSV)):
-            vdims = element.vdims
-            tooltips.append((vdims[0].pprint_label, '@image'))
-            for vdim in vdims[1:]:
-                vname = dimension_sanitizer(vdim.name)
-                tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
+        vdims = element.vdims
+        tooltips.append((vdims[0].pprint_label, '@image'))
+        for vdim in vdims[1:]:
+            vname = dimension_sanitizer(vdim.name)
+            tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
-        super(RasterPlot, self)._postprocess_hover(renderer, source)
+        super()._postprocess_hover(renderer, source)
         hover = self.handles.get('hover')
         if not (hover and isinstance(hover.tooltips, list)):
             return
@@ -67,7 +76,7 @@ class RasterPlot(ColorbarPlot):
         hover.formatters = formatters
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -90,11 +99,11 @@ class RasterPlot(ColorbarPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
+        dh, dw = t-b, r-l
         if self.invert_xaxis:
             l, r = r, l
         if self.invert_yaxis:
             b, t = t, b
-        dh, dw = t-b, r-l
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
         for i, vdim in enumerate(element.vdims, 2):
@@ -121,11 +130,20 @@ class RasterPlot(ColorbarPlot):
 
 class RGBPlot(ElementPlot):
 
-    style_opts = ['alpha']
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
+    style_opts = ['alpha'] + base_properties
 
     _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image_rgba')
+
+    selection_display = BokehOverlaySelectionDisplay()
+
+    def _hover_opts(self, element):
+        xdim, ydim = element.kdims
+        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
+                ('RGBA', '@image')], {}
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
@@ -153,6 +171,8 @@ class RGBPlot(ElementPlot):
                 img = np.dstack([img, alpha])
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
+            if not img.flags['C_CONTIGUOUS']:
+                img = img.copy()
             img = img.view(dtype=np.uint32).reshape((N, M))
 
         # Ensure axis inversions are handled correctly
@@ -160,13 +180,14 @@ class RGBPlot(ElementPlot):
         if self.invert_axes:
             img = img.T
             l, b, r, t = b, l, t, r
+
+        dh, dw = t-b, r-l
         if self.invert_xaxis:
             l, r = r, l
             img = img[:, ::-1]
         if self.invert_yaxis:
             img = img[::-1]
             b, t = t, b
-        dh, dw = t-b, r-l
 
         if 0 in img.shape:
             img = np.zeros((1, 1), dtype=np.uint32)
@@ -175,22 +196,29 @@ class RGBPlot(ElementPlot):
         return (data, mapping, style)
 
 
-
 class HSVPlot(RGBPlot):
 
     def get_data(self, element, ranges, style):
-        return super(HSVPlot, self).get_data(element.rgb, ranges, style)
-
+        return super().get_data(element.rgb, ranges, style)
 
 
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+    selection_display = BokehOverlaySelectionDisplay()
+
+    style_opts = ['cmap'] + base_properties + line_properties + fill_properties
 
     _nonvectorized_styles = style_opts
 
@@ -203,7 +231,8 @@ class QuadMeshPlot(ColorbarPlot):
         cmapper = self._get_colormapper(z, element, ranges, style)
         cmapper = {'field': z.name, 'transform': cmapper}
 
-        irregular = element.interface.irregular(element, x)
+        irregular = (element.interface.irregular(element, x) or
+                     element.interface.irregular(element, y))
         if irregular:
             mapping = dict(xs='xs', ys='ys', fill_color=cmapper)
         else:
@@ -217,6 +246,7 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
+
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]

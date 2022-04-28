@@ -8,8 +8,10 @@ from ..core.boundingregion import BoundingBox
 from ..core.data import default_datatype
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
-from ..core.util import (is_nan, sort_topologically, one_to_one,
-                         cartesian_product, is_cyclic, datetime_types)
+from ..core.util import (
+    cartesian_product, datetime_types, is_cyclic, is_nan,
+    one_to_one, sort_topologically
+)
 
 try:
     import pandas as pd
@@ -123,7 +125,8 @@ class categorical_aggregate2d(Operation):
     datatype = param.List(['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
-    def _get_coords(self, obj):
+    @classmethod
+    def _get_coords(cls, obj):
         """
         Get the coordinates of the 2D aggregate, maintaining the correct
         sorting order.
@@ -131,6 +134,10 @@ class categorical_aggregate2d(Operation):
         xdim, ydim = obj.dimensions(label=True)[:2]
         xcoords = obj.dimension_values(xdim, False)
         ycoords = obj.dimension_values(ydim, False)
+        if xcoords.dtype.kind not in 'SUO':
+            xcoords = np.sort(xcoords)
+        if ycoords.dtype.kind not in 'SUO':
+            return xcoords, np.sort(ycoords)
 
         # Determine global orderings of y-values using topological sort
         grouped = obj.groupby(xdim, container_type=OrderedDict,
@@ -155,14 +162,14 @@ class categorical_aggregate2d(Operation):
         elif not is_cyclic(orderings):
             coords = list(itertools.chain(*sort_topologically(orderings)))
             ycoords = coords if len(coords) == len(ycoords) else np.sort(ycoords)
-        return xcoords, ycoords
+        return np.asarray(xcoords), np.asarray(ycoords)
 
-
-    def _aggregate_dataset(self, obj, xcoords, ycoords):
+    def _aggregate_dataset(self, obj):
         """
         Generates a gridded Dataset from a column-based dataset and
         lists of xcoords and ycoords
         """
+        xcoords, ycoords = self._get_coords(obj)
         dim_labels = obj.dimensions(label=True)
         vdims = obj.dimensions()[2:]
         xdim, ydim = dim_labels[:2]
@@ -195,6 +202,18 @@ class categorical_aggregate2d(Operation):
         return agg.clone(grid_data, kdims=[xdim, ydim], vdims=vdims,
                          datatype=self.p.datatype)
 
+    def _aggregate_dataset_pandas(self, obj):
+        index_cols = [d.name for d in obj.kdims]
+        df = obj.data.set_index(index_cols).groupby(index_cols, sort=False).first()
+        label = 'unique' if len(df) == len(obj) else 'non-unique'
+        levels = self._get_coords(obj)
+        index = pd.MultiIndex.from_product(levels, names=df.index.names)
+        reindexed = df.reindex(index)
+        data = tuple(levels)
+        shape = tuple(d.shape[0] for d in data)
+        for vdim in obj.vdims:
+            data += (reindexed[vdim.name].values.reshape(shape).T,)
+        return obj.clone(data, datatype=self.p.datatype, label=label)
 
     def _process(self, obj, key=None):
         """
@@ -210,10 +229,12 @@ class categorical_aggregate2d(Operation):
             raise ValueError("Must have at two dimensions to aggregate over"
                              "and one value dimension to aggregate on.")
 
-        dtype = 'dataframe' if pd else 'dictionary'
-        obj = Dataset(obj, datatype=[dtype])
-        xcoords, ycoords = self._get_coords(obj)
-        return self._aggregate_dataset(obj, xcoords, ycoords)
+        if pd:
+            obj = Dataset(obj, datatype=['dataframe'])
+            return self._aggregate_dataset_pandas(obj)
+        else:
+            obj = Dataset(obj, datatype=['dictionary'])
+            return self._aggregate_dataset(obj)
 
 
 def circular_layout(nodes):
@@ -273,6 +294,31 @@ def connect_edges_pd(graph):
         end = edge['dst_x'], edge['dst_y']
         edge_segments.append(np.array([start, end]))
     return edge_segments
+
+
+def connect_tri_edges_pd(trimesh):
+    """
+    Given a TriMesh element containing abstract edges compute edge
+    segments directly connecting the source and target nodes. This
+    operation depends on pandas and is a lot faster than the pure
+    NumPy equivalent.
+    """
+    edges = trimesh.dframe().copy()
+    edges.index.name = 'trimesh_edge_index'
+    edges = edges.reset_index()
+    nodes = trimesh.nodes.dframe().copy()
+    nodes.index.name = 'node_index'
+    v1, v2, v3 = trimesh.kdims
+    x, y, idx = trimesh.nodes.kdims[:3]
+
+    df = pd.merge(edges, nodes, left_on=[v1.name], right_on=[idx.name])
+    df = df.rename(columns={x.name: 'x0', y.name: 'y0'})
+    df = pd.merge(df, nodes, left_on=[v2.name], right_on=[idx.name])
+    df = df.rename(columns={x.name: 'x1', y.name: 'y1'})
+    df = pd.merge(df, nodes, left_on=[v3.name], right_on=[idx.name])
+    df = df.rename(columns={x.name: 'x2', y.name: 'y2'})
+    df = df.sort_values('trimesh_edge_index').drop(['trimesh_edge_index'], axis=1)
+    return df[['x0', 'y0', 'x1', 'y1', 'x2', 'y2']]
 
 
 def connect_edges(graph):

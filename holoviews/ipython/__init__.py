@@ -3,18 +3,18 @@ from unittest import SkipTest
 
 import param
 import holoviews
-from pyviz_comms import nb_mime_js
+
 from IPython import version_info
-from param import ipython as param_ext
+from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
+from param import ipython as param_ext
 
 from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
-from ..core.util import mimebundle_to_html
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
-from ..plotting.renderer import Renderer, MIME_TYPES
+from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import pprint_display, png_display, svg_display
@@ -37,7 +37,7 @@ class IPTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super(IPTestCase, self).setUp()
+        super().setUp()
         try:
             import IPython
             from IPython.display import HTML, SVG
@@ -84,7 +84,7 @@ class notebook_extension(extension):
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
     inline = param.Boolean(default=True, doc="""
-        Whether to inline JS and CSS resources. 
+        Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
 
     width = param.Number(default=None, bounds=(0, 100), doc="""
@@ -96,9 +96,14 @@ class notebook_extension(extension):
         format will be displayed).
 
         Although the 'html' format is supported across backends, other
-        formats supported by the current backend (e.g 'png' and 'svg'
+        formats supported by the current backend (e.g. 'png' and 'svg'
         using the matplotlib backend) may be used. This may be useful to
-        export figures to other formats such as PDF with nbconvert. """)
+        export figures to other formats such as PDF with nbconvert.""")
+
+    allow_jedi_completion = param.Boolean(default=False, doc="""
+       Whether to allow jedi tab-completion to be enabled in IPython.
+       Disabled by default because many HoloViews features rely on
+       tab-completion machinery not supported when using jedi.""")
 
     case_sensitive_completion = param.Boolean(default=False, doc="""
        Whether to monkey patch IPython to use the correct tab-completion
@@ -107,7 +112,8 @@ class notebook_extension(extension):
     _loaded = False
 
     def __call__(self, *args, **params):
-        super(notebook_extension, self).__call__(*args, **params)
+        comms = params.pop('comms', None)
+        super().__call__(*args, **params)
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
@@ -139,6 +145,8 @@ class notebook_extension(extension):
         if p.case_sensitive_completion:
             from IPython.core import completer
             completer.completions_sorting_key = self.completions_sorting_key
+        if not p.allow_jedi_completion and hasattr(IPCompleter, 'use_jedi'):
+            ip.run_line_magic('config', 'IPCompleter.use_jedi = False')
 
         resources = self._get_resources(args, params)
 
@@ -164,27 +172,34 @@ class notebook_extension(extension):
             css += '<style>div.container { width: %s%% }</style>' % p.width
         if p.css:
             css += '<style>%s</style>' % p.css
+
         if css:
             display(HTML(css))
 
         resources = list(resources)
         if len(resources) == 0: return
 
-        Renderer.load_nb()
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
+        from panel import config
+        if hasattr(config, 'comms') and comms:
+            config.comms = comms
+
+        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
+        if not same_cell_execution:
+            for r in [r for r in resources if r != 'holoviews']:
+                Store.renderers[r].load_nb(inline=p.inline)
+            Renderer.load_nb(inline=p.inline)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
         # Create a message for the logo (if shown)
-        self.load_hvjs(logo=p.logo,
-                       bokeh_logo=  p.logo and ('bokeh' in resources),
-                       mpl_logo=    p.logo and (('matplotlib' in resources)
-                                                or resources==['holoviews']),
-                       plotly_logo= p.logo and ('plotly' in resources),
-                       JS=('holoviews' in resources))
+        if not same_cell_execution and p.logo:
+            self.load_logo(logo=p.logo,
+                           bokeh_logo=  p.logo and ('bokeh' in resources),
+                           mpl_logo=    p.logo and (('matplotlib' in resources)
+                                                    or resources==['holoviews']),
+                           plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
@@ -232,59 +247,22 @@ class notebook_extension(extension):
         return resources
 
     @classmethod
-    def load_hvjs(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False,
-                  JS=True, message='HoloViewsJS successfully loaded.'):
+    def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
         """
-        Displays javascript and CSS to initialize HoloViews widgets.
+        Allow to display Holoviews' logo and the plotting extensions' logo.
         """
         import jinja2
-        # Evaluate load_notebook.html template with widgetjs code
-        if JS:
-            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[], script=True)
-        else:
-            widgetjs, widgetcss = '', ''
-
-        # Add classic notebook MIME renderer
-        widgetjs += nb_mime_js
 
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
-        html = template.render({'widgetcss':   widgetcss,
-                                'logo':        logo,
+        html = template.render({'logo':        logo,
                                 'bokeh_logo':  bokeh_logo,
                                 'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo,
-                                'message':     message})
+                                'plotly_logo': plotly_logo})
         publish_display_data(data={'text/html': html})
 
-        # Vanilla JS mime type is only consumed by classic notebook
-        # Custom mime type is only consumed by JupyterLab
-        if JS:
-            mimebundle = {
-                MIME_TYPES['js']           : widgetjs,
-                MIME_TYPES['jlab-hv-load'] : widgetjs
-            }
-            if os.environ.get('HV_DOC_HTML', False):
-                mimebundle = {'text/html': mimebundle_to_html(mimebundle)}
-            publish_display_data(data=mimebundle)
 
-
-    @param.parameterized.bothmethod
-    def tab_completion_docstring(self_or_cls):
-        """
-        Generates a docstring that can be used to enable tab-completion
-        of resources.
-        """
-        elements = ['%s=Boolean' %k for k in list(Store.renderers.keys())]
-        for name, p in self_or_cls.params().items():
-            param_type = p.__class__.__name__
-            elements.append("%s=%s" % (name, param_type))
-
-        return "params(%s)" % ', '.join(['holoviews=Boolean'] + elements)
-
-
-notebook_extension.__doc__ = notebook_extension.tab_completion_docstring()
 notebook_extension.add_delete_action(Renderer._delete_plot)
 
 

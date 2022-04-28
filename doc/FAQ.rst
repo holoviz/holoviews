@@ -38,7 +38,7 @@ To override a label for plotting it is also possible to use the
 .. code:: python
 
   curve = hv.Curve(df, 'x_col', 'y_col')
-  curve = curve.options(xlabel='X Label', ylabel='Label for Y')
+  curve = curve.opts(xlabel='X Label', ylabel='Label for Y')
 
 **Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
 
@@ -62,7 +62,7 @@ set the ``xlim`` and ``ylim`` plot options:
 
 .. code:: python
 
-  hv.Curve(df, 'x_col', 'y_col').options(xlim=(0, None), ylim=(0, 10))
+  hv.Curve(df, 'x_col', 'y_col').opts(xlim=(0, None), ylim=(0, 10))
 
 This approach allows you to customize objects easily as a final step, but note that the values won't be applied to the underlying data, and thus won't be inherited if this object is subsequently used in an operation or data selection command.
 
@@ -74,11 +74,17 @@ across all objects that are presented together, so that they can be
 compared directly. If you don't want objects that share a dimension to
 be normalized together in your layout, you can change the ``axiswise``
 normalization option to True, making each object be normalized
-independently:
+independently, e.g. for a layout of `Curve` objects use:
 
 .. code:: python
 
-    your_layout.options(axiswise=True)
+    your_layout.opts(opts.Curve(axiswise=True))
+
+Alternatively you may also set `shared_axes=False` on the Layout itself:
+
+.. code:: python
+
+    your_layout.opts(shared_axes=False)
 
 Similarly, if you have a HoloMap composed of multiple frames in an
 animation or controlled with widgets, you can make each frame be
@@ -86,7 +92,7 @@ normalized independently by changing ``framewise`` to True:
 
 .. code:: python
 
-    your_holomap.options(framewise=True)
+    your_holomap.opts(framewise=True)
 
 
 **Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for axis normalization across frames?**
@@ -112,10 +118,10 @@ determine the appropriate axis range yourself and set that, e.g. with
 .. code:: python
 
   # for matplotlib:
-  hv_obj = hv_obj.options(fig_size=500)
+  hv_obj = hv_obj.opts(fig_size=500)
 
   # for bokeh:
-  hv_obj = hv_obj.options(width=1000, height=500)
+  hv_obj = hv_obj.opts(width=1000, height=500)
 
 
 **Q: How do I get a legend on my overlay figure?**
@@ -178,7 +184,7 @@ plotted, instead consider that it is possible to write so called ``hooks``:
 	# artist, axis, legend and in bokeh x_range, y_range, glyph, cds etc.
 	plot.handles
 
-  hv.Curve(df, 'x_col', 'y_col').options(hooks=[hook])
+  hv.Curve(df, 'x_col', 'y_col').opts(hooks=[hook])
 
 These hooks can modify the backend specific representation, e.g. the
 matplotlib figure, before it is displayed, allowing arbitrary customizations to be
@@ -223,7 +229,7 @@ for that HoloViews object:
       b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
 
   h = hv.Curve([1,2,7], 'x_col', 'y_col')
-  h = h.options(hooks=[update_axis])
+  h = h.opts(hooks=[update_axis])
   h
 
 Here, you've wrapped your Bokeh-API calls into a function, then
@@ -354,7 +360,7 @@ they don't get applied until the object is returned
 (during IPython's "display hooks" processing). So to make sure that
 options get applied, (a) return the object from a cell, and then (b)
 access it (e.g. for exporting) after the object has been returned.
-To avoid confusion, you may prefer to use .options() directly on the
+To avoid confusion, you may prefer to use .opts() directly on the
 object to ensure that the options have been applied before exporting.
 Example code below:
 
@@ -445,7 +451,7 @@ element:
   hv.extension('matplotlib')
   Store.add_style_opts(hv.Image, ['filternorm'], backend='matplotlib')
 
-Now you can freely use ``'filternorm'`` in ``.options()`` and in the
+Now you can freely use ``'filternorm'`` in ``.opts()`` and in the
 ``%opts`` line/cell magic, including tab-completion!
 
 

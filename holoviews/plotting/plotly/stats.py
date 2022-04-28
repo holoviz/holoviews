@@ -1,7 +1,6 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
+from .selection import PlotlyOverlaySelectionDisplay
 from .chart import ChartPlot
 from .element import ElementPlot, ColorbarPlot
 
@@ -9,21 +8,48 @@ from .element import ElementPlot, ColorbarPlot
 class BivariatePlot(ChartPlot, ColorbarPlot):
 
     filled = param.Boolean(default=False)
-    
+
     ncontours = param.Integer(default=None)
 
-    trace_kwargs = {'type': 'histogram2dcontour'}
-
-    style_opts = ['cmap', 'showlabels', 'labelfont', 'labelformat', 'showlines']
+    style_opts = ['visible', 'cmap', 'showlabels', 'labelfont', 'labelformat', 'showlines']
 
     _style_key = 'contours'
 
-    def graph_options(self, element, ranges, style):
-        opts = super(BivariatePlot, self).graph_options(element, ranges, style)
+    selection_display = PlotlyOverlaySelectionDisplay()
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'histogram2dcontour'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super().graph_options(element, ranges, style, **kwargs)
+        copts = self.get_color_opts(element.vdims[0], element, ranges, style)
+
         if self.ncontours:
             opts['autocontour'] = False
             opts['ncontours'] = self.ncontours
-        opts['contours'] = {'coloring': 'fill' if self.filled else 'lines'}
+
+        # Make line width a little wider (default is less than 1)
+        opts['line'] = {'width': 1}
+
+        # Configure contours
+        opts['contours'] = {
+            'coloring': 'fill' if self.filled else 'lines',
+            'showlines': style.get('showlines', True)
+        }
+
+        # Add colorscale
+        opts['colorscale'] = copts['colorscale']
+
+        # Add colorbar
+        if 'colorbar' in copts:
+            opts['colorbar'] = copts['colorbar']
+
+        opts['showscale'] = copts.get('showscale', False)
+
+        # Add visible
+        opts['visible'] = style.get('visible', True)
+
         return opts
 
 
@@ -37,12 +63,16 @@ class DistributionPlot(ElementPlot):
 
     filled = param.Boolean(default=True, doc="""
         Whether the bivariate contours should be filled.""")
-    
-    style_opts = ['color', 'dash', 'line_width']
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     _style_key = 'line'
+
+    selection_display = PlotlyOverlaySelectionDisplay()
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines'}
 
 
 class MultiDistributionPlot(ElementPlot):
@@ -50,7 +80,7 @@ class MultiDistributionPlot(ElementPlot):
     def _get_axis_dims(self, element):
         return element.kdims, element.vdims[0]
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         if element.kdims:
             groups = element.groupby(element.kdims).items()
         else:
@@ -67,7 +97,7 @@ class MultiDistributionPlot(ElementPlot):
         return plots
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(MultiDistributionPlot, self).get_extents(
+        return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
@@ -92,14 +122,18 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
 
-    style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
+    style_opts = ['visible', 'color', 'alpha', 'outliercolor', 'marker', 'size']
 
-    trace_kwargs = {'type': 'box'}
-    
     _style_key = 'marker'
 
-    def graph_options(self, element, ranges, style):
-        options = super(BoxWhiskerPlot, self).graph_options(element, ranges, style)
+    selection_display = PlotlyOverlaySelectionDisplay()
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'box'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        options = super().graph_options(element, ranges, style, **kwargs)
         options['boxmean'] = self.mean
         options['jitter'] = self.jitter
         return options
@@ -107,7 +141,6 @@ class BoxWhiskerPlot(MultiDistributionPlot):
 
 class ViolinPlot(MultiDistributionPlot):
 
-    
     box = param.Boolean(default=True, doc="""
         Whether to draw a boxplot inside the violin""")
 
@@ -116,14 +149,18 @@ class ViolinPlot(MultiDistributionPlot):
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
 
-    style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
+    style_opts = ['visible', 'color', 'alpha', 'outliercolor', 'marker', 'size']
 
-    trace_kwargs = {'type': 'violin'}
-    
     _style_key = 'marker'
 
-    def graph_options(self, element, ranges, style):
-        options = super(ViolinPlot, self).graph_options(element, ranges, style)
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'violin'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        options = super().graph_options(
+            element, ranges, style, **kwargs
+        )
         options['meanline'] = {'visible': self.meanline}
         options['box'] = {'visible': self.box}
         return options

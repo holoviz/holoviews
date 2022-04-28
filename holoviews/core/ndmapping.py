@@ -12,8 +12,10 @@ import param
 
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
-from .util import (config, unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
+from .util import (
+    unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
+    process_ellipses, get_ndmapping_label
+)
 
 class item_check(object):
     """
@@ -96,11 +98,10 @@ class MultiDimensionalMapping(Dimensioned):
 
     def __init__(self, initial_items=None, kdims=None, **params):
         if isinstance(initial_items, MultiDimensionalMapping):
-            params = dict(util.get_param_values(initial_items),
-                          **dict({'sort': self.sort}, **params))
+            params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
-        super(MultiDimensionalMapping, self).__init__(OrderedDict(), **dict(params))
+        super().__init__(OrderedDict(), **dict(params))
         if type(initial_items) is dict and not self.sort:
             raise ValueError('If sort=False the data must define a fixed '
                              'ordering, please supply a list of items or '
@@ -267,8 +268,7 @@ class MultiDimensionalMapping(Dimensioned):
             Cloned object
         """
         with item_check(not shared_data and self._check_items):
-            return super(MultiDimensionalMapping, self).clone(data, shared_data,
-                                                              *args, **overrides)
+            return super().clone(data, shared_data, *args, **overrides)
 
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
@@ -298,8 +298,9 @@ class MultiDimensionalMapping(Dimensioned):
         group_type = group_type if group_type else type(self)
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         with item_check(False):
+            sort = kwargs.pop('sort', self.sort)
             return util.ndmapping_groupby(self, dimensions, container_type,
-                                          group_type, sort=True, **kwargs)
+                                          group_type, sort=sort, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -337,7 +338,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
+        if isinstance(dim_val, str) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
@@ -486,7 +487,7 @@ class MultiDimensionalMapping(Dimensioned):
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
                 info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
-        print(info_str)
+        return info_str
 
 
     def update(self, other):
@@ -579,48 +580,6 @@ class MultiDimensionalMapping(Dimensioned):
     def __len__(self):
         return len(self.data)
 
-    ######################
-    #    Deprecations    #
-    ######################
-
-    def table(self, datatype=None, **kwargs):
-        """
-        Deprecated method to convert an MultiDimensionalMapping of
-        Elements to a Table.
-        """
-        if config.future_deprecations:
-            self.param.warning("The table method is deprecated and should no "
-                               "longer be used. If using a HoloMap use "
-                               "HoloMap.collapse() instead to return a Dataset.")
-
-        from .data.interface import Interface
-        from ..element.tabular import Table
-        new_data = [(key, value.table(datatype=datatype, **kwargs))
-                    for key, value in self.data.items()]
-        tables = self.clone(new_data)
-        return Interface.concatenate(tables, new_type=Table)
-
-
-    def dframe(self):
-        """
-        Deprecated method to convert a MultiDimensionalMapping to
-        a pandas DataFrame. Conversion to a dataframe now only
-        supported by specific subclasses such as UniformNdMapping
-        types.
-        """
-        self.param.warning("The MultiDimensionalMapping.dframe method is "
-                           "deprecated and should no longer be used. "
-                           "Use a more specific subclass which does support "
-                           "the dframe method instead, e.g. a HoloMap.")
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimensions('key', True) + [self.group]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
-
-
 
 class NdMapping(MultiDimensionalMapping):
     """
@@ -647,9 +606,9 @@ class NdMapping(MultiDimensionalMapping):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items())
             return self.clone([item for c, item in selection if c])
-        elif indexslice == () and not self.kdims:
+        elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
             return self.data[()]
-        elif indexslice in [Ellipsis, ()]:
+        elif (isinstance(indexslice, tuple) and indexslice == ()) or indexslice is Ellipsis:
             return self
         elif any(Ellipsis is sl for sl in wrap_tuple(indexslice)):
             indexslice = process_ellipses(self, indexslice)
@@ -809,7 +768,7 @@ class UniformNdMapping(NdMapping):
         self._type = None
         self._group_check, self.group = None, group
         self._label_check, self.label = None, label
-        super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
+        super().__init__(initial_items, kdims=kdims, **params)
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
@@ -828,7 +787,7 @@ class UniformNdMapping(NdMapping):
         Returns:
             Cloned object
         """
-        settings = dict(self.get_param_values())
+        settings = dict(self.param.get_param_values())
         if settings.get('group', None) != self._group:
             settings.pop('group')
         if settings.get('label', None) != self._label:
@@ -837,7 +796,7 @@ class UniformNdMapping(NdMapping):
             clone_type = self.__class__
         else:
             clone_type = new_type
-            new_params = new_type.params()
+            new_params = new_type.param.objects()
             settings = {k: v for k, v in settings.items()
                       if k in new_params}
         settings = dict(settings, **overrides)
@@ -853,6 +812,60 @@ class UniformNdMapping(NdMapping):
         with item_check(not shared_data and self._check_items):
             return clone_type(data, *args, **{k:v for k,v in settings.items()
                                               if k not in pos_args})
+
+
+    def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
+        """Concatenates and aggregates along supplied dimensions
+
+        Useful to collapse stacks of objects into a single object,
+        e.g. to average a stack of Images or Curves.
+
+        Args:
+            dimensions: Dimension(s) to collapse
+                Defaults to all key dimensions
+            function: Aggregation function to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **kwargs: Keyword arguments passed to the aggregation function
+
+        Returns:
+            Returns the collapsed element or HoloMap of collapsed
+            elements
+        """
+        from .data import concat
+        if not dimensions:
+            dimensions = self.kdims
+        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if self.ndims > 1 and len(dimensions) != self.ndims:
+            groups = self.groupby([dim for dim in self.kdims
+                                   if dim not in dimensions])
+
+        elif all(d in self.kdims for d in dimensions):
+            groups = UniformNdMapping([(0, self)], ['tmp'])
+        else:
+            raise KeyError("Supplied dimensions not found.")
+
+        collapsed = groups.clone(shared_data=False)
+        for key, group in groups.items():
+            last = group.values()[-1]
+            if isinstance(last, UniformNdMapping):
+                group_data = OrderedDict([
+                    (k, v.collapse()) for k, v in group.items()
+                ])
+                group = group.clone(group_data)
+            if hasattr(group.values()[-1], 'interface'):
+                group_data = concat(group)
+                if function:
+                    agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
+                    group_data = group.type(agg)
+            else:
+                group_data = [el.data for el in group]
+                args = (group_data, function, group.last.kdims)
+                data = group.type.collapse_data(*args, **kwargs)
+                group_data = group.last.clone(data)
+            collapsed[key] = group_data
+        return collapsed if self.ndims-len(dimensions) else collapsed.last
 
 
     def dframe(self, dimensions=None, multi_index=False):
@@ -962,7 +975,7 @@ class UniformNdMapping(NdMapping):
         elif self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
-        super(UniformNdMapping, self)._item_check(dim_vals, data)
+        super()._item_check(dim_vals, data)
 
 
     def __mul__(self, other, reverse=False):
@@ -991,7 +1004,10 @@ class UniformNdMapping(NdMapping):
 
         overlayed_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]
-        return self.clone(overlayed_items)
+        try:
+            return self.clone(overlayed_items)
+        except NotImplementedError:
+            return NotImplemented
 
 
     def __rmul__(self, other):

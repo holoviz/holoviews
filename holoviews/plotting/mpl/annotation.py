@@ -1,15 +1,46 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 import matplotlib
 
 from matplotlib import patches as patches
+from matplotlib.lines import Line2D
 
-from ...core.util import match_spec, basestring
+from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
+
+
+class ABLine2D(Line2D):
+
+    """
+    Draw a line based on its slope and y-intercept. Additional arguments are
+    passed to the <matplotlib.lines.Line2D> constructor.
+    """
+
+    def __init__(self, slope, intercept, *args, **kwargs):
+        ax = kwargs['axes']
+
+        # init the line, add it to the axes
+        super().__init__([], [], *args, **kwargs)
+        self._slope = slope
+        self._intercept = intercept
+        ax.add_line(self)
+
+        # cache the renderer, draw the line for the first time
+        ax.figure.canvas.draw()
+        self._update_lim(None)
+
+        # connect to axis callbacks
+        self.axes.callbacks.connect('xlim_changed', self._update_lim)
+        self.axes.callbacks.connect('ylim_changed', self._update_lim)
+
+    def _update_lim(self, event):
+        """ called whenever axis x/y limits change """
+        x = np.array(self.axes.get_xbound())
+        y = (self._slope * x) + self._intercept
+        self.set_data(x, y)
+        self.axes.draw_artist(self)
 
 
 class AnnotationPlot(ElementPlot):
@@ -22,7 +53,7 @@ class AnnotationPlot(ElementPlot):
 
     def __init__(self, annotation, **params):
         self._annotation = annotation
-        super(AnnotationPlot, self).__init__(annotation, **params)
+        super().__init__(annotation, **params)
         self.handles['annotations'] = []
 
     @mpl_rc_context
@@ -59,7 +90,6 @@ class VLinePlot(AnnotationPlot):
             return [axis.axvline(position, **opts)]
 
 
-
 class HLinePlot(AnnotationPlot):
     "Draw a horizontal line on the axis"
 
@@ -71,6 +101,50 @@ class HLinePlot(AnnotationPlot):
             return [axis.axvline(position, **opts)]
         else:
             return [axis.axhline(position, **opts)]
+
+
+class VSpanPlot(AnnotationPlot):
+    "Draw a vertical span on the axis"
+
+    style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
+                  'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, positions, opts):
+        "Draw a vertical span on the axis"
+        if self.invert_axes:
+            return [axis.axhspan(*positions, **opts)]
+        else:
+            return [axis.axvspan(*positions, **opts)]
+
+
+class HSpanPlot(AnnotationPlot):
+    "Draw a horizontal span on the axis"
+
+    style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
+                  'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, positions, opts):
+        "Draw a horizontal span on the axis"
+        if self.invert_axes:
+            return [axis.axvspan(*positions, **opts)]
+        else:
+            return [axis.axhspan(*positions, **opts)]
+
+
+class SlopePlot(AnnotationPlot):
+
+    style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, position, opts):
+        "Draw a horizontal line on the axis"
+        gradient, intercept = position
+        if self.invert_axes:
+            if gradient == 0:
+                gradient = np.inf, np.inf
+            else:
+                gradient, intercept = 1/gradient, -(intercept/gradient)
+        artist = ABLine2D(*position, axes=axis, **opts)
+        return [artist]
 
 
 class TextPlot(AnnotationPlot):
@@ -91,7 +165,7 @@ class TextPlot(AnnotationPlot):
 
 class LabelsPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -185,6 +259,9 @@ class ArrowPlot(AnnotationPlot):
             xytext = (0, points if direction=='v' else -points)
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
+        if 'fontsize' in textopts:
+            self.param.warning('Arrow fontsize style option is deprecated, '
+                               'use textsize option instead.')
         if 'textsize' in textopts:
             textopts['fontsize'] = textopts.pop('textsize')
         return [axis.annotate(text, xy=(x, y), textcoords='offset points',

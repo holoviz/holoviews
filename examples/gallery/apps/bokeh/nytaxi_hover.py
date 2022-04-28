@@ -7,8 +7,11 @@ you can obtain by downloading the file from AWS:
 
   https://s3.amazonaws.com/datashader-data/nyc_taxi_wide.parq
 
-Once this parquet is placed in a data/ subfolder, you can run this app
-with:
+Place this parquet in a data/ subfolder and install the python dependencies, e.g.
+
+  conda install datashader fastparquet python-snappy
+
+You can now run this app with:
 
   bokeh serve --show nytaxi_hover.py
 
@@ -20,14 +23,15 @@ import dask.dataframe as dd
 from holoviews import opts
 from holoviews.operation.datashader import aggregate
 
+hv.extension('bokeh')
 renderer = hv.renderer('bokeh')
 
 # Set plot and style options
 opts.defaults(
     opts.Curve(xaxis=None, yaxis=None, show_grid=False, show_frame=False,
                color='orangered', framewise=True, width=100),
-    opts.Image(width=800, height=400, shared_axes=False, logz=True,
-               xaxis=None, yaxis=None, axiswise=True),
+    opts.Image(width=800, height=400, shared_axes=False, logz=True, colorbar=True,
+               xaxis=None, yaxis=None, axiswise=True, bgcolor='black'),
     opts.HLine(color='white', line_width=1),
     opts.Layout(shared_axes=False),
     opts.VLine(color='white', line_width=1))

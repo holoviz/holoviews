@@ -4,7 +4,7 @@ import pandas as pd
 
 from ..core import Operation, Element
 from ..core.data import PandasInterface
-from ..core.util import pandas_version
+from ..core.util import pandas_version, LooseVersion
 from ..element import Scatter
 
 
@@ -17,7 +17,7 @@ class RollingBase(param.Parameterized):
         Whether to set the x-coordinate at the center or right edge
         of the window.""")
 
-    min_periods = param.Integer(default=None, doc="""
+    min_periods = param.Integer(default=None, allow_None=True, doc="""
        Minimum number of observations in window required to have a
        value (otherwise result is NaN).""")
 
@@ -35,7 +35,7 @@ class rolling(Operation,RollingBase):
     Applies a function over a rolling window.
     """
 
-    window_type = param.ObjectSelector(default=None,
+    window_type = param.ObjectSelector(default=None, allow_None=True,
         objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
                  'parzen', 'bohman', 'blackmanharris', 'nuttall',
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
@@ -50,7 +50,7 @@ class rolling(Operation,RollingBase):
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
                                         **self._roll_kwargs())
         if self.p.window_type is None:
-            kwargs = {'raw': True} if pandas_version >= '0.23.0' else {}
+            kwargs = {'raw': True} if pandas_version >= LooseVersion('0.23.0') else {}
             rolled = df.apply(self.p.function, **kwargs)
         else:
             if self.p.function is np.mean:
@@ -72,7 +72,7 @@ class resample(Operation):
     """
 
     closed = param.ObjectSelector(default=None, objects=['left', 'right'],
-        doc="Which side of bin interval is closed")
+        doc="Which side of bin interval is closed", allow_None=True)
 
     function = param.Callable(default=np.mean, doc="""
         Function for computing new values out of existing ones.""")

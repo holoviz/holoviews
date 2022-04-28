@@ -3,6 +3,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, Dataset, Element2D
+from .selection import Selection2DExpr, SelectionGeomExpr
 
 
 class Geometry(Dataset, Element2D):
@@ -26,7 +27,7 @@ class Geometry(Dataset, Element2D):
     __abstract = True
 
 
-class Points(Geometry):
+class Points(Selection2DExpr, Geometry):
     """
     Points represents a set of coordinates in 2D space, which may
     optionally be associated with any number of value dimensions.
@@ -54,9 +55,9 @@ class Sticks(Geometry):
                                 Dimension('Magnitude')], bounds=(1, None))
 
 
-class VectorField(Geometry):
+class VectorField(Selection2DExpr, Geometry):
     """
-    A VectorField represents a set of vectors in 2D spac with an
+    A VectorField represents a set of vectors in 2D space with an
     associated angle, as well as an optional magnitude and any number
     of other value dimensions. The angles are assumed to be defined in
     radians and by default the magnitude is assumed to be normalized
@@ -67,3 +68,32 @@ class VectorField(Geometry):
 
     vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
                                 Dimension('Magnitude')], bounds=(1, None))
+
+
+class Segments(SelectionGeomExpr, Geometry):
+    """
+    Segments represent a collection of lines in 2D space.
+    """
+    group = param.String(default='Segments', constant=True)
+
+    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
+                                Dimension('x1'), Dimension('y1')],
+                       bounds=(4, 4), constant=True, doc="""
+        Segments represent lines given by x- and y-
+        coordinates in 2D space.""")
+
+
+class Rectangles(SelectionGeomExpr, Geometry):
+    """
+    Rectangles represent a collection of axis-aligned rectangles in 2D space.
+    """
+
+    group = param.String(default='Rectangles', constant=True)
+
+    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
+                                Dimension('x1'), Dimension('y1')],
+                       bounds=(4, 4), constant=True, doc="""
+        The key dimensions of the Rectangles element represent the
+        bottom-left (x0, y0) and top right (x1, y1) coordinates
+        of each box.""")
+

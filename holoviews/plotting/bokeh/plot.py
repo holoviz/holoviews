@@ -1,6 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import json
 from itertools import groupby
 from collections import defaultdict
 
@@ -8,31 +5,37 @@ import numpy as np
 import param
 
 from bokeh.layouts import gridplot
-from bokeh.models import (ColumnDataSource, Column, Row, Div)
+from bokeh.models import (
+    ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
+)
 from bokeh.models.widgets import Panel, Tabs
 
+from ...selection import NoOpSelectionDisplay
 from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
-    GridSpace, HoloMap, Element, DynamicMap
+    GridSpace, HoloMap, Element
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    basestring, cftime_to_timestamp, cftime_types, get_method_owner,
-    unique_iterator, wrap_tuple, wrap_tuple_streams, _STANDARD_CALENDARS)
-from ...streams import Stream
+    cftime_to_timestamp, cftime_types, get_method_owner,
+    is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
+    _STANDARD_CALENDARS
+)
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot
+    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot,
+    CallbackPlot
 )
 from ..util import attach_streams, displayable, collate
-from .callbacks import LinkCallback
+from .links import LinkCallback
 from .util import (
-    TOOL_TYPES, filter_toolboxes, make_axis, update_shared_sources,
-    empty_plot, decode_bytes, theme_attr_json, cds_column_replace)
+    filter_toolboxes, make_axis, update_shared_sources, empty_plot,
+    decode_bytes, theme_attr_json, cds_column_replace, get_default
+)
 
 
-class BokehPlot(DimensionedPlot):
+class BokehPlot(DimensionedPlot, CallbackPlot):
     """
     Plotting baseclass for the Bokeh backends, implementing the basic
     plotting interface for Bokeh based plots.
@@ -77,49 +80,11 @@ class BokehPlot(DimensionedPlot):
 
     backend = 'bokeh'
 
-    @property
-    def document(self):
-        return self._document
+    selection_display = NoOpSelectionDisplay()
 
     @property
     def id(self):
         return self.root.ref['id'] if self.root else None
-
-    @property
-    def root(self):
-        if self._root:
-            return self._root
-        elif 'plot' in self.handles and self.top_level:
-            return self.state
-        else:
-            return None
-
-    @document.setter
-    def document(self, doc):
-        if (doc and hasattr(doc, 'on_session_destroyed') and
-            self.root is self.handles.get('plot') and not isinstance(self, AdjointLayoutPlot)):
-            doc.on_session_destroyed(self._session_destroy)
-            if self._document:
-                if isinstance(self._document._session_destroyed_callbacks, set):
-                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
-                else:
-                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
-
-        self._document = doc
-        if self.subplots:
-            for plot in self.subplots.values():
-                if plot is not None:
-                    plot.document = doc
-
-
-    def _session_destroy(self, session_context):
-        self.cleanup()
-
-    def __init__(self, *args, **params):
-        root = params.pop('root', None)
-        super(BokehPlot, self).__init__(*args, **params)
-        self._document = None
-        self._root = root
 
 
     def get_data(self, element, ranges, style):
@@ -132,90 +97,23 @@ class BokehPlot(DimensionedPlot):
         raise NotImplementedError
 
 
-    @property
-    def link_sources(self):
-        "Returns potential Link or Stream sources."
-        if isinstance(self, GenericOverlayPlot):
-            zorders = []
-        elif self.batched:
-            zorders = list(range(self.zorder, self.zorder+len(self.hmap.last)))
-        else:
-            zorders = [self.zorder]
-
-        if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = []
-        elif not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [o for i, inputs in self.stream_sources.items()
-                       for o in inputs if i in zorders]
-        else:
-            sources = [self.hmap.last]
-        return sources
-
-
-    def _construct_callbacks(self):
-        """
-        Initializes any callbacks for streams which have defined
-        the plotted object as a source.
-        """
-        cb_classes = set()
-        registry = list(Stream.registry.items())
-        callbacks = Stream._callbacks['bokeh']
-        for source in self.link_sources:
-            streams = [
-                s for src, streams in registry for s in streams
-                if src is source or (src._plot_id is not None and
-                                     src._plot_id == source._plot_id)]
-            cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
-                           if type(stream) in callbacks and stream.linked
-                           and stream.source is not None}
-        cbs = []
-        sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
-        for cb, group in groupby(sorted_cbs, lambda x: x[0]):
-            cb_streams = [s for _, s in group]
-            cbs.append(cb(self, cb_streams, source))
-        return cbs
-
-
-    def push(self):
-        """
-        Pushes updated plot data via the Comm.
-        """
-        if self.renderer.mode == 'server':
-            return
-        if self.comm is None:
-            raise Exception('Renderer does not have a comm.')
-
-        if self._root and 'embedded' in self._root.tags:
-            # Allows external libraries to prevent comm updates
-            return
-
-        msg = self.renderer.diff(self, binary=True)
-        if msg is None:
-            return
-        self.comm.send(msg.header_json)
-        self.comm.send(msg.metadata_json)
-        self.comm.send(msg.content_json)
-        for header, payload in msg.buffers:
-            self.comm.send(json.dumps(header))
-            self.comm.send(buffers=[payload])
-
-
-    def set_root(self, root):
-        """
-        Sets the root model on all subplots.
-        """
-        if root is None:
-            return
-        for plot in self.traverse(lambda x: x):
-            plot._root = root
-
+    def _update_selected(self, cds):
+        from .callbacks import Selection1DCallback
+        cds.selected.indices = self.selected
+        for cb in self.callbacks:
+            if isinstance(cb, Selection1DCallback):
+                for s in cb.streams:
+                    s.update(index=self.selected)
 
     def _init_datasource(self, data):
         """
         Initializes a data source to be passed into the bokeh glyph.
         """
         data = self._postprocess_data(data)
-        return ColumnDataSource(data=data)
+        cds = ColumnDataSource(data=data)
+        if hasattr(self, 'selected')  and self.selected is not None:
+            self._update_selected(cds)
+        return cds
 
 
     def _postprocess_data(self, data):
@@ -263,24 +161,9 @@ class BokehPlot(DimensionedPlot):
         else:
             source.data.update(data)
 
-    def _update_callbacks(self, plot):
-        """
-        Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing
-        subplots into a CompositePlot and sets the plot id to match
-        the root level bokeh model.
-        """
-        subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOL_TYPES[t]}))
-                        for t in self._merged_tools}
-        for subplot in subplots:
-            for cb in subplot.callbacks:
-                for c in cb.callbacks:
-                    for tool, objs in merged_tools.items():
-                        if tool in c.args and objs:
-                            c.args[tool] = objs[0]
-                    if self.top_level:
-                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
+        if hasattr(self, 'selected') and self.selected is not None:
+            self._update_selected(source)
+
 
     @property
     def state(self):
@@ -298,6 +181,24 @@ class BokehPlot(DimensionedPlot):
         should be updated.
         """
         return []
+
+
+    def _get_fontsize_defaults(self):
+        theme = self.renderer.theme
+        defaults = {
+            'title': get_default(Title, 'text_font_size', theme),
+            'legend_title': get_default(Legend, 'title_text_font_size', theme),
+            'legend': get_default(Legend, 'label_text_font_size', theme),
+            'label': get_default(Axis, 'axis_label_text_font_size', theme),
+            'ticks': get_default(Axis, 'major_label_text_font_size', theme),
+            'cticks': get_default(ColorBar, 'major_label_text_font_size', theme),
+            'clabel': get_default(ColorBar, 'title_text_font_size', theme)
+        }
+        processed = dict(defaults)
+        for k, v in defaults.items():
+            if isinstance(v, dict) and 'value' in v:
+                processed[k] = v['value']
+        return processed
 
 
     def cleanup(self):
@@ -325,11 +226,9 @@ class BokehPlot(DimensionedPlot):
             for stream in set(streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
-                    if get_method_owner(subscriber) not in plots
+                    if not is_param_method(subscriber) or
+                    get_method_owner(subscriber) not in plots
                 ]
-
-        if self.comm and self.root is self.handles.get('plot'):
-            self.comm.close()
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -337,8 +236,8 @@ class BokehPlot(DimensionedPlot):
         Converts integer fontsizes to a string specifying
         fontsize in pt.
         """
-        size = super(BokehPlot, self)._fontsize(key, label, common)
-        return {k: v if isinstance(v, basestring) else '%spt' % v
+        size = super()._fontsize(key, label, common)
+        return {k: v if isinstance(v, str) else '%spt' % v
                 for k, v in size.items()}
 
     def _get_title_div(self, key, default_fontsize='15pt', width=450):
@@ -571,14 +470,11 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
-        self.set_root(params.pop('root', None))
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
         if 'axis_offset' in params:
@@ -624,6 +520,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 kwargs['frame_width'] = width
             if height is not None:
                 kwargs['frame_height'] = height
+            if c == 0:
+                kwargs['align'] = 'end'
             if c == 0 and r != 0:
                 kwargs['xaxis'] = None
             if c != 0 and r == 0:
@@ -657,7 +555,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
-                                         renderer=self.renderer,
+                                         renderer=self.renderer, root=self.root,
                                          ranges=frame_ranges, uniform=self.uniform,
                                          keys=self.keys, **dict(opts, **kwargs))
                 collapsed_layout[coord] = (subplot.layout
@@ -695,7 +593,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -784,12 +681,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         Whether to display overlaid plots in separate panes""")
 
     def __init__(self, layout, keys=None, **params):
-        super(LayoutPlot, self).__init__(layout, keys=keys, **params)
+        super().__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
-        self.set_root(params.pop('root', None))
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -908,7 +802,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             subplot = plot_type(element, keys=self.keys,
                                 dimensions=self.dimensions,
                                 layout_dimensions=layout_dimensions,
-                                ranges=ranges, subplot=True,
+                                ranges=ranges, subplot=True, root=self.root,
                                 uniform=self.uniform, layout_num=num,
                                 renderer=self.renderer,
                                 **dict({'shared_axes': self.shared_axes},
@@ -957,6 +851,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     def initialize_plot(self, plots=None, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        opts = self.layout.opts.get('plot', self.backend)
+        opts = {} if opts is None else opts.kwargs
 
         plot_grid = self._compute_grid()
         passed_plots = [] if plots is None else plots
@@ -964,6 +860,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         col_offsets = defaultdict(int)
         tab_plots = []
 
+        stretch_width = False
+        stretch_height = False
         for r in range(self.rows):
             # Compute row offset
             row = [(k, sp) for k, sp in self.subplots.items() if k[0] == r]
@@ -988,23 +886,40 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 subplots = subplot.initialize_plot(ranges=ranges, plots=shared_plots)
                 nsubplots = len(subplots)
 
+                modes = {sp.sizing_mode for sp in subplots
+                         if sp.sizing_mode not in (None, 'auto', 'fixed')}
+                sizing_mode = self.sizing_mode
+                if modes:
+                    responsive_width = any(s in m for m in modes for s in ('width', 'both'))
+                    responsive_height = any(s in m for m in modes for s in ('height', 'both'))
+                    stretch_width |= responsive_width
+                    stretch_height |= responsive_height
+                    if responsive_width and responsive_height:
+                        sizing_mode = 'stretch_both'
+                    elif responsive_width:
+                        sizing_mode = 'stretch_width'
+                    elif responsive_height:
+                        sizing_mode = 'stretch_height'
+
                 # If tabs enabled lay out AdjointLayout on grid
                 if self.tabs:
                     title = subplot.subplots['main']._format_title(self.keys[-1],
                                                                    dimensions=False)
+
                     if not title:
                         title = ' '.join(self.paths[r,c])
+
                     if nsubplots == 1:
                         grid = subplots[0]
                     elif nsubplots == 2:
                         grid = gridplot([subplots], merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
-                                        sizing_mode=self.sizing_mode)
+                                        sizing_mode=sizing_mode)
                     else:
                         grid = [[subplots[2], None], subplots[:2]]
                         grid = gridplot(children=grid, merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
-                                        sizing_mode=self.sizing_mode)
+                                        sizing_mode=sizing_mode)
                     tab_plots.append((title, grid))
                     continue
 
@@ -1019,27 +934,37 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                     plot_column[c+c_offset-int(col_padded)] = subplots[0]
                 passed_plots.append(subplots[0])
 
+        if 'sizing_mode' in opts:
+            sizing_mode = opts['sizing_mode']
+        elif stretch_width and stretch_height:
+            sizing_mode = 'stretch_both'
+        elif stretch_width:
+            sizing_mode = 'stretch_width'
+        elif stretch_height:
+            sizing_mode = 'stretch_height'
+        else:
+            sizing_mode = None
+
         # Wrap in appropriate layout model
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
             panels = [Panel(child=child, title=t) for t, child in tab_plots]
-            layout_plot = Tabs(tabs=panels)
+            layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
             layout_plot = gridplot(children=plot_grid,
                                    toolbar_location=self.toolbar,
                                    merge_tools=self.merge_tools,
-                                   sizing_mode=self.sizing_mode)
+                                   sizing_mode=sizing_mode)
 
         title = self._get_title_div(self.keys[-1])
         if title:
             self.handles['title'] = title
-            layout_plot = Column(title, layout_plot)
+            layout_plot = Column(title, layout_plot, sizing_mode=sizing_mode)
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -1068,11 +993,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
 
 
-class AdjointLayoutPlot(BokehPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 
@@ -1084,8 +1005,7 @@ class AdjointLayoutPlot(BokehPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, plots=[]):
         """
@@ -1109,7 +1029,6 @@ class AdjointLayoutPlot(BokehPlot):
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
-
 
     def update_frame(self, key, ranges=None):
         plot = None

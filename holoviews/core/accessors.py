@@ -1,16 +1,91 @@
 """
 Module for accessor objects for viewable HoloViews objects.
 """
-from __future__ import absolute_import, unicode_literals
+import copy
+import sys
 
 from collections import OrderedDict
+from functools import wraps
+from types import FunctionType
 
 import param
+
+from param.parameterized import add_metaclass
 
 from . import util
 from .pprint import PrettyPrinter
 
 
+class AccessorPipelineMeta(type):
+    def __new__(mcs, classname, bases, classdict):
+        if '__call__' in classdict:
+            classdict['__call__'] = mcs.pipelined(classdict['__call__'])
+
+        inst = type.__new__(mcs, classname, bases, classdict)
+        return inst
+
+    @classmethod
+    def pipelined(mcs, __call__):
+        @wraps(__call__)
+        def pipelined_call(*args, **kwargs):
+            from ..operation.element import method as method_op, factory
+            from .data import Dataset, MultiDimensionalMapping
+            inst = args[0]
+
+            if not hasattr(inst._obj, '_pipeline'):
+                # Wrapped object doesn't support the pipeline property
+                return __call__(*args, **kwargs)
+
+            inst_pipeline = copy.copy(inst._obj. _pipeline)
+            in_method = inst._obj._in_method
+            if not in_method:
+                inst._obj._in_method = True
+
+            try:
+                result = __call__(*args, **kwargs)
+
+                if not in_method:
+                    init_op = factory.instance(
+                        output_type=type(inst),
+                        kwargs={'mode': getattr(inst, 'mode', None)},
+                    )
+                    call_op = method_op.instance(
+                        input_type=type(inst),
+                        method_name='__call__',
+                        args=list(args[1:]),
+                        kwargs=kwargs,
+                    )
+
+                    if isinstance(result, Dataset):
+                        result._pipeline = inst_pipeline.instance(
+                            operations=inst_pipeline.operations + [
+                                init_op, call_op
+                            ],
+                            output_type=type(result),
+                        )
+                    elif isinstance(result, MultiDimensionalMapping):
+                        for key, element in result.items():
+                            getitem_op = method_op.instance(
+                                input_type=type(result),
+                                method_name='__getitem__',
+                                args=[key],
+                            )
+                            element._pipeline = inst_pipeline.instance(
+                                operations=inst_pipeline.operations + [
+                                    init_op, call_op, getitem_op
+                                ],
+                                output_type=type(result),
+                            )
+            finally:
+                if not in_method:
+                    inst._obj._in_method = False
+
+            return result
+
+        return pipelined_call
+
+
+@add_metaclass(AccessorPipelineMeta)
 class Apply(object):
     """
     Utility to apply a function or operation to all viewable elements
@@ -20,7 +95,8 @@ class Apply(object):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+    def __call__(self, apply_function, streams=[], link_inputs=True,
+                 link_dataset=True, dynamic=None, per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
         Any keyword arguments are passed through to the function. If
@@ -29,7 +105,7 @@ class Apply(object):
         response to changes in those objects.
 
         Args:
-            function: A callable function
+            apply_function: A callable function
                 The function will be passed the return value of the
                 DynamicMap as the first argument and any supplied
                 stream values or keywords as additional keyword
@@ -40,11 +116,17 @@ class Apply(object):
             link_inputs (bool, optional): Whether to link the inputs
                 Determines whether Streams and Links attached to
                 original object will be inherited.
+            link_dataset (bool, optional): Whether to link the dataset
+                Determines whether the dataset will be inherited.
             dynamic (bool, optional): Whether to make object dynamic
                 By default object is made dynamic if streams are
                 supplied, an instance parameter is supplied as a
                 keyword argument, or the supplied function is a
                 parameterized method.
+            per_element (bool, optional): Whether to apply per element
+                By default apply works on the leaf nodes, which
+                includes both elements and overlays. If set it will
+                apply directly to elements.
             kwargs (dict, optional): Additional keyword arguments
                 Keyword arguments which will be supplied to the
                 function.
@@ -53,7 +135,9 @@ class Apply(object):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        from .data import Dataset
         from .dimension import ViewableElement
+        from .element import Element
         from .spaces import HoloMap, DynamicMap
         from ..util import Dynamic
 
@@ -64,13 +148,17 @@ class Apply(object):
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
+            if not len(samples):
+                return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
-                function, streams, link_inputs, dynamic, **kwargs)
+                apply_function, streams, link_inputs, link_dataset,
+                dynamic, per_element, **kwargs
+            )
 
-        if isinstance(function, util.basestring):
+        if isinstance(apply_function, str):
             args = kwargs.pop('_method_args', ())
-            method_name = function
-            def function(object, **kwargs):
+            method_name = apply_function
+            def apply_function(object, **kwargs):
                 method = getattr(object, method_name, None)
                 if method is None:
                     raise AttributeError('Applied method %s does not exist.'
@@ -80,48 +168,60 @@ class Apply(object):
                                          method_name)
                 return method(*args, **kwargs)
 
-        applies = isinstance(self._obj, (ViewableElement, DynamicMap))
+        if 'panel' in sys.modules:
+            from panel.widgets.base import Widget
+            kwargs = {k: v.param.value if isinstance(v, Widget) else v
+                      for k, v in kwargs.items()}
+
+        spec = Element if per_element else ViewableElement
+        applies = isinstance(self._obj, spec)
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
-        param_methods = {p: val for p, val in kwargs.items()
-                         if util.is_param_method(val, has_deps=True)}
+
+        dependent_kws = any(
+            (isinstance(val, FunctionType) and hasattr(val, '_dinfo')) or
+            util.is_param_method(val, has_deps=True) for val in kwargs.values()
+        )
 
         if dynamic is None:
-            dynamic = (bool(streams) or isinstance(self._obj, DynamicMap) or
-                       util.is_param_method(function, has_deps=True) or
-                       params or param_methods)
+            is_dynamic = (bool(streams) or isinstance(self._obj, DynamicMap) or
+                          util.is_param_method(apply_function, has_deps=True) or
+                          params or dependent_kws)
+        else:
+            is_dynamic = dynamic
 
-        if applies and dynamic:
-            return Dynamic(self._obj, operation=function, streams=streams,
-                           kwargs=kwargs, link_inputs=link_inputs)
+        if (applies or isinstance(self._obj, HoloMap)) and is_dynamic:
+            return Dynamic(self._obj, operation=apply_function, streams=streams,
+                           kwargs=kwargs, link_inputs=link_inputs,
+                           link_dataset=link_dataset)
         elif applies:
-            inner_kwargs = dict(kwargs)
-            for k, v in kwargs.items():
-                if util.is_param_method(v, has_deps=True):
-                    inner_kwargs[k] = v()
-                elif k in params:
-                    inner_kwargs[k] = getattr(v.owner, v.name)
-            if hasattr(function, 'dynamic'):
+            inner_kwargs = util.resolve_dependent_kwargs(kwargs)
+            if hasattr(apply_function, 'dynamic'):
                 inner_kwargs['dynamic'] = False
-            return function(self._obj, **inner_kwargs)
+            new_obj = apply_function(self._obj, **inner_kwargs)
+            if (link_dataset and isinstance(self._obj, Dataset) and
+                isinstance(new_obj, Dataset) and new_obj._dataset is None):
+                new_obj._dataset = self._obj.dataset
+            return new_obj
         elif self._obj._deep_indexable:
             mapped = []
             for k, v in self._obj.data.items():
-                new_val = v.apply(function, dynamic=dynamic, streams=streams,
-                                  link_inputs=link_inputs, **kwargs)
+                new_val = v.apply(apply_function, dynamic=dynamic, streams=streams,
+                                  link_inputs=link_inputs, link_dataset=link_dataset,
+                                  **kwargs)
                 if new_val is not None:
                     mapped.append((k, new_val))
             return self._obj.clone(mapped, link=link_inputs)
 
-        
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a aggregate function to all ViewableElements.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See :py:meth:`Dimensioned.aggregate` and :py:meth:`Apply.__call__`
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
+        kwargs['per_element'] = True
         return self.__call__('aggregate', **kwargs)
 
     def opts(self, *args, **kwargs):
@@ -130,6 +230,14 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
+        from ..util.transform import dim
+        from ..streams import Params
+        params = {}
+        for arg in kwargs.values():
+            if isinstance(arg, dim):
+                params.update(arg.params)
+        streams = Params.from_params(params, watch_only=True)
+        kwargs['streams'] = kwargs.get('streams', []) + streams
         kwargs['_method_args'] = args
         return self.__call__('opts', **kwargs)
 
@@ -140,7 +248,18 @@ class Apply(object):
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
+        kwargs['per_element'] = True
         return self.__call__('reduce', **kwargs)
+
+    def sample(self, samples=[], bounds=None, **kwargs):
+        """Samples element values at supplied coordinates.
+
+        See :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
+        for more information.
+        """
+        kwargs['_method_args'] = (samples, bounds)
+        kwargs['per_element'] = True
+        return self.__call__('sample', **kwargs)
 
     def select(self, **kwargs):
         """Applies a selection to all ViewableElement objects.
@@ -150,8 +269,26 @@ class Apply(object):
         """
         return self.__call__('select', **kwargs)
 
+    def transform(self, *args, **kwargs):
+        """Applies transforms to all Datasets.
+
+        See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
+        for more information.
+        """
+        from ..util.transform import dim
+        from ..streams import Params
+        params = {}
+        for _, arg in list(args)+list(kwargs.items()):
+            if isinstance(arg, dim):
+                params.update(arg.params)
+        streams = Params.from_params(params, watch_only=True)
+        kwargs['streams'] = kwargs.get('streams', []) + streams
+        kwargs['_method_args'] = args
+        kwargs['per_element'] = True
+        return self.__call__('transform', **kwargs)
 
 
+@add_metaclass(AccessorPipelineMeta)
 class Redim(object):
     """
     Utility that supports re-dimensioning any HoloViews object via the
@@ -178,7 +315,7 @@ class Redim(object):
             list: List of dimensions with replacements applied
         """
         from .dimension import Dimension
-        
+
         replaced = []
         for d in dimensions:
             if d.name in overrides:
@@ -190,7 +327,7 @@ class Redim(object):
 
             if override is None:
                 replaced.append(d)
-            elif isinstance(override, (util.basestring, tuple)):
+            elif isinstance(override, (str, tuple)):
                 replaced.append(d.clone(override))
             elif isinstance(override, Dimension):
                 replaced.append(override)
@@ -215,6 +352,46 @@ class Redim(object):
                 filtered.append((key, value))
         return filtered
 
+    def _transform_dimension(self, kdims, vdims, dimension):
+        if dimension in kdims:
+            idx = kdims.index(dimension)
+            dimension = self._obj.kdims[idx]
+        elif dimension in vdims:
+            idx = vdims.index(dimension)
+            dimension = self._obj.vdims[idx]
+        return dimension
+
+    def _create_expression_transform(self, kdims, vdims, exclude=[]):
+        from .dimension import dimension_name
+        from ..util.transform import dim
+
+        def _transform_expression(expression):
+            if dimension_name(expression.dimension) in exclude:
+                dimension = expression.dimension
+            else:
+                dimension = self._transform_dimension(
+                    kdims, vdims, expression.dimension
+                )
+            expression = expression.clone(dimension)
+            ops = []
+            for op in expression.ops:
+                new_op = dict(op)
+                new_args = []
+                for arg in op['args']:
+                    if isinstance(arg, dim):
+                        arg = _transform_expression(arg)
+                    new_args.append(arg)
+                new_op['args'] = tuple(new_args)
+                new_kwargs = {}
+                for kw, kwarg in op['kwargs'].items():
+                    if isinstance(kwarg, dim):
+                        kwarg = _transform_expression(kwarg)
+                    new_kwargs[kw] = kwarg
+                new_op['kwargs'] = new_kwargs
+                ops.append(new_op)
+            expression.ops = ops
+            return expression
+        return _transform_expression
 
     def __call__(self, specs=None, **dimensions):
         """
@@ -240,13 +417,15 @@ class Redim(object):
         kdims = self.replace_dimensions(obj.kdims, dimensions)
         vdims = self.replace_dimensions(obj.vdims, dimensions)
         zipped_dims = zip(obj.kdims+obj.vdims, kdims+vdims)
-        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
+        renames = {pk.name: nk for pk, nk in zipped_dims if pk.name != nk.name}
 
         if self.mode == 'dataset':
             data = obj.data
             if renames:
                 data = obj.interface.redim(obj, renames)
-            clone = obj.clone(data, kdims=kdims, vdims=vdims)
+            transform = self._create_expression_transform(kdims, vdims, list(renames.values()))
+            transforms = obj._transforms + [transform]
+            clone = obj.clone(data, kdims=kdims, vdims=vdims, transforms=transforms)
             if self._obj.dimensions(label='name') == clone.dimensions(label='name'):
                 # Ensure that plot_id is inherited as long as dimension
                 # name does not change
@@ -293,6 +472,9 @@ class Redim(object):
     def type(self, specs=None, **values):
         return self._redim('type', specs, **values)
 
+    def nodata(self, specs=None, **values):
+        return self._redim('nodata', specs, **values)
+
     def step(self, specs=None, **values):
         return self._redim('step', specs, **values)
 
@@ -306,7 +488,7 @@ class Redim(object):
         return self._redim('values', specs, **ranges)
 
 
-
+@add_metaclass(AccessorPipelineMeta)
 class Opts(object):
 
     def __init__(self, obj, mode=None):
@@ -314,12 +496,13 @@ class Opts(object):
         self._obj = obj
 
 
-    def get(self, group=None, backend=None):
+    def get(self, group=None, backend=None, defaults=True):
         """Returns the corresponding Options object.
 
         Args:
             group: The options group. Flattens across groups if None.
             backend: Current backend if None otherwise chosen backend.
+            defaults: Whether to include default option values
 
         Returns:
             Options object associated with the object containing the
@@ -330,7 +513,8 @@ class Opts(object):
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
         for group in groups:
-            optsobj = Store.lookup_options(backend, self._obj, group)
+            optsobj = Store.lookup_options(backend, self._obj, group,
+                                           defaults=defaults)
             keywords = dict(keywords, **optsobj.kwargs)
         return Options(**keywords)
 
@@ -377,12 +561,12 @@ class Opts(object):
         """
         if self._mode is None:
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-            if apply_groups and util.config.future_deprecations:
+            if apply_groups:
                 msg = ("Calling the .opts method with options broken down by options "
                        "group (i.e. separate plot, style and norm groups) is deprecated. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
-                param.main.warning(msg)
+                param.main.param.warning(msg)
 
         return self._dispatch_opts( *args, **kwargs)
 
@@ -449,7 +633,14 @@ class Opts(object):
 
 
     def _base_opts(self, *args, **kwargs):
-        apply_groups, options, new_kwargs = util.deprecated_opts_signature(args, kwargs)
+        from .options import Options
+
+        new_args = []
+        for arg in args:
+            if isinstance(arg, Options) and arg.key is None:
+                arg = arg(key=type(self._obj).__name__)
+            new_args.append(arg)
+        apply_groups, options, new_kwargs = util.deprecated_opts_signature(new_args, kwargs)
 
         # By default do not clone in .opts method
         clone = kwargs.get('clone', None)
@@ -460,4 +651,4 @@ class Opts(object):
             return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
 
         kwargs['clone'] = False if clone is None else clone
-        return self._obj.options(*args, **kwargs)
+        return self._obj.options(*new_args, **kwargs)

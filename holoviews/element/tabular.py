@@ -4,7 +4,7 @@ import param
 
 from ..core import OrderedDict, Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
-from ..core.util import config
+from .selection import SelectionIndexExpr
 
 
 class ItemTable(Element):
@@ -16,7 +16,7 @@ class ItemTable(Element):
     order. Tables store heterogeneous data with different labels.
 
     Dimension objects are also accepted as keys, allowing dimensional
-    information (e.g type and units) to be associated per heading.
+    information (e.g. type and units) to be associated per heading.
     """
 
     kdims = param.List(default=[], bounds=(0, 0), doc="""
@@ -28,16 +28,13 @@ class ItemTable(Element):
 
     group = param.String(default="ItemTable", constant=True)
 
-
     @property
     def rows(self):
         return len(self.vdims)
 
-
     @property
     def cols(self):
         return 2
-
 
     def __init__(self, data, **params):
         if data is None:
@@ -53,37 +50,24 @@ class ItemTable(Element):
         if not 'vdims' in params:
             params['vdims'] = list(data.keys())
         str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
-        super(ItemTable, self).__init__(str_keys, **params)
-
+        super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
         """
         Get the value associated with the given heading (key).
         """
-        if heading is ():
+        if heading == ():
             return self
         if heading not in self.vdims:
             raise KeyError("%r not in available headings." % heading)
         return np.array(self.data.get(heading, np.NaN))
-
-
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        if config.future_deprecations:
-            param.main.param.warning(
-                'ItemTable.collapse_data is deprecated and '
-                'should no longer be used.')
-        groups = np.vstack([np.array(odict.values()) for odict in data]).T
-        return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
-
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
             return np.array([self.data.get(dimension, np.NaN)])
         else:
-            return super(ItemTable, self).dimension_values(dimension)
-
+            return super().dimension_values(dimension)
 
     def sample(self, samples=[]):
         if callable(samples):
@@ -97,7 +81,6 @@ class ItemTable(Element):
     def reduce(self, dimensions=None, function=None, **reduce_map):
         raise NotImplementedError('ItemTables are for heterogeneous data, which'
                                   'cannot be reduced.')
-
 
     def pprint_cell(self, row, col):
         """
@@ -114,11 +97,9 @@ class ItemTable(Element):
             heading = self.vdims[row]
             return dim.pprint_value(self.data.get(heading.name, np.NaN))
 
-
     def hist(self, *args, **kwargs):
         raise NotImplementedError("ItemTables are not homogeneous and "
                                   "don't support histograms.")
-
 
     def cell_type(self, row, col):
         """
@@ -129,21 +110,8 @@ class ItemTable(Element):
         else:         return 'data'
 
 
-    ######################
-    #    Deprecations    #
-    ######################
 
-    def values(self):
-        """
-        Deprecated method to access the ItemTable value dimension values.
-        """
-        self.param.warning('ItemTable values method is deprecated.')
-        return tuple(self.data.get(d.name, np.NaN)
-                     for d in self.vdims)
-
-
-
-class Table(Dataset, Tabular):
+class Table(SelectionIndexExpr, Dataset, Tabular):
     """
     Table is a Dataset type, which gets displayed in a tabular
     format and is convertible to most other Element types.

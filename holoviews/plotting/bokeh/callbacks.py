@@ -1,45 +1,109 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import time
+
 from collections import defaultdict
 
-import param
 import numpy as np
+import panel as pn
+
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox,
-    Range1d, DataRange1d
+    CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
+    PolyDrawTool, BoxEditTool, PolyEditTool, FreehandDrawTool,
+    PointDrawTool
 )
-from pyviz_comms import JS_CALLBACK
+from panel.io.state import state
+from panel.io.model import hold
+from tornado import gen
 
 from ...core import OrderedDict
-from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
-from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PointerX, PointerY, BoundsX, BoundsY,
-                        Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
-                        PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw)
-from ..links import Link, RangeToolLink, DataLink
-from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import convert_timestamp, bokeh_version
+from ...core.options import CallbackError
+from ...core.util import (
+    datetime_types, dimension_sanitizer, dt64_to_dt
+)
+from ...element import Table
+from ...streams import (
+    Stream, PointerXY, RangeXY, Selection1D, RangeX, RangeY, PointerX,
+    PointerY, BoundsX, BoundsY, Tap, SingleTap, DoubleTap, MouseEnter,
+    MouseLeave, PressUp, PanEnd, PlotSize, Draw, BoundsXY, PlotReset,
+    BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
+    CurveEdit, SelectionXY, Lasso, SelectMode
+)
+from .util import LooseVersion, bokeh_version, convert_timestamp
+
+if bokeh_version >= LooseVersion('2.3.0'):
+    CUSTOM_TOOLTIP = 'description'
+else:
+    CUSTOM_TOOLTIP = 'custom_tooltip'
 
 
-class MessageCallback(object):
+class Callback(object):
     """
-    A MessageCallback is an abstract baseclass used to supply Streams
-    with events originating from bokeh plot interactions. The baseclass
-    defines how messages are handled and the basic specification required
-    to define a Callback.
+    Provides a baseclass to define callbacks, which return data from
+    bokeh model callbacks, events and attribute changes. The callback
+    then makes this data available to any streams attached to it.
+
+    The definition of a callback consists of a number of components:
+
+    * models      : Defines which bokeh models the callback will be
+                    attached on referencing the model by its key in
+                    the plots handles, e.g. this could be the x_range,
+                    y_range, plot, a plotting tool or any other
+                    bokeh mode.
+
+    * attributes  : The attributes define which attributes to send
+                    back to Python. They are defined as a dictionary
+                    mapping between the name under which the variable
+                    is made available to Python and the specification
+                    of the attribute. The specification should start
+                    with the variable name that is to be accessed and
+                    the location of the attribute separated by
+                    periods.  All models defined by the models and can
+                    be addressed in this way, e.g. to get the start of
+                    the x_range as 'x' you can supply {'x':
+                    'x_range.attributes.start'}. Additionally certain
+                    handles additionally make the cb_obj variables
+                    available containing additional information about
+                    the event.
+
+    * on_events   : If the Callback should listen to bokeh events this
+                    should declare the types of event as a list (optional)
+
+    * on_changes  : If the Callback should listen to model attribute
+                    changes on the defined ``models`` (optional)
+
+    If either on_events or on_changes are declared the Callback will
+    be registered using the on_event or on_change machinery, otherwise
+    it will be treated as a regular callback on the model.  The
+    callback can also define a _process_msg method, which can modify
+    the data sent by the callback before it is passed to the streams.
+
+    A callback supports three different throttling modes:
+
+    - adaptive (default): The callback adapts the throttling timeout
+      depending on the rolling mean of the time taken to process each
+      message. The rolling window is controlled by the `adaptive_window`
+      value.
+    - throttle: Uses the fixed `throttle_timeout` as the minimum amount
+      of time between events.
+    - debounce: Processes the message only when no new event has been
+      received within the `throttle_timeout` duration.
     """
 
+    # Throttling configuration
+    adaptive_window = 3
+    throttle_timeout = 100
+    throttling_scheme = 'adaptive'
+
+    # Attributes to sync
     attributes = {}
 
     # The plotting handle(s) to attach the JS callback on
     models = []
 
-    # Additional models available to the callback
-    extra_models = []
-
     # Conditions when callback should be skipped
-    skip = []
+    skip_events  = []
+    skip_changes = []
 
     # Callback will listen to events of the supplied type on the models
     on_events = []
@@ -47,27 +111,32 @@ class MessageCallback(object):
     # List of change events on the models to listen to
     on_changes = []
 
+    # Internal state
     _callbacks = {}
+    _transforms = []
+
+    def __init__(self, plot, streams, source, **params):
+        self.plot = plot
+        self.streams = streams
+        self.source = source
+        self.handle_ids = defaultdict(dict)
+        self.reset()
+        self._active = False
+        self._prev_msg = None
+        self._last_event = time.time()
+        self._history = []
+
+    def _transform(self, msg):
+        for transform in self._transforms:
+            msg = transform(msg, self)
+        return msg
 
     def _process_msg(self, msg):
         """
         Subclassable method to preprocess JSON message in callback
         before passing to stream.
         """
-        return msg
-
-
-    def __init__(self, plot, streams, source, **params):
-        self.plot = plot
-        self.streams = streams
-        if plot.renderer.mode != 'server':
-            self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
-        else:
-            self.comm = None
-        self.source = source
-        self.handle_ids = defaultdict(dict)
-        self.reset()
-
+        return self._transform(msg)
 
     def cleanup(self):
         self.reset()
@@ -75,26 +144,20 @@ class MessageCallback(object):
         self.plot = None
         self.source = None
         self.streams = []
-        if self.comm:
-            try:
-                self.comm.close()
-            except:
-                pass
         Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
                                if cb is not self}
-
 
     def reset(self):
         if self.handle_ids:
             handles = self._init_plot_handles()
             for handle_name in self.models:
+                if not (handle_name in handles):
+                    continue
                 handle = handles[handle_name]
                 cb_hash = (id(handle), id(type(self)))
                 self._callbacks.pop(cb_hash, None)
-        self.callbacks = []
         self.plot_handles = {}
         self._queue = []
-
 
     def _filter_msg(self, msg, ids):
         """
@@ -110,7 +173,6 @@ class MessageCallback(object):
             else:
                 filtered_msg[k] = v
         return filtered_msg
-
 
     def on_msg(self, msg):
         streams = []
@@ -128,12 +190,17 @@ class MessageCallback(object):
 
         try:
             Stream.trigger(streams)
+        except CallbackError as e:
+            if self.plot.root and self.plot.root.ref['id'] in state._handles:
+                handle, _ = state._handles[self.plot.root.ref['id']]
+                handle.update({'text/html': str(e)}, raw=True)
+            else:
+                raise e
         except Exception as e:
             raise e
         finally:
             for stream in streams:
                 stream._metadata = {}
-
 
     def _init_plot_handles(self):
         """
@@ -151,17 +218,11 @@ class MessageCallback(object):
         self.plot_handles = handles
 
         requested = {}
-        for h in self.models+self.extra_models:
+        for h in self.models:
             if h in self.plot_handles:
                 requested[h] = handles[h]
-            elif h in self.extra_models:
-                print("Warning %s could not find the %s model. "
-                      "The corresponding stream may not work."
-                      % (type(self).__name__, h))
         self.handle_ids.update(self._get_stream_handle_ids(requested))
-
         return requested
-
 
     def _get_stream_handle_ids(self, handles):
         """
@@ -176,122 +237,6 @@ class MessageCallback(object):
                     handle_id = handles[h].ref['id']
                     stream_handle_ids[stream][h] = handle_id
         return stream_handle_ids
-
-
-
-class CustomJSCallback(MessageCallback):
-    """
-    The CustomJSCallback attaches CustomJS callbacks to a bokeh plot,
-    which looks up the requested attributes and sends back a message
-    to Python using a Comms instance.
-    """
-
-    js_callback = JS_CALLBACK
-
-    code = ""
-
-    # Timeout if a comm message is swallowed
-    timeout = 20000
-
-    # Timeout before the first event is processed
-    debounce = 20
-
-    @classmethod
-    def attributes_js(cls, attributes):
-        """
-        Generates JS code to look up attributes on JS objects from
-        an attributes specification dictionary. If the specification
-        references a plotting particular plotting handle it will also
-        generate JS code to get the ID of the object.
-
-        Simple example (when referencing cb_data or cb_obj):
-
-        Input  : {'x': 'cb_data.geometry.x'}
-
-        Output : data['x'] = cb_data['geometry']['x']
-
-        Example referencing plot handle:
-
-        Input  : {'x0': 'x_range.attributes.start'}
-
-        Output : if ((x_range !== undefined)) {
-                    data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
-                 }
-        """
-        assign_template = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'
-        conditional_template = 'if (({obj_name} != undefined)) {{ {assign} }}'
-        code = ''
-        for key, attr_path in sorted(attributes.items()):
-            data_assign = 'data["{key}"] = '.format(key=key)
-            attrs = attr_path.split('.')
-            obj_name = attrs[0]
-            attr_getters = ''.join(['["{attr}"]'.format(attr=attr)
-                                    for attr in attrs[1:]])
-            if obj_name not in ['cb_obj', 'cb_data']:
-                assign_str = assign_template.format(
-                    assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
-                )
-                code += conditional_template.format(
-                    obj_name=obj_name, assign=assign_str
-                )
-            else:
-                assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
-                code += assign_str
-        return code
-
-
-    def get_customjs(self, references, plot_id=None):
-        """
-        Creates a CustomJS callback that will send the requested
-        attributes back to python.
-        """
-        # Generate callback JS code to get all the requested data
-        if plot_id is None:
-            plot_id = self.plot.id or 'PLACEHOLDER_PLOT_ID'
-        self_callback = self.js_callback.format(comm_id=self.comm.id,
-                                                timeout=self.timeout,
-                                                debounce=self.debounce,
-                                                plot_id=plot_id)
-
-        attributes = self.attributes_js(self.attributes)
-        conditions = ["%s" % cond for cond in self.skip]
-        conditional = ''
-        if conditions:
-            conditional = 'if (%s) { return };\n' % (' || '.join(conditions))
-        data = "var data = {};\n"
-        code = conditional + data + attributes + self.code + self_callback
-        return CustomJS(args=references, code=code)
-
-
-    def set_customjs_callback(self, js_callback, handle):
-        """
-        Generates a CustomJS callback by generating the required JS
-        code and gathering all plotting handles and installs it on
-        the requested callback handle.
-        """
-        if self.on_events:
-            for event in self.on_events:
-                handle.js_on_event(event, js_callback)
-        elif self.on_changes:
-            for change in self.on_changes:
-                handle.js_on_change(change, js_callback)
-        elif hasattr(handle, 'callback'):
-            handle.callback = js_callback
-
-
-
-class ServerCallback(MessageCallback):
-    """
-    Implements methods to set up bokeh server callbacks. A ServerCallback
-    resolves the requested attributes on the Python end and then hands
-    the msg off to the general on_msg handler, which will update the
-    Stream(s) attached to the callback.
-    """
-
-    def __init__(self, plot, streams, source, **params):
-        super(ServerCallback, self).__init__(plot, streams, source, **params)
-        self._active = False
-
 
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
@@ -316,28 +261,88 @@ class ServerCallback(MessageCallback):
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
 
+    def skip_event(self, event):
+        return any(skip(event) for skip in self.skip_events)
+
+    def skip_change(self, msg):
+        return any(skip(msg) for skip in self.skip_changes)
+
+    def _set_busy(self, busy):
+        """
+        Sets panel.state to busy if available.
+        """
+        if 'busy' not in state.param:
+            return # Check if busy state is supported
+
+        from panel.util import edit_readonly
+        with edit_readonly(state):
+            state.busy = busy
+
+    def _schedule_callback(self, cb, timeout=None, offset=True):
+        if timeout is None:
+            if self._history and self.throttling_scheme == 'adaptive':
+                timeout = int(np.array(self._history).mean()*1000)
+            else:
+                timeout = self.throttle_timeout
+            if self.throttling_scheme != 'debounce' and offset:
+                # Subtract the time taken since event started
+                diff = time.time()-self._last_event
+                timeout = max(timeout-(diff*1000), 50)
+        if not pn.state.curdoc:
+            cb()
+        else:
+            pn.state.curdoc.add_timeout_callback(cb, int(timeout))
 
     def on_change(self, attr, old, new):
         """
         Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((attr, old, new))
+        self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
-            self.plot.document.add_timeout_callback(self.process_on_change, 50)
             self._active = True
-
+            self._set_busy(True)
+            if self.plot.renderer.mode == 'server':
+                self._schedule_callback(self.process_on_change, offset=False)
+            else:
+                with hold(self.plot.document):
+                    self.process_on_change()
 
     def on_event(self, event):
         """
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((event))
+        self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
-            self.plot.document.add_timeout_callback(self.process_on_event, 50)
             self._active = True
+            self._set_busy(True)
+            if self.plot.renderer.mode == 'server':
+                self._schedule_callback(self.process_on_event, offset=False)
+            else:
+                with hold(self.plot.document):
+                    self.process_on_event()
 
+    def throttled(self):
+        now = time.time()
+        timeout = self.throttle_timeout/1000.
+        if self.throttling_scheme in ('throttle', 'adaptive'):
+            diff = (now-self._last_event)
+            if self._history and self.throttling_scheme == 'adaptive':
+                timeout = np.array(self._history).mean()
+            if diff < timeout:
+                return int((timeout-diff)*1000)
+        else:
+            prev_event = self._queue[-1][-1]
+            diff = (now-prev_event)
+            if diff < timeout:
+                return self.throttle_timeout
+        self._last_event = time.time()
+        return False
+
+    @gen.coroutine
+    def process_on_event_coroutine(self):
+        self.process_on_event()
 
     def process_on_event(self):
         """
@@ -345,25 +350,46 @@ class ServerCallback(MessageCallback):
         """
         if not self._queue:
             self._active = False
+            self._set_busy(False)
+            return
+        throttled = self.throttled()
+        if throttled and pn.state.curdoc:
+            self._schedule_callback(self.process_on_event, throttled)
             return
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
-                                   for event in self._queue]).values())
+                                   for event, dt in self._queue]).values())
         self._queue = []
 
         # Process event types
         for event in events:
+            if self.skip_event(event):
+                continue
             msg = {}
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        self.plot.document.add_timeout_callback(self.process_on_event, 50)
+        w = self.adaptive_window-1
+        diff = time.time()-self._last_event
+        self._history = self._history[-w:] + [diff]
+        if self.plot.renderer.mode == 'server':
+            self._schedule_callback(self.process_on_event)
+        else:
+            self._active = False
 
+    @gen.coroutine
+    def process_on_change_coroutine(self):
+        self.process_on_change()
 
     def process_on_change(self):
         if not self._queue:
             self._active = False
+            self._set_busy(False)
+            return
+        throttled = self.throttled()
+        if throttled and pn.state.curdoc:
+            self._schedule_callback(self.process_on_change, throttled)
             return
         self._queue = []
 
@@ -378,82 +404,43 @@ class ServerCallback(MessageCallback):
             cb_obj = self.plot_handles.get(obj_handle)
             msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
-        self.on_msg(msg)
-        self.plot.document.add_timeout_callback(self.process_on_change, 50)
+        if self.skip_change(msg):
+            equal = True
+        else:
+            try:
+                equal = msg == self._prev_msg
+            except Exception:
+                equal = False
 
+        if not equal or any(s.transient for s in self.streams):
+            self.on_msg(msg)
+            w = self.adaptive_window-1
+            diff = time.time()-self._last_event
+            self._history = self._history[-w:] + [diff]
+            self._prev_msg = msg
 
-    def set_server_callback(self, handle):
+        if self.plot.renderer.mode == 'server':
+            self._schedule_callback(self.process_on_change)
+        else:
+            self._active = False
+
+    def set_callback(self, handle):
         """
         Set up on_change events for bokeh server interactions.
         """
         if self.on_events:
             for event in self.on_events:
                 handle.on_event(event, self.on_event)
-        elif self.on_changes:
+        if self.on_changes:
             for change in self.on_changes:
+                if change in ['patching', 'streaming']:
+                    # Patch and stream events do not need handling on server
+                    continue
                 handle.on_change(change, self.on_change)
-
-
-
-class Callback(CustomJSCallback, ServerCallback):
-    """
-    Provides a baseclass to define callbacks, which return data from
-    bokeh model callbacks, events and attribute changes. The callback
-    then makes this data available to any streams attached to it.
-
-    The definition of a callback consists of a number of components:
-
-    * models      : Defines which bokeh models the callback will be
-                    attached on referencing the model by its key in
-                    the plots handles, e.g. this could be the x_range,
-                    y_range, plot, a plotting tool or any other
-                    bokeh mode.
-
-    * extra_models: Any additional models available in handles which
-                    should be made available in the namespace of the
-                    objects, e.g. to make a tool available to skip
-                    checks.
-
-    * attributes  : The attributes define which attributes to send
-                    back to Python. They are defined as a dictionary
-                    mapping between the name under which the variable
-                    is made available to Python and the specification
-                    of the attribute. The specification should start
-                    with the variable name that is to be accessed and
-                    the location of the attribute separated by
-                    periods.  All models defined by the models and
-                    extra_models attributes can be addressed in this
-                    way, e.g. to get the start of the x_range as 'x'
-                    you can supply {'x': 'x_range.attributes.start'}.
-                    Additionally certain handles additionally make the
-                    cb_data and cb_obj variables available containing
-                    additional information about the event.
-
-    * skip        : Conditions when the Callback should be skipped
-                    specified as a list of valid JS expressions, which
-                    can reference models requested by the callback,
-                    e.g. ['pan.attributes.active'] would skip the
-                    callback if the pan tool is active.
-
-    * code        : Defines any additional JS code to be executed,
-                    which can modify the data object that is sent to
-                    the backend.
-
-    * on_events   : If the Callback should listen to bokeh events this
-                    should declare the types of event as a list (optional)
-
-    * on_changes  : If the Callback should listen to model attribute
-                    changes on the defined ``models`` (optional)
-
-    If either on_events or on_changes are declared the Callback will
-    be registered using the on_event or on_change machinery, otherwise
-    it will be treated as a regular callback on the model.  The
-    callback can also define a _process_msg method, which can modify
-    the data sent by the callback before it is passed to the streams.
-    """
 
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
+        cb_handles = []
         for handle_name in self.models:
             if handle_name not in handles:
                 warn_args = (handle_name, type(self.plot).__name__,
@@ -461,26 +448,24 @@ class Callback(CustomJSCallback, ServerCallback):
                 print('%s handle not found on %s, cannot '
                       'attach %s callback' % warn_args)
                 continue
-            handle = handles[handle_name]
+            cb_handles.append(handles[handle_name])
 
-            # Hash the plot handle with Callback type allowing multiple
-            # callbacks on one handle to be merged
-            cb_hash = (id(handle), id(type(self)))
-            if cb_hash in self._callbacks:
-                # Merge callbacks if another callback has already been attached
-                cb = self._callbacks[cb_hash]
-                cb.streams = list(set(cb.streams+self.streams))
-                for k, v in self.handle_ids.items():
-                    cb.handle_ids[k].update(v)
-                continue
+        # Hash the plot handle with Callback type allowing multiple
+        # callbacks on one handle to be merged
+        handle_ids = [id(h) for h in cb_handles]
+        cb_hash = tuple(handle_ids)+(id(type(self)),)
+        if cb_hash in self._callbacks:
+            # Merge callbacks if another callback has already been attached
+            cb = self._callbacks[cb_hash]
+            cb.streams = list(set(cb.streams+self.streams))
+            for k, v in self.handle_ids.items():
+                cb.handle_ids[k].update(v)
+            self.cleanup()
+            return
 
-            if self.plot.renderer.mode == 'server':
-                self.set_server_callback(handle)
-            else:
-                js_callback = self.get_customjs(handles, plot_id=plot_id)
-                self.set_customjs_callback(js_callback, handle)
-                self.callbacks.append(js_callback)
-            self._callbacks[cb_hash] = self
+        for handle in cb_handles:
+            self.set_callback(handle)
+        self._callbacks[cb_hash] = self
 
 
 
@@ -491,37 +476,7 @@ class PointerXYCallback(Callback):
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot']
-    extra_models= ['x_range', 'y_range']
-
     on_events = ['mousemove']
-
-    # Clip x and y values to available axis range
-    code = """
-    if (x_range.type.endsWith('Range1d')) {
-      xstart = x_range.start;
-      xend = x_range.end;
-      if (xstart > xend) {
-        [xstart, xend] = [xend, xstart]
-      }
-      if (cb_obj.x < xstart) {
-        data['x'] = xstart;
-      } else if (cb_obj.x > xend) {
-        data['x'] = xend;
-      }
-    }
-    if (y_range.type.endsWith('Range1d')) {
-      ystart = y_range.start;
-      yend = y_range.end;
-      if (ystart > yend) {
-        [ystart, yend] = [yend, ystart]
-      }
-      if (cb_obj.y < ystart) {
-        data['y'] = ystart;
-      } else if (cb_obj.y > yend) {
-        data['y'] = yend;
-      }
-    }
-    """
 
     def _process_out_of_bounds(self, value, start, end):
         "Clips out of bounds values"
@@ -557,10 +512,9 @@ class PointerXYCallback(Callback):
         if 'y' in msg and isinstance(yaxis, DatetimeAxis):
             msg['y'] = convert_timestamp(msg['y'])
 
-        server_mode = self.plot.renderer.mode == 'server'
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
             msg['x'] = x_range.factors[int(msg['x'])]
-        elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)) and server_mode:
+        elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
                 xstart, xend = xend, xstart
@@ -572,7 +526,7 @@ class PointerXYCallback(Callback):
 
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
             msg['y'] = y_range.factors[int(msg['y'])]
-        elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)) and server_mode:
+        elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:
                 ystart, yend = yend, ystart
@@ -582,7 +536,7 @@ class PointerXYCallback(Callback):
             else:
                 msg['y'] = y
 
-        return msg
+        return self._transform(msg)
 
 
 class PointerXCallback(PointerXYCallback):
@@ -591,21 +545,7 @@ class PointerXCallback(PointerXYCallback):
     """
 
     attributes = {'x': 'cb_obj.x'}
-    extra_models= ['x_range']
-    code = """
-    if (x_range.type.endsWith('Range1d')) {
-      xstart = x_range.start;
-      xend = x_range.end;
-      if (xstart > xend) {
-        [xstart, xend] = [xend, xstart]
-      }
-      if (cb_obj.x < xstart) {
-        data['x'] = xstart;
-      } else if (cb_obj.x > xend) {
-        data['x'] = xend;
-      }
-    }
-    """
+
 
 class PointerYCallback(PointerXYCallback):
     """
@@ -613,38 +553,22 @@ class PointerYCallback(PointerXYCallback):
     """
 
     attributes = {'y': 'cb_obj.y'}
-    extra_models= ['y_range']
-    code = """
-    if (y_range.type.endsWith('Range1d')) {
-      ystart = y_range.start;
-      yend = y_range.end;
-      if (ystart > yend) {
-        [ystart, yend] = [yend, ystart]
-      }
-      if (cb_obj.y < ystart) {
-        data['y'] = ystart;
-      } else if (cb_obj.y > yend) {
-        data['y'] = yend;
-      }
-    }
-    """
+
 
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']
     models = ['plot']
-    extra_models=['pan', 'box_zoom', 'x_range', 'y_range']
-    skip = ['pan && pan.attributes.active', 'box_zoom && box_zoom.attributes.active']
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
 
     def __init__(self, *args, **kwargs):
         self.stroke_count = 0
-        super(DrawCallback, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _process_msg(self, msg):
         event = msg.pop('event')
         if event == 'panend':
             self.stroke_count += 1
-        return dict(msg, stroke_count=self.stroke_count)
+        return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
 class TapCallback(PointerXYCallback):
@@ -653,30 +577,6 @@ class TapCallback(PointerXYCallback):
 
     Note: As of bokeh 0.12.5, there is no way to distinguish the
     individual tap events within a doubletap event.
-    """
-
-    # Skip if tap is outside axis range
-    code = """
-    if (x_range.type.endsWith('Range1d')) {
-      xstart = x_range.start;
-      xend = x_range.end;
-      if (xstart > xend) {
-        [xstart, xend] = [xend, xstart]
-      }
-      if ((cb_obj.x < xstart) || (cb_obj.x > xend)) {
-        return
-      }
-    }
-    if (y_range.type.endsWith('Range1d')) {
-      ystart = y_range.start;
-      yend = y_range.end;
-      if (ystart > yend) {
-        [ystart, yend] = [yend, ystart]
-      }
-      if ((cb_obj.y < ystart) || (cb_obj.y > yend)) {
-        return
-      }
-    }
     """
 
     on_events = ['tap', 'doubletap']
@@ -708,6 +608,22 @@ class SingleTapCallback(TapCallback):
     """
 
     on_events = ['tap']
+
+
+class PressUpCallback(TapCallback):
+    """
+    Returns the mouse x/y-position of a pressup mouse event.
+    """
+
+    on_events = ['pressup']
+
+
+class PanEndCallback(TapCallback):
+    """
+    Returns the mouse x/y-position of a pan end event.
+    """
+
+    on_events = ['panend']
 
 
 class DoubleTapCallback(TapCallback):
@@ -753,20 +669,24 @@ class RangeXYCallback(Callback):
         if 'x0' in msg and 'x1' in msg:
             x0, x1 = msg['x0'], msg['x1']
             if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
-                x0 = convert_timestamp(x0)
-                x1 = convert_timestamp(x1)
-            if self.plot.invert_xaxis:
+                if not isinstance(x0, datetime_types):
+                    x0 = convert_timestamp(x0)
+                if not isinstance(x1, datetime_types):
+                    x1 = convert_timestamp(x1)
+            if x0 > x1:
                 x0, x1 = x1, x0
             data['x_range'] = (x0, x1)
         if 'y0' in msg and 'y1' in msg:
             y0, y1 = msg['y0'], msg['y1']
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
-                y0 = convert_timestamp(y0)
-                y1 = convert_timestamp(y1)
-            if self.plot.invert_yaxis:
+                if not isinstance(y0, datetime_types):
+                    y0 = convert_timestamp(y0)
+                if not isinstance(y1, datetime_types):
+                    y1 = convert_timestamp(y1)
+            if y0 > y1:
                 y0, y1 = y1, y0
             data['y_range'] = (y0, y1)
-        return data
+        return self._transform(data)
 
 
 class RangeXCallback(RangeXYCallback):
@@ -803,9 +723,29 @@ class PlotSizeCallback(Callback):
 
     def _process_msg(self, msg):
         if msg.get('width') and msg.get('height'):
-            return msg
+            return self._transform(msg)
         else:
             return {}
+
+
+class SelectModeCallback(Callback):
+
+    attributes = {'box_mode': 'box_select.mode',
+                  'lasso_mode': 'lasso_select.mode'}
+    models = ['box_select', 'lasso_select']
+    on_changes = ['mode']
+
+    def _process_msg(self, msg):
+        stream = self.streams[0]
+        if 'box_mode' in msg:
+            mode = msg.pop('box_mode')
+            if mode != stream.mode:
+                msg['mode'] = mode
+        if 'lasso_mode' in msg:
+            mode = msg.pop('lasso_mode')
+            if mode != stream.mode:
+                msg['mode'] = mode
+        return msg
 
 
 class BoundsCallback(Callback):
@@ -817,9 +757,10 @@ class BoundsCallback(Callback):
                   'y0': 'cb_obj.geometry.y0',
                   'y1': 'cb_obj.geometry.y1'}
     models = ['plot']
-    extra_models = ['box_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
+
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -829,9 +770,55 @@ class BoundsCallback(Callback):
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
                 msg['y0'] = convert_timestamp(msg['y0'])
                 msg['y1'] = convert_timestamp(msg['y1'])
-            return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+            msg = {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+            return self._transform(msg)
         else:
             return {}
+
+
+class SelectionXYCallback(BoundsCallback):
+    """
+    Converts a bounds selection to numeric or categorical x-range
+    and y-range selections.
+    """
+
+    def _process_msg(self, msg):
+        msg = super()._process_msg(msg)
+        if 'bounds' not in msg:
+            return msg
+        el = self.plot.current_frame
+        x0, y0, x1, y1 = msg['bounds']
+        x_range = self.plot.handles['x_range']
+        if isinstance(x_range, FactorRange):
+            x0, x1 = int(round(x0)), int(round(x1))
+            xfactors = x_range.factors[x0: x1]
+            if x_range.tags and x_range.tags[0]:
+                xdim = el.get_dimension(x_range.tags[0][0][0])
+                if xdim and hasattr(el, 'interface'):
+                    dtype = el.interface.dtype(el, xdim)
+                    try:
+                        xfactors = list(np.array(xfactors).astype(dtype))
+                    except:
+                        pass
+            msg['x_selection'] = xfactors
+        else:
+            msg['x_selection'] = (x0, x1)
+        y_range = self.plot.handles['y_range']
+        if isinstance(y_range, FactorRange):
+            y0, y1 = int(round(y0)), int(round(y1))
+            yfactors = y_range.factors[y0: y1]
+            if y_range.tags and y_range.tags[0]:
+                ydim = el.get_dimension(y_range.tags[0][0][0])
+                if ydim and hasattr(el, 'interface'):
+                    dtype = el.interface.dtype(el, ydim)
+                    try:
+                        yfactors = list(np.array(yfactors).astype(dtype))
+                    except:
+                        pass
+            msg['y_selection'] = yfactors
+        else:
+            msg['y_selection'] = (y0, y1)
+        return msg
 
 
 class BoundsXCallback(Callback):
@@ -841,16 +828,18 @@ class BoundsXCallback(Callback):
 
     attributes = {'x0': 'cb_obj.geometry.x0', 'x1': 'cb_obj.geometry.x1'}
     models = ['plot']
-    extra_models = ['xbox_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
+
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'x1']):
             if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
                 msg['x0'] = convert_timestamp(msg['x0'])
                 msg['x1'] = convert_timestamp(msg['x1'])
-            return {'boundsx': (msg['x0'], msg['x1'])}
+            msg = {'boundsx': (msg['x0'], msg['x1'])}
+            return self._transform(msg)
         else:
             return {}
 
@@ -862,18 +851,43 @@ class BoundsYCallback(Callback):
 
     attributes = {'y0': 'cb_obj.geometry.y0', 'y1': 'cb_obj.geometry.y1'}
     models = ['plot']
-    extra_models = ['ybox_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
+
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['y0', 'y1']):
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
                 msg['y0'] = convert_timestamp(msg['y0'])
                 msg['y1'] = convert_timestamp(msg['y1'])
-            return {'boundsy': (msg['y0'], msg['y1'])}
+            msg = {'boundsy': (msg['y0'], msg['y1'])}
+            return self._transform(msg)
         else:
             return {}
+
+
+class LassoCallback(Callback):
+
+    attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
+    models = ['plot']
+    on_events = ['selectiongeometry']
+    skip_events = [lambda event: event.geometry['type'] != 'poly',
+                   lambda event: not event.final]
+
+    def _process_msg(self, msg):
+        if not all(c in msg for c in ('xs', 'ys')):
+            return {}
+        xs, ys = msg['xs'], msg['ys']
+        if isinstance(xs, dict):
+            xs = ((int(i), x) for i, x in xs.items())
+            xs = [x for _, x in sorted(xs)]
+        if isinstance(ys, dict):
+            ys = ((int(i), y) for i, y in ys.items())
+            ys = [y for _, y in sorted(ys)]
+        if xs is None or ys is None:
+            return {}
+        return {'geometry': np.column_stack([xs, ys])}
 
 
 class Selection1DCallback(Callback):
@@ -886,8 +900,16 @@ class Selection1DCallback(Callback):
     on_changes = ['indices']
 
     def _process_msg(self, msg):
+        el = self.plot.current_frame
         if 'index' in msg:
-            return {'index': [int(v) for v in msg['index']]}
+            msg = {'index': [int(v) for v in msg['index']]}
+            if isinstance(el, Table):
+                # Ensure that explicitly applied selection does not
+                # trigger new events
+                sel = el.opts.get('plot').kwargs.get('selected')
+                if sel is not None and list(sel) == msg['index']:
+                    return {}
+            return self._transform(msg)
         else:
             return {}
 
@@ -901,7 +923,8 @@ class ResetCallback(Callback):
     on_events = ['reset']
 
     def _process_msg(self, msg):
-        return {'resetting': True}
+        msg = {'resetting': True}
+        return self._transform(msg)
 
 
 class CDSCallback(Callback):
@@ -912,10 +935,10 @@ class CDSCallback(Callback):
 
     attributes = {'data': 'source.data'}
     models = ['source']
-    on_changes = ['data']
+    on_changes = ['data', 'patching']
 
     def initialize(self, plot_id=None):
-        super(CDSCallback, self).initialize(plot_id)
+        super().initialize(plot_id)
         plot = self.plot
         data = self._process_msg({'data': plot.handles['source'].data})['data']
         for stream in self.streams:
@@ -927,149 +950,245 @@ class CDSCallback(Callback):
         msg['data'] = dict(msg['data'])
         for col, values in msg['data'].items():
             if isinstance(values, dict):
+                shape = values.pop('shape', None)
+                dtype = values.pop('dtype', None)
+                values.pop('dimension', None)
                 items = sorted([(int(k), v) for k, v in values.items()])
                 values = [v for k, v in items]
+                if dtype is not None:
+                    values = np.array(values, dtype=dtype).reshape(shape)
             elif isinstance(values, list) and values and isinstance(values[0], dict):
                 new_values = []
                 for vals in values:
                     if isinstance(vals, dict):
+                        shape = vals.pop('shape', None)
+                        dtype = vals.pop('dtype', None)
+                        vals.pop('dimension', None)
                         vals = sorted([(int(k), v) for k, v in vals.items()])
                         vals = [v for k, v in vals]
+                        if dtype is not None:
+                            vals = np.array(vals, dtype=dtype).reshape(shape)
                     new_values.append(vals)
                 values = new_values
+            elif any(isinstance(v, (int, float)) for v in values):
+                values = [np.nan if v is None else v for v in values]
             msg['data'][col] = values
-        return msg
+        return self._transform(msg)
 
 
-class PointDrawCallback(CDSCallback):
+class GlyphDrawCallback(CDSCallback):
 
-    def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import PointDrawTool
-        except Exception:
-            param.main.param.warning('PointDraw requires bokeh >= 0.12.14')
-            return
+    _style_callback = """
+      var types = Bokeh.require("core/util/types");
+      var changed = false
+      for (var i = 0; i < cb_obj.length; i++) {
+        for (var style in styles) {
+          var value = styles[style];
+          if (types.isArray(value)) {
+            value = value[i % value.length];
+          }
+          if (cb_obj.data[style][i] !== value) {
+            cb_obj.data[style][i] = value;
+            changed = true;
+          }
+        }
+      }
+      if (changed)
+        cb_obj.change.emit()
+    """
 
+    def _create_style_callback(self, cds, glyph):
         stream = self.streams[0]
-        renderers = [self.plot.handles['glyph_renderer']]
-        kwargs = {}
-        if stream.num_objects:
-            if bokeh_version >= '1.0.0':
-                kwargs['num_objects'] = stream.num_objects
-            else:
-                param.main.param.warning(
-                    'Specifying num_objects to PointDraw stream requires '
-                    'a bokeh version >= 1.0.0.')
-        point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
-                                   empty_value=stream.empty_value,
-                                   renderers=renderers, **kwargs)
-        self.plot.state.tools.append(point_tool)
-        source = self.plot.handles['source']
+        col = cds.column_names[0]
+        length = len(cds.data[col])
+        for style, values in stream.styles.items():
+            cds.data[style] = [values[i % len(values)] for i in range(length)]
+            setattr(glyph, style, style)
+        cb = CustomJS(code=self._style_callback,
+                      args={'styles': stream.styles,
+                            'empty': stream.empty_value})
+        cds.js_on_change('data', cb)
 
-        # Add any value dimensions not already in the CDS data
-        # ensuring the element can be reconstituted in entirety
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
         element = self.plot.current_frame
+        stream = self.streams[0]
         for d in element.vdims:
             dim = dimension_sanitizer(d.name)
-            if dim not in source.data:
-                source.data[dim] = element.dimension_values(d)
-        super(PointDrawCallback, self).initialize(plot_id)
+            if dim in data:
+                continue
+            values = element.dimension_values(d)
+            if len(values) != len(list(data.values())[0]):
+                values = np.concatenate([values, [stream.empty_value]])
+            data[dim] = values
 
 
-class PolyDrawCallback(CDSCallback):
+class PointDrawCallback(GlyphDrawCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import PolyDrawTool
-        except:
-            param.main.param.warning('PolyDraw requires bokeh >= 0.12.14')
-            return
         plot = self.plot
         stream = self.streams[0]
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        renderers = [plot.handles['glyph_renderer']]
         kwargs = {}
         if stream.num_objects:
-            if bokeh_version >= '1.0.0':
-                kwargs['num_objects'] = stream.num_objects
-            else:
-                param.main.param.warning(
-                    'Specifying num_objects to PointDraw stream requires '
-                    'a bokeh version >=1.0.0.')
-        if stream.show_vertices:
-            if bokeh_version >= '1.0.0':
-                vertex_style = dict({'size': 10}, **stream.vertex_style)
-                r1 = plot.state.scatter([], [], **vertex_style)
-                kwargs['vertex_renderer'] = r1
-            else:
-                param.main.param.warning(
-                    'Enabling vertices on the PointDraw stream requires '
-                    'a bokeh version >=1.0.0.')
-        poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
-                                 empty_value=stream.empty_value,
-                                 renderers=[plot.handles['glyph_renderer']],
-                                 **kwargs)
-        plot.state.tools.append(poly_tool)
-        self._update_cds_vdims()
-        super(PolyDrawCallback, self).initialize(plot_id)
-
-    def _update_cds_vdims(self):
+            kwargs['num_objects'] = stream.num_objects
+        if stream.tooltip:
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+        if stream.styles:
+            self._create_style_callback(cds, glyph)
+        if stream.empty_value is not None:
+            kwargs['empty_value'] = stream.empty_value
+        point_tool = PointDrawTool(
+            add=all(s.add for s in self.streams),
+            drag=all(s.drag for s in self.streams),
+            renderers=renderers, **kwargs)
+        self.plot.state.tools.append(point_tool)
+        self._update_cds_vdims(cds.data)
         # Add any value dimensions not already in the CDS data
         # ensuring the element can be reconstituted in entirety
+        super().initialize(plot_id)
+
+    def _process_msg(self, msg):
+        self._update_cds_vdims(msg['data'])
+        return super()._process_msg(msg)
+
+
+class CurveEditCallback(GlyphDrawCallback):
+
+    def initialize(self, plot_id=None):
+        plot = self.plot
+        stream = self.streams[0]
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        renderer = plot.state.scatter(glyph.x, glyph.y, source=cds,
+                                      visible=False, **stream.style)
+        renderers = [renderer]
+        kwargs = {}
+        if stream.tooltip:
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+        point_tool = PointDrawTool(
+            add=False, drag=True, renderers=renderers, **kwargs
+        )
+        code="renderer.visible = tool.active || (cds.selected.indices.length > 0)"
+        show_vertices = CustomJS(args={'renderer': renderer, 'cds': cds, 'tool': point_tool}, code=code)
+        point_tool.js_on_change('change:active', show_vertices)
+        cds.selected.js_on_change('indices', show_vertices)
+
+        self.plot.state.tools.append(point_tool)
+        self._update_cds_vdims(cds.data)
+        super().initialize(plot_id)
+
+    def _process_msg(self, msg):
+        self._update_cds_vdims(msg['data'])
+        return super()._process_msg(msg)
+
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
         element = self.plot.current_frame
-        cds = self.plot.handles['cds']
         for d in element.vdims:
-            scalar = element.interface.isscalar(element, d)
             dim = dimension_sanitizer(d.name)
-            if dim not in cds.data:
+            if dim not in data:
+                data[dim] = element.dimension_values(d)
+
+
+class PolyDrawCallback(GlyphDrawCallback):
+
+    def initialize(self, plot_id=None):
+        plot = self.plot
+        stream = self.streams[0]
+        cds = self.plot.handles['cds']
+        glyph = self.plot.handles['glyph']
+        renderers = [plot.handles['glyph_renderer']]
+        kwargs = {}
+        if stream.num_objects:
+            kwargs['num_objects'] = stream.num_objects
+        if stream.show_vertices:
+            vertex_style = dict({'size': 10}, **stream.vertex_style)
+            r1 = plot.state.scatter([], [], **vertex_style)
+            kwargs['vertex_renderer'] = r1
+        if stream.styles:
+            self._create_style_callback(cds, glyph)
+        if stream.tooltip:
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+        if stream.empty_value is not None:
+            kwargs['empty_value'] = stream.empty_value
+        poly_tool = PolyDrawTool(
+            drag=all(s.drag for s in self.streams), renderers=renderers,
+            **kwargs
+        )
+        plot.state.tools.append(poly_tool)
+        self._update_cds_vdims(cds.data)
+        super().initialize(plot_id)
+
+    def _process_msg(self, msg):
+        self._update_cds_vdims(msg['data'])
+        return super()._process_msg(msg)
+
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
+        element = self.plot.current_frame
+        stream = self.streams[0]
+        interface = element.interface
+        scalar_kwargs = {'per_geom': True} if interface.multi else {}
+        for d in element.vdims:
+            scalar = element.interface.isunique(element, d, **scalar_kwargs)
+            dim = dimension_sanitizer(d.name)
+            if dim not in data:
                 if scalar:
-                    cds.data[dim] = element.dimension_values(d, not scalar)
+                    values = element.dimension_values(d, not scalar)
                 else:
-                    cds.data[dim] = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
+                    values = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
+                if len(values) != len(data['xs']):
+                    values = np.concatenate([values, [stream.empty_value]])
+                data[dim] = values
 
 
 class FreehandDrawCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import FreehandDrawTool
-        except:
-            param.main.param.warning('FreehandDraw requires bokeh >= 0.13.0')
-            return
         plot = self.plot
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
         stream = self.streams[0]
+        if stream.styles:
+            self._create_style_callback(cds, glyph)
+        kwargs = {}
+        if stream.tooltip:
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+        if stream.empty_value is not None:
+            kwargs['empty_value'] = stream.empty_value
         poly_tool = FreehandDrawTool(
-            empty_value=stream.empty_value,
             num_objects=stream.num_objects,
             renderers=[plot.handles['glyph_renderer']],
+            **kwargs
         )
         plot.state.tools.append(poly_tool)
-        self._update_cds_vdims()
+        self._update_cds_vdims(cds.data)
         CDSCallback.initialize(self, plot_id)
 
 
-class BoxEditCallback(CDSCallback):
+class BoxEditCallback(GlyphDrawCallback):
 
-    attributes = {'data': 'rect_source.data'}
-    models = ['rect_source']
+    attributes = {'data': 'cds.data'}
+    models = ['cds']
 
-    def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import BoxEditTool
-        except:
-            param.main.param.warning('BoxEdit requires bokeh >= 0.12.14')
-            return
-
+    def _path_initialize(self):
         plot = self.plot
-        data = plot.handles['cds'].data
+        cds = plot.handles['cds']
+        data = cds.data
         element = self.plot.current_frame
-        stream = self.streams[0]
-        kwargs = {}
-        if stream.num_objects:
-            if bokeh_version >= '1.0.0':
-                kwargs['num_objects'] = stream.num_objects
-            else:
-                param.main.param.warning(
-                    'Specifying num_objects to BoxEdit stream requires '
-                    'a bokeh version >=1.0.0.')
+
         xs, ys, widths, heights = [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
@@ -1080,266 +1199,113 @@ class BoxEditCallback(CDSCallback):
             heights.append(y1-y0)
         data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
         data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
-        rect_source = ColumnDataSource(data=data)
+        cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
-        plot.handles['rect_source'] = rect_source
-        box_tool = BoxEditTool(renderers=[r1], **kwargs)
-        plot.state.tools.append(box_tool)
+        r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
-        super(CDSCallback, self).initialize()
         data = self._process_msg({'data': data})['data']
         for stream in self.streams:
             stream.update(data=data)
+        return r1
 
+    def initialize(self, plot_id=None):
+        from .path import PathPlot
+
+        stream = self.streams[0]
+        cds = self.plot.handles['cds']
+
+        kwargs = {}
+        if stream.num_objects:
+            kwargs['num_objects'] = stream.num_objects
+        if stream.tooltip:
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+
+        renderer = self.plot.handles['glyph_renderer']
+        if isinstance(self.plot, PathPlot):
+            renderer = self._path_initialize()
+        if stream.styles:
+            self._create_style_callback(cds, renderer.glyph)
+        box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+        self.plot.state.tools.append(box_tool)
+        self._update_cds_vdims(cds.data)
+        super(CDSCallback, self).initialize()
 
     def _process_msg(self, msg):
-        data = super(BoxEditCallback, self)._process_msg(msg)
+        data = super()._process_msg(msg)
         if 'data' not in data:
             return {}
         data = data['data']
         x0s, x1s, y0s, y1s = [], [], [], []
-        for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
+        for (x, y, w, h) in zip(data['x'], data['y'], data['width'], data['height']):
             x0s.append(x-w/2.)
             x1s.append(x+w/2.)
             y0s.append(y-h/2.)
             y1s.append(y+h/2.)
-        return {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
+        values = {}
+        for col in data:
+            if col in ('x', 'y', 'width', 'height'):
+                continue
+            values[col] = data[col]
+        msg = {'data': dict(values, x0=x0s, x1=x1s, y0=y0s, y1=y1s)}
+        self._update_cds_vdims(msg['data'])
+        return self._transform(msg)
 
 
 class PolyEditCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import PolyEditTool
-        except:
-            param.main.param.warning('PolyEdit requires bokeh >= 0.12.14')
-            return
         plot = self.plot
+        cds = plot.handles['cds']
         vertex_tool = None
         if all(s.shared for s in self.streams):
             tools = [tool for tool in plot.state.tools if isinstance(tool, PolyEditTool)]
             vertex_tool = tools[0] if tools else None
+
+        stream = self.streams[0]
+        kwargs = {}
+        if stream.tooltip:
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
         if vertex_tool is None:
-            vertex_style = dict({'size': 10}, **self.streams[0].vertex_style)
+            vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
-            vertex_tool = PolyEditTool(vertex_renderer=r1)
+            vertex_tool = PolyEditTool(vertex_renderer=r1, **kwargs)
             plot.state.tools.append(vertex_tool)
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
-        self._update_cds_vdims()
+        self._update_cds_vdims(cds.data)
         CDSCallback.initialize(self, plot_id)
 
 
-
-callbacks = Stream._callbacks['bokeh']
-
-callbacks[PointerXY]   = PointerXYCallback
-callbacks[PointerX]    = PointerXCallback
-callbacks[PointerY]    = PointerYCallback
-callbacks[Tap]         = TapCallback
-callbacks[SingleTap]   = SingleTapCallback
-callbacks[DoubleTap]   = DoubleTapCallback
-callbacks[MouseEnter]  = MouseEnterCallback
-callbacks[MouseLeave]  = MouseLeaveCallback
-callbacks[RangeXY]     = RangeXYCallback
-callbacks[RangeX]      = RangeXCallback
-callbacks[RangeY]      = RangeYCallback
-callbacks[BoundsXY]    = BoundsCallback
-callbacks[BoundsX]     = BoundsXCallback
-callbacks[BoundsY]     = BoundsYCallback
-callbacks[Selection1D] = Selection1DCallback
-callbacks[PlotSize]    = PlotSizeCallback
-callbacks[Draw]        = DrawCallback
-callbacks[PlotReset]   = ResetCallback
-callbacks[CDSStream]   = CDSCallback
-callbacks[BoxEdit]     = BoxEditCallback
-callbacks[PointDraw]   = PointDrawCallback
-callbacks[FreehandDraw]   = FreehandDrawCallback
-callbacks[PolyDraw]    = PolyDrawCallback
-callbacks[PolyEdit]    = PolyEditCallback
-
-
-
-class LinkCallback(param.Parameterized):
-
-    source_model = None
-    target_model = None
-    source_handles = []
-    target_handles = []
-
-    on_source_events = []
-    on_source_changes = []
-
-    on_target_events = []
-    on_target_changes = []
-
-    source_code = None
-    target_code = None
-
-    def __init__(self, root_model, link, source_plot, target_plot=None):
-        self.root_model = root_model
-        self.link = link
-        self.source_plot = source_plot
-        self.target_plot = target_plot
-        self.validate()
-
-        references = {k: v for k, v in link.get_param_values()
-                      if k not in ('source', 'target', 'name')}
-
-        for sh in self.source_handles+[self.source_model]:
-            key = '_'.join(['source', sh])
-            references[key] = source_plot.handles[sh]
-
-        for p, value in link.get_param_values():
-            if p in ('name', 'source', 'target'):
-                continue
-            references[p] = value
-
-        if target_plot is not None:
-            for sh in self.target_handles+[self.target_model]:
-                key = '_'.join(['target', sh])
-                references[key] = target_plot.handles[sh]
-
-        if self.source_model in source_plot.handles:
-            src_model = source_plot.handles[self.source_model]
-            src_cb = CustomJS(args=references, code=self.source_code)
-            for ch in self.on_source_changes:
-                src_model.js_on_change(ch, src_cb)
-            for ev in self.on_source_events:
-                src_model.js_on_event(ev, src_cb)
-
-        if target_plot is not None and self.target_model in target_plot.handles and self.target_code:
-            tgt_model = target_plot.handles[self.target_model]
-            tgt_cb = CustomJS(args=references, code=self.target_code)
-            for ch in self.on_target_changes:
-                tgt_model.js_on_change(ch, tgt_cb)
-            for ev in self.on_target_events:
-                tgt_model.js_on_event(ev, tgt_cb)
-
-    @classmethod
-    def find_links(cls, root_plot):
-        """
-        Traverses the supplied plot and searches for any Links on
-        the plotted objects.
-        """
-        plot_fn = lambda x: isinstance(x, GenericElementPlot) and not isinstance(x, GenericOverlayPlot)
-        plots = root_plot.traverse(lambda x: x, [plot_fn])
-        potentials = [cls.find_link(plot) for plot in plots]
-        source_links = [p for p in potentials if p is not None]
-        found = []
-        for plot, links in source_links:
-            for link in links:
-                if not link._requires_target:
-                    # If link has no target don't look further
-                    found.append((link, plot, None))
-                    continue
-                potentials = [cls.find_link(p, link) for p in plots]
-                tgt_links = [p for p in potentials if p is not None]
-                if tgt_links:
-                    found.append((link, plot, tgt_links[0][0]))
-        return found
-
-    @classmethod
-    def find_link(cls, plot, link=None):
-        """
-        Searches a GenericElementPlot for a Link.
-        """
-        registry = Link.registry.items()
-        for source in plot.link_sources:
-            if link is None:
-                links = [
-                    l for src, links in registry for l in links
-                    if src is source or (src._plot_id is not None and
-                                         src._plot_id == source._plot_id)]
-                if links:
-                    return (plot, links)
-            else:
-                if ((link.target is source) or
-                    (link.target is not None and
-                     link.target._plot_id is not None and
-                     link.target._plot_id == source._plot_id)):
-                    return (plot, [link])
-
-    def validate(self):
-        """
-        Should be subclassed to check if the source and target plots
-        are compatible to perform the linking.
-        """
-
-
-class RangeToolLinkCallback(LinkCallback):
-    """
-    Attaches a RangeTool to the source plot and links it to the
-    specified axes on the target plot
-    """
-
-    def __init__(self, root_model, link, source_plot, target_plot):
-        try:
-            from bokeh.models.tools import RangeTool
-        except:
-            raise Exception('RangeToolLink requires bokeh >= 0.13')
-        toolbars = list(root_model.select({'type': ToolbarBox}))
-        axes = {}
-        if 'x' in link.axes:
-            axes['x_range'] = target_plot.handles['x_range']
-        if 'y' in link.axes:
-            axes['y_range'] = target_plot.handles['y_range']
-        tool = RangeTool(**axes)
-        source_plot.state.add_tools(tool)
-        if toolbars:
-            toolbar = toolbars[0].toolbar
-            toolbar.tools.append(tool)
-
-
-class DataLinkCallback(LinkCallback):
-    """
-    Merges the source and target ColumnDataSource
-    """
-
-    def __init__(self, root_model, link, source_plot, target_plot):
-        src_cds = source_plot.handles['source']
-        tgt_cds = target_plot.handles['source']
-        if src_cds is tgt_cds:
-            return
-
-        src_len = [len(v) for v in src_cds.data.values()]
-        tgt_len = [len(v) for v in tgt_cds.data.values()]
-        if src_len[0] != tgt_len[0]:
-            raise Exception('DataLink source data length must match target '
-                            'data length, found source length of %d and '
-                            'target length of %d.' % (src_len[0], tgt_len[0]))
-
-        # Ensure the data sources are compatible (i.e. overlapping columns are equal)
-        for k, v in tgt_cds.data.items():
-            if k not in src_cds.data:
-                continue
-            v = np.asarray(v)
-            col = np.asarray(src_cds.data[k])
-            if not ((isscalar(v) and v == col) or
-                    (v.dtype.kind not in 'iufc' and (v==col).all()) or
-                    np.allclose(v, np.asarray(src_cds.data[k]))):
-                raise ValueError('DataLink can only be applied if overlapping '
-                                 'dimension values are equal, %s column on source '
-                                 'does not match target' % k)
-
-        src_cds.data.update(tgt_cds.data)
-        renderer = target_plot.handles.get('glyph_renderer')
-        if renderer is None:
-            pass
-        elif 'data_source' in renderer.properties():
-            renderer.update(data_source=src_cds)
-        else:
-            renderer.update(source=src_cds)
-        if hasattr(renderer, 'view'):
-            renderer.view.update(source=src_cds)
-        target_plot.handles['source'] = src_cds
-        for callback in target_plot.callbacks:
-            callback.initialize(plot_id=root_model.ref['id'])
-
-
-callbacks = Link._callbacks['bokeh']
-
-callbacks[RangeToolLink] = RangeToolLinkCallback
-callbacks[DataLink] = DataLinkCallback
+Stream._callbacks['bokeh'].update({
+    PointerXY   : PointerXYCallback,
+    PointerX    : PointerXCallback,
+    PointerY    : PointerYCallback,
+    Tap         : TapCallback,
+    SingleTap   : SingleTapCallback,
+    DoubleTap   : DoubleTapCallback,
+    PressUp     : PressUpCallback,
+    PanEnd      : PanEndCallback,
+    MouseEnter  : MouseEnterCallback,
+    MouseLeave  : MouseLeaveCallback,
+    RangeXY     : RangeXYCallback,
+    RangeX      : RangeXCallback,
+    RangeY      : RangeYCallback,
+    BoundsXY    : BoundsCallback,
+    BoundsX     : BoundsXCallback,
+    BoundsY     : BoundsYCallback,
+    Lasso       : LassoCallback,
+    Selection1D : Selection1DCallback,
+    PlotSize    : PlotSizeCallback,
+    SelectionXY : SelectionXYCallback,
+    Draw        : DrawCallback,
+    PlotReset   : ResetCallback,
+    CDSStream   : CDSCallback,
+    BoxEdit     : BoxEditCallback,
+    PointDraw   : PointDrawCallback,
+    CurveEdit   : CurveEditCallback,
+    FreehandDraw: FreehandDrawCallback,
+    PolyDraw    : PolyDrawCallback,
+    PolyEdit    : PolyEditCallback,
+    SelectMode  : SelectModeCallback
+})

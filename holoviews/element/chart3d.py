@@ -37,6 +37,9 @@ class Surface(Image, Element3D):
         extents = extents if extents else (None, None, None, None, None, None)
         Image.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        expr, bbox, _ = super()._get_selection_expr_for_stream_value(**kwargs)
+        return expr, bbox, None
 
 
 class TriSurface(Element3D, Points):
@@ -63,23 +66,10 @@ class TriSurface(Element3D, Points):
         return Points.__getitem__(self, slc)
 
 
-class Trisurface(TriSurface):
-    """
-    Old name for TriSurface. Retaining for backwards compatibility
-    until holoviews 2.0.
-    """
-
-    group = param.String(default='Trisurface', constant=True)
-
-    def __init__(self, *args, **kwargs):
-        self.param.warning('Please use TriSurface element instead')
-        super(TriSurface, self).__init__(*args, **kwargs)
-
-
 class Scatter3D(Element3D, Points):
     """
     Scatter3D is a 3D element representing the position of a collection
-    of coordinates in a 3D space. The key dimensions represent the 
+    of coordinates in a 3D space. The key dimensions represent the
     position of each coordinate along the x-, y- and z-axis while the
     value dimensions can optionally supply additional information.
     """
@@ -96,7 +86,6 @@ class Scatter3D(Element3D, Points):
 
     def __getitem__(self, slc):
         return Points.__getitem__(self, slc)
-
 
 
 class Path3D(Element3D, Path):

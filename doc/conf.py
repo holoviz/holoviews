@@ -4,30 +4,63 @@ from nbsite.shared_conf import *
 
 # Declare information specific to this project.
 project = u'HoloViews'
-authors = u'PyViz developers'
-copyright = u'2019 ' + authors
+authors = u'HoloViz developers'
+copyright = u'2022 ' + authors
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
-import holoviews
-version = release = holoviews.__version__
+import param
 
-html_theme = 'sphinx_ioam_theme'
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
+
+import holoviews
+version = release = base_version(holoviews.__version__)
+
+holoviews.extension.inline = False
+
+html_theme = 'pydata_sphinx_theme'
+html_logo = '_static/logo_horizontal_theme.png'
+html_favicon = '_static/favicon.ico'
+
 html_static_path += ['_static']
+
+html_css_files = [
+    'nbsite.css',
+    'css/custom.css'
+]
+
 html_theme_options = {
-    'logo': 'logo.png',
-    'favicon': 'favicon.ico',
-    'custom_css': 'holoviews.css'
+    'github_url': 'https://github.com/holoviz/holoviews',
+    'icon_links': [
+        {
+            'name': 'Twitter',
+            'url': 'https://twitter.com/holoviews',
+            'icon': 'fab fa-twitter-square',
+        },
+        {
+            'name': 'Discourse',
+            'url': 'https://discourse.holoviz.org/',
+            'icon': 'fab fa-discourse',
+        },
+    ],
+    "footer_items": [
+        "copyright",
+        "last-updated",
+    ],
+    'google_analytics_id': 'UA-61554933-1',
 }
+
 nbbuild_cell_timeout = 360
 
-extensions += ['nbsite.gallery']
-
-templates_path = ['_templates']
+extensions += [
+    'nbsite.gallery',
+    'sphinx_copybutton',
+]
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
     'galleries': {},
-    'github_org': 'pyviz',
+    'github_org': 'holoviz',
     'github_project': 'holoviews'
 }
 
@@ -52,43 +85,18 @@ if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
         ]
     }
 
-MAIN_SITE = '//holoviews.org'
+templates_path = [
+    '_templates'
+]
 
 html_context.update({
-    'PROJECT': project,
-    'DESCRIPTION': description,
-    'AUTHOR': authors,
-    'VERSION': version,
-    'WEBSITE_SERVER': 'https:',
-    # Links
-    'LINKS': (
-        ('Getting started', '/getting_started/index'),
-        ('User Guide', '/user_guide/index'),
-        ('Gallery', '/gallery/index'),
-        ('Reference Gallery', '/reference/index'),
-        ('API Docs', '/Reference_Manual/index'),
-        ('FAQ', '/FAQ'),
-        ('About', '/about')
-    ),
-    # About Links
-    'ABOUT': (
-        ('About', '/about.html')
-    ),
-    # Social links
-    'SOCIAL': (
-        ('Gitter', '//gitter.im/pyviz/pyviz'),
-        ('Twitter', '//twitter.com/holoviews'),
-        ('Github', '//github.com/pyviz/holoviews'),
-    ),
-    # Links for the docs sub navigation
-    'NAV': (
-        ('Getting started', 'getting_started/index'),
-        ('User Guide', 'user_guide/index'),
-        ('Gallery', 'gallery/index'),
-        ('Reference Gallery', 'reference/index'),
-        ('Releases', 'releases'),
-        ('API', 'Reference_Manual/index'),
-        ('FAQ', 'FAQ')
-    ),
-    'js_includes': html_context['js_includes']+['holoviews.js']
+    # Used to add binder links to the latest released tag.
+    "last_release": f"v{'.'.join(holoviews.__version__.split('.')[:3])}",
+    'github_user': 'holoviz',
+    'github_repo': 'holoviews',
 })
+
+# Override the Sphinx default title that appends `documentation`
+html_title = f'{project} v{version}'
+# Format of the last updated section in the footer
+html_last_updated_fmt = '%Y-%m-%d'

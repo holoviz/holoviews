@@ -8,14 +8,15 @@ quickly draw common shapes.
 import numpy as np
 
 import param
-from ..core import Element2D, Dataset
+from ..core import Dataset
 from ..core.data import MultiInterface
-from ..core.dimension import Dimension, asdim
-from ..core.util import config, disable_constant, isscalar
+from ..core.dimension import Dimension
+from ..core.util import OrderedDict
 from .geom import Geometry
+from .selection import SelectionPolyExpr
 
 
-class Path(Geometry):
+class Path(SelectionPolyExpr, Geometry):
     """
     The Path element represents one or more of path geometries with
     associated values. Each path geometry may be split into
@@ -56,7 +57,8 @@ class Path(Geometry):
     group = param.String(default="Path", constant=True)
 
     datatype = param.ObjectSelector(default=[
-        'multitabular', 'dataframe', 'dictionary', 'dask', 'array'])
+        'multitabular', 'spatialpandas', 'dask_spatialpandas']
+    )
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
@@ -68,31 +70,23 @@ class Path(Geometry):
                 data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
             # Allow unpacking of a list of Path elements
+            kdims = kdims or self.kdims
             paths = []
             for path in data:
+                if path.kdims != kdims:
+                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims)}
+                    path = path.redim(**redim)
                 if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
                 else:
                     paths.append(path.data)
             data = paths
 
-        datatype = params.pop('datatype', self.datatype)
-
-        # Ensure that a list of tuples of scalars and any other non-list
-        # type is interpreted as a single path
-        if (not isinstance(data, (list, Dataset)) or
-            (isinstance(data, list) and not len(data) == 0 and all(
-                isinstance(d, tuple) and all(isscalar(v) for v in d)
-                for d in data))):
-            datatype = [dt for dt in datatype if dt != 'multitabular']
-        elif isinstance(data, list) and 'multitabular' not in datatype:
-            datatype = datatype + ['multitabular']
-
-        super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
-                                   datatype=datatype, **params)
-
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def __getitem__(self, key):
+        if isinstance(key, np.ndarray):
+            return self.select(selection_mask=np.squeeze(key))
         if key in self.dimensions(): return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
@@ -105,13 +99,61 @@ class Path(Geometry):
         ystart, ystop = ykey.start, ykey.stop
         return self.clone(extents=(xstart, ystart, xstop, ystop))
 
+    def select(self, selection_expr=None, selection_specs=None, **selection):
+        """Applies selection by dimension name
 
-    def select(self, selection_specs=None, **kwargs):
-        """
-        Bypasses selection on data and sets extents based on selection.
-        """
-        return super(Element2D, self).select(selection_specs, **kwargs)
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
 
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
+
+        * predicate expression: A holoviews.dim expression, e.g.:
+
+            from holoviews import dim
+            ds.select(selection_expr=dim('x') % 2 == 0)
+
+        Args:
+            selection_expr: holoviews.dim predicate expression
+                specifying selection.
+            selection_specs: List of specs to match on
+                A list of types, functions, or type[.group][.label]
+                strings specifying which objects to apply the
+                selection on.
+            **selection: Dictionary declaring selections by dimension
+                Selections can be scalar values, tuple ranges, lists
+                of discrete values and boolean arrays
+
+        Returns:
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
+        """
+        xdim, ydim = self.kdims[:2]
+        x_range = selection.pop(xdim.name, None)
+        y_range = selection.pop(ydim.name, None)
+        sel = super().select(selection_expr, selection_specs,
+                             **selection)
+        if x_range is None and y_range is None:
+            return sel
+        x_range = x_range if isinstance(x_range, slice) else slice(None)
+        y_range = y_range if isinstance(y_range, slice) else slice(None)
+        return sel[x_range, y_range]
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
         """
@@ -120,46 +162,20 @@ class Path(Geometry):
         to select a subset of paths.
         """
         if not self.interface.multi:
-            if datatype == 'array':
+            if not len(self):
+                return []
+            elif datatype == 'array':
                 obj = self.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = self.dframe(**kwargs)
-            elif datatype == 'columns':
+            elif datatype in ('columns', 'dictionary'):
                 obj = self.columns(**kwargs)
             elif datatype is None:
-                obj = self
+                obj = self.clone([self.data])
             else:
                 raise ValueError("%s datatype not support" % datatype)
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
-
-    # Deprecated methods
-
-    @classmethod
-    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
-        if config.future_deprecations:
-            param.main.param.warning(
-                'Path.collapse_data is deprecated, collapsing may now '
-                'be performed through concatenation and aggregation.')
-        if function is None:
-            return [path for paths in data_list for path in paths]
-        else:
-            raise Exception("Path types are not uniformly sampled and"
-                            "therefore cannot be collapsed with a function.")
-
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style unpickled Path types without an interface
-        use the MultiInterface.
-
-        Note: Deprecate as part of 2.0
-        """
-        self.__dict__ = state
-        if 'interface' not in state:
-            self.interface = MultiInterface
-        super(Dataset, self).__setstate__(state)
-
 
 
 class Contours(Path):
@@ -194,9 +210,6 @@ class Contours(Path):
     representation where all paths are separated by NaN values.
     """
 
-    level = param.Number(default=None, doc="""
-        Optional level associated with the set of Contours.""")
-
     vdims = param.List(default=[], constant=True, doc="""
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""")
@@ -207,32 +220,7 @@ class Contours(Path):
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
-        if params.get('level') is not None:
-            self.param.warning(
-                "The level parameter on %s elements is deprecated, "
-                "supply the value dimension(s) as columns in the data.",
-                type(self).__name__)
-            vdims = vdims or [self._level_vdim]
-            params['vdims'] = []
-        else:
-            params['vdims'] = vdims
-        super(Contours, self).__init__(data, kdims=kdims, **params)
-        if params.get('level') is not None:
-            with disable_constant(self):
-                self.vdims = [asdim(d) for d in vdims]
-        else:
-            all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
-            if not all_scalar:
-                raise ValueError("All value dimensions on a Contours element must be scalar")
-
-    def dimension_values(self, dim, expanded=True, flat=True):
-        dimension = self.get_dimension(dim, strict=True)
-        if dimension in self.vdims and self.level is not None:
-            if expanded:
-                return np.full(len(self), self.level)
-            return np.array([self.level])
-        return super(Contours, self).dimension_values(dim, expanded, flat)
-
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 class Polygons(Contours):
@@ -322,8 +310,11 @@ class BaseShape(Path):
 
     __abstract = True
 
+    def __new__(cls, *args, **kwargs):
+        return super(Dataset, cls).__new__(cls)
+
     def __init__(self, **params):
-        super(BaseShape, self).__init__([], **params)
+        super().__init__([], **params)
         self.interface = MultiInterface
 
     def clone(self, *args, **overrides):
@@ -332,7 +323,7 @@ class BaseShape(Path):
         containing the specified args and kwargs.
         """
         link = overrides.pop('link', True)
-        settings = dict(self.get_param_values(), **overrides)
+        settings = dict(self.param.get_param_values(), **overrides)
         if 'id' not in settings:
             settings['id'] = self.id
         if not args and link:
@@ -373,7 +364,6 @@ class Box(BaseShape):
     __pos_params = ['x','y', 'height']
 
     def __init__(self, x, y, spec, **params):
-
         if isinstance(spec, tuple):
             if 'aspect' in params:
                 raise ValueError('Aspect parameter not supported when supplying '
@@ -383,17 +373,17 @@ class Box(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Box, self).__init__(x=x, y=y, height=height, **params)
+        super().__init__(x=x, y=y, height=height, **params)
 
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
-        (l,b,r,t) = (x-half_width, y-half_height, x+half_width, y+half_height)
-
+        (l,b,r,t) = (-half_width, -half_height, half_width, half_height)
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                         [np.sin(self.orientation), np.cos(self.orientation)]])
 
-        self.data = [np.tensordot(rot, box.T, axes=[1,0]).T]
+        xs, ys = np.tensordot(rot, box.T, axes=[1,0])
+        self.data = [np.column_stack([xs+x, ys+y])]
 
 
 class Ellipse(BaseShape):
@@ -452,7 +442,7 @@ class Ellipse(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Ellipse, self).__init__(x=x, y=y, height=height, **params)
+        super().__init__(x=x, y=y, height=height, **params)
         angles = np.linspace(0, 2*np.pi, self.samples)
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -476,7 +466,7 @@ class Bounds(BaseShape):
     used to compute the corresponding lbrt tuple.
     """
 
-    lbrt = param.NumericTuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
+    lbrt = param.Tuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
           The (left, bottom, right, top) coordinates of the bounding box.""")
 
     group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
@@ -487,6 +477,8 @@ class Bounds(BaseShape):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
 
-        super(Bounds, self).__init__(lbrt=lbrt, **params)
+        super().__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
-        self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]
+        xdim, ydim = self.kdims
+        self.data = [OrderedDict([(xdim.name, np.array([l, l, r, r, l])),
+                                  (ydim.name, np.array([b, t, t, b, b]))])]

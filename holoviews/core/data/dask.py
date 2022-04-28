@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 try:
     import itertools.izip as zip
@@ -44,7 +42,7 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def loaded(cls):
-        return 'dask' in sys.modules and 'pandas' in sys.modules
+        return 'dask.dataframe' in sys.modules and 'pandas' in sys.modules
 
     @classmethod
     def applies(cls, obj):
@@ -71,17 +69,28 @@ class DaskInterface(PandasInterface):
         return data, dims, extra
 
     @classmethod
+    def compute(cls, dataset):
+        return dataset.clone(dataset.data.compute())
+
+    @classmethod
+    def persist(cls, dataset):
+        return dataset.clone(dataset.data.persist())
+
+    @classmethod
     def shape(cls, dataset):
         return (len(dataset.data), len(dataset.data.columns))
 
     @classmethod
     def range(cls, dataset, dimension):
         import dask.dataframe as dd
-        column = dataset.data[dataset.get_dimension(dimension).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             column = np.sort(column[column.notnull()].compute())
             return (column[0], column[-1]) if len(column) else (None, None)
         else:
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
             return dd.compute(column.min(), column.max())
 
     @classmethod
@@ -90,18 +99,21 @@ class DaskInterface(PandasInterface):
         return dataset.data
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim)
         data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
-        return data.compute().values
+        if keep_index:
+            return data.compute() if compute else data
+        else:
+            return data.compute().values if compute else data.values
 
     @classmethod
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists. or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
@@ -163,6 +175,9 @@ class DaskInterface(PandasInterface):
             group_kwargs = dict(util.get_param_values(dataset),
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
+
+        # Propagate dataset
+        group_kwargs['dataset'] = dataset.dataset
 
         data = []
         group_by = [d.name for d in index_dims]
@@ -257,22 +272,18 @@ class DaskInterface(PandasInterface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not np.isscalar(values):
-                err = ('Dask dataframe does not support assigning '
-                       'non-scalar value.')
-                raise NotImplementedError(err)
+                if len(values):
+                    err = ('Dask dataframe does not support assigning '
+                           'non-scalar value.')
+                    raise NotImplementedError(err)
+                values = None
             data = data.assign(**{dimension.name: values})
         return data
 
     @classmethod
-    def concat(cls, datasets, dimensions, vdims):
+    def concat_fn(cls, dataframes, **kwargs):
         import dask.dataframe as dd
-        dataframes = []
-        for key, ds in datasets:
-            data = ds.data.copy()
-            for d, k in zip(dimensions, key):
-                data[d.name] = k
-            dataframes.append(data)
-        return dd.concat(dataframes)
+        return dd.concat(dataframes, **kwargs)
 
     @classmethod
     def dframe(cls, dataset, dimensions):

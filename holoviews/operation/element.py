@@ -2,18 +2,21 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
-from __future__ import division
+import warnings
 
 import numpy as np
-
 import param
+
 from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
-from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite, dt_to_int)
+from ..core.data.util import dask_array_module
+from ..core.util import (
+    LooseVersion, group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
+    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -50,7 +53,7 @@ class operation(Operation):
        checking.
 
        May be used to declare useful information to other code in
-       HoloViews e.g required for tab-completion support of operations
+       HoloViews, e.g. required for tab-completion support of operations
        registered with compositors.""")
 
     group = param.String(default='Operation', doc="""
@@ -83,8 +86,105 @@ class factory(Operation):
         By default, if three overlaid Images elements are supplied,
         the corresponding RGB element will be returned. """)
 
+    args = param.List(default=[], doc="""
+        The list of positional argument to pass to the factory""")
+
+    kwargs = param.Dict(default={}, doc="""
+        The dict of keyword arguments to pass to the factory""")
+
     def _process(self, view, key=None):
-        return self.p.output_type(view)
+        return self.p.output_type(view, *self.p.args, **self.p.kwargs)
+
+
+class function(Operation):
+
+    output_type = param.ClassSelector(class_=type, doc="""
+        The output type of the method operation""")
+
+    input_type = param.ClassSelector(class_=type, doc="""
+        The object type the method is defined on""")
+
+    fn = param.Callable(default=lambda el, *args, **kwargs: el, doc="""
+        The function to apply.""")
+
+    args = param.List(default=[], doc="""
+        The list of positional argument to pass to the method""")
+
+    kwargs = param.Dict(default={}, doc="""
+        The dict of keyword arguments to pass to the method""")
+
+    def _process(self, element, key=None):
+        return self.p.fn(element, *self.p.args, **self.p.kwargs)
+
+
+class method(Operation):
+    """
+    Operation that wraps a method call
+    """
+
+    output_type = param.ClassSelector(class_=type, doc="""
+        The output type of the method operation""")
+
+    input_type = param.ClassSelector(class_=type, doc="""
+        The object type the method is defined on""")
+
+    method_name = param.String(default='__call__', doc="""
+        The method name""")
+
+    args = param.List(default=[], doc="""
+        The list of positional argument to pass to the method""")
+
+    kwargs = param.Dict(default={}, doc="""
+        The dict of keyword arguments to pass to the method""")
+
+    def _process(self, element, key=None):
+        fn = getattr(self.p.input_type, self.p.method_name)
+        return fn(element, *self.p.args, **self.p.kwargs)
+
+
+class apply_when(param.ParameterizedFunction):
+    """
+    Applies a selection depending on the current zoom range. If the
+    supplied predicate function returns a True it will apply the
+    operation otherwise it will return the raw element after the
+    selection. For example the following will apply datashading if
+    the number of points in the current viewport exceed 1000 otherwise
+    just returning the selected points element:
+
+       apply_when(points, operation=datashade, predicate=lambda x: x > 1000)
+    """
+
+    operation = param.Callable(default=lambda x: x)
+
+    predicate = param.Callable(default=None)
+
+    def _apply(self, element, x_range, y_range, invert=False):
+        selected = element
+        if x_range is not None and y_range is not None:
+            selected = element[x_range, y_range]
+        condition = self.predicate(selected)
+        if (not invert and condition) or (invert and not condition):
+            return selected
+        elif selected.interface.gridded:
+            return selected.clone([])
+        else:
+            return selected.iloc[:0]
+
+    def __call__(self, obj, **params):
+        if 'streams' in params:
+            streams = params.pop('streams')
+        else:
+            streams = [RangeXY()]
+        self.param.set_param(**params)
+        if not self.predicate:
+            raise ValueError(
+                'Must provide a predicate function to determine when '
+                'to apply the operation and when to return the selected '
+                'data.'
+            )
+        applied = self.operation(obj.apply(self._apply, streams=streams))
+        raw = obj.apply(self._apply, streams=streams, invert=True)
+        return applied * raw
 
 
 class chain(Operation):
@@ -109,21 +209,25 @@ class chain(Operation):
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 
-    group = param.String(default='Chain', doc="""
-        The group assigned to the result after having applied the chain.""")
-
+    group = param.String(default='', doc="""
+        The group assigned to the result after having applied the chain.
+        Defaults to the group produced by the last operation in the chain""")
 
     operations = param.List(default=[], class_=Operation, doc="""
        A list of Operations (or Operation instances)
-       that are applied on the input from left to right..""")
+       that are applied on the input from left to right.""")
 
     def _process(self, view, key=None):
         processed = view
-        for operation in self.p.operations:
-            processed = operation.process_element(processed, key,
-                                                  input_ranges=self.p.input_ranges)
+        for i, operation in enumerate(self.p.operations):
+            processed = operation.process_element(
+                processed, key, input_ranges=self.p.input_ranges
+            )
 
-        return processed.clone(group=self.p.group)
+        if not self.p.group:
+            return processed
+        else:
+            return processed.clone(group=self.p.group)
 
 
 class transform(Operation):
@@ -160,7 +264,6 @@ class transform(Operation):
         processed = (img.data if not self.p.operator
                      else self.p.operator(img.data))
         return img.clone(processed, group=self.p.group)
-
 
 
 class image_overlay(Operation):
@@ -289,6 +392,8 @@ class threshold(Operation):
     group = param.String(default='Threshold', doc="""
        The group assigned to the thresholded output.""")
 
+    _per_element = True
+
     def _process(self, matrix, key=None):
 
         if not isinstance(matrix, Image):
@@ -315,6 +420,8 @@ class gradient(Operation):
 
     group = param.String(default='Gradient', doc="""
     The group assigned to the output gradient matrix.""")
+
+    _per_element = True
 
     def _process(self, matrix, key=None):
 
@@ -370,6 +477,8 @@ class convolve(Operation):
         convolution in lbrt (left, bottom, right, top) format. By
         default, no slicing is applied.""")
 
+    _per_element = True
+
     def _process(self, overlay, key=None):
         if len(overlay) != 2:
             raise Exception("Overlay must contain at least to items.")
@@ -420,11 +529,14 @@ class contours(Operation):
     overlaid = param.Boolean(default=False, doc="""
         Whether to overlay the contour on the supplied Element.""")
 
+    _per_element = True
+
     def _process(self, element, key=None):
         try:
             from matplotlib.contour import QuadContourSet
             from matplotlib.axes import Axes
             from matplotlib.figure import Figure
+            from matplotlib.dates import num2date, date2num
         except ImportError:
             raise ImportError("contours operation requires matplotlib.")
         extent = element.range(0) + element.range(1)[::-1]
@@ -443,6 +555,14 @@ class contours(Operation):
         if ys.shape[1] != zs.shape[1]:
             ys = ys[:, :-1] + (np.diff(ys, axis=1)/2.)
         data = (xs, ys, zs)
+
+        # if any data is a datetime, transform to matplotlib's numerical format
+        data_is_datetime = tuple(isdatetime(arr) for k, arr in enumerate(data))
+        if any(data_is_datetime):
+            data = tuple(
+                date2num(d) if is_datetime else d
+                for d, is_datetime in zip(data, data_is_datetime)
+            )
 
         xdim, ydim = element.dimensions('key', label=True)
         if self.p.filled:
@@ -481,6 +601,14 @@ class contours(Operation):
                 interior = []
                 polys = geom.to_polygons(closed_only=False)
                 for ncp, cp in enumerate(polys):
+                    if any(data_is_datetime[0:2]):
+                        # transform x/y coordinates back to datetimes
+                        xs, ys = np.split(cp, 2, axis=1)
+                        if data_is_datetime[0]:
+                            xs = np.array(num2date(xs))
+                        if data_is_datetime[1]:
+                            ys = np.array(num2date(ys))
+                        cp = np.concatenate((xs, ys), axis=1)
                     if ncp == 0:
                         exteriors.append(cp)
                         exteriors.append(empty)
@@ -490,7 +618,11 @@ class contours(Operation):
                     interiors.append(interior)
             if not exteriors:
                 continue
-            geom = {element.vdims[0].name: level, (xdim, ydim): np.concatenate(exteriors[:-1])}
+            geom = {
+                element.vdims[0].name:
+                num2date(level) if data_is_datetime[2] else level,
+                (xdim, ydim): np.concatenate(exteriors[:-1])
+            }
             if self.p.filled and interiors:
                 geom['holes'] = interiors
             paths.append(geom)
@@ -510,8 +642,11 @@ class histogram(Operation):
     bin_range = param.NumericTuple(default=None, length=2,  doc="""
       Specifies the range within which to compute the bins.""")
 
-    bins = param.ClassSelector(default=None, class_=(np.ndarray, list, tuple), doc="""
-      An explicit set of bin edges.""")
+    bins = param.ClassSelector(default=None, class_=(np.ndarray, list, tuple, str), doc="""
+      An explicit set of bin edges or a method to find the optimal
+      set of bin edges, e.g. 'auto', 'fd', 'scott' etc. For more
+      documentation on these approaches see the np.histogram_bin_edges
+      documentation.""")
 
     cumulative = param.Boolean(default=False, doc="""
       Whether to compute the cumulative histogram""")
@@ -522,7 +657,7 @@ class histogram(Operation):
     frequency_label = param.String(default=None, doc="""
       Format string defining the label of the frequency dimension of the Histogram.""")
 
-    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+    groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
     log = param.Boolean(default=False, doc="""
@@ -531,7 +666,7 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=True,
+    normed = param.ObjectSelector(default=False,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
       Controls normalization behavior.  If `True` or `'integral'`, then
@@ -560,68 +695,124 @@ class histogram(Operation):
             self.p.groupby = None
             return grouped.map(self._process, Dataset)
 
+        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
             selected_dim = [d.name for d in element.vdims + element.kdims][0]
         dim = element.get_dimension(selected_dim)
-        data = np.array(element.dimension_values(selected_dim))
-        if self.p.nonzero:
-            mask = data > 0
-            data = data[mask]
-        if self.p.weight_dimension:
-            weights = np.array(element.dimension_values(self.p.weight_dimension))
+
+        if hasattr(element, 'interface'):
+            data = element.interface.values(element, selected_dim, compute=False)
+        else:
+            data = element.dimension_values(selected_dim)
+
+        is_datetime = isdatetime(data)
+        if is_datetime:
+            data = data.astype('datetime64[ns]').astype('int64')
+
+        # Handle different datatypes
+        is_finite = isfinite
+        is_cupy = is_cupy_array(data)
+        if is_cupy:
+            import cupy
+            full_cupy_support = LooseVersion(cupy.__version__) > LooseVersion('8.0')
+            if not full_cupy_support and (normed or self.p.weight_dimension):
+                data = cupy.asnumpy(data)
+                is_cupy = False
+            else:
+                is_finite = cupy.isfinite
+
+        # Mask data
+        if is_ibis_expr(data):
+            mask = data.notnull()
             if self.p.nonzero:
-                weights = weights[mask]
+                mask = mask & (data != 0)
+            data = data.to_projection()
+            data = data[mask]
+            no_data = not len(data.head(1).execute())
+            data = data[dim.name]
+        else:
+            mask = is_finite(data)
+            if self.p.nonzero:
+                mask = mask & (data != 0)
+            data = data[mask]
+            da = dask_array_module()
+            no_data = False if da and isinstance(data, da.Array) else not len(data)
+
+        # Compute weights
+        if self.p.weight_dimension:
+            if hasattr(element, 'interface'):
+                weights = element.interface.values(element, self.p.weight_dimension, compute=False)
+            else:
+                weights = element.dimension_values(self.p.weight_dimension)
+            weights = weights[mask]
         else:
             weights = None
 
-        data = data[isfinite(data)]
-        hist_range = self.p.bin_range or element.range(selected_dim)
-        # Avoids range issues including zero bin range and empty bins
-        if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
-            hist_range = (0, 1)
-
-        datetimes = False
-        bins = None if self.p.bins is None else np.asarray(self.p.bins)
-        steps = self.p.num_bins + 1
-        start, end = hist_range
-        if data.dtype.kind == 'M' or (data.dtype.kind == 'O' and isinstance(data[0], datetime_types)):
-            start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
-            datetimes = True
-            data = data.astype('datetime64[ns]').astype('int64')
-            if bins is not None:
-                bins = bins.astype('datetime64[ns]').astype('int64')
-            else:
-                hist_range = start, end
-
-        if self.p.bins:
-            edges = bins
-        elif self.p.log:
-            bin_min = max([abs(start), data[data>0].min()])
-            edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
+        # Compute bins
+        if isinstance(self.p.bins, str):
+            bin_data = cupy.asnumpy(data) if is_cupy else data
+            edges = np.histogram_bin_edges(bin_data, bins=self.p.bins)
+        elif isinstance(self.p.bins, (list, np.ndarray)):
+            edges = self.p.bins
+            if isdatetime(edges):
+                edges = edges.astype('datetime64[ns]').astype('int64')
         else:
-            edges = np.linspace(start, end, steps)
-        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
-
-        if len(data):
-            if normed:
-                # This covers True, 'height', 'integral'
-                hist, edges = np.histogram(data, density=True, range=(start, end),
-                                           weights=weights, bins=edges)
-                if normed=='height':
-                    hist /= hist.max()
+            hist_range = self.p.bin_range or element.range(selected_dim)
+            # Suppress a warning emitted by Numpy when datetime or timedelta scalars
+            # are compared. See https://github.com/numpy/numpy/issues/10095 and
+            # https://github.com/numpy/numpy/issues/9210. 
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    action='ignore', message='elementwise comparison failed',
+                    category=DeprecationWarning
+                )
+                null_hist_range = hist_range == (0, 0)
+            # Avoids range issues including zero bin range and empty bins
+            if null_hist_range or any(not isfinite(r) for r in hist_range):
+                hist_range = (0, 1)
+            steps = self.p.num_bins + 1
+            start, end = hist_range
+            if is_datetime:
+                start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
+            if self.p.log:
+                bin_min = max([abs(start), data[data>0].min()])
+                edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
             else:
-                hist, edges = np.histogram(data, normed=normed, range=(start, end),
-                                           weights=weights, bins=edges)
-                if self.p.weight_dimension and self.p.mean_weighted:
-                    hist_mean, _ = np.histogram(data, density=False, range=(start, end),
-                                                bins=self.p.num_bins)
-                    hist /= hist_mean
+                edges = np.linspace(start, end, steps)
+        if is_cupy:
+            edges = cupy.asarray(edges)
+
+        if not is_dask_array(data) and no_data:
+            nbins = self.p.num_bins if self.p.bins is None else len(self.p.bins)-1
+            hist = np.zeros(nbins)
+        elif hasattr(element, 'interface'):
+            density = True if normed else False
+            hist, edges = element.interface.histogram(
+                data, edges, density=density, weights=weights
+            )
+            if normed == 'height':
+                hist /= hist.max()
+            if self.p.weight_dimension and self.p.mean_weighted:
+                hist_mean, _ = element.interface.histogram(
+                    data, density=False, bins=edges
+                )
+                hist /= hist_mean
+        elif normed:
+            # This covers True, 'height', 'integral'
+            hist, edges = np.histogram(data, density=True,
+                                       weights=weights, bins=edges)
+            if normed == 'height':
+                hist /= hist.max()
         else:
-            hist = np.zeros(self.p.num_bins)
+            hist, edges = np.histogram(data, normed=normed, weights=weights, bins=edges)
+            if self.p.weight_dimension and self.p.mean_weighted:
+                hist_mean, _ = np.histogram(data, density=False, bins=self.p.num_bins)
+                hist /= hist_mean
+
         hist[np.isnan(hist)] = 0
-        if datetimes:
+        if is_datetime:
             edges = (edges/1e3).astype('datetime64[us]')
 
         params = {}
@@ -642,6 +833,11 @@ class histogram(Operation):
             hist = np.cumsum(hist)
             if self.p.normed in (True, 'integral'):
                 hist *= edges[1]-edges[0]
+
+        # Save off the computed bin edges so that if this operation instance
+        # is used to compute another histogram, it will default to the same
+        # bin edges.
+        self.bins = list(edges)
         return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
                          label=element.label, **params)
 
@@ -668,7 +864,8 @@ class decimate(Operation):
     random_seed = param.Integer(default=42, doc="""
         Seed used to initialize randomization.""")
 
-    streams = param.List(default=[RangeXY], doc="""
+    streams = param.ClassSelector(default=[RangeXY], class_=(dict, list),
+                                   doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
@@ -679,6 +876,8 @@ class decimate(Operation):
     y_range  = param.NumericTuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
+
+    _per_element = True
 
     def _process_layer(self, element, key=None):
         if not isinstance(element, Dataset):
@@ -696,7 +895,7 @@ class decimate(Operation):
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
-            return element.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
+            return sliced.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
         return sliced
 
     def _process(self, element, key=None):
@@ -713,6 +912,8 @@ class interpolate_curve(Operation):
                                                   'steps-post', 'linear'],
                                          default='steps-mid', doc="""
        Controls the transition point of the step along the x-axis.""")
+
+    _per_element = True
 
     @classmethod
     def pts_to_prestep(cls, x, values):
@@ -769,13 +970,12 @@ class interpolate_curve(Operation):
         if self.p.interpolation not in INTERPOLATE_FUNCS:
             return element
         x = element.dimension_values(0)
-        dtype = x.dtype
-        is_datetime = dtype.kind == 'M' or isinstance(x[0], datetime_types)
+        is_datetime = isdatetime(x)
         if is_datetime:
             dt_type = 'datetime64[ns]'
-            x = x.astype(dt_type).astype('int64')
+            x = x.astype(dt_type)
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[1:])
-        xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x.astype('f'), dvals)
+        xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x, dvals)
         if is_datetime:
             xs = xs.astype(dt_type)
         return element.clone((xs,)+dvals)
@@ -835,8 +1035,8 @@ class gridmatrix(param.ParameterizedFunction):
        or any other function which returns a viewable element.""")
 
     overlay_dims = param.List(default=[], doc="""
-       If a HoloMap is supplied this will allow overlaying one or
-       more of it's key dimensions.""")
+       If a HoloMap is supplied, this will allow overlaying one or
+       more of its key dimensions.""")
 
     def __call__(self, data, **params):
         p = param.ParamOverrides(self, params)
@@ -863,7 +1063,7 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, basestring, np.str_, np.object_)+datetime_types
+        types = (str, np.str_, np.object_)+datetime_types
         dims = [d for d in element.dimensions()
                 if _is_number(element.range(d)[0]) and
                 not issubclass(element.get_dimension_type(d), types)]

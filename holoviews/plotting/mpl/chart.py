@@ -1,7 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
-from itertools import product
-
 import param
 import numpy as np
 import matplotlib as mpl
@@ -13,14 +9,14 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    OrderedDict, match_spec, unique_iterator, basestring, max_range,
-    isfinite, datetime_types, dt_to_int, dt64_to_dt, search_indices,
-    unique_array, isscalar
+    LooseVersion, match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
+    unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..plot import PlotSelector
+from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -61,6 +57,8 @@ class CurvePlot(ChartPlot):
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     show_grid = param.Boolean(default=False, doc="""
         Enable axis grid.""")
 
@@ -82,16 +80,16 @@ class CurvePlot(ChartPlot):
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         dims = element.dimensions()
-        if xs.dtype.kind == 'M' or (len(xs) and isinstance(xs[0], datetime_types)):
+        if isdatetime(xs):
             dimtype = element.get_dimension_type(0)
             dt_format = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
-            dims[0] = dims[0](value_format=DateFormatter(dt_format))
+            dims[0] = dims[0].clone(value_format=DateFormatter(dt_format))
         coords = (ys, xs) if self.invert_axes else (xs, ys)
         return coords, style, {'dimensions': dims}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
-        if xs.dtype.kind == 'M' or (len(xs) and isinstance(xs[0], datetime_types)):
+        if isdatetime(xs):
             artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
         else:
             artist = ax.plot(xs, ys, **plot_kwargs)[0]
@@ -125,7 +123,7 @@ class ErrorPlot(ColorbarPlot):
     def init_artists(self, ax, plot_data, plot_kwargs):
         handles = ax.errorbar(*plot_data, **plot_kwargs)
         bottoms, tops = None, None
-        if mpl_version >= str('2.0'):
+        if mpl_version >= LooseVersion('2.0'):
             _, caps, verts = handles
             if caps:
                 bottoms, tops = caps
@@ -133,15 +131,17 @@ class ErrorPlot(ColorbarPlot):
             _, (bottoms, tops), verts = handles
         return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0], 'artist': verts[0]}
 
-
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
-        color = style.get('color')
+        color = style.pop('color', None)
         if isinstance(color, np.ndarray):
             style['ecolor'] = color
         if 'edgecolor' in style:
             style['ecolor'] = style.pop('edgecolor')
+        if 'linewidth' in style:
+            # Raise ValueError if a numpy array, so needs to be a list.
+            style["elinewidth"] = np.asarray(style.pop('linewidth')).tolist()
         c = style.get('c')
         if isinstance(c, np.ndarray):
             with abbreviated_exception():
@@ -157,15 +157,11 @@ class ErrorPlot(ColorbarPlot):
         style['fmt'] = 'none'
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
-        yerr = element.array(dimensions=dims[2:4])
+        err = element.array(dimensions=dims[2:4])
 
-        if self.invert_axes:
-            coords = (ys, xs)
-            err_key = 'xerr'
-        else:
-            coords = (xs, ys)
-            err_key = 'yerr'
-        style[err_key] = yerr.T if len(dims) > 3 else yerr[:, 0]
+        err_key = 'xerr' if element.horizontal ^ self.invert_axes else 'yerr'
+        coords = (ys, xs) if self.invert_axes else (xs, ys)
+        style[err_key] = err.T if len(dims) > 3 else err[:, 0]
         return coords, style, {}
 
 
@@ -176,18 +172,18 @@ class ErrorPlot(ColorbarPlot):
 
         _, style, axis_kwargs = self.get_data(element, ranges, style)
         xs, ys, neg_error = (element.dimension_values(i) for i in range(3))
-        samples = len(xs)
-        pos_error = element.dimension_values(3) if len(element.dimensions()) > 3 else neg_error
-        if self.invert_axes:
-            bxs, bys = ys - neg_error, xs
-            txs, tys = ys + pos_error, xs
-            new_arrays = [np.array([[bxs[i], xs[i]], [txs[i], xs[i]]])
-                          for i in range(samples)]
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+        if element.horizontal:
+            bxs, bys = xs - neg_error, ys
+            txs, tys = xs + pos_error, ys
         else:
             bxs, bys = xs, ys - neg_error
             txs, tys = xs, ys + pos_error
-            new_arrays = [np.array([[xs[i], bys[i]], [xs[i], tys[i]]])
-                          for i in range(samples)]
+        if self.invert_axes:
+            bxs, bys = bys, bxs
+            txs, tys = tys, txs
+        new_arrays = np.moveaxis(np.array([[bxs, bys], [txs, tys]]), 2, 0)
         verts.set_paths(new_arrays)
         if bottoms:
             bottoms.set_xdata(bxs)
@@ -197,14 +193,16 @@ class ErrorPlot(ColorbarPlot):
             tops.set_ydata(tys)
         if 'ecolor' in style:
             verts.set_edgecolors(style['ecolor'])
-        if 'linewidth' in style:
-            verts.set_linewidths(style['linewidth'])
+        if 'elinewidth' in style:
+            verts.set_linewidths(style['elinewidth'])
 
         return axis_kwargs
 
 
 
-class AreaPlot(ChartPlot):
+class AreaPlot(AreaMixin, ChartPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -229,21 +227,6 @@ class AreaPlot(ChartPlot):
         fill_fn = ax.fill_betweenx if self.invert_axes else ax.fill_between
         stack = fill_fn(*plot_data, **plot_kwargs)
         return {'artist': stack}
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        vdims = element.vdims[:2]
-        vdim = vdims[0].name
-        if len(vdims) > 1:
-            new_range = {}
-            for r in ranges[vdim]:
-                new_range[r] = max_range([ranges[vd.name][r] for vd in vdims])
-            ranges[vdim] = new_range
-        else:
-            s0, s1 = ranges[vdim]['soft']
-            s0 = min(s0, 0) if isfinite(s0) else 0
-            s1 = max(s1, 0) if isfinite(s1) else 0
-            ranges[vdim]['soft'] = (s0, s1)
-        return super(AreaPlot, self).get_extents(element, ranges, range_type)
 
 
 
@@ -271,19 +254,22 @@ class SideAreaPlot(AdjoinedPlot, AreaPlot):
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
 
-
 class SpreadPlot(AreaPlot):
     """
     SpreadPlot plots the Spread Element type.
     """
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
     def __init__(self, element, **params):
-        super(SpreadPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
         xs = element.dimension_values(0)
         mean = element.dimension_values(1)
         neg_error = element.dimension_values(2)
@@ -293,7 +279,6 @@ class SpreadPlot(AreaPlot):
 
     def get_extents(self, element, ranges, range_type='combined'):
         return ChartPlot.get_extents(self, element, ranges, range_type)
-
 
 
 class HistogramPlot(ColorbarPlot):
@@ -313,7 +298,7 @@ class HistogramPlot(ColorbarPlot):
         self.center = False
         self.cyclic = False
 
-        super(HistogramPlot, self).__init__(histograms, **params)
+        super().__init__(histograms, **params)
 
         if self.invert_axes:
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
@@ -333,10 +318,10 @@ class HistogramPlot(ColorbarPlot):
 
         # Get plot ranges and values
         dims = hist.dimensions()[:2]
-        edges, hvals, widths, lims, isdatetime = self._process_hist(hist)
-        if isdatetime and not dims[0].value_format:
+        edges, hvals, widths, lims, is_datetime = self._process_hist(hist)
+        if is_datetime and not dims[0].value_format:
             dt_format = Dimension.type_formatters[np.datetime64]
-            dims[0] = dims[0](value_format=DateFormatter(dt_format))
+            dims[0] = dims[0].clone(value_format=DateFormatter(dt_format))
 
         style = self.style[self.cyclic_index]
         if self.invert_axes:
@@ -381,15 +366,13 @@ class HistogramPlot(ColorbarPlot):
         hist_vals = np.array(values)
         xlim = hist.range(0)
         ylim = hist.range(1)
-        isdatetime = False
-        if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
+        is_datetime = isdatetime(edges)
+        if is_datetime:
             edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
             edges = date2num(edges)
             xlim = tuple(dt_to_int(v, 'D') for v in xlim)
-            isdatetime = True
         widths = np.diff(edges)
-        return edges[:-1], hist_vals, widths, xlim+ylim, isdatetime
-
+        return edges[:-1], hist_vals, widths, xlim+ylim, is_datetime
 
     def _compute_ticks(self, element, edges, widths, lims):
         """
@@ -410,15 +393,13 @@ class HistogramPlot(ColorbarPlot):
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
 
-
     def get_extents(self, element, ranges, range_type='combined'):
         ydim = element.get_dimension(1)
         s0, s1 = ranges[ydim.name]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.name]['soft'] = (s0, s1)
-        return super(HistogramPlot, self).get_extents(element, ranges, range_type)
-
+        return super().get_extents(element, ranges, range_type)
 
     def _process_axsettings(self, hist, lims, ticks):
         """
@@ -428,14 +409,12 @@ class HistogramPlot(ColorbarPlot):
         axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)]))
         return axis_settings
 
-
     def _update_plot(self, key, hist, bars, lims, ranges):
         """
         Process bars can be subclassed to manually adjust bars
         after being plotted.
         """
         return bars
-
 
     def _update_artists(self, key, hist, edges, hvals, widths, lims, ranges):
         """
@@ -464,7 +443,6 @@ class HistogramPlot(ColorbarPlot):
         return ax_settings
 
 
-
 class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
     bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
@@ -480,18 +458,16 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         """
         Subclassed to offset histogram by defined amount.
         """
-        edges, hvals, widths, lims, isdatetime = super(SideHistogramPlot, self)._process_hist(hist)
+        edges, hvals, widths, lims, isdatetime = super()._process_hist(hist)
         offset = self.offset * lims[3]
-        hvals *= 1-self.offset
+        hvals = hvals * (1-self.offset)
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims, isdatetime
 
-
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
-        super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
+        super()._update_artists(n, element, edges, hvals, widths, lims, ranges)
         self._update_plot(n, element, self.handles['artist'], lims, ranges)
-
 
     def _update_plot(self, key, element, bars, lims, ranges):
         """
@@ -522,7 +498,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
             cdim = None
 
         # Get colormapping options
-        if isinstance(range_item, (HeatMap, Raster)) or cdim:
+        if isinstance(range_item, (HeatMap, Raster)) or (cdim and cdim in element):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
@@ -536,10 +512,9 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         elif offset:
             self._update_separator(offset)
 
-        if cmap is not None:
+        if cmap is not None and main_range and (None not in main_range):
             self._colorize_bars(cmap, bars, element, main_range, dim)
         return bars
-
 
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
         """
@@ -553,7 +528,6 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         for c, bar in zip(colors, bars):
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
-
 
     def _update_separator(self, offset):
         """
@@ -582,11 +556,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
@@ -627,7 +601,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         cmap = style.get('cmap', None)
 
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -646,7 +620,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         ms = style.get('s', mpl.rcParams['lines.markersize'])
         sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
+        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 's' option and "
                 "declare a size_index; ignoring the size_index.")
@@ -668,6 +642,13 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def update_handles(self, key, axis, element, ranges, style):
         paths = self.handles['artist']
         (xs, ys), style, _ = self.get_data(element, ranges, style)
+        xdim, ydim = element.dimensions()[:2]
+        if 'factors' in ranges.get(xdim.name, {}):
+            factors = list(ranges[xdim.name]['factors'])
+            xs = [factors.index(x) for x in xs if x in factors]
+        if 'factors' in ranges.get(ydim.name, {}):
+            factors = list(ranges[ydim.name]['factors'])
+            ys = [factors.index(y) for y in ys if y in factors]
         paths.set_offsets(np.column_stack([xs, ys]))
         if 's' in style:
             sizes = style['s']
@@ -711,12 +692,14 @@ class VectorFieldPlot(ColorbarPlot):
        they may be customized with the 'headlength' and
        'headaxislength' style options.""")
 
-    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+    magnitude = param.ClassSelector(class_=(str, dim), doc="""
         Dimension or dimension value transform that declares the magnitude
         of each vector. Magnitude is expected to be scaled between 0-1,
         by default the magnitudes are rescaled relative to the minimum
         distance between vectors, this can be disabled with the
         rescale_lengths option.""")
+
+    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
 
     rescale_lengths = param.Boolean(default=True, doc="""
        Whether the lengths will be rescaled to take into account the
@@ -724,13 +707,13 @@ class VectorFieldPlot(ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of dimension value transform on color option,
         e.g. `color=dim('Magnitude')`.
         """)
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of the magnitude option, e.g.
         `magnitude=dim('Magnitude')`.
@@ -761,7 +744,7 @@ class VectorFieldPlot(ColorbarPlot):
                 "and declare a size_index; ignoring the size_index.")
         elif size_dim:
             mag_dim = size_dim
-        elif isinstance(mag_dim, basestring):
+        elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
         if mag_dim is not None:
             if isinstance(mag_dim, dim):
@@ -796,7 +779,7 @@ class VectorFieldPlot(ColorbarPlot):
         # Compute color
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -844,41 +827,24 @@ class VectorFieldPlot(ColorbarPlot):
 
 
 
-class BarPlot(LegendPlot):
+class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
-    padding = param.Number(default=0.2, doc="""
+    bar_padding = param.Number(default=0.2, doc="""
        Defines the padding between groups.""")
 
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
+    multi_level = param.Boolean(default=True, doc="""
+       Whether the Bars should be grouped into a second categorical axis level.""")
 
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
 
-    xticks = param.Integer(0, precedence=-1)
-
-    # Deprecated parameters
-
-    color_by = param.List(default=['category'], doc="""
-       Defines how the Bar elements colored. Valid options include
-       any permutation of 'group', 'category' and 'stack'.""")
-
-    group_index = param.Integer(default=0, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
-
-    category_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
-    stack_index = param.Integer(default=2, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
 
-    _nonvectorized_styles = style_opts
+    _nonvectorized_styles = ['visible']
 
     legend_specs = dict(LegendPlot.legend_specs, **{
         'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
@@ -887,66 +853,30 @@ class BarPlot(LegendPlot):
                        bbox_to_anchor=(0., -0.4, 1., .102),
                        borderaxespad=0.1)})
 
-    _dimensions = OrderedDict([('group', 0),
-                               ('category',1),
-                               ('stack',2)])
-
-    def __init__(self, element, **params):
-        super(BarPlot, self).__init__(element, **params)
-        self.values, self.bar_dimensions = self._get_values()
-
-    def _get_values(self):
+    def _get_values(self, element, ranges):
         """
         Get unique index value for each bar
         """
-        (gi, _), (ci, _), (si, _) = self._get_dims(self.hmap.last)
-        ndims = self.hmap.last.ndims
-        dims = self.hmap.last.kdims
-        dimensions = []
-        values = {}
-        for vidx, vtype in zip([gi, ci, si], self._dimensions):
-            if vidx < ndims:
-                dim = dims[vidx]
-                dimensions.append(dim)
-                vals = self.hmap.dimension_values(dim.name)
+        gvals, cvals = self._get_coords(element, ranges, as_string=False)
+        kdims = element.kdims
+        if element.ndims == 1:
+            dimensions = kdims + [None, None]
+            values = {'group': gvals, 'stack': [None]}
+        elif self.stacked:
+            stack_dim = kdims[1]
+            dimensions = [kdims[0], None, stack_dim]
+            if stack_dim.values:
+                stack_order = stack_dim.values
+            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
+                stack_order = ranges[stack_dim]['factors']
             else:
-                dimensions.append(None)
-                vals = [None]
-            values[vtype] = list(unique_iterator(vals))
-        return values, dimensions
-
-
-    def _compute_styles(self, element, style_groups):
-        """
-        Computes color and hatch combinations by
-        any combination of the 'group', 'category'
-        and 'stack'.
-        """
-        style = self.lookup_options(element, 'style')[0]
-        sopts = []
-        for sopt in ['color', 'hatch']:
-            if sopt in style:
-                sopts.append(sopt)
-                style.pop(sopt, None)
-        color_groups = []
-        for sg in style_groups:
-            color_groups.append(self.values[sg])
-        style_product = list(product(*color_groups))
-        wrapped_style = self.lookup_options(element, 'style').max_cycles(len(style_product))
-        color_groups = {k:tuple(wrapped_style[n][sopt] for sopt in sopts)
-                        for n,k in enumerate(style_product)}
-
-        return style, color_groups, sopts
-
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        ngroups = len(self.values['group'])
-        vdim = element.vdims[0].name
-        if self.stacked or self.stack_index == 1:
-            return 0, 0, ngroups, np.NaN
+                stack_order = element.dimension_values(1, False)
+            stack_order = list(stack_order)
+            values = {'group': gvals, 'stack': stack_order}
         else:
-            vrange = ranges[vdim]['combined']
-            return 0, np.nanmin([vrange[0], 0]), ngroups, vrange[1]
+            dimensions = kdims + [None]
+            values = {'group': gvals, 'category': cvals}
+        return dimensions, values
 
 
     @mpl_rc_context
@@ -956,166 +886,133 @@ class BarPlot(LegendPlot):
         axis = self.handles['axis']
         key = self.keys[-1]
 
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['artist'], self.handles['xticks'], xdims = self._create_bars(axis, element)
-        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'],
-                                   element=element, dimensions=[xdims, vdim])
-
+        self.handles['artist'], xticks, xdims = self._create_bars(axis, element, ranges, style)
+        kwargs = {'yticks': xticks} if self.invert_axes else {'xticks': xticks}
+        return self._finalize_axis(key, ranges=ranges, element=element,
+                                   dimensions=[xdims, vdim], **kwargs)
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
-        yalignments = None
-        if xticks is not None:
-            ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-            xticks = (list(ticks), list(labels))
-        super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
-        if yalignments:
-            for t, y in zip(axis.get_xticklabels(), yalignments):
-                t.set_y(y)
+        alignments = None
+        ticks = xticks or yticks
+        if ticks is not None:
+            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]))
+            ticks = (list(ticks), list(labels))
+        if xticks:
+            xticks = ticks
+        elif yticks:
+            yticks = ticks
+        super()._finalize_ticks(axis, element, xticks, yticks, zticks)
+        if alignments:
+            if xticks:
+                for t, y in zip(axis.get_xticklabels(), alignments):
+                    t.set_y(y)
+            elif yticks:
+                for t, x in zip(axis.get_yticklabels(), alignments):
+                    t.set_x(x)
 
+    def _create_bars(self, axis, element, ranges, style):
+        # Get values dimensions, and style information
+        (gdim, cdim, sdim), values = self._get_values(element, ranges)
+        style_dim = None
+        if sdim:
+            cats = values['stack']
+            style_dim = sdim
+        elif cdim:
+            cats = values['category']
+            style_dim = cdim
 
-    def _get_dims(self, element):
-        ndims = len(element.dimensions())
-        if element.ndims < 2:
-            gdim, cdim, sdim = element.kdims[0], None, None
-            gi, ci, si = 0, ndims+1, ndims+1
-        elif element.ndims == 3:
-            gdim, cdim, sdim = element.kdims
-            gi, ci, si = 0, 1, 2
-        elif self.stacked or self.stack_index == 1:
-            gdim, cdim, sdim = element.kdims[0], None, element.kdims[1]
-            gi, ci, si = 0, ndims+1, 1
+        if style_dim:
+            style_map = {style_dim.pprint_value(v): self.style[i]
+                         for i, v in enumerate(cats)}
         else:
-            gdim, cdim, sdim = element.kdims[0], element.kdims[1], None
-            gi, ci, si = 0, 1, ndims+1
-        return (gi, gdim), (ci, cdim), (si, sdim)
-
-
-    def _create_bars(self, axis, element):
-        # Get style and dimension information
-        values = self.values    
-        if self.group_index != 0:
-            self.warning('Bars group_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.category_index != 1:
-            self.warning('Bars category_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.stack_index != 2 and not (self.stack_index == 1 and not self.stacked):
-            self.warning('Bars stack_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.color_by != ['category']:
-            self.warning('Bars color_by plot option is deprecated '
-                         'and will be ignored, in future it will '
-                         'support color style mapping by dimension.')
-
-        (gi, gdim), (ci, cdim), (si, sdim) = self._get_dims(element)
-        indices = dict(zip(self._dimensions, (gi, ci, si)))
-        color_by = ['category'] if cdim else ['stack']
-        style_groups = [sg for sg in color_by if indices[sg] < element.ndims]
-        style_opts, color_groups, sopts = self._compute_styles(element, style_groups)
-        dims = element.dimensions('key', label=True)
-        ndims = len(dims)
-        xdims = [d for d in [cdim, gdim] if d is not None]
+            style_map = {None: {}}
 
         # Compute widths
-        width = (1-(2.*self.padding)) / len(values['category'])
-
-        # Initialize variables
-        xticks = []
-        val_key = [None] * ndims
-        style_key = [None] * len(style_groups)
-        label_key = [None] * len(style_groups)
-        labels = []
-        bars = {}
+        width = (1-(2.*self.bar_padding)) / len(values.get('category', [None]))
+        if self.invert_axes:
+            plot_fn = 'barh'
+            x, y, w, bottom = 'y', 'width', 'height', 'left'
+        else:
+            plot_fn = 'bar'
+            x, y, w, bottom = 'x', 'height', 'width', 'bottom'
 
         # Iterate over group, category and stack dimension values
         # computing xticks and drawing bars and applying styles
-        for gidx, grp_name in enumerate(values['group']):
-            if grp_name is not None:
-                grp = gdim.pprint_value(grp_name)
-                if 'group' in style_groups:
-                    idx = style_groups.index('group')
-                    label_key[idx] = str(grp)
-                    style_key[idx] = grp_name
-                val_key[gi] = grp_name
-                if ci < ndims:
-                    yalign = -0.04
-                else:
-                    yalign = 0
-                xticks.append((gidx+0.5, grp, yalign))
-            for cidx, cat_name in enumerate(values['category']):
-                xpos = gidx+self.padding+(cidx*width)
-                if cat_name is not None:
-                    cat = gdim.pprint_value(cat_name)
-                    if 'category' in style_groups:
-                        idx = style_groups.index('category')
-                        label_key[idx] = str(cat)
-                        style_key[idx] = cat_name
-                    val_key[ci] = cat_name
-                    xticks.append((xpos+width/2., cat, 0))
+        xticks, labels, bar_data = [], [], {}
+        for gidx, grp in enumerate(values.get('group', [None])):
+            sel_key = {}
+            label = None
+            if grp is not None:
+                grp_label = gdim.pprint_value(grp)
+                sel_key[gdim.name] = [grp]
+                yalign = -0.04 if cdim and self.multi_level else 0
+                xticks.append((gidx+0.5, grp_label, yalign))
+            for cidx, cat in enumerate(values.get('category', [None])):
+                xpos = gidx+self.bar_padding+(cidx*width)
+                if cat is not None:
+                    label = cdim.pprint_value(cat)
+                    sel_key[cdim.name] = [cat]
+                    if self.multi_level:
+                        xticks.append((xpos+width/2., label, 0))
                 prev = 0
-                for stk_name in values['stack']:
-                    if stk_name is not None:
-                        if 'stack' in style_groups:
-                            idx = style_groups.index('stack')
-                            stk = gdim.pprint_value(stk_name)
-                            label_key[idx] = str(stk)
-                            style_key[idx] = stk_name
-                        val_key[si] = stk_name
-                    vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
+                for stk in values.get('stack', [None]):
+                    if stk is not None:
+                        label = sdim.pprint_value(stk)
+                        sel_key[sdim.name] = [stk]
+                    el = element.select(**sel_key)
+                    vals = el.dimension_values(element.vdims[0].name)
                     val = float(vals[0]) if len(vals) else np.NaN
-                    label = ', '.join(label_key)
-                    style = dict(style_opts, label='' if label in labels else label,
-                                 **dict(zip(sopts, color_groups[tuple(style_key)])))
-                    with abbreviated_exception():
-                        style = self._apply_transforms(element, {}, style)
-                    bar = axis.bar([xpos+width/2.], [val], width=width, bottom=prev,
-                                   **style)
-
-                    # Update variables
-                    bars[tuple(val_key)] = bar
+                    xval = xpos+width/2.
+                    if label in bar_data:
+                        group = bar_data[label]
+                        group[x].append(xval)
+                        group[y].append(val)
+                        group[bottom].append(prev)
+                    else:
+                        bar_style = dict(style, **style_map.get(label, {}))
+                        with abbreviated_exception():
+                            bar_style = self._apply_transforms(el, ranges, bar_style)
+                        bar_data[label] = {
+                            x:[xval], y: [val], w: width, bottom: [prev],
+                            'label': label,
+                        }
+                        bar_data[label].update(bar_style)
                     prev += val if isfinite(val) else 0
-                    labels.append(label)
-        title = [element.kdims[indices[cg]].pprint_label
-                 for cg in color_by if indices[cg] < ndims]
+                    if label is not None:
+                        labels.append(label)
 
-        if self.show_legend and any(len(l) for l in labels) and color_by != ['category']:
+        # Draw bars
+        bars = [getattr(axis, plot_fn)(**bar_spec) for bar_spec in bar_data.values()]
+
+        # Generate legend and axis labels
+        ax_dims = [gdim]
+        title = ''
+        if sdim:
+            title = sdim.pprint_label
+            ax_dims.append(sdim)
+        elif cdim:
+            title = cdim.pprint_label
+            if self.multi_level:
+                ax_dims.append(cdim)
+        if self.show_legend and any(len(l) for l in labels) and (sdim or not self.multi_level):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
-            axis.legend(title=', '.join(title), **leg_spec)
-        return bars, xticks, xdims
+            legend_opts = self.legend_opts.copy()
+            legend_opts.update(**leg_spec)
+            axis.legend(title=title, **legend_opts)
+
+        return bars, xticks, ax_dims
 
 
-    def update_handles(self, key, axis, element, ranges, style):
-        dims = element.dimensions('key', label=True)
-        ndims = len(dims)
-        (gi, _), (ci, _), (si, _) = self._get_dims(element)
-        val_key = [None] * ndims
-        for g in self.values['group']:
-            if g is not None: val_key[gi] = g
-            for c in self.values['category']:
-                if c is not None: val_key[ci] = c
-                prev = 0
-                for s in self.values['stack']:
-                    if s is not None: val_key[si] = s
-                    bar = self.handles['artist'].get(tuple(val_key))
-                    if bar:
-                        vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
-                        height = float(vals[0]) if len(vals) else np.NaN
-                        bar[0].set_height(height)
-                        bar[0].set_y(prev)
-                        prev += height if isfinite(height) else 0
-        return {'xticks': self.handles['xticks']}
 
-
-class SpikesPlot(PathPlot, ColorbarPlot):
+class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
     aspect = param.Parameter(default='square', doc="""
         The aspect ratio mode of the plot. Allows setting an
@@ -1123,11 +1020,13 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         'square' and 'equal' options.""")
 
     color_index = param.ClassSelector(default=None, allow_None=True,
-                                      class_=(basestring, int), doc="""
+                                      class_=(str, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
@@ -1139,45 +1038,26 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        if len(element.dimensions()) > 1:
-            ydim = element.get_dimension(1)
-            s0, s1 = ranges[ydim.name]['soft']
-            s0 = min(s0, 0) if isfinite(s0) else 0
-            s1 = max(s1, 0) if isfinite(s1) else 0
-            ranges[ydim.name]['soft'] = (s0, s1)
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type)
-        if len(element.dimensions()) == 1 and range_type != 'hard':
-            if self.batched:
-                bs, ts = [], []
-                # Iterate over current NdOverlay and compute extents
-                # from position and length plot options
-                frame = self.current_frame or self.hmap.last
-                for el in frame.values():
-                    opts = self.lookup_options(el, 'plot').options
-                    pos = opts.get('position', self.position)
-                    length = opts.get('spike_length', self.spike_length)
-                    bs.append(pos)
-                    ts.append(pos+length)
-                b, t = (np.nanmin(bs), np.nanmax(ts))
-            else:
-                b, t = self.position, self.position+self.spike_length
-        return l, b, r, t
-
     def get_data(self, element, ranges, style):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
+        opts = self.lookup_options(element, 'plot').options
 
         pos = self.position
-        if ndims > 1:
-            data = [[(x, pos), (x, pos+y)] for x, y in element.array([0, 1])]
+        if ndims > 1 and 'spike_length' not in opts:
+            data = element.columns([0, 1])
+            xs, ys = data[dimensions[0]], data[dimensions[1]]
+            data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys)]
         else:
+            xs = element.array([0])
             height = self.spike_length
-            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array([0])]
+            data = [[(x[0], pos), (x[0], pos+height)] for x in xs]
 
         if self.invert_axes:
             data = [(line[0][::-1], line[1][::-1]) for line in data]
@@ -1189,16 +1069,19 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
-                if (vs.dtype.kind == 'M' or (len(vs) and isinstance(vs[0], datetime_types))) and i < len(dims):
-                    dt_format = Dimension.type_formatters[np.datetime64]
-                    dims[i] = dims[i](value_format=DateFormatter(dt_format))
-                    vs = np.array([dt_to_int(v, 'D') for v in vs])
+                if isdatetime(vs):
+                    dt_format = Dimension.type_formatters.get(
+                        type(vs[0]),
+                        Dimension.type_formatters[np.datetime64]
+                    )
+                    vs = date2num(vs)
+                    dims[i] = dims[i].clone(value_format=DateFormatter(dt_format))
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -1207,9 +1090,16 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             style['array'] = element.dimension_values(cdim)
             self._norm_kwargs(element, ranges, style, cdim)
 
+        if 'spike_length' in opts:
+            axis_dims =  (element.dimensions()[0], None)
+        elif len(element.dimensions()) == 1:
+            axis_dims =  (element.dimensions()[0], None)
+        else:
+            axis_dims =  (element.dimensions()[0], element.dimensions()[1])
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
-        return (clean_spikes,), style, {'dimensions': dims}
+
+        return (clean_spikes,), style, {'dimensions': axis_dims}
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -1257,4 +1147,3 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
-

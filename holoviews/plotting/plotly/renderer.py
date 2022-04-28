@@ -1,136 +1,145 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import base64
-import json
+
+from io import BytesIO
 
 import param
+import panel as pn
+
 with param.logging_level('CRITICAL'):
-    from plotly.offline.offline import utils, get_plotlyjs, init_notebook_mode
     import plotly.graph_objs as go
+
+from param.parameterized import bothmethod
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
-from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
+from .callbacks import callbacks
+from .util import clean_internal_figure_properties
 
 
-plotly_msg_handler = """
-/* Backend specific body of the msg_handler, updates displayed frame */
-var plot = $('#{plot_id}')[0];
-var data = JSON.parse(msg);
-$.each(data.data, function(i, obj) {{
-  $.each(Object.keys(obj), function(j, key) {{
-    plot.data[i][key] = obj[key];
-  }});
-}});
-var plotly = window._Plotly || window.Plotly;
-plotly.relayout(plot, data.layout);
-plotly.redraw(plot);
-"""
+
+def _PlotlyHoloviewsPane(fig_dict, **kwargs):
+    """
+    Custom Plotly pane constructor for use by the HoloViews Pane.
+    """
+
+    # Remove internal HoloViews properties
+    clean_internal_figure_properties(fig_dict)
+
+    config = fig_dict.pop('config', {})
+    if config.get('responsive'):
+        kwargs['sizing_mode'] = 'stretch_both'
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup',
+                                 config=config, **kwargs)
+
+    # Register callbacks on pane
+    for callback_cls in callbacks.values():
+        for callback_prop in callback_cls.callback_properties:
+            plotly_pane.param.watch(
+                lambda event, cls=callback_cls, prop=callback_prop:
+                    cls.update_streams_from_property_update(
+                        prop, event.new, event.obj.object
+                    ),
+                callback_prop,
+            )
+    return plotly_pane
 
 
 class PlotlyRenderer(Renderer):
 
     backend = param.String(default='plotly', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'png', 'svg', 'auto'], doc="""
+    fig = param.ObjectSelector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    mode_formats = {'fig': {'default': ['html', 'png', 'svg', 'json']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
+    holomap = param.ObjectSelector(default='auto',
+                                   objects=['scrubber','widgets', 'gif',
+                                            None, 'auto'], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
 
-    widgets = {'scrubber': PlotlyScrubberWidget,
-               'widgets': PlotlySelectionWidget}
 
-    backend_dependencies = {'js': (get_plotlyjs(),)}
+    mode_formats = {'fig': ['html', 'png', 'svg'],
+                    'holomap': ['widgets', 'scrubber', 'gif', 'auto']}
 
-    comm_msg_handler = plotly_msg_handler
+    widgets = ['scrubber', 'widgets']
 
     _loaded = False
 
-    def __call__(self, obj, fmt='html', divuuid=None):
-        plot, fmt =  self._validate(obj, fmt)
-        mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
+    _render_with_panel = True
 
-        if isinstance(plot, tuple(self.widgets.values())):
-            return plot(), mime_types
-        elif fmt in ('html', 'png', 'svg'):
-            return self._figure_data(plot, fmt, divuuid=divuuid), mime_types
-        elif fmt == 'json':
-            return self.diff(plot), mime_types
-
-
-    def diff(self, plot, serialize=True):
+    @bothmethod
+    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
         """
-        Returns a json diff required to update an existing plot with
-        the latest plot data.
+        Given a HoloViews Viewable return a corresponding figure dictionary.
+        Allows cleaning the dictionary of any internal properties that were added
         """
-        diff = plot.state
-        if serialize:
-            return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
-        else:
-            return diff
+        fig_dict = super().get_plot_state(obj, renderer, **kwargs)
+        config = fig_dict.get('config', {})
 
+        # Remove internal properties (e.g. '_id', '_dim')
+        clean_internal_figure_properties(fig_dict)
 
-    def _figure_data(self, plot, fmt=None, divuuid=None, comm=True, as_script=False, width=800, height=600):
-        # Wrapping plot.state in go.Figure here performs validation
-        # and applies any default theme.
-        figure = go.Figure(plot.state)
+        # Run through Figure constructor to normalize keys
+        # (e.g. to expand magic underscore notation)
+        fig_dict = go.Figure(fig_dict).to_dict()
+        fig_dict['config'] = config
 
-        if fmt in ('png', 'svg'):
+        # Remove template
+        fig_dict.get('layout', {}).pop('template', None)
+        return fig_dict
+
+    def _figure_data(self, plot, fmt, as_script=False, **kwargs):
+        if fmt == 'gif':
             import plotly.io as pio
+
+            from PIL import Image
+            from plotly.io.orca import ensure_server, shutdown_server, status
+
+            running = status.state == 'running'
+            if not running:
+                ensure_server()
+
+            nframes = len(plot)
+            frames = []
+            for i in range(nframes):
+                plot.update(i)
+                img_bytes = BytesIO()
+                figure = go.Figure(self.get_plot_state(plot))
+                img = pio.to_image(figure, 'png', validate=False)
+                img_bytes.write(img)
+                frames.append(Image.open(img_bytes))
+
+            if not running:
+                shutdown_server()
+
+            bio = BytesIO()
+            duration = (1./self.fps)*1000
+            frames[0].save(bio, format='GIF', append_images=frames[1:],
+                           save_all=True, duration=duration, loop=0)
+            bio.seek(0)
+            data = bio.read()
+        elif fmt in ('png', 'svg'):
+            import plotly.io as pio
+
+            # Wrapping plot.state in go.Figure here performs validation
+            # and applies any default theme.
+            figure = go.Figure(self.get_plot_state(plot))
             data = pio.to_image(figure, fmt)
-            if as_script:
-                b64 = base64.b64encode(data).decode("utf-8")
-                (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
-                src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-                div = tag.format(src=src, mime_type=mime_type, css='')
-                js = ''
-                return div, js
-            return data
 
-        if divuuid is None:
-            divuuid = plot.id
-
-        jdata = json.dumps(figure.data, cls=utils.PlotlyJSONEncoder)
-        jlayout = json.dumps(figure.layout, cls=utils.PlotlyJSONEncoder)
-
-        config = {}
-        config['showLink'] = False
-        jconfig = json.dumps(config)
-
-        if as_script:
-            header = 'window.PLOTLYENV=window.PLOTLYENV || {};'
+            if fmt == 'svg':
+                data = data.decode('utf-8')
         else:
-            header = ('<script type="text/javascript">'
-                      'window.PLOTLYENV=window.PLOTLYENV || {};'
-                      '</script>')
+            raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
 
-        script = '\n'.join([
-            'var plotly = window._Plotly || window.Plotly;'
-            'plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
-            '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
-            '}})']).format(id=divuuid,
-                           data=jdata,
-                           layout=jlayout,
-                           config=jconfig)
-
-        html = ('<div id="{id}.loading" style="color: rgb(50,50,50);">'
-                'Drawing...</div>'
-                '<div id="{id}" style="height: {height}; width: {width};" '
-                'class="plotly-graph-div">'
-                '</div>'.format(id=divuuid, height=height, width=width))
         if as_script:
-            return html, header + script
-
-        content = (
-            '{html}'
-            '<script type="text/javascript">'
-            '  {script}'
-            '</script>'
-        ).format(html=html, script=script)
-        return '\n'.join([header, content])
+            b64 = base64.b64encode(data).decode("utf-8")
+            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+            div = tag.format(src=src, mime_type=mime_type, css='')
+            return div
+        return data
 
 
     @classmethod
@@ -149,8 +158,14 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        from IPython.display import publish_display_data
+        import panel.models.plotly # noqa
         cls._loaded = True
-        init_notebook_mode(connected=not inline)
-        publish_display_data(data={MIME_TYPES['jlab-hv-load']:
-                                   get_plotlyjs()})
+        if 'plotly' not in getattr(pn.extension, '_loaded_extensions', ['plotly']):
+            pn.extension._loaded_extensions.append('plotly')
+
+
+def _activate_plotly_backend(renderer):
+    if renderer == "plotly":
+        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviewsPane
+
+Store._backend_switch_hooks.append(_activate_plotly_backend)

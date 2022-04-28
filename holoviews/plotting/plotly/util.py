@@ -4,6 +4,7 @@ import re
 import numpy as np
 from plotly import colors
 
+from ...core.util import isfinite, max_range
 from ..util import color_intervals, process_cmap
 
 # Constants
@@ -79,14 +80,45 @@ _trace_to_subplot = {
     'scattermapbox': ['mapbox']
 }
 
+# trace types that support legends
+legend_trace_types = {
+    'scatter',
+    'bar',
+    'box',
+    'histogram',
+    'histogram2dcontour',
+    'contour',
+    'scatterternary',
+    'violin',
+    'waterfall',
+    'pie',
+    'scatter3d',
+    'scattergeo',
+    'scattergl',
+    'splom',
+    'pointcloud',
+    'scattermapbox',
+    'scattercarpet',
+    'contourcarpet',
+    'ohlc',
+    'candlestick',
+    'scatterpolar',
+    'scatterpolargl',
+    'barpolar',
+    'area',
+}
+
 # Aliases - map common style options to more common names
 
-STYLE_ALIASES = {'line_width': 'width', 'alpha': 'opacity',
-                 'cell_height': 'height', 'marker': 'symbol'}
+STYLE_ALIASES = {'alpha': 'opacity',
+                 'cell_height': 'height',
+                 'marker': 'symbol',
+                 "max_zoom": "maxzoom",
+                 "min_zoom": "minzoom",}
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
-_subplot_re = re.compile('\D*(\d+)')
+_subplot_re = re.compile(r'\D*(\d+)')
 
 
 def _get_subplot_number(subplot_val):
@@ -236,6 +268,7 @@ def _get_max_subplot_ids(fig):
     max_subplot_ids['xaxis'] = 0
     max_subplot_ids['yaxis'] = 0
 
+    # Check traces
     for trace in fig.get('data', []):
         trace_type = trace.get('type', 'scatter')
         subplot_types = _trace_to_subplot.get(trace_type, [])
@@ -250,6 +283,20 @@ def _get_max_subplot_ids(fig):
 
             max_subplot_ids[subplot_type] = max(
                 max_subplot_ids[subplot_type], subplot_number)
+
+    # check annotations/shapes/images
+    layout = fig.get('layout', {})
+    for layout_prop in ['annotations', 'shapes', 'images']:
+        for obj in layout.get(layout_prop, []):
+            xref = obj.get('xref', 'x')
+            if xref != 'paper':
+                xref_number = _get_subplot_number(xref)
+                max_subplot_ids['xaxis'] = max(max_subplot_ids['xaxis'], xref_number)
+
+            yref = obj.get('yref', 'y')
+            if yref != 'paper':
+                yref_number = _get_subplot_number(yref)
+                max_subplot_ids['yaxis'] = max(max_subplot_ids['yaxis'], yref_number)
 
     return max_subplot_ids
 
@@ -335,6 +382,23 @@ def _offset_subplot_ids(fig, offsets):
             else:
                 yaxis['anchor'] = 'x'
 
+    # Axis matches references
+    for layout_prop in list(layout.keys()):
+        if layout_prop[1:5] == 'axis':
+            axis = layout[layout_prop]
+            matches_val = axis.get('matches', None)
+            if matches_val:
+
+                if matches_val[0] == 'x':
+                    matches_number = _get_subplot_number(matches_val) + x_offset
+                elif matches_val[0] == 'y':
+                    matches_number = _get_subplot_number(matches_val) + y_offset
+                else:
+                    continue
+
+                suffix = str(matches_number) if matches_number > 1 else ""
+                axis['matches'] = matches_val[0] + suffix
+
     # annotations/shapes/images
     for layout_prop in ['annotations', 'shapes', 'images']:
         for obj in layout.get(layout_prop, []):
@@ -387,12 +451,12 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
     layout = fig.setdefault('layout', {})
 
     def scale_translate_x(x):
-        return [x[0] * scale_x + translate_x,
-                x[1] * scale_x + translate_x]
+        return [min(x[0] * scale_x + translate_x, 1),
+                min(x[1] * scale_x + translate_x, 1)]
 
     def scale_translate_y(y):
-        return [y[0] * scale_y + translate_y,
-                y[1] * scale_y + translate_y]
+        return [min(y[0] * scale_y + translate_y, 1),
+                min(y[1] * scale_y + translate_y, 1)]
 
     def perform_scale_translate(obj):
         domain = obj.setdefault('domain', {})
@@ -453,7 +517,26 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
     for obj in layout.get('annotations', []):
         if obj.get('xref', None) == 'paper':
             obj['x'] = obj.get('x', 0.5) * scale_x + translate_x
+        if obj.get('yref', None) == 'paper':
             obj['y'] = obj.get('y', 0.5) * scale_y + translate_y
+
+    # shapes
+    for obj in layout.get('shapes', []):
+        if obj.get('xref', None) == 'paper':
+            obj['x0'] = obj.get('x0', 0.25) * scale_x + translate_x
+            obj['x1'] = obj.get('x1', 0.75) * scale_x + translate_x
+        if obj.get('yref', None) == 'paper':
+            obj['y0'] = obj.get('y0', 0.25) * scale_y + translate_y
+            obj['y1'] = obj.get('y1', 0.75) * scale_y + translate_y
+
+    # images
+    for obj in layout.get('images', []):
+        if obj.get('xref', None) == 'paper':
+            obj['x'] = obj.get('x', 0.5) * scale_x + translate_x
+            obj['sizex'] = obj.get('sizex', 0) * scale_x
+        if obj.get('yref', None) == 'paper':
+            obj['y'] = obj.get('y', 0.5) * scale_y + translate_y
+            obj['sizey'] = obj.get('sizey', 0) * scale_y
 
 
 def merge_figure(fig, subfig):
@@ -477,10 +560,10 @@ def merge_figure(fig, subfig):
 
     # layout
     layout = fig.setdefault('layout', {})
-    _merge_layout_objs(layout, subfig.get('layout', {}))
+    merge_layout(layout, subfig.get('layout', {}))
 
 
-def _merge_layout_objs(obj, subobj):
+def merge_layout(obj, subobj):
     """
     Merge layout objects recursively
 
@@ -497,7 +580,7 @@ def _merge_layout_objs(obj, subobj):
     for prop, val in subobj.items():
         if isinstance(val, dict) and prop in obj:
             # recursion
-            _merge_layout_objs(obj[prop], val)
+            merge_layout(obj[prop], val)
         elif (isinstance(val, list) and
               obj.get(prop, None) and
               isinstance(obj[prop][0], dict)):
@@ -505,8 +588,14 @@ def _merge_layout_objs(obj, subobj):
             # append
             obj[prop].extend(val)
         else:
-            # init/overwrite
-            obj[prop] = copy.deepcopy(val)
+            # Handle special cases
+            if prop == "style" and val == "white-bg" and obj.get("style", None):
+                # Don't let layout.mapbox.style of "white-bg" override other
+                # background
+                pass
+            elif val is not None:
+                # init/overwrite
+                obj[prop] = copy.deepcopy(val)
 
 
 def _compute_subplot_domains(widths, spacing):
@@ -529,24 +618,29 @@ def _compute_subplot_domains(widths, spacing):
     # normalize widths
     widths_sum = float(sum(widths))
     total_spacing = (len(widths) - 1) * spacing
-    widths = [(w / widths_sum)*(1-total_spacing) for w in widths]
+    total_width = widths_sum + total_spacing
+
+    relative_spacing = spacing / (widths_sum + total_spacing)
+    relative_widths = [(w / total_width) for w in widths]
+
     domains = []
 
     for c in range(len(widths)):
-        domain_start = c * spacing + sum(widths[:c])
-        domain_stop = min(1, domain_start + widths[c])
+        domain_start = c * relative_spacing + sum(relative_widths[:c])
+        domain_stop = min(1, domain_start + relative_widths[c])
         domains.append((domain_start, domain_stop))
 
     return domains
 
 
 def figure_grid(figures_grid,
-                row_heights=None,
-                column_widths=None,
-                row_spacing=0.15,
-                column_spacing=0.15,
+                row_spacing=50,
+                column_spacing=50,
                 share_xaxis=False,
-                share_yaxis=False):
+                share_yaxis=False,
+                width=None,
+                height=None
+                ):
     """
     Construct a figure from a 2D grid of sub-figures
 
@@ -556,40 +650,72 @@ def figure_grid(figures_grid,
         2D list of plotly figure dicts that will be combined in a grid to
         produce the resulting figure.  None values maybe used to leave empty
         grid cells
-    row_heights: list of float (default None)
-        List of the relative heights of each row in the grid (these values
-        will be normalized by the function)
-    column_widths: list of float (default None)
-        List of the relative widths of each column in the grid (these values
-        will be normalized by the function)
-    row_spacing: float (default 0.15)
-        Vertical spacing between rows in the gird in normalized coordinates
-    column_spacing: float (default 0.15)
-        Horizontal spacing between columns in the grid in normalized
+    row_spacing: float (default 50)
+        Vertical spacing between rows in the gird in pixels
+    column_spacing: float (default 50)
+        Horizontal spacing between columns in the grid in pixels
         coordinates
     share_xaxis: bool (default False)
-        Share x-axis between sub-figures in the same column. This will only
-        work if each sub-figure has a single x-axis
+        Share x-axis between sub-figures in the same column. Also link all x-axes in the
+        figure. This will only work if each sub-figure has a single x-axis
     share_yaxis: bool (default False)
-        Share y-axis between sub-figures in the same row. This will only work
-        if each subfigure has a single y-axis
+        Share y-axis between sub-figures in the same row. Also link all y-axes in the
+        figure. This will only work if each subfigure has a single y-axis
+    width: int (default None)
+        Final figure width. If not specified, width is the sum of the max width of
+        the figures in each column
+    height: int (default None)
+        Final figure width. If not specified, height is the sum of the max height of
+        the figures in each row
 
     Returns
     -------
     dict
         A plotly figure dict
     """
-
-    # compute number of rows/cols
-    rows = len(figures_grid)
-    columns = len(figures_grid[0])
-
     # Initialize row heights / column widths
-    if not row_heights:
-        row_heights = [1 for _ in range(rows)]
+    row_heights = [-1 for _ in figures_grid]
+    column_widths = [-1 for _ in figures_grid[0]]
 
-    if not column_widths:
-        column_widths = [1 for _ in range(columns)]
+    nrows = len(row_heights)
+    ncols = len(column_widths)
+
+    responsive = True
+    for r in range(nrows):
+        for c in range(ncols):
+            fig_element = figures_grid[r][c]
+            if not fig_element:
+                continue
+            responsive &= fig_element.get('config', {}).get('responsive', False)
+
+    default = None if responsive else 400
+    for r in range(nrows):
+        for c in range(ncols):
+            fig_element = figures_grid[r][c]
+            if not fig_element:
+                continue
+
+            w = fig_element.get('layout', {}).get('width', default)
+            if w:
+                column_widths[c] = max(w, column_widths[c])
+
+            h = fig_element.get('layout', {}).get('height', default)
+            if h:
+                row_heights[r] = max(h, row_heights[r])
+
+    if width:
+        available_column_width = width - (ncols - 1) * column_spacing
+        column_width_scale = available_column_width / sum(column_widths)
+        column_widths = [wi * column_width_scale for wi in column_widths]
+    else:
+        column_width_scale = 1.0
+
+    if height:
+        available_row_height = height - (nrows - 1) * row_spacing
+        row_height_scale = available_row_height / sum(row_heights)
+        row_heights = [hi * row_height_scale for hi in row_heights]
+    else:
+        row_height_scale = 1.0
 
     # Compute domain widths/heights for subplots
     column_domains = _compute_subplot_domains(column_widths, column_spacing)
@@ -620,13 +746,56 @@ def figure_grid(figures_grid,
 
                 _offset_subplot_ids(fig, subplot_offsets)
 
-                scale_x = column_domain[1] - column_domain[0]
-                scale_y = row_domain[1] - row_domain[0]
-                _scale_translate(fig,
-                                 scale_x, scale_y,
-                                 column_domain[0], row_domain[0])
+                if responsive:
+                    scale_x = 1./ncols
+                    scale_y = 1./nrows
+                    px = ((0.2/(ncols) if ncols > 1 else 0))
+                    py = ((0.2/(nrows) if nrows > 1 else 0))
+                    sx = scale_x-px
+                    sy = scale_y-py
+                    _scale_translate(fig, sx, sy, scale_x*c+px/2., scale_y*r+py/2.)
+                else:
+                    fig_height = fig['layout'].get('height', default) * row_height_scale
+                    fig_width = fig['layout'].get('width', default) * column_width_scale
+                    scale_x = (column_domain[1] - column_domain[0]) * (fig_width / column_widths[c])
+                    scale_y = (row_domain[1] - row_domain[0]) * (fig_height / row_heights[r])
+                    _scale_translate(
+                        fig, scale_x, scale_y, column_domain[0], row_domain[0]
+                    )
 
                 merge_figure(output_figure, fig)
+
+    if responsive:
+        output_figure['config'] = {'responsive': True}
+
+    # Set output figure width/height
+    if height:
+        output_figure['layout']['height'] = height
+    elif responsive:
+        output_figure['layout']['autosize'] = True
+    else:
+        output_figure['layout']['height'] = (
+            sum(row_heights) + row_spacing * (nrows - 1)
+        )
+
+    if width:
+        output_figure['layout']['width'] = width
+    elif responsive:
+        output_figure['layout']['autosize'] = True
+    else:
+        output_figure['layout']['width'] = (
+                sum(column_widths) + column_spacing * (ncols - 1)
+        )
+
+    if share_xaxis:
+        for prop, val in output_figure['layout'].items():
+            if prop.startswith('xaxis'):
+                val['matches'] = 'x'
+
+    if share_yaxis:
+        for prop, val in output_figure['layout'].items():
+            if prop.startswith('yaxis'):
+                val['matches'] = 'y'
 
     return output_figure
 
@@ -654,9 +823,11 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
     try:
         palette = process_cmap(cmap, ncolors)
     except Exception as e:
-        palette = colors.PLOTLY_SCALES.get(cmap)
-        if palette is None:
+        colorscale = colors.PLOTLY_SCALES.get(cmap)
+        if colorscale is None:
             raise e
+        return colorscale
+
     if isinstance(levels, int):
         colorscale = []
         scale = np.linspace(0, 1, levels+1)
@@ -673,3 +844,72 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
         palette, (cmin, cmax) = color_intervals(
             palette, levels, clip=(cmin, cmax))
     return colors.make_colorscale(palette)
+
+
+def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
+    """
+    Configure matching axes for a figure
+
+    Note: This function mutates the input figure
+
+    Parameters
+    ----------
+    fig: dict
+        The figure dictionary to process.
+    matching_prop: str
+        The name of the axis property that should be used to determine that two axes
+        should be matched together.  If the property is missing or None, axes will not
+        be matched
+    """
+
+    # Build mapping from matching properties to (axis, ref) tuples
+    axis_map = {}
+
+    for k, v in fig.get('layout', {}).items():
+        if k[1:5] == 'axis':
+            matching_val = v.get(matching_prop, None)
+            axis_map.setdefault(matching_val, [])
+
+            # Get axis reference as used by matching ('xaxis3' -> 'x3')
+            axis_ref = k.replace('axis', '')
+
+            # Append axis entry to maping
+            axis_pair = (axis_ref, v)
+            axis_map[matching_val].append(axis_pair)
+
+    # Set matching
+    for _, axis_pairs in axis_map.items():
+        if len(axis_pairs) < 2:
+            continue
+
+        matches_reference, linked_axis = axis_pairs[0]
+        for _, axis in axis_pairs[1:]:
+            axis['matches'] = matches_reference
+            if 'range' in axis and 'range' in linked_axis:
+                linked_axis['range'] = [
+                    v if isfinite(v) else None for v in max_range([axis['range'], linked_axis['range']])
+                ]
+
+
+def clean_internal_figure_properties(fig):
+    """
+    Remove all HoloViews internal properties (those with leading underscores) from the
+    input figure.
+
+    Note: This function mutates the input figure
+
+    Parameters
+    ----------
+    fig: dict
+        The figure dictionary to process.
+    """
+    fig_props = list(fig)
+    for prop in fig_props:
+        val = fig[prop]
+        if prop.startswith('_'):
+            fig.pop(prop)
+        elif isinstance(val, dict):
+            clean_internal_figure_properties(val)
+        elif isinstance(val, (list, tuple)) and val and isinstance(val[0], dict):
+            for el in val:
+                clean_internal_figure_properties(el)

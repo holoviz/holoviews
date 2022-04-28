@@ -1,47 +1,79 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
-from ...core.data import Dataset
-from ...core import util
-from ...element import Bars
 from ...operation import interpolate_curve
-from ..util import get_axis_padding
+from ...element import Tiles
+from ..mixins import AreaMixin, BarsMixin
 from .element import ElementPlot, ColorbarPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class ChartPlot(ElementPlot):
 
-    trace_kwargs = {'type': 'scatter'}
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter'}
 
-    def get_data(self, element, ranges, style):
-        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
-        return [{x: element.dimension_values(0),
-                 y: element.dimension_values(1)}]
+    def get_data(self, element, ranges, style, is_geo=False, **kwargs):
+        if is_geo:
+            if self.invert_axes:
+                x = element.dimension_values(1)
+                y = element.dimension_values(0)
+            else:
+                x = element.dimension_values(0)
+                y = element.dimension_values(1)
+
+            lon, lat = Tiles.easting_northing_to_lon_lat(x, y)
+            return [{"lon": lon, "lat": lat}]
+        else:
+            x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
+            return [{x: element.dimension_values(0),
+                     y: element.dimension_values(1)}]
 
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    style_opts = ['marker', 'color', 'cmap', 'alpha', 'size', 'sizemin']
+    style_opts = [
+        'visible',
+        'marker',
+        'color',
+        'cmap',
+        'alpha',
+        'size',
+        'sizemin',
+        'selectedpoints',
+    ]
 
-    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin']
-
-    trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
+    _nonvectorized_styles = ['visible', 'cmap', 'alpha', 'sizemin', 'selectedpoints']
 
     _style_key = 'marker'
 
-    def graph_options(self, element, ranges, style):
-        opts = super(ScatterPlot, self).graph_options(element, ranges, style)
+    selection_display = PlotlyOverlaySelectionDisplay()
+
+    _supports_geo = True
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        if is_geo:
+            return {'type': 'scattermapbox', 'mode': 'markers'}
+        else:
+            return {'type': 'scatter', 'mode': 'markers'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super().graph_options(element, ranges, style, **kwargs)
         cdim = element.get_dimension(self.color_index)
         if cdim:
             copts = self.get_color_opts(cdim, element, ranges, style)
             copts['color'] = element.dimension_values(cdim)
-            opts['marker'].update(opts)
+            opts['marker'].update(copts)
+
+        # If cmap was present and applicable, it was processed by get_color_opts above.
+        # Remove it now to avoid plotly validation error
+        opts.get('marker', {}).pop('cmap', None)
         return opts
 
 
@@ -54,47 +86,47 @@ class CurvePlot(ChartPlot, ColorbarPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    style_opts = ['color', 'dash', 'line_width']
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     _nonvectorized_styles = style_opts
 
+    unsupported_geo_style_opts = ["dash"]
+
     _style_key = 'line'
 
-    def get_data(self, element, ranges, style):
+    _supports_geo = True
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        if is_geo:
+            return {'type': 'scattermapbox', 'mode': 'lines'}
+        else:
+            return {'type': 'scatter', 'mode': 'lines'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return super(CurvePlot, self).get_data(element, ranges, style)
+        return super().get_data(element, ranges, style, **kwargs)
 
 
-class AreaPlot(ChartPlot):
+class AreaPlot(AreaMixin, ChartPlot):
 
-    style_opts = ['color', 'dash', 'line_width']
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     _style_key = 'line'
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        vdims = element.vdims[:2]
-        vdim = vdims[0].name
-        if len(vdims) > 1:
-            new_range = {}
-            for r in ranges[vdim]:
-                new_range[r] = util.max_range([ranges[vd.name][r] for vd in vdims])
-            ranges[vdim] = new_range
-        else:
-            s0, s1 = ranges[vdim]['soft']
-            s0 = min(s0, 0) if util.isfinite(s0) else 0
-            s1 = max(s1, 0) if util.isfinite(s1) else 0
-            ranges[vdim]['soft'] = (s0, s1)
-        return super(AreaPlot, self).get_extents(element, ranges, range_type)
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines'}
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         if len(element.vdims) == 1:
-            kwargs = super(AreaPlot, self).get_data(element, ranges, style)[0]
+            kwargs = super().get_data(element, ranges, style, **kwargs)[0]
             kwargs['fill'] = 'tozero'+y
             return [kwargs]
         xs = element.dimension_values(0)
@@ -106,13 +138,17 @@ class AreaPlot(ChartPlot):
 
 class SpreadPlot(ChartPlot):
 
-    style_opts = ['color', 'dash', 'line_width']
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     _style_key = 'line'
 
-    def get_data(self, element, ranges, style):
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         xs = element.dimension_values(0)
         mean = element.dimension_values(1)
@@ -123,30 +159,38 @@ class SpreadPlot(ChartPlot):
         upper = mean + pos_error
         return [{x: xs, y: lower, 'fill': None},
                 {x: xs, y: upper, 'fill': 'tonext'+y}]
-    
+
 
 class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
-
-    style_opts = ['color', 'dash', 'line_width', 'thickness']
+    style_opts = ['visible', 'color', 'dash', 'line_width', 'thickness']
 
     _nonvectorized_styles = style_opts
 
     _style_key = 'error_y'
 
-    def get_data(self, element, ranges, style):
+    selection_display = PlotlyOverlaySelectionDisplay()
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
+
+    def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
+        error_k = 'error_' + x if element.horizontal else 'error_' + y
         neg_error = element.dimension_values(2)
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
-        error_y = dict(type='data', array=pos_error, arrayminus=neg_error)
+        error_v = dict(type='data', array=pos_error, arrayminus=neg_error)
         return [{x: element.dimension_values(0),
                  y: element.dimension_values(1),
-                 'error_'+y: error_y}]
+                 error_k: error_v}]
 
 
-class BarPlot(ElementPlot):
+class BarPlot(BarsMixin, ElementPlot):
+
+    multi_level = param.Boolean(default=True, doc="""
+       Whether the Bars should be grouped into a second categorical axis level.""")
 
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
@@ -154,94 +198,44 @@ class BarPlot(ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    # Deprecated parameters
-
-    group_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
-
-    category_index = param.Integer(default=None, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
-    stack_index = param.Integer(default=None, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
-
     stacked = param.Boolean(default=False)
 
-    trace_kwargs = {'type': 'bar'}
+    style_opts = ['visible']
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        Make adjustments to plot extents by computing
-        stacked bar heights, adjusting the bar baseline
-        and forcing the x-axis to be categorical.
-        """
-        if self.batched:
-            overlay = self.current_frame
-            element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
-                           vdims=element.vdims)
-            for kd in overlay.kdims:
-                ranges[kd.name]['combined'] = overlay.range(kd)
+    selection_display = PlotlyOverlaySelectionDisplay()
 
-        xdim = element.kdims[0]
-        ydim = element.vdims[0]
-
-        # Compute stack heights
-        if self.stacked or self.stack_index:
-            ds = Dataset(element)
-            pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
-            neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
-            y0, y1 = util.max_range([pos_range, neg_range])
-        else:
-            y0, y1 = ranges[ydim.name]['combined']
-
-        padding = 0 if self.overlaid else self.padding
-        _, ypad, _ = get_axis_padding(padding)
-        y0, y1 = util.range_pad(y0, y1, ypad, self.logy)
-
-        # Set y-baseline
-        if y0 < 0:
-            y1 = max([y1, 0])
-        elif self.logy:
-            y0 = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
-        else:
-            y0 = 0
-
-        # Ensure x-axis is picked up as categorical
-        nx = len(element.dimension_values(0, False))
-        return (-0.5, y0, nx-0.5, y1)
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'bar'}
 
     def _get_axis_dims(self, element):
-        if element.ndims > 1 and not (self.stacked or self.stack_index):
+        if element.ndims > 1 and not self.stacked:
             xdims = element.kdims
         else:
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
-    def get_data(self, element, ranges, style):
-        if self.stack_index is not None:
-            self.param.warning(
-                'Bars stack_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-        if self.category_index is not None:
-            self.param.warning(
-                'Bars category_index plot option is deprecated and '
-                'will be ignored, set stacked=True/False instead.')
-        if self.group_index not in (None, 1):
-            self.param.warning(
-                'Bars group_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
+    def get_extents(self, element, ranges, range_type='combined'):
+        x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
+        if range_type not in ('data', 'combined'):
+            return x0, y0, x1, y1
+        return (None, y0, None, y1)
 
+    def get_data(self, element, ranges, style, **kwargs):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             pass
-        elif self.stacked or self.stack_index:
+        elif self.stacked:
             stack_dim = element.get_dimension(1)
+            if stack_dim.values:
+                svals = stack_dim.values
+            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
+                svals = ranges[stack_dim]['factors']
+            else:
+                svals = element.dimension_values(1, False)
         else:
             group_dim = element.get_dimension(1)
 
@@ -252,26 +246,86 @@ class BarPlot(ElementPlot):
             x, y = ('x', 'y')
             orientation = 'v'
 
+        xvals, gvals = self._get_coords(element, ranges, as_string=False)
+
+        bars = []
         if element.ndims == 1:
-            bars = [{
+            values = []
+            for v in xvals:
+                sel = element[[v]]
+                values.append(sel.iloc[0, 1] if len(sel) else 0)
+            bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in element.dimension_values(xdim)],
-                y: element.dimension_values(vdim)}]
-        else:
-            group_dim = group_dim or stack_dim
+                x: [xdim.pprint_value(v) for v in xvals],
+                y: np.nan_to_num(values)})
+        elif stack_dim or not self.multi_level:
+            group_dim = stack_dim or group_dim
+            order = list(svals if stack_dim else gvals)
             els = element.groupby(group_dim)
-            bars = []
-            for k, el in els.items():
+            sorted_groups = sorted(els.items(), key=lambda x: order.index(x[0])
+                                   if x[0] in order else -1)
+            for k, el in sorted_groups[::-1]:
+                values = []
+                for v in xvals:
+                    sel = el[[v]]
+                    values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in el.dimension_values(xdim)],
-                    y: el.dimension_values(vdim)})
+                    x: [xdim.pprint_value(v) for v in xvals],
+                    y: np.nan_to_num(values)})
+        else:
+            values = element.dimension_values(vdim)
+            bars.append({
+                'orientation': orientation,
+                x: [[d.pprint_value(v) for v in element.dimension_values(d)]
+                    for d in (xdim, group_dim)],
+                y: np.nan_to_num(values)})
         return bars
 
-    def init_layout(self, key, element, ranges):
-        layout = super(BarPlot, self).init_layout(key, element, ranges)
+    def init_layout(self, key, element, ranges, **kwargs):
+        layout = super().init_layout(key, element, ranges)
         stack_dim = None
-        if element.ndims > 1 and (self.stacked or self.stack_index):
+        if element.ndims > 1 and self.stacked:
             stack_dim = element.get_dimension(1)
         layout['barmode'] = 'stack' if stack_dim else 'group'
+        return layout
+
+
+class HistogramPlot(ElementPlot):
+
+    style_opts = [
+        'visible', 'color', 'line_color', 'line_width', 'opacity', 'selectedpoints'
+    ]
+
+    _style_key = 'marker'
+
+    selection_display = PlotlyOverlaySelectionDisplay()
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'bar'}
+
+    def get_data(self, element, ranges, style, **kwargs):
+        xdim = element.kdims[0]
+        ydim = element.vdims[0]
+        values = np.asarray(element.interface.coords(element, ydim))
+        edges = np.asarray(element.interface.coords(element, xdim))
+        if len(edges) < 2:
+            binwidth = 0
+        else:
+            binwidth = edges[1] - edges[0]
+
+        if self.invert_axes:
+            ys = edges
+            xs = values
+            orientation = 'h'
+        else:
+            xs = edges
+            ys = values
+            orientation = 'v'
+        return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
+
+    def init_layout(self, key, element, ranges, **kwargs):
+        layout = super().init_layout(key, element, ranges)
+        layout['barmode'] = 'overlay'
         return layout

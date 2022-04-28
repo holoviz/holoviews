@@ -1,5 +1,4 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import copy
 import math
 import warnings
 from types import FunctionType
@@ -10,17 +9,19 @@ import matplotlib.colors as mpl_colors
 
 from matplotlib import ticker
 from matplotlib.dates import date2num
+from matplotlib.image import AxesImage
 
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ...element import Graph, Path
+from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
+from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import mpl_version, validate, wrap_formatter
+from .util import LooseVersion, EqHistNormalize, mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -53,15 +54,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
          Whether to apply log scaling to the y-axis of the Chart.""")
 
     xformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     yformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the y-axis.""")
 
     zformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the z-axis.""")
 
     zaxis = param.Boolean(default=True, doc="""
@@ -90,7 +91,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     _has_axes = True
 
     def __init__(self, element, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         check = self.hmap.last
         if isinstance(check, CompositeOverlay):
             check = check.values()[0] # Should check if any are 3D plots
@@ -103,7 +104,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             except Exception as e:
                 self.param.warning("Plotting hook %r could not be "
                                    "applied:\n\n %s" % (hook, e))
-
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
@@ -127,7 +127,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                if mpl_version <= '1.5.9':
+                if mpl_version <= LooseVersion('1.5.9'):
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)
@@ -171,7 +171,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if self.logy:
                     axis.set_yscale('log')
 
-                if not self.projection == '3d':
+                if not (isinstance(self.projection, str) and self.projection == '3d'):
                     self._set_axis_position(axis, 'x', self.xaxis)
                     self._set_axis_position(axis, 'y', self.yaxis)
 
@@ -190,8 +190,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._finalize_artist(element)
 
         self._execute_hooks(element)
-        return super(ElementPlot, self)._finalize_axis(key)
-
+        return super()._finalize_axis(key)
 
     def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
         """
@@ -208,7 +207,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._set_axis_formatter(axis.xaxis, xdim, self.xformatter)
         if ydim:
             self._set_axis_formatter(axis.yaxis, ydim, self.yformatter)
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             zdim = dimensions[2] if ndims > 2 else None
             if zdim or self.zformatter is not None:
                 self._set_axis_formatter(axis.zaxis, zdim, self.zformatter)
@@ -221,7 +220,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._set_axis_ticks(axis.yaxis, yticks, log=self.logy,
                              rotation=self.yrotation)
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             zticks = zticks if zticks else self.zticks
             self._set_axis_ticks(axis.zaxis, zticks, log=self.logz,
                                  rotation=self.zrotation)
@@ -237,14 +236,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
-
     def _finalize_artist(self, element):
         """
         Allows extending the _finalize_axis method with Element
         specific options.
         """
         pass
-
 
     def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
         """
@@ -268,7 +265,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Set axis formatter based on dimension formatter.
         """
         if isinstance(dim, list): dim = dim[0]
-        if formatter is not None:
+        if formatter is not None or dim is None:
             pass
         elif dim.value_format:
             formatter = dim.value_format
@@ -295,7 +292,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
-        if ((isinstance(aspect, util.basestring) and aspect != 'square') or
+        if isinstance(self.projection, str) and self.projection == '3d':
+            return
+
+        if ((isinstance(aspect, str) and aspect != 'square') or
             self.data_aspect):
             data_ratio = self.data_aspect or aspect
         else:
@@ -321,10 +321,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             return
 
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
-        coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
+        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.NaN for coord in extents]
         coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
                   for c in coords]
-        if self.projection == '3d' or len(extents) == 6:
+        if (isinstance(self.projection, str) and self.projection == '3d') or len(extents) == 6:
             l, b, zmin, r, t, zmax = coords
             if self.invert_zaxis or any(p.invert_zaxis for p in subplots):
                 zmin, zmax = zmax, zmin
@@ -412,12 +412,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if an integer number of ticks is supplied and setting a
         rotation for the ticks.
         """
+        if isinstance(ticks, np.ndarray):
+            ticks = list(ticks)
         if isinstance(ticks, (list, tuple)) and all(isinstance(l, list) for l in ticks):
             axis.set_ticks(ticks[0])
             axis.set_ticklabels(ticks[1])
         elif isinstance(ticks, ticker.Locator):
             axis.set_major_locator(ticks)
-        elif not ticks and ticks is not None:
+        elif ticks is not None and not ticks:
             axis.set_ticks([])
         elif isinstance(ticks, int):
             if log:
@@ -448,6 +450,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         using the last available frame.
         """
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
@@ -508,6 +511,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             handles = self.init_artists(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
 
+        trigger = self._trigger
+        self._trigger = []
+        Stream.trigger(trigger)
+
         return self._finalize_axis(self.keys[-1], element=element, ranges=ranges,
                                    **axis_kwargs)
 
@@ -519,6 +526,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         plot_fn = getattr(ax, plot_method)
+        if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
+             plot_kwargs.pop('vmin', None)
+             plot_kwargs.pop('vmax', None)
         artist = plot_fn(*plot_args, **plot_kwargs)
         return {'artist': artist[0] if isinstance(artist, list) and
                 len(artist) == 1 else artist}
@@ -540,7 +550,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if validate(k, v) == True:
                     continue
                 elif v in element or (isinstance(element, Graph) and v in element.nodes):
@@ -558,10 +568,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     % (k, v))
                 continue
 
-            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
-                val = self.overlay_dims[v.dimension]
+            if v.dimension in self.overlay_dims:
+                ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
+                             list(self.overlay_dims))
+                val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif type(element) is Path:
-                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
+                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
             else:
                 val = v.apply(element, ranges)
@@ -585,7 +597,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             groups = [sg for sg in style_groups if k.startswith(sg)]
             group = groups[0] if groups else None
             prefix = '' if group is None else group+'_'
-            if (k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray)
+            if (k in (prefix+'c', prefix+'color') and isinstance(val, util.arraylike_types)
                 and not validate('color', val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
@@ -615,7 +627,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 (prefix != 'edge' or getattr(self, 'filled', True))
                 and any(o.startswith(prefix+'face') for o in self.style_opts))
 
-            if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray):
+            if k in (prefix+'c', prefix+'color') and isinstance(val, util.arraylike_types):
                 fill_style = new_style.get(prefix+'facecolor')
                 if fill_style and validate('color', fill_style):
                     new_style.pop('facecolor')
@@ -650,16 +662,36 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 class ColorbarPlot(ElementPlot):
 
+    clabel = param.String(default=None, doc="""
+        An explicit override of the color bar label, if set takes precedence
+        over the title key in colorbar_opts.""")
+
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a
+        tuple (low,high). If specified, takes precedence over data
+        and dimension ranges.""")
+
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
+
+    cformatter = param.ClassSelector(
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the colorbar axis.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
+    colorbar_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
+
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -682,6 +714,11 @@ class ColorbarPlot(ElementPlot):
     cbar_width = param.Number(default=0.05, doc="""
         Width of the colorbar as a fraction of the main plot""")
 
+    cbar_extend = param.ObjectSelector(
+        objects=['neither', 'both', 'min', 'max'], default=None, doc="""
+        If not 'neither', make pointed end(s) for out-of- range values."""
+    )
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -690,14 +727,19 @@ class ColorbarPlot(ElementPlot):
     _default_nan = '#8b8b8b'
 
     def __init__(self, *args, **kwargs):
-        super(ColorbarPlot, self).__init__(*args, **kwargs)
-        self._cbar_extend = 'neither'
+        super().__init__(*args, **kwargs)
 
     def _adjust_cbar(self, cbar, label, dim):
         noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
+
+        for lb in ['clabel', 'labels']:
+            labelsize = self._fontsize(lb, common=False).get('fontsize')
+            if labelsize is not None:
+                break
+
         if (cbar.solids and noalpha):
             cbar.solids.set_edgecolor("face")
-        cbar.set_label(label)
+        cbar.set_label(label, fontsize=labelsize)
         if isinstance(self.cbar_ticks, ticker.Locator):
             cbar.ax.yaxis.set_major_locator(self.cbar_ticks)
         elif self.cbar_ticks == 0:
@@ -713,6 +755,12 @@ class ColorbarPlot(ElementPlot):
                                         for t in self.cbar_ticks])
             cbar.set_ticks(ticks)
             cbar.set_ticklabels(labels)
+
+        for tk in ['cticks', 'ticks']:
+            ticksize = self._fontsize(tk, common=False).get('fontsize')
+            if ticksize is not None:
+                cbar.ax.tick_params(labelsize=ticksize)
+                break
 
 
     def _finalize_artist(self, element):
@@ -744,7 +792,9 @@ class ColorbarPlot(ElementPlot):
         if isinstance(dimension, dim):
             dimension = dimension.dimension
         dimension = element.get_dimension(dimension)
-        if dimension:
+        if self.clabel is not None:
+            label = self.clabel
+        elif dimension:
             label = dimension.pprint_label
         elif element.vdims:
             label = element.vdims[0].pprint_label
@@ -758,7 +808,9 @@ class ColorbarPlot(ElementPlot):
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
-            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self._cbar_extend)
+            cbar = fig.colorbar(artist, cax=cax, ax=axis,
+                extend=self.cbar_extend, **self.colorbar_opts)
+            self._set_axis_formatter(cbar.ax.yaxis, dimension, self.cformatter)
             self._adjust_cbar(cbar, label, dimension)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
@@ -788,7 +840,7 @@ class ColorbarPlot(ElementPlot):
                     isinstance(element, Dataset) and
                     element.interface.multi and
                     (getattr(element, 'level', None) is not None or
-                     element.interface.isscalar(element, vdim.name))
+                    element.interface.isunique(element, vdim.name, True))
                 )
                 values = np.asarray(element.dimension_values(vdim, expanded=expanded))
 
@@ -808,7 +860,10 @@ class ColorbarPlot(ElementPlot):
                 categorical = False
             elif values.dtype.kind in 'uif':
                 if dim_name in ranges:
-                    clim = ranges[dim_name]['combined']
+                    if self.clim_percentile and 'robust' in ranges[dim_name]:
+                        clim = ranges[dim_name]['robust']
+                    else:
+                        clim = ranges[dim_name]['combined']
                 elif isinstance(vdim, dim):
                     if values.dtype.kind == 'M':
                         clim = values.min(), values.max()
@@ -843,7 +898,10 @@ class ColorbarPlot(ElementPlot):
         else:
             categorical = values.dtype.kind not in 'uif'
 
-        if self.logz:
+        if self.cnorm == 'eq_hist':
+            opts[prefix+'norm'] = EqHistNormalize(
+                vmin=clim[0], vmax=clim[1])
+        if self.cnorm == 'log' or self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
                                              linthresh=clim[1]/np.e)
@@ -874,12 +932,15 @@ class ColorbarPlot(ElementPlot):
             el_min, el_max = -np.inf, np.inf
         vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']
         vmax = np.inf if opts[prefix+'vmax'] is None else opts[prefix+'vmax']
-        if el_min < vmin and el_max > vmax:
-            self._cbar_extend = 'both'
-        elif el_min < vmin:
-            self._cbar_extend = 'min'
-        elif el_max > vmax:
-            self._cbar_extend = 'max'
+        if self.cbar_extend is None:
+            if el_min < vmin and el_max > vmax:
+                self.cbar_extend = 'both'
+            elif el_min < vmin:
+                self.cbar_extend = 'min'
+            elif el_max > vmax:
+                self.cbar_extend = 'max'
+            else:
+                self.cbar_extend = 'neither'
 
         # Define special out-of-range colors on colormap
         colors = {}
@@ -889,7 +950,7 @@ class ColorbarPlot(ElementPlot):
             elif isinstance(val, tuple):
                 colors[k] = {'color': val[:3],
                              'alpha': val[3] if len(val) > 3 else 1}
-            elif isinstance(val, util.basestring):
+            elif isinstance(val, str):
                 color = val
                 alpha = 1
                 if color.startswith('#') and len(color) == 9:
@@ -899,7 +960,13 @@ class ColorbarPlot(ElementPlot):
 
         if not isinstance(cmap, mpl_colors.Colormap):
             if isinstance(cmap, dict):
-                factors = util.unique_array(values)
+                # The palette needs to correspond to the map's limits (vmin/vmax). So use the same
+                # factors as in the map's clim computation above.
+                range_key = dim_range_key(vdim)
+                if range_key in ranges and 'factors' in ranges[range_key]:
+                    factors = ranges[range_key]['factors']
+                else:
+                    factors = util.unique_array(values)
                 palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                            for f in factors]
             else:
@@ -907,11 +974,12 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(self.color_levels, list):
                     palette, (vmin, vmax) = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
             cmap = mpl_colors.ListedColormap(palette)
+
+        cmap = copy.copy(cmap)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
         opts[prefix+'cmap'] = cmap
-
 
 
 class LegendPlot(ElementPlot):
@@ -936,6 +1004,9 @@ class LegendPlot(ElementPlot):
         'bottom', 'top', 'left', 'best', 'top_right', 'top_left',
         'bottom_right' and 'bottom_left' are supported.""")
 
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     legend_specs = {'inner': {},
                     'best': {},
                     'left':   dict(bbox_to_anchor=(-.15, 1), loc=1),
@@ -949,7 +1020,6 @@ class LegendPlot(ElementPlot):
                     'top_left': dict(loc=2),
                     'bottom_left': dict(loc=3),
                     'bottom_right': dict(loc=4)}
-
 
 
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
@@ -966,13 +1036,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title', 'title_format', 'padding',
                           'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter', 'data_aspect']
+                          'xformatter', 'yformatter', 'data_aspect', 'fontscale',
+                          'legend_opts']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
             params['projection'] = self._get_projection(overlay)
-        super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
-
+        super().__init__(overlay, ranges=ranges, **params)
 
     def _finalize_artist(self, element):
         for subplot in self.subplots.values():
@@ -985,7 +1055,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         """
         legend_data = []
         dimensions = overlay.kdims
-        title = ', '.join([d.name for d in dimensions])
+        title = ', '.join([d.label for d in dimensions])
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue
@@ -993,9 +1063,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             handle = subplot.traverse(lambda p: p.handles['artist'],
                                       [lambda p: 'artist' in p.handles])
             if isinstance(overlay, NdOverlay):
-                key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
-                label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
-                                  zip(dimensions, key)])
+                label = ','.join([dim.pprint_value(k, print_unit=True)
+                                  for k, dim in zip(key, dimensions)])
                 if handle:
                     legend_data.append((handle, label))
             else:
@@ -1009,6 +1078,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for handle, label in zip(all_handles, all_labels):
             # Ensure that artists with multiple handles are supported
             if isinstance(handle, list): handle = tuple(handle)
+            handle = tuple(h for h in handle if not isinstance(h, (AxesImage, list)))
+            if not handle:
+                continue
             if handle and (handle not in data) and label and label not in used_labels:
                 data[handle] = label
                 used_labels.append(label)
@@ -1019,21 +1091,17 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         else:
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
+            legend_opts = self.legend_opts.copy()
+            legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
             leg = axis.legend(list(data.keys()), list(data.values()),
-                              title=title, scatterpoints=1,
-                              **dict(leg_spec, **self._fontsize('legend')))
+                              title=title, **legend_opts)
             title_fontsize = self._fontsize('legend_title')
             if title_fontsize:
                 leg.get_title().set_fontsize(title_fontsize['fontsize'])
-            frame = leg.get_frame()
-            frame.set_facecolor('1.0')
-            frame.set_edgecolor('0.0')
-            frame.set_linewidth('1.0')
             leg.set_zorder(10e6)
             self.handles['legend'] = leg
             self.handles['bbox_extra_artists'].append(leg)
         self.handles['legend_data'] = data
-
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -1054,11 +1122,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         return self._finalize_axis(key, element=element, ranges=ranges,
                                    title=self._format_title(key))
 
-
     @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if element is None and not reused:
             element = self._get_frame(key)
         elif element is not None:
@@ -1077,7 +1145,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for k, subplot in self.subplots.items():
             el = None if empty else element.get(k, None)
             if isinstance(self.hmap, DynamicMap) and not empty:
-                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
+                idx, spec, exact = self._match_subplot(k, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                     if not exact:

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -45,7 +43,6 @@ class BivariatePlot(PolygonPlot):
         A list of scalar values used to specify the contour levels.""")
 
 
-
 class BoxPlot(ChartPlot):
     """
     BoxPlot plots the ErrorBar Element type and supporting
@@ -64,7 +61,7 @@ class BoxPlot(ChartPlot):
     _plot_methods = dict(single='boxplot')
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(BoxPlot, self).get_extents(
+        return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
@@ -87,7 +84,7 @@ class BoxPlot(ChartPlot):
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
-        format_kdims = [kd(value_format=None) for kd in element.kdims]
+        format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]]}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
@@ -99,7 +96,6 @@ class BoxPlot(ChartPlot):
         for g in ('whiskers', 'fliers', 'medians', 'boxes', 'caps', 'means'):
             for v in self.handles.get(g, []):
                 v.remove()
-
 
 
 class SideBoxPlot(AdjoinedPlot, BoxPlot):
@@ -125,7 +121,7 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     def __init__(self, *args, **kwargs):
-        super(SideBoxPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.adjoined:
             self.invert_axes = not self.invert_axes
 
@@ -201,7 +197,8 @@ class ViolinPlot(BoxPlot):
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            data.append(group[group.vdims[0]])
+            d = group[group.vdims[0]]
+            data.append(d[np.isfinite(d)])
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = list(range(len(data)))
@@ -212,11 +209,12 @@ class ViolinPlot(BoxPlot):
             element = element.aggregate(function=np.mean)
         else:
             element = element.clone([(element.aggregate(function=np.mean),)])
+
         new_style = self._apply_transforms(element, ranges, style)
         style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
-        format_kdims = [kd(value_format=None) for kd in element.kdims]
+        format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         ticks = {'yticks' if self.invert_axes else 'xticks': list(enumerate(labels))}
         return (data,), style, dict(dimensions=[format_kdims, element.vdims[0]], **ticks)
 

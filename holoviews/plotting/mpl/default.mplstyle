@@ -23,7 +23,6 @@ grid.color: black
 grid.linestyle: :
 
 legend.loc: upper right
-legend.frameon: True
 legend.fontsize: small
 legend.fancybox: True
 

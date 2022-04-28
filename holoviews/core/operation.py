@@ -3,12 +3,14 @@ Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
 import param
+
 from .dimension import ViewableElement
 from .element import Element
 from .layout import Layout
+from .options import Store
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, HoloMap
-from . import util
+from . import util, Dataset
 
 
 class Operation(param.ParameterizedFunction):
@@ -57,7 +59,7 @@ class Operation(param.ParameterizedFunction):
        visualization should update this stream with range changes
        originating from the newly generated axes.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.ClassSelector(default=[], class_=(dict, list), doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
@@ -68,6 +70,17 @@ class Operation(param.ParameterizedFunction):
     # and processed element
     _preprocess_hooks = []
     _postprocess_hooks = []
+    _allow_extra_keywords=False
+
+    # Whether to apply operation per element (will be enabled by default in 2.0)
+    _per_element = False
+
+    # Flag indicating whether to automatically propagate the .dataset property from
+    # the input of the operation to the result
+    _propagate_dataset = True
+
+    # Options to transfer from the input element to the transformed element
+    _transfer_options = []
 
     @classmethod
     def search(cls, element, pattern):
@@ -118,9 +131,35 @@ class Operation(param.ParameterizedFunction):
         kwargs = {}
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
+
+        element_pipeline = getattr(element, '_pipeline', None)
+
+        if hasattr(element, '_in_method'):
+            in_method = element._in_method
+            if not in_method:
+                element._in_method = True
         ret = self._process(element, key)
+        if hasattr(element, '_in_method') and not in_method:
+            element._in_method = in_method
+
+        if self._transfer_options:
+            for backend in Store.loaded_backends():
+                Store.transfer_options(
+                    element, ret, backend, self._transfer_options, level=1
+                )
+
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
+
+        if (self._propagate_dataset and isinstance(ret, Dataset)
+            and isinstance(element, Dataset) and not in_method):
+            ret._dataset = element.dataset.clone()
+            ret._pipeline = element_pipeline.instance(
+                operations=element_pipeline.operations + [
+                    self.instance(**self.p)
+                ],
+            )
+            ret._transforms = element._transforms
         return ret
 
 
@@ -139,7 +178,19 @@ class Operation(param.ParameterizedFunction):
         The process_element method allows a single element to be
         operated on given an externally supplied key.
         """
-        self.p = param.ParamOverrides(self, params)
+        if self._per_element and not isinstance(element, Element):
+            return element.clone({k: self.process_element(el, key, **params)
+                                  for k, el in element.items()})
+        if hasattr(self, 'p'):
+            if self._allow_extra_keywords:
+                extras = self.p._extract_extra_keywords(params)
+                self.p._extra_keywords.update(extras)
+                params = {k: v for k, v in params.items() if k not in self.p._extra_keywords}
+            self.p.update(params)
+            self.p._check_params(params)
+        else:
+            self.p = param.ParamOverrides(self, params,
+                                          allow_extra_keywords=self._allow_extra_keywords)
         return self._apply(element, key)
 
 
@@ -150,17 +201,22 @@ class Operation(param.ParameterizedFunction):
                 params[k] = v()
             elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = getattr(v.owner, v.name)
-        self.p = param.ParamOverrides(self, params)
+        self.p = param.ParamOverrides(self, params,
+                                      allow_extra_keywords=self._allow_extra_keywords)
         if not self.p.dynamic:
             kwargs['dynamic'] = False
             if isinstance(element, HoloMap):
                 # Backwards compatibility for key argument
                 return element.clone([(k, self._apply(el, key=k))
                                       for k, el in element.items()])
-            elif isinstance(element, ViewableElement):
+            elif ((self._per_element and isinstance(element, Element)) or
+                  (not self._per_element and isinstance(element, ViewableElement))):
                 return self._apply(element)
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
+        kwargs['per_element'] = self._per_element
+        kwargs['link_dataset'] = self._propagate_dataset
+        kwargs['link_inputs'] = self.p.link_inputs
         return element.apply(self, **kwargs)
 
 
@@ -178,4 +234,4 @@ class OperationCallable(Callable):
     def __init__(self, callable, **kwargs):
         if 'operation' not in kwargs:
             raise ValueError('An OperationCallable must have an operation specified')
-        super(OperationCallable, self).__init__(callable, **kwargs)
+        super().__init__(callable, **kwargs)

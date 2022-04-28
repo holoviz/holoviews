@@ -3,8 +3,6 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
-from __future__ import unicode_literals
-
 import re
 import datetime as dt
 import weakref
@@ -12,7 +10,7 @@ import weakref
 from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
-from functools import reduce, partial
+from functools import partial
 
 import param
 import numpy as np
@@ -22,7 +20,7 @@ from .accessors import Opts, Apply, Redim
 from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
-from .util import basestring, OrderedDict, bytes_to_unicode, unicode
+from .util import OrderedDict, bytes_to_unicode
 
 # Alias parameter support for pickle loading
 
@@ -60,7 +58,7 @@ def asdim(dimension):
     """
     if isinstance(dimension, Dimension):
         return dimension
-    elif isinstance(dimension, (tuple, dict, basestring)):
+    elif isinstance(dimension, (tuple, dict, str)):
         return Dimension(dimension)
     else:
         raise ValueError('%s type could not be interpreted as Dimension. '
@@ -79,7 +77,7 @@ def dimension_name(dimension):
     """
     if isinstance(dimension, Dimension):
         return dimension.name
-    elif isinstance(dimension, basestring):
+    elif isinstance(dimension, str):
         return dimension
     elif isinstance(dimension, tuple):
         return dimension[0]
@@ -113,7 +111,7 @@ def process_dimensions(kdims, vdims):
     for group, dims in [('kdims', kdims), ('vdims', vdims)]:
         if dims is None:
             continue
-        elif isinstance(dims, (tuple, basestring, Dimension, dict)):
+        elif isinstance(dims, (tuple, str, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
             raise ValueError("%s argument expects a Dimension or list of dimensions, "
@@ -121,7 +119,7 @@ def process_dimensions(kdims, vdims):
                              "instances, not a %s type. Ensure you passed the data as the "
                              "first argument." % (group, type(dims).__name__))
         for dim in dims:
-            if not isinstance(dim, (tuple, basestring, Dimension, dict)):
+            if not isinstance(dim, (tuple, str, Dimension, dict)):
                 raise ValueError('Dimensions must be defined as a tuple, '
                                  'string, dictionary or Dimension instance, '
                                  'found a %s type.' % type(dim).__name__)
@@ -191,8 +189,13 @@ class Dimension(param.Parameterized):
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
 
-    value_format = param.Callable(default=None, doc="""
-        Formatting function applied to each value before display.""")
+    default = param.Parameter(default=None, doc="""
+        Default value of the Dimension which may be useful for widget
+        or other situations that require an initial or default value.""")
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN.""")
 
     range = param.Tuple(default=(None, None), doc="""
         Specifies the minimum and maximum allowed values for a
@@ -202,24 +205,23 @@ class Dimension(param.Parameterized):
         Specifies a minimum and maximum reference value, which
         may be overridden by the data.""")
 
-    type = param.Parameter(default=None, doc="""
-        Optional type associated with the Dimension values. The type
-        may be an inbuilt constructor (such as int, str, float) or a
-        custom class object.""")
-
-    default = param.Parameter(default=None, doc="""
-        Default value of the Dimension which may be useful for widget
-        or other situations that require an initial or default value.""")
-
     step = param.Number(default=None, doc="""
         Optional floating point step specifying how frequently the
         underlying space should be sampled. May be used to define a
         discrete sampling over the range.""")
 
+    type = param.Parameter(default=None, doc="""
+        Optional type associated with the Dimension values. The type
+        may be an inbuilt constructor (such as int, str, float) or a
+        custom class object.""")
+
     unit = param.String(default=None, allow_None=True, doc="""
         Optional unit string associated with the Dimension. For
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
+
+    value_format = param.Callable(default=None, doc="""
+        Formatting function applied to each value before display.""")
 
     values = param.List(default=[], doc="""
         Optional specification of the allowed value set for the
@@ -240,22 +242,22 @@ class Dimension(param.Parameterized):
             raise KeyError('Dimension name must only be passed as the positional argument')
 
         if isinstance(spec, Dimension):
-            existing_params = dict(spec.get_param_values())
+            existing_params = dict(spec.param.get_param_values())
         elif (spec, params.get('unit', None)) in self.presets.keys():
             preset = self.presets[(str(spec), str(params['unit']))]
-            existing_params = dict(preset.get_param_values())
+            existing_params = dict(preset.param.get_param_values())
         elif isinstance(spec, dict):
             existing_params = spec
         elif spec in self.presets:
-            existing_params = dict(self.presets[spec].get_param_values())
+            existing_params = dict(self.presets[spec].param.get_param_values())
         elif (spec,) in self.presets:
-            existing_params = dict(self.presets[(spec,)].get_param_values())
+            existing_params = dict(self.presets[(spec,)].param.get_param_values())
         else:
             existing_params = {}
 
         all_params = dict(existing_params, **params)
         if isinstance(spec, tuple):
-            if not all(isinstance(s, basestring) for s in spec) or len(spec) != 2:
+            if not all(isinstance(s, str) for s in spec) or len(spec) != 2:
                 raise ValueError("Dimensions specified as a tuple must be a tuple "
                                  "consisting of the name and label not: %s" % str(spec))
             name, label = spec
@@ -267,7 +269,7 @@ class Dimension(param.Parameterized):
                         'Using label as supplied by keyword ({!r}), ignoring '
                         'tuple value {!r}'.format(params['label'], label))
                 all_params['label'] = params['label']
-        elif isinstance(spec, basestring):
+        elif isinstance(spec, str):
             all_params['name'] = spec
             all_params['label'] = params.get('label', spec)
 
@@ -277,13 +279,13 @@ class Dimension(param.Parameterized):
             raise ValueError('Dimension label cannot be None or the empty string')
 
         values = params.get('values', [])
-        if isinstance(values, basestring) and values == 'initial':
+        if isinstance(values, str) and values == 'initial':
             self.param.warning("The 'initial' string for dimension values "
                                "is no longer supported.")
             values = []
 
         all_params['values'] = list(util.unique_array(values))
-        super(Dimension, self).__init__(**all_params)
+        super().__init__(**all_params)
         if self.default is not None:
             if self.values and self.default not in values:
                 raise ValueError('%r default %s not found in declared values: %s' %
@@ -294,7 +296,6 @@ class Dimension(param.Parameterized):
                 raise ValueError('%r default %s not in declared range: %s' %
                                  (self, self.default, self.range))
 
-
     @property
     def spec(self):
         """"Returns the Dimensions tuple specification
@@ -303,14 +304,6 @@ class Dimension(param.Parameterized):
             tuple: Dimension tuple specification
         """
         return (self.name, self.label)
-
-
-    def __call__(self, spec=None, **overrides):
-        if util.config.future_deprecations:
-            self.param.warning('Dimension.__call__ method has been deprecated, '
-                               'use the clone method instead.')
-        return self.clone(spec=spec, **overrides)
-
 
     def clone(self, spec=None, **overrides):
         """Clones the Dimension with new parameters
@@ -325,11 +318,11 @@ class Dimension(param.Parameterized):
         Returns:
             Cloned Dimension object
         """
-        settings = dict(self.get_param_values(onlychanged=True), **overrides)
+        settings = dict(self.param.get_param_values(), **overrides)
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
-        if 'label' in overrides and isinstance(spec, basestring) :
+        if 'label' in overrides and isinstance(spec, str) :
             spec = (spec, overrides['label'])
         elif 'label' in overrides and isinstance(spec, tuple) :
             if overrides['label'] != spec[1]:
@@ -337,7 +330,6 @@ class Dimension(param.Parameterized):
                     'Using label as supplied by keyword ({!r}), ignoring '
                     'tuple value {!r}'.format(overrides['label'], spec[1]))
             spec = (spec[0],  overrides['label'])
-
         return self.__class__(spec, **{k:v for k,v in settings.items()
                                        if k not in ['name', 'label']})
 
@@ -350,8 +342,9 @@ class Dimension(param.Parameterized):
         """
         Compatibility for pickles before alias attribute was introduced.
         """
-        super(Dimension, self).__setstate__(d)
-        self.label = self.name
+        super().__setstate__(d)
+        if '_label_param_value' not in d:
+            self.label = self.name
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
@@ -384,19 +377,20 @@ class Dimension(param.Parameterized):
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
-        changed = dict(self.get_param_values(onlychanged=True))
+        changed = dict(self.param.get_param_values(onlychanged=True))
         if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
             return 'Dimension({spec})'.format(spec=repr(self.name))
 
-        ordering = sorted( sorted(changed.keys()),
-                           key=lambda k: (- float('inf')
-                                          if self.params(k).precedence is None
-                                          else self.params(k).precedence))
+        params = self.param.objects('existing')
+        ordering = sorted(
+            sorted(changed.keys()), key=lambda k: (
+                -float('inf') if params[k].precedence is None
+                else params[k].precedence))
         kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
         return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
 
-    def pprint_value(self, value):
+    def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.
 
         Args:
@@ -410,20 +404,25 @@ class Dimension(param.Parameterized):
                      else self.type_formatters.get(own_type))
         if formatter:
             if callable(formatter):
-                return formatter(value)
-            elif isinstance(formatter, basestring):
+                formatted_value = formatter(value)
+            elif isinstance(formatter, str):
                 if isinstance(value, (dt.datetime, dt.date)):
-                    return value.strftime(formatter)
+                    formatted_value = value.strftime(formatter)
                 elif isinstance(value, np.datetime64):
-                    return util.dt64_to_dt(value).strftime(formatter)
+                    formatted_value = util.dt64_to_dt(value).strftime(formatter)
                 elif re.findall(r"\{(\w+)\}", formatter):
-                    return formatter.format(value)
+                    formatted_value = formatter.format(value)
                 else:
-                    return formatter % value
-        return unicode(bytes_to_unicode(value))
+                    formatted_value = formatter % value
+        else:
+            formatted_value = bytes_to_unicode(value)
+
+        if print_unit and self.unit is not None:
+            formatted_value = formatted_value + ' ' + bytes_to_unicode(self.unit)
+        return formatted_value
 
     def pprint_value_string(self, value):
-        """Pretty print the dimension value and unit.
+        """Pretty print the dimension value and unit with title_format
 
         Args:
             value: Dimension value to format
@@ -487,6 +486,7 @@ class LabelledData(param.Parameterized):
         may be set to associate some custom options with the object.
         """
         self.data = data
+
         self._id = None
         self.id = id
         self._plot_id = plot_id or util.builtins.id(self)
@@ -500,7 +500,7 @@ class LabelledData(param.Parameterized):
             util.group_sanitizer.add_aliases(**{alias:long_name})
             params['group'] = long_name
 
-        super(LabelledData, self).__init__(**params)
+        super().__init__(**params)
         if not util.group_sanitizer.allowable(self.group):
             raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
@@ -543,15 +543,15 @@ class LabelledData(param.Parameterized):
         Returns:
             Cloned object
         """
-        params = dict(self.get_param_values())
+        params = dict(self.param.get_param_values())
         if new_type is None:
             clone_type = self.__class__
         else:
             clone_type = new_type
-            new_params = new_type.params()
+            new_params = new_type.param.objects('existing')
             params = {k: v for k, v in params.items()
                       if k in new_params}
-            if params.get('group') == self.params()['group'].default:
+            if params.get('group') == self.param.objects('existing')['group'].default:
                 params.pop('group')
         settings = dict(params, **overrides)
         if 'id' not in settings:
@@ -624,14 +624,11 @@ class LabelledData(param.Parameterized):
         identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
         return identifier_match
 
-
     def traverse(self, fn=None, specs=None, full_breadth=True):
         """Traverses object returning matching items
-
         Traverses the set of children of the object, collecting the
         all objects matching the defined specs. Each object can be
         processed with the supplied function.
-
         Args:
             fn (function, optional): Function applied to matched objects
             specs: List of specs to match
@@ -641,7 +638,6 @@ class LabelledData(param.Parameterized):
             full_breadth: Whether to traverse all objects
                 Whether to traverse the full set of objects on each
                 container or only the first.
-
         Returns:
             list: List of objects that matched
         """
@@ -755,7 +751,7 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)
-        super(LabelledData, self).__setstate__({})
+        super().__setstate__({})
 
 
 class Dimensioned(LabelledData):
@@ -845,17 +841,25 @@ class Dimensioned(LabelledData):
         if 'cdims' in params:
             params['cdims'] = {d if isinstance(d, Dimension) else Dimension(d): val
                                for d, val in params['cdims'].items()}
-        super(Dimensioned, self).__init__(data, **params)
+        super().__init__(data, **params)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
         self._settings = None
 
         # Instantiate accessors
-        self.apply = Apply(self)
-        self.opts = Opts(self)
-        self.redim = Redim(self)
 
+    @property
+    def apply(self):
+        return Apply(self)
+
+    @property
+    def opts(self):
+        return Opts(self)
+
+    @property
+    def redim(self):
+        return Redim(self)
 
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input
@@ -944,7 +948,7 @@ class Dimensioned(LabelledData):
         Returns:
             Dimension object for the requested dimension or default
         """
-        if dimension is not None and not isinstance(dimension, (int, basestring, Dimension)):
+        if dimension is not None and not isinstance(dimension, (int, str, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
                             'and Dimension instances, cannot lookup '
                             'Dimensions using %s type.' % type(dimension).__name__)
@@ -956,14 +960,25 @@ class Dimensioned(LabelledData):
                 raise KeyError("Dimension %r not found" % dimension)
             else:
                 return default
-        dimension = dimension_name(dimension)
-        name_map = {dim.name: dim for dim in all_dims}
-        name_map.update({dim.label: dim for dim in all_dims})
-        name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
-        if strict and dimension not in name_map:
-            raise KeyError("Dimension %r not found." % dimension)
+
+        if isinstance(dimension, Dimension):
+            dims = [d for d in all_dims if dimension == d]
+            if strict and not dims:
+                raise KeyError("%r not found." % dimension)
+            elif dims:
+                return dims[0]
+            else:
+                return None
         else:
-            return name_map.get(dimension, default)
+            dimension = dimension_name(dimension)
+            name_map = {dim.spec: dim for dim in all_dims}
+            name_map.update({dim.name: dim for dim in all_dims})
+            name_map.update({dim.label: dim for dim in all_dims})
+            name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
+            if strict and dimension not in name_map:
+                raise KeyError("Dimension %r not found." % dimension)
+            else:
+                return name_map.get(dimension, default)
 
 
     def get_dimension_index(self, dimension):
@@ -1109,14 +1124,14 @@ class Dimensioned(LabelledData):
             # Apply the selection on the selected object of a different type
             dimensions = selection.dimensions() + ['value']
             if any(kw in dimensions for kw in kwargs):
-                selection = selection.select(selection_specs, **kwargs)
+                selection = selection.select(selection_specs=selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
                 dimensions = v.dimensions() + ['value']
                 if any(kw in dimensions for kw in kwargs):
-                    items.append((k, v.select(selection_specs, **kwargs)))
+                    items.append((k, v.select(selection_specs=selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
             selection = selection.clone(items)
@@ -1180,8 +1195,6 @@ class Dimensioned(LabelledData):
         if not dimension_range:
             return lower, upper
         return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
-
-
     def __repr__(self):
         return PrettyPrinter.pprint(self)
 
@@ -1189,22 +1202,9 @@ class Dimensioned(LabelledData):
         return repr(self)
 
     def __unicode__(self):
-        return unicode(PrettyPrinter.pprint(self))
+        return PrettyPrinter.pprint(self)
 
-    def __call__(self, options=None, **kwargs):
-        if util.config.warn_options_call:
-            self.param.warning(
-                'Use of __call__ to set options will be deprecated '
-                'in future. Use the equivalent opts method or use '
-                'the recommended .options method instead.')
-
-        if not kwargs and options is None:
-            return self.opts.clear()
-
-        return self.opts(options, **kwargs)
-
-
-    def options(self, *args, **kwargs):
+    def options(self, *args, clone=True, **kwargs):
         """Applies simplified option definition returning a new object.
 
         Applies options on an object or nested group of objects in a
@@ -1243,11 +1243,10 @@ class Dimensioned(LabelledData):
             Returns the cloned object with the options applied
         """
         backend = kwargs.get('backend', None)
-        clone = kwargs.pop('clone', True)
 
-        if len(args) == 0 and len(kwargs)==0:
+        if not (args or kwargs):
             options = None
-        elif args and isinstance(args[0], basestring):
+        elif args and isinstance(args[0], str):
             options = {args[0]: kwargs}
         elif args and isinstance(args[0], list):
             if kwargs:
@@ -1262,9 +1261,9 @@ class Dimensioned(LabelledData):
                              "Supplying both formats is not supported.")
         elif args and all(isinstance(el, dict) for el in args):
             if len(args) > 1:
-                self.warning('Only a single dictionary can be passed '
-                             'as a positional argument. Only processing '
-                             'the first dictionary')
+                self.param.warning('Only a single dictionary can be passed '
+                                   'as a positional argument. Only processing '
+                                   'the first dictionary')
             options = [Options(spec, **kws) for spec,kws in args[0].items()]
         elif args:
             options = list(args)
@@ -1327,20 +1326,10 @@ class ViewableTree(AttrTree, Dimensioned):
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in list(self.param)+['id', 'plot_id'] if p in kwargs}
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
-
-
-    @classmethod
-    def from_values(cls, vals):
-        "Deprecated method to construct tree from list of objects"
-        if util.config.future_deprecations:
-            param.main.param.warning("%s.from_values is deprecated, the %s "
-                                     "constructor may now be used directly.")
-        return cls(items=cls._process_items(vals))
-
 
     @classmethod
     def _process_items(cls, vals):
@@ -1379,8 +1368,11 @@ class ViewableTree(AttrTree, Dimensioned):
         for i, (path, item) in enumerate(items):
             if counter[path] > 1:
                 path = path + (util.int_to_roman(counts[path]+1),)
-            elif counts[path]:
-                path = path[:-1] + (util.int_to_roman(counts[path]+1),)
+            else:
+                inc = 1
+                while counts[path]:
+                    path = path[:-1] + (util.int_to_roman(counts[path]+inc),)
+                    inc += 1
             new_items.append((path, item))
             counts[path] += 1
         return new_items
@@ -1438,24 +1430,8 @@ class ViewableTree(AttrTree, Dimensioned):
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
         else:
-            return super(ViewableTree, self).dimension_values(
+            return super().dimension_values(
                 dimension, expanded, flat)
-
-
-    def regroup(self, group):
-        """Deprecated method to apply new group to items.
-
-        Equivalent functionality possible using:
-
-            ViewableTree(tree.relabel(group='Group').values())
-        """
-        if util.config.future_deprecations:
-            self.param.warning('%s.regroup is deprecated, use relabel '
-                               'method with a group argument instead.'
-                               % type(self).__name__)
-        new_items = [el.relabel(group=group) for el in self.data.values()]
-        return reduce(lambda x,y: x+y, new_items)
-
 
     def __len__(self):
         return len(self.data)

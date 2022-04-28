@@ -4,13 +4,14 @@ import numpy as np
 import colorsys
 import param
 
-from ..core import util, config
-from ..core.data import ImageInterface, GridInterface
+from ..core import util, config, Dimension, Element2D, Overlay, Dataset
+from ..core.data import ImageInterface
 from ..core.data.interface import DataError
-from ..core import Dimension, Element2D, Overlay, Dataset
+from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
+from .geom import Selection2DExpr
 from .graphs import TriMesh
 from .tabular import Table
 from .util import compute_slice_bounds, categorical_aggregate2d
@@ -47,8 +48,7 @@ class Raster(Element2D):
         if extents is None:
             (d1, d2) = data.shape[:2]
             extents = (0, 0, d2, d1)
-        super(Raster, self).__init__(data, kdims=kdims, vdims=vdims, extents=extents, **params)
-
+        super().__init__(data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
     def __getitem__(self, slices):
         if slices in self.dimensions(): return self.dimension_values(slices)
@@ -70,7 +70,6 @@ class Raster(Element2D):
             return self.clone(np.expand_dims(data, axis=slc_types.index(True)),
                               extents=None)
 
-
     def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
@@ -81,8 +80,7 @@ class Raster(Element2D):
             if not dimension_range:
                 return lower, upper
             return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
-        return super(Raster, self).range(dim, data_range, dimension_range)
-
+        return super().range(dim, data_range, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
         """
@@ -100,23 +98,9 @@ class Raster(Element2D):
             arr = self.data.T
             return arr.flatten() if flat else arr
         else:
-            return super(Raster, self).dimension_values(dim)
+            return super().dimension_values(dim)
 
-
-    @classmethod
-    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
-        if util.config.future_deprecations:
-            param.main.param.warning(
-                'Raster.collapse_data is deprecated, collapsing '
-                'may now be performed through concatenation '
-                'and aggregation.')
-        if isinstance(function, np.ufunc):
-            return function.reduce(data_list)
-        else:
-            return function(np.dstack(data_list), axis=-1, **kwargs)
-
-
-    def sample(self, samples=[], **sample_values):
+    def sample(self, samples=[], bounds=None, **sample_values):
         """
         Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -129,10 +113,8 @@ class Raster(Element2D):
             X, Y = samples
             samples = zip(X, Y)
 
-        params = dict(self.get_param_values(onlychanged=True),
+        params = dict(self.param.get_param_values(onlychanged=True),
                       vdims=self.vdims)
-        params.pop('extents', None)
-        params.pop('bounds', None)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for _, c in
@@ -191,30 +173,30 @@ class Raster(Element2D):
             if oidx and hasattr(self, 'bounds'):
                 reduced = reduced[::-1]
             data = zip(x_vals, reduced)
-            params = dict(dict(self.get_param_values(onlychanged=True)),
+            params = dict(dict(self.param.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
             params.pop('extents', None)
             return Table(data, **params)
 
-
     @property
     def depth(self):
         return len(self.vdims)
-
 
     @property
     def _zdata(self):
         return self.data
 
-
     def _coord2matrix(self, coord):
         return int(round(coord[1])), int(round(coord[0]))
 
+    def __len__(self):
+        return np.product(self._zdata.shape)
 
 
 
-class Image(Dataset, Raster, SheetCoordinateSystem):
+
+class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     """
     Image represents a regularly sampled 2D grid of an underlying
     continuous space of intensity values, which will be colormapped on
@@ -283,8 +265,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
         elif isinstance(data, np.ndarray) and data.ndim < self._ndim:
-            raise ValueError('%s type expects %d-D array received %d-D'
-                             'array.' % (self._ndim, data.ndim))
+            raise ValueError('%s type expects %d-D array received %d-D '
+                             'array.' % (type(self).__name__, self._ndim, data.ndim))
 
         if rtol is not None:
             params['rtol'] = rtol
@@ -293,9 +275,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar."
+            raise DataError("%s type expects gridded data, %s is columnar. "
                             "To display columnar data as gridded use the HeatMap "
-                            "element or aggregate the data." %
+                            "element or aggregate the data (e.g. using rasterize "
+                            "or np.histogram2d)." %
                             (type(self).__name__, self.interface.__name__))
 
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
@@ -312,19 +295,22 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = BoundingBox(points=((l, b), (r, t)))
 
         data_bounds = None
-        if self.interface is ImageInterface and not isinstance(data, np.ndarray):
+        if self.interface is ImageInterface and not isinstance(data, (np.ndarray, Image)):
             data_bounds = self.bounds.lbrt()
-        l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
-        ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
-        if not util.isfinite(xdensity) or not util.isfinite(ydensity):
-            raise ValueError('Density along Image axes could not be determined. '
-                             'If the data contains only one coordinate along the '
-                             'x- or y-axis ensure you declare the bounds and/or '
-                             'density.')
-        SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
-        self._validate(data_bounds, supplied_bounds)
 
+        non_finite = all(not util.isfinite(v) for v in bounds.lbrt())
+        if non_finite:
+            bounds = BoundingBox(points=((0, 0), (0, 0)))
+            xdensity = xdensity or 1
+            ydensity = ydensity or 1
+        else:
+            l, b, r, t = bounds.lbrt()
+            xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
+            ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
+        SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
+        if non_finite:
+           self.bounds = BoundingBox(points=((np.nan, np.nan), (np.nan, np.nan)))
+        self._validate(data_bounds, supplied_bounds)
 
     def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
@@ -396,20 +382,6 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                              'are supplied, otherwise they must match the data. To change '
                              'the displayed extents set the range on the x- and y-dimensions.')
 
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style unpickled Image types without an interface
-        use the ImageInterface.
-
-        Note: Deprecate as part of 2.0
-        """
-        self.__dict__ = state
-        if isinstance(self.data, np.ndarray):
-            self.interface = ImageInterface
-        super(Dataset, self).__setstate__(state)
-
-
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
         """
@@ -424,14 +396,12 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity,
                                 ydensity=self.ydensity)
             overrides = dict(sheet_params, **overrides)
-        return super(Image, self).clone(data, shared_data, new_type, link,
+        return super().clone(data, shared_data, new_type, link,
                                         *args, **overrides)
 
-
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
-        agg = super(Image, self).aggregate(dimensions, function, spreadfn, **kwargs)
+        agg = super().aggregate(dimensions, function, spreadfn, **kwargs)
         return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg
-
 
     def select(self, selection_specs=None, **selection):
         """
@@ -483,64 +453,6 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                               ydensity=self.ydensity, bounds=bounds)
 
 
-    def sample(self, samples=[], **kwargs):
-        """
-        Allows sampling of an Image as an iterator of coordinates
-        matching the key dimensions, returning a new object containing
-        just the selected samples. Alternatively may supply kwargs to
-        sample a coordinate on an object. On an Image the coordinates
-        are continuously indexed and will always snap to the nearest
-        coordinate.
-        """
-        kwargs = {k: v for k, v in kwargs.items() if k != 'closest'}
-        if kwargs and samples:
-            raise Exception('Supply explicit list of samples or kwargs, not both.')
-        elif kwargs:
-            sample = [slice(None) for _ in range(self.ndims)]
-            for dim, val in kwargs.items():
-                sample[self.get_dimension_index(dim)] = val
-            samples = [tuple(sample)]
-
-        # If a 1D cross-section of 2D space return Curve
-        shape = self.interface.shape(self, gridded=True)
-        if len(samples) == 1:
-            dims = [kd for kd, v in zip(self.kdims, samples[0])
-                    if not (np.isscalar(v) or isinstance(v, util.datetime_types))]
-            if len(dims) == 1:
-                kdims = [self.get_dimension(kd) for kd in dims]
-                sample = tuple(np.datetime64(s) if isinstance(s, util.datetime_types) else s
-                               for s in samples[0])
-                sel = {kd.name: s for kd, s in zip(self.kdims, sample)}
-                dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
-                selection = self.select(**sel)
-                selection = tuple(selection.columns(kdims+self.vdims).values())
-                datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
-                return self.clone(selection, kdims=kdims, new_type=Curve,
-                                  datatype=datatype)
-            else:
-                kdims = self.kdims
-        else:
-            kdims = self.kdims
-
-        xs, ys = zip(*samples)
-        if isinstance(xs[0], util.datetime_types):
-            xs = np.array(xs).astype(np.datetime64)
-        if isinstance(ys[0], util.datetime_types):
-            ys = np.array(ys).astype(np.datetime64)
-        yidx, xidx = self.sheet2matrixidx(np.array(xs), np.array(ys))
-        yidx = shape[0]-yidx-1
-
-        # Detect out-of-bounds indices
-        out_of_bounds= (yidx<0) | (xidx<0) | (yidx>=shape[0]) | (xidx>=shape[1])
-        if out_of_bounds.any():
-            coords = [samples[idx] for idx in np.where(out_of_bounds)[0]]
-            raise IndexError('Coordinate(s) %s out of bounds for %s with bounds %s' %
-                             (coords, type(self).__name__, self.bounds.lbrt()))
-
-        data = self.interface.ndloc(self, (yidx, xidx))
-        return self.clone(data, new_type=Table, datatype=['dataframe', 'dictionary'])
-
-
     def closest(self, coords=[], **kwargs):
         """
         Given a single coordinate or multiple coordinates as
@@ -582,41 +494,13 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         idx = self.get_dimension_index(dim)
         dimension = self.get_dimension(dim)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
-            if self.interface.datatype == 'image':
-                l, b, r, t = self.bounds.lbrt()
-                return (b, t) if idx else (l, r)
-            low, high = super(Image, self).range(dim, data_range)
-            density = self.ydensity if idx else self.xdensity
-            halfd = (1./density)/2.
-            if isinstance(low, util.datetime_types):
-                halfd = np.timedelta64(int(round(halfd)), self._time_unit)
-            return (low-halfd, high+halfd)
+            l, b, r, t = self.bounds.lbrt()
+            return (b, t) if idx else (l, r)
         else:
-            return super(Image, self).range(dim, data_range, dimension_range)
-
-
-    def table(self, datatype=None):
-        """
-        Converts the data Element to a Table, optionally may
-        specify a supported data type. The default data types
-        are 'numpy' (for homogeneous data), 'dataframe', and
-        'dictionary'.
-        """
-        if config.future_deprecations:
-            self.param.warning(
-                "The table method is deprecated and should no longer "
-                "be used. Instead cast the %s to a a Table directly."
-                % type(self).__name__)
-        if datatype and not isinstance(datatype, list):
-            datatype = [datatype]
-        from ..element import Table
-        return self.clone(self.columns(), new_type=Table,
-                          **(dict(datatype=datatype) if datatype else {}))
-
+            return super().range(dim, data_range, dimension_range)
 
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
-
 
 
 class RGB(Image):
@@ -676,34 +560,33 @@ class RGB(Image):
         """
         return self
 
-
     @classmethod
     def load_image(cls, filename, height=1, array=False, bounds=None, bare=False, **kwargs):
-        """
-        Returns an raster element or raw numpy array from a PNG image
-        file, using matplotlib.
+        """Load an image from a file and return an RGB element or array
 
-        The specified height determines the bounds of the raster
-        object in sheet coordinates: by default the height is 1 unit
-        with the width scaled appropriately by the image aspect ratio.
+        Args:
+            filename: Filename of the image to be loaded
+            height: Determines the bounds of the image where the width
+                    is scaled relative to the aspect ratio of the image.
+            array: Whether to return an array (rather than RGB default)
+            bounds: Bounds for the returned RGB (overrides height)
+            bare: Whether to hide the axes
+            kwargs: Additional kwargs to the RGB constructor
 
-        Note that as PNG images are encoded as RGBA, the red component
-        maps to the first channel, the green component maps to the
-        second component etc. For RGB elements, this mapping is
-        trivial but may be important for subclasses e.g. for HSV
-        elements.
-
-        Setting bare=True will apply options disabling axis labels
-        displaying just the bare image. Any additional keyword
-        arguments will be passed to the Image object.
+        Returns:
+            RGB element or array
         """
         try:
-            from matplotlib import pyplot as plt
+            from PIL import Image
         except:
-            raise ImportError("RGB.load_image requires matplotlib.")
+            raise ImportError("RGB.load_image requires PIL (or Pillow).")
 
-        data = plt.imread(filename)
-        if array:  return data
+        with open(filename, 'rb') as f:
+            data = np.array(Image.open(f))
+            data = data / 255.
+
+        if array:
+            return data
 
         (h, w, _) = data.shape
         if bounds is None:
@@ -711,9 +594,9 @@ class RGB(Image):
             xoffset, yoffset = w*f/2, h*f/2
             bounds=(-xoffset, -yoffset, xoffset, yoffset)
         rgb = cls(data, bounds=bounds, **kwargs)
-        if bare: rgb = rgb(plot=dict(xaxis=None, yaxis=None))
+        if bare:
+            rgb.opts(xaxis=None, yaxis=None)
         return rgb
-
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, Overlay):
@@ -732,11 +615,15 @@ class RGB(Image):
             vdims = list(self.vdims)
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
-        if isinstance(data, np.ndarray):
-            if data.shape[-1] == 4 and len(vdims) == 3:
-                vdims.append(self.alpha_dimension)
-        super(RGB, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
+        alpha = self.alpha_dimension
+        if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
+            (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
+             and data[-1].shape[-1] == 4 and len(vdims) == 3) or
+            (isinstance(data, dict) and tuple(dimension_name(vd) for vd in vdims)+(alpha.name,) in data)):
+            # Handle all forms of packed value dimensions
+            vdims.append(alpha)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 class HSV(RGB):
@@ -806,7 +693,7 @@ class HSV(RGB):
                    **params)
 
 
-class QuadMesh(Dataset, Element2D):
+class QuadMesh(Selection2DExpr, Dataset, Element2D):
     """
     A QuadMesh represents 2D rectangular grid expressed as x- and
     y-coordinates defined as 1D or 2D arrays. Unlike the Image type
@@ -841,28 +728,13 @@ class QuadMesh(Dataset, Element2D):
     def __init__(self, data, kdims=None, vdims=None, **params):
         if data is None or isinstance(data, list) and data == []:
             data = ([], [], np.zeros((0, 0)))
-        super(QuadMesh, self).__init__(data, kdims, vdims, **params)
+        super().__init__(data, kdims, vdims, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar."
+            raise DataError("%s type expects gridded data, %s is columnar. "
                             "To display columnar data as gridded use the HeatMap "
-                            "element or aggregate the data." %
+                            "element or aggregate the data (e.g. using "
+                            "np.histogram2d)." %
                             (type(self).__name__, self.interface.__name__))
-
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style QuadMesh types without an interface can be unpickled.
-
-        Note: Deprecate as part of 2.0
-        """
-        if 'interface' not in state:
-            self.interface = GridInterface
-            x, y = state['_kdims_param_value']
-            z = state['_vdims_param_value'][0]
-            data = state['data']
-            state['data'] = {x.name: data[0], y.name: data[1], z.name: data[2]}
-        super(Dataset, self).__setstate__(state)
-
 
     def trimesh(self):
         """
@@ -911,7 +783,7 @@ class QuadMesh(Dataset, Element2D):
 
 
 
-class HeatMap(Dataset, Element2D):
+class HeatMap(Selection2DExpr, Dataset, Element2D):
     """
     HeatMap represents a 2D grid of categorical coordinates which can
     be computed from a sparse tabular representation. A HeatMap does
@@ -938,5 +810,47 @@ class HeatMap(Dataset, Element2D):
     vdims = param.List(default=[Dimension('z')], constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-        self.gridded = categorical_aggregate2d(self)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+        self._gridded = None
+
+    @property
+    def gridded(self):
+        if self._gridded is None:
+            self._gridded = categorical_aggregate2d(self)
+        return self._gridded
+
+    @property
+    def _unique(self):
+        """
+        Reports if the Dataset is unique.
+        """
+        return self.gridded.label != 'non-unique'
+
+    def range(self, dim, data_range=True, dimension_range=True):
+        """Return the lower and upper bounds of values along dimension.
+
+        Args:
+            dimension: The dimension to compute the range on.
+            data_range (bool): Compute range from data values
+            dimension_range (bool): Include Dimension ranges
+                Whether to include Dimension range and soft_range
+                in range calculation
+
+        Returns:
+            Tuple containing the lower and upper bound
+        """
+        dim = self.get_dimension(dim)
+        if dim in self.kdims:
+            try:
+                self.gridded._binned = True
+                if self.gridded is self:
+                    return super().range(dim, data_range, dimension_range)
+                else:
+                    drange = self.gridded.range(dim, data_range, dimension_range)
+            except:
+                drange = None
+            finally:
+                self.gridded._binned = False
+            if drange is not None:
+                return drange
+        return super().range(dim, data_range, dimension_range)

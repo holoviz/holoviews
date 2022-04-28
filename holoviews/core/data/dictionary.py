@@ -19,7 +19,7 @@ from .. import util
 class DictInterface(Interface):
     """
     Interface for simple dictionary-based dataset format. The dictionary
-    keys correspond to the column (i.e dimension) names and the values
+    keys correspond to the column (i.e. dimension) names and the values
     are collections representing the values in that column.
     """
 
@@ -215,13 +215,23 @@ class DictInterface(Interface):
         columns = defaultdict(list)
         for key, ds in datasets:
             for k, vals in ds.data.items():
-                columns[k].append(vals)
+                columns[k].append(np.atleast_1d(vals))
             for d, k in zip(dimensions, key):
                 columns[d.name].append(np.full(len(ds), k))
 
         template = datasets[0][1]
         dims = dimensions+template.dimensions()
         return OrderedDict([(d.name, np.concatenate(columns[d.name])) for d in dims])
+
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = OrderedDict(dataset.data)
+        for vd in dataset.vdims:
+            new_array = np.copy(dataset.data[vd.name])
+            new_array[mask] = mask_value
+            masked[vd.name] = new_array
+        return masked
 
 
     @classmethod
@@ -238,7 +248,7 @@ class DictInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension)
+        dim = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dim.name]
         if isscalar(column):
             return column, column
@@ -246,8 +256,8 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
-        dim = dataset.get_dimension(dim).name
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+        dim = dataset.get_dimension(dim, strict=True).name
         values = dataset.data.get(dim)
         if isscalar(values):
             if not expanded:
@@ -258,6 +268,13 @@ class DictInterface(Interface):
                 return util.unique_array(values)
             values = np.asarray(values)
         return values
+
+
+    @classmethod
+    def assign(cls, dataset, new_data):
+        data = OrderedDict(dataset.data)
+        data.update(new_data)
+        return data
 
 
     @classmethod
@@ -308,9 +325,18 @@ class DictInterface(Interface):
     def select(cls, dataset, selection_mask=None, **selection):
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
+        empty = not selection_mask.sum()
+        dimensions = dataset.dimensions()
+        if empty:
+            return {d.name: np.array([], dtype=cls.dtype(dataset, d))
+                    for d in dimensions}
         indexed = cls.indexed(dataset, selection)
-        data = OrderedDict((k, v if isscalar(v) else v[selection_mask])
-                           for k, v in dataset.data.items())
+        data = OrderedDict()
+        for k, v in dataset.data.items():
+            if k not in dimensions or isscalar(v):
+                data[k] = v
+            else:
+                data[k] = v[selection_mask]
         if indexed and len(list(data.values())[0]) == 1 and len(dataset.vdims) == 1:
             value = data[dataset.vdims[0].name]
             return value if isscalar(value) else value[0]
@@ -387,6 +413,11 @@ class DictInterface(Interface):
             return arr if isscalar(arr) else arr[0]
         return new_data
 
+
+    @classmethod
+    def geom_type(cls, dataset):
+        return dataset.data.get('geom_type')
+
     @classmethod
     def has_holes(cls, dataset):
         from holoviews.element import Polygons
@@ -398,9 +429,18 @@ class DictInterface(Interface):
         from holoviews.element import Polygons
         key = Polygons._hole_key
         if key in dataset.data:
-            return [[[np.asarray(h) for h in hs] for hs in dataset.data[key]]]
+            holes = []
+            for hs in dataset.data[key]:
+                subholes = []
+                for h in hs:
+                    hole = np.asarray(h)
+                    if (hole[0, :] != hole[-1, :]).all():
+                        hole = np.concatenate([hole, hole[:1]])
+                    subholes.append(hole)
+                holes.append(subholes)
+            return [holes]
         else:
-            return super(DictInterface, cls).holes(dataset)
+            return super().holes(dataset)
 
 
 Interface.register(DictInterface)

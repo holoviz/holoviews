@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from bokeh.models import Column
@@ -11,9 +9,10 @@ from bokeh.models.widgets import (
 from ...core import Dataset, Dimension
 from ...element import ItemTable
 from ...streams import Buffer
-from ...core.util import dimension_sanitizer, datetime_types
+from ...core.util import dimension_sanitizer, isdatetime
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
+from .selection import TabularSelectionDisplay
 
 
 class TablePlot(BokehPlot, GenericElementPlot):
@@ -28,27 +27,32 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     height = param.Number(default=300)
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     width = param.Number(default=400)
+
+    selection_display = TabularSelectionDisplay()
 
     style_opts = ['row_headers', 'selectable', 'editable',
                   'sortable', 'fit_columns', 'scroll_to_selection',
-                  'index_position']
+                  'index_position', 'visible']
 
     _stream_data = True
 
     def __init__(self, element, plot=None, **params):
-        super(TablePlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.static_source = False
 
     def get_data(self, element, ranges, style):
         return ({dimension_sanitizer(d.name): element.dimension_values(d)
                  for d in element.dimensions()}, {}, style)
-
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -66,6 +70,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['source'] = self.handles['cds'] = source
         self.handles['selected'] = source.selected
+        if self.selected is not None:
+            source.selected.indices = self.selected
 
         columns = self._get_columns(element, data)
         style['reorderable'] = False
@@ -99,7 +105,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
             elif kind == 'f':
                 formatter = NumberFormatter(format='0,0.0[00000]')
                 editor = NumberEditor()
-            elif kind == 'M' or (kind == 'O' and len(data[col]) and type(data[col][0]) in datetime_types):
+            elif isdatetime(data[col]):
                 dimtype = element.get_dimension_type(col)
                 dformat = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
                 formatter = DateFormatter(format=dformat)
@@ -119,18 +125,21 @@ class TablePlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         element = self._get_frame(key)
+        self.param.set_param(**self.lookup_options(element, 'plot').options)
         self._get_title_div(key, '12pt')
 
         # Cache frame object id to skip updating data if unchanged
         previous_id = self.handles.get('previous_id', None)
         current_id = element._plot_id
+        source = self.handles['source']
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
         if (element is None or (not self.dynamic and self.static) or
             (self.streaming and self.streaming[0].data is self.current_frame.data
              and not self.streaming[0]._triggering) or self.static_source):
+            if self.static_source and hasattr(self, 'selected') and self.selected is not None:
+                self._update_selected(source)
             return
-        source = self.handles['source']
         style = self.lookup_options(element, 'style')[self.cyclic_index]
         data, _, style = self.get_data(element, ranges, style)
         columns = self._get_columns(element, data)

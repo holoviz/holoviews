@@ -18,6 +18,8 @@ class ArrayInterface(Interface):
 
     datatype = 'array'
 
+    named = False
+
     @classmethod
     def dimension_type(cls, dataset, dim):
         return dataset.data.dtype.type
@@ -40,7 +42,7 @@ class ArrayInterface(Interface):
             dict_data = sorted(data.items())
             dataset = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                             for k, v in dict_data))
-            data = np.column_stack(dataset)
+            data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
             if len(set(d.dtype.kind for d in data)) > 1:
@@ -98,6 +100,11 @@ class ArrayInterface(Interface):
 
 
     @classmethod
+    def dtype(cls, dataset, dimension):
+        return dataset.data.dtype
+
+
+    @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         data = dataset.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
@@ -118,7 +125,7 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         data = dataset.data
         dim_idx = dataset.get_dimension_index(dim)
         if data.ndim == 1:
@@ -127,6 +134,13 @@ class ArrayInterface(Interface):
         if not expanded:
             return util.unique_array(values)
         return values
+
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = np.copy(dataset.data)
+        masked[mask] = mask_value
+        return masked
 
 
     @classmethod
@@ -226,6 +240,18 @@ class ArrayInterface(Interface):
 
 
     @classmethod
+    def assign(cls, dataset, new_data):
+        data = dataset.data.copy()
+        for d, arr in new_data.items():
+            if dataset.get_dimension(d) is None:
+                continue
+            idx = dataset.get_dimension_index(d)
+            data[:, idx] = arr
+        new_cols = [arr for d, arr in new_data.items() if dataset.get_dimension(d) is None]
+        return np.column_stack([data]+new_cols)
+
+
+    @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         reindexed = dataset.reindex(dimensions)
         grouped = (cls.groupby(reindexed, dimensions, list, 'raw')
@@ -245,7 +271,7 @@ class ArrayInterface(Interface):
     def iloc(cls, dataset, index):
         rows, cols = index
         if np.isscalar(cols):
-            if isinstance(cols, util.basestring):
+            if isinstance(cols, str):
                 cols = dataset.get_dimension_index(cols)
             if np.isscalar(rows):
                 return dataset.data[rows, cols]

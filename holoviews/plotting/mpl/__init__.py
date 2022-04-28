@@ -1,9 +1,10 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from matplotlib.cm import register_cmap
+from param import concrete_descendents
+from colorcet import kbc
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
@@ -11,9 +12,12 @@ from ...core.overlay import NdOverlay, Overlay
 from ...core.util import LooseVersion, pd
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
+from ..util import fire_colors
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
+from .element import ElementPlot
+from .geometry import * # noqa (API import)
 from .graphs import * # noqa (API import)
 from .heatmap import * # noqa (API import)
 from .hex_tiles import * # noqa (API import)
@@ -27,7 +31,7 @@ from .tabular import * # noqa (API import)
 from .renderer import MPLRenderer
 
 
-mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
+mpl_ge_150 = LooseVersion(mpl.__version__) >= LooseVersion('1.5.0')
 
 if pd:
     try:
@@ -76,12 +80,6 @@ def get_color_cycle():
 
 styles = {'default': './default.mplstyle',
           'default>1.5': './default1.5.mplstyle'}
-
-if config.style_17:
-    if mpl_ge_150:
-        set_style('default>1.5')
-    else:
-        set_style('default')
 
 # Define Palettes and cycles from matplotlib colormaps
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
@@ -140,7 +138,6 @@ Store.register({Curve: CurvePlot,
                 # Chart 3D
                 Surface: SurfacePlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
                 Scatter3D: Scatter3DPlot,
                 Path3D: Path3DPlot,
 
@@ -171,6 +168,9 @@ Store.register({Curve: CurvePlot,
                 # Annotation plots
                 VLine: VLinePlot,
                 HLine: HLinePlot,
+                VSpan: VSpanPlot,
+                HSpan: HSpanPlot,
+                Slope: SlopePlot,
                 Arrow: ArrowPlot,
                 Spline: SplinePlot,
                 Text: TextPlot,
@@ -183,6 +183,10 @@ Store.register({Curve: CurvePlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+
+                # Geometry plots
+                Rectangles: RectanglesPlot,
+                Segments: SegmentPlot,
 
                 # Statistics elements
                 Distribution: DistributionPlot,
@@ -198,34 +202,35 @@ MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           Spikes: SideSpikesPlot,
                           BoxWhisker: SideBoxPlot})
 
-if config.style_17:
-    CurvePlot.show_grid = True
-    SideHistogramPlot.show_grid = True
-    PointPlot.show_grid = True
+if config.no_padding:
+    for plot in concrete_descendents(ElementPlot).values():
+        plot.padding = 0
 
-    MPLPlot.show_frame = True
-    for framelesscls in [RasterGridPlot, GridPlot,
-                         AdjoinedPlot, Plot3D, CurvePlot, HistogramPlot]:
-        framelesscls.show_frame = False
-else:
-    # Raster types, Path types and VectorField should have frames
-    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
-                      QuadMeshPlot, HeatMapPlot, PolygonPlot]:
-        framedcls.show_frame = True
+# Raster types, Path types and VectorField should have frames
+for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
+                  QuadMeshPlot, HeatMapPlot, PolygonPlot]:
+    framedcls.show_frame = True
 
+fire_cmap   = LinearSegmentedColormap.from_list("fire",   fire_colors, N=len(fire_colors))
+fire_r_cmap = LinearSegmentedColormap.from_list("fire_r", list(reversed(fire_colors)),
+                                                N=len(fire_colors))
+register_cmap("fire", cmap=fire_cmap)
+register_cmap("fire_r", cmap=fire_r_cmap)
+
+register_cmap('kbc_r',
+              cmap=LinearSegmentedColormap.from_list('kbc_r',
+                                                     list(reversed(kbc)), N=len(kbc)))
 
 options = Store.options(backend='matplotlib')
-dflt_cmap = 'hot' if config.style_17 else 'fire'
+dflt_cmap = config.default_cmap
+
 # Default option definitions
-# Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
+# Note: *No*short aliases here! e.g. use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
 options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
-
-if not config.style_17:
-    options.Points = Options('plot', show_frame=True)
-
+options.Points = Options('plot', show_frame=True)
 options.ErrorBars = Options('style', edgecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', edgecolor='k', color=Cycle())
@@ -236,19 +241,23 @@ options.Scatter3D = Options('plot', fig_size=150)
 options.Path3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Surface = Options('style', cmap='fire')
-options.Spikes = Options('style', color='black', cmap='fire')
+options.Spikes = Options('style', color='black', cmap=dflt_cmap)
 options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
 options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
 
+# Geometries
+options.Rectangles = Options('style', edgecolor='black')
+
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest',
+options.Image = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
+options.Raster = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap, edgecolors='white',
                           annular_edgecolors='white', annular_linewidth=0.5,
                           xmarks_edgecolor='white', xmarks_linewidth=3,
-                          ymarks_edgecolor='white', ymarks_linewidth=3)
+                          ymarks_edgecolor='white', ymarks_linewidth=3,
+                          linewidths=0)
 options.HeatMap = Options('plot', show_values=True)
 options.RGB = Options('style', interpolation='nearest')
 # Composites
@@ -259,27 +268,23 @@ options.GridMatrix = Options('plot', fig_size=160, shared_xaxis=True,
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
-if config.style_17:
-    options.Spline = Options('style', linewidth=2, edgecolor='r')
-else:
-    options.Spline = Options('style', edgecolor=Cycle())
+options.Slope = Options('style', color=Cycle())
+options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
+options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
+options.Spline = Options('style', edgecolor=Cycle())
 
-options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
+options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 # Paths
-options.Contours = Options('style', color=Cycle(), cmap='viridis')
+options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
-options.Path = Options('style', color=Cycle(), cmap='viridis')
-
-if config.style_17:
-    options.Box = Options('style', color=Cycle())
-    options.Bounds = Options('style', color=Cycle())
-    options.Ellipse = Options('style', color=Cycle())
-else:
-    options.Box = Options('style', color='black')
-    options.Bounds = Options('style', color='black')
-    options.Ellipse = Options('style', color='black')
-    options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
-                               cmap='viridis')
+options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
+                           cmap=dflt_cmap)
+options.Rectangles = Options('style', cmap=dflt_cmap)
+options.Segments = Options('style', cmap=dflt_cmap)
+options.Box = Options('style', color='black')
+options.Bounds = Options('style', color='black')
+options.Ellipse = Options('style', color='black')
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
@@ -288,7 +293,7 @@ options.TimeSeries = Options('style', color=Cycle())
 options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
                         edge_color='black', node_size=15)
 options.TriMesh = Options('style', node_edgecolors='black', node_facecolors='white',
-                          edge_color='black', node_size=5, edge_linewidth=1)
+                          edge_color='black', node_size=5, edge_linewidth=1, cmap=dflt_cmap)
 options.Chord = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
                         edge_color='black', node_size=10, edge_linewidth=0.5)
 options.Chord = Options('plot', xaxis=None, yaxis=None)

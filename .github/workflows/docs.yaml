@@ -1,0 +1,103 @@
+name: docs
+on:
+  push:
+    tags:
+    - 'v[0-9]+.[0-9]+.[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Site to build and deploy, or dry-run'
+        type: choice
+        options:
+        - dev
+        - main
+        - dryrun
+        required: true
+        default: dev
+
+jobs:
+  build_docs:
+    name: Documentation
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      DESC: "Documentation build"
+      MPLBACKEND: "Agg"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      MOZ_HEADLESS: 1
+      PANEL_EMBED: "true"
+      PANEL_EMBED_JSON: "true"
+      PANEL_EMBED_JSON_PREFIX: "json"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          mamba-version: "*"
+          channels: pyviz/label/dev,conda-forge,nodefaults
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: conda setup
+        run: |
+          conda create -n test-environment python=3.8 pyctdev
+      - name: doit develop_install
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit develop_install -o doc --conda-mode=mamba
+          mamba install geckodriver selenium awscli
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
+      - name: bokeh sampledata
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          bokeh sampledata
+      - name: generate rst
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          nbsite generate-rst --org holoviz --project-name holoviews
+      - name: refmanual
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
+      - name: build docs
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews
+      - name: upload dev
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
+      - name: upload main
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          aws s3 sync --quiet ./builtdocs s3://holoviews.org/

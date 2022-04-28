@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 from functools import partial
 
@@ -8,16 +6,21 @@ import numpy as np
 
 from bokeh.models import FactorRange, Circle, VBar, HBar
 
+from .selection import BokehOverlaySelectionDisplay
+from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
-from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
-                          unique_iterator, isfinite)
+from ...core.util import (
+    dimension_sanitizer, wrap_tuple, unique_iterator, isfinite,
+    is_dask_array, is_cupy_array
+)
 from ...operation.stats import univariate_kde
+from ...util.transform import dim
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
-from .styles import fill_properties, line_properties
-from .util import decode_bytes
+from .styles import base_properties, fill_properties, line_properties
+from .util import LooseVersion, bokeh_version, decode_bytes
 
 
 class DistributionPlot(AreaPlot):
@@ -33,6 +36,8 @@ class DistributionPlot(AreaPlot):
 
     filled = param.Boolean(default=True, doc="""
         Whether the bivariate contours should be filled.""")
+
+    selection_display = BokehOverlaySelectionDisplay()
 
 
 class BivariatePlot(PolygonPlot):
@@ -55,7 +60,7 @@ class BivariatePlot(PolygonPlot):
     levels = param.ClassSelector(default=10, class_=(list, int), doc="""
         A list of scalar values used to specify the contour levels.""")
 
-
+    selection_display = BokehOverlaySelectionDisplay(color_prop='cmap', is_cmap=True)
 
 
 class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
@@ -65,7 +70,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `box_color=dim('color')`""")
 
@@ -75,17 +80,19 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Map each glyph to a style group
     _style_groups = {'segment': 'whisker', 'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
 
-    style_opts = (['whisker_'+p for p in line_properties] +
-                  ['box_'+p for p in fill_properties+line_properties] +
+    style_opts = (['whisker_'+p for p in base_properties+line_properties] +
+                  ['box_'+p for p in base_properties+fill_properties+line_properties] +
                   ['outlier_'+p for p in fill_properties+line_properties] +
-                  ['width', 'box_width', 'cmap', 'box_cmap'])
+                  ['box_width', 'cmap', 'box_cmap'])
 
-    _nonvectorized_styles = ['box_width', 'whisker_width', 'width', 'cmap', 'box_cmap']
+    _nonvectorized_styles = base_properties + ['box_width', 'whisker_width', 'cmap', 'box_cmap']
 
     _stream_data = False # Plot does not support streaming data
 
+    selection_display = BokehOverlaySelectionDisplay(color_prop='box_color')
+
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(BoxWhiskerPlot, self).get_extents(
+        return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
@@ -95,7 +102,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
         if self.show_legend and not element.kdims and self.overlaid:
-            properties['legend'] = element.label
+            legend_prop = 'legend_label' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
+            properties[legend_prop] = element.label
         return properties
 
     def _apply_transforms(self, element, data, ranges, style, group=None):
@@ -107,9 +115,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 element = agg
             else:
                 element = element.clone([(agg,)])
-        return super(BoxWhiskerPlot, self)._apply_transforms(element, data, ranges, style, group)
+        return super()._apply_transforms(element, data, ranges, style, group)
 
-    def _get_factors(self, element):
+    def _get_factors(self, element, ranges):
         """
         Get factors for categorical axes.
         """
@@ -128,7 +136,41 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _postprocess_hover(self, renderer, source):
         if not isinstance(renderer.glyph, (Circle, VBar, HBar)):
             return
-        super(BoxWhiskerPlot, self)._postprocess_hover(renderer, source)
+        super()._postprocess_hover(renderer, source)
+
+    def _box_stats(self, vals):
+        is_finite = isfinite
+        is_dask = is_dask_array(vals)
+        is_cupy = is_cupy_array(vals)
+        if is_cupy:
+            import cupy
+            percentile = cupy.percentile
+            is_finite = cupy.isfinite
+        elif is_dask:
+            import dask.array as da
+            percentile = da.percentile
+        else:
+            percentile = np.percentile
+
+        vals = vals[is_finite(vals)]
+
+        if is_dask or len(vals):
+            q1, q2, q3 = (percentile(vals, q=q) for q in range(25, 100, 25))
+            iqr = q3 - q1
+            upper = max(vals[vals <= q3 + 1.5*iqr].max(), q3)
+            lower = min(vals[vals >= q1 - 1.5*iqr].min(), q1)
+        else:
+            q1, q2, q3 = 0, 0, 0
+            upper, lower = 0, 0
+        outliers = vals[(vals > upper) | (vals < lower)]
+
+        if is_cupy:
+            return (q1.item(), q2.item(), q3.item(), upper.item(),
+                    lower.item(), cupy.asnumpy(outliers))
+        elif is_dask:
+            return da.compute(q1, q2, q3, upper, lower, outliers)
+        else:
+            return q1, q2, q3, upper, lower, outliers
 
     def get_data(self, element, ranges, style):
         if element.kdims:
@@ -145,7 +187,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         out_data = defaultdict(list, {'index': [], vdim: []})
 
         # Define glyph-data mapping
-        width = style.get('box_width', style.get('width', 0.7))
+        width = style.get('box_width', 0.7)
         whisker_width = style.pop('whisker_width', 0.4)/2.
         if 'width' in style:
             self.param.warning("BoxWhisker width option is deprecated "
@@ -168,6 +210,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             cdim, cidx = None, None
 
         factors = []
+        vdim = element.vdims[0].name
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
@@ -185,18 +228,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 factors.append(label)
 
             # Compute statistics
-            vals = g.dimension_values(g.vdims[0])
-            vals = vals[isfinite(vals)]
-            if len(vals):
-                q1, q2, q3 = (np.percentile(vals, q=q)
-                              for q in range(25, 100, 25))
-                iqr = q3 - q1
-                upper = min(q3 + 1.5*iqr, vals.max())
-                lower = max(q1 - 1.5*iqr, vals.min())
-            else:
-                q1, q2, q3 = 0, 0, 0
-                lower, upper = 0, 0
-            outliers = vals[(vals>upper) | (vals<lower)]
+            vals = g.interface.values(g, vdim, compute=False)
+            q1, q2, q3, upper, lower, outliers = self._box_stats(vals)
+
             # Add to CDS data
             for data in [r1_data, r2_data]:
                 data['index'].append(label)
@@ -275,7 +309,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = list(unique_iterator(factors))
 
         if self.show_legend:
-            vbar_map['legend'] = cdim.name
+            legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
+            vbar_map[legend_prop] = cdim.name
 
         return data, mapping, style
 
@@ -302,44 +337,131 @@ class ViolinPlot(BoxWhiskerPlot):
           * quartiles - Indicates first, second and third quartiles
         """)
 
+    split = param.ClassSelector(default=None, class_=(str, dim), doc="""
+       The dimension to split the Violin on.""")
+
     violin_width = param.Number(default=0.8, doc="""
        Relative width of the violin""")
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`""")
 
     # Map each glyph to a style group
-    _style_groups = {'patches': 'violin', 'segment': 'stats', 'vbar': 'box',
-                     'scatter': 'median', 'hbar': 'box'}
+    _style_groups = {'patches': 'violin', 'multi_line': 'outline',
+                     'segment': 'stats', 'vbar': 'box', 'scatter': 'median',
+                     'hbar': 'box'}
 
-    _draw_order = ['patches', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
+    _draw_order = ['patches', 'multi_line', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
 
-    style_opts = ([glyph+p for p in fill_properties+line_properties
+    style_opts = ([glyph+p for p in base_properties+fill_properties+line_properties
                    for glyph in ('violin_', 'box_')] +
-                  ['stats_'+p for p in line_properties] +
+                  [glyph+p for p in base_properties+line_properties
+                   for glyph in ('stats_', 'outline_')] +
                   ['_'.join([glyph, p]) for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
                   ['cmap', 'box_cmap', 'violin_cmap'])
 
     _stat_fns = [partial(np.percentile, q=q) for q in [25, 50, 75]]
 
-    def _kde_data(self, el, key, **kwargs):
-        vdim = el.vdims[0]
-        values = el.dimension_values(vdim)
+    selection_display = BokehOverlaySelectionDisplay(color_prop='violin_fill_color')
+
+    def _get_axis_dims(self, element):
+        split_dim = dim(self.split) if isinstance(self.split, str) else self.split
+        kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
+        return kdims, element.vdims[0]
+
+    def _get_factors(self, element, ranges):
+        """
+        Get factors for categorical axes.
+        """
+        split_dim = dim(self.split) if isinstance(self.split, str) else self.split
+        kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
+        if not kdims:
+            xfactors, yfactors = [element.label], []
+        else:
+            factors = [key for key in element.groupby(kdims).data.keys()]
+            if element.ndims > 1:
+                factors = sorted(factors)
+            factors = [tuple(d.pprint_value(k) for d, k in zip(kdims, key))
+                       for key in factors]
+            factors = [f[0] if len(f) == 1 else f for f in factors]
+            xfactors, yfactors = factors, []
+        return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
+
+    def _kde_data(self, element, el, key, split_dim, split_cats, **kwargs):
+        vdims = el.vdims
+        vdim = vdims[0]
         if self.clip:
             vdim = vdim(range=self.clip)
             el = el.clone(vdims=[vdim])
-        kde = univariate_kde(el, dimension=vdim, **kwargs)
-        xs, ys = (kde.dimension_values(i) for i in range(2))
-        mask = isfinite(ys) & (ys>0) # Mask out non-finite and zero values
-        xs, ys = xs[mask], ys[mask]
-        ys = (ys/ys.max())*(self.violin_width/2.) if len(ys) else []
-        ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
-        xs = np.concatenate([xs, xs[::-1]])
-        kde =  {'ys': xs, 'xs': ys}
+
+        if split_dim is not None:
+            el = el.clone(kdims=element.kdims)
+            all_cats = split_dim.apply(el)
+            if len(split_cats) > 2:
+                raise ValueError(
+                    'The number of categories for split violin plots cannot be '
+                    'greater than 2. Found {0} categories: {1}'.format(
+                        len(split_cats), ', '.join(split_cats)))
+            el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
+            kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
+            scale = 4
+        else:
+            split_cats = [None, None]
+            kdes = {None: univariate_kde(el, dimension=vdim.name, **kwargs)}
+            scale = 2
+
+        x_range = el.range(vdim)
+        xs, fill_xs, ys, fill_ys = [], [], [], []
+        for i, cat in enumerate(split_cats):
+            kde = kdes.get(cat)
+            if kde is None:
+                _xs, _ys = np.array([]), np.array([])
+            else:
+                _xs, _ys = (kde.dimension_values(idim) for idim in range(2))
+            mask = isfinite(_ys) & (_ys>0) # Mask out non-finite and zero values
+            _xs, _ys = _xs[mask], _ys[mask]
+
+            if i == 0:
+                _ys *= -1
+            else:
+                _ys = _ys[::-1]
+                _xs = _xs[::-1]
+
+            if split_dim:
+                if len(_xs):
+                    fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
+                    fill_ys.append([0]+list(_ys)+[0])
+                else:
+                    fill_xs.append([])
+                    fill_ys.append([])
+            x_range = x_range[::-1]
+
+            xs += list(_xs)
+            ys += list(_ys)
+
+        xs = np.array(xs)
+        ys = np.array(ys)
+
+        # this scales the width
+        if split_dim:
+            fill_xs = [np.asarray(x) for x in fill_xs]
+            fill_ys = [[key + (y,) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
+                       if len(fy) else [] for fy in fill_ys]
+        ys = (ys/np.nanmax(np.abs(ys)))*(self.violin_width/scale) if len(ys) else []
+        ys = [key + (y,) for y in ys]
+
+        line = {'ys': xs, 'xs': ys}
+        if split_dim:
+            kde = {'ys': fill_xs, 'xs': fill_ys}
+        else:
+            kde = line
+
+        if isinstance(kdes, NdOverlay):
+            kde[repr(split_dim)] = [str(k) for k in split_cats]
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
@@ -365,11 +487,7 @@ class ViolinPlot(BoxWhiskerPlot):
                     segments['y1'].append(sy)
         elif self.inner == 'box':
             xpos = key+(0,)
-            q1, q2, q3 = (np.percentile(values, q=q)
-                          for q in range(25, 100, 25))
-            iqr = q3 - q1
-            upper = min(q3 + 1.5*iqr, np.nanmax(values))
-            lower = max(q1 - 1.5*iqr, np.nanmin(values))
+            q1, q2, q3, upper, lower, _ = self._box_stats(values)
             segments['x'].append(xpos)
             segments['y0'].append(lower)
             segments['y1'].append(upper)
@@ -378,15 +496,28 @@ class ViolinPlot(BoxWhiskerPlot):
             bars['top'].append(q3)
             scatter['x'] = xpos
             scatter['y'] = q2
-        return kde, segments, bars, scatter
+
+        return kde, line, segments, bars, scatter
 
 
     def get_data(self, element, ranges, style):
-        if element.kdims:
+        split_dim = dim(self.split) if isinstance(self.split, str) else self.split
+        kdims = [kd for kd in element.kdims if not split_dim or split_dim.dimension != kd]
+
+        if kdims:
             with sorted_context(False):
-                groups = element.groupby(element.kdims).data
+                groups = element.groupby(kdims).data
         else:
             groups = dict([((element.label,), element)])
+
+        if split_dim:
+            split_name = split_dim.dimension.name
+            if split_name in ranges and not split_dim.ops and 'factors' in ranges[split_name]:
+                split_cats = ranges[split_name].get('factors')
+            elif split_dim:
+                split_cats = list(unique_iterator(split_dim.apply(element)))
+        else:
+            split_cats = None
 
         # Define glyph-data mapping
         if self.invert_axes:
@@ -412,20 +543,34 @@ class ViolinPlot(BoxWhiskerPlot):
 
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
         mapping, data = {}, {}
-        patches_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(4))
+        kde_data, line_data, seg_data, bar_data, scatter_data = (
+            defaultdict(list) for i in range(5)
+        )
         for i, (key, g) in enumerate(groups.items()):
             key = decode_bytes(key)
-            kde, segs, bars, scatter = self._kde_data(g, key, **kwargs)
+            if element.kdims:
+                key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
+            kde, line, segs, bars, scatter = self._kde_data(
+                element, g, key, split_dim, split_cats, **kwargs
+            )
             for k, v in segs.items():
                 seg_data[k] += v
             for k, v in bars.items():
                 bar_data[k] += v
             for k, v in scatter.items():
                 scatter_data[k].append(v)
-            for k, v in kde.items():
-                patches_data[k].append(v)
+            for k, v in line.items():
+                line_data[k].append(v)
+            for k, vals in kde.items():
+                if split_dim:
+                    for v in vals:
+                        kde_data[k].append(v)
+                else:
+                    kde_data[k].append(vals)
 
-        data['patches_1'] = patches_data
+        data['multi_line_1'] = line_data
+        mapping['multi_line_1'] = kde_map
+        data['patches_1'] = kde_data
         mapping['patches_1'] = kde_map
         if seg_data:
             data['segment_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
@@ -437,6 +582,22 @@ class ViolinPlot(BoxWhiskerPlot):
             mapping[bar_glyph+'_1'] = bar_map
         if scatter_data:
             data['scatter_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
-                              for k, v in scatter_data.items()}
+                                 for k, v in scatter_data.items()}
             mapping['scatter_1'] = scatter_map
+
+        if split_dim:
+            factors = [str(v) for v in split_cats]
+            cmapper = self._get_colormapper(
+                split_dim, element, ranges, dict(style), name='violin_color_mapper',
+                group='violin', factors=factors)
+            style['violin_fill_color'] = {'field': repr(split_dim), 'transform': cmapper}
+            if self.show_legend:
+                legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
+                kde_map[legend_prop] = repr(split_dim)
+
+        for k, v in list(style.items()):
+            if k.startswith('violin_line'):
+                style[k.replace('violin', 'outline')] = style.pop(k)
+        style['violin_line_width'] = 0
+
         return data, mapping, style

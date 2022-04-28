@@ -1,18 +1,26 @@
 import os, sys, inspect, shutil
 
 from collections import defaultdict
+from inspect import Parameter, Signature
+from types import FunctionType
+from pathlib import Path
 
 import param
+
 from pyviz_comms import extension as _pyviz_extension
 
-from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
-from ..core.options import options_policy, Keywords, Options
+from ..core import (
+    Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
+    StoreOptions, Store
+)
+from ..core.options import Keywords, Options, options_policy
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring, merge_options_to_dict, OrderedDict  # noqa (API import)
+from ..core.overlay import Overlay
+from ..core.util import merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
-from ..core.spaces import Callable
 from ..core import util
-from ..streams import Stream, Params
+from ..operation.element import function
+from ..streams import Stream, Params, streams_list_from_dict
 from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
@@ -82,29 +90,14 @@ class opts(param.ParameterizedFunction):
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
 
+    def __init__(self, *args, **kwargs): # Needed for opts specific __signature__
+        super().__init__(*args, **kwargs)
+
     def __call__(self, *args, **params):
         if not params and not args:
             return Options()
         elif params and not args:
             return Options(**params)
-
-        if len(args) == 1:
-            msg = ("Positional argument signature of opts is deprecated, "
-                   "use opts.defaults instead.\nFor instance, instead of "
-                   "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
-            if util.config.future_deprecations:
-                self.param.warning(msg)
-            self._linemagic(args[0])
-        elif len(args) == 2:
-            msg = ("Double positional argument signature of opts is deprecated, "
-                   "use the .options method instead.\nFor instance, instead of "
-                   "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
-
-            if util.config.future_deprecations:
-                self.param.warning(msg)
-
-            self._cellmagic(args[0], args[1])
-
 
     @classmethod
     def _group_kwargs_to_options(cls, obj, kwargs):
@@ -183,8 +176,8 @@ class opts(param.ParameterizedFunction):
 
         Applies options on an object or nested group of objects,
         returning a new object with the options applied. This method
-        accepts the separate option namespaces explicitly (i.e 'plot',
-        'style' and 'norm').
+        accepts the separate option namespaces explicitly (i.e. 'plot',
+        'style', and 'norm').
 
         If the options are to be set directly on the object a
         simple format may be used, e.g.:
@@ -217,7 +210,7 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from ..util.parser import OptsSpec
             try:
                 options = OptsSpec.parse(options)
@@ -234,7 +227,7 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
             except:  ns = globals()
@@ -249,24 +242,12 @@ class opts(param.ParameterizedFunction):
         return options, False
 
     @classmethod
-    def _cellmagic(cls, options, obj, strict=False):
-        "Deprecated, not expected to be used by any current code"
-        options, failure = cls._process_magic(options, strict)
-        if failure: return obj
-        if not isinstance(obj, Dimensioned):
-            return obj
-        else:
-            return StoreOptions.set_options(obj, options)
-
-    @classmethod
     def _linemagic(cls, options, strict=False, backend=None):
-        "Deprecated, not expected to be used by any current code"
         backends = None if backend is None else [backend]
         options, failure = cls._process_magic(options, strict, backends=backends)
         if failure: return
         with options_policy(skip_invalid=True, warn_on_skip=False):
             StoreOptions.apply_customizations(options, Store.options(backend=backend))
-
 
     @classmethod
     def defaults(cls, *options, **kwargs):
@@ -283,7 +264,6 @@ class opts(param.ParameterizedFunction):
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
         cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
-
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
@@ -325,6 +305,19 @@ class opts(param.ParameterizedFunction):
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
         current_backend = Store.current_backend
+
+        if not Store.renderers:
+            raise ValueError("No plotting extension is currently loaded. "
+                             "Ensure you load an plotting extension with "
+                             "hv.extension or import it explicitly from "
+                             "holoviews.plotting before applying any "
+                             "options.")
+        elif current_backend not in Store.renderers:
+            raise ValueError("Currently selected plotting extension {ext} "
+                             "has not been loaded, ensure you load it "
+                             "with hv.extension({ext}) before setting "
+                             "options".format(ext=repr(current_backend)))
+
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
@@ -341,16 +334,17 @@ class opts(param.ParameterizedFunction):
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
             for opt, value in options.items():
-                found = False
-                valid_options = []
                 for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
-                        found = True
                         break
-                    valid_options += group_opts.allowed_keywords
-                if found: continue
-                cls._options_error(opt, objtype, backend, valid_options)
+                else:
+                    valid_options = sorted({
+                        keyword
+                        for group_opts in obj_options.groups.values()
+                        for keyword in group_opts.allowed_keywords
+                    })
+                    cls._options_error(opt, objtype, backend, valid_options)
         return expanded
 
 
@@ -373,7 +367,7 @@ class opts(param.ParameterizedFunction):
             else:
                 raise ValueError('Unexpected option %r for %s type '
                                  'when using the %r extension. No '
-                                 'similar options founds.' %
+                                 'similar options found.' %
                                  (opt, objtype, backend))
 
         # Check option is invalid for all backends
@@ -411,7 +405,7 @@ class opts(param.ParameterizedFunction):
         namespace is typically given as 'hv' if fully qualified
         namespaces are desired.
         """
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from .parser import OptsSpec
             if ns is None:
                 try:     ns = get_ipython().user_ns  # noqa
@@ -456,9 +450,9 @@ class opts(param.ParameterizedFunction):
                         return Options(spec, **kws)
                     mismatched[loaded_backend] = list(keys - valid)
 
-                invalid =  keys - all_valid_kws # Keys not found for any backend
+                invalid = keys - all_valid_kws # Keys not found for any backend
                 if mismatched and not invalid:  # Keys found across multiple backends
-                    msg = ('{prefix} keywords supplied are mixed across backends. '
+                    msg = ('{prefix}keywords supplied are mixed across backends. '
                            'Keyword(s) {info}')
                     info = ', '.join('%s are invalid for %s'
                                      % (', '.join(repr(el) for el in v), k)
@@ -480,10 +474,12 @@ class opts(param.ParameterizedFunction):
             return Options(spec, **kws)
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        sorted_kw_set = sorted(set(filtered_keywords))
+        signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+                              + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                 for kw in sorted_kw_set])
+        builder.__signature__ = signature
         return classmethod(builder)
-
 
     @classmethod
     def _element_keywords(cls, backend, elements=None):
@@ -508,7 +504,6 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _update_backend(cls, backend):
-
         if cls.__original_docstring__ is None:
             cls.__original_docstring__ = cls.__doc__
 
@@ -521,9 +516,12 @@ class opts(param.ParameterizedFunction):
                         cls._create_builder(element, keywords))
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
-        cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        sorted_kw_set = sorted(set(filtered_keywords))
+        from inspect import Parameter, Signature
+        signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
+                              + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                 for kw in sorted_kw_set])
+        cls.__init__.__signature__ = signature
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -584,7 +582,7 @@ class output(param.ParameterizedFunction):
         line, obj = None,None
         if len(args) > 2:
             raise TypeError('The opts utility accepts one or two positional arguments.')
-        if len(args) == 1 and not isinstance(args[0], basestring):
+        if len(args) == 1 and not isinstance(args[0], str):
             obj = args[0]
         elif len(args) == 1:
             line = args[0]
@@ -597,10 +595,6 @@ class output(param.ParameterizedFunction):
             for k in options.keys():
                 if k not in Store.output_settings.allowed:
                     raise KeyError('Invalid keyword: %s' % k)
-            if 'filename' in options:
-                if util.config.future_deprecations:
-                    self.param.warning('The filename argument of output is deprecated. '
-                                       'Use hv.save instead.')
 
             def display_fn(obj, renderer):
                 try:
@@ -616,7 +610,8 @@ class output(param.ParameterizedFunction):
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
-output.__doc__ = Store.output_settings._generate_docstring()
+output.__doc__ = Store.output_settings._generate_docstring(signature=False)
+output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):
@@ -625,7 +620,12 @@ def renderer(name):
     """
     try:
         if name not in Store.renderers:
+            prev_backend = Store.current_backend
+            if Store.current_backend not in Store.renderers:
+                prev_backend = None
             extension(name)
+            if prev_backend:
+                Store.set_current_backend(prev_backend)
         return Store.renderers[name]
     except ImportError:
         msg = ('Could not find a {name!r} renderer, available renderers are: {available}.')
@@ -706,7 +706,7 @@ class extension(_pyviz_extension):
         cls._backend_hooks[backend].append(callback)
 
 
-def save(obj, filename, fmt='auto', backend=None, **kwargs):
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
     """
     Saves the supplied object to file.
 
@@ -730,23 +730,45 @@ def save(obj, filename, fmt='auto', backend=None, **kwargs):
         and if widgets are desired either 'widgets' or 'scrubber'
     backend: string
         A valid HoloViews rendering backend, e.g. bokeh or matplotlib
+    resources: string or bokeh.resource.Resources
+        Bokeh resources used to load bokehJS components. Defaults to
+        CDN, to embed resources inline for offline usage use 'inline'
+        or bokeh.resources.INLINE.
+    toolbar: bool or None
+        Whether to include toolbars in the exported plot. If None,
+        display the toolbar unless fmt is `png` and backend is `bokeh`.
+        If `True`, always include the toolbar.  If `False`, do not include the
+        toolbar.
+    title: string
+        Custom title for exported HTML file
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
+    if (
+        not toolbar
+        and backend == "bokeh"
+        and (fmt == "png" or (isinstance(filename, str) and filename.endswith("png")))
+    ):
+        obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
+    elif toolbar is not None and not toolbar:
+        obj = obj.opts(toolbar=None)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
-    if isinstance(filename, basestring):
+    if isinstance(filename, Path):
+        filename = str(filename.absolute())
+    if isinstance(filename, str):
         supported = [mfmt for tformats in renderer_obj.mode_formats.values()
-                     for mformats in tformats.values() for mfmt in mformats]
+                     for mfmt in tformats]
         formats = filename.split('.')
         if fmt == 'auto' and formats and formats[-1] != 'html':
             fmt = formats[-1]
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
-    return renderer_obj.save(obj, filename, fmt=fmt)
+    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources,
+                             title=title)
 
 
 def render(obj, backend=None, **kwargs):
@@ -785,7 +807,7 @@ def render(obj, backend=None, **kwargs):
     plot = renderer_obj.get_plot(obj)
     if backend == 'matplotlib' and len(plot) > 1:
         return plot.anim(fps=renderer_obj.fps)
-    return renderer_obj.get_plot(obj).state
+    return renderer_obj.get_plot_state(obj)
 
 
 class Dynamic(param.ParameterizedFunction):
@@ -820,10 +842,18 @@ class Dynamic(param.ParameterizedFunction):
          corresponding visualization should update this stream with
          range changes originating from the newly generated axes.""")
 
+    link_dataset = param.Boolean(default=True, doc="""
+         Determines whether the output of the operation should inherit
+         the .dataset property of the input to the operation. Helpful
+         for tracking data providence for user supplied functions,
+         which do not make use of the clone method. Should be disabled
+         for operations where the output is not derived from the input
+         and instead depends on some external state.""")
+
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
         List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
@@ -850,23 +880,54 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        if isinstance(self.p.streams, dict):
+            streams = defaultdict(dict)
+            stream_specs, params = [], {}
+            for name, p in self.p.streams.items():
+                if not isinstance(p, param.Parameter):
+                    raise ValueError("Stream dictionary must map operation keywords "
+                                     "to parameter names. Cannot handle %r type."
+                                     % type(p))
+                if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
+                    if p.name != name:
+                        streams[p.owner][p.name] = name
+                    else:
+                        streams[p.owner] = {}
+                else:
+                    params[name] = p
+            stream_specs = streams_list_from_dict(params)
+            # Note that the correct stream instance will only be created
+            # correctly of the parameter's .owner points to the correct
+            # class (i.e the parameter isn't defined on a superclass)
+            stream_specs += [stream(rename=rename) for stream, rename in streams.items()]
+        else:
+            stream_specs = self.p.streams
+
         streams = []
-        for stream in self.p.streams:
+        op = self.p.operation
+        for stream in stream_specs:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
                 raise ValueError('Streams must be Stream classes or instances, found %s type' %
                                  type(stream).__name__)
-            if isinstance(self.p.operation, Operation):
-                updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
-                           if v is None and k in self.p.operation.p}
-                if updates:
+            if isinstance(op, Operation):
+                updates = {k: op.p.get(k) for k, v in stream.contents.items()
+                           if v is None and k in op.p}
+                if not isinstance(stream, Params):
                     reverse = {v: k for k, v in stream._rename.items()}
-                    stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
+                    updates = {reverse.get(k, k): v for k, v in updates.items()}
+                stream.update(**updates)
             streams.append(stream)
 
-        params = {k: v for k, v in self.p.kwargs.items() if isinstance(v, param.Parameter)
-                  and isinstance(v.owner, param.Parameterized)}
+        params = {}
+        for k, v in self.p.kwargs.items():
+            if 'panel' in sys.modules:
+                from panel.widgets.base import Widget
+                if isinstance(v, Widget):
+                    v = v.param.value
+            if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
+                params[k] = v
         streams += Params.from_params(params)
 
         # Inherit dimensioned streams
@@ -875,15 +936,22 @@ class Dynamic(param.ParameterizedFunction):
             streams = list(util.unique_iterator(streams + dim_streams))
 
         # If callback is a parameterized method and watch is disabled add as stream
-        has_dependencies = util.is_param_method(self.p.operation, has_deps=True)
+        has_dependencies = (util.is_param_method(op, has_deps=True) or
+                            isinstance(op, FunctionType) and hasattr(op, '_dinfo'))
         if has_dependencies and watch:
-            streams.append(self.p.operation)
+            streams.append(op)
 
         # Add any keyword arguments which are parameterized methods
         # with dependencies as streams
         for value in self.p.kwargs.values():
             if util.is_param_method(value, has_deps=True):
                 streams.append(value)
+            elif isinstance(value, FunctionType) and hasattr(value, '_dinfo'):
+                dependencies = list(value._dinfo.get('dependencies', []))
+                dependencies += list(value._dinfo.get('kw', {}).values())
+                params = [d for d in dependencies if isinstance(d, param.Parameter)
+                          and isinstance(d.owner, param.Parameterized)]
+                streams.append(Params(parameters=params, watch_only=True))
 
         valid, invalid = Stream._process_streams(streams)
         if invalid:
@@ -896,42 +964,44 @@ class Dynamic(param.ParameterizedFunction):
         if util.is_param_method(self.p.operation) and util.get_method_owner(self.p.operation) is element:
             return self.p.operation(**kwargs)
         elif isinstance(self.p.operation, Operation):
-            kwargs = {k: v for k, v in kwargs.items()
-                      if k in self.p.operation.params()}
+            kwargs = {k: v for k, v in kwargs.items() if k in self.p.operation.param}
             return self.p.operation.process_element(element, key, **kwargs)
         else:
             return self.p.operation(element, **kwargs)
-
-    def _eval_kwargs(self):
-        """Evaluates any parameterized methods in the kwargs"""
-        evaled_kwargs = {}
-        for k, v in self.p.kwargs.items():
-            if util.is_param_method(v):
-                v = v()
-            evaled_kwargs[k] = v
-        return evaled_kwargs
 
     def _dynamic_operation(self, map_obj):
         """
         Generate function to dynamically apply the operation.
         Wraps an existing HoloMap or DynamicMap.
         """
-        if not isinstance(map_obj, DynamicMap):
-            def dynamic_operation(*key, **kwargs):
-                kwargs = dict(self._eval_kwargs(), **kwargs)
-                obj = map_obj[key] if isinstance(map_obj, HoloMap) else map_obj
-                return self._process(obj, key, kwargs)
-        else:
-            def dynamic_operation(*key, **kwargs):
-                kwargs = dict(self._eval_kwargs(), **kwargs)
-                return self._process(map_obj[key], key, kwargs)
-        if isinstance(self.p.operation, Operation):
-            return OperationCallable(dynamic_operation, inputs=[map_obj],
-                                     link_inputs=self.p.link_inputs,
-                                     operation=self.p.operation)
-        else:
-            return Callable(dynamic_operation, inputs=[map_obj],
-                            link_inputs=self.p.link_inputs)
+        def resolve(key, kwargs):
+            if not isinstance(map_obj, HoloMap):
+                return key, map_obj
+            elif isinstance(map_obj, DynamicMap) and map_obj._posarg_keys and not key:
+                key = tuple(kwargs[k] for k in map_obj._posarg_keys)
+            return key, map_obj[key]
+
+        def apply(element, *key, **kwargs):
+            kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
+            processed = self._process(element, key, kwargs)
+            if (self.p.link_dataset and isinstance(element, Dataset) and
+                isinstance(processed, Dataset) and processed._dataset is None):
+                processed._dataset = element.dataset
+            return processed
+
+        def dynamic_operation(*key, **kwargs):
+            key, obj = resolve(key, kwargs)
+            return apply(obj, *key, **kwargs)
+
+        operation = self.p.operation
+        op_kwargs = self.p.kwargs
+        if not isinstance(operation, Operation):
+            operation = function.instance(fn=apply)
+            op_kwargs = {'kwargs': op_kwargs}
+        return OperationCallable(dynamic_operation, inputs=[map_obj],
+                                 link_inputs=self.p.link_inputs,
+                                 operation=operation,
+                                 operation_kwargs=op_kwargs)
 
 
     def _make_dynamic(self, hmap, dynamic_fn, streams):
@@ -940,9 +1010,12 @@ class Dynamic(param.ParameterizedFunction):
         an equivalent DynamicMap from the HoloMap.
         """
         if isinstance(hmap, ViewableElement):
-            return DynamicMap(dynamic_fn, streams=streams)
+            dmap = DynamicMap(dynamic_fn, streams=streams)
+            if isinstance(hmap, Overlay):
+                dmap.callback.inputs[:] = list(hmap)
+            return dmap
         dim_values = zip(*hmap.data.keys())
         params = util.get_param_values(hmap)
-        kdims = [d(values=list(util.unique_iterator(values))) for d, values in
+        kdims = [d.clone(values=list(util.unique_iterator(values))) for d, values in
                  zip(hmap.kdims, dim_values)]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))

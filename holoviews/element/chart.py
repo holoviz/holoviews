@@ -1,12 +1,11 @@
 import numpy as np
-
 import param
 
 from ..core import util
-from ..core import Dimension, Dataset, Element2D
-from ..core.data import GridInterface
-from .geom import Points, VectorField, Sticks # noqa: backward compatible import
-from .stats import BoxWhisker         # noqa: backward compatible import
+from ..core import Dimension, Dataset, Element2D, NdOverlay, Overlay
+from ..core.dimension import process_dimensions
+from .geom import Rectangles, Points, VectorField, Sticks # noqa: backward compatible import
+from .selection import Selection1DExpr, Selection2DExpr
 
 
 class Chart(Dataset, Element2D):
@@ -42,27 +41,20 @@ class Chart(Dataset, Element2D):
     # Enables adding index if 1D array like data is supplied
     _auto_indexable_1d = True
 
+    _max_kdim_count = 1 # Remove once kdims has bounds=(1,1) instead of warning
     __abstract = True
 
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        params.update(process_dimensions(kdims, vdims))
+        if len(params.get('kdims', [])) == self._max_kdim_count + 1:
+            self.param.warning('Chart elements should only be supplied a single kdim')
+        super().__init__(data, **params)
+
     def __getitem__(self, index):
-        sliced = super(Chart, self).__getitem__(index)
-        if not isinstance(sliced, Chart):
-            return sliced
-
-        if not isinstance(index, tuple): index = (index,)
-        ndims = len(self.extents)//2
-        lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
-        for i, slc in enumerate(index[:ndims]):
-            if isinstance(slc, slice):
-                lbound = self.extents[i]
-                ubound = self.extents[ndims:][i]
-                lower_bounds[i] = lbound if slc.start is None else slc.start
-                upper_bounds[i] = ubound if slc.stop is None else slc.stop
-        sliced.extents = tuple(lower_bounds+upper_bounds)
-        return sliced
+        return super(Chart, self).__getitem__(index)
 
 
-class Scatter(Chart):
+class Scatter(Selection2DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
@@ -73,8 +65,7 @@ class Scatter(Chart):
     group = param.String(default='Scatter', constant=True)
 
 
-
-class Curve(Chart):
+class Curve(Selection1DExpr, Chart):
     """
     Curve is a Chart element representing a line in a 1D coordinate
     system where the key dimension maps on the line x-coordinate and
@@ -85,14 +76,22 @@ class Curve(Chart):
     group = param.String(default='Curve', constant=True)
 
 
-
-class ErrorBars(Chart):
+class ErrorBars(Selection1DExpr, Chart):
     """
     ErrorBars is a Chart element representing error bars in a 1D
     coordinate system where the key dimension corresponds to the
-    location along the x-axis and the value dimensions define the
-    location along the y-axis and the symmetric or assymetric spread.
+    location along the x-axis and the first value dimension
+    corresponds to the location along the y-axis and one or two
+    extra value dimensions corresponding to the symmetric or
+    asymetric errors either along x-axis or y-axis. If two value
+    dimensions are given, then the last value dimension will be
+    taken as symmetric errors. If three value dimensions are given
+    then the last two value dimensions will be taken as negative and
+    positive errors. By default the errors are defined along y-axis.
+    A parameter `horizontal`, when set `True`, will define the errors
+    along the x-axis.
     """
+
     group = param.String(default='ErrorBars', constant=True, doc="""
         A string describing the quantity measured by the ErrorBars
         object.""")
@@ -100,6 +99,8 @@ class ErrorBars(Chart):
     vdims = param.List(default=[Dimension('y'), Dimension('yerror')],
                        bounds=(1, None), constant=True)
 
+    horizontal = param.Boolean(default=False, doc="""
+        Whether the errors are along y-axis (vertical) or x-axis.""")
 
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
@@ -117,10 +118,11 @@ class ErrorBars(Chart):
         Returns:
             Tuple containing the lower and upper bound
         """
+        dim_with_err = 0 if self.horizontal else 1
         didx = self.get_dimension_index(dim)
         dim = self.get_dimension(dim)
-        if didx == 1 and data_range and len(self):
-            mean = self.dimension_values(1)
+        if didx == dim_with_err and data_range and len(self):
+            mean = self.dimension_values(didx)
             neg_error = self.dimension_values(2)
             if len(self.dimensions()) > 3:
                 pos_error = self.dimension_values(3)
@@ -131,8 +133,7 @@ class ErrorBars(Chart):
             if not dimension_range:
                 return (lower, upper)
             return util.dimension_range(lower, upper, dim.range, dim.soft_range)
-        return super(ErrorBars, self).range(dim, data_range)
-
+        return super().range(dim, data_range)
 
 
 class Spread(ErrorBars):
@@ -147,8 +148,7 @@ class Spread(ErrorBars):
     group = param.String(default='Spread', constant=True)
 
 
-
-class Bars(Chart):
+class Bars(Selection1DExpr, Chart):
     """
     Bars is a Chart element representing categorical observations
     using the height of rectangular bars. The key dimensions represent
@@ -161,9 +161,10 @@ class Bars(Chart):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,3))
 
+    _max_kdim_count = 3
 
 
-class Histogram(Chart):
+class Histogram(Selection1DExpr, Chart):
     """
     Histogram is a Chart element representing a number of bins in a 1D
     coordinate system. The key dimension represents the binned values,
@@ -184,52 +185,22 @@ class Histogram(Chart):
 
     _binned = True
 
-    def __init__(self, data, edges=None, **params):
+    def __init__(self, data, **params):
         if data is None:
             data = []
-        if edges is not None:
-            self.param.warning(
-                "Histogram edges should be supplied as a tuple "
-                "along with the values, passing the edges will "
-                "be deprecated in holoviews 2.0.")
-            data = (edges, data)
-        elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
+        if (isinstance(data, tuple) and len(data) == 2 and
+            len(data[0])+1 == len(data[1])):
             data = data[::-1]
-        super(Histogram, self).__init__(data, **params)
 
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style Histogram types without an interface can be unpickled.
-
-        Note: Deprecate as part of 2.0
-        """
-        if 'interface' not in state:
-            self.interface = GridInterface
-            x, y = state['_kdims_param_value'][0], state['_vdims_param_value'][0]
-            state['data'] = {x.name: state['data'][1], y.name: state['data'][0]}
-        super(Dataset, self).__setstate__(state)
-
-
-    @property
-    def values(self):
-        "Property to access the Histogram values provided for backward compatibility"
-        if util.config.future_deprecations:
-            self.param.warning('Histogram.values is deprecated in favor of '
-                               'common dimension_values method.')
-        return self.dimension_values(1)
-
+        super().__init__(data, **params)
 
     @property
     def edges(self):
         "Property to access the Histogram edges provided for backward compatibility"
-        if util.config.future_deprecations:
-            self.param.warning('Histogram.edges is deprecated in favor of '
-                               'common dimension_values method.')
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 
-class Spikes(Chart):
+class Spikes(Selection1DExpr, Chart):
     """
     Spikes is a Chart element which represents a number of discrete
     spikes, events or observations in a 1D coordinate system. The key
@@ -264,7 +235,7 @@ class Area(Curve):
     group = param.String(default='Area', constant=True)
 
     @classmethod
-    def stack(cls, areas):
+    def stack(cls, areas, baseline_name='Baseline'):
         """
         Stacks an (Nd)Overlay of Area or Curve Elements by offsetting
         their baselines. To stack a HoloMap or DynamicMap use the map
@@ -272,12 +243,22 @@ class Area(Curve):
         """
         if not len(areas):
             return areas
-        baseline = np.zeros(len(areas.values()[0]))
+        is_overlay = isinstance(areas, Overlay)
+        if is_overlay:
+            areas = NdOverlay({i: el for i, el in enumerate(areas)})
+        df = areas.dframe(multi_index=True)
+        levels = list(range(areas.ndims))
+        vdim = areas.last.vdims[0]
+        vdims = [vdim, baseline_name]
+        baseline = None
         stacked = areas.clone(shared_data=False)
-        vdims = [areas.values()[0].vdims[0], 'Baseline']
-        for k, area in areas.items():
-            x, y = (area.dimension_values(i) for i in range(2))
-            stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims,
-                                    new_type=Area)
-            baseline = baseline + y
-        return stacked
+        for key, sdf in df.groupby(level=levels, sort=False):
+            sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
+            if baseline is None:
+                sdf[baseline_name] = 0
+            else:
+                sdf[vdim.name] = sdf[vdim.name] + baseline
+                sdf[baseline_name] = baseline
+            baseline = sdf[vdim.name]
+            stacked[key] = areas[key].clone(sdf, vdims=vdims)
+        return Overlay(stacked.values()) if is_overlay else stacked

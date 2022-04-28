@@ -1,36 +1,14 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
 
+import six
 import param
 import numpy as np
 
 from .. import util
 from ..element import Element
-from ..ndmapping import OrderedDict, NdMapping
-
-
-def get_array_types():
-    array_types = (np.ndarray,)
-    if 'dask' in sys.modules:
-        import dask.array as da
-        array_types += (da.Array,)
-    return array_types
-
-def dask_array_module():
-    try:
-        import dask.array as da
-        return da
-    except:
-        return None
-
-def is_dask(array):
-    if 'dask' in sys.modules:
-        import dask.array as da
-    else:
-        return False
-    return da and isinstance(array, da.Array)
+from ..ndmapping import NdMapping
+from .util import finite_range
 
 
 class DataError(ValueError):
@@ -39,10 +17,43 @@ class DataError(ValueError):
     def __init__(self, msg, interface=None):
         if interface is not None:
             msg = '\n\n'.join([msg, interface.error()])
-        super(DataError, self).__init__(msg)
+        super().__init__(msg)
 
 
-class iloc(object):
+class Accessor(object):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __getitem__(self, index):
+        from ..data import Dataset
+        from ...operation.element import method
+        in_method = self.dataset._in_method
+        if not in_method:
+            self.dataset._in_method = True
+        try:
+            res = self._perform_getitem(self.dataset, index)
+            if not in_method and isinstance(res, Dataset):
+                getitem_op = method.instance(
+                    input_type=type(self),
+                    output_type=type(self.dataset),
+                    method_name='_perform_getitem',
+                    args=[index],
+                )
+                res._pipeline = self.dataset.pipeline.instance(
+                    operations=self.dataset.pipeline.operations + [getitem_op],
+                    output_type=type(self.dataset)
+                )
+        finally:
+            if not in_method:
+                self.dataset._in_method = False
+        return res
+
+    @classmethod
+    def _perform_getitem(cls, dataset, index):
+        raise NotImplementedError()
+
+
+class iloc(Accessor):
     """
     iloc is small wrapper object that allows row, column based
     indexing into a Dataset using the ``.iloc`` property.  It supports
@@ -51,10 +62,8 @@ class iloc(object):
     information see the ``Dataset.iloc`` property docstring.
     """
 
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def __getitem__(self, index):
+    @classmethod
+    def _perform_getitem(cls, dataset, index):
         index = util.wrap_tuple(index)
         if len(index) == 1:
             index = (index[0], slice(None))
@@ -65,32 +74,32 @@ class iloc(object):
         rows, cols = index
         if rows is Ellipsis:
             rows = slice(None)
-        data = self.dataset.interface.iloc(self.dataset, (rows, cols))
-        kdims = self.dataset.kdims
-        vdims = self.dataset.vdims
-        if np.isscalar(data):
+
+        data = dataset.interface.iloc(dataset, (rows, cols))
+        kdims = dataset.kdims
+        vdims = dataset.vdims
+        if util.isscalar(data):
             return data
         elif cols == slice(None):
             pass
         else:
             if isinstance(cols, slice):
-                dims = self.dataset.dimensions()[index[1]]
+                dims = dataset.dimensions()[index[1]]
             elif np.isscalar(cols):
-                dims = [self.dataset.get_dimension(cols)]
+                dims = [dataset.get_dimension(cols)]
             else:
-                dims = [self.dataset.get_dimension(d) for d in cols]
+                dims = [dataset.get_dimension(d) for d in cols]
             kdims = [d for d in dims if d in kdims]
             vdims = [d for d in dims if d in vdims]
 
-        datatype = [dt for dt in self.dataset.datatype
-                    if dt in Interface.interfaces and
+        datatypes = util.unique_iterator([dataset.interface.datatype]+dataset.datatype)
+        datatype = [dt for dt in datatypes if dt in Interface.interfaces and
                     not Interface.interfaces[dt].gridded]
         if not datatype: datatype = ['dataframe', 'dictionary']
-        return self.dataset.clone(data, kdims=kdims, vdims=vdims,
-                                  datatype=datatype)
+        return dataset.clone(data, kdims=kdims, vdims=vdims, datatype=datatype)
 
 
-class ndloc(object):
+class ndloc(Accessor):
     """
     ndloc is a small wrapper object that allows ndarray-like indexing
     for gridded Datasets using the ``.ndloc`` property. It supports
@@ -98,22 +107,19 @@ class ndloc(object):
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.ndloc`` property docstring.
     """
-
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def __getitem__(self, indices):
-        ds = self.dataset
+    @classmethod
+    def _perform_getitem(cls, dataset, indices):
+        ds = dataset
         indices = util.wrap_tuple(indices)
         if not ds.interface.gridded:
             raise IndexError('Cannot use ndloc on non nd-dimensional datastructure')
-        selected = self.dataset.interface.ndloc(ds, indices)
+        selected = dataset.interface.ndloc(ds, indices)
         if np.isscalar(selected):
             return selected
         params = {}
         if hasattr(ds, 'bounds'):
             params['bounds'] = None
-        return self.dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
+        return dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
 
 
 class Interface(param.Parameterized):
@@ -129,6 +135,9 @@ class Interface(param.Parameterized):
 
     # Denotes whether the interface expects ragged data
     multi = False
+
+    # Whether the interface stores the names of the underlying dimensions
+    named = True
 
     @classmethod
     def loaded(cls):
@@ -194,20 +203,29 @@ class Interface(param.Parameterized):
             vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
-        if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+        if hasattr(data, 'interface') and isinstance(data.interface, type) and issubclass(data.interface, Interface):
             if datatype is None:
                 datatype = [dt for dt in data.datatype if dt in eltype.datatype]
                 if not datatype:
                     datatype = eltype.datatype
 
-            if data.interface.datatype in datatype and data.interface.datatype in eltype.datatype:
+            interface = data.interface
+            if interface.datatype in datatype and interface.datatype in eltype.datatype and interface.named:
                 data = data.data
-            elif data.interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
-                gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
-                                       for kd in data.kdims])
+            elif interface.multi and any(cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces):
+                data = [d for d in data.interface.split(data, None, None, 'columns')]
+            elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
+                new_data = []
+                for kd in data.kdims:
+                    irregular = interface.irregular(data, kd)
+                    coords = data.dimension_values(kd.name, expanded=irregular,
+                                                   flat=not irregular)
+                    new_data.append(coords)
                 for vd in data.vdims:
-                    gridded[vd.name] = data.dimension_values(vd, flat=False)
-                data = tuple(gridded.values())
+                    new_data.append(interface.values(data, vd, flat=False, compute=False))
+                data = tuple(new_data)
+            elif 'dataframe' in datatype and util.pd:
+                data = data.dframe()
             else:
                 data = tuple(data.columns().values())
         elif isinstance(data, Element):
@@ -238,16 +256,17 @@ class Interface(param.Parameterized):
             except DataError:
                 raise
             except Exception as e:
-                if interface in head:
-                    priority_errors.append((interface, e))
+                if interface in head or len(prioritized) == 1:
+                    priority_errors.append((interface, e, True))
         else:
             error = ("None of the available storage backends were able "
                      "to support the supplied data format.")
             if priority_errors:
-                intfc, e = priority_errors[0]
+                intfc, e, _ = priority_errors[0]
                 priority_error = ("%s raised following error:\n\n %s"
                                   % (intfc.__name__, e))
                 error = ' '.join([error, priority_error])
+                raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
             raise DataError(error)
 
         return data, interface, dims, extra_kws
@@ -263,51 +282,98 @@ class Interface(param.Parameterized):
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
+    @classmethod
+    def persist(cls, dataset):
+        """
+        Should return a persisted version of the Dataset.
+        """
+        return dataset
+
+    @classmethod
+    def compute(cls, dataset):
+        """
+        Should return a computed version of the Dataset.
+        """
+        return dataset
 
     @classmethod
     def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
-
     @classmethod
     def isscalar(cls, dataset, dim):
-        return cls.values(dataset, dim, expanded=False) == 1
+        return len(cls.values(dataset, dim, expanded=False)) == 1
 
+    @classmethod
+    def isunique(cls, dataset, dim, per_geom=False):
+        """
+        Compatibility method introduced for v1.13.0 to smooth
+        over addition of per_geom kwarg for isscalar method.
+        """
+        try:
+            return cls.isscalar(dataset, dim, per_geom)
+        except TypeError:
+            return cls.isscalar(dataset, dim)
+
+    @classmethod
+    def dtype(cls, dataset, dimension):
+        name = dataset.get_dimension(dimension, strict=True).name
+        data = dataset.data[name]
+        if util.isscalar(data):
+            return np.array([data]).dtype
+        else:
+            return data.dtype
+
+    @classmethod
+    def replace_value(cls, data, nodata):
+        """
+        Replace `nodata` value in data with NaN
+        """
+        data = data.astype('float64')
+        mask = data != nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
 
     @classmethod
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
-        mask = np.ones(len(dataset), dtype=np.bool)
-        for dim, k in selection.items():
-            if isinstance(k, tuple):
-                k = slice(*k)
+        mask = np.ones(len(dataset), dtype=np.bool_)
+        for dim, sel in selection.items():
+            if isinstance(sel, tuple):
+                sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if isinstance(k, slice):
+            if util.isdatetime(arr) and util.pd:
+                try:
+                    sel = util.parse_datetime_selection(sel)
+                except:
+                    pass
+            if isinstance(sel, slice):
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'invalid value encountered')
-                    if k.start is not None:
-                        mask &= k.start <= arr
-                    if k.stop is not None:
-                        mask &= arr < k.stop
-            elif isinstance(k, (set, list)):
+                    if sel.start is not None:
+                        mask &= sel.start <= arr
+                    if sel.stop is not None:
+                        mask &= arr < sel.stop
+            elif isinstance(sel, (set, list)):
                 iter_slcs = []
-                for ik in k:
+                for ik in sel:
                     with warnings.catch_warnings():
                         warnings.filterwarnings('ignore', r'invalid value encountered')
                         iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
-            elif callable(k):
-                mask &= k(arr)
+            elif callable(sel):
+                mask &= sel(arr)
             else:
-                index_mask = arr == k
+                index_mask = arr == sel
                 if dataset.ndims == 1 and np.sum(index_mask) == 0:
-                    data_index = np.argmin(np.abs(arr - k))
-                    mask = np.zeros(len(dataset), dtype=np.bool)
+                    data_index = np.argmin(np.abs(arr - sel))
+                    mask = np.zeros(len(dataset), dtype=np.bool_)
                     mask[data_index] = True
                 else:
                     mask &= index_mask
@@ -339,7 +405,7 @@ class Interface(param.Parameterized):
                 assert column.dtype.kind not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                    return (np.nanmin(column), np.nanmax(column))
+                    return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):
@@ -385,6 +451,22 @@ class Interface(param.Parameterized):
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
     @classmethod
+    def histogram(cls, array, bins, density=True, weights=None):
+        if util.is_dask_array(array):
+            import dask.array as da
+            histogram = da.histogram
+        elif util.is_cupy_array(array):
+            import cupy
+            histogram = cupy.histogram
+        else:
+            histogram = np.histogram
+        hist, edges = histogram(array, bins=bins, density=density, weights=weights)
+        if util.is_cupy_array(hist):
+            edges = cupy.asnumpy(edges)
+            hist = cupy.asnumpy(hist)
+        return hist, edges
+
+    @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):
         kdims = [kdim for kdim in dataset.kdims if kdim not in reduce_dims]
         return cls.aggregate(dataset, kdims, function, **kwargs)
@@ -426,3 +508,11 @@ class Interface(param.Parameterized):
         coords = cls.values(dataset, dataset.kdims[0])
         splits = np.where(np.isnan(coords.astype('float')))[0]
         return [[[]]*(len(splits)+1)]
+
+    @classmethod
+    def as_dframe(cls, dataset):
+        """
+        Returns the data of a Dataset as a dataframe avoiding copying
+        if it already a dataframe type.
+        """
+        return dataset.dframe()

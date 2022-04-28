@@ -4,10 +4,10 @@ Installing HoloViews
 The quickest and easiest way to get the latest version of all the
 recommended packages for working with HoloViews on Linux, Windows, or
 Mac systems is via the
-`conda <http://conda.pydata.org/docs/>`_ command provided by 
+`conda <https://docs.conda.io/projects/conda/en/latest/>`_ command provided by
 the
-`Anaconda <http://docs.continuum.io/anaconda/install>`_ or
-`Miniconda <http://conda.pydata.org/miniconda.html>`_ scientific
+`Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or
+`Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ scientific
 Python distributions::
 
   conda install -c pyviz holoviews bokeh
@@ -15,7 +15,7 @@ Python distributions::
 This recommended installation includes the default `Matplotlib
 <http://matplotlib.org>`_ plotting library backend, the
 more interactive `Bokeh <http://bokeh.pydata.org>`_ plotting library
-backend, and the `Jupyter/IPython Notebook <http://jupyter.org>`_.
+backend, and the `Jupyter Notebook <http://jupyter.org>`_.
 
 A similar set of packages can be installed using ``pip``, if that
 command is available on your system::
@@ -28,25 +28,20 @@ HoloViews objects without visualization::
 
   pip install holoviews
 
-This minimal install includes only the two required libraries `Param
-<http://param.pyviz.org/>`_ and `Numpy <http://numpy.org>`_,
-neither of which has any required dependencies, which makes it very
-easy to integrate HoloViews into your workflow or as part of another
-project.
+This minimal install includes only three required libraries `Param
+<https://param.holoviz.org/>`_, `Numpy <https://numpy.org>`_ and,
+`pandas <https://pandas.pydata.org/>`_, which makes it very easy to
+integrate HoloViews into your workflow or as part of another project.
 
 Alternatively, you can ask ``pip`` to install a larger set of
 packages that provide additional functionality in HoloViews::
 
-  pip install "holoviews[extras]"
+  pip install "holoviews[examples]"
 
-This option installs all the required and recommended packages,
-including the `pandas <http://pandas.pydata.org/>`_ and `Seaborn
-<http://stanford.edu/~mwaskom/software/seaborn/>`_ libraries.
+This option installs all the required and recommended packages, in
+addition to all all libraries required for running all the examples.
 
-Lastly, to get *everything*, including `cyordereddict
-<https://pypi.python.org/pypi/cyordereddict>`_ to enable optional
-speed optimizations and `nose <https://pypi.python.org/pypi/nose/>`_
-for running unit tests, you can use::
+Lastly, to get *everything* including the test dependencies, you can use::
 
   pip install "holoviews[all]"
 
@@ -57,16 +52,16 @@ can be installed using::
 
 To get the very latest development version using ``pip``, you can use::
 
-  pip install git+https://github.com/pyviz/holoviews.git
+  pip install git+https://github.com/holoviz/holoviews.git
 
 The alternative approach using git archive (e.g ``pip install
-https://github.com/pyviz/holoviews/archive/master.zip``) is *not*
+https://github.com/holoviz/holoviews/archive/master.zip``) is *not*
 recommended as you will have incomplete version strings.
 
 Anyone interested in following development can get the very latest
 version by cloning the git repository::
 
-  git clone https://github.com/pyviz/holoviews.git
+  git clone https://github.com/holoviz/holoviews.git
 
 To make this code available for import you then need to run::
 
@@ -82,18 +77,19 @@ Jupyter Notebook::
 
   jupyter notebook
 
-To work with JupyterLab you will also need the PyViz JupyterLab
+To work with JupyterLab>2.0 you won't need to install anything else,
+however for older versions you should also install the PyViz
 extension::
 
-  conda install -c conda-forge jupyterlab
   jupyter labextension install @pyviz/jupyterlab_pyviz
 
 Once you have installed JupyterLab and the extension launch it with::
 
-  jupyter-lab
+  jupyter lab
 
-Now you can download the `tutorial notebooks`_.  unzip them somewhere
-Jupyter Notebook can find them, and then open the Homepage.ipynb
-tutorial or any of the others in the Notebook.  Enjoy exploring your
-data!
+Now that you are set up you can get a copy of all the examples shown
+on this website::
+
+    holoviews --install-examples
+    cd holoviews-examples
 

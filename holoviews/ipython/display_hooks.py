@@ -4,7 +4,7 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import os, sys, traceback
+import sys, traceback
 
 import IPython
 from IPython import get_ipython
@@ -21,6 +21,7 @@ from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
 from ..core.util import mimebundle_to_html
 from ..plotting import Plot
+from ..plotting.renderer import MIME_TYPES
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -34,10 +35,12 @@ ABBREVIATE_TRACEBACKS = True
 
 
 def max_frame_warning(max_frames):
-    sys.stderr.write("Skipping regular visual display to avoid "
-                     "lengthy animation render times\n"
-                     "[Total item frames exceeds max_frames on OutputSettings (%d)]"
-                     % max_frames)
+    sys.stderr.write(
+        "Animation longer than the max_frames limit {max_frames};\n"
+        "skipping rendering to avoid unexpected lengthy computations.\n"
+        "If desired, the limit can be increased using:\n"
+        "hv.output(max_frames=<insert number>)".format(max_frames=max_frames)
+    )
 
 def process_object(obj):
     "Hook to process the object currently being displayed."
@@ -69,14 +72,15 @@ def single_frame_plot(obj):
     """
     Returns plot, renderer and format for single frame export.
     """
-    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+    obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
 
     backend = Store.current_backend
     renderer = Store.renderers[backend]
 
     plot_cls = renderer.plotting_class(obj)
     plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
-    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
+    fmt = (renderer.param.objects('existing')['fig'].objects[0]
+           if renderer.fig == 'auto' else renderer.fig)
     return plot, renderer, fmt
 
 
@@ -113,16 +117,11 @@ def dynamic_optstate(element, state=None):
 @contextmanager
 def option_state(element):
     optstate = dynamic_optstate(element)
-    raised_exception = False
     try:
         yield
     except Exception:
-        raised_exception = True
+        dynamic_optstate(element, state=optstate)
         raise
-    finally:
-        if raised_exception:
-            dynamic_optstate(element, state=optstate)
-
 
 
 def display_hook(fn):
@@ -142,20 +141,20 @@ def display_hook(fn):
             mimebundle = fn(element, max_frames=max_frames)
             if mimebundle is None:
                 return {}, {}
-
-            html = mimebundle_to_html(mimebundle)
-            if os.environ.get('HV_DOC_HTML', False):
-                mimebundle = {'text/html': html}, {}
+            mime_data, mime_metadata = mimebundle
+            if MIME_TYPES['js'] in mime_data:
+                mime_data['text/html'] = mimebundle_to_html(mime_data)
+                del mime_data[MIME_TYPES['js']]
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                if type(holoviews.archive) is not FileArchive:
-                    holoviews.archive.add(element, html=html)
+                if type(holoviews.archive) is not FileArchive and 'text/html' in mime_data:
+                    holoviews.archive.add(element, html=mime_data['text/html'])
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
-            return mimebundle
+            return mime_data, mime_metadata
         except SkipRendering as e:
             if e.warn:
                 sys.stderr.write(str(e))
@@ -204,7 +203,8 @@ def map_display(vmap, max_frames):
 
 @display_hook
 def layout_display(layout, max_frames):
-    if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
+    if isinstance(layout, AdjointLayout):
+        layout = Layout(layout).opts(layout.opts.get('plot'))
     if not isinstance(layout, (Layout, NdLayout)): return None
 
     nframes = len(unique_dimkeys(layout)[1])
@@ -296,7 +296,7 @@ def image_display(element, max_frames, fmt):
     plot = renderer.get_plot(element)
 
     # Current renderer does not support the image format
-    if fmt not in renderer.params('fig').objects:
+    if fmt not in renderer.param.objects('existing')['fig'].objects:
         return None
 
     data, info = renderer(plot, fmt=fmt)
