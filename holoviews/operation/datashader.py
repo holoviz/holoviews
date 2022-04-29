@@ -209,9 +209,9 @@ class ResamplingOperation(LinkableOperation):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        width *= self.p.pixel_ratio
-        height *= self.p.pixel_ratio
-        return ((xstart, xend), (ystart, yend)), (xs, ys), (int(width), int(height)), (xtype, ytype)
+        width = int(width * self.p.pixel_ratio)
+        height = int(height * self.p.pixel_ratio)
+        return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
 
 
     def _dt_transform(self, x_range, y_range, xs, ys, xtype, ytype):
