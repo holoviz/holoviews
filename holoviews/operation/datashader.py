@@ -79,9 +79,9 @@ class ResamplingOperation(LinkableOperation):
     pixel_density = param.Integer(default=1, bounds=(1,None), doc="""
        Pixel density multiplier applied to the height and width. Useful
        for higher resolution screens where the PlotSize stream reports
-       'nominal' dimensions in pixels that does not match the physical
-       pixels , e.g. setting pixel_density=2 can give better results on
-       retina displays.""")
+       'nominal' dimensions in pixels that do not match the physical
+       pixels. For instance, setting pixel_density=2 can give better
+       results on retina displays.""")
 
     x_range  = param.Tuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max x-value. Auto-ranges
