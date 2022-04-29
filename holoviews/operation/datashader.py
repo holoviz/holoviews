@@ -1400,7 +1400,7 @@ class shade(LinkableOperation):
 
 
 
-class geometry_rasterize(AggregationOperation):
+class geometry_rasterize(LineAggregationOperation):
     """
     Rasterizes geometries by converting them to spatialpandas.
     """
@@ -1445,12 +1445,15 @@ class geometry_rasterize(AggregationOperation):
         if isinstance(agg_fn, ds.count_cat) and data[agg_fn.column].dtype.name != 'category':
             data[agg_fn.column] = data[agg_fn.column].astype('category')
 
+        agg_kwargs = dict(geometry=col, agg=agg_fn)
         if isinstance(element, Polygons):
-            agg = cvs.polygons(data, geometry=col, agg=agg_fn)
+            agg = cvs.polygons(data, **agg_kwargs)
         elif isinstance(element, Path):
-            agg = cvs.line(data, geometry=col, agg=agg_fn)
+            if self.p.line_width and ds_version >= LooseVersion('0.14.0'):
+                agg_kwargs['line_width'] = self.p.line_width
+            agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
-            agg = cvs.points(data, geometry=col, agg=agg_fn)
+            agg = cvs.points(data, **agg_kwargs)
         agg = agg.rename({'x': xdim.name, 'y': ydim.name})
 
         if agg.ndim == 2:
