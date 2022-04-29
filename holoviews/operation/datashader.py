@@ -80,7 +80,7 @@ class ResamplingOperation(LinkableOperation):
        Pixel ratio applied to the height and width. Useful for higher
        resolution screens where the PlotSize stream reports 'nominal'
        dimensions in pixels that do not match the physical pixels. For
-       instance, setting pixel_ratio=2 can give better results on retina
+       instance, setting pixel_ratio=2 can give better results on Retina
        displays.""")
 
     x_range  = param.Tuple(default=None, length=2, doc="""
