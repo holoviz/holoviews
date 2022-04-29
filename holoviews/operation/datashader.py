@@ -76,7 +76,7 @@ class ResamplingOperation(LinkableOperation):
     width = param.Integer(default=400, doc="""
        The width of the output image in pixels.""")
 
-    pixel_density = param.Integer(default=1, bounds=(1,None), doc="""
+    pixel_density = param.Number(default=1, bounds=(1,None), doc="""
        Pixel density multiplier applied to the height and width. Useful
        for higher resolution screens where the PlotSize stream reports
        'nominal' dimensions in pixels that do not match the physical
@@ -211,7 +211,7 @@ class ResamplingOperation(LinkableOperation):
 
         width *= self.p.pixel_density
         height *= self.p.pixel_density
-        return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
+        return ((xstart, xend), (ystart, yend)), (xs, ys), (int(width), int(height)), (xtype, ytype)
 
 
     def _dt_transform(self, x_range, y_range, xs, ys, xtype, ytype):
