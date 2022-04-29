@@ -94,8 +94,20 @@ normalized independently by changing ``framewise`` to True:
 
     your_holomap.opts(framewise=True)
 
+**Q: How do I make only a single axis be shared across a layout?
 
-**Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for axis normalization across frames?**
+**A:** Even when `shared_axes=True`, HoloViews will only share axes
+that have the same Dimension, so just make sure that axes that you
+want to be independent have a different name or label. Here, the x
+axis should be shared, but the y should be independent:
+
+.. code:: python
+
+    xs = range(-10,11) ; ys = [100-x**2 for x in xs]
+    hv.Curve((xs, ys), 'x', 'y') + hv.Curve((xs, ys), 'x', 'z')
+
+
+**Q: Why doesn't my DynamicMap respect the `framewise=False` option for axis normalization across frames?**
 
 **A:** Unfortunately, HoloViews has no way of knowing the axis ranges
 of objects that might be returned by future calls to a DynamicMap's
