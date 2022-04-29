@@ -76,12 +76,12 @@ class ResamplingOperation(LinkableOperation):
     width = param.Integer(default=400, doc="""
        The width of the output image in pixels.""")
 
-    pixel_density = param.Number(default=1, bounds=(1,None), doc="""
-       Pixel density multiplier applied to the height and width. Useful
-       for higher resolution screens where the PlotSize stream reports
-       'nominal' dimensions in pixels that do not match the physical
-       pixels. For instance, setting pixel_density=2 can give better
-       results on retina displays.""")
+    pixel_ratio = param.Number(default=1, bounds=(1,None), doc="""
+       Pixel ratio applied to the height and width. Useful for higher
+       resolution screens where the PlotSize stream reports 'nominal'
+       dimensions in pixels that do not match the physical pixels. For
+       instance, setting pixel_ratio=2 can give better results on retina
+       displays.""")
 
     x_range  = param.Tuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max x-value. Auto-ranges
@@ -209,8 +209,8 @@ class ResamplingOperation(LinkableOperation):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        width *= self.p.pixel_density
-        height *= self.p.pixel_density
+        width *= self.p.pixel_ratio
+        height *= self.p.pixel_ratio
         return ((xstart, xend), (ystart, yend)), (xs, ys), (int(width), int(height)), (xtype, ytype)
 
 
