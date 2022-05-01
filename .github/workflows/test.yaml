@@ -159,3 +159,63 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           codecov
+  test_suite_26:
+    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: ['2.6']
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      MPLBACKEND: "Agg"
+      CHANS_DEV: "-c pyviz -c bokeh -c conda-forge -c nodefaults"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow
+      - name: conda setup
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda create $CHANS_DEV -n test-environment python=${{ matrix.python-version }} pyctdev
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
+      - name: doit develop_install
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+          doit develop_install $CHANS_DEV -o tests
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
+      - name: doit test_flakes
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_flakes
+      - name: doit test_unit
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_unit
+      - name: codecov
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          codecov
