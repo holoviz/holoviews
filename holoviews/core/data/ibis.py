@@ -1,5 +1,6 @@
 import sys
 import numpy
+from packaging.version import Version
 
 try:
     from collections.abc import Iterable
@@ -12,6 +13,13 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import Interface
 from . import pandas
 from .util import cached
+
+
+try:
+    import ibis
+    ibis_version =  Version(ibis.__version__)
+except ImportError:
+    pass
 
 
 class IbisInterface(Interface):
@@ -125,9 +133,15 @@ class IbisInterface(Interface):
     ):
         dimension = dataset.get_dimension(dimension, strict=True)
         data = dataset.data[dimension.name]
+        if (
+            ibis_version > Version("3")
+            and isinstance(data, ibis.expr.types.AnyColumn)
+            and not expanded
+        ):
+            data = dataset.data[[dimension.name]]
         if not expanded:
             data = data.distinct()
-        return data if keep_index or not compute else data.execute().values
+        return data if keep_index or not compute else data.execute().values.flatten()
 
     @classmethod
     def histogram(cls, expr, bins, density=True, weights=None):
