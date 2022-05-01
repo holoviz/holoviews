@@ -166,7 +166,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['2.6']
+        python-version: ['2.7']
     timeout-minutes: 60
     defaults:
       run:
