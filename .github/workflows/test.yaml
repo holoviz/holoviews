@@ -24,7 +24,6 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "-o unit_tests"
       MPLBACKEND: "Agg"
       CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
