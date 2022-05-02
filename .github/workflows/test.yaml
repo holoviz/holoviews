@@ -186,35 +186,33 @@ jobs:
       - name: conda setup
         run: |
           eval "$(conda shell.bash hook)"
-          conda create $CHANS_DEV -n test-environment python=${{ matrix.python-version }} pyctdev "param<1.12"
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit develop_install
+          conda create $CHANS_DEV -n test-environment python=${{ matrix.python-version }} pip
+      - name: conda list
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda list
-          # First step of develop_install executed here to pin param
-          conda install -c pyviz -c bokeh -c conda-forge -c nodefaults "param <1.12" "pyct >=0.4.4" "setuptools >=30.3.0"
-          doit develop_install $CHANS_DEV -o tests
-      - name: doit env_capture
+      - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit env_capture
-      - name: doit test_flakes
+          pip install .[tests]
+          pip install "param<1.12"
+      - name: conda list
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit test_flakes
-      - name: doit test_unit
+          conda list
+      - name: flakes
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit test_unit
+          flake8 holoviews
+      - name: unit test
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          pytest holoviews
       - name: codecov
         run: |
           eval "$(conda shell.bash hook)"
