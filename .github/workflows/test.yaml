@@ -11,82 +11,82 @@ on:
     - cron: '0 14 * * SUN'
 
 jobs:
-  test_suite:
-    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-    timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      HV_REQUIREMENTS: "-o unit_tests"
-      MPLBACKEND: "Agg"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: "100"
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow
-      - name: conda setup
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda update -n base -c defaults conda
-          conda config --prepend channels nodefaults
-          conda config --prepend channels conda-forge
-          conda config --prepend channels bokeh
-          conda config --prepend channels pyviz/label/dev
-          conda config --remove channels defaults
-          conda create -n test-environment python=${{ matrix.python-version }} pyctdev
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit develop_install
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda list
-          doit develop_install ${{ env.HV_REQUIREMENTS }}
-          conda install $CHANS_DEV "ibis-sqlite=2"
-          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
-          echo "-----"
-          git describe
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit test_flakes
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_flakes
-      - name: doit test_unit
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_unit
-      - name: test examples
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_examples
-      - name: codecov
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          codecov
+  # test_suite:
+  #   name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+  #       python-version: ['3.7', '3.8', '3.9', '3.10']
+  #   timeout-minutes: 60
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   env:
+  #     HV_REQUIREMENTS: "-o unit_tests"
+  #     MPLBACKEND: "Agg"
+  #     CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: "100"
+  #     - uses: conda-incubator/setup-miniconda@v2
+  #       with:
+  #         miniconda-version: "latest"
+  #     - name: Fetch unshallow
+  #       run: git fetch --prune --tags --unshallow
+  #     - name: conda setup
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda update -n base -c defaults conda
+  #         conda config --prepend channels nodefaults
+  #         conda config --prepend channels conda-forge
+  #         conda config --prepend channels bokeh
+  #         conda config --prepend channels pyviz/label/dev
+  #         conda config --remove channels defaults
+  #         conda create -n test-environment python=${{ matrix.python-version }} pyctdev
+  #     - name: doit env_capture
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         doit env_capture
+  #     - name: doit develop_install
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         conda list
+  #         doit develop_install ${{ env.HV_REQUIREMENTS }}
+  #         conda install $CHANS_DEV "ibis-sqlite=2"
+  #         python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+  #         echo "-----"
+  #         git describe
+  #     - name: doit env_capture
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         doit env_capture
+  #     - name: doit test_flakes
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         doit test_flakes
+  #     - name: doit test_unit
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         doit test_unit
+  #     - name: test examples
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         doit test_examples
+  #     - name: codecov
+  #       run: |
+  #         eval "$(conda shell.bash hook)"
+  #         conda activate test-environment
+  #         codecov
   test_suite_36:
     name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
