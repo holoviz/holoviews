@@ -132,8 +132,7 @@ jobs:
           doit develop_install ${{ env.HV_REQUIREMENTS }}  --conda-mode=mamba
           # Pin panel on Python 3.6 because one or more dev releases on the 0.13.* series
           # can be installed on Python 3.6 but are actually not compatible with Python 3.6
-          # Install ibis-framework instead of ibis-sqlite as it's only available starting from Python 3.7
-          mamba install "ibis-framework=2" "panel=0.12"
+          mamba install "panel=0.12"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
@@ -187,7 +186,7 @@ jobs:
       - name: conda setup
         run: |
           eval "$(conda shell.bash hook)"
-          conda create $CHANS_DEV -n test-environment python=${{ matrix.python-version }} pyctdev
+          conda create $CHANS_DEV -n test-environment python=${{ matrix.python-version }} pyctdev "param<1.12"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
