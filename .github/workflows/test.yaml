@@ -58,7 +58,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.HV_REQUIREMENTS }}
-          pip install ibis-framework
+          conda install $CHANS_DEV ibis-sqlite
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
