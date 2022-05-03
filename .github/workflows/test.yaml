@@ -147,7 +147,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          pytest holoviews
+          doit test_unit
       - name: test examples
         run: |
           eval "$(conda shell.bash hook)"
