@@ -109,3 +109,63 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           codecov
+  test_suite_26:
+    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: ['2.7']
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      MPLBACKEND: "Agg"
+      CHANS_DEV: "-c pyviz -c bokeh -c conda-forge -c nodefaults"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow
+      - name: conda setup
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda create $CHANS_DEV -n test-environment python=${{ matrix.python-version }} pip
+      - name: conda list
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+      - name: doit develop_install
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          pip install "param<1.12" "pyct>=0.4.4" "setuptools>=30.3.0"
+          pip install .[tests] --no-build-isolation
+      - name: conda list
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+      - name: flakes
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          flake8 holoviews
+      - name: unit test
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          nosetests holoviews.tests --with-doctest --with-coverage --cover-package=holoviews
+      - name: codecov
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          codecov
