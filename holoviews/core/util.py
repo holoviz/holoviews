@@ -2307,9 +2307,9 @@ def flatten(line):
     -------
     flattened : generator
     """
-
     for element in line:
         if any(isinstance(element, tp) for tp in (list, tuple, dict)):
-            yield from flatten(element)
+            for el in flatten(element):
+                yield el
         else:
             yield element
