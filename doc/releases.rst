@@ -7,14 +7,14 @@ Version 1.14
 Version 1.14.9
 **************
 
-**April 8, 2022**
+**May 5, 2022**
 
 This release contains a small number of important bug fixes as well as
 support for the newly added antialiasing option for line rendering in
 datashader. Many thanks to @andriyot, @Hoxbro, @pepijndevos, @stas-sl,
 @TheoMathurin, @maximlt, @jlstevens, @jbednar, and @philippjfr.
 
-Bug fixes:
+Enhancements:
 
 -  Improvements to extension loading, improving visual appearance in
    JupyterLab when no logo is used and a check to avoid loading
@@ -22,11 +22,18 @@ Bug fixes:
    (`#5216 <https://github.com/holoviz/holoviews/pull/5216>`__,
    `#5249 <https://github.com/holoviz/holoviews/pull/5249>`__)
 -  Add support for setting antialiased line_width on datashader line
-   aggregation
-   (`#5264 <https://github.com/holoviz/holoviews/pull/5264>`__)
+   aggregation as well as pixel_ratio setting
+   (`#5264 <https://github.com/holoviz/holoviews/pull/5264>`__,
+   `#5288 <https://github.com/holoviz/holoviews/pull/5288>`__)
 -  Added options to customize hover line_(width|join|cap|dash)
    properties
    (`#5211 <https://github.com/holoviz/holoviews/pull/5211>`__)
+-  Restored Python 2 compatibility that lapsed due to lack of CI testing
+   since 1.14.3. This is expected to be the last release with Python 2
+   support. (`#5298 <https://github.com/holoviz/holoviews/pull/5298>`__)
+
+Bug fixes:
+
 -  Fix to respect series order in stacked area plot
    (`#5236 <https://github.com/holoviz/holoviews/pull/5236>`__)
 -  Support buffer streams of unspecified length (#5247)
@@ -39,6 +46,13 @@ Bug fixes:
    (`#5243 <https://github.com/holoviz/holoviews/pull/5243>`__)
 -  Respecting Renderer’s center property for HoloViews pane
    (`#5197 <https://github.com/holoviz/holoviews/pull/5197>`__)
+
+Documentation:
+
+-  Updated Large data guide to reflect changes in Datashader and
+   antialising support
+   (`#5267 <https://github.com/holoviz/holoviews/pull/5267>`__,
+   `#5290 <https://github.com/holoviz/holoviews/pull/5290>`__)
 
 Version 1.14.8
 **************
