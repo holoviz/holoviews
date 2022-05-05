@@ -30,7 +30,7 @@ except:
     bokeh_renderer = None
 
 
-if sys.version_info.major == 3 and sys.version_info == 6:
+if sys.version_info.major == 3 and sys.version_info.minor == 6:
     raise SkipTest('Skip Python 3.6 as Panel fixes were not backported to prevent tests hanging')
 
 
