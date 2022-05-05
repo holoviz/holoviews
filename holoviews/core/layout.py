@@ -21,11 +21,13 @@ class Layoutable:
     def __add__(x, y):
         "Compose objects into a Layout"
         if any(isinstance(arg, int) for arg in (x, y)):
-            raise TypeError(f"unsupported operand type(s) for +: {x.__class__.__name__} and {y.__class__.__name__}. "
-                            "If you are trying to use a reduction like `sum(elements)` "
-                            "to combine a list of elements, we recommend you use "
-                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
-                            "making an overlay from a list) instead.")
+            raise TypeError((
+                "unsupported operand type(s) for +: {x.__class__.__name__} and {y.__class__.__name__}. "
+                "If you are trying to use a reduction like `sum(elements)` "
+                "to combine a list of elements, we recommend you use "
+                "`Layout(elements)` (and similarly `Overlay(elements)` for "
+                 "making an overlay from a list) instead.").format(x=x, y=y)
+            )
         try:
             return Layout([x, y])
         except NotImplementedError:
