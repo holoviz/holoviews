@@ -7,7 +7,7 @@ Version 1.14
 Version 1.14.9
 **************
 
-**May 5, 2022**
+**May 6, 2022**
 
 This release contains a small number of important bug fixes as well as
 support for the newly added antialiasing option for line rendering in
