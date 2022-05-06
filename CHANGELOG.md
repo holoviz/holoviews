@@ -38,7 +38,9 @@ Bug fixes:
   ([#5243](https://github.com/holoviz/holoviews/pull/5243))
 - Respecting Renderer's center property for HoloViews pane
   ([#5197](https://github.com/holoviz/holoviews/pull/5197))
-  
+- Fix vmin/vmax deprecation in HeatMap plot for matplotlib > 3.3
+  ([#5300](https://github.com/holoviz/holoviews/pull/5300))
+
 Documentation:
 
 - Updated Large data guide to reflect changes in Datashader and
