@@ -183,20 +183,23 @@ class notebook_extension(extension):
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
-        Renderer.load_nb(inline=p.inline)
+        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
+        if not same_cell_execution:
+            for r in [r for r in resources if r != 'holoviews']:
+                Store.renderers[r].load_nb(inline=p.inline)
+            Renderer.load_nb(inline=p.inline)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
         # Create a message for the logo (if shown)
-        self.load_hvjs(logo=p.logo,
-                       bokeh_logo=  p.logo and ('bokeh' in resources),
-                       mpl_logo=    p.logo and (('matplotlib' in resources)
-                                                or resources==['holoviews']),
-                       plotly_logo= p.logo and ('plotly' in resources))
+        if not same_cell_execution and p.logo:
+            self.load_logo(logo=p.logo,
+                           bokeh_logo=  p.logo and ('bokeh' in resources),
+                           mpl_logo=    p.logo and (('matplotlib' in resources)
+                                                    or resources==['holoviews']),
+                           plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
@@ -244,10 +247,9 @@ class notebook_extension(extension):
         return resources
 
     @classmethod
-    def load_hvjs(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False,
-                  JS=True, message='HoloViewsJS successfully loaded.'):
+    def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
         """
-        Displays javascript and CSS to initialize HoloViews widgets.
+        Allow to display Holoviews' logo and the plotting extensions' logo.
         """
         import jinja2
 
@@ -257,8 +259,7 @@ class notebook_extension(extension):
         html = template.render({'logo':        logo,
                                 'bokeh_logo':  bokeh_logo,
                                 'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo,
-                                'message':     message})
+                                'plotly_logo': plotly_logo})
         publish_display_data(data={'text/html': html})
 
 

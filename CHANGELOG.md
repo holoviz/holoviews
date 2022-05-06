@@ -1,3 +1,54 @@
+Version 1.14.9
+==============
+**May 6, 2022**
+
+This release contains a small number of important bug fixes as well as
+support for the newly added antialiasing option for line rendering in
+datashader. Many thanks to @andriyot, @Hoxbro, @pepijndevos, @stas-sl,
+@TheoMathurin, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Enhancements:
+
+- Improvements to extension loading, improving visual appearance in
+  JupyterLab when no logo is used and a check to avoid loading
+  unnecessary JavaScript.
+  ([#5216](https://github.com/holoviz/holoviews/pull/5216),
+   [#5249](https://github.com/holoviz/holoviews/pull/5249))
+- Add support for setting antialiased line_width on datashader line
+  aggregation as well as pixel_ratio setting
+  ([#5264](https://github.com/holoviz/holoviews/pull/5264),
+  [#5288](https://github.com/holoviz/holoviews/pull/5288))
+- Added options to customize hover line_(width|join|cap|dash) properties
+  ([#5211](https://github.com/holoviz/holoviews/pull/5211))
+- Restored Python 2 compatibility that lapsed due to lack of CI testing
+  since 1.14.3. This is expected to be the last release with Python 2 support.
+  ([#5298](https://github.com/holoviz/holoviews/pull/5298))
+
+Bug fixes:
+
+- Fix to respect series order in stacked area plot
+  ([#5236](https://github.com/holoviz/holoviews/pull/5236))
+- Support buffer streams of unspecified length (#5247)
+  ([#5247](https://github.com/holoviz/holoviews/pull/5247))
+- Fixed log axis lower bound when data minimum is <= 0
+  ([#5246](https://github.com/holoviz/holoviews/pull/5246))
+- Declared GitHub project URL in setup.py
+  ([#5227](https://github.com/holoviz/holoviews/pull/5227))
+- Fixed streaming Psutil example application
+  ([#5243](https://github.com/holoviz/holoviews/pull/5243))
+- Respecting Renderer's center property for HoloViews pane
+  ([#5197](https://github.com/holoviz/holoviews/pull/5197))
+- Fix vmin/vmax deprecation in HeatMap plot for matplotlib > 3.3
+  ([#5300](https://github.com/holoviz/holoviews/pull/5300))
+
+Documentation:
+
+- Updated Large data guide to reflect changes in Datashader and
+  antialising support
+  ([#5267](https://github.com/holoviz/holoviews/pull/5267),
+  [#5290](https://github.com/holoviz/holoviews/pull/5290))
+
+
 Version 1.14.8
 ==============
 **February 15, 2022**
@@ -5,7 +56,7 @@ Version 1.14.8
 This release contains a small number of important bug fixes as well as
 fixes required for Python 3.9 and 3.10 support. Many thanks to @Hoxbro,
 @maximlt, @jlstevens, @jbednar, and @philippjfr.
- 
+
 Bug fixes:
 
 - Fixed xarray validation for aliased coordinate
@@ -38,7 +89,7 @@ Version 1.14.7
 **December 16, 2021**
 
 This release contains a small number of important bug fixes. Many thanks
-to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt, 
+to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt,
 @jlstevens, @jbednar, and @philippjfr.
 
 Bug fixes:
@@ -94,7 +145,7 @@ Bug fixes:
       ([#5098](https://github.com/holoviz/holoviews/pull/5098))
 - Improved docs:
     * Switch to the Pydata Sphinx theme
-      ([#5163](https://github.com/holoviz/holoviews/pull/5163)) 
+      ([#5163](https://github.com/holoviz/holoviews/pull/5163))
 
 Version 1.14.6
 ==============
@@ -119,7 +170,7 @@ Bug fixes:
 - Improvements to linked selections including support for linked
   selection lasso for cudf and improved warnings
   ([#5044](https://github.com/holoviz/holoviews/pull/5044),
-   [#5051](https://github.com/holoviz/holoviews/pull/5051)) 
+   [#5051](https://github.com/holoviz/holoviews/pull/5051))
 - Respect apply_ranges at range computation level
   ([#5081](https://github.com/holoviz/holoviews/pull/5081))
 - Keep ordering of kdim when stacking Areas
@@ -130,7 +181,7 @@ Bug fixes:
 Version 1.14.5
 ==============
 **July 16, 2021**
-	
+
 This is a hotfix release with a number of important bug fixes. Most
 importantly, this version supports for the recent pandas 1.3.0
 release. Many thanks to @kgullikson88, @philippjfr and @jlstevens for

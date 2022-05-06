@@ -308,7 +308,7 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt)
             fmt = 'html'
         elif dynamic or (self._render_with_panel and fmt == 'html'):
-            plot = HoloViewsPane(obj, center=True, backend=self.backend,
+            plot = HoloViewsPane(obj, center=self.center, backend=self.backend,
                                  renderer=self)
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)

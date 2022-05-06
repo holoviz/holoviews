@@ -272,11 +272,11 @@ class dim(object):
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
     def __getattribute__(self, attr):
-        self_dict = super().__getattribute__('__dict__')
+        self_dict = super(dim, self).__getattribute__('__dict__')
         if '_ns' not in self_dict: # Not yet initialized
-            return super().__getattribute__(attr)
+            return super(dim, self).__getattribute__(attr)
         ns = self_dict['_ns']
-        ops = super().__getattribute__('ops')
+        ops = super(dim, self).__getattribute__('ops')
         if ops and ops[-1]['kwargs'].get('accessor'):
             try:
                 ns = getattr(ns, ops[-1]['fn'])
@@ -289,7 +289,7 @@ class dim(object):
         if attr in extras and attr not in super(dim, self).__dir__():
             return type(self)(self, attr, accessor=True)
         else:
-            return super().__getattribute__(attr)
+            return super(dim, self).__getattribute__(attr)
 
     def __dir__(self):
         ns = self._ns

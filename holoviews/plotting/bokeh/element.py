@@ -961,7 +961,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 low, high = util.max_range([(low, high), shared])
             if invert: low, high = high, low
             if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
-                low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
+                low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
                 self.param.warning(
                     "Logarithmic axis range encountered value less "
                     "than or equal to zero, please supply explicit "

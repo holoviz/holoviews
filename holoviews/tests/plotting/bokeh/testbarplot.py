@@ -83,8 +83,8 @@ class TestBarPlot(TestBokehPlot):
         y_range = plot.handles['y_range']
         self.assertEqual(list(source.data['Index']), ['A', 'B', 'C'])
         self.assertEqual(source.data['Value'], np.array([1, 2, 3]))
-        self.assertEqual(glyph.bottom, 10**(np.log10(3)-2))
-        self.assertEqual(y_range.start, 0.03348369522101712)
+        self.assertEqual(glyph.bottom, 0.01)
+        self.assertEqual(y_range.start, 0.01)
         self.assertEqual(y_range.end, 3.348369522101713)
 
     def test_bars_logy_explicit_range(self):
@@ -146,7 +146,7 @@ class TestBarPlot(TestBokehPlot):
         bars = Bars([(1, 2), (2, 1), (3, 3)]).options(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(bars)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0.033483695221017122)
+        self.assertEqual(y_range.start, 0.01)
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     ###########################
