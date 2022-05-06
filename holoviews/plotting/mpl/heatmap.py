@@ -187,6 +187,8 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
+        if 'vmin' in style:
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (xvals, yvals, data), style, {'xticks': xticks, 'yticks': yticks}
 
 
