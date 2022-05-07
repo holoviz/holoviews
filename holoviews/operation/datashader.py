@@ -641,6 +641,8 @@ class overlay_aggregate(aggregate):
         if is_sum:
             agg.data[column].values[mask] = np.NaN
 
+        agg._dataset = agg.dataset.clone(data=[el.data for el in element], datatype=['multitabular'])
+
         return agg.clone(bounds=bbox)
 
 
@@ -2064,8 +2066,70 @@ class inspect_polygons(inspect_base):
         return df.iloc[distances.argsort().values]
 
 
+class inspect_curve(inspect_base):
+    """
+    Selects one of multiple datashaded curves by drawing a vertical line
+    at the x-position and identifying all points of intersection of
+    that line on the rasterized plot. The intersection closest to the
+    specified y-coordinate is picked and the data of all rasterized
+    curves is searched for proximity to that coordinate.
+    """
 
+    x = param.Parameter()
+
+    def _process(self, raster, key=None):
+        # For an RGB image, select based on the alpha channel
+        if isinstance(raster, hv.RGB):
+            raster = raster[..., raster.vdims[-1]]
+        (x0, x1), (y0, y1) = raster.range(0), raster.range(1)
+        xdelta, ydelta = self._distance_args(raster, (x0, x1), (y0, y1), self.p.pixels)
+        x, y = self.p.x, self.p.y
+        try:
+            vline = (x-x0) / (x1-x0)
+        except Exception:
+            vline = None
+        array = raster.dimension_values(2, flat=False).astype(float)
+        xindex = -1 if vline is None else int(array.shape[1]*vline)
+        if xindex < 0 or xindex >= array.shape[1]:
+            result = self._empty_df(raster.dataset)
+            return self._element(raster, result)
+        array = np.where((array==0) | np.isnan(array), 0, 1)
+        array[:, xindex] += 1
+        ys, _ = np.where(array==2)
+        if not len(ys):
+            result = self._empty_df(raster.dataset)
+            return self._element(raster, result)
+        ys = raster.dimension_values(1, expanded=False)[ys]
+        ydiff = y-ys
+        yclose = ys[abs(ydiff).argmin()]
+        sample = raster.dataset.clone(raster.dataset.data[0], datatype=['dataframe'])
+        xdim, ydim = sample.dimensions()[:2]
+        hit = None
+        for df in raster.dataset.data:
+            sample.data = df
+            (y0s, y1s) = sample.range(1)
+            if yclose < y0s or yclose > y1s:
+                continue
+            if len(sample.select(**{xdim.name: (x-xdelta, x+xdelta),
+                                    ydim.name: (yclose-ydelta, yclose+ydelta)})):
+                hit = sample 
+                break
+        if hit is None:
+            result = self._empty_df(raster.dataset)
+            return self._element(raster, result)
+        result = hit.data
+        self.hits = result
+        df = self.p.transform(result)
+        return self._element(raster, result)
+
+    @classmethod
+    def _element(cls, raster, df):
+        dims = raster.kdims + cls._vdims(raster, df)
+        return Curve(df, kdims=dims[0], vdims=dims[1:])
+
+    
 inspect._dispatch = {
     Points: inspect_points,
-    Polygons: inspect_polygons
+    Polygons: inspect_polygons,
+    Curve: inspect_curve
 }
