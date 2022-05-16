@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import style
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Image, Curve, Scatter, Scatter3D
@@ -30,7 +31,15 @@ class TestElementPlot(TestMPLPlot):
 
     def test_element_font_scaling(self):
         curve = Curve(range(10)).options(fontscale=2, title='A title')
-        plot = mpl_renderer.get_plot(curve)
+        with style.context(
+            {
+                "axes.labelsize": 10,
+                "axes.titlesize": 12,
+                "xtick.labelsize": 10,
+                "ytick.labelsize": 10,
+            }
+        ):
+            plot = mpl_renderer.get_plot(curve)
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 24)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 20)
@@ -40,7 +49,16 @@ class TestElementPlot(TestMPLPlot):
 
     def test_element_font_scaling_fontsize_override_common(self):
         curve = Curve(range(10)).options(fontscale=2, fontsize=14, title='A title')
-        plot = mpl_renderer.get_plot(curve)
+        with style.context(
+            {
+                "axes.labelsize": 10,
+                "axes.titlesize": 12,
+                "font.size": 10,
+                "xtick.labelsize": 10,
+                "ytick.labelsize": 10,
+            }
+        ):
+            plot = mpl_renderer.get_plot(curve)
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 28)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 28)
@@ -51,7 +69,15 @@ class TestElementPlot(TestMPLPlot):
     def test_element_font_scaling_fontsize_override_specific(self):
         curve = Curve(range(10)).options(
             fontscale=2, fontsize={'title': 16, 'xticks': 12, 'xlabel': 6}, title='A title')
-        plot = mpl_renderer.get_plot(curve)
+        with style.context(
+            {
+                "axes.labelsize": 10,
+                "axes.titlesize": 12,
+                "xtick.labelsize": 10,
+                "ytick.labelsize": 10,
+            }
+        ):
+            plot = mpl_renderer.get_plot(curve)
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 32)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 12)

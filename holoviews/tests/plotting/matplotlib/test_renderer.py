@@ -9,6 +9,7 @@ from unittest import SkipTest
 
 import numpy as np
 import param
+from matplotlib import style
 
 from holoviews import (DynamicMap, HoloMap, Image, ItemTable, Store,
                        GridSpace, Table, Curve)
@@ -62,12 +63,14 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (288, 288))
 
     def test_get_size_row_plot(self):
-        plot = self.renderer.get_plot(self.image1+self.image2)
+        with style.context("default"):
+            plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (576, 257))
 
     def test_get_size_column_plot(self):
-        plot = self.renderer.get_plot((self.image1+self.image2).cols(1))
+        with style.context("default"):
+            plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (288, 509))
 
