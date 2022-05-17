@@ -1759,6 +1759,14 @@ class ColorbarPlot(ElementPlot):
     logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
+    rescale_discrete_levels = param.Boolean(default=True, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the palette, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``.""")
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -1961,6 +1969,7 @@ class ColorbarPlot(ElementPlot):
 
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
+            opts = {}
             if self.cnorm == 'linear':
                 colormapper = LinearColorMapper
             if self.cnorm == 'log' or self.logz:
@@ -1983,6 +1992,8 @@ class ColorbarPlot(ElementPlot):
                                       "Note that the option cnorm='eq_hist' requires "
                                       "bokeh 2.2.3 or higher.")
                 colormapper = EqHistColorMapper
+                if bokeh_version >= LooseVersion('2.4.3'):
+                    opts['rescale_discrete_levels'] = True
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
@@ -1990,7 +2001,6 @@ class ColorbarPlot(ElementPlot):
                 offset = self.default_span / 2
                 low -= offset
                 high += offset
-            opts = {}
             if util.isfinite(low):
                 opts['low'] = low
             if util.isfinite(high):
