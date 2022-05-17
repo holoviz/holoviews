@@ -1993,7 +1993,7 @@ class ColorbarPlot(ElementPlot):
                                       "bokeh 2.2.3 or higher.")
                 colormapper = EqHistColorMapper
                 if bokeh_version >= LooseVersion('2.4.3'):
-                    opts['rescale_discrete_levels'] = True
+                    opts['rescale_discrete_levels'] = self.rescale_discrete_levels
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
