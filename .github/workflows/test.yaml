@@ -26,7 +26,7 @@ jobs:
     env:
       HV_REQUIREMENTS: "-o unit_tests"
       MPLBACKEND: "Agg"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
@@ -43,7 +43,7 @@ jobs:
           conda update -n base -c defaults conda
           conda config --prepend channels nodefaults
           conda config --prepend channels conda-forge
-          conda config --prepend channels bokeh
+          conda config --prepend channels bokeh/label/dev
           conda config --prepend channels pyviz/label/dev
           conda config --remove channels defaults
           conda create -n test-environment python=${{ matrix.python-version }} pyctdev
@@ -103,7 +103,7 @@ jobs:
       MAMBA_NO_BANNER: 1
       HV_REQUIREMENTS: "-o unit_tests"
       MPLBACKEND: "Agg"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge -c nodefaults"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
@@ -113,7 +113,7 @@ jobs:
         with:
           miniconda-version: "latest"
           mamba-version: "*"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
