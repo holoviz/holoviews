@@ -21,12 +21,6 @@ from types import FunctionType
 import numpy as np
 import param
 
-# Python 2 builtins
-basestring = str
-long = int
-unicode = str
-cmp = lambda a, b: (a>b)-(a<b)
-
 get_keywords = operator.attrgetter('varkw')
 generator_types = (zip, range, types.GeneratorType)
 numpy_version = LooseVersion(np.__version__)
