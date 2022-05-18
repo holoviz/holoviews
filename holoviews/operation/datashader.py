@@ -76,6 +76,13 @@ class ResamplingOperation(LinkableOperation):
     width = param.Integer(default=400, doc="""
        The width of the output image in pixels.""")
 
+    pixel_ratio = param.Number(default=1, bounds=(1,None), doc="""
+       Pixel ratio applied to the height and width. Useful for higher
+       resolution screens where the PlotSize stream reports 'nominal'
+       dimensions in pixels that do not match the physical pixels. For
+       instance, setting pixel_ratio=2 can give better results on Retina
+       displays.""")
+
     x_range  = param.Tuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max x-value. Auto-ranges
        if set to None.""")
@@ -202,6 +209,8 @@ class ResamplingOperation(LinkableOperation):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
+        width = int(width * self.p.pixel_ratio)
+        height = int(height * self.p.pixel_ratio)
         return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
 
 
@@ -463,7 +472,7 @@ class aggregate(LineAggregationOperation):
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
-        if overlay_aggregate.applies(element, agg_fn):
+        if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width):
             params = dict(
                 {p: v for p, v in self.param.get_param_values() if p != 'name'},
                 dynamic=False, **{p: v for p, v in self.p.items()
@@ -539,20 +548,21 @@ class overlay_aggregate(aggregate):
     """
 
     @classmethod
-    def applies(cls, element, agg_fn):
+    def applies(cls, element, agg_fn, line_width=None):
         return (isinstance(element, NdOverlay) and
-                ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and
+                (element.type is not Curve or line_width is None) and
+                ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any)) and
                   (agg_fn.column is None or agg_fn.column not in element.kdims)) or
                  (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims)))
-
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
 
-        if not self.applies(element, agg_fn):
-            raise ValueError('overlay_aggregate only handles aggregation '
-                             'of NdOverlay types with count, sum or mean '
-                             'reduction.')
+        if not self.applies(element, agg_fn, line_width=self.p.line_width):
+            raise ValueError(
+                'overlay_aggregate only handles aggregation of NdOverlay types '
+                'with count, sum or mean reduction.'
+            )
 
         # Compute overall bounds
         dims = element.last.dimensions()[0:2]
@@ -595,11 +605,11 @@ class overlay_aggregate(aggregate):
         else:
             agg_fn1 = aggregate.instance(**agg_params)
             agg_fn2 = None
-        is_sum = isinstance(agg_fn1.aggregator, ds.sum)
+        is_sum = isinstance(agg_fn, ds.sum)
+        is_any = isinstance(agg_fn, ds.any)
 
         # Accumulate into two aggregates and mask
         agg, agg2, mask = None, None, None
-        mask = None
         for v in element:
             # Compute aggregates and mask
             new_agg = agg_fn1.process_element(v, None)
@@ -614,7 +624,10 @@ class overlay_aggregate(aggregate):
                 if is_sum: mask = new_mask
                 if agg_fn2: agg2 = new_agg2
             else:
-                agg.data += new_agg.data
+                if is_any:
+                    agg.data |= new_agg.data
+                else:
+                    agg.data += new_agg.data
                 if is_sum: mask &= new_mask
                 if agg_fn2: agg2.data += new_agg2.data
 
@@ -1397,7 +1410,7 @@ class shade(LinkableOperation):
 
 
 
-class geometry_rasterize(AggregationOperation):
+class geometry_rasterize(LineAggregationOperation):
     """
     Rasterizes geometries by converting them to spatialpandas.
     """
@@ -1442,12 +1455,15 @@ class geometry_rasterize(AggregationOperation):
         if isinstance(agg_fn, ds.count_cat) and data[agg_fn.column].dtype.name != 'category':
             data[agg_fn.column] = data[agg_fn.column].astype('category')
 
+        agg_kwargs = dict(geometry=col, agg=agg_fn)
         if isinstance(element, Polygons):
-            agg = cvs.polygons(data, geometry=col, agg=agg_fn)
+            agg = cvs.polygons(data, **agg_kwargs)
         elif isinstance(element, Path):
-            agg = cvs.line(data, geometry=col, agg=agg_fn)
+            if self.p.line_width and ds_version >= LooseVersion('0.14.0'):
+                agg_kwargs['line_width'] = self.p.line_width
+            agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
-            agg = cvs.points(data, geometry=col, agg=agg_fn)
+            agg = cvs.points(data, **agg_kwargs)
         agg = agg.rename({'x': xdim.name, 'y': ydim.name})
 
         if agg.ndim == 2:

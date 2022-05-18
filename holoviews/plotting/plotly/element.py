@@ -439,6 +439,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             xaxis = dict(range=xrange, title=xlabel)
             if self.logx:
                 xaxis['type'] = 'log'
+                xaxis['range'] = np.log10(xaxis['range'])
             self._get_ticks(xaxis, self.xticks)
 
             if self.projection != '3d' and self.xaxis:
@@ -476,6 +477,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             yaxis = dict(range=yrange, title=ylabel)
             if self.logy:
                 yaxis['type'] = 'log'
+                yaxis['range'] = np.log10(yaxis['range'])
             self._get_ticks(yaxis, self.yticks)
 
             if self.projection != '3d' and self.yaxis:
