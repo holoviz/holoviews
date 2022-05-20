@@ -1,6 +1,9 @@
 """
 Test cases for Dimension and Dimensioned object behaviour.
 """
+
+import pytest
+
 from holoviews.core import Dimensioned, Dimension
 from holoviews.element.comparison import ComparisonTestCase
 from ..utils import LoggingComparisonTestCase
@@ -32,6 +35,28 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
 
     def test_dimension_label_kwarg(self):
         dim = Dimension('test', label='A test')
+        self.assertEqual(dim.label, 'A test')
+
+    @pytest.mark.xfail()
+    def test_dimension_dict_empty(self):
+        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+            Dimension(dict())
+
+    @pytest.mark.xfail()
+    def test_dimension_dict_label(self):
+        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+            Dimension(dict(label='A test'))
+
+    @pytest.mark.xfail()
+    def test_dimension_dict_name(self):
+        dim = Dimension(dict(name='test'))
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.label, 'test')
+
+    @pytest.mark.xfail()
+    def test_dimension_dict_name_and_label(self):
+        dim = Dimension(dict(name='test', label='A test'))
+        self.assertEqual(dim.name, 'test')
         self.assertEqual(dim.label, 'A test')
 
     def test_dimension_label_kwarg_and_tuple(self):
