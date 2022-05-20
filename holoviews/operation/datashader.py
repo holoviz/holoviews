@@ -122,7 +122,7 @@ class ResamplingOperation(LinkableOperation):
     _transfer_options = []
 
     @bothmethod
-    def instance(self_or_cls,**params):
+    def instance(self_or_cls, **params):
         filtered = {k:v for k,v in params.items() if k in self_or_cls.param}
         inst = super(ResamplingOperation, self_or_cls).instance(**filtered)
         inst._precomputed = {}
@@ -257,6 +257,7 @@ class AggregationOperation(ResamplingOperation):
     }
 
     def _get_aggregator(self, element, add_field=True):
+        self._default_agg = self.p.aggregator is self.param.aggregator.default
         agg = self.p.aggregator
         if isinstance(agg, str):
             if agg not in self._agg_methods:
@@ -502,8 +503,13 @@ class aggregate(LineAggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
+        # If we are datashading a Curve and no explicit aggregator
+        # was set use any()
+        if isinstance(element, Curve) and self._default_agg:
+            agg_fn = rd.any()
+
         agg_kwargs = {}
-        if self.p.line_width and glyph == 'line' and ds_version >= LooseVersion('0.14.0'):
+        if self.p.line_width and glyph == 'line':
             agg_kwargs['line_width'] = self.p.line_width
 
         dfdata = PandasInterface.as_dframe(data)
