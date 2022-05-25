@@ -14,7 +14,6 @@ from bokeh.models import (
 )
 from panel.io.state import state
 from panel.io.model import hold
-from tornado import gen
 
 from ...core import OrderedDict
 from ...core.options import CallbackError
@@ -340,8 +339,7 @@ class Callback(object):
         self._last_event = time.time()
         return False
 
-    @gen.coroutine
-    def process_on_event_coroutine(self):
+    async def process_on_event_coroutine(self):
         self.process_on_event()
 
     def process_on_event(self):
@@ -378,8 +376,7 @@ class Callback(object):
         else:
             self._active = False
 
-    @gen.coroutine
-    def process_on_change_coroutine(self):
+    async def process_on_change_coroutine(self):
         self.process_on_change()
 
     def process_on_change(self):
