@@ -80,12 +80,6 @@ class TestBokehServerSetup(ComparisonTestCase):
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
-        x_range = bokeh_renderer.last_plot.handles['x_range']
-        self.assertIn(cb.on_change, x_range._callbacks['start'])
-        self.assertIn(cb.on_change, x_range._callbacks['end'])
-        y_range = bokeh_renderer.last_plot.handles['y_range']
-        self.assertIn(cb.on_change, y_range._callbacks['start'])
-        self.assertIn(cb.on_change, y_range._callbacks['end'])
 
     def test_set_up_linked_event_stream_on_server_doc(self):
         obj = Curve([])
@@ -95,8 +89,6 @@ class TestBokehServerSetup(ComparisonTestCase):
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, ResetCallback)
         self.assertEqual(cb.streams, [stream])
-        plot = bokeh_renderer.last_plot.state
-        self.assertIn(cb.on_event, plot._event_callbacks['reset'])
 
 
 
