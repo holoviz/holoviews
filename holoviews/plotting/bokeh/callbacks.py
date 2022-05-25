@@ -13,6 +13,7 @@ from bokeh.models import (
     PointDrawTool
 )
 from panel.io.state import state
+
 from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
@@ -28,10 +29,7 @@ from ...streams import (
 )
 from .util import LooseVersion, bokeh_version, convert_timestamp
 
-if bokeh_version >= LooseVersion('2.3.0'):
-    CUSTOM_TOOLTIP = 'description'
-else:
-    CUSTOM_TOOLTIP = 'custom_tooltip'
+CUSTOM_TOOLTIP = 'description'
 
 
 class Callback(object):
@@ -115,8 +113,6 @@ class Callback(object):
         self.reset()
         self._active = False
         self._prev_msg = None
-        self._last_event = time.time()
-        self._tasks = []
 
     def _transform(self, msg):
         for transform in self._transforms:
@@ -296,8 +292,7 @@ class Callback(object):
         """
         Trigger callback change event and triggering corresponding streams.
         """
-        await asyncio.gather(*self._tasks)
-        self._tasks = []
+        await asyncio.sleep(0.01)
         if not self._queue:
             self._active = False
             self._set_busy(False)
@@ -321,8 +316,7 @@ class Callback(object):
 
     async def process_on_change(self):
         # Give on_change time to process new events
-        await asyncio.gather(*self._tasks)
-        self._tasks = []
+        await asyncio.sleep(0.01)
         if not self._queue:
             self._active = False
             self._set_busy(False)
@@ -359,13 +353,13 @@ class Callback(object):
         """
         if self.on_events:
             event_handler = lambda event: (
-                self._tasks.append(asyncio.create_task(self.on_event(event)))
+                asyncio.create_task(self.on_event(event))
             )
             for event in self.on_events:
                 handle.on_event(event, event_handler)
         if self.on_changes:
             change_handler = lambda attr, old, new: (
-                self._tasks.append(asyncio.create_task(self.on_change(attr, old, new)))
+                asyncio.create_task(self.on_change(attr, old, new))
             )
             for change in self.on_changes:
                 if change in ['patching', 'streaming']:
