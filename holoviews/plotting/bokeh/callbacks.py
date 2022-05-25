@@ -6,7 +6,6 @@ import time
 from collections import defaultdict
 
 import numpy as np
-import panel as pn
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
@@ -14,8 +13,6 @@ from bokeh.models import (
     PointDrawTool
 )
 from panel.io.state import state
-from panel.io.model import hold
-
 from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
