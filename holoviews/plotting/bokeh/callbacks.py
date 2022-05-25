@@ -27,9 +27,7 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from .util import LooseVersion, bokeh_version, convert_timestamp
-
-CUSTOM_TOOLTIP = 'description'
+from .util import convert_timestamp
 
 
 class Callback(object):
@@ -979,7 +977,7 @@ class PointDrawCallback(GlyphDrawCallback):
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if stream.styles:
             self._create_style_callback(cds, glyph)
         if stream.empty_value is not None:
@@ -1011,7 +1009,7 @@ class CurveEditCallback(GlyphDrawCallback):
         renderers = [renderer]
         kwargs = {}
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         point_tool = PointDrawTool(
             add=False, drag=True, renderers=renderers, **kwargs
         )
@@ -1058,7 +1056,7 @@ class PolyDrawCallback(GlyphDrawCallback):
         if stream.styles:
             self._create_style_callback(cds, glyph)
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if stream.empty_value is not None:
             kwargs['empty_value'] = stream.empty_value
         poly_tool = PolyDrawTool(
@@ -1106,7 +1104,7 @@ class FreehandDrawCallback(PolyDrawCallback):
             self._create_style_callback(cds, glyph)
         kwargs = {}
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if stream.empty_value is not None:
             kwargs['empty_value'] = stream.empty_value
         poly_tool = FreehandDrawTool(
@@ -1161,7 +1159,7 @@ class BoxEditCallback(GlyphDrawCallback):
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
 
         renderer = self.plot.handles['glyph_renderer']
         if isinstance(self.plot, PathPlot):
@@ -1207,7 +1205,7 @@ class PolyEditCallback(PolyDrawCallback):
         stream = self.streams[0]
         kwargs = {}
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if vertex_tool is None:
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
