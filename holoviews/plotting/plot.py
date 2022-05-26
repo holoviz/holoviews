@@ -1173,7 +1173,7 @@ class GenericElementPlot(DimensionedPlot):
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
-                 overlay_dims={}, stream_sources=[], streams=None, **params):
+                 overlay_dims={}, stream_sources={}, streams=None, **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid

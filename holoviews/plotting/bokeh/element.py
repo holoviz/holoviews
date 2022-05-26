@@ -2053,11 +2053,11 @@ class LegendPlot(ElementPlot):
     legend_cols = param.Integer(default=False, doc="""
        Whether to lay out the legend as columns.""")
 
-    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
-                    'bottom': 'below'}
-
     legend_opts = param.Dict(default={}, doc="""
         Allows setting specific styling options for the colorbar.""")
+
+    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
+                    'bottom': 'below'}
 
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
@@ -2205,7 +2205,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         renderers = []
         for item in legend_items:
             item.renderers[:] = [r for r in item.renderers if r not in renderers]
-            if item in filtered or not item.renderers or not any(r.visible for r in item.renderers):
+            if (item in filtered or not item.renderers or
+                not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
             renderers += item.renderers
             filtered.append(item)
