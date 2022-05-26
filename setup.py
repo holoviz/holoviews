@@ -76,10 +76,7 @@ extras_require["basic_tests"] = (
     + extras_require["notebook"]
 )
 
-extras_require["nbtests"] = extras_require["recommended"] + [
-    "nose",
-    "deepdiff",
-]
+extras_require["nbtests"] = extras_require["recommended"]
 
 extras_require['doc'] = extras_require['examples'] + [
     'nbsite >=0.7.1',
