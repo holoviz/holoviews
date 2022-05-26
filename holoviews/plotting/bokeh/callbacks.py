@@ -657,12 +657,16 @@ class RangeXYCallback(Callback):
     Returns the x/y-axis ranges of a plot.
     """
 
-    attributes = {'x0': 'x_range.attributes.start',
-                  'x1': 'x_range.attributes.end',
-                  'y0': 'y_range.attributes.start',
-                  'y1': 'y_range.attributes.end'}
-    models = ['x_range', 'y_range']
-    on_changes = ['start', 'end']
+    on_events = ['rangesupdate']
+
+    models = ['plot']
+
+    attributes = {
+        'x0': 'cb_obj.x0',
+        'y0': 'cb_obj.y0',
+        'x1': 'cb_obj.x1',
+        'y1': 'cb_obj.y1'
+    }
 
     def _process_msg(self, msg):
         data = {}
@@ -694,9 +698,14 @@ class RangeXCallback(RangeXYCallback):
     Returns the x-axis range of a plot.
     """
 
-    attributes = {'x0': 'x_range.attributes.start',
-                  'x1': 'x_range.attributes.end'}
-    models = ['x_range']
+    on_events = ['rangesupdate']
+
+    models = ['plot']
+
+    attributes = {
+        'x0': 'cb_obj.x0',
+        'x1': 'cb_obj.x1',
+    }
 
 
 class RangeYCallback(RangeXYCallback):
@@ -704,10 +713,14 @@ class RangeYCallback(RangeXYCallback):
     Returns the y-axis range of a plot.
     """
 
-    attributes = {'y0': 'y_range.attributes.start',
-                  'y1': 'y_range.attributes.end'}
-    models = ['y_range']
+    on_events = ['rangesupdate']
 
+    models = ['plot']
+
+    attributes = {
+        'y0': 'cb_obj.y0',
+        'y1': 'cb_obj.y1'
+    }
 
 
 class PlotSizeCallback(Callback):
