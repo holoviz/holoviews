@@ -719,6 +719,14 @@ class ColorbarPlot(ElementPlot):
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
 
+    rescale_discrete_levels = param.Boolean(default=True, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the palette, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``.""")
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -900,7 +908,9 @@ class ColorbarPlot(ElementPlot):
 
         if self.cnorm == 'eq_hist':
             opts[prefix+'norm'] = EqHistNormalize(
-                vmin=clim[0], vmax=clim[1])
+                vmin=clim[0], vmax=clim[1],
+                rescale_discrete_levels=self.rescale_discrete_levels
+            )
         if self.cnorm == 'log' or self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
