@@ -725,7 +725,8 @@ class ColorbarPlot(ElementPlot):
         limit of the autoranged span so that the values are rendering
         towards the (more visible) top of the palette, thus
         avoiding washout of the lower values.  Has no effect if
-        ``cnorm!=`eq_hist``.""")
+        ``cnorm!=`eq_hist``. Set this value to False if you need to
+        match historical unscaled behavior, prior to HoloViews 1.14.4.""")
 
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
