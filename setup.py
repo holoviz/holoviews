@@ -14,7 +14,7 @@ install_requires = [
     "param >=1.9.3,<2.0",
     "numpy >=1.0",
     "pyviz_comms >=0.7.4",
-    "panel >=0.9.5",
+    "panel >=0.13.1",
     "colorcet",
     "packaging",
     "pandas >=0.20.0",
@@ -28,7 +28,7 @@ extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
     "matplotlib >=3",
-    "bokeh >=1.1.0",
+    "bokeh >=2.4.3",
 ]
 
 # Requirements to run all examples
@@ -72,7 +72,7 @@ extras_require["unit_tests"] = extras_require["examples"] + extras_require["test
 
 extras_require["basic_tests"] = (
     extras_require["tests"]
-    + ["matplotlib >=3", "bokeh >=1.1.0", "pandas"]
+    + ["matplotlib >=3", "bokeh >=2.4.3", "pandas"]
     + extras_require["notebook"]
 )
 
@@ -130,7 +130,7 @@ setup_args.update(
     dict(
         name="holoviews",
         version=get_setup_version("holoviews"),
-        python_requires=">=3.6",
+        python_requires=">=3.7",
         install_requires=install_requires,
         extras_require=extras_require,
         description="Stop plotting your data - annotate your data and let it visualize itself.",
@@ -152,9 +152,10 @@ setup_args.update(
         classifiers=[
             "License :: OSI Approved :: BSD License",
             "Development Status :: 5 - Production/Stable",
-            "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Operating System :: OS Independent",
             "Intended Audience :: Science/Research",
             "Intended Audience :: Developers",
