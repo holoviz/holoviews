@@ -1265,8 +1265,8 @@ class shade(LinkableOperation):
         the lower limit of the autoranged span so that the values are
         rendering towards the (more visible) top of the ``cmap`` range, 
         thus avoiding washout of the lower values.  Has no effect if
-        ``cnorm!=`eq_hist``. Set to False to match historical unscaled
-        behavior, prior to HoloViews 1.14.4.""")
+        ``cnorm!=`eq_hist``. Set this value to False if you need to
+        match historical unscaled behavior, prior to HoloViews 1.14.4.""")
 
     @classmethod
     def concatenate(cls, overlay):
