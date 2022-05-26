@@ -106,7 +106,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit ecosystem=pip package_build
+          doit ecosystem=pip package_build --test-group=flakes
       - name: pip upload
         if: github.event_name == 'push'
         run: |
