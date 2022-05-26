@@ -46,7 +46,8 @@ extras_require["examples"] = extras_require["recommended"] + [
     "dask",
     "scipy",
     "shapely",
-    "scikit-image"
+    "scikit-image",
+    "pyarrow",
 ]
 
 # Extra third-party libraries
@@ -68,13 +69,6 @@ extras_require['tests'] = [
 ]
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
-
-if sys.version_info.major > 2:
-    extras_require["unit_tests"].extend(
-        [
-            "pyarrow",
-        ]  # spatialpandas incompatibility
-    )
 
 extras_require["basic_tests"] = (
     extras_require["tests"]
@@ -136,7 +130,7 @@ setup_args.update(
     dict(
         name="holoviews",
         version=get_setup_version("holoviews"),
-        python_requires=">=2.7",
+        python_requires=">=3.6",
         install_requires=install_requires,
         extras_require=extras_require,
         description="Stop plotting your data - annotate your data and let it visualize itself.",
