@@ -192,8 +192,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         points = Points([(0, 1)])
         PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_point_draw_callback_with_vdims_initialization(self):
         points = Points([(0, 1, 'A')], vdims=['A'])
@@ -227,8 +226,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_poly_draw_callback_with_vdims(self):
         polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
@@ -290,8 +288,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         boxes = Polygons([Box(0, 0, 1)])
         BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
-        self.assertEqual(plot.handles['cds']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['cds']._callbacks
 
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
@@ -308,8 +305,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyEdit(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_poly_edit_shared_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
