@@ -70,6 +70,9 @@ extras_require['tests'] = [
 
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
 
+if sys.version_info >= (3, 7):
+    extras_require["unit_tests"].append("ibis-sqlite")
+
 extras_require["basic_tests"] = (
     extras_require["tests"]
     + ["matplotlib >=3", "bokeh >=2.4.3", "pandas"]
