@@ -168,7 +168,7 @@ class PandasInterface(Interface):
             else:
                 column = column.sort_values()
             try:
-                column = column[~column.isin([None])]
+                column = column[~column.isin([None, pd.NA])]
             except:
                 pass
             if not len(column):
