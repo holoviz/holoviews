@@ -58,7 +58,6 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.HV_REQUIREMENTS }}
-          conda install $CHANS_DEV "ibis-sqlite=2"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
