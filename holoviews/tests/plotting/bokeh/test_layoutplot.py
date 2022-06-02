@@ -10,12 +10,9 @@ from holoviews.streams import Stream
 from holoviews.util import render, opts
 from holoviews.util.transform import dim
 
-try:
-    from bokeh.layouts import Column, Row
-    from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel, Spacer, GridBox, Title
-    from bokeh.plotting import Figure
-except:
-    pass
+from bokeh.layouts import Column, Row
+from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel, Spacer, GridBox, Title
+from bokeh.plotting import Figure
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer

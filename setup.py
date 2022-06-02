@@ -22,6 +22,48 @@ install_requires = [
 
 extras_require = {}
 
+extras_require['flakes'] = [
+    'flake8',
+]
+
+# Test requirements
+extras_require['tests_core'] = [
+    'pytest',
+    'pytest-cov',
+    'matplotlib >=3',
+    # nbconvert: see https://github.com/holoviz/holoviews/issues/5167
+    'nbconvert <6',
+    'bokeh',
+    'pillow',
+    'plotly >=4.0',
+    'dash >=1.16',
+    'codecov',
+]
+
+# Optional tests dependencies, i.e. one should be able
+# to run and pass the test suite without installing any
+# of those.
+extras_require['tests'] = extras_require['tests_core'] + [
+    'dask',
+    'cudf',
+    'ibis-sqlite',
+    'spatialpandas',
+    'xarray >=0.10.4',
+    'networkx',
+    'datashader >=0.11.1',
+    'shapely',
+    'ffmpeg',
+    'cftime',
+    'scipy',
+    'pscript ==0.7.1',
+    'selenium',
+    'ipython >=5.4.0',
+]
+
+extras_require['tests_nb'] = [
+    'nbsmoke >=0.2.0',
+]
+
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 
@@ -55,35 +97,10 @@ extras_require["extras"] = extras_require["examples"] + [
     "pscript ==0.7.1",
 ]
 
-# Test requirements
-extras_require['tests'] = [
-    'pytest',
-    'pytest-cov',
-    'mock',
-    'flake8',
-    'path.py',
-    'matplotlib >=3',
-    'nbsmoke >=0.2.0',
-    'nbconvert',
-    'codecov',
-]
-
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
-
-if sys.version_info >= (3, 7):
-    extras_require["unit_tests"].append("ibis-sqlite")
-
-extras_require["basic_tests"] = (
-    extras_require["tests"]
-    + ["matplotlib >=3", "bokeh >=2.4.3", "pandas"]
-    + extras_require["notebook"]
-)
-
-extras_require["nbtests"] = extras_require["recommended"]
 
 extras_require['doc'] = extras_require['examples'] + [
     'nbsite >=0.7.1',
-    'sphinx',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
@@ -93,16 +110,13 @@ extras_require['doc'] = extras_require['examples'] + [
     'pooch',
 ]
 
+extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
+
 extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
 ]
-
-# Everything for examples and nosetests
-extras_require["all"] = list(
-    set(extras_require["unit_tests"]) | set(extras_require["nbtests"])
-)
 
 def get_setup_version(reponame):
     """

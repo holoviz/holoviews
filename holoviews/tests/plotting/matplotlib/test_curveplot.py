@@ -1,16 +1,13 @@
 import datetime as dt
-from unittest import skipIf
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core.overlay import NdOverlay
-from holoviews.core.util import pd
 from holoviews.element import Curve
 from holoviews.util.transform import dim
 
 from .test_plot import TestMPLPlot, mpl_renderer
-
-pd_skip = skipIf(pd is None, 'Pandas is not available')
 
 
 class TestCurvePlot(TestMPLPlot):
@@ -21,7 +18,6 @@ class TestCurvePlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         self.assertEqual(plot.handles['axis'].get_xlim(), (16801.0, 16810.0))
 
-    @pd_skip
     def test_curve_pandas_timestamps(self):
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
         curve = Curve((dates, np.random.rand(10)))
@@ -42,7 +38,6 @@ class TestCurvePlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(curve_dt*curve_dt64)
         self.assertEqual(tuple(map(round, plot.handles['axis'].get_xlim())), (16801.0, 16811.0))
 
-    @pd_skip
     def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]

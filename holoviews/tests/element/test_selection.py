@@ -2,7 +2,7 @@
 Test cases for the Comparisons class over the Chart elements
 """
 
-from unittest import SkipTest, skipIf
+from unittest import skipIf
 
 import numpy as np
 
@@ -40,10 +40,7 @@ ds_available = skipIf(ds is None, 'datashader not available')
 class TestSelection1DExpr(ComparisonTestCase):
 
     def setUp(self):
-        try:
-            import holoviews.plotting.bokeh # noqa
-        except:
-            raise SkipTest("Bokeh selection tests require bokeh.")
+        import holoviews.plotting.bokeh # noqa
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
@@ -222,10 +219,7 @@ class TestSelection1DExpr(ComparisonTestCase):
 class TestSelection2DExpr(ComparisonTestCase):
 
     def setUp(self):
-        try:
-            import holoviews.plotting.bokeh # noqa
-        except:
-            raise SkipTest("Bokeh selection tests require bokeh.")
+        import holoviews.plotting.bokeh # noqa
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
@@ -437,10 +431,7 @@ class TestSelection2DExpr(ComparisonTestCase):
 class TestSelectionGeomExpr(ComparisonTestCase):
 
     def setUp(self):
-        try:
-            import holoviews.plotting.bokeh # noqa
-        except:
-            raise SkipTest("Bokeh selection tests require bokeh.")
+        import holoviews.plotting.bokeh # noqa
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
@@ -544,10 +535,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
 class TestSelectionPolyExpr(ComparisonTestCase):
 
     def setUp(self):
-        try:
-            import holoviews.plotting.bokeh # noqa
-        except:
-            raise SkipTest("Bokeh selection tests require bokeh.")
+        import holoviews.plotting.bokeh # noqa
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')

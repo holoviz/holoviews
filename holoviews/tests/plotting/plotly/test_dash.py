@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 from dash._callback_context import CallbackContext
 
 from .test_plot import TestPlotlyPlot
@@ -12,11 +14,6 @@ except ImportError:
     from dash.dcc import Store
 import plotly.io as pio
 pio.templates.default = None
-
-try:
-    from unittest.mock import MagicMock, patch
-except:
-    from mock import MagicMock, patch
 
 
 class TestHoloViewsDash(TestPlotlyPlot):

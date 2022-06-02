@@ -1,21 +1,13 @@
-from unittest import SkipTest
-
 import numpy as np
 
 from holoviews.core import Dimension
 from holoviews.element import HexTiles
 from holoviews.plotting.bokeh.hex_tiles import hex_binning
-from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestHexTilesOperation(TestBokehPlot):
-
-    def setUp(self):
-        super().setUp()
-        if bokeh_version < LooseVersion('0.12.15'):
-            raise SkipTest("Bokeh >= 0.12.15 required to test HexTiles operation.")
 
     def test_hex_tiles_count_aggregation(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)])
@@ -39,11 +31,6 @@ class TestHexTilesOperation(TestBokehPlot):
 
 
 class TestHexTilesPlot(TestBokehPlot):
-
-    def setUp(self):
-        super().setUp()
-        if bokeh_version < LooseVersion('0.12.15'):
-            raise SkipTest("Bokeh >= 0.12.15 required to test HexTilesPlot.")
 
     def test_hex_tiles_empty(self):
         tiles = HexTiles([])

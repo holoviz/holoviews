@@ -1,29 +1,19 @@
-from unittest import TestCase, SkipTest
-
-try:
-    from unittest.mock import Mock
-except:
-    from mock import Mock
-
 import uuid
-from holoviews import Tiles
-try:
-    import plotly.graph_objs as go
-except:
-    go = None
 
+from unittest import TestCase
+from unittest.mock import Mock
+
+import plotly.graph_objs as go
+
+from holoviews import Tiles
 from holoviews.streams import (
     BoundsXY, BoundsX, BoundsY, RangeXY, RangeX, RangeY, Selection1D
 )
-
-try:
-    from holoviews.plotting.plotly.callbacks import (
-        RangeXYCallback, RangeXCallback, RangeYCallback,
-        BoundsXYCallback, BoundsXCallback, BoundsYCallback,
-        Selection1DCallback
-    )
-except:
-    pass
+from holoviews.plotting.plotly.callbacks import (
+    RangeXYCallback, RangeXCallback, RangeYCallback,
+    BoundsXYCallback, BoundsXCallback, BoundsYCallback,
+    Selection1DCallback
+)
 
 
 def mock_plot(trace_uid=None):
@@ -69,8 +59,6 @@ def build_callback_set(callback_cls, trace_uids, stream_type, num_streams=2):
 class TestCallbacks(TestCase):
 
     def setUp(self):
-        if go is None:
-            raise SkipTest("Plotly required to test plotly callbacks")
         self.fig_dict = go.Figure({
             'data': [
                 {'type': 'scatter',

@@ -10,10 +10,7 @@ from holoviews.util import Dynamic
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import FixedTicker, HoverTool, FactorRange, Span, Range1d
-except:
-    pass
+from bokeh.models import FixedTicker, HoverTool, FactorRange, Span, Range1d
 
 
 class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):

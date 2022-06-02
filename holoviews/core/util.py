@@ -19,6 +19,7 @@ from threading import Thread, Event
 from types import FunctionType
 
 import numpy as np
+import pandas as pd
 import param
 
 # Python 2 builtins
@@ -39,40 +40,34 @@ masked_types = ()
 
 anonymous_dimension_label = '_'
 
+pandas_version = LooseVersion(pd.__version__)
 try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-if pd:
-    pandas_version = LooseVersion(pd.__version__)
-    try:
-        if pandas_version >= LooseVersion('1.3.0'):
-            from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-            from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
-        elif pandas_version >= LooseVersion('0.24.0'):
-            from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-            from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-        elif pandas_version > LooseVersion('0.20.0'):
-            from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
-            from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-        else:
-            from pandas.types.dtypes import DatetimeTZDtypeType
-            from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
-        pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
-        pandas_timedelta_types = (pd.Timedelta,)
-        datetime_types = datetime_types + pandas_datetime_types
-        timedelta_types = timedelta_types + pandas_timedelta_types
-        arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-        if pandas_version > LooseVersion('0.23.0'):
-            from pandas.core.dtypes.generic import ABCExtensionArray
-            arraylike_types = arraylike_types + (ABCExtensionArray,)
-        if pandas_version > LooseVersion('1.0'):
-            from pandas.core.arrays.masked import BaseMaskedArray
-            masked_types = (BaseMaskedArray,)
-    except Exception as e:
-        param.main.param.warning('pandas could not register all extension types '
-                                 'imports failed with the following error: %s' % e)
+    if pandas_version >= LooseVersion('1.3.0'):
+        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
+        from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
+    elif pandas_version >= LooseVersion('0.24.0'):
+        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
+        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+    elif pandas_version > LooseVersion('0.20.0'):
+        from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
+        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+    else:
+        from pandas.types.dtypes import DatetimeTZDtypeType
+        from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
+    pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
+    pandas_timedelta_types = (pd.Timedelta,)
+    datetime_types = datetime_types + pandas_datetime_types
+    timedelta_types = timedelta_types + pandas_timedelta_types
+    arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
+    if pandas_version > LooseVersion('0.23.0'):
+        from pandas.core.dtypes.generic import ABCExtensionArray
+        arraylike_types = arraylike_types + (ABCExtensionArray,)
+    if pandas_version > LooseVersion('1.0'):
+        from pandas.core.arrays.masked import BaseMaskedArray
+        masked_types = (BaseMaskedArray,)
+except Exception as e:
+    param.main.param.warning('pandas could not register all extension types '
+                                'imports failed with the following error: %s' % e)
 
 try:
     import cftime

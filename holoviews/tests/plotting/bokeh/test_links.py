@@ -1,26 +1,15 @@
-from unittest import SkipTest
-
 import numpy as np
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Polygons, Table, Scatter, Path, Points
 from holoviews.plotting.links import (Link, RangeToolLink, DataLink)
 
-try:
-    from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
-    from bokeh.models import ColumnDataSource
-except:
-    pass
+from bokeh.models import ColumnDataSource
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestLinkCallbacks(TestBokehPlot):
-
-    def setUp(self):
-        if not bokeh_renderer or bokeh_version < LooseVersion('0.13'):
-            raise SkipTest('RangeTool requires bokeh version >= 0.13')
-        super().setUp()
 
     def test_range_tool_link_callback_single_axis(self):
         from bokeh.models import RangeTool

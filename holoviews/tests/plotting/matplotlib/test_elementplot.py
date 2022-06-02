@@ -6,10 +6,7 @@ from holoviews.streams import Stream
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
-try:
-    from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
-except:
-    pass
+from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
 class TestElementPlot(TestMPLPlot):
 
