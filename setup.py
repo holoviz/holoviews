@@ -31,8 +31,7 @@ extras_require['tests_core'] = [
     'pytest',
     'pytest-cov',
     'matplotlib >=3',
-    # nbconvert: see https://github.com/holoviz/holoviews/issues/5167
-    'nbconvert <6',
+    'nbconvert',
     'bokeh',
     'pillow',
     'plotly >=4.0',
