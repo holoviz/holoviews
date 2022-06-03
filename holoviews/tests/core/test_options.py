@@ -921,7 +921,7 @@ class TestLookupOptions(ComparisonTestCase):
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
-        import holoviews.plotting.matplotlib # noqa
+        import holoviews.plotting.mpl # noqa
         import holoviews.plotting.bokeh # noqa
         import holoviews.plotting.plotly # noqa
 
