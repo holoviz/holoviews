@@ -84,7 +84,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit develop_install $CHANS_DEV
+          doit develop_install $CHANS_DEV -o flakes
           pip uninstall -y holoviews
           doit pip_on_conda
       - name: doit env_capture
