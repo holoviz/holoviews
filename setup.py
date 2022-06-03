@@ -98,6 +98,7 @@ extras_require["extras"] = extras_require["examples"] + [
     "pscript ==0.7.1",
 ]
 
+# Not used in tox.ini or elsewhere, kept for backwards compatibility.
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
 
 extras_require['doc'] = extras_require['examples'] + [
