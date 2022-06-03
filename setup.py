@@ -53,7 +53,6 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'ffmpeg',
     'cftime',
     'scipy',
-    'pscript ==0.7.1',
     'selenium',
     'ipython >=5.4.0',
 ]
