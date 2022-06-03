@@ -24,7 +24,7 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      HV_REQUIREMENTS: "-o flakes -o tests -o examples"
+      HV_REQUIREMENTS: "-o flakes -o tests -o examples_tests"
       MPLBACKEND: "Agg"
       CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
