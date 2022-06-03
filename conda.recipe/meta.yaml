@@ -35,13 +35,11 @@ requirements:
 
 test:
   requires:
-    - nose
+    - pytest
   imports:
     - holoviews
-  commands:
-    - nosetests holoviews.tests.core holoviews.tests.element holoviews.tests.plotting.bokeh --with-doctest
 
 about:
-  home: www.holoviews.org
+  home: https://holoviews.org
   summary: Stop plotting your data - annotate your data and let it visualize itself.
   license: BSD 3-Clause

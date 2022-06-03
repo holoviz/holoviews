@@ -6,10 +6,7 @@ from holoviews.element import BoxWhisker
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import ColumnDataSource, CategoricalColorMapper, LinearColorMapper
-except:
-    pass
+from bokeh.models import ColumnDataSource, CategoricalColorMapper, LinearColorMapper
 
 
 class TestBoxWhiskerPlot(TestBokehPlot):

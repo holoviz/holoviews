@@ -1,11 +1,10 @@
 import datetime as dt
-from unittest import skipIf
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap
 from holoviews.core.options import Cycle, Palette
-from holoviews.core.util import pd
 from holoviews.element import Curve
 from holoviews.plotting.util import rgb2hex
 from holoviews.streams import PointerX
@@ -13,13 +12,8 @@ from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import FactorRange, FixedTicker
-    from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
-except:
-    pass
-
-pd_skip = skipIf(pd is None, 'Pandas not available')
+from bokeh.models import FactorRange, FixedTicker
+from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
 
 
 class TestCurvePlot(TestBokehPlot):
@@ -136,7 +130,6 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
 
-    @pd_skip
     def test_curve_pandas_timestamps(self):
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
         curve = Curve((dates, np.random.rand(10)))
@@ -160,7 +153,6 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 11)))
 
-    @pd_skip
     def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]

@@ -6,15 +6,11 @@ import datetime
 import math
 import unittest
 
-from unittest import skipIf
 from itertools import product
 from collections import OrderedDict
 
 import numpy as np
-try:
-    import pandas as pd
-except:
-    pd = None
+import pandas as pd
 
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
@@ -27,8 +23,6 @@ from holoviews.streams import PointerXY
 from holoviews.element.comparison import ComparisonTestCase
 
 sanitize_identifier = sanitize_identifier_fn.instance()
-
-pd_skip = skipIf(pd is None, "pandas is not available")
 
 
 class TestDeepHash(ComparisonTestCase):
@@ -75,22 +69,18 @@ class TestDeepHash(ComparisonTestCase):
         arr2 = np.array([1,2,4])
         self.assertNotEqual(deephash(arr1), deephash(arr2))
 
-    @pd_skip
     def test_deephash_dataframe_equality(self):
         self.assertEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
                          deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})))
 
-    @pd_skip
     def test_deephash_dataframe_inequality(self):
         self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
                             deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,8]})))
 
-    @pd_skip
     def test_deephash_series_equality(self):
         self.assertEqual(deephash(pd.Series([1,2,3])),
                          deephash(pd.Series([1,2,3])))
 
-    @pd_skip
     def test_deephash_series_inequality(self):
         self.assertNotEqual(deephash(pd.Series([1,2,3])),
                             deephash(pd.Series([1,2,7])))
@@ -115,7 +105,6 @@ class TestDeepHash(ComparisonTestCase):
         obj2 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
         self.assertNotEqual(deephash(obj1), deephash(obj2))
 
-    @pd_skip
     def test_deephash_nested_mixed_equality(self):
         obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
@@ -127,7 +116,6 @@ class TestDeepHash(ComparisonTestCase):
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
         self.assertEqual(deephash(obj1), deephash(obj2))
 
-    @pd_skip
     def test_deephash_nested_mixed_inequality(self):
         obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
@@ -501,7 +489,6 @@ class TestDatetimeUtils(unittest.TestCase):
         dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
         self.assertEqual(dt_to_int(dt), 1483228800000000.0)
 
-    @pd_skip
     def test_timestamp_to_us_int(self):
         dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
         self.assertEqual(dt_to_int(dt), 1483228800000000.0)
@@ -522,7 +509,6 @@ class TestDatetimeUtils(unittest.TestCase):
         dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
         self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
 
-    @pd_skip
     def test_timestamp_to_s_int(self):
         dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
         self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
@@ -541,7 +527,6 @@ class TestDatetimeUtils(unittest.TestCase):
         self.assertEqual(drange[0], start+np.timedelta64(50, 'ms'))
         self.assertEqual(drange[-1], end-np.timedelta64(50, 'ms'))
 
-    @pd_skip
     def test_timezone_to_int(self):
         import pytz
         timezone = pytz.timezone("Europe/Copenhagen")
@@ -597,55 +582,45 @@ class TestNumericUtilities(ComparisonTestCase):
         dt64 = np.timedelta64('NaT')
         self.assertFalse(isfinite(dt64))
 
-    @pd_skip
     def test_isfinite_pandas_timestamp_nat(self):
         dt64 = pd.Timestamp('NaT')
         self.assertFalse(isfinite(dt64))
 
-    @pd_skip
     def test_isfinite_pandas_period_nat(self):
         dt64 = pd.Period('NaT')
         self.assertFalse(isfinite(dt64))
 
-    @pd_skip
     def test_isfinite_pandas_period_index(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
         self.assertEqual(isfinite(daily), np.array([True, True, True]))
 
-    @pd_skip
     def test_isfinite_pandas_period_series(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D').to_series()
         self.assertEqual(isfinite(daily), np.array([True, True, True]))
 
-    @pd_skip
     def test_isfinite_pandas_period_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
         daily = pd.PeriodIndex(list(daily)+[pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
-    @pd_skip
     def test_isfinite_pandas_period_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
         daily = pd.Series(list(daily)+[pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
-    @pd_skip
     def test_isfinite_pandas_timestamp_index(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
         self.assertEqual(isfinite(daily), np.array([True, True, True]))
 
-    @pd_skip
     def test_isfinite_pandas_timestamp_series(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_series()
         self.assertEqual(isfinite(daily), np.array([True, True, True]))
 
-    @pd_skip
     def test_isfinite_pandas_timestamp_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
         daily = pd.DatetimeIndex(list(daily)+[pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
-    @pd_skip
     def test_isfinite_pandas_timestamp_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
         daily = pd.Series(list(daily)+[pd.NaT])

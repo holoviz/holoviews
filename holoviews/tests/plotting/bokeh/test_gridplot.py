@@ -8,12 +8,9 @@ from holoviews.streams import Stream
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.layouts import Column
-    from bokeh.models import Div, ToolbarBox
-    from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
-except:
-    pass
+from bokeh.layouts import Column
+from bokeh.models import Div, ToolbarBox
+from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
 
 
 

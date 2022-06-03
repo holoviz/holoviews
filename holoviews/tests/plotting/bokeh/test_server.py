@@ -1,7 +1,4 @@
-import sys
 import time
-
-from unittest import SkipTest
 
 import param
 
@@ -12,34 +9,26 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 from holoviews.streams import Stream, RangeXY, PlotReset
 
-try:
-    from bokeh.client import pull_session
-    from bokeh.document import Document
-    from bokeh.io.doc import curdoc, set_curdoc
-    from bokeh.models import ColumnDataSource
+from bokeh.client import pull_session
+from bokeh.document import Document
+from bokeh.io.doc import curdoc, set_curdoc
+from bokeh.models import ColumnDataSource
 
-    from holoviews.plotting.bokeh.callbacks import (
-        Callback, RangeXYCallback, ResetCallback
-    )
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
-    from panel.widgets import DiscreteSlider, FloatSlider
-    from panel.io.state import state
-    from panel import serve
-    bokeh_renderer = BokehRenderer.instance(mode='server')
-except:
-    bokeh_renderer = None
+from holoviews.plotting.bokeh.callbacks import (
+    Callback, RangeXYCallback, ResetCallback
+)
+from holoviews.plotting.bokeh.renderer import BokehRenderer
+from panel.widgets import DiscreteSlider, FloatSlider
+from panel.io.state import state
+from panel import serve
 
-
-if sys.version_info.major == 3 and sys.version_info.minor == 6:
-    raise SkipTest('Skip Python 3.6 as Panel fixes were not backported to prevent tests hanging')
+bokeh_renderer = BokehRenderer.instance(mode='server')
 
 
 class TestBokehServerSetup(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
         self.doc = curdoc()
         set_curdoc(Document())
@@ -80,12 +69,7 @@ class TestBokehServerSetup(ComparisonTestCase):
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
-        x_range = bokeh_renderer.last_plot.handles['x_range']
-        self.assertIn(cb.on_change, x_range._callbacks['start'])
-        self.assertIn(cb.on_change, x_range._callbacks['end'])
-        y_range = bokeh_renderer.last_plot.handles['y_range']
-        self.assertIn(cb.on_change, y_range._callbacks['start'])
-        self.assertIn(cb.on_change, y_range._callbacks['end'])
+        assert 'rangesupdate' in bokeh_renderer.last_plot.state._event_callbacks
 
     def test_set_up_linked_event_stream_on_server_doc(self):
         obj = Curve([])
@@ -95,8 +79,6 @@ class TestBokehServerSetup(ComparisonTestCase):
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, ResetCallback)
         self.assertEqual(cb.streams, [stream])
-        plot = bokeh_renderer.last_plot.state
-        self.assertIn(cb.on_event, plot._event_callbacks['reset'])
 
 
 
@@ -104,8 +86,6 @@ class TestBokehServer(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
         self._port = None
 
@@ -141,12 +121,7 @@ class TestBokehServer(ComparisonTestCase):
         cb = plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
-        x_range = bokeh_renderer.last_plot.handles['x_range']
-        self.assertIn(cb.on_change, x_range._callbacks['start'])
-        self.assertIn(cb.on_change, x_range._callbacks['end'])
-        y_range = bokeh_renderer.last_plot.handles['y_range']
-        self.assertIn(cb.on_change, y_range._callbacks['start'])
-        self.assertIn(cb.on_change, y_range._callbacks['end'])
+        assert 'rangesupdate' in plot.state._event_callbacks
 
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])

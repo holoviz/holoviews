@@ -184,9 +184,9 @@ class notebook_extension(extension):
             config.comms = comms
 
         same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
+        for r in [r for r in resources if r != 'holoviews']:
+            Store.renderers[r].load_nb(inline=p.inline)
         if not same_cell_execution:
-            for r in [r for r in resources if r != 'holoviews']:
-                Store.renderers[r].load_nb(inline=p.inline)
             Renderer.load_nb(inline=p.inline)
 
         if hasattr(ip, 'kernel') and not loaded:

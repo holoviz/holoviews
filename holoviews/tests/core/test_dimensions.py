@@ -1,16 +1,12 @@
 """
 Test cases for Dimension and Dimensioned object behaviour.
 """
-from unittest import SkipTest
 from holoviews.core import Dimensioned, Dimension
 from holoviews.element.comparison import ComparisonTestCase
 from ..utils import LoggingComparisonTestCase
 
 import numpy as np
-try:
-    import pandas as pd
-except:
-    pd = None
+import pandas as pd
 
 class DimensionNameLabelTest(LoggingComparisonTestCase):
 
@@ -167,31 +163,23 @@ class DimensionValuesTest(ComparisonTestCase):
         self.assertEqual(dim.values, self.values2)
 
     def test_dimension_values_series1(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.values1})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values1)
 
     def test_dimension_values_series2(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.values2})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values2)
 
 
     def test_dimension_values_series_duplicates1(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.duplicates1})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values1)
 
 
     def test_dimension_values_series_duplicates2(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.duplicates2})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values2)

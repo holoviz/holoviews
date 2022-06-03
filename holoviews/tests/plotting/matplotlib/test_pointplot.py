@@ -7,10 +7,7 @@ from holoviews.element import Points
 from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
 
-try:
-    from matplotlib import pyplot
-except:
-    pass
+from matplotlib import pyplot
 
 
 class TestPointPlot(TestMPLPlot):

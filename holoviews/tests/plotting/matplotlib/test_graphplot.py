@@ -6,12 +6,7 @@ from holoviews.core.spaces import HoloMap
 from holoviews.core.util import LooseVersion
 from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
 from holoviews.util.transform import dim
-
-# Standardize backend due to random inconsistencies
-try:
-    from matplotlib.collections import LineCollection, PolyCollection
-except:
-    pass
+from matplotlib.collections import LineCollection, PolyCollection
 
 from .test_plot import TestMPLPlot, mpl_renderer
 

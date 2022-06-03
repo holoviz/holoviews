@@ -404,52 +404,55 @@ class CFTimeConverter(NetCDFTimeConverter):
 
 class EqHistNormalize(Normalize):
 
-    def __init__(self, vmin=None, vmax=None, clip=False, nbins=256**2, ncolors=256):
+    def __init__(self, vmin=None, vmax=None, clip=False, rescale_discrete_levels=True, nbins=256**2, ncolors=256):
         super().__init__(vmin, vmax, clip)
         self._nbins = nbins
         self._bin_edges = None
         self._ncolors = ncolors
-        self._color_bins = np.linspace(0, 1, ncolors)
+        self._color_bins = np.linspace(0, 1, ncolors+1)
+        self._rescale = rescale_discrete_levels
 
     def binning(self, data, n=256):
         low = data.min() if self.vmin is None else self.vmin
         high = data.max() if self.vmax is None else self.vmax
         nbins = self._nbins
         eq_bin_edges = np.linspace(low, high, nbins+1)
-        hist, _ = np.histogram(data, eq_bin_edges)
+        full_hist, _ = np.histogram(data, eq_bin_edges)
 
-        eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
-        cdf = np.cumsum(hist)
-        cdf_max = cdf[-1]
-        norm_cdf = cdf/cdf_max
-
-        # Iteratively find as many finite bins as there are colors
-        finite_bins = n-1
-        binning = []
-        iterations = 0
-        guess = n*2
-        while ((finite_bins != n) and (iterations < 4) and (finite_bins != 0)):
-            ratio = guess/finite_bins
-            if (ratio > 1000):
-                #Abort if distribution is extremely skewed
-                break
-            guess = np.round(max(n*ratio, n))
-
-            # Interpolate
-            palette_edges = np.arange(0, guess)
-            palette_cdf = norm_cdf*(guess-1)
-            binning = np.interp(palette_edges, palette_cdf, eq_bin_centers)
-
-            # Evaluate binning
-            uniq_bins = np.unique(binning)
-            finite_bins = len(uniq_bins)-1
-            iterations += 1
-        if (finite_bins == 0):
-            binning = [low]+[high]*(n-1)
+        # Remove zeros, leaving extra element at beginning for rescale_discrete_levels
+        nonzero = np.nonzero(full_hist)[0]
+        nhist = len(nonzero)
+        if nhist > 1:
+            hist = np.zeros(nhist+1)
+            hist[1:] = full_hist[nonzero]
+            eq_bin_centers = np.concatenate([[0.], (eq_bin_edges[nonzero] + eq_bin_edges[nonzero+1]) / 2.])
+            eq_bin_centers[0] = 2*eq_bin_centers[1] - eq_bin_centers[-1]
         else:
-            binning = binning[-n:]
-            if (finite_bins != n):
-                warnings.warn("EqHistColorMapper warning: Histogram equalization did not converge.")
+            hist = full_hist
+            eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
+
+        # CDF scaled from 0 to 1 except for first value
+        cdf = np.cumsum(hist)
+        lo = cdf[1]
+        diff = cdf[-1] - lo
+        with np.errstate(divide='ignore', invalid='ignore'):
+            cdf = (cdf - lo) / diff
+        cdf[0] = -1.0
+
+        lower_span = 0
+        if self._rescale:
+            discrete_levels = nhist
+            m = -0.5/98.0
+            c = 1.5 - 2*m
+            multiple = m*discrete_levels + c
+            if (multiple > 1):
+                lower_span = 1 - multiple
+
+        cdf_bins = np.linspace(lower_span, 1, n+1)
+        binning = np.interp(cdf_bins, cdf, eq_bin_centers)
+        if not self._rescale:
+            binning[0] = low
+        binning[-1] = high
         return binning
 
     def __call__(self, data, clip=None):

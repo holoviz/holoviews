@@ -2,15 +2,9 @@
 Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
-
-from unittest import SkipTest
-
 import numpy as np
 
-try:
-    from holoviews.plotting import mpl # noqa Register backend
-except:
-    raise SkipTest('Matplotlib backend not available.')
+from holoviews.plotting import mpl # noqa Register backend
 
 from holoviews import Overlay, Curve, Image, HoloMap
 from holoviews.core.options import Store, StoreOptions

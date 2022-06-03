@@ -4,9 +4,9 @@ from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 
 try:
-    import pandas as pd
     import xarray as xr
 except:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")

@@ -4,10 +4,7 @@ from holoviews.element import QuadMesh, Image
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import ColorBar
-except:
-    pass
+from bokeh.models import ColorBar
 
 
 class TestQuadMeshPlot(TestBokehPlot):

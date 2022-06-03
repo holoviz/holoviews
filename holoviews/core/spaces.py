@@ -1716,16 +1716,12 @@ class DynamicMap(HoloMap):
         raise NotImplementedError('Cannot add dimensions to a DynamicMap, '
                                   'cast to a HoloMap first.')
 
-    def next(self):
+    def __next__(self):
         if self.callback.noargs:
             return self[()]
         else:
             raise Exception('The next method can only be used for DynamicMaps using'
                             'generators (or callables without arguments)')
-
-    # For Python 2 and 3 compatibility
-    __next__ = next
-
 
 
 class GridSpace(Layoutable, UniformNdMapping):

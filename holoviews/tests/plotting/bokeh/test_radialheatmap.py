@@ -5,11 +5,8 @@ import numpy as np
 from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
 
-try:
-    from bokeh.models import ColorBar
-    from holoviews.plotting.bokeh import RadialHeatMapPlot
-except:
-    pass
+from bokeh.models import ColorBar
+from holoviews.plotting.bokeh import RadialHeatMapPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

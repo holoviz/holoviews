@@ -15,18 +15,14 @@ from holoviews.util import render
 from .test_plot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
 
-try:
-    import panel as pn
+import panel as pn
 
-    from bokeh.document import Document
-    from bokeh.models import tools
-    from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
-                              NumeralTickFormatter, LogTicker,
-                              LinearColorMapper, LogColorMapper)
-    from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
-except:
-    pass
-
+from bokeh.document import Document
+from bokeh.models import tools
+from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
+                            NumeralTickFormatter, LogTicker,
+                            LinearColorMapper, LogColorMapper)
+from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
 
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):

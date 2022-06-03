@@ -3,10 +3,7 @@ import numpy as np
 from holoviews.core.dimension import Dimension
 from holoviews.element import Labels
 
-try:
-    from bokeh.models import LinearColorMapper, CategoricalColorMapper
-except:
-    pass
+from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer

@@ -3,31 +3,22 @@
 Test cases for rendering exporters
 """
 from collections import OrderedDict
-from unittest import SkipTest
 
+import panel as pn
 import param
 
 from holoviews import (DynamicMap, HoloMap, Store, Curve)
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.plotly import PlotlyRenderer
+from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
+from panel.widgets import DiscreteSlider, Player, FloatSlider
 from pyviz_comms import CommManager
-
-try:
-    import panel as pn
-
-    from holoviews.plotting.plotly import PlotlyRenderer
-    from holoviews.plotting.renderer import Renderer
-    from panel.widgets import DiscreteSlider, Player, FloatSlider
-except:
-    pn, PlotlyRenderer = None, None
 
 
 class PlotlyRendererTest(ComparisonTestCase):
 
     def setUp(self):
-        if 'plotly' not in Store.renderers or None in (pn, PlotlyRenderer):
-            raise SkipTest("Plotly and Panel required to test rendering.")
-
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
         self.renderer = PlotlyRenderer.instance()

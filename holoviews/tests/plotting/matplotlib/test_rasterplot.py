@@ -4,10 +4,7 @@ from holoviews.element import Raster, Image
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
-try:
-    from matplotlib.colors import ListedColormap
-except:
-    pass
+from matplotlib.colors import ListedColormap
 
 
 class TestRasterPlot(TestMPLPlot):

@@ -4,12 +4,12 @@ from collections import deque, namedtuple
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 import pytest
 import pyviz_comms as comms
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.core.util import pd
 from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (
@@ -17,20 +17,17 @@ from holoviews.streams import (
     PlotReset, Selection1D, RangeXY, PlotSize, CDSStream, SingleTap
 )
 
-try:
-    from bokeh.events import Tap
-    from bokeh.io.doc import set_curdoc
-    from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
-    from holoviews.plotting.bokeh.callbacks import (
-        Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-        BoxEditCallback, PointerXCallback, TapCallback
-    )
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
-    bokeh_server_renderer = BokehRenderer.instance(mode='server')
-    bokeh_renderer = BokehRenderer.instance()
-except:
-    bokeh_renderer = None
-    bokeh_server_renderer = None
+from bokeh.events import Tap
+from bokeh.io.doc import set_curdoc
+from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
+from holoviews.plotting.bokeh.callbacks import (
+    Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
+    BoxEditCallback, PointerXCallback, TapCallback
+)
+from holoviews.plotting.bokeh.renderer import BokehRenderer
+
+bokeh_server_renderer = BokehRenderer.instance(mode='server')
+bokeh_renderer = BokehRenderer.instance()
 
 
 class CallbackTestCase(ComparisonTestCase):
@@ -192,8 +189,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         points = Points([(0, 1)])
         PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_point_draw_callback_with_vdims_initialization(self):
         points = Points([(0, 1, 'A')], vdims=['A'])
@@ -227,8 +223,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_poly_draw_callback_with_vdims(self):
         polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
@@ -290,8 +285,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         boxes = Polygons([Box(0, 0, 1)])
         BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
-        self.assertEqual(plot.handles['cds']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['cds']._callbacks
 
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
@@ -308,8 +302,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyEdit(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_poly_edit_shared_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
@@ -388,26 +381,6 @@ class TestServerCallbacks(CallbackTestCase):
         resolved = callback.resolve_attr_spec(spec, selected, model=selected)
         self.assertEqual(resolved, {'id': selected.ref['id'], 'value': [0, 2]})
 
-    def test_rangexy_resolves(self):
-        points = Points([1, 2, 3])
-        RangeXY(source=points)
-        plot = bokeh_server_renderer.get_plot(points)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
-        callback = plot.callbacks[0]
-        x0_range_spec = callback.attributes['x0']
-        x1_range_spec = callback.attributes['x1']
-        y0_range_spec = callback.attributes['y0']
-        y1_range_spec = callback.attributes['y1']
-        resolved = callback.resolve_attr_spec(x0_range_spec, x_range, model=x_range)
-        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 0})
-        resolved = callback.resolve_attr_spec(x1_range_spec, x_range, model=x_range)
-        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 2})
-        resolved = callback.resolve_attr_spec(y0_range_spec, y_range, model=y_range)
-        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 1})
-        resolved = callback.resolve_attr_spec(y1_range_spec, y_range, model=y_range)
-        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 3})
-
     def test_plotsize_resolves(self):
         points = Points([1, 2, 3])
         PlotSize(source=points)
@@ -462,50 +435,3 @@ class TestServerCallbacks(CallbackTestCase):
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
-
-    def test_rangexy_shared_transposed_axes(self):
-        "Checks that stream callbacks are not shared on transposed axes"
-        c1 = Curve([1, 2, 3], 'x', 'y')
-        c2 = Curve([1, 2, 3], 'y', 'x')
-        stream1 = RangeXY(source=c1)
-        stream2 = RangeXY(source=c2)
-        layout = c1 + c2
-        plot = bokeh_server_renderer.get_plot(layout)
-        c1p, c2p = [p.subplots['main'] for p in plot.subplots.values()]
-
-        c1_cb = c1p.callbacks[0]
-        assert c1_cb.streams == [stream1]
-        assert stream1 in c1_cb.handle_ids
-        stream1_handles = c1_cb.handle_ids[stream1]
-        assert stream1_handles['x_range'] == c1p.handles['x_range'].ref['id']
-        assert stream1_handles['y_range'] == c1p.handles['y_range'].ref['id']
-
-        c2_cb = c2p.callbacks[0]
-        assert c2_cb.streams == [stream2]
-        assert stream2 in c2_cb.handle_ids
-        stream2_handles = c2_cb.handle_ids[stream2]
-        assert stream2_handles['x_range'] == c2p.handles['x_range'].ref['id']
-        assert stream2_handles['y_range'] == c2p.handles['y_range'].ref['id']
-
-    def test_rangexy_shared_axes(self):
-        "Check that stream callbacks are shared on shared axes"
-        c1 = Curve([1, 2, 3], 'x', 'y')
-        c2 = Curve([1, 2, 3], 'x', 'y')
-        stream1 = RangeXY(source=c1)
-        stream2 = RangeXY(source=c2)
-        layout = c1 + c2
-        plot = bokeh_server_renderer.get_plot(layout)
-        c1p, c2p = [p.subplots['main'] for p in plot.subplots.values()]
-        c1_cb = c1p.callbacks[0]
-        c2_cb = c2p.callbacks[0]
-
-        assert set(c1_cb.streams) == {stream1, stream2}
-        assert stream1 in c1_cb.handle_ids
-        stream1_handles = c1_cb.handle_ids[stream1]
-        assert stream1_handles['x_range'] == c1p.handles['x_range'].ref['id']
-        assert stream1_handles['y_range'] == c1p.handles['y_range'].ref['id']
-        stream2_handles = c1_cb.handle_ids[stream2]
-        assert stream2_handles['x_range'] == c2p.handles['x_range'].ref['id']
-        assert stream2_handles['y_range'] == c2p.handles['y_range'].ref['id']
-
-        assert c2_cb.streams == []
