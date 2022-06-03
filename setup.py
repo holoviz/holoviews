@@ -45,8 +45,7 @@ extras_require['tests_core'] = [
 # of those.
 extras_require['tests'] = extras_require['tests_core'] + [
     'dask',
-    'cudf',
-    'ibis-sqlite',
+    'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
     'spatialpandas',
     'xarray >=0.10.4',
     'networkx',
@@ -58,6 +57,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'pscript ==0.7.1',
     'selenium',
     'ipython >=5.4.0',
+]
+
+extras_require['tests_gpu'] = extras_require['tests'] + [
+    'cudf',
 ]
 
 extras_require['tests_nb'] = [
