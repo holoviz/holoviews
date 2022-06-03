@@ -154,7 +154,7 @@ setup_args.update(
         long_description_content_type="text/markdown",
         author="Jean-Luc Stevens and Philipp Rudiger",
         author_email="holoviews@gmail.com",
-        maintainer="PyViz Developers",
+        maintainer="HoloViz Developers",
         maintainer_email="developers@pyviz.org",
         platforms=["Windows", "Mac OS X", "Linux"],
         license="BSD",
