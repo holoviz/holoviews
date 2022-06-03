@@ -1,28 +1,21 @@
-from unittest import SkipTest
-
 from param import concrete_descendents
+
+import plotly.graph_objs as go
+import pyviz_comms as comms
 
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
-import pyviz_comms as comms
-
-try:
-    from holoviews.plotting.plotly.element import ElementPlot
-    plotly_renderer = Store.renderers['plotly']
-    from holoviews.plotting.plotly.util import figure_grid
-    import plotly.graph_objs as go
-except:
-    plotly_renderer = None
+from holoviews.plotting.plotly.element import ElementPlot
+from holoviews.plotting.plotly.util import figure_grid
 
 from .. import option_intersections
 
+plotly_renderer = Store.renderers['plotly']
 
 
 class TestPlotlyPlot(ComparisonTestCase):
 
     def setUp(self):
-        if not plotly_renderer:
-            raise SkipTest("Plotly required to test plot instantiation")
         self.previous_backend = Store.current_backend
         Store.set_current_backend('plotly')
         self.comm_manager = plotly_renderer.comm_manager

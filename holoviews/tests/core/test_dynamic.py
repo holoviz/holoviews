@@ -1,8 +1,6 @@
 import uuid
 import time
-import sys
 from collections import deque
-from unittest import SkipTest
 
 import param
 import numpy as np
@@ -58,8 +56,6 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
 
     def test_simple_constructor_streams_dict_panel_widget(self):
-        if 'panel' not in sys.modules:
-            raise SkipTest('Panel not available')
         import panel
         DynamicMap(lambda x: x, streams=dict(x=panel.widgets.FloatSlider()))
 

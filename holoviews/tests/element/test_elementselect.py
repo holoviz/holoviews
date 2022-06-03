@@ -1,11 +1,7 @@
 from itertools import product
 import datetime as dt
 import numpy as np
-
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
+import pandas as pd
 
 from holoviews.core import HoloMap
 from holoviews.element import Image, Contours, Curve
@@ -109,10 +105,9 @@ class DimensionedSelectionTest(ComparisonTestCase):
             self.assertEqual(el.select(time=
                 (dt.datetime(1999, 12, 31), dt.datetime(2000, 1, 2))), el[s:e]
             )
-            if pd:
-                self.assertEqual(el.select(
-                    time=(pd.Timestamp(s), pd.Timestamp(e))
-                ), el[pd.Timestamp(s):pd.Timestamp(e)])
+            self.assertEqual(el.select(
+                time=(pd.Timestamp(s), pd.Timestamp(e))
+            ), el[pd.Timestamp(s):pd.Timestamp(e)])
 
     def test_selection_spec_positional_error_message(self):
         s, e = '1999-12-31', '2000-1-2'

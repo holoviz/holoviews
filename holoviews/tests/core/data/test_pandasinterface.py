@@ -1,11 +1,5 @@
-from unittest import SkipTest
-
 import numpy as np
-
-try:
-    import pandas as pd
-except:
-    raise SkipTest("Could not import pandas, skipping PandasInterface tests.")
+import pandas as pd
 
 from holoviews.core.dimension import Dimension
 from holoviews.core.data import Dataset

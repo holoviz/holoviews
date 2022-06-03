@@ -1,15 +1,11 @@
-from unittest import SkipTest
+import pandas as pd
 
 from holoviews.core import NdOverlay
-from holoviews.core.util import pd
 from holoviews.element import Segments
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import FactorRange
-except:
-    pass
+from bokeh.models import FactorRange
 
 
 class TestSegmentPlot(TestBokehPlot):
@@ -49,8 +45,6 @@ class TestSegmentPlot(TestBokehPlot):
         self._test_hover_info(obj, tooltips)
 
     def test_segments_overlay_datetime_hover(self):
-        if pd is None:
-            raise SkipTest("Test requires pandas")
         obj = NdOverlay({
             i: Segments((
                 list(pd.date_range('2016-01-01', '2016-01-31')),

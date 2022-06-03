@@ -1,7 +1,4 @@
-try:
-    from unittest.mock import Mock
-except:
-    from mock import Mock
+from unittest.mock import Mock
 
 import holoviews as hv
 import panel as pn

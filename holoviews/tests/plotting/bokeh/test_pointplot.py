@@ -1,22 +1,18 @@
 import datetime as dt
-from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
-from holoviews.core.util import pd
 from holoviews.element import Points
 from holoviews.streams import Stream
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
 
-try:
-    from bokeh.models import FactorRange, LinearColorMapper, CategoricalColorMapper
-    from bokeh.models import Scatter
-except:
-    pass
+from bokeh.models import FactorRange, LinearColorMapper, CategoricalColorMapper
+from bokeh.models import Scatter
 
 
 class TestPointPlot(TestBokehPlot):
@@ -132,8 +128,6 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['color'], color)
 
     def test_points_overlay_datetime_hover(self):
-        if pd is None:
-            raise SkipTest("Test requires pandas")
         obj = NdOverlay({i: Points((list(pd.date_range('2016-01-01', '2016-01-31')), range(31))) for i in range(5)},
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']}}

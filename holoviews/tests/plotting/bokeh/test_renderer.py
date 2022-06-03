@@ -5,30 +5,25 @@ from unittest import SkipTest
 import numpy as np
 import param
 
-from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve, Store
+from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve
 from holoviews.streams import Stream
 from holoviews.plotting import Renderer
 from holoviews.element.comparison import ComparisonTestCase
 from pyviz_comms import CommManager
 
-try:
-    import panel as pn
+import panel as pn
 
-    from bokeh.io import curdoc
-    from holoviews.plotting.bokeh import BokehRenderer
-    from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
-    from bokeh.themes.theme import Theme
+from bokeh.io import curdoc
+from holoviews.plotting.bokeh import BokehRenderer
+from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
+from bokeh.themes.theme import Theme
 
-    from panel.widgets import DiscreteSlider, Player, FloatSlider
-except:
-    pn = None
+from panel.widgets import DiscreteSlider, Player, FloatSlider
 
 
 class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):
-        if 'bokeh' not in Store.renderers and pn is not None:
-            raise SkipTest("Bokeh and Panel required to test 'bokeh' renderer")
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')

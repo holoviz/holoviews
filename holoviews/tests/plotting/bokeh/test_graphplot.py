@@ -4,11 +4,8 @@ from holoviews.core.data import Dataset
 from holoviews.element import Graph, Nodes, TriMesh, Chord, VLine, circular_layout
 from holoviews.util.transform import dim
 
-try:
-    from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, NodesOnly, Patches)
-    from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
-except:
-    pass
+from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, NodesOnly, Patches)
+from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

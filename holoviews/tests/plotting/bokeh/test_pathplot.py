@@ -10,10 +10,7 @@ from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import LinearColorMapper, CategoricalColorMapper
-except:
-    pass
+from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 
 class TestPathPlot(TestBokehPlot):

@@ -2,10 +2,7 @@ import numpy as np
 
 from holoviews.element import HeatMap, Points, Image
 
-try:
-    from bokeh.models import FactorRange, HoverTool, Range1d
-except:
-    pass
+from bokeh.models import FactorRange, HoverTool, Range1d
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

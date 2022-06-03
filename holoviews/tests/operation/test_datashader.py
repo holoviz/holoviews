@@ -3,6 +3,7 @@ import datetime as dt
 from unittest import SkipTest, skipIf
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from holoviews import (
@@ -18,7 +19,6 @@ try:
     import datashader as ds
     import dask.dataframe as dd
     import xarray as xr
-    from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         LooseVersion, aggregate, regrid, ds_version, stack, directly_connect_edges,
         shade, spread, rasterize, datashade, AggregationOperation,

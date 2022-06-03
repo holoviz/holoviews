@@ -2,11 +2,12 @@ import datetime as dt
 
 from collections import OrderedDict
 from itertools import product
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 from holoviews.core.data import Dataset
-from holoviews.core.util import pd, date_range
+from holoviews.core.util import date_range
 from holoviews.element import Image, Curve, RGB, HSV
 from holoviews.util.transform import dim
 
@@ -14,8 +15,6 @@ try:
     import dask.array as da
 except ImportError:
     da = None
-
-pd_skip = skipIf(pd is None, "pandas is not available")
 
 
 from .base import (
@@ -31,13 +30,11 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     __test__ = False
 
-    @pd_skip
     def test_dataset_dataframe_init_hm(self):
         with self.assertRaises(Exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
-    @pd_skip
     def test_dataset_dataframe_init_hm_alias(self):
         with self.assertRaises(Exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
@@ -519,7 +516,6 @@ class DaskGridInterfaceTests(GridInterfaceTests):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten().compute())
 
-    @pd_skip
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
         self.assertEqual(df.x.values, self.xs)

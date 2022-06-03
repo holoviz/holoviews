@@ -1,5 +1,3 @@
-from unittest import SkipTest
-
 import pyviz_comms as comms
 
 from param import concrete_descendents
@@ -8,15 +6,12 @@ from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 
-try:
-    from bokeh.models import (
-        ColumnDataSource, LinearColorMapper, LogColorMapper, HoverTool
-    )
-    from holoviews.plotting.bokeh.callbacks import Callback
-    from holoviews.plotting.bokeh.element import ElementPlot
-    bokeh_renderer = Store.renderers['bokeh']
-except:
-    bokeh_renderer = None
+from bokeh.models import (
+    ColumnDataSource, LinearColorMapper, LogColorMapper, HoverTool
+)
+from holoviews.plotting.bokeh.callbacks import Callback
+from holoviews.plotting.bokeh.element import ElementPlot
+bokeh_renderer = Store.renderers['bokeh']
 
 from .. import option_intersections
 
@@ -36,8 +31,6 @@ class TestBokehPlot(ComparisonTestCase):
         self.previous_backend = Store.current_backend
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
         Store.set_current_backend('bokeh')
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
