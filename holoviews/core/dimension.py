@@ -255,17 +255,17 @@ class Dimension(param.Parameterized):
             all_params['name'] = spec
             all_params['label'] = spec
         elif isinstance(spec, tuple):
-            if len(spec) != 2:
-                raise ValueError("Dimensions specified as a tuple must be a tuple "
-                                 "consisting of the name and label not: %s" % str(spec))
-            name, label = spec
-            all_params['name'] = name
-            all_params['label'] = label
-            if 'label' in params and (label != params['label']):
-                if params['label'] != label:
-                    self.param.warning(
-                        'Using label as supplied by keyword ({!r}), ignoring '
-                        'tuple value {!r}'.format(params['label'], label))
+            try:
+                all_params['name'], all_params['label'] = spec
+            except ValueError as exc:
+                raise ValueError(
+                    "Dimensions specified as a tuple must be a tuple "
+                    "consisting of the name and label not: %s" % str(spec)
+                ) from exc
+            if 'label' in params and params['label'] != all_params['label']:
+                self.param.warning(
+                    'Using label as supplied by keyword ({!r}), ignoring '
+                    'tuple value {!r}'.format(params['label'], all_params['label']))
         elif isinstance(spec, dict):
             all_params.update(spec)
             try:
