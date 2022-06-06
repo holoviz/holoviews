@@ -56,14 +56,8 @@ def asdim(dimension):
         A Dimension object constructed from the dimension spec. No
         copy is performed if the input is already a Dimension.
     """
-    if isinstance(dimension, Dimension):
-        return dimension
-    elif isinstance(dimension, (tuple, dict, str)):
-        return Dimension(dimension)
-    else:
-        raise ValueError('%s type could not be interpreted as Dimension. '
-                         'Dimensions must be declared as a string, tuple, '
-                         'dictionary or Dimension type.')
+    return dimension if isinstance(dimension, Dimension) else Dimension(dimension)
+
 
 def dimension_name(dimension):
     """Return the Dimension.name for a dimension-like object.
@@ -118,11 +112,6 @@ def process_dimensions(kdims, vdims):
                              "specified as tuples, strings, dictionaries or Dimension "
                              "instances, not a %s type. Ensure you passed the data as the "
                              "first argument." % (group, type(dims).__name__))
-        for dim in dims:
-            if not isinstance(dim, (tuple, str, Dimension, dict)):
-                raise ValueError('Dimensions must be defined as a tuple, '
-                                 'string, dictionary or Dimension instance, '
-                                 'found a %s type.' % type(dim).__name__)
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 
@@ -274,6 +263,12 @@ class Dimension(param.Parameterized):
                 raise ValueError(
                     'Dimension specified as a dict must contain a "name" key'
                 ) from exc
+        else:
+            raise ValueError(
+                '%s type could not be interpreted as Dimension.  Dimensions must be '
+                'declared as a string, tuple, dictionary or Dimension type.'
+                % type(spec).__name__
+            )
         all_params.update(params)
 
         if not all_params['name']:
