@@ -269,6 +269,13 @@ class Dimension(param.Parameterized):
                         'Using label as supplied by keyword ({!r}), ignoring '
                         'tuple value {!r}'.format(params['label'], label))
                 all_params['label'] = params['label']
+        elif isinstance(spec, dict):
+            try:
+                all_params.setdefault('label', spec['name'])
+            except KeyError as exc:
+                raise ValueError(
+                    'Dimension specified as a dict must contain a "name" key'
+                ) from exc
         elif isinstance(spec, str):
             all_params['name'] = spec
             all_params['label'] = params.get('label', spec)

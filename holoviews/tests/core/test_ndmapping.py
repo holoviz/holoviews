@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-import pytest
-
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import (
     MultiDimensionalMapping, NdMapping, UniformNdMapping
@@ -58,7 +56,6 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def test_idxmapping_init_dimstr(self):
         MultiDimensionalMapping(self.init_item_odict, kdims=self.dimension_labels)
 
-    @pytest.mark.xfail()
     def test_idxmapping_init_dimdict(self):
         MultiDimensionalMapping(
             self.init_item_odict,
