@@ -252,33 +252,29 @@ class Dimension(param.Parameterized):
                 existing_params = dict(self.presets[spec].param.get_param_values())
             elif (spec,) in self.presets:
                 existing_params = dict(self.presets[(spec,)].param.get_param_values())
-        elif isinstance(spec, dict):
-            existing_params = spec
-
-        all_params = dict(existing_params, **params)
-        if isinstance(spec, tuple):
+            existing_params['name'] = spec
+            existing_params['label'] = spec
+        elif isinstance(spec, tuple):
             if not all(isinstance(s, str) for s in spec) or len(spec) != 2:
                 raise ValueError("Dimensions specified as a tuple must be a tuple "
                                  "consisting of the name and label not: %s" % str(spec))
             name, label = spec
-            all_params['name'] = name
-            all_params['label'] = label
+            existing_params['name'] = name
+            existing_params['label'] = label
             if 'label' in params and (label != params['label']):
                 if params['label'] != label:
                     self.param.warning(
                         'Using label as supplied by keyword ({!r}), ignoring '
                         'tuple value {!r}'.format(params['label'], label))
-                all_params['label'] = params['label']
         elif isinstance(spec, dict):
+            existing_params.update(spec)
             try:
-                all_params.setdefault('label', spec['name'])
+                existing_params.setdefault('label', spec['name'])
             except KeyError as exc:
                 raise ValueError(
                     'Dimension specified as a dict must contain a "name" key'
                 ) from exc
-        elif isinstance(spec, str):
-            all_params['name'] = spec
-            all_params['label'] = params.get('label', spec)
+        all_params = dict(existing_params, **params)
 
         if all_params['name'] == '':
             raise ValueError('Dimension name cannot be the empty string')
