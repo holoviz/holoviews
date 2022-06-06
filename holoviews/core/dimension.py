@@ -241,19 +241,19 @@ class Dimension(param.Parameterized):
         if 'name' in params:
             raise KeyError('Dimension name must only be passed as the positional argument')
 
+        existing_params = {}
         if isinstance(spec, Dimension):
             existing_params = dict(spec.param.get_param_values())
-        elif (spec, params.get('unit', None)) in self.presets.keys():
-            preset = self.presets[(str(spec), str(params['unit']))]
-            existing_params = dict(preset.param.get_param_values())
+        elif isinstance(spec, str):
+            if (spec, params.get('unit', None)) in self.presets.keys():
+                preset = self.presets[(str(spec), str(params['unit']))]
+                existing_params = dict(preset.param.get_param_values())
+            elif spec in self.presets:
+                existing_params = dict(self.presets[spec].param.get_param_values())
+            elif (spec,) in self.presets:
+                existing_params = dict(self.presets[(spec,)].param.get_param_values())
         elif isinstance(spec, dict):
             existing_params = spec
-        elif spec in self.presets:
-            existing_params = dict(self.presets[spec].param.get_param_values())
-        elif (spec,) in self.presets:
-            existing_params = dict(self.presets[(spec,)].param.get_param_values())
-        else:
-            existing_params = {}
 
         all_params = dict(existing_params, **params)
         if isinstance(spec, tuple):

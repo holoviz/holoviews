@@ -53,7 +53,6 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
         self.assertEqual(dim.name, 'test')
         self.assertEqual(dim.label, 'test')
 
-    @pytest.mark.xfail()
     def test_dimension_dict_name_and_label(self):
         dim = Dimension(dict(name='test', label='A test'))
         self.assertEqual(dim.name, 'test')
