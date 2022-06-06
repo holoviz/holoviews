@@ -255,7 +255,7 @@ class Dimension(param.Parameterized):
             all_params['name'] = spec
             all_params['label'] = spec
         elif isinstance(spec, tuple):
-            if not all(isinstance(s, str) for s in spec) or len(spec) != 2:
+            if len(spec) != 2:
                 raise ValueError("Dimensions specified as a tuple must be a tuple "
                                  "consisting of the name and label not: %s" % str(spec))
             name, label = spec
@@ -276,10 +276,10 @@ class Dimension(param.Parameterized):
                 ) from exc
         all_params.update(params)
 
-        if all_params['name'] == '':
-            raise ValueError('Dimension name cannot be the empty string')
-        if all_params['label'] in ['', None]:
-            raise ValueError('Dimension label cannot be None or the empty string')
+        if not all_params['name']:
+            raise ValueError('Dimension name cannot be empty')
+        if not all_params['label']:
+            raise ValueError('Dimension label cannot be empty')
 
         values = params.get('values', [])
         if isinstance(values, str) and values == 'initial':
