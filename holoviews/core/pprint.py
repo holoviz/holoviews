@@ -68,9 +68,10 @@ class ParamFilter(param.ParameterizedFunction):
             name_match = re.search(pattern,name)
             if name_match is not None:
                 return True
-            doc_match = re.search(pattern,p.doc)
-            if doc_match is not None:
-                return True
+            if p.doc is not None:
+                doc_match = re.search(pattern,p.doc)
+                if doc_match is not None:
+                    return True
             return False
         return inner_filter
 
@@ -95,7 +96,7 @@ class InfoPrinter(object):
         if cls.ppager is None: return ''
         if pattern is not None:
             obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-            if len(obj.param) <= 1:
+            if len(obj.param.params()) <= 1:
                 return None
         param_info = cls.ppager.get_param_info(obj)
         param_list = cls.ppager.param_docstrings(param_info)
@@ -125,7 +126,7 @@ class InfoPrinter(object):
     @classmethod
     def highlight(cls, pattern, string):
         if pattern is None: return string
-        return re.sub(pattern, r'\033[43;1;30m\g<0>\x1b[0m',
+        return re.sub(pattern, '\033[43;1;30m\g<0>\x1b[0m',
                       string, flags=re.IGNORECASE)
 
 
@@ -151,7 +152,7 @@ class InfoPrinter(object):
         if visualization is False or plot_class is None:
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-                if len(obj.param) <= 1:
+                if len(obj.param.params()) <= 1:
                     return ('No %r parameters found matching specified pattern %r'
                             % (name, pattern))
             info = param.ipython.ParamPager()(obj)
