@@ -68,9 +68,10 @@ class ParamFilter(param.ParameterizedFunction):
             name_match = re.search(pattern,name)
             if name_match is not None:
                 return True
-            doc_match = re.search(pattern,p.doc)
-            if doc_match is not None:
-                return True
+            if p.doc is not None:
+                doc_match = re.search(pattern,p.doc)
+                if doc_match is not None:
+                    return True
             return False
         return inner_filter
 
