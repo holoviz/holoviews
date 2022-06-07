@@ -126,7 +126,7 @@ class InfoPrinter(object):
     @classmethod
     def highlight(cls, pattern, string):
         if pattern is None: return string
-        return re.sub(pattern, r'\033[43;1;30m\g<0>\x1b[0m',
+        return re.sub(pattern, '\033[43;1;30m\g<0>\x1b[0m',
                       string, flags=re.IGNORECASE)
 
 
