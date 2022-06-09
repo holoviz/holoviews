@@ -299,7 +299,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             data_bounds = self.bounds.lbrt()
 
         non_finite_bounds = all(not util.isfinite(v) for v in bounds.lbrt())
-        data_ranges = self.interface.range(self, kdims[0]) + self.interface.range(self, kdims[1])
+        data_ranges = self.interface.range(self, self.kdims[0]) + self.interface.range(self, self.kdims[1])
         non_finite_data_ranges = all(not util.isfinite(v) for v in data_ranges)
         non_finite = non_finite_bounds or non_finite_data_ranges
 
