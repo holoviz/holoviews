@@ -648,6 +648,8 @@ class extension(_pyviz_extension):
     # Hooks run when a backend is loaded
     _backend_hooks = defaultdict(list)
 
+    _loaded = False
+
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
