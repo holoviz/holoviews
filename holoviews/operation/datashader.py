@@ -598,12 +598,12 @@ class overlay_aggregate(aggregate):
                     group_type=NdOverlay
                 )
             groups = []
-            for k, v in grouped.items():
+            for k, el in grouped.items():
                 if width == 0 or height == 0:
-                    agg = self._empty_agg(element, x, y, width, height, xs, ys, agg_fn)
+                    agg = self._empty_agg(el, x, y, width, height, xs, ys, ds.count())
                     groups.append((k, agg))
                 else:
-                    agg = agg_fn1(v)
+                    agg = agg_fn1(el)
                     groups.append((k, agg.clone(agg.data, bounds=bbox)))
             return grouped.clone(groups)
 
