@@ -1134,19 +1134,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
+                field = k
                 categorical = isinstance(cmapper, CategoricalColorMapper)
+                if categorical and getattr(self, 'show_legend', False):
+                    legend_labels = getattr(self, 'legend_labels', False)
+                    if legend_labels:
+                        label_field = f'_{field}_labels'
+                        data[label_field] = [legend_labels.get(v, v) for v in data[field]]
+                        new_style['legend_field'] = label_field
+                    else:
+                        new_style['legend_field'] = field
                 if categorical and val.dtype.kind in 'ifMub':
                     if v.dimension in element:
                         formatter = element.get_dimension(v.dimension).pprint_value
                     else:
                         formatter = str
                     field = k + '_str__'
-                    data[k+'_str__'] = [formatter(d) for d in val]
-                else:
-                    field = k
-                if categorical and getattr(self, 'show_legend', False):
-                    legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
-                    new_style[legend_prop] = field
+                    data[field] = [formatter(d) for d in val]
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
@@ -2031,6 +2035,19 @@ class ColorbarPlot(ElementPlot):
 
 class LegendPlot(ElementPlot):
 
+    legend_cols = param.Integer(default=False, doc="""
+        Whether to lay out the legend as columns.""")
+
+    legend_labels = param.Dict(default=None, doc="""
+        Label overrides.""")
+
+    legend_muted = param.Boolean(default=False, doc="""
+        Controls whether the legend entries are muted by default.""")
+
+    legend_offset = param.NumericTuple(default=(0, 0), doc="""
+        If legend is placed outside the axis, this determines the
+        (width, height) offset in pixels from the original position.""")
+
     legend_position = param.ObjectSelector(objects=["top_right",
                                                     "top_left",
                                                     "bottom_left",
@@ -2043,21 +2060,12 @@ class LegendPlot(ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
-    legend_muted = param.Boolean(default=False, doc="""
-        Controls whether the legend entries are muted by default.""")
-
-    legend_offset = param.NumericTuple(default=(0, 0), doc="""
-        If legend is placed outside the axis, this determines the
-        (width, height) offset in pixels from the original position.""")
-
-    legend_cols = param.Integer(default=False, doc="""
-       Whether to lay out the legend as columns.""")
-
     legend_opts = param.Dict(default={}, doc="""
         Allows setting specific styling options for the colorbar.""")
 
-    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
-                    'bottom': 'below'}
+    legend_specs = {
+        'right': 'right', 'left': 'left', 'top': 'above', 'bottom': 'below'
+    }
 
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
@@ -2208,6 +2216,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if (item in filtered or not item.renderers or
                 not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
+            if isinstance(item.label, dict) and 'value' in item.label and self.legend_labels:
+                label = item.label['value']
+                item.label = {'value': self.legend_labels.get(label, label)}
             renderers += item.renderers
             filtered.append(item)
         legend.items[:] = list(util.unique_iterator(filtered))
