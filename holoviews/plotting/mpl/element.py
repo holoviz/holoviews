@@ -1091,10 +1091,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         legend_plot = True
         dimensions = overlay.kdims
         title = ', '.join([d.label for d in dimensions])
+        labels = self.legend_labels
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue
-            labels = subplot.legend_labels
             title = ', '.join([d.name for d in dimensions])
             handle = subplot.traverse(lambda p: p.handles['artist'],
                                       [lambda p: 'artist' in p.handles])
