@@ -68,10 +68,11 @@ class BokehRenderer(Renderer):
         combining the bokeh model with another plot.
         """
         plot = super().get_plot(obj, doc, renderer, **kwargs)
-        if plot.document is None:
-            plot.document = Document() if self_or_cls.notebook_context else curdoc()
-        if self_or_cls.theme:
-            plot.document.theme = self_or_cls.theme
+        if doc is None:
+            if plot.document is None:
+                plot.document = Document() if self_or_cls.notebook_context else curdoc()
+            if self_or_cls.theme:
+                plot.document.theme = self_or_cls.theme
         return plot
 
     def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):
