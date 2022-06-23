@@ -196,6 +196,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
+    document = param.Parameter()
+
     _categorical = False
     _allow_implicit_categories = True
 
