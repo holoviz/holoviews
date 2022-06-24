@@ -28,7 +28,8 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
-from ..core.util import pd, cast_array_to_int64, datetime_types, dt_to_int
+from ..core.util import (pd, cast_array_to_int64, datetime_types, dt_to_int,
+                         is_float)
 
 
 class ComparisonInterface(object):
@@ -62,7 +63,7 @@ class ComparisonInterface(object):
         Classmethod equivalent to unittest.TestCase method
         """
         asserter = None
-        if type(first) is type(second):
+        if type(first) is type(second) or (is_float(first) and is_float(second)):
             asserter = cls.equality_type_funcs.get(type(first))
 
             if asserter is not None:
