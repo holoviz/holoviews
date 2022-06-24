@@ -760,7 +760,7 @@ class DatashaderShadeTests(ComparisonTestCase):
                           'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
                                      datatype=['xarray'], vdims=Dimension('z Count', nodata=0))},
                          kdims=['z'])
-        shaded = shade(data)
+        shaded = shade(data, rescale_discrete_levels=False)
         r = [[228, 120], [66, 120]]
         g = [[26, 109], [150, 109]]
         b = [[28, 95], [129, 95]]
@@ -778,7 +778,7 @@ class DatashaderShadeTests(ComparisonTestCase):
                           'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
                                      datatype=['grid'], vdims=Dimension('z Count', nodata=0))},
                          kdims=['z'])
-        shaded = shade(data)
+        shaded = shade(data, rescale_discrete_levels=False)
         r = [[228, 120], [66, 120]]
         g = [[26, 109], [150, 109]]
         b = [[28, 95], [129, 95]]
