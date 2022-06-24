@@ -374,6 +374,16 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
 
+    def test_point_categorical_color_op_legend_with_labels(self):
+        labels = {'A': 'A point', 'B': 'B point', 'C': 'C point'}
+        points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                        vdims='color').opts(color='color', show_legend=True, legend_labels=labels)
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        legend = plot.state.legend[0].items[0]
+        assert legend.label == {'field': '_color_labels'}
+        assert cds.data['_color_labels'] == ['A point', 'B point', 'C point']
+
     def test_point_categorical_dtype_color_op(self):
         df = pd.DataFrame(dict(sample_id=['subject 1', 'subject 2', 'subject 3', 'subject 4'], category=['apple', 'pear', 'apple', 'pear'], value=[1, 2, 3, 4]))
         df['category'] = df['category'].astype('category')

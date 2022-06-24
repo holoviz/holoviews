@@ -280,6 +280,13 @@ class TestLegends(TestBokehPlot):
         legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
         self.assertEqual(legend_labels, ['A', 'B'])
 
+    def test_overlay_legend_with_labels(self):
+        overlay = (Curve(range(10), label='A') * Curve(range(10), label='B')).opts(
+            legend_labels={'A': 'A Curve', 'B': 'B Curve'})
+        plot = bokeh_renderer.get_plot(overlay)
+        legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
+        self.assertEqual(legend_labels, ['A Curve', 'B Curve'])
+
     def test_dynamic_subplot_remapping(self):
         # Checks that a plot is appropriately updated when reused
         def cb(X):

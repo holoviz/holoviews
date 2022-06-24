@@ -237,6 +237,24 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
+    def test_point_categorical_color_op_legend(self):
+        points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
+                        vdims='color').options(color='color', show_legend=True)
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        leg = plot.handles['axis'].get_legend()
+        legend_labels = [l.get_text() for l in leg.texts]
+        self.assertEqual(legend_labels, ['A', 'B'])
+
+    def test_point_categorical_color_op_legend_with_labels(self):
+        points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')], vdims='color').opts(
+            color='color', show_legend=True, legend_labels={'A': 'A point', 'B': 'B point'})
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        leg = plot.handles['axis'].get_legend()
+        legend_labels = [l.get_text() for l in leg.texts]
+        self.assertEqual(legend_labels, ['A point', 'B point'])
+        
     def test_point_size_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
                         vdims='size').options(s='size')

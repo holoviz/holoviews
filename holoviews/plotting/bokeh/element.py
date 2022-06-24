@@ -1136,21 +1136,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                 group=group, **kwargs)
                 field = k
                 categorical = isinstance(cmapper, CategoricalColorMapper)
-                if categorical and getattr(self, 'show_legend', False):
-                    legend_labels = getattr(self, 'legend_labels', False)
-                    if legend_labels:
-                        label_field = f'_{field}_labels'
-                        data[label_field] = [legend_labels.get(v, v) for v in data[field]]
-                        new_style['legend_field'] = label_field
-                    else:
-                        new_style['legend_field'] = field
-                if categorical and val.dtype.kind in 'ifMub':
-                    if v.dimension in element:
-                        formatter = element.get_dimension(v.dimension).pprint_value
-                    else:
-                        formatter = str
-                    field = k + '_str__'
-                    data[field] = [formatter(d) for d in val]
+
+                if categorical:
+                    if val.dtype.kind in 'ifMub':
+                        field = k + '_str__'
+                        if v.dimension in element:
+                            formatter = element.get_dimension(v.dimension).pprint_value
+                        else:
+                            formatter = str
+                        data[field] = [formatter(d) for d in val]
+                    if getattr(self, 'show_legend', False):
+                        legend_labels = getattr(self, 'legend_labels', False)
+                        if legend_labels:
+                            label_field = f'_{field}_labels'
+                            data[label_field] = [legend_labels.get(v, v) for v in val]
+                            new_style['legend_field'] = label_field
+                        else:
+                            new_style['legend_field'] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
