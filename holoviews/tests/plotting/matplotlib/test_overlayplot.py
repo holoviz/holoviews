@@ -99,3 +99,22 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestMPLPlot):
         overlay = (Curve(range(10)).options(ylabel='custom y-label') * Curve(range(10)))
         axes = mpl_renderer.get_plot(overlay).handles['axis']
         self.assertEqual(axes.get_ylabel(), 'custom y-label')
+
+
+
+class TestLegends(TestMPLPlot):
+
+    def test_overlay_legend(self):
+        overlay = Curve(range(10), label='A') * Curve(range(10), label='B')
+        plot = mpl_renderer.get_plot(overlay)
+        legend = plot.handles['legend']
+        legend_labels = [l.get_text() for l in legend.texts]
+        self.assertEqual(legend_labels, ['A', 'B'])
+
+    def test_overlay_legend_with_labels(self):
+        overlay = (Curve(range(10), label='A') * Curve(range(10), label='B')).opts(
+            legend_labels={'A': 'A Curve', 'B': 'B Curve'})
+        plot = mpl_renderer.get_plot(overlay)
+        legend = plot.handles['legend']
+        legend_labels = [l.get_text() for l in legend.texts]
+        self.assertEqual(legend_labels, ['A Curve', 'B Curve'])

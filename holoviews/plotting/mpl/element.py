@@ -483,8 +483,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         style = self.lookup_options(element, 'style')
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
+        labels = getattr(self, 'legend_labels', {})
         label = element.label if self.show_legend else ''
-        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+        style = dict(label=labels.get(label, label), zorder=self.zorder, **self.style[self.cyclic_index])
         axis_kwargs = self.update_handles(key, axis, element, ranges, style)
         self._finalize_axis(key, element=element, ranges=ranges,
                             **(axis_kwargs if axis_kwargs else {}))
@@ -615,6 +616,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     else:
                         factors = util.unique_array(val)
                     val = util.search_indices(val, factors)
+                    labels = getattr(self, 'legend_labels', {})
+                    factors = [labels.get(f, f) for f in factors]
                     new_style['cat_legend'] = {
                         'title': v.dimension, 'prop': 'c', 'factors': factors
                     }
@@ -1010,6 +1013,9 @@ class LegendPlot(ElementPlot):
     legend_cols = param.Integer(default=None, doc="""
        Number of legend columns in the legend.""")
 
+    legend_labels = param.Dict(default={}, doc="""
+        A mapping that allows overriding legend labels.""")
+
     legend_position = param.ObjectSelector(objects=['inner', 'right',
                                                     'bottom', 'top',
                                                     'left', 'best',
@@ -1049,6 +1055,7 @@ class LegendPlot(ElementPlot):
         legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
         return legend_opts
 
+
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
     OverlayPlot supports compositors processing of Overlays across maps.
@@ -1084,6 +1091,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         legend_plot = True
         dimensions = overlay.kdims
         title = ', '.join([d.label for d in dimensions])
+        labels = self.legend_labels
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue
@@ -1101,7 +1109,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
                 elif element.label and handle:
-                    legend_data.append((handle, element.label))
+                    legend_data.append((handle, labels.get(element.label, element.label)))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
         used_labels = []
