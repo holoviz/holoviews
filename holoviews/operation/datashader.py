@@ -593,12 +593,18 @@ class overlay_aggregate(aggregate):
             if element.ndims == 1:
                 grouped = element
             else:
-                grouped = element.groupby([agg_fn.column], container_type=NdOverlay,
-                                          group_type=NdOverlay)
+                grouped = element.groupby(
+                    [agg_fn.column], container_type=NdOverlay,
+                    group_type=NdOverlay
+                )
             groups = []
-            for k, v in grouped.items():
-                agg = agg_fn1(v)
-                groups.append((k, agg.clone(agg.data, bounds=bbox)))
+            for k, el in grouped.items():
+                if width == 0 or height == 0:
+                    agg = self._empty_agg(el, x, y, width, height, xs, ys, ds.count())
+                    groups.append((k, agg))
+                else:
+                    agg = agg_fn1(el)
+                    groups.append((k, agg.clone(agg.data, bounds=bbox)))
             return grouped.clone(groups)
 
         # Create aggregate instance for sum, count operations, breaking mean
