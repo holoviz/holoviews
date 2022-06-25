@@ -9,6 +9,7 @@ import bokeh
 import bokeh.plotting
 
 from bokeh.core.properties import value
+from bokeh.document import Document
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
     ColorBar, ColorMapper, Legend, Renderer, Title, tools
@@ -196,7 +197,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
-    document = param.Parameter()
+    document = param.ClassSelector(class_=Document, doc="""
+        The bokeh Document to attach the plot to.""")
 
     _categorical = False
     _allow_implicit_categories = True
