@@ -3,6 +3,7 @@ import sys
 
 from js import document
 
+from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
@@ -31,7 +32,7 @@ async def _link(ref, doc):
 
 def render_html(obj):
     if hasattr(sys.stdout, '_out'):
-        out = sys.stdout._out # type: ignore
+        target = sys.stdout._out # type: ignore
     else:
         raise ValueError("Could not determine target node to write to.")
     doc = Document() 
@@ -51,7 +52,7 @@ def render_image(element, fmt):
     Used to render elements to an image format (svg or png) if requested
     in the display formats.
     """
-    if fmt not in Store.display_formats:b
+    if fmt not in Store.display_formats:
         return None
 
     backend = Store.current_backend
@@ -67,12 +68,11 @@ def render_image(element, fmt):
     data, info = renderer(plot, fmt=fmt)
     return {info['mime_type']: data}, {}
 
-def render_png(obj):
+def render_png(element):
     return render_image(element, 'png')
 
-def render_svg(obj):
+def render_svg(element):
     return render_image(element, 'svg')
-
 
 #-----------------------------------------------------------------------------
 # Public API
