@@ -10,9 +10,9 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from panel.io.pyodide import _link_docs
 from panel.pane import panel as as_panel
 
-from ..core.dimension import LabelledData
-from ..core.options import Store
-from ..util import extension as _extension
+from .core.dimension import LabelledData
+from .core.options import Store
+from .util import extension as _extension
 
 
 #-----------------------------------------------------------------------------
