@@ -18,7 +18,7 @@ class TestQuadMeshPlot(TestBokehPlot):
 
     def test_quadmesh_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
-        qmesh = QuadMesh(Image(arr)).opts(plot=dict(invert_axes=True, tools=['hover']))
+        qmesh = QuadMesh(Image(arr)).opts(invert_axes=True, tools=['hover'])
         plot = bokeh_renderer.get_plot(qmesh)
         source = plot.handles['source']
         self.assertEqual(source.data['z'], qmesh.dimension_values(2, flat=False).flatten())
@@ -29,7 +29,7 @@ class TestQuadMeshPlot(TestBokehPlot):
         n = 21
         xs = np.logspace(1, 3, n)
         ys = np.linspace(1, 10, n)
-        qmesh = QuadMesh((xs, ys, np.random.rand(n-1, n-1))).options(colorbar=True)
+        qmesh = QuadMesh((xs, ys, np.random.rand(n-1, n-1))).opts(colorbar=True)
         plot = bokeh_renderer.get_plot(qmesh)
         self.assertIsInstance(plot.handles['colorbar'], ColorBar)
         self.assertIs(plot.handles['colorbar'].color_mapper, plot.handles['color_mapper'])

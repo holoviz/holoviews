@@ -55,7 +55,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         self.assertEqual(ticks['yticks'], self.yticks)
 
     def test_get_data_xseparators(self):
-        plot = mpl_renderer.get_plot(self.element.opts(plot=dict(xmarks=4)))
+        plot = mpl_renderer.get_plot(self.element.opts(xmarks=4))
         data, style, ticks = plot.get_data(self.element, {'z': {'combined': (0, 3)}}, {})
         xseparators = data['xseparator']
         arrays = [np.array([[0., 0.25],
@@ -65,7 +65,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         self.assertEqual(xseparators, arrays)
 
     def test_get_data_yseparators(self):
-        plot = mpl_renderer.get_plot(self.element.opts(plot=dict(ymarks=4)))
+        plot = mpl_renderer.get_plot(self.element.opts(ymarks=4))
         data, style, ticks = plot.get_data(self.element, {'z': {'combined': (0, 3)}}, {})
         yseparators = data['yseparator']
         for circle, r in zip(yseparators, [0.25, 0.375]):
@@ -74,5 +74,5 @@ class RadialHeatMapPlotTests(TestMPLPlot):
     def test_heatmap_holomap(self):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
-        plot = mpl_renderer.get_plot(hm.options(radial=True))
+        plot = mpl_renderer.get_plot(hm.opts(radial=True))
         self.assertIsInstance(plot, RadialHeatMapPlot)

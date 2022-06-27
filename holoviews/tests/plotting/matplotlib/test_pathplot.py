@@ -16,7 +16,7 @@ class TestPathPlot(TestMPLPlot):
         data = {'x': xs, 'y': ys, 'color': color}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims='color').options(
+        path = Path([data], vdims='color').opts(
             color='color', color_levels=levels, cmap=colors)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
@@ -28,7 +28,7 @@ class TestPathPlot(TestMPLPlot):
         ys = xs[::-1]
         alpha = [0.1, 0.7, 0.3, 0.2]
         data = {'x': xs, 'y': ys, 'alpha': alpha}
-        path = Path([data], vdims='alpha').options(alpha='alpha')
+        path = Path([data], vdims='alpha').opts(alpha='alpha')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(path)
 
@@ -37,7 +37,7 @@ class TestPathPlot(TestMPLPlot):
         ys = xs[::-1]
         line_width = [1, 7, 3, 2]
         data = {'x': xs, 'y': ys, 'line_width': line_width}
-        path = Path([data], vdims='line_width').options(linewidth='line_width')
+        path = Path([data], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_linewidths(), line_width)
@@ -48,7 +48,7 @@ class TestPathPlot(TestMPLPlot):
         path = HoloMap({
             0: Path([{'x': xs, 'y': ys, 'line_width': [1, 7, 3, 2]}], vdims='line_width'),
             1: Path([{'x': xs, 'y': ys, 'line_width': [3, 8, 2, 3]}], vdims='line_width')
-        }).options(linewidth='line_width')
+        }).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_linewidths(), [1, 7, 3, 2])
@@ -110,7 +110,7 @@ class TestPolygonPlot(TestMPLPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
         colors = np.array([[0. , 0.501961, 0. , 1. ],
@@ -127,7 +127,7 @@ class TestPolygonPlot(TestMPLPlot):
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'blue'},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'green'}
             ], vdims='color'),
-        }).options(color='color')
+        }).opts(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
         colors = np.array([[0, 0.501961, 0, 1],
@@ -142,7 +142,7 @@ class TestPolygonPlot(TestMPLPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
@@ -158,7 +158,7 @@ class TestPolygonPlot(TestMPLPlot):
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 2},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 5}
             ], vdims='color'),
-        }).options(color='color', framewise=True)
+        }).opts(color='color', framewise=True)
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
@@ -171,7 +171,7 @@ class TestPolygonPlot(TestMPLPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
@@ -181,7 +181,7 @@ class TestPolygonPlot(TestMPLPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
-        ], vdims='alpha').options(alpha='alpha')
+        ], vdims='alpha').opts(alpha='alpha')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(polygons)
 
@@ -189,7 +189,7 @@ class TestPolygonPlot(TestMPLPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
-        ], vdims='line_width').options(linewidth='line_width')
+        ], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_linewidths(), [7, 3])
@@ -201,7 +201,7 @@ class TestContoursPlot(TestMPLPlot):
     def test_contours_categorical_color(self):
         path = Contours([{('x', 'y'): np.random.rand(10, 2), 'z': cat}
                      for cat in ('B', 'A', 'B')],
-                    vdims='z').opts(plot=dict(color_index='z'))
+                    vdims='z').opts(color_index='z')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
@@ -211,7 +211,7 @@ class TestContoursPlot(TestMPLPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         colors = np.array([[0. , 0.501961, 0. , 1. ],
@@ -228,7 +228,7 @@ class TestContoursPlot(TestMPLPlot):
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'blue'},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'green'}
             ], vdims='color'),
-        }).options(color='color')
+        }).opts(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         colors = np.array([[0, 0.501961, 0, 1],
@@ -243,7 +243,7 @@ class TestContoursPlot(TestMPLPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
@@ -259,7 +259,7 @@ class TestContoursPlot(TestMPLPlot):
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 2},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 5}
             ], vdims='color'),
-        }).options(color='color', framewise=True)
+        }).opts(color='color', framewise=True)
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
@@ -272,7 +272,7 @@ class TestContoursPlot(TestMPLPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
@@ -282,7 +282,7 @@ class TestContoursPlot(TestMPLPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
-        ], vdims='alpha').options(alpha='alpha')
+        ], vdims='alpha').opts(alpha='alpha')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(contours)
 
@@ -290,7 +290,7 @@ class TestContoursPlot(TestMPLPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
-        ], vdims='line_width').options(linewidth='line_width')
+        ], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_linewidths(), [7, 3])
@@ -305,7 +305,7 @@ class TestContoursPlot(TestMPLPlot):
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 2},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 5}
             ], vdims='line_width'),
-        }).options(linewidth='line_width', framewise=True)
+        }).opts(linewidth='line_width', framewise=True)
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_linewidths(), [7, 3])

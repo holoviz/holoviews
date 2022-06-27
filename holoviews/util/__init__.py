@@ -81,7 +81,7 @@ class opts(param.ParameterizedFunction):
     __original_docstring__ = None
 
     # Keywords not to be tab-completed (helps with deprecation)
-    _no_completion = ['title_format', 'color_index', 'size_index', 'finalize_hooks',
+    _no_completion = ['title_format', 'color_index', 'size_index',
                       'scaling_factor', 'scaling_method', 'size_fn', 'normalize_lengths',
                       'group_index', 'category_index', 'stack_index', 'color_by']
 

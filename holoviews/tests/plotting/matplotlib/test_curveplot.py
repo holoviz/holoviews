@@ -49,7 +49,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(plot.handles['axis'].get_xlim(), (16801.0, 16813.0))
 
     def test_curve_padding_square(self):
-        curve = Curve([1, 2, 3]).options(padding=0.1)
+        curve = Curve([1, 2, 3]).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], -0.2)
@@ -58,7 +58,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_square_per_axis(self):
-        curve = Curve([1, 2, 3]).options(padding=((0, 0.1), (0.1, 0.2)))
+        curve = Curve([1, 2, 3]).opts(padding=((0, 0.1), (0.1, 0.2)))
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0)
@@ -67,7 +67,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.4)
 
     def test_curve_padding_hard_xrange(self):
-        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.1)
+        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0)
@@ -76,7 +76,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_soft_xrange(self):
-        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
+        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0)
@@ -85,7 +85,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_unequal(self):
-        curve = Curve([1, 2, 3]).options(padding=(0.05, 0.1))
+        curve = Curve([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], -0.1)
@@ -94,7 +94,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_nonsquare(self):
-        curve = Curve([1, 2, 3]).options(padding=0.1, aspect=2)
+        curve = Curve([1, 2, 3]).opts(padding=0.1, aspect=2)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], -0.1)
@@ -103,7 +103,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_logx(self):
-        curve = Curve([(1, 1), (2, 2), (3,3)]).options(padding=0.1, logx=True)
+        curve = Curve([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.89595845984076228)
@@ -112,7 +112,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_logy(self):
-        curve = Curve([1, 2, 3]).options(padding=0.1, logy=True)
+        curve = Curve([1, 2, 3]).opts(padding=0.1, logy=True)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], -0.2)
@@ -121,7 +121,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.3483695221017129)
 
     def test_curve_padding_datetime_square(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(curve)
@@ -132,7 +132,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_datetime_nonsquare(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(curve)
@@ -148,7 +148,7 @@ class TestCurvePlot(TestMPLPlot):
 
     def test_curve_scalar_color_op(self):
         curve = Curve([(0, 0, 'red'), (0, 1, 'red'), (0, 2, 'red')],
-                       vdims=['y', 'color']).options(color='color')
+                       vdims=['y', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(curve)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_color(), 'red')
@@ -157,7 +157,7 @@ class TestCurvePlot(TestMPLPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Curve(np.arange(i))
                              for i, color in enumerate(colors)},
-                            'color').options('Curve', color='color')
+                            'color').opts('Curve', color='color')
         plot = mpl_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors):
             style = dict(subplot.style[subplot.cyclic_index])
@@ -166,19 +166,19 @@ class TestCurvePlot(TestMPLPlot):
 
     def test_curve_color_op(self):
         curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
-                       vdims=['y', 'color']).options(color='color')
+                       vdims=['y', 'color']).opts(color='color')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(curve)
 
     def test_curve_alpha_op(self):
         curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
-                       vdims=['y', 'alpha']).options(alpha='alpha')
+                       vdims=['y', 'alpha']).opts(alpha='alpha')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(curve)
 
     def test_curve_linewidth_op(self):
         curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
-                       vdims=['y', 'linewidth']).options(linewidth='linewidth')
+                       vdims=['y', 'linewidth']).opts(linewidth='linewidth')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(curve)
 

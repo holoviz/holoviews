@@ -100,7 +100,7 @@ class TestLinkCallbacks(TestBokehPlot):
             bokeh_renderer.get_plot(layout)
 
     def test_data_link_list(self):
-        path = Path([[(0, 0, 0), (1, 1, 1), (2, 2, 2)]], vdims='color').options(color='color')
+        path = Path([[(0, 0, 0), (1, 1, 1), (2, 2, 2)]], vdims='color').opts(color='color')
         table = Table([('A', 1), ('B', 2)], 'A', 'B')
         DataLink(path, table)
         layout = path + table

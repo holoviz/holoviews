@@ -20,8 +20,8 @@ class TestCurvePlot(TestBokehPlot):
 
     def test_batched_curve_subscribers_correctly_attached(self):
         posx = PointerX()
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Curve': dict(line_color=Cycle(values=['red', 'blue']))}
         overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
                                                   for i in range(2)}).opts(opts), kdims=[],
                              streams=[posx])
@@ -33,8 +33,8 @@ class TestCurvePlot(TestBokehPlot):
         # Checks if a stream callback is created to link batched plot
         # to the stream
         posx = PointerX()
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Curve': dict(line_color=Cycle(values=['red', 'blue']))}
         overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
                                                   for i in range(2)}).opts(opts), kdims=[],
                              streams=[posx])
@@ -56,8 +56,8 @@ class TestCurvePlot(TestBokehPlot):
             self.assertEqual(subp.handles['glyph'].line_color, color)
 
     def test_batched_curve_line_color_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Curve': dict(line_color=Cycle(values=['red', 'blue']))}
         overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -65,8 +65,8 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
 
     def test_batched_curve_alpha_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Curve': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Curve': dict(alpha=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -76,8 +76,8 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['color'], color)
 
     def test_batched_curve_line_width_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Curve': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Curve': dict(line_width=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -90,7 +90,7 @@ class TestCurvePlot(TestBokehPlot):
         obj = NdOverlay({i: Curve([(dt.datetime(2016, 1, j+1), j) for j in range(31)]) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}{%F %T}'), ('y', '@{y}')],
                               formatters={'@{x}': "datetime"})
 
@@ -99,7 +99,7 @@ class TestCurvePlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}')], 'prev')
 
     def test_curve_overlay_hover(self):
@@ -117,7 +117,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
     def test_curve_categorical_xaxis_invert_axes(self):
-        curve = Curve((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_axes=True))
+        curve = Curve((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(curve)
         y_range = plot.handles['y_range']
         self.assertIsInstance(y_range, FactorRange)
@@ -165,19 +165,19 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
 
     def test_curve_fontsize_xlabel(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'xlabel': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'xlabel': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
                          '14pt')
 
     def test_curve_fontsize_ylabel(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'ylabel': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'ylabel': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
                          '14pt')
 
     def test_curve_fontsize_both_labels(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'labels': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'labels': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
                          '14pt')
@@ -185,19 +185,19 @@ class TestCurvePlot(TestBokehPlot):
                          '14pt')
 
     def test_curve_fontsize_xticks(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'xticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
                          '14pt')
 
     def test_curve_fontsize_yticks(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'yticks': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'yticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
                          '14pt')
 
     def test_curve_fontsize_both_ticks(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'ticks': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'ticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
                          '14pt')
@@ -205,7 +205,7 @@ class TestCurvePlot(TestBokehPlot):
                          '14pt')
 
     def test_curve_fontsize_xticks_and_both_ticks(self):
-        curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '18pt', 'ticks': '14pt'}))
+        curve = Curve(range(10)).opts(fontsize={'xticks': '18pt', 'ticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
                          '18pt')
@@ -213,33 +213,33 @@ class TestCurvePlot(TestBokehPlot):
                          '14pt')
 
     def test_curve_xticks_list(self):
-        curve = Curve(range(10)).opts(plot=dict(xticks=[0, 5, 10]))
+        curve = Curve(range(10)).opts(xticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_curve_xticks_list_of_tuples_xaxis(self):
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
-        curve = Curve(range(10)).opts(plot=dict(xticks=ticks))
+        curve = Curve(range(10)).opts(xticks=ticks)
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].major_label_overrides, dict(ticks))
 
     def test_curve_yticks_list(self):
-        curve = Curve(range(10)).opts(plot=dict(yticks=[0, 5, 10]))
+        curve = Curve(range(10)).opts(yticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_curve_xticks_list_of_tuples_yaxis(self):
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
-        curve = Curve(range(10)).opts(plot=dict(yticks=ticks))
+        curve = Curve(range(10)).opts(yticks=ticks)
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
 
     def test_curve_padding_square(self):
-        curve = Curve([1, 2, 3]).options(padding=0.1)
+        curve = Curve([1, 2, 3]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -248,7 +248,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_square_per_axis(self):
-        curve = Curve([1, 2, 3]).options(padding=((0, 0.1), (0.1, 0.2)))
+        curve = Curve([1, 2, 3]).opts(padding=((0, 0.1), (0.1, 0.2)))
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -257,7 +257,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.4)
 
     def test_curve_padding_hard_xrange(self):
-        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.1)
+        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -266,7 +266,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_soft_xrange(self):
-        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
+        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -275,7 +275,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_unequal(self):
-        curve = Curve([1, 2, 3]).options(padding=(0.05, 0.1))
+        curve = Curve([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.1)
@@ -284,7 +284,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_nonsquare(self):
-        curve = Curve([1, 2, 3]).options(padding=0.1, width=600)
+        curve = Curve([1, 2, 3]).opts(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.1)
@@ -293,7 +293,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_logx(self):
-        curve = Curve([(1, 1), (2, 2), (3,3)]).options(padding=0.1, logx=True)
+        curve = Curve([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.89595845984076228)
@@ -302,7 +302,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_logy(self):
-        curve = Curve([1, 2, 3]).options(padding=0.1, logy=True)
+        curve = Curve([1, 2, 3]).opts(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -311,7 +311,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     def test_curve_padding_datetime_square(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(curve)
@@ -322,7 +322,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_datetime_nonsquare(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(curve)
@@ -338,7 +338,7 @@ class TestCurvePlot(TestBokehPlot):
 
     def test_curve_scalar_color_op(self):
         curve = Curve([(0, 0, 'red'), (0, 1, 'red'), (0, 2, 'red')],
-                       vdims=['y', 'color']).options(color='color')
+                       vdims=['y', 'color']).opts(color='color')
         plot = bokeh_renderer.get_plot(curve)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_color, 'red')
@@ -347,7 +347,7 @@ class TestCurvePlot(TestBokehPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Curve(np.arange(i))
                              for i, color in enumerate(colors)},
-                            'color').options('Curve', color='color')
+                            'color').opts('Curve', color='color')
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors):
             style = dict(subplot.style[subplot.cyclic_index])
@@ -356,19 +356,19 @@ class TestCurvePlot(TestBokehPlot):
 
     def test_curve_color_op(self):
         curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
-                       vdims=['y', 'color']).options(color='color')
+                       vdims=['y', 'color']).opts(color='color')
         with self.assertRaises(Exception):
             bokeh_renderer.get_plot(curve)
 
     def test_curve_alpha_op(self):
         curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
-                       vdims=['y', 'alpha']).options(alpha='alpha')
+                       vdims=['y', 'alpha']).opts(alpha='alpha')
         with self.assertRaises(Exception):
             bokeh_renderer.get_plot(curve)
 
     def test_curve_line_width_op(self):
         curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
-                       vdims=['y', 'linewidth']).options(line_width='linewidth')
+                       vdims=['y', 'linewidth']).opts(line_width='linewidth')
         with self.assertRaises(Exception):
             bokeh_renderer.get_plot(curve)
 
