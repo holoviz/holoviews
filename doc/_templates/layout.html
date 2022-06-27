@@ -40,16 +40,16 @@
 {% else %}
 {% set content_col_class = "col-md-11 col-xl-8" %}
 {% endif %}
-<main class="col-12 {{ content_col_class }} py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+<div class="bd-content col-12 {{ content_col_class }}" role="main">
   {% block docs_body %}
-  <div>
+  <article class="bd-article" role="main">
     {% block body %} {% endblock %}
-  </div>
+  </article>
   {% endblock %}
   {% if theme_show_prev_next %}
   <footer class="bd-footer-article">
     {% include "sections/footer-article.html" %}
   </footer>
   {% endif %}
-</main>
+</div>
 {% endblock %}
