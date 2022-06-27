@@ -678,7 +678,7 @@ class ColorbarPlot(ElementPlot):
         An explicit override of the color bar label, if set takes precedence
         over the title key in colorbar_opts.""")
 
-    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    clim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
         User-specified colorbar axis range limits for the plot, as a
         tuple (low,high). If specified, takes precedence over data
         and dimension ranges.""")
@@ -872,7 +872,7 @@ class ColorbarPlot(ElementPlot):
         clim = opts.pop(prefix+'clims', None)
 
         # check if there's an actual value (not np.nan)
-        if clim is None and util.isfinite(self.clim).all():
+        if clim is None and self.clim is not None and any(util.isfinite(cl) for cl in self.clim):
             clim = self.clim
 
         if clim is None:

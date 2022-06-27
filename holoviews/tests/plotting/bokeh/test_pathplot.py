@@ -16,8 +16,8 @@ from bokeh.models import LinearColorMapper, CategoricalColorMapper
 class TestPathPlot(TestBokehPlot):
 
     def test_batched_path_line_color_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Path': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Path': dict(line_color=Cycle(values=['red', 'blue']))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -25,8 +25,8 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
 
     def test_batched_path_alpha_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Path': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Path': dict(alpha=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -36,8 +36,8 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['color'], color)
 
     def test_batched_path_line_width_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Path': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Path': dict(line_width=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -51,7 +51,7 @@ class TestPathPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Path': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}')])
 
     def test_path_colored_and_split_with_extra_vdims(self):
@@ -60,7 +60,9 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).options(color_index='color', tools=['hover'])
+        path = Path([data], vdims=['color','other']).opts(
+            color_index='color', tools=['hover']
+        )
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
@@ -75,7 +77,9 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).options(color=dim('color')*2, tools=['hover'])
+        path = Path([data], vdims=['color','other']).opts(
+            color=dim('color')*2, tools=['hover']
+        )
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
@@ -92,7 +96,7 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).options(
+        path = Path([data], vdims=['color', 'date']).opts(
             color_index='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -114,7 +118,7 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).options(
+        path = Path([data], vdims=['color', 'date']).opts(
             color='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -133,7 +137,7 @@ class TestPathPlot(TestBokehPlot):
         ys = xs[::-1]
         alpha = [0.1, 0.7, 0.3, 0.2]
         data = {'x': xs, 'y': ys, 'alpha': alpha}
-        path = Path([data], vdims='alpha').options(alpha='alpha')
+        path = Path([data], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
@@ -145,7 +149,7 @@ class TestPathPlot(TestBokehPlot):
         ys = xs[::-1]
         line_width = [1, 7, 3, 2]
         data = {'x': xs, 'y': ys, 'line_width': line_width}
-        path = Path([data], vdims='line_width').options(line_width='line_width')
+        path = Path([data], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
@@ -272,7 +276,7 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(fill_color='color', tools=['hover'])
+        ], vdims='color').opts(fill_color='color', tools=['hover'])
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -285,7 +289,7 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -297,7 +301,7 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -313,7 +317,7 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -328,7 +332,7 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
-        ], vdims='alpha').options(alpha='alpha')
+        ], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -340,7 +344,7 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
-        ], vdims='line_width').options(line_width='line_width')
+        ], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -394,7 +398,7 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -405,7 +409,7 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -440,7 +444,7 @@ class TestContoursPlot(TestBokehPlot):
             1: Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 5},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 2}
-            ], vdims='color')}).options(color='color', framewise=True)
+            ], vdims='color')}).opts(color='color', framewise=True)
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -459,7 +463,7 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -473,7 +477,7 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
-        ], vdims='alpha').options(alpha='alpha')
+        ], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -484,7 +488,7 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
-        ], vdims='line_width').options(line_width='line_width')
+        ], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']

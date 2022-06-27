@@ -20,7 +20,7 @@ class TestLabelsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_labels_inverted(self):
-        labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(invert_axes=True)
+        labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(invert_axes=True)
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][0]['x'], np.array([3, 2, 1]))
         self.assertEqual(state['data'][0]['y'], np.array([0, 1, 2]))
@@ -32,22 +32,22 @@ class TestLabelsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
 
     def test_labels_size(self):
-        labels = Labels([(0, 3, 0), (0, 2, 1), (0, 1, 1)]).options(size='y')
+        labels = Labels([(0, 3, 0), (0, 2, 1), (0, 1, 1)]).opts(size='y')
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][0]['textfont']['size'], np.array([3, 2, 1]))
 
     def test_labels_xoffset(self):
-        labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(xoffset=0.5)
+        labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(xoffset=0.5)
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][0]['x'], np.array([0.5, 1.5, 2.5]))
 
     def test_labels_yoffset(self):
-        labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(yoffset=0.5)
+        labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(yoffset=0.5)
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][0]['y'], np.array([3.5, 2.5, 1.5]))
 
     def test_visible(self):
-        element = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(visible=False)
+        element = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)
 
@@ -90,7 +90,7 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         )
 
     def test_labels_inverted(self):
-        labels = Tiles("") * Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(
+        labels = Tiles("") * Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(
             invert_axes=True
         )
         with self.assertRaises(ValueError) as e:
@@ -99,7 +99,7 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         self.assertIn("invert_axes", str(e.exception))
 
     def test_labels_size(self):
-        labels = Tiles("") * Labels([(0, 3, 0), (0, 2, 1), (0, 1, 1)]).options(size=23)
+        labels = Tiles("") * Labels([(0, 3, 0), (0, 2, 1), (0, 1, 1)]).opts(size=23)
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][1]['textfont']['size'], 23)
 
@@ -109,7 +109,7 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
             (self.xs[0], self.ys[0], 'A'),
             (self.xs[1], self.ys[1], 'B'),
             (self.xs[2], self.ys[2], 'C')
-        ]).options(xoffset=offset)
+        ]).opts(xoffset=offset)
 
         state = self._get_plot_state(labels)
         lons, lats = Tiles.easting_northing_to_lon_lat(np.array(self.xs) + offset, self.ys)
@@ -122,13 +122,13 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
             (self.xs[0], self.ys[0], 'A'),
             (self.xs[1], self.ys[1], 'B'),
             (self.xs[2], self.ys[2], 'C')
-        ]).options(yoffset=offset)
+        ]).opts(yoffset=offset)
         state = self._get_plot_state(labels)
         lons, lats = Tiles.easting_northing_to_lon_lat(self.xs, np.array(self.ys) + offset)
         self.assertEqual(state['data'][1]['lon'], lons)
         self.assertEqual(state['data'][1]['lat'], lats)
 
     def test_visible(self):
-        element = Tiles("") * Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(visible=False)
+        element = Tiles("") * Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][1]['visible'], False)

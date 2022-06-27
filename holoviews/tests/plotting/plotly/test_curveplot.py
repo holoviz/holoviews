@@ -17,7 +17,7 @@ class TestCurvePlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
 
     def test_curve_inverted(self):
-        curve = Curve([1, 2, 3]).options(invert_axes=True)
+        curve = Curve([1, 2, 3]).opts(invert_axes=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['x'], np.array([1, 2, 3]))
         self.assertEqual(state['data'][0]['y'], np.array([0, 1, 2]))
@@ -28,33 +28,33 @@ class TestCurvePlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
 
     def test_curve_interpolation(self):
-        curve = Curve([1, 2, 3]).options(interpolation='steps-mid')
+        curve = Curve([1, 2, 3]).opts(interpolation='steps-mid')
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['x'], np.array([0., 0.5, 0.5, 1.5, 1.5, 2.]))
         self.assertEqual(state['data'][0]['y'], np.array([1, 1, 2, 2, 3, 3]))
 
     def test_curve_color(self):
-        curve = Curve([1, 2, 3]).options(color='red')
+        curve = Curve([1, 2, 3]).opts(color='red')
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['line']['color'], 'red')
 
     def test_curve_color_mapping_error(self):
-        curve = Curve([1, 2, 3]).options(color='x')
+        curve = Curve([1, 2, 3]).opts(color='x')
         with self.assertRaises(ValueError):
             self._get_plot_state(curve)
 
     def test_curve_dash(self):
-        curve = Curve([1, 2, 3]).options(dash='dash')
+        curve = Curve([1, 2, 3]).opts(dash='dash')
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['line']['dash'], 'dash')
 
     def test_curve_line_width(self):
-        curve = Curve([1, 2, 3]).options(line_width=5)
+        curve = Curve([1, 2, 3]).opts(line_width=5)
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['line']['width'], 5)
 
     def test_visible(self):
-        element = Curve([1, 2, 3]).options(visible=False)
+        element = Curve([1, 2, 3]).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)
 
@@ -92,7 +92,7 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
         )
 
     def test_curve_inverted(self):
-        curve = Tiles("") * Curve([1, 2, 3]).options(invert_axes=True)
+        curve = Tiles("") * Curve([1, 2, 3]).opts(invert_axes=True)
         with self.assertRaises(ValueError) as e:
             self._get_plot_state(curve)
 
@@ -105,33 +105,33 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
         interp_ys = interp_curve.dimension_values("y")
         interp_lons, interp_lats = Tiles.easting_northing_to_lon_lat(interp_xs, interp_ys)
 
-        curve = Tiles("") * Curve(self.ys).options(interpolation='steps-mid')
+        curve = Tiles("") * Curve(self.ys).opts(interpolation='steps-mid')
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][1]['lat'], interp_lats)
         self.assertEqual(state['data'][1]['lon'], interp_lons)
 
     def test_curve_color(self):
-        curve = Tiles("") * Curve([1, 2, 3]).options(color='red')
+        curve = Tiles("") * Curve([1, 2, 3]).opts(color='red')
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][1]['line']['color'], 'red')
 
     def test_curve_color_mapping_error(self):
-        curve = Tiles("") * Curve([1, 2, 3]).options(color='x')
+        curve = Tiles("") * Curve([1, 2, 3]).opts(color='x')
         with self.assertRaises(ValueError):
             self._get_plot_state(curve)
 
     def test_curve_dash(self):
-        curve = Tiles("") * Curve([1, 2, 3]).options(dash='dash')
+        curve = Tiles("") * Curve([1, 2, 3]).opts(dash='dash')
         with self.assertRaises(ValueError) as e:
             self._get_plot_state(curve)
         self.assertIn("dash", str(e.exception))
 
     def test_curve_line_width(self):
-        curve = Tiles("") * Curve([1, 2, 3]).options(line_width=5)
+        curve = Tiles("") * Curve([1, 2, 3]).opts(line_width=5)
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][1]['line']['width'], 5)
 
     def test_visible(self):
-        element = Tiles("") * Curve([1, 2, 3]).options(visible=False)
+        element = Tiles("") * Curve([1, 2, 3]).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][1]['visible'], False)

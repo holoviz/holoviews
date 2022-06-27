@@ -276,16 +276,16 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
     def test_heatmap_holomap(self):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
-        plot = bokeh_renderer.get_plot(hm.options(radial=True))
+        plot = bokeh_renderer.get_plot(hm.opts(radial=True))
         self.assertIsInstance(plot, RadialHeatMapPlot)
 
     def test_radial_heatmap_colorbar(self):
-        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).options(radial=True, colorbar=True)
+        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
         self.assertIsInstance(plot.handles.get('colorbar'), ColorBar)
 
     def test_radial_heatmap_ranges(self):
-        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).options(radial=True, colorbar=True)
+        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
         self.assertEqual(plot.handles['x_range'].start, -0.05)
         self.assertEqual(plot.handles['x_range'].end, 1.05)

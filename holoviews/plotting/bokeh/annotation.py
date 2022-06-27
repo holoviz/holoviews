@@ -421,9 +421,6 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
           aspect ratio.
     """)
 
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
-
     hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a plot. The
         hook is passed the plot object and the displayed element, and

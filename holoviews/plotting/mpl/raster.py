@@ -227,7 +227,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     data_aspect = param.Parameter(precedence=-1)
     default_span = param.Parameter(precedence=-1)
     hooks = param.Parameter(precedence=-1)
-    finalize_hooks = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)

@@ -136,7 +136,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_title_fontsize(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
-        layout = Layout([hmap1, hmap2]).opts(plot=dict(fontsize={'title': '12pt'}))
+        layout = Layout([hmap1, hmap2]).opts(fontsize={'title': '12pt'})
         plot = bokeh_renderer.get_plot(layout)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
@@ -147,7 +147,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_title_show_title_false(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
-        layout = Layout([hmap1, hmap2]).opts(plot=dict(show_title=False))
+        layout = Layout([hmap1, hmap2]).opts(show_title=False)
         plot = bokeh_renderer.get_plot(layout)
         self.assertTrue('title' not in plot.handles)
 
@@ -240,7 +240,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
                          for (f, _, _) in grid.children], [1, 1, 1])
 
     def test_layout_plot_tabs_with_adjoints(self):
-        layout = (Curve([]) + Curve([]).hist()).options(tabs=True)
+        layout = (Curve([]) + Curve([]).hist()).opts(tabs=True)
         plot = bokeh_renderer.get_plot(layout)
         self.assertIsInstance(plot.state, Tabs)
         panel1, panel2 = plot.state.tabs
@@ -260,7 +260,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
 
         # Pop key (1,) for one of the HoloMaps and make Layout
         hmap2.pop((1,))
-        layout = (hmap1 + hmap2).opts(plot=dict(shared_datasource=True))
+        layout = (hmap1 + hmap2).opts(shared_datasource=True)
 
         # Get plot
         plot = bokeh_renderer.get_plot(layout)
@@ -297,7 +297,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_shared_axes_disable(self):
         curve = Curve(range(10))
-        img = Image(np.random.rand(10,10)).opts(plot=dict(shared_axes=False))
+        img = Image(np.random.rand(10,10)).opts(shared_axes=False)
         plot = bokeh_renderer.get_plot(curve+img)
         plot = plot.subplots[(0, 1)].subplots['main']
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
@@ -312,19 +312,19 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains('WARNING', 'skipping subplot')
 
     def test_layout_set_toolbar_location(self):
-        layout = (Curve([]) + Points([])).options(toolbar='left')
+        layout = (Curve([]) + Points([])).opts(toolbar='left')
         plot = bokeh_renderer.get_plot(layout)
         self.assertIsInstance(plot.state, Row)
         self.assertIsInstance(plot.state.children[0], ToolbarBox)
 
     def test_layout_disable_toolbar(self):
-        layout = (Curve([]) + Points([])).options(toolbar=None)
+        layout = (Curve([]) + Points([])).opts(toolbar=None)
         plot = bokeh_renderer.get_plot(layout)
         self.assertIsInstance(plot.state, GridBox)
         self.assertEqual(len(plot.state.children), 2)
 
     def test_layout_shared_inverted_yaxis(self):
-        layout = (Curve([]) + Curve([])).options('Curve', invert_yaxis=True)
+        layout = (Curve([]) + Curve([])).opts('Curve', invert_yaxis=True)
         plot = bokeh_renderer.get_plot(layout)
         subplot = list(plot.subplots.values())[0].subplots['main']
         self.assertEqual(subplot.handles['y_range'].start, 1)

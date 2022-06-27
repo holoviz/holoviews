@@ -24,7 +24,7 @@ class TestMPLBoxWhiskerPlot(TestMPLPlot):
                          p2.handles['boxes'][0].get_path().vertices)
 
     def test_box_whisker_padding_square(self):
-        curve = BoxWhisker([1, 2, 3]).options(padding=0.1)
+        curve = BoxWhisker([1, 2, 3]).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         y_range = plot.handles['axis'].get_ylim()
         self.assertEqual(y_range[0], 0.8)
