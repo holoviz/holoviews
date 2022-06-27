@@ -505,11 +505,7 @@ class DimensionedPlot(Plot):
         label, group, type_name, dim_title = self._format_title_components(
             key, dimensions=True, separator='\n'
         )
-
-        custom_title = (self.title != self.param['title'].default)
-        title_str = self.title
-
-        title = util.bytes_to_unicode(title_str).format(
+        title = util.bytes_to_unicode(self.title).format(
             label=util.bytes_to_unicode(label),
             group=util.bytes_to_unicode(group),
             type=type_name,
