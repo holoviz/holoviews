@@ -2,7 +2,7 @@
 
 {% block docs_navbar %}
 <nav class="navbar navbar-dark navbar-expand-lg bg-dark fixed-top bd-navbar" id="navbar-main">
-  {%- include "docs-navbar.html" %}
+  {%- include "sections/header.html" %}
 </nav>
 {% endblock %}
 
@@ -47,7 +47,9 @@
   </div>
   {% endblock %}
   {% if theme_show_prev_next %}
-  {% include "prev-next.html" %}
+  <footer class="bd-footer-article">
+    {% include "sections/footer-article.html" %}
+  </footer>
   {% endif %}
 </main>
 {% endblock %}

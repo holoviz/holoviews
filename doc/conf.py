@@ -47,10 +47,12 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
+    "navbar_end": ["navbar-icon-links"],
     'google_analytics_id': 'UA-61554933-1',
 }
 
 nbbuild_cell_timeout = 360
+nbbuild_ipython_startup = "from nbsite.ipystartup import *; import ipystartup;"
 
 extensions += [
     'nbsite.gallery',
