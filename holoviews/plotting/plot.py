@@ -1217,8 +1217,8 @@ class GenericElementPlot(DimensionedPlot):
                                 if k not in plot_opts})
 
         applied_params = dict(params, **plot_opts)
-        for p in applied_params:
-            if p in self.param and p in self._deprecations:
+        for p, pval in applied_params.items():
+            if p in self.param and p in self._deprecations and pval is not None:
                 self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions,
                          dynamic=dynamic, **applied_params)
