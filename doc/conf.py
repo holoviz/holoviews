@@ -96,6 +96,7 @@ html_context.update({
     "last_release": f"v{'.'.join(holoviews.__version__.split('.')[:3])}",
     'github_user': 'holoviz',
     'github_repo': 'holoviews',
+    "default_mode": "light"
 })
 
 # Override the Sphinx default title that appends `documentation`
