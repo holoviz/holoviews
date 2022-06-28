@@ -1,4 +1,4 @@
-:root {
+:root[data-theme="light"] {
     --pst-color-primary: rgb(47,47,47);
     --pst-color-link: rgb(163,26,38);
     --pst-color-link-hover: rgb(254,203,56);
