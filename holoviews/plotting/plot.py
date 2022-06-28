@@ -215,18 +215,13 @@ class Plot(param.Parameterized):
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
         """
-        if self.renderer.mode == 'server':
-            from bokeh.io import curdoc
-            thread = threading.current_thread()
-            thread_id = thread.ident if thread else None
-            if (curdoc() is not self.document or (state._thread_id is not None and
-                thread_id != state._thread_id)):
-                # If we do not have the Document lock, schedule refresh as callback
-                self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
-                                     for s in getattr(p, 'streams', []) if s._triggering]
-                if self.document and self.document.session_context:
-                    self.document.add_next_tick_callback(self.refresh)
-                    return
+        if self.renderer.mode == 'server' and not state._unblocked(self.document):
+            # If we do not have the Document lock, schedule refresh as callback
+            self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
+                                 for s in getattr(p, 'streams', []) if s._triggering]
+            if self.document and self.document.session_context:
+                self.document.add_next_tick_callback(self.refresh)
+                return
 
         # Ensure that server based tick callbacks maintain stream triggering state
         for s in self._triggering:
