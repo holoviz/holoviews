@@ -47,6 +47,7 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
+    "navbar_end": ["navbar-icon-links"],
     'google_analytics_id': 'UA-61554933-1',
 }
 
@@ -94,6 +95,7 @@ html_context.update({
     "last_release": f"v{'.'.join(holoviews.__version__.split('.')[:3])}",
     'github_user': 'holoviz',
     'github_repo': 'holoviews',
+    "default_mode": "light"
 })
 
 # Override the Sphinx default title that appends `documentation`

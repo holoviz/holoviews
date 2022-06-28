@@ -1,7 +1,7 @@
-:root {
-    --pst-color-primary: 47,47,47;
-    --pst-color-link: 163,26,38;
-    --pst-color-link-hover: 254,203,56;
+:root[data-theme="light"] {
+    --pst-color-primary: rgb(47,47,47);
+    --pst-color-link: rgb(163,26,38);
+    --pst-color-link-hover: rgb(254,203,56);
 }
 
 .nav-link {
@@ -71,4 +71,8 @@ button.toggle-button {
     padding-left: 1.5rem;
     padding-top: 1rem;
     padding-bottom: 1rem;
+}
+
+ul.current.nav.bd-sidenav {
+    padding: 0;
 }
