@@ -3,7 +3,6 @@ Public API for all plots supported by HoloViews, regardless of
 plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
-import threading
 import uuid
 import warnings
 
