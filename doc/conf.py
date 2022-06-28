@@ -52,7 +52,6 @@ html_theme_options = {
 }
 
 nbbuild_cell_timeout = 360
-nbbuild_ipython_startup = "from nbsite.ipystartup import *; import ipystartup;"
 
 extensions += [
     'nbsite.gallery',
