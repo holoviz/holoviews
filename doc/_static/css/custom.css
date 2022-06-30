@@ -2,6 +2,7 @@
     --pst-color-primary: rgb(47,47,47);
     --pst-color-link: rgb(163,26,38);
     --pst-color-link-hover: rgb(254,203,56);
+    --pst-color-surface: rgb(250, 250, 250);
 }
 
 .nav-link {
