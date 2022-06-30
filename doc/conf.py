@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import param
+
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
+
 from nbsite.shared_conf import *
 
 # Declare information specific to this project.
@@ -7,11 +12,6 @@ project = u'HoloViews'
 authors = u'HoloViz developers'
 copyright = u'2022 ' + authors
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
-
-import param
-
-param.parameterized.docstring_signature = False
-param.parameterized.docstring_describe_params = False
 
 import holoviews
 version = release = base_version(holoviews.__version__)
