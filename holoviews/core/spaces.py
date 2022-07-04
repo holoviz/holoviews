@@ -951,10 +951,11 @@ class DynamicMap(HoloMap):
 
     def _style(self, retval):
         "Applies custom option tree to values return by the callback."
+        from ..util import opts
         if self.id not in Store.custom_options():
             return retval
         spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
-        return retval.opts(spec)
+        return opts.apply_groups(retval, options=spec)
 
 
     def _execute_callback(self, *args):

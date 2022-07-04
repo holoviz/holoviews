@@ -328,7 +328,7 @@ class TestEditToolCallbacks(CallbackTestCase):
     def test_point_draw_shared_datasource_callback(self):
         points = Points([1, 2, 3])
         table = Table(points.data, ['x', 'y'])
-        layout = (points + table).options(shared_datasource=True, clone=False)
+        layout = (points + table).opts(shared_datasource=True, clone=False)
         PointDraw(source=points)
         self.assertIs(points.data, table.data)
         plot = bokeh_renderer.get_plot(layout)

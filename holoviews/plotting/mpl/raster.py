@@ -5,7 +5,7 @@ import numpy as np
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator
+from ...core.util import isfinite, match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
 from ..util import categorical_legend
 from .chart import PointPlot
@@ -116,8 +116,11 @@ class RGBPlot(RasterBasePlot, LegendPlot):
             data = data[::-1, ::-1]
             data = data.transpose([1, 0, 2])
             l, b, r, t = b, l, t, r
-        style['extent'] = [l, r, b, t]
+        if all(isfinite(e) for e in (l, b, r, t)):
+            style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
+        if data.shape[:2] == (0, 0):
+            data = np.zeros((1, 1, 4), dtype='uint8')
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
@@ -224,13 +227,13 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     data_aspect = param.Parameter(precedence=-1)
     default_span = param.Parameter(precedence=-1)
     hooks = param.Parameter(precedence=-1)
-    finalize_hooks = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
     invert_zaxis = param.Parameter(precedence=-1)
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
+    legend_labels = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
     legend_opts = param.Parameter(precedence=-1)
     legend_limit = param.Parameter(precedence=-1)

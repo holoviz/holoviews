@@ -109,7 +109,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'pscript',
     'graphviz',
     'bokeh >2.2',
-    'pydata-sphinx-theme',
+    'pydata-sphinx-theme >=0.9.0',
     'sphinx-copybutton',
     'pooch',
 ]

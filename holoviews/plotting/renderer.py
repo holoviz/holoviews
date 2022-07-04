@@ -271,7 +271,7 @@ class Renderer(Exporter):
         Given a HoloViews Viewable return a corresponding plot state.
         """
         if not isinstance(obj, Plot):
-            obj = self_or_cls.get_plot(obj, renderer, **kwargs)
+            obj = self_or_cls.get_plot(obj=obj, renderer=renderer, **kwargs)
         return obj.state
 
     def _validate(self, obj, fmt, **kwargs):

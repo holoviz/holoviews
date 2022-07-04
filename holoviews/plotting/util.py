@@ -1288,6 +1288,10 @@ fire = [str('#{0:02x}{1:02x}{2:02x}'.format(int(r*255),int(g*255),int(b*255)))
 
 
 class categorical_legend(Operation):
+    """
+    Generates a Points element which contains information for generating
+    a legend by inspecting the pipeline of a datashaded RGB element.
+    """
 
     backend = param.String()
 

@@ -3,7 +3,6 @@ Public API for all plots supported by HoloViews, regardless of
 plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
-import threading
 import uuid
 import warnings
 
@@ -215,18 +214,13 @@ class Plot(param.Parameterized):
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
         """
-        if self.renderer.mode == 'server':
-            from bokeh.io import curdoc
-            thread = threading.current_thread()
-            thread_id = thread.ident if thread else None
-            if (curdoc() is not self.document or (state._thread_id is not None and
-                thread_id != state._thread_id)):
-                # If we do not have the Document lock, schedule refresh as callback
-                self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
-                                     for s in getattr(p, 'streams', []) if s._triggering]
-                if self.document and self.document.session_context:
-                    self.document.add_next_tick_callback(self.refresh)
-                    return
+        if self.renderer.mode == 'server' and not state._unblocked(self.document):
+            # If we do not have the Document lock, schedule refresh as callback
+            self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
+                                 for s in getattr(p, 'streams', []) if s._triggering]
+            if self.document and self.document.session_context:
+                self.document.add_next_tick_callback(self.refresh)
+                return
 
         # Ensure that server based tick callbacks maintain stream triggering state
         for s in self._triggering:
@@ -396,8 +390,6 @@ class DimensionedPlot(Plot):
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
 
-    title_format = param.String(default=None, doc="Alias for title.")
-
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
         of plotting. Allows selecting normalization at different levels
@@ -504,22 +496,10 @@ class DimensionedPlot(Plot):
         return util.bytes_to_unicode(separator.join(g for g in groups if g))
 
     def _format_title(self, key, dimensions=True, separator='\n'):
-        if self.title_format:
-            self.param.warning('title_format is deprecated. Please use title instead')
-
         label, group, type_name, dim_title = self._format_title_components(
             key, dimensions=True, separator='\n'
         )
-
-        custom_title = (self.title != self.param['title'].default)
-        if custom_title and self.title_format:
-            self.param.warning('Both title and title_format set. Using title')
-        title_str = (
-            self.title if custom_title or self.title_format is None
-            else self.title_format
-        )
-
-        title = util.bytes_to_unicode(title_str).format(
+        title = util.bytes_to_unicode(self.title).format(
             label=util.bytes_to_unicode(label),
             group=util.bytes_to_unicode(group),
             type=type_name,
@@ -1066,9 +1046,6 @@ class GenericElementPlot(DimensionedPlot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
-
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
 
@@ -1169,6 +1146,29 @@ class GenericElementPlot(DimensionedPlot):
     _propagate_options = []
     v17_option_propagation = True
 
+    _deprecations = {
+        'color_index': (
+            "The `color_index` parameter is deprecated in favor of color "
+            "style mapping, e.g. `color=dim('color')` or `line_color=dim('color')`"
+        ),
+        'size_index': (
+            "The `size_index` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=dim('size')**2`."
+        ),
+        'scaling_method': (
+            "The `scaling_method` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=dim('size')**2` for area scaling."
+        ),
+        'scaling_factor': (
+            "The `scaling_factor` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=dim('size')*10`."
+        ),
+        'size_fn': (
+            "The `size_fn` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=abs(dim('size'))`."
+        ),
+    }
+
     _selection_display = NoOpSelectionDisplay()
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
@@ -1210,8 +1210,12 @@ class GenericElementPlot(DimensionedPlot):
             plot_opts.update(**{k: v[0] for k, v in inherited.items()
                                 if k not in plot_opts})
 
+        applied_params = dict(params, **plot_opts)
+        for p, pval in applied_params.items():
+            if p in self.param and p in self._deprecations and pval is not None:
+                self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions,
-                         dynamic=dynamic, **dict(params, **plot_opts))
+                         dynamic=dynamic, **applied_params)
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
 
         # Attach streams if not overlaid and not a batched ElementPlot
@@ -1227,6 +1231,7 @@ class GenericElementPlot(DimensionedPlot):
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
             self.ordering = []
+
 
     def get_zorder(self, overlay, key, el):
         """
@@ -1264,16 +1269,7 @@ class GenericElementPlot(DimensionedPlot):
         """
         Executes finalize hooks
         """
-        if self.hooks and self.finalize_hooks:
-            self.param.warning(
-                "Supply either hooks or finalize_hooks not both, "
-                "using hooks and ignoring finalize_hooks.")
-        elif self.finalize_hooks:
-            self.param.warning(
-                "The finalize_hooks option is deprecated, use the "
-                "hooks option instead.")
-        hooks = self.hooks or self.finalize_hooks
-        for hook in hooks:
+        for hook in self.hooks:
             try:
                 hook(self, element)
             except Exception as e:

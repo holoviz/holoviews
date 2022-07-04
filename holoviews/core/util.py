@@ -1227,6 +1227,13 @@ def is_number(obj):
     else: return False
 
 
+def is_float(obj):
+    """
+    Checks if the argument is a floating-point scalar.
+    """
+    return isinstance(obj, (float, np.floating))
+
+
 def is_int(obj, int_like=False):
     """
     Checks for int types including the native Python type and NumPy-like objects

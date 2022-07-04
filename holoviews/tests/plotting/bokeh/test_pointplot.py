@@ -18,18 +18,17 @@ from bokeh.models import Scatter
 class TestPointPlot(TestBokehPlot):
 
     def test_points_colormapping(self):
-        points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(plot=dict(color_index=3))
+        points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(color_index=3)
         self._test_colormapping(points, 3)
 
     def test_points_colormapping_with_nonselection(self):
-        opts = dict(plot=dict(color_index=3),
-                    style=dict(nonselection_color='red'))
+        opts = dict(color_index=3, nonselection_color='red')
         points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(**opts)
         self._test_colormapping(points, 3)
 
     def test_points_colormapping_categorical(self):
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b']).opts(plot=dict(color_index='b'))
+                         vdims=['a', 'b']).opts(color_index='b')
         plot = bokeh_renderer.get_plot(points)
         plot.initialize_plot()
         cmapper = plot.handles['color_mapper']
@@ -39,7 +38,7 @@ class TestPointPlot(TestBokehPlot):
     def test_points_color_selection_nonselection(self):
         opts = dict(color='green', selection_color='red', nonselection_color='blue')
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b']).opts(style=opts)
+                         vdims=['a', 'b']).opts(**opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
         self.assertEqual(glyph_renderer.glyph.fill_color, 'green')
@@ -52,7 +51,7 @@ class TestPointPlot(TestBokehPlot):
     def test_points_alpha_selection_nonselection(self):
         opts = dict(alpha=0.8, selection_alpha=1.0, nonselection_alpha=0.2)
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b']).opts(style=opts)
+                         vdims=['a', 'b']).opts(**opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
         self.assertEqual(glyph_renderer.glyph.fill_alpha, 0.8)
@@ -65,7 +64,7 @@ class TestPointPlot(TestBokehPlot):
     def test_points_alpha_selection_partial(self):
         opts = dict(selection_alpha=1.0, selection_fill_alpha=0.2)
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b']).opts(style=opts)
+                         vdims=['a', 'b']).opts(**opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
         self.assertEqual(glyph_renderer.glyph.fill_alpha, 1.0)
@@ -80,8 +79,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(extents, (0, 0, 98, 98))
 
     def test_batched_points_size_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Points': dict(style=dict(size=Cycle(values=[1, 2])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Points': dict(size=Cycle(values=[1, 2]))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -92,8 +91,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['size'], size)
 
     def test_batched_points_line_color_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Points': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Points': dict(line_color=Cycle(values=['red', 'blue']))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -104,8 +103,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
 
     def test_batched_points_alpha_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Points': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Points': dict(alpha=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -116,8 +115,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['color'], color)
 
     def test_batched_points_line_width_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Points': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Points': dict(line_width=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -131,7 +130,7 @@ class TestPointPlot(TestBokehPlot):
         obj = NdOverlay({i: Points((list(pd.date_range('2016-01-01', '2016-01-31')), range(31))) for i in range(5)},
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}{%F %T}'), ('y', '@{y}')],
                               formatters={'@{x}': "datetime"})
 
@@ -140,7 +139,7 @@ class TestPointPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')])
 
     def test_points_overlay_hover(self):
@@ -148,7 +147,7 @@ class TestPointPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'),
                                     ('y', '@{y}')])
 
@@ -165,8 +164,10 @@ class TestPointPlot(TestBokehPlot):
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
-        warning = ('z dimension is not numeric, '
-                   'cannot use to scale Points size.\n')
+        warning = (
+            "The `size_index` parameter is deprecated in favor of size style mapping, e.g. "
+            "`size=dim('size')**2`.\nz dimension is not numeric, cannot use to scale Points size.\n"
+        )
         self.assertEqual(log_msg, warning)
 
     def test_points_categorical_xaxis(self):
@@ -185,7 +186,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
-        points = Points((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_axes=True))
+        points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
         self.assertIsInstance(y_range, FactorRange)
@@ -200,7 +201,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])
 
     def test_points_overlay_categorical_xaxis_invert_axis(self):
-        points = Points((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_xaxis=True))
+        points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_xaxis=True)
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
@@ -208,7 +209,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'][::-1])
 
     def test_points_overlay_categorical_xaxis_invert_axes(self):
-        points = Points((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_axes=True))
+        points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         y_range = plot.handles['y_range']
@@ -216,7 +217,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'])
 
     def test_points_padding_square(self):
-        points = Points([1, 2, 3]).options(padding=0.1)
+        points = Points([1, 2, 3]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -225,7 +226,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_square_per_axis(self):
-        curve = Points([1, 2, 3]).options(padding=((0, 0.1), (0.1, 0.2)))
+        curve = Points([1, 2, 3]).opts(padding=((0, 0.1), (0.1, 0.2)))
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -234,7 +235,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.4)
 
     def test_points_padding_unequal(self):
-        points = Points([1, 2, 3]).options(padding=(0.05, 0.1))
+        points = Points([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.1)
@@ -243,7 +244,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_nonsquare(self):
-        points = Points([1, 2, 3]).options(padding=0.1, width=600)
+        points = Points([1, 2, 3]).opts(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.1)
@@ -252,7 +253,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_logx(self):
-        points = Points([(1, 1), (2, 2), (3,3)]).options(padding=0.1, logx=True)
+        points = Points([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.89595845984076228)
@@ -261,7 +262,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_logy(self):
-        points = Points([1, 2, 3]).options(padding=0.1, logy=True)
+        points = Points([1, 2, 3]).opts(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -270,7 +271,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     def test_points_padding_datetime_square(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(points)
@@ -281,7 +282,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_datetime_nonsquare(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(points)
@@ -292,7 +293,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_hard_xrange(self):
-        points = Points([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.1)
+        points = Points([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -301,7 +302,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_soft_xrange(self):
-        points = Points([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
+        points = Points([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -310,7 +311,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_datetime_hover(self):
-        points = Points([(0, 1, dt.datetime(2017, 1, 1))], vdims='date').options(tools=['hover'])
+        points = Points([(0, 1, dt.datetime(2017, 1, 1))], vdims='date').opts(tools=['hover'])
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         self.assertEqual(cds.data['date'].astype('datetime64'), np.array([1483228800000000000]))
@@ -339,7 +340,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
-                        vdims='color').options(color='color')
+                        vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -349,7 +350,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_linear_color_op(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(color='color')
+                        vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -363,7 +364,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_categorical_color_op(self):
         points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
-                        vdims='color').options(color='color')
+                        vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -373,6 +374,16 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+
+    def test_point_categorical_color_op_legend_with_labels(self):
+        labels = {'A': 'A point', 'B': 'B point', 'C': 'C point'}
+        points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                        vdims='color').opts(color='color', show_legend=True, legend_labels=labels)
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        legend = plot.state.legend[0].items[0]
+        assert legend.label == {'field': '_color_labels'}
+        assert cds.data['_color_labels'] == ['A point', 'B point', 'C point']
 
     def test_point_categorical_dtype_color_op(self):
         df = pd.DataFrame(dict(sample_id=['subject 1', 'subject 2', 'subject 3', 'subject 4'], category=['apple', 'pear', 'apple', 'pear'], value=[1, 2, 3, 4]))
@@ -389,7 +400,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
 
     def test_point_explicit_cmap_color_op(self):
-        points = Points([(0, 0), (0, 1), (0, 2)]).options(
+        points = Points([(0, 0), (0, 1), (0, 2)]).opts(
             color='y', cmap={0: 'red', 1: 'green', 2: 'blue'})
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
@@ -404,7 +415,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_line_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
-                        vdims='color').options(line_color='color')
+                        vdims='color').opts(line_color='color')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -414,7 +425,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_fill_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
-                        vdims='color').options(fill_color='color')
+                        vdims='color').opts(fill_color='color')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -424,7 +435,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_angle_op(self):
         points = Points([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
-                        vdims='angle').options(angle='angle')
+                        vdims='angle').opts(angle='angle')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -433,7 +444,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
-                        vdims='alpha').options(alpha='alpha')
+                        vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -442,7 +453,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_line_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
-                        vdims='alpha').options(line_alpha='alpha')
+                        vdims='alpha').opts(line_alpha='alpha')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -452,7 +463,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_fill_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
-                        vdims='alpha').options(fill_alpha='alpha')
+                        vdims='alpha').opts(fill_alpha='alpha')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -462,7 +473,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_size_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
-                        vdims='size').options(size='size')
+                        vdims='size').opts(size='size')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -471,7 +482,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_line_width_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
-                        vdims='line_width').options(line_width='line_width')
+                        vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -480,7 +491,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
-                        vdims='marker').options(marker='marker')
+                        vdims='marker').opts(marker='marker')
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
@@ -489,7 +500,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_op_ndoverlay_value(self):
         markers = ['circle', 'triangle']
-        overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').options('Points', marker='Marker')
+        overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
@@ -497,17 +508,20 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_color_index_color_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(color='color', color_index='color')
+                        vdims='color').opts(color='color', color_index='color')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
+        warning = (
+            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
+            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
+            "for 'color' option and declare a color_index; ignoring the color_index.\n"
+        )
         self.assertEqual(log_msg, warning)
 
     def test_point_color_index_color_no_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(fill_color='color', color_index='color')
+                        vdims='color').opts(fill_color='color', color_index='color')
         plot = bokeh_renderer.get_plot(points)
         glyph = plot.handles['glyph']
         cmapper = plot.handles['fill_color_color_mapper']
@@ -517,10 +531,13 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_size_index_size_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='size').options(size='size', size_index='size')
+                        vdims='size').opts(size='size', size_index='size')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'size' option "
-                   "and declare a size_index; ignoring the size_index.\n")
+        warning = (
+            "The `size_index` parameter is deprecated in favor of size style mapping, e.g. "
+            "`size=dim('size')**2`.\nCannot declare style mapping for 'size' option and declare a "
+            "size_index; ignoring the size_index.\n"
+        )
         self.assertEqual(log_msg, warning)

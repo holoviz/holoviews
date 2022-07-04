@@ -81,7 +81,7 @@ class opts(param.ParameterizedFunction):
     __original_docstring__ = None
 
     # Keywords not to be tab-completed (helps with deprecation)
-    _no_completion = ['title_format', 'color_index', 'size_index', 'finalize_hooks',
+    _no_completion = ['title_format', 'color_index', 'size_index',
                       'scaling_factor', 'scaling_method', 'size_fn', 'normalize_lengths',
                       'group_index', 'category_index', 'stack_index', 'color_by']
 
@@ -648,6 +648,8 @@ class extension(_pyviz_extension):
     # Hooks run when a backend is loaded
     _backend_hooks = defaultdict(list)
 
+    _loaded = False
+
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
@@ -804,9 +806,10 @@ def render(obj, backend=None, **kwargs):
     renderer_obj = renderer(backend)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
-    plot = renderer_obj.get_plot(obj)
-    if backend == 'matplotlib' and len(plot) > 1:
-        return plot.anim(fps=renderer_obj.fps)
+    if backend == 'matplotlib':
+        plot = renderer_obj.get_plot(obj)
+        if len(plot) > 1:
+            return plot.anim(fps=renderer_obj.fps)
     return renderer_obj.get_plot_state(obj)
 
 

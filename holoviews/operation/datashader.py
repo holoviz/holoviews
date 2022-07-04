@@ -593,12 +593,18 @@ class overlay_aggregate(aggregate):
             if element.ndims == 1:
                 grouped = element
             else:
-                grouped = element.groupby([agg_fn.column], container_type=NdOverlay,
-                                          group_type=NdOverlay)
+                grouped = element.groupby(
+                    [agg_fn.column], container_type=NdOverlay,
+                    group_type=NdOverlay
+                )
             groups = []
-            for k, v in grouped.items():
-                agg = agg_fn1(v)
-                groups.append((k, agg.clone(agg.data, bounds=bbox)))
+            for k, el in grouped.items():
+                if width == 0 or height == 0:
+                    agg = self._empty_agg(el, x, y, width, height, xs, ys, ds.count())
+                    groups.append((k, agg))
+                else:
+                    agg = agg_fn1(el)
+                    groups.append((k, agg.clone(agg.data, bounds=bbox)))
             return grouped.clone(groups)
 
         # Create aggregate instance for sum, count operations, breaking mean
@@ -2077,39 +2083,3 @@ inspect._dispatch = {
     Points: inspect_points,
     Polygons: inspect_polygons
 }
-
-
-class categorical_legend(Operation):
-
-    def _process(self, element, key=None):
-        from ..plotting.util import rgb2hex
-        rasterize_op = element.pipeline.find(rasterize)
-        if isinstance(rasterize_op, datashade):
-            shade_op = rasterize_op
-        else:
-            shade_op = element.pipeline.find(shade)
-        if None in (shade_op, rasterize_op):
-            return None
-        hvds = element.dataset
-        input_el = element.pipeline.operations[0](hvds)
-        agg = rasterize_op._get_aggregator(input_el, rasterize_op.aggregator)
-        if not isinstance(agg, (ds.count_cat, ds.by)):
-            return
-        column = agg.column
-        if hasattr(hvds.data, 'dtypes'):
-            cats = list(hvds.data.dtypes[column].categories)
-            if cats == ['__UNKNOWN_CATEGORIES__']:
-                cats = list(hvds.data[column].cat.as_known().categories)
-        else:
-            cats = list(hvds.dimension_values(column, expanded=False))
-        colors = shade_op.color_key
-        color_data = [(0, 0, cat) for cat in cats]
-        if isinstance(colors, list):
-            cat_colors = {cat: colors[i] for i, cat in enumerate(cats)}
-        else:
-            cat_colors = {cat: colors[cat] for cat in cats}
-        cat_colors = {
-            cat: rgb2hex([v/256 for v in color[:3]]) if isinstance(color, tuple) else color
-            for cat, color in cat_colors.items()}
-        return Points(color_data, vdims=['category']).opts(
-             apply_ranges=False, cmap=cat_colors, color='category', show_legend=True)
