@@ -3,7 +3,7 @@ Version 1.15.0
 **July 6, 2022**
 
 This is a major release with a large number of new features and bug
-fixes, as well as a updates to Python and Panel compatibility.
+fixes, as well as updates to Python and Panel compatibility.
 
 Many thanks to the numerous users who filed bug reports, tested
 development versions, and contributed a number of new features and bug
@@ -56,9 +56,7 @@ lines as well as the new `rescale_discrete_levels` colormapping option.
 - Set `rescale_discrete_levels=True` by default
   ([#5268](https://github.com/holoviz/holoviews/pull/5268))
 
-Linked selection features:
-
-The following features have been added to linked selections.
+New linked selection features:
 
 - Implement `linked_selection.filter` method
   ([#4999](https://github.com/holoviz/holoviews/pull/4999))
@@ -69,9 +67,7 @@ The following features have been added to linked selections.
 - Fix `AdjointLayout` in `link_selections`
   ([#5030](https://github.com/holoviz/holoviews/pull/5030))
 
-Bokeh features:
-
-The following features have been added to the Bokeh plotting backend:
+New features for the Bokeh plotting backend:
 
 - Add `legend_labels` option to allow overriding legend labels
   ([#5342](https://github.com/holoviz/holoviews/pull/5342))
@@ -80,10 +76,7 @@ The following features have been added to the Bokeh plotting backend:
 - Updated sankey algorithm to `d3-sankey-v0.12.3`
  ([#4707](https://github.com/holoviz/holoviews/pull/4707))
 
-Enhancements:
-
-In addition to major features, the following enhancements and
-optimizations have been added:
+Other enhancements:
 
 - Optimize and clean up options system
  ([#4954](https://github.com/holoviz/holoviews/pull/4954))
@@ -99,9 +92,6 @@ optimizations have been added:
 
 
 Bug fixes:
-
-In addition to the new features and enhancements, a large number of bug
-fixes have been made:
 
 - Fix batch watching and linking of parameters in Params stream
  ([#4960](https://github.com/holoviz/holoviews/pull/4960),
