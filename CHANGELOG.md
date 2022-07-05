@@ -7,11 +7,13 @@ fixes, as well as a updates to Python and Panel compatibility.
 
 Many thanks to the numerous users who filed bug reports, tested
 development versions, and contributed a number of new features and bug
-fixes, including special thanks to @ablythed @douglas-raillard-arm
-@FloLangenfeld @HoxBro @ianthomas23 @jenssss @pepijndevos @peterroelants
-@stas-sl @Yura52 for their contributions. In addition, thanks to the
-maintainers @jbednar, @maximlt, @jlstevens and @philippjfr for
-contributing to this release.
+fixes, including special thanks to @ablythed @ahuang11
+@douglas-raillard-arm @FloLangenfeld @HoxBro @ianthomas23 @jenssss
+@pepijndevos @peterroelants @stas-sl @Yura52 for their contributions. In
+addition, thanks to the maintainers @jbednar, @maximlt, @jlstevens and
+@philippjfr for contributing to this release.
+
+
 
 Compatibility:
 
@@ -90,6 +92,11 @@ optimizations have been added:
  https://github.com/holoviz/holoviews/pull/5061
 - Support ibis-framework version 3
  ([#5292](https://github.com/holoviz/holoviews/pull/5292))
+- Add `OpenTopoMap` as a tile source
+ ([#5052](https://github.com/holoviz/holoviews/pull/5052))
+- Show all histograms of an `Overlay`
+([#5031](https://github.com/holoviz/holoviews/pull/5031))
+
 
 Bug fixes:
 
@@ -105,6 +112,8 @@ fixes have been made:
  ([#4951](https://github.com/holoviz/holoviews/pull/4951))
 - Handle `pd.NA` as missing data in dtype=object column
  ([#5323](https://github.com/holoviz/holoviews/pull/5323))
+- Forward `DynamicMap.hist` dimension parameter to histogram creation
+ ([#5037](https://github.com/holoviz/holoviews/pull/5037))
 - Remove numpy pin from examples
  ([#5285](https://github.com/holoviz/holoviews/pull/5285))
 - Fix vmin/vmax deprecation on matplotlib HeatMapPlot
@@ -125,6 +134,9 @@ fixes have been made:
  ([#5063](https://github.com/holoviz/holoviews/pull/5063))
 - Fixes for bokeh `Callbacks`
  ([#5040](https://github.com/holoviz/holoviews/pull/5040))
+- Fix for attribute error in matplotlib `CompositePlot`
+ ([#4969](https://github.com/holoviz/holoviews/pull/4969))
+
 
 Documentation:
 
