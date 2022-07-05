@@ -13,8 +13,6 @@ fixes, including special thanks to @ablythed @ahuang11
 addition, thanks to the maintainers @jbednar, @maximlt, @jlstevens and
 @philippjfr for contributing to this release.
 
-
-
 Compatibility:
 
 - Python 2 support has finally been dropped with 1.14.9 as the last
@@ -96,6 +94,8 @@ Bug fixes:
 - Fix batch watching and linking of parameters in Params stream
  ([#4960](https://github.com/holoviz/holoviews/pull/4960),
   [#4956](https://github.com/holoviz/holoviews/pull/4956))
+- Ensure `Plot.refresh` is dispatched immediately if possible
+ ([#5348](https://github.com/holoviz/holoviews/pull/5348))
 - Fix datashader empty overlay aggregation
  ([#5334](https://github.com/holoviz/holoviews/pull/5334))
 - Fixed missing handling of nodata for count aggregator with column
@@ -126,7 +126,10 @@ Bug fixes:
  ([#5040](https://github.com/holoviz/holoviews/pull/5040))
 - Fix for attribute error in matplotlib `CompositePlot`
  ([#4969](https://github.com/holoviz/holoviews/pull/4969))
-
+- Silenced inappropriate deprecation warnings and updated deprecation
+  settings in options system
+ ([#5345](https://github.com/holoviz/holoviews/pull/5345),
+  [#5346](https://github.com/holoviz/holoviews/pull/5346))
 
 Documentation:
 
