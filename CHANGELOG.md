@@ -47,8 +47,6 @@ lines as well as the new `rescale_discrete_levels` colormapping option.
   ([#4806](https://github.com/holoviz/holoviews/pull/4806))
 - Implement `line_width` support when rasterizing spatialpandas paths
   ([#5280](https://github.com/holoviz/holoviews/pull/5280))
-- Added `pixel_ratio parameter` to ResamplingOperation base class
-  ([#5288](https://github.com/holoviz/holoviews/pull/5288))
 - Expose `rescale_discrete_levels` in the Bokeh backend
   ([#5312](https://github.com/holoviz/holoviews/pull/5312))
 - Set `rescale_discrete_levels=True` by default
@@ -60,8 +58,6 @@ New linked selection features:
   ([#4999](https://github.com/holoviz/holoviews/pull/4999))
 - Allow passing custom `selection_expr` to linked selections filter
   ([#5012](https://github.com/holoviz/holoviews/pull/5012))
-- Implement linked selection lasso for cudf using cuspatial
-  ([#5051](https://github.com/holoviz/holoviews/pull/5051))
 - Fix `AdjointLayout` in `link_selections`
   ([#5030](https://github.com/holoviz/holoviews/pull/5030))
 
@@ -69,8 +65,6 @@ New features for the Bokeh plotting backend:
 
 - Add `legend_labels` option to allow overriding legend labels
   ([#5342](https://github.com/holoviz/holoviews/pull/5342))
-- Allow customizing `hover line_(width|join|cap|dash)` properties
- ([#5211](https://github.com/holoviz/holoviews/pull/5211))
 - Updated sankey algorithm to `d3-sankey-v0.12.3`
  ([#4707](https://github.com/holoviz/holoviews/pull/4707))
 
@@ -119,8 +113,6 @@ Bug fixes:
  ([#5266](https://github.com/holoviz/holoviews/pull/5266))
 - Switch to using bokeh `rangesupdate` event for `Range` streams
  ([#5265](https://github.com/holoviz/holoviews/pull/5265))
-- Ensure updates to the bokeh visible style property are applied
- ([#5063](https://github.com/holoviz/holoviews/pull/5063))
 - Fixes for bokeh `Callbacks`
  ([#5040](https://github.com/holoviz/holoviews/pull/5040))
 - Fix for attribute error in matplotlib `CompositePlot`
@@ -143,8 +135,6 @@ The following improvements to the documentation have been made:
  ([#4953](https://github.com/holoviz/holoviews/pull/4953))
 - Added FAQ about sharing only a single axis
  ([#5278](https://github.com/holoviz/holoviews/pull/5278))
-- Updated Large Data guide to match changes in Datashader
- ([#5290](https://github.com/holoviz/holoviews/pull/5290))
 - Miscellaneous fixes to Heatmap reference notebook and Continuous
   Coordinates user guide
  ([#5262](https://github.com/holoviz/holoviews/pull/5262))
