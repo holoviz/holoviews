@@ -16,9 +16,15 @@ addition, thanks to the maintainers @jbednar, @maximlt, @jlstevens and
 Compatibility:
 
 - Python 2 support has finally been dropped with 1.14.9 as the last
-  release supporting Python 2.
+  release supporting Python 2
 - HoloViews now requires panel >0.13.1
-  ([#4329](https://github.com/holoviz/holoviews/pull/4329))
+  ([#4329](https://github.com/holoviz/holoviews/pull/4329))  
+- Colormaps for the output of the datashade operation have changed to
+  address
+  [holoviz/datashader#357](https://github.com/holoviz/datashader/issues/357);
+  see `rescale_discrete_levels` below. To revert to the old colorbar
+  behavior, set `ColorbarPlot.rescale_discrete_levels = False` in the
+  `bokeh` or `mpl` plotting modules as appropriate.
 
 Major features:
 
