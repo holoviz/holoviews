@@ -117,7 +117,6 @@ Bug fixes:
  ([#5018](https://github.com/holoviz/holoviews/pull/5018))
 - Ensure `overlay_aggregate` is not applied for anti-aliased lines
  ([#5266](https://github.com/holoviz/holoviews/pull/5266))
- https://github.com/holoviz/holoviews/pull/5266
 - Switch to using bokeh `rangesupdate` event for `Range` streams
  ([#5265](https://github.com/holoviz/holoviews/pull/5265))
 - Ensure updates to the bokeh visible style property are applied
