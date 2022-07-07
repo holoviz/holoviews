@@ -25,6 +25,8 @@ Compatibility:
   see `rescale_discrete_levels` below. To revert to the old colorbar
   behavior, set `ColorbarPlot.rescale_discrete_levels = False` in the
   `bokeh` or `mpl` plotting modules as appropriate.
+- Updated Sankey algorithm means that some users may need to update the
+  `node_padding` parameter for plots generated with earlier releases.
 
 Major features:
 
