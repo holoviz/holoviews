@@ -1547,6 +1547,9 @@ class rasterize(AggregationOperation):
     ]
 
     def _process(self, element, key=None):
+        if isinstance(element, Image):
+            self.p.expand = False
+
         # Potentially needs traverse to find element types first?
         all_allowed_kws = set()
         all_supplied_kws = set()
