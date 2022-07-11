@@ -84,7 +84,7 @@ class iloc(object):
         return dim(self.expr, self)
 
     def __call__(self, values):
-        return values[self.index]
+        return values[resolve_dependent_value(self.index)]
 
 
 @_maybe_map
@@ -335,6 +335,9 @@ class dim(object):
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
+            if hasattr(op['fn'], 'index'):
+                # Special case for iloc to check if slice has parameters
+                op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
                 if Widget and isinstance(op_arg, Widget):
