@@ -327,24 +327,36 @@ class dim(object):
 
     @property
     def params(self):
+        if 'panel' in sys.modules:
+            from panel.widgets.base import Widget
+        else:
+            Widget = None
+
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
             op_args = flatten(op_args)
             for op_arg in op_args:
-                if 'panel' in sys.modules:
-                    from panel.widgets.base import Widget
-                    if isinstance(op_arg, Widget):
-                        op_arg = op_arg.param.value
+                if Widget and isinstance(op_arg, Widget):
+                    op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
                 elif isinstance(op_arg, slice):
-                    if isinstance(op_arg.start, param.Parameter):
-                        params[op_arg.start.name+str(id(op_arg.start))] = op_arg.start
-                    if isinstance(op_arg.stop, param.Parameter):
-                        params[op_arg.stop.name+str(id(op_arg.stop))] = op_arg.stop
-                    if isinstance(op_arg.step, param.Parameter):
-                        params[op_arg.step.name+str(id(op_arg.step))] = op_arg.step
+                    (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
+
+                    if Widget and isinstance(start, Widget):
+                        start = start.param.value
+                    if Widget and isinstance(stop, Widget):
+                        stop = stop.param.value
+                    if Widget and isinstance(step, Widget):
+                        step = step.param.value
+
+                    if isinstance(start, param.Parameter):
+                        params[start.name+str(id(start))] = start
+                    if isinstance(stop, param.Parameter):
+                        params[stop.name+str(id(stop))] = stop
+                    if isinstance(step, param.Parameter):
+                        params[step.name+str(id(step))] = step
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
                     params[op_arg.name+str(id(op_arg))] = op_arg
