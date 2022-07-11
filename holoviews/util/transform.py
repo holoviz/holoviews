@@ -84,7 +84,10 @@ class iloc(object):
         return dim(self.expr, self)
 
     def __call__(self, values):
-        return values[resolve_dependent_value(self.index)]
+        if isinstance(values, (pd.Series, pd.DataFrame)):
+            return values.iloc[resolve_dependent_value(self.index)]
+        else:
+            return values[resolve_dependent_value(self.index)]
 
 
 class loc(object):
@@ -355,7 +358,7 @@ class dim(object):
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
             if hasattr(op['fn'], 'index'):
-                # Special case for iloc to check if slice has parameters
+                # Special case for loc and iloc to check for parameters
                 op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
