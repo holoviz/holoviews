@@ -87,6 +87,24 @@ class iloc(object):
         return values[resolve_dependent_value(self.index)]
 
 
+class loc(object):
+    """Implements loc for dim expressions.
+    """
+
+    __name__ = 'loc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values.loc[resolve_dependent_value(self.index)]
+
+
 @_maybe_map
 def bin(values, bins, labels=None):
     """Bins data into declared bins
@@ -163,7 +181,7 @@ python_isin = _maybe_map(_python_isin)
 
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc
+    MethodType, np.ufunc, iloc, loc
 )
 
 
@@ -196,6 +214,7 @@ class dim(object):
         astype: 'astype',
         round_: 'round',
         iloc: 'iloc',
+        loc: 'loc',
     }
 
     _numpy_funcs = {
@@ -793,6 +812,8 @@ class dim(object):
                     format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
                     format_string = prev+').iloc[{0}]'.format(repr(fn.index))
+                elif isinstance(fn, loc):
+                    format_string = prev+').loc[{0}]'.format(repr(fn.index))
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+').{fn}('
@@ -874,6 +895,9 @@ class df_dim(dim):
                      if dataset.interface.multi == intfc.multi]
         return dataset.clone(datatype=datatypes)
 
+    @property
+    def loc(self):
+        return loc(self)
 
 
 class xr_dim(dim):
