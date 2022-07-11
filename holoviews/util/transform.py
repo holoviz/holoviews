@@ -583,12 +583,6 @@ class dim(object):
                     dataset, flat, expanded, ranges, all_values,
                     keep_index, compute, strict
                 )
-            elif isinstance(arg, slice):
-                arg = slice(
-                    resolve_dependent_value(arg.start),
-                    resolve_dependent_value(arg.stop),
-                    resolve_dependent_value(arg.step)
-                )
             arg = resolve_dependent_value(arg)
             fn_args.append(arg)
         fn_kwargs = {}
@@ -597,12 +591,6 @@ class dim(object):
                 v = v.apply(
                     dataset, flat, expanded, ranges, all_values,
                     keep_index, compute, strict
-                )
-            elif isinstance(v, slice):
-                v = slice(
-                    resolve_dependent_value(v.start),
-                    resolve_dependent_value(v.stop),
-                    resolve_dependent_value(v.step)
                 )
             fn_kwargs[k] = resolve_dependent_value(v)
         args = tuple(fn_args[::-1] if op['reverse'] else fn_args)
