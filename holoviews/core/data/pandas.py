@@ -60,6 +60,9 @@ class PandasInterface(Interface):
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
+            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
+                raise DataError("pandas DataFrame column names used as dimensions "
+                                "must be strings not integers.", cls)
             # Handle reset of index if kdims reference index by name
             for kd in kdims:
                 kd = dimension_name(kd)
@@ -69,9 +72,6 @@ class PandasInterface(Interface):
                        for name in index_names):
                     data = data.reset_index()
                     break
-            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
-                raise DataError("pandas DataFrame column names used as dimensions "
-                                "must be strings not integers.", cls)
 
             if kdims:
                 kdim = dimension_name(kdims[0])
