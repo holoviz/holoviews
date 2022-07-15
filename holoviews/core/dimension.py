@@ -1340,9 +1340,8 @@ class ViewableTree(AttrTree, Dimensioned):
         if type(vals) is cls:
             return vals.data
         elif isinstance(vals, (AdjointLayout, str)):
-            # This function does not work if `vals` is a string,
-            # but if it happens to be, it is better to use this
-            # elif-statement than the next elif-statement.
+            # `string` vals isn't supported but checked anyway
+            # for better exception message.
             vals = [vals]
         elif isinstance(vals, Iterable):
             vals = list(vals)
