@@ -269,6 +269,11 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         _, vline_plot = plot.subplots.values()
         assert vline_plot.handles['glyph'].location == 1
 
+    def test_overlay_iterable(self):
+        # Related to https://github.com/holoviz/holoviews/issues/5315
+        c1 = Curve([0, 1])
+        c2 = Curve([10, 20])
+        Overlay({'a': c1, 'b': c2}.values())
 
 
 class TestLegends(TestBokehPlot):

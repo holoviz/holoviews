@@ -11,6 +11,7 @@ from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
 from functools import partial
+from collections.abc import Iterable
 
 import param
 import numpy as np
@@ -1334,10 +1335,16 @@ class ViewableTree(AttrTree, Dimensioned):
     @classmethod
     def _process_items(cls, vals):
         "Processes list of items assigning unique paths to each."
+        from .layout import AdjointLayout
+
         if type(vals) is cls:
             return vals.data
-        elif not isinstance(vals, (list, tuple)):
+        elif isinstance(vals, (AdjointLayout, str)):
+            # `string` vals isn't supported but checked anyway
+            # for better exception message.
             vals = [vals]
+        elif isinstance(vals, Iterable):
+            vals = list(vals)
         items = []
         counts = defaultdict(lambda: 1)
         cls._unpack_paths(vals, items, counts)
