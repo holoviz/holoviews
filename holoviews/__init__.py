@@ -36,10 +36,8 @@ Annotate your data
 ...     ridership=hv.Dimension("ridership", label='Ridership'),
 ... )
 
-Please note that the
-
-- key dimension(s) represents the independent variable(s).
-- value dimension(s) represents the dependent variable(s).
+The key dimension(s) represents the independent variable(s) and the value dimension(s) the
+dependent variable(s).
 
 Add options
 
@@ -64,7 +62,8 @@ How to get help
 
 >>> hv.help(scatter)
 
-The HoloViews help system is the best way to understand the available options and parameters.
+The HoloViews help system is the best way to understand the available options and parameters of your
+HoloViews objects.
 
 How to export
 -------------
@@ -82,7 +81,7 @@ You can create powerful data apps by combining with Panel.
 >>> pn.pane.HoloViews(scatter, sizing_mode="stretch_both").servable()
 
 Then run `panel serve script.py --autoreload --show`. This will open the plot in your browser. When
-you save the script, the browser will reload to speed up your development process.
+you save the script, the browser will reload. This speeds up your development process.
 
 For more check out https://panel.holoviz.org/reference/panes/HoloViews.html
 """
