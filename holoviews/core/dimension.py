@@ -856,6 +856,57 @@ class Dimensioned(LabelledData):
 
     @property
     def opts(self):
+        # This docstring should be similar to the Opts.__call__ docstring
+        """Call `.opts(...)` to set options like for example `cmap` and
+        `show_title` on the HoloViews object.
+
+        Please note 
+        
+        - The object is modified in place by default
+        - options are only applied to the currently selected backend
+        - the available options differ between backends.
+
+        Reference: https://holoviews.org/user_guide/Applying_Customizations.html
+
+        Examples:
+
+        If the options are to be set directly on the object a simple format
+        may be used, e.g.:
+
+        >>> obj.opts(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using a
+        type[.group][.label] specification, e.g.:
+
+        >>> obj.opts('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+        >>> obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+
+        You can see the options applied using
+
+        >>> obj.opts.info()
+        :Image   [x]   (y)
+        | Options(cmap='viridis', show_title=False)
+
+        You can explore the available options using
+
+        >>> hv.help(obj)
+
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied in place with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+        """
         return Opts(self)
 
     @property

@@ -520,23 +520,43 @@ class Opts(object):
 
 
     def __call__(self, *args, **kwargs):
-        """Applies nested options definition.
+        # This docstring should be similar to the .opts docstring
+        """Applies options like `cmap` on a HoloViews object or nested group
+        of objects.
 
-        Applies options on an object or nested group of objects in a
-        flat format. Unlike the .options method, .opts modifies the
-        options in place by default. If the options are to be set
-        directly on the object a simple format may be used, e.g.:
+        Please note 
+        
+        - The object is modified in place by default
+        - options are only applied to the currently selected backend
+        - the available options differ between backends.
 
-            obj.opts(cmap='viridis', show_title=False)
+        Reference: https://holoviews.org/user_guide/Applying_Customizations.html
 
-        If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
+        Examples:
+        
+        If the options are to be set directly on the object a simple format
+        may be used, e.g.:
 
-            obj.opts('Image', cmap='viridis', show_title=False)
+        >>> obj.opts(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using a
+        type[.group][.label] specification, e.g.:
+
+        >>> obj.opts('Image', cmap='viridis', show_title=False)
 
         or using:
 
-            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+        >>> obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+
+        You can see the options applied using
+
+        >>> obj.opts.info()
+        :Image   [x]   (y)
+        | Options(cmap='viridis', show_title=False)
+
+        You can explore the available options using
+
+        >>> hv.help(obj)
 
         Args:
             *args: Sets of options to apply to object
