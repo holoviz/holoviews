@@ -59,7 +59,7 @@ Installation
 ============
 
 HoloViews works with 
-[Python 2.7 and Python 3](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest)
+[Python 3](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest)
 on Linux, Windows, or Mac, and works seamlessly with 
 [Jupyter Notebook and JupyterLab](https://jupyter.org).
 
