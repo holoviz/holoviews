@@ -36,12 +36,14 @@ Import HoloViews and configure your plotting backend
 
 Annotate your data
 
->>> scatter = hv.Scatter(station_info, kdims='services', vdims='ridership')
->>> scatter = scatter.redim(
-...     services=hv.Dimension("services", label='Services'),
-...     ridership=hv.Dimension("ridership", label='Ridership'),
+>>> scatter = (
+...     hv.Scatter(station_info, kdims='services', vdims='ridership')
+...     .redim(
+...         services=hv.Dimension("services", label='Services'),
+...         ridership=hv.Dimension("ridership", label='Ridership'),
+...     )
+...     .opts(size=10, color="red", responsive=True)
 ... )
->>> scatter.opts(size=10, color="red", responsive=True)
 >>> scatter
 
 In a notebook this will display a nice scatter plot.
