@@ -13,10 +13,6 @@ Rapids cuDF, Streamz, Intake, Geopandas, NetworkX and Ibis.
 - allows you to drop into the rest of the
 HoloViz ecosystem when more power or flexibility is needed.
 
-For basic data exploration, we recommend using the higher level hvPlot package
-that provides the well known Pandas `.plot` api. You can drop into HoloViews
-later, when more flexibility and power is required.
-
 To learn more check out https://holoviews.org/. To report issues or contribute
 go to https://github.com/holoviz/holoviews. To join the community go to
 https://discourse.holoviz.org/.
