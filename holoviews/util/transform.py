@@ -151,8 +151,19 @@ def categorize(values, categories, default=None):
     return result
 
 
+if hasattr(np, 'isin'):
+    isin = _maybe_map(np.isin)
+else:
+    # for 1.4 <= numpy < 1.13; in1d() available since 1.4
+    def _isin(element, test_elements, assume_unique=False, invert=False):
+        # from 1.13's numpy.lib.arraysetops
+        element = np.asarray(element)
+        return np.in1d(element, test_elements, assume_unique=assume_unique,
+                invert=invert).reshape(element.shape)
+    isin = _maybe_map(_isin)
+    del _isin
+
 digitize = _maybe_map(np.digitize)
-isin = _maybe_map(np.isin)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
