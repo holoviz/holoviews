@@ -2,31 +2,37 @@
 HoloViews makes data analysis and visualization simple
 ======================================================
 
-HoloViews lets you focus on what you are trying to explore and convey, not on the process of
-plotting.
+HoloViews lets you focus on what you are trying to explore and convey, not on
+the process of plotting.
 
-HoloViews supports a wide range of input data sources including Pandas, Dask, XArray and Ibis.
-HoloViews supports outputs using the plotting backends Bokeh (default), Matplotlib and Plotly.
+HoloViews
 
-For basic data exploration, we recommend using the higher level hvPlot package. You can
-drop into HoloViews later, when more flexibility and power is required.
+- supports a wide range of data sources including Pandas, Dask, XArray
+Rapids cuDF, Streamz, Intake, Geopandas, NetworkX and Ibis.
+- supports the plotting backends Bokeh (default), Matplotlib and Plotly.
+- allows you to drop into the rest of the
+HoloViz ecosystem when more power or flexibility is needed.
 
-To learn more check out https://holoviews.org/. To report issues or contribute check out
-https://github.com/holoviz/holoviews. To join the community check out
+For basic data exploration, we recommend using the higher level hvPlot package
+that provides the well known Pandas `.plot` api. You can drop into HoloViews
+later, when more flexibility and power is required.
+
+To learn more check out https://holoviews.org/. To report issues or contribute
+go to https://github.com/holoviz/holoviews. To join the community go to
 https://discourse.holoviz.org/.
 
-How to use HoloViews in 5 simple steps
+How to use HoloViews in 3 simple steps
 --------------------------------------
 
-Import your packages
+Work with the data source you already know and ❤️
 
 >>> import pandas as pd
+>>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/master/examples/assets/station_info.csv')
+
+Import HoloViews and configure your plotting backend
+
 >>> import holoviews as hv
 >>> hv.extension('bokeh')
-
-Extract your data
-
->>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/master/examples/assets/station_info.csv')
 
 Annotate your data
 
@@ -35,55 +41,32 @@ Annotate your data
 ...     services=hv.Dimension("services", label='Services'),
 ...     ridership=hv.Dimension("ridership", label='Ridership'),
 ... )
-
-The key dimension(s) represents the independent variable(s) and the value dimension(s) the
-dependent variable(s).
-
-Add options
-
 >>> scatter.opts(size=10, color="red", responsive=True)
-
-Let your data visualize it self (in your notebook)
-
 >>> scatter
+
+In a notebook this will display a nice scatter plot.
+
+Note that the `kdims` (The key dimension(s)) represents the independent
+variable(s) and the `vdims` (value dimension(s)) the dependent variable(s).
 
 For more check out https://holoviews.org/getting_started/Introduction.html
 
-How to understand your objects
-------------------------------
+How to get help
+---------------
 
 You can understand the structure of your objects by printing them.
 
 >>> print(scatter)
 :Scatter   [services]   (ridership)
 
-How to get help
----------------
+You can get extensive documentation using `hv.help`.
 
 >>> hv.help(scatter)
 
-The HoloViews help system is the best way to understand the available options and parameters of your
-HoloViews objects.
+In a notebook or ipython environment the usual
 
-How to export
--------------
-
->>> hv.save(scatter, filename="scatter.png")
-
-For more check out https://holoviews.org/user_guide/Exporting_and_Archiving.html
-
-How to create data apps
------------------------
-
-You can create powerful data apps by combining with Panel.
-
->>> import panel as pn
->>> pn.pane.HoloViews(scatter, sizing_mode="stretch_both").servable()
-
-Then run `panel serve script.py --autoreload --show`. This will open the plot in your browser. When
-you save the script, the browser will reload. This speeds up your development process.
-
-For more check out https://panel.holoviz.org/reference/panes/HoloViews.html
+- `help` and `?` will provide you with documentation.
+- `TAB` and `SHIFT+TAB` completion will help you navigate.
 """
 import io, os, sys
 
