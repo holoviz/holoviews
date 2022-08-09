@@ -77,6 +77,12 @@ class DimensionReprTest(ComparisonTestCase):
         dim = Dimension('test', label='Test Dimension', unit='m')
         self.assertEqual(eval(repr(dim)) == dim, True)
 
+    def test_pprint_value_boolean(self):
+        # https://github.com/holoviz/holoviews/issues/5378
+        dim = Dimension('test')
+        self.assertEqual(dim.pprint_value(True), 'True')
+        self.assertEqual(dim.pprint_value(False), 'False')
+
 
 class DimensionEqualityTest(ComparisonTestCase):
 
