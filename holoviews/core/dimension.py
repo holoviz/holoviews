@@ -416,7 +416,7 @@ class Dimension(param.Parameterized):
                 else:
                     formatted_value = formatter % value
         else:
-            formatted_value = bytes_to_unicode(value)
+            formatted_value = str(bytes_to_unicode(value))
 
         if print_unit and self.unit is not None:
             formatted_value = formatted_value + ' ' + bytes_to_unicode(self.unit)
