@@ -62,7 +62,8 @@ extras_require['tests_gpu'] = extras_require['tests'] + [
 ]
 
 extras_require['tests_nb'] = [
-    'nbsmoke >=0.2.0',
+    'nbval',
+    'pytest-xdist',
 ]
 
 # Notebook dependencies
