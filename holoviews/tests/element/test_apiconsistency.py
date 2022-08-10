@@ -22,4 +22,3 @@ class TestParameterDeclarations(ComparisonTestCase):
             el = getattr(element, element_name)
             self.assertEqual(el.param['label'].constant, True,
                              msg='Label parameter of element %s not constant' % element_name)
-

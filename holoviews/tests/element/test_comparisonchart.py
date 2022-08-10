@@ -197,4 +197,3 @@ class VectorFieldComparisonTest(ComparisonTestCase):
         except  AssertionError as e:
             if not str(e).startswith("VectorField not almost equal to 6 decimals"):
                 raise self.failureException("VectorField  data mismatch error not raised.")
-

@@ -110,5 +110,3 @@ class TestCoordinateConversion(ComparisonTestCase):
                 a, b, check_exact=False,
             )
         )
-
-

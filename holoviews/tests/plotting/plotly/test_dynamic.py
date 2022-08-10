@@ -161,4 +161,3 @@ class TestInteractiveStream(TestPlotlyPlot):
         self.assertIsNone(boundsxy2a.bounds)
         self.assertIsNone(boundsxy2b.bounds)
         self.assertEqual(selection1d3.index, [])
-

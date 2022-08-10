@@ -200,4 +200,3 @@ class TestSpikesPlot(TestMPLPlot):
             "for 'color' option and declare a color_index; ignoring the color_index.\n"
         )
         self.assertEqual(log_msg, warning)
-

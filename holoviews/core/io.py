@@ -856,6 +856,3 @@ class FileArchive(Archive):
     def clear(self):
         "Clears the file archive"
         self._files.clear()
-
-
-

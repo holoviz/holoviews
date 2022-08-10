@@ -24,6 +24,7 @@ extras_require = {}
 
 extras_require['flakes'] = [
     'flake8',
+    'pre-commit',
 ]
 
 # Test requirements

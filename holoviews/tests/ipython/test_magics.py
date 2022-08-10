@@ -187,4 +187,3 @@ class TestCompositorMagic(ExtensionTestCase):
         self.assertEqual(len(compositors), 1)
         self.assertEqual(compositors[0].group, 'HCSTEST')
         self.assertEqual(compositors[0].mode, 'data')
-

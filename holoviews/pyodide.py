@@ -35,7 +35,7 @@ def render_html(obj):
         target = sys.stdout._out # type: ignore
     else:
         raise ValueError("Could not determine target node to write to.")
-    doc = Document() 
+    doc = Document()
     as_panel(obj).server_doc(doc, location=False)
     docs_json, [render_item,] = standalone_docs_json_and_render_items(
         doc.roots, suppress_callback_warning=True
