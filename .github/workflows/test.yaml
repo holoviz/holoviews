@@ -27,7 +27,7 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@master
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a1
         with:
           name: test_suite
           python-version: ${{ matrix.python-version }}
