@@ -218,3 +218,5 @@ Compositor.register(compositor)
 class StreamlinePlot(PathPlot):
 
     density = param.Number(default=1., doc="The density of the streamlines.")
+
+    padding = param.ClassSelector(default=0)
