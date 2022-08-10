@@ -27,15 +27,10 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow
       - uses: pyviz-dev/holoviz_tasks/install@master
         with:
           name: test_suite
-          python_version: ${{ matrix.python-version}
+          python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests"
           cache: true
