@@ -27,10 +27,11 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a2
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a3
         with:
           name: test_suite
           python-version: ${{ matrix.python-version }}
+          channel-priority: flexible
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests"
           cache: true
