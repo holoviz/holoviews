@@ -219,4 +219,4 @@ class StreamlinePlot(PathPlot):
 
     density = param.Number(default=1., doc="The density of the streamlines.")
 
-    padding = param.ClassSelector(default=0)
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
