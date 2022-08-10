@@ -14,7 +14,7 @@ install_requires = [
     "param >=1.9.3,<2.0",
     "numpy >=1.0",
     "pyviz_comms >=0.7.4",
-    "panel >=0.9.5",
+    "panel >=0.13.1",
     "colorcet",
     "packaging",
     "pandas >=0.20.0",
@@ -22,13 +22,56 @@ install_requires = [
 
 extras_require = {}
 
+extras_require['flakes'] = [
+    'flake8',
+]
+
+# Test requirements
+extras_require['tests_core'] = [
+    'pytest',
+    'pytest-cov',
+    'matplotlib >=3',
+    'nbconvert',
+    'bokeh',
+    'pillow',
+    'plotly >=4.0',
+    'dash >=1.16',
+    'codecov',
+]
+
+# Optional tests dependencies, i.e. one should be able
+# to run and pass the test suite without installing any
+# of those.
+extras_require['tests'] = extras_require['tests_core'] + [
+    'dask',
+    'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
+    'spatialpandas',
+    'xarray >=0.10.4',
+    'networkx',
+    'datashader >=0.11.1',
+    'shapely',
+    'ffmpeg',
+    'cftime',
+    'scipy',
+    'selenium',
+    'ipython >=5.4.0',
+]
+
+extras_require['tests_gpu'] = extras_require['tests'] + [
+    'cudf',
+]
+
+extras_require['tests_nb'] = [
+    'nbsmoke >=0.2.0',
+]
+
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
     "matplotlib >=3",
-    "bokeh >=1.1.0",
+    "bokeh >=2.4.3",
 ]
 
 # Requirements to run all examples
@@ -46,71 +89,38 @@ extras_require["examples"] = extras_require["recommended"] + [
     "dask",
     "scipy",
     "shapely",
-    "scikit-image"
+    "scikit-image",
+    "pyarrow",
 ]
+
+extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
 
 # Extra third-party libraries
 extras_require["extras"] = extras_require["examples"] + [
     "pscript ==0.7.1",
 ]
 
-# Test requirements
-extras_require['tests'] = [
-    'pytest',
-    'pytest-cov',
-    'mock',
-    'flake8',
-    'path.py',
-    'matplotlib >=3',
-    'nbsmoke >=0.2.0',
-    'nbconvert',
-    'codecov',
-    # Numba currently incompatible with this Numpy version
-    'numpy<1.22',
-]
-
-extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"]
-
-if sys.version_info.major > 2:
-    extras_require["unit_tests"].extend(
-        [
-            "pyarrow",
-        ]  # spatialpandas incompatibility
-    )
-
-extras_require["basic_tests"] = (
-    extras_require["tests"]
-    + ["matplotlib >=3", "bokeh >=1.1.0", "pandas"]
-    + extras_require["notebook"]
-)
-
-extras_require["nbtests"] = extras_require["recommended"] + [
-    "nose",
-    "deepdiff",
-]
+# Not used in tox.ini or elsewhere, kept for backwards compatibility.
+extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['flakes']
 
 extras_require['doc'] = extras_require['examples'] + [
     'nbsite >=0.7.1',
-    'sphinx',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
     'bokeh >2.2',
-    'pydata-sphinx-theme',
+    'pydata-sphinx-theme >=0.9.0',
     'sphinx-copybutton',
     'pooch',
 ]
+
+extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
 ]
-
-# Everything for examples and nosetests
-extras_require["all"] = list(
-    set(extras_require["unit_tests"]) | set(extras_require["nbtests"])
-)
 
 def get_setup_version(reponame):
     """
@@ -138,7 +148,7 @@ setup_args.update(
     dict(
         name="holoviews",
         version=get_setup_version("holoviews"),
-        python_requires=">=2.7",
+        python_requires=">=3.7",
         install_requires=install_requires,
         extras_require=extras_require,
         description="Stop plotting your data - annotate your data and let it visualize itself.",
@@ -146,7 +156,7 @@ setup_args.update(
         long_description_content_type="text/markdown",
         author="Jean-Luc Stevens and Philipp Rudiger",
         author_email="holoviews@gmail.com",
-        maintainer="PyViz Developers",
+        maintainer="HoloViz Developers",
         maintainer_email="developers@pyviz.org",
         platforms=["Windows", "Mac OS X", "Linux"],
         license="BSD",
@@ -160,9 +170,10 @@ setup_args.update(
         classifiers=[
             "License :: OSI Approved :: BSD License",
             "Development Status :: 5 - Production/Stable",
-            "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Operating System :: OS Independent",
             "Intended Audience :: Science/Research",
             "Intended Audience :: Developers",

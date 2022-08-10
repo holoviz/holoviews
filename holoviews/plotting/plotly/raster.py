@@ -4,6 +4,7 @@ import numpy as np
 import param
 
 from ...core.options import SkipRendering
+from ...core.util import isfinite
 from ...element import Image, Raster
 from ..mixins import HeatMapMixin
 from .element import ColorbarPlot
@@ -27,8 +28,11 @@ class RasterPlot(ColorbarPlot):
     def graph_options(self, element, ranges, style, **kwargs):
         opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
-        opts['zmin'] = copts.pop('cmin')
-        opts['zmax'] = copts.pop('cmax')
+        cmin, cmax = copts.pop('cmin'), copts.pop('cmax')
+        if isfinite(cmin):
+            opts['zmin'] = cmin
+        if isfinite(cmax):
+            opts['zmax'] = cmax
         opts['zauto'] = copts.pop('cauto')
         return dict(opts, **copts)
 
@@ -41,7 +45,10 @@ class RasterPlot(ColorbarPlot):
         if type(element) is Raster:
             array=array.T[::-1,...]
         ny, nx = array.shape
-        dx, dy = float(r-l)/nx, float(t-b)/ny
+        if any(not isfinite(c) for c in (l, b, r, t)) or nx == 0 or ny == 0:
+            l, b, r, t, dx, dy = 0, 0, 0, 0, 0, 0
+        else:
+            dx, dy = float(r-l)/nx, float(t-b)/ny
         x0, y0 = l+dx/2., b+dy/2.
         if self.invert_axes:
             x0, y0, dx, dy = y0, x0, dy, dx

@@ -53,7 +53,7 @@ class TestSankeyPlot(TestBokehPlot):
             (0, 2, 5), (0, 3, 7), (0, 4, 6),
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
             Dataset(enumerate('ABXYZ'), 'index', 'label'))
-        ).options(label_index='label', tools=['hover'])
+        ).opts(label_index='label', tools=['hover'])
         plot = bokeh_renderer.get_plot(sankey)
 
         scatter_source = plot.handles['scatter_1_source']

@@ -271,7 +271,7 @@ class Renderer(Exporter):
         Given a HoloViews Viewable return a corresponding plot state.
         """
         if not isinstance(obj, Plot):
-            obj = self_or_cls.get_plot(obj, renderer, **kwargs)
+            obj = self_or_cls.get_plot(obj=obj, renderer=renderer, **kwargs)
         return obj.state
 
     def _validate(self, obj, fmt, **kwargs):
@@ -303,7 +303,7 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt)
             fmt = 'html'
         elif dynamic or (self._render_with_panel and fmt == 'html'):
-            plot = HoloViewsPane(obj, center=True, backend=self.backend,
+            plot = HoloViewsPane(obj, center=self.center, backend=self.backend,
                                  renderer=self)
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)

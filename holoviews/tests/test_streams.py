@@ -4,11 +4,12 @@ Unit test of the streams system
 from collections import defaultdict
 from unittest import SkipTest
 
+import pandas as pd
 import param
 from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import LooseVersion, pd
+from holoviews.core.util import LooseVersion
 from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
@@ -898,11 +899,6 @@ class TestBufferDictionaryStream(ComparisonTestCase):
 
 
 class TestBufferDataFrameStream(ComparisonTestCase):
-
-    def setUp(self):
-        if pd is None:
-            raise SkipTest('Pandas not available')
-        super().setUp()
 
     def test_init_buffer_dframe(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})

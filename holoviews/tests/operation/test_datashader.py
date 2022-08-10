@@ -3,6 +3,7 @@ import datetime as dt
 from unittest import SkipTest, skipIf
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from holoviews import (
@@ -18,7 +19,6 @@ try:
     import datashader as ds
     import dask.dataframe as dd
     import xarray as xr
-    from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         LooseVersion, aggregate, regrid, ds_version, stack, directly_connect_edges,
         shade, spread, rasterize, datashade, AggregationOperation,
@@ -760,7 +760,7 @@ class DatashaderShadeTests(ComparisonTestCase):
                           'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
                                      datatype=['xarray'], vdims=Dimension('z Count', nodata=0))},
                          kdims=['z'])
-        shaded = shade(data)
+        shaded = shade(data, rescale_discrete_levels=False)
         r = [[228, 120], [66, 120]]
         g = [[26, 109], [150, 109]]
         b = [[28, 95], [129, 95]]
@@ -778,7 +778,7 @@ class DatashaderShadeTests(ComparisonTestCase):
                           'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
                                      datatype=['grid'], vdims=Dimension('z Count', nodata=0))},
                          kdims=['z'])
-        shaded = shade(data)
+        shaded = shade(data, rescale_discrete_levels=False)
         r = [[228, 120], [66, 120]]
         g = [[26, 109], [150, 109]]
         b = [[28, 95], [129, 95]]
@@ -922,9 +922,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
         array = np.array([
-            [   1.5,    1.5, np.NaN],
-            [   0.5,    1.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [0.5, 1.5, 1.5],
+            [0.5, 0.5, 1.5],
+            [0.5, 0.5, 0.5]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -937,9 +937,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
 
         array = np.array([
-            [    2.,     3., np.NaN],
-            [   1.5,    2.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [2.166667, 2.833333, 3.5     ],
+            [1.833333, 2.5,      3.166667],
+            [1.5,      2.166667, 2.833333]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -962,9 +962,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
 
         array = np.array([
-            [    2.,     3., np.NaN],
-            [   1.5,    2.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [2.166667, 2.833333, 3.5     ],
+            [1.833333, 2.5,      3.166667],
+            [1.5,      2.166667, 2.833333]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -988,9 +988,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
 
         array = np.array([
-            [   1.5,    1.5, np.NaN],
-            [   0.5,    1.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [0.5, 1.5, 1.5],
+            [0.5, 0.5, 1.5],
+            [0.5, 0.5, 0.5]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -1014,9 +1014,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
 
         array = np.array([
-            [    2.,     3., np.NaN],
-            [   1.5,    2.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [2.166667, 2.833333, 3.5     ],
+            [1.833333, 2.5,      3.166667],
+            [1.5,      2.166667, 2.833333]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -1027,9 +1027,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
 
         array = np.array([
-            [    2.,     3., np.NaN],
-            [   1.5,    2.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [2.166667, 2.833333, 3.5     ],
+            [1.833333, 2.5,      3.166667],
+            [1.5,      2.166667, 2.833333]
         ])
         image = Image(array, bounds=(0, 0, 1, 1), vdims='node_z')
         self.assertEqual(img, image)
@@ -1040,9 +1040,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
 
         array = np.array([
-            [   1.5,    1.5, np.NaN],
-            [   0.5,    1.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [0.5, 1.5, 1.5],
+            [0.5, 0.5, 1.5],
+            [0.5, 0.5, 0.5]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -1059,17 +1059,22 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         vertices = [(0., 0., 1), (0., 1., 2), (1., 0., 3), (1., 1., 4)]
         trimesh = TriMesh((simplices, Points(vertices, vdims='z')))
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
-        image = Image(np.array([[2., 3., np.NaN], [1.5, 2.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
-                      bounds=(0, 0, 1, 1), vdims='z')
+
+        array = np.array([
+            [2.166667, 2.833333, 3.5     ],
+            [1.833333, 2.5,      3.166667],
+            [1.5,      2.166667, 2.833333]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1), vdims='z')
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_ds_aggregator(self):
         trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
         array = np.array([
-            [   1.5,    1.5, np.NaN],
-            [   0.5,    1.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [0.5, 1.5, 1.5],
+            [0.5, 0.5, 1.5],
+            [0.5, 0.5, 0.5]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
@@ -1078,9 +1083,9 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator='mean')
         array = np.array([
-            [   1.5,    1.5, np.NaN],
-            [   0.5,    1.5, np.NaN],
-            [np.NaN, np.NaN, np.NaN]
+            [0.5, 1.5, 1.5],
+            [0.5, 0.5, 1.5],
+            [0.5, 0.5, 0.5]
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)

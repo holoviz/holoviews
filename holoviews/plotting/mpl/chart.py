@@ -545,7 +545,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(ChartPlot, ColorbarPlot):
+class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.

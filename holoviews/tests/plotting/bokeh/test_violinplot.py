@@ -10,10 +10,7 @@ from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import LinearColorMapper, CategoricalColorMapper
-except:
-    pass
+from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 
 class TestBokehViolinPlot(TestBokehPlot):
@@ -27,7 +24,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_simple(self):
         values = np.random.rand(100)
-        violin = Violin(values).opts(plot=dict(violin_width=0.7))
+        violin = Violin(values).opts(violin_width=0.7)
         qmin, q1, q2, q3, qmax = (np.percentile(values, q=q)
                                   for q in range(0,125,25))
         iqr = q3 - q1
@@ -67,7 +64,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_inner_quartiles(self):
         values = np.random.rand(100)
-        violin = Violin(values).opts(plot=dict(inner='quartiles'))
+        violin = Violin(values).opts(inner='quartiles')
         kde = univariate_kde(violin, cut=5)
         xs = kde.dimension_values(0)
         plot = bokeh_renderer.get_plot(violin)
@@ -79,7 +76,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_inner_stick(self):
         values = np.random.rand(100)
-        violin = Violin(values).opts(plot=dict(inner='stick'))
+        violin = Violin(values).opts(inner='stick')
         kde = univariate_kde(violin, cut=5)
         xs = kde.dimension_values(0)
         plot = bokeh_renderer.get_plot(violin)
@@ -103,7 +100,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_single_point(self):
         data = {'x': [1], 'y': [1]}
-        violin = Violin(data=data, kdims='x', vdims='y').opts(plot=dict(inner='box'))
+        violin = Violin(data=data, kdims='x', vdims='y').opts(inner='box')
 
         plot = bokeh_renderer.get_plot(violin)
         self.assertEqual(plot.handles['x_range'].factors, ['1'])
@@ -115,7 +112,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_linear_color_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5), 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_color='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(violin_color='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['patches_1_source']
         cmapper = plot.handles['violin_color_color_mapper']
@@ -129,7 +126,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_categorical_color_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(['A', 'B', 'C', 'D', 'E'], 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_color='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(violin_color='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
@@ -142,7 +139,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_alpha_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5)/10., 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_alpha='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(violin_alpha='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
@@ -152,7 +149,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_line_width_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5), 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_line_width='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(violin_line_width='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -162,7 +159,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_split_op_multi(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5), 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(split=dim('b')>2)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(split=dim('b')>2)
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
@@ -173,7 +170,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_split_op_single(self):
         a = np.repeat(np.arange(2), 5)
-        violin = Violin((a, np.arange(10)), ['a'], 'd').options(split='a')
+        violin = Violin((a, np.arange(10)), ['a'], 'd').opts(split='a')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
@@ -184,7 +181,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_box_linear_color_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5), 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_color='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(box_color='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['vbar_1_source']
         cmapper = plot.handles['box_color_color_mapper']
@@ -198,7 +195,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_box_categorical_color_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(['A', 'B', 'C', 'D', 'E'], 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_color='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(box_color='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']
@@ -211,7 +208,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_box_alpha_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5)/10., 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_alpha='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(box_alpha='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']
@@ -221,7 +218,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_box_line_width_op(self):
         a = np.repeat(np.arange(5), 5)
         b = np.repeat(np.arange(5), 5)
-        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_line_width='b')
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').opts(box_line_width='b')
         plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']

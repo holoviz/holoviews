@@ -21,6 +21,7 @@ from ..core.util import (
     closest_match, is_number, isfinite, python2sort, disable_constant,
     arraylike_types
 )
+from ..element import Points
 from ..streams import LinkedStream, Params
 from ..util.transform import dim
 
@@ -884,9 +885,6 @@ register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'light',
     ['glasbey_dark'])
 
 
-
-
-
 def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     """
     Convert valid colormap specifications to a list of colors.
@@ -1287,3 +1285,49 @@ fire_colors = linear_kryw_0_100_c71 = [\
 # Bokeh palette
 fire = [str('#{0:02x}{1:02x}{2:02x}'.format(int(r*255),int(g*255),int(b*255)))
         for r,g,b in fire_colors]
+
+
+class categorical_legend(Operation):
+    """
+    Generates a Points element which contains information for generating
+    a legend by inspecting the pipeline of a datashaded RGB element.
+    """
+
+    backend = param.String()
+
+    def _process(self, element, key=None):
+        import datashader as ds
+        from ..operation.datashader import shade, rasterize, datashade
+        rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
+        if isinstance(rasterize_op, datashade):
+            shade_op = rasterize_op
+        else:
+            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
+        if None in (shade_op, rasterize_op):
+            return None
+        hvds = element.dataset
+        input_el = element.pipeline.operations[0](hvds)
+        agg = rasterize_op._get_aggregator(input_el, rasterize_op.aggregator)
+        if not isinstance(agg, (ds.count_cat, ds.by)):
+            return
+        column = agg.column
+        if hasattr(hvds.data, 'dtypes'):
+            cats = list(hvds.data.dtypes[column].categories)
+            if cats == ['__UNKNOWN_CATEGORIES__']:
+                cats = list(hvds.data[column].cat.as_known().categories)
+        else:
+            cats = list(hvds.dimension_values(column, expanded=False))
+        colors = shade_op.color_key or ds.colors.Sets1to3
+        color_data = [(0, 0, cat) for cat in cats]
+        if isinstance(colors, list):
+            cat_colors = {cat: colors[i] for i, cat in enumerate(cats)}
+        else:
+            cat_colors = {cat: colors[cat] for cat in cats}
+        cmap = {}
+        for cat, color in cat_colors.items():
+            if isinstance(color, tuple):
+                color = rgb2hex([v/256 for v in color[:3]])
+            cmap[cat] = color
+        return Points(color_data, vdims=['category']).opts(
+            cmap=cmap, color='category', show_legend=True,
+            backend=self.p.backend, visible=False)

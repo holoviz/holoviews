@@ -9,21 +9,16 @@ from unittest import SkipTest
 
 import numpy as np
 import param
+import panel as pn
 
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable, Store,
+from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
                        GridSpace, Table, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream
+from holoviews.plotting.mpl import MPLRenderer, CurvePlot
+from holoviews.plotting.renderer import Renderer
+from panel.widgets import DiscreteSlider, Player, FloatSlider
 from pyviz_comms import CommManager
-
-try:
-    import panel as pn
-
-    from holoviews.plotting.mpl import MPLRenderer, CurvePlot
-    from holoviews.plotting.renderer import Renderer
-    from panel.widgets import DiscreteSlider, Player, FloatSlider
-except:
-    pn = None
 
 
 class MPLRendererTest(ComparisonTestCase):
@@ -33,9 +28,6 @@ class MPLRendererTest(ComparisonTestCase):
     """
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers and pn is not None:
-            raise SkipTest("Matplotlib and Panel required to test rendering.")
-
         self.basename = 'no-file'
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')

@@ -609,14 +609,18 @@ class Buffer(Pipe):
         """
         if isinstance(data, np.ndarray):
             data_length = len(data)
-            if data_length < self.length:
+            if not self.length:
+                data = np.concatenate([self.data, data])
+            elif data_length < self.length:
                 prev_chunk = self.data[-(self.length-data_length):]
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
                 data = data[-self.length:]
         elif util.pd and isinstance(data, util.pd.DataFrame):
             data_length = len(data)
-            if data_length < self.length:
+            if not self.length:
+                data = util.pd.concat([self.data, data])
+            elif data_length < self.length:
                 prev_chunk = self.data.iloc[-(self.length-data_length):]
                 data = util.pd.concat([prev_chunk, data])
             elif data_length > self.length:
@@ -625,7 +629,9 @@ class Buffer(Pipe):
             data_length = len(list(data.values())[0])
             new_data = {}
             for k, v in data.items():
-                if data_length < self.length:
+                if not self.length:
+                    new_data[k] = np.concatenate([self.data[k], v])
+                elif data_length < self.length:
                     prev_chunk = self.data[k][-(self.length-data_length):]
                     new_data[k] = np.concatenate([prev_chunk, v])
                 elif data_length > self.length:

@@ -44,19 +44,22 @@ class SimpleComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(np.float32(3.52),3.5)
         except AssertionError as e:
-            self.assertEqual(str(e), "3.52 != 3.5")
+            if not str(e).startswith("Floats not almost equal to 6 decimals"):
+                    raise self.failureException("Numpy float mismatch error not raised.")
 
     def test_float_heterogeneous_unequal2(self):
         try:
             self.assertEqual(np.float64(3.54),3.5)
         except AssertionError as e:
-            self.assertEqual(str(e), "3.54 != 3.5")
+            if not str(e).startswith("Floats not almost equal to 6 decimals"):
+                    raise self.failureException("Numpy float mismatch error not raised.")
 
     def test_float_heterogeneous_unequal3(self):
         try:
             self.assertEqual(np.float64(3.0), np.float32(4.0))
         except AssertionError as e:
-            self.assertEqual(str(e), "3.0 != 4.0")
+            if not str(e).startswith("Floats not almost equal to 6 decimals"):
+                    raise self.failureException("Numpy float mismatch error not raised.")
 
     def test_arrays_equal_int(self):
         self.assertEqual(np.array([[1,2],[3,4]]),

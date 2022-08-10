@@ -2,12 +2,8 @@ import numpy as np
 
 import PIL.Image
 
-try:
-    import plotly.graph_objs as go
-except:
-    go = None
-
 from holoviews.element import RGB, Tiles
+import plotly.graph_objs as go
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 

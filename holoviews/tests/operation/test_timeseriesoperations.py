@@ -1,9 +1,6 @@
-from unittest import SkipTest, skipIf
+from unittest import skipIf
 
-try:
-    import pandas as pd
-except:
-    raise SkipTest('Pandas not available')
+import pandas as pd
 
 try:
     import scipy # noqa

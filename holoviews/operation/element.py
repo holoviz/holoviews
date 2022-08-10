@@ -229,6 +229,20 @@ class chain(Operation):
         else:
             return processed.clone(group=self.p.group)
 
+    def find(self, operation, skip_nonlinked=True):
+        """
+        Returns the first found occurrence of an operation while
+        performing a backward traversal of the chain pipeline.
+        """
+        found = None
+        for op in self.operations[::-1]:
+            if isinstance(op, operation):
+                found = op
+                break
+            if not op.link_inputs and skip_nonlinked:
+                break
+        return found
+
 
 class transform(Operation):
     """

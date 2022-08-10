@@ -932,7 +932,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 low, high = util.max_range([(low, high), shared])
             if invert: low, high = high, low
             if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
-                low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
+                low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
                 self.param.warning(
                     "Logarithmic axis range encountered value less "
                     "than or equal to zero, please supply explicit "
@@ -1134,19 +1134,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
+                field = k
                 categorical = isinstance(cmapper, CategoricalColorMapper)
-                if categorical and val.dtype.kind in 'ifMub':
-                    if v.dimension in element:
-                        formatter = element.get_dimension(v.dimension).pprint_value
-                    else:
-                        formatter = str
-                    field = k + '_str__'
-                    data[k+'_str__'] = [formatter(d) for d in val]
-                else:
-                    field = k
-                if categorical and getattr(self, 'show_legend', False):
-                    legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
-                    new_style[legend_prop] = field
+
+                if categorical:
+                    if val.dtype.kind in 'ifMub':
+                        field = k + '_str__'
+                        if v.dimension in element:
+                            formatter = element.get_dimension(v.dimension).pprint_value
+                        else:
+                            formatter = str
+                        data[field] = [formatter(d) for d in val]
+                    if getattr(self, 'show_legend', False):
+                        legend_labels = getattr(self, 'legend_labels', False)
+                        if legend_labels:
+                            label_field = f'_{field}_labels'
+                            data[label_field] = [legend_labels.get(v, v) for v in val]
+                            new_style['legend_field'] = label_field
+                        else:
+                            new_style['legend_field'] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
@@ -1759,6 +1765,14 @@ class ColorbarPlot(ElementPlot):
     logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
+    rescale_discrete_levels = param.Boolean(default=True, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the palette, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``.""")
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -1961,6 +1975,7 @@ class ColorbarPlot(ElementPlot):
 
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
+            opts = {}
             if self.cnorm == 'linear':
                 colormapper = LinearColorMapper
             if self.cnorm == 'log' or self.logz:
@@ -1983,6 +1998,8 @@ class ColorbarPlot(ElementPlot):
                                       "Note that the option cnorm='eq_hist' requires "
                                       "bokeh 2.2.3 or higher.")
                 colormapper = EqHistColorMapper
+                if bokeh_version > LooseVersion('2.4.2'):
+                    opts['rescale_discrete_levels'] = self.rescale_discrete_levels
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
@@ -1990,7 +2007,6 @@ class ColorbarPlot(ElementPlot):
                 offset = self.default_span / 2
                 low -= offset
                 high += offset
-            opts = {}
             if util.isfinite(low):
                 opts['low'] = low
             if util.isfinite(high):
@@ -2021,6 +2037,19 @@ class ColorbarPlot(ElementPlot):
 
 class LegendPlot(ElementPlot):
 
+    legend_cols = param.Integer(default=False, doc="""
+        Whether to lay out the legend as columns.""")
+
+    legend_labels = param.Dict(default=None, doc="""
+        Label overrides.""")
+
+    legend_muted = param.Boolean(default=False, doc="""
+        Controls whether the legend entries are muted by default.""")
+
+    legend_offset = param.NumericTuple(default=(0, 0), doc="""
+        If legend is placed outside the axis, this determines the
+        (width, height) offset in pixels from the original position.""")
+
     legend_position = param.ObjectSelector(objects=["top_right",
                                                     "top_left",
                                                     "bottom_left",
@@ -2033,21 +2062,12 @@ class LegendPlot(ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
-    legend_muted = param.Boolean(default=False, doc="""
-        Controls whether the legend entries are muted by default.""")
-
-    legend_offset = param.NumericTuple(default=(0, 0), doc="""
-        If legend is placed outside the axis, this determines the
-        (width, height) offset in pixels from the original position.""")
-
-    legend_cols = param.Integer(default=False, doc="""
-       Whether to lay out the legend as columns.""")
-
-    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
-                    'bottom': 'below'}
-
     legend_opts = param.Dict(default={}, doc="""
         Allows setting specific styling options for the colorbar.""")
+
+    legend_specs = {
+        'right': 'right', 'left': 'left', 'top': 'above', 'bottom': 'below'
+    }
 
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
@@ -2195,8 +2215,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         renderers = []
         for item in legend_items:
             item.renderers[:] = [r for r in item.renderers if r not in renderers]
-            if item in filtered or not item.renderers or not any(r.visible for r in item.renderers):
+            if (item in filtered or not item.renderers or
+                not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
+            if isinstance(item.label, dict) and 'value' in item.label and self.legend_labels:
+                label = item.label['value']
+                item.label = {'value': self.legend_labels.get(label, label)}
             renderers += item.renderers
             filtered.append(item)
         legend.items[:] = list(util.unique_iterator(filtered))

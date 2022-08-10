@@ -84,6 +84,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
+    # No custom legend options
+    _legend_opts = {}
+
     # Declare which styles cannot be mapped to a non-scalar dimension
     _nonvectorized_styles = ['marker', 'alpha', 'cmap', 'angle', 'visible']
 
@@ -480,12 +483,24 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         style = self.lookup_options(element, 'style')
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
+        labels = getattr(self, 'legend_labels', {})
         label = element.label if self.show_legend else ''
-        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+        style = dict(label=labels.get(label, label), zorder=self.zorder, **self.style[self.cyclic_index])
         axis_kwargs = self.update_handles(key, axis, element, ranges, style)
         self._finalize_axis(key, element=element, ranges=ranges,
                             **(axis_kwargs if axis_kwargs else {}))
 
+    def render_artists(self, element, ranges, style, ax):
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        legend = plot_kwargs.pop('cat_legend', None)
+        with abbreviated_exception():
+            handles = self.init_artists(ax, plot_data, plot_kwargs)
+        if legend and 'artist' in handles and hasattr(handles['artist'], 'legend_elements'):
+            legend_handles, _ = handles['artist'].legend_elements()
+            leg = ax.legend(legend_handles, legend['factors'],
+                            title=legend['title'], **self._legend_opts)
+            ax.add_artist(leg)
+        return handles, axis_kwargs
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -504,11 +519,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
         if self.show_legend:
             style['label'] = element.label
-
-        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-
-        with abbreviated_exception():
-            handles = self.init_artists(ax, plot_data, plot_kwargs)
+        handles, axis_kwargs = self.render_artists(element, ranges, style, ax)
         self.handles.update(handles)
 
         trigger = self._trigger
@@ -539,10 +550,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Update the elements of the plot.
         """
         self.teardown_handles()
-        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-
-        with abbreviated_exception():
-            handles = self.init_artists(axis, plot_data, plot_kwargs)
+        handles, axis_kwargs = self.render_artists(element, ranges, style, axis)
         self.handles.update(handles)
         return axis_kwargs
 
@@ -608,8 +616,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     else:
                         factors = util.unique_array(val)
                     val = util.search_indices(val, factors)
+                    labels = getattr(self, 'legend_labels', {})
+                    factors = [labels.get(f, f) for f in factors]
+                    new_style['cat_legend'] = {
+                        'title': v.dimension, 'prop': 'c', 'factors': factors
+                    }
                 k = prefix+'c'
-
             new_style[k] = val
 
         for k, val in list(new_style.items()):
@@ -666,7 +678,7 @@ class ColorbarPlot(ElementPlot):
         An explicit override of the color bar label, if set takes precedence
         over the title key in colorbar_opts.""")
 
-    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    clim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
         User-specified colorbar axis range limits for the plot, as a
         tuple (low,high). If specified, takes precedence over data
         and dimension ranges.""")
@@ -718,6 +730,15 @@ class ColorbarPlot(ElementPlot):
         objects=['neither', 'both', 'min', 'max'], default=None, doc="""
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
+
+    rescale_discrete_levels = param.Boolean(default=True, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the palette, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``. Set this value to False if you need to
+        match historical unscaled behavior, prior to HoloViews 1.14.4.""")
 
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
@@ -851,7 +872,7 @@ class ColorbarPlot(ElementPlot):
         clim = opts.pop(prefix+'clims', None)
 
         # check if there's an actual value (not np.nan)
-        if clim is None and util.isfinite(self.clim).all():
+        if clim is None and self.clim is not None and any(util.isfinite(cl) for cl in self.clim):
             clim = self.clim
 
         if clim is None:
@@ -900,7 +921,9 @@ class ColorbarPlot(ElementPlot):
 
         if self.cnorm == 'eq_hist':
             opts[prefix+'norm'] = EqHistNormalize(
-                vmin=clim[0], vmax=clim[1])
+                vmin=clim[0], vmax=clim[1],
+                rescale_discrete_levels=self.rescale_discrete_levels
+            )
         if self.cnorm == 'log' or self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
@@ -990,6 +1013,9 @@ class LegendPlot(ElementPlot):
     legend_cols = param.Integer(default=None, doc="""
        Number of legend columns in the legend.""")
 
+    legend_labels = param.Dict(default={}, doc="""
+        A mapping that allows overriding legend labels.""")
+
     legend_position = param.ObjectSelector(objects=['inner', 'right',
                                                     'bottom', 'top',
                                                     'left', 'best',
@@ -1020,6 +1046,14 @@ class LegendPlot(ElementPlot):
                     'top_left': dict(loc=2),
                     'bottom_left': dict(loc=3),
                     'bottom_right': dict(loc=4)}
+
+    @property
+    def _legend_opts(self):
+        leg_spec = self.legend_specs[self.legend_position]
+        if self.legend_cols: leg_spec['ncol'] = self.legend_cols
+        legend_opts = self.legend_opts.copy()
+        legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
+        return legend_opts
 
 
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
@@ -1054,15 +1088,19 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         and set up the legend
         """
         legend_data = []
+        legend_plot = True
         dimensions = overlay.kdims
         title = ', '.join([d.label for d in dimensions])
+        labels = self.legend_labels
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue
             title = ', '.join([d.name for d in dimensions])
             handle = subplot.traverse(lambda p: p.handles['artist'],
                                       [lambda p: 'artist' in p.handles])
-            if isinstance(overlay, NdOverlay):
+            if getattr(subplot, '_legend_plot', None) is not None:
+                legend_plot = True
+            elif isinstance(overlay, NdOverlay):
                 label = ','.join([dim.pprint_value(k, print_unit=True)
                                   for k, dim in zip(key, dimensions)])
                 if handle:
@@ -1071,7 +1109,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
                 elif element.label and handle:
-                    legend_data.append((handle, element.label))
+                    legend_data.append((handle, labels.get(element.label, element.label)))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
         used_labels = []
@@ -1086,15 +1124,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 used_labels.append(label)
         if (not len(set(data.values())) > 0) or not self.show_legend:
             legend = axis.get_legend()
-            if legend:
+            if legend and not (legend_plot or self.show_legend):
                 legend.set_visible(False)
         else:
-            leg_spec = self.legend_specs[self.legend_position]
-            if self.legend_cols: leg_spec['ncol'] = self.legend_cols
-            legend_opts = self.legend_opts.copy()
-            legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
             leg = axis.legend(list(data.keys()), list(data.values()),
-                              title=title, **legend_opts)
+                              title=title, **self._legend_opts)
             title_fontsize = self._fontsize('legend_title')
             if title_fontsize:
                 leg.get_title().set_fontsize(title_fontsize['fontsize'])

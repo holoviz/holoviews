@@ -2,11 +2,7 @@ import datetime as dt
 from unittest import skipIf
 
 import numpy as np
-
-try:
-    import matplotlib as mpl
-except:
-    mpl = None
+import pandas as pd
 
 try:
     import dask.array as da
@@ -17,14 +13,11 @@ from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
                        QuadMesh, Dataset)
 from holoviews.core.data.grid import GridInterface
-from holoviews.core.util import pd
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
                                          interpolate_curve)
 
-pd_skip = skipIf(pd is None, "Pandas not available")
-mpl_skip = skipIf(mpl is None, "Matplotlib is not available")
 da_skip = skipIf(da is None, "dask.array is not available")
 
 
@@ -73,7 +66,6 @@ class OperationTests(ComparisonTestCase):
         op_img = gradient(img)
         self.assertEqual(op_img, img.clone(np.array([[3.162278, 3.162278], [3.162278, 3.162278]]), group='Gradient'))
 
-    @mpl_skip
     def test_image_contours(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, levels=[0.5])
@@ -83,14 +75,12 @@ class OperationTests(ComparisonTestCase):
                             vdims=img.vdims)
         self.assertEqual(op_contours, contour)
 
-    @mpl_skip
     def test_image_contours_no_range(self):
         img = Image(np.zeros((2, 2)))
         op_contours = contours(img, levels=2)
         contour = Contours([], vdims=img.vdims)
         self.assertEqual(op_contours, contour)
 
-    @mpl_skip
     def test_qmesh_contours(self):
         qmesh = QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])))
         op_contours = contours(qmesh, levels=[0.5])
@@ -100,7 +90,6 @@ class OperationTests(ComparisonTestCase):
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
 
-    @mpl_skip
     def test_qmesh_curvilinear_contours(self):
         x = y = np.arange(3)
         xs, ys = np.meshgrid(x, y)
@@ -113,7 +102,6 @@ class OperationTests(ComparisonTestCase):
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
 
-    @mpl_skip
     def test_qmesh_curvilinear_edges_contours(self):
         x = y = np.arange(3)
         xs, ys = np.meshgrid(x, y)
@@ -130,7 +118,6 @@ class OperationTests(ComparisonTestCase):
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
 
-    @mpl_skip
     def test_image_contours_filled(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, filled=True, levels=[2, 2.5])
@@ -254,7 +241,6 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
-    @pd_skip
     def test_histogram_operation_pd_period(self):
         dates = pd.date_range('2017-01-01', '2017-01-04', freq='D').to_period('D')
         op_hist = histogram(Dataset(dates, 'Date'), num_bins=4, normed=True)

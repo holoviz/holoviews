@@ -17,7 +17,7 @@ class TestAreaPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [0, 3])
 
     def test_area_to_zero_x(self):
-        curve = Area([1, 2, 3]).options(invert_axes=True)
+        curve = Area([1, 2, 3]).opts(invert_axes=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['x'], np.array([1, 2, 3]))
         self.assertEqual(state['data'][0]['y'], np.array([0, 1, 2]))
@@ -40,7 +40,7 @@ class TestAreaPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [0.5, 3])
 
     def test_area_fill_between_xs(self):
-        area = Area([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).options(invert_axes=True)
+        area = Area([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).opts(invert_axes=True)
         state = self._get_plot_state(area)
         self.assertEqual(state['data'][0]['x'], np.array([0.5, 1, 2.25]))
         self.assertEqual(state['data'][0]['mode'], 'lines')
@@ -52,6 +52,6 @@ class TestAreaPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [0, 2])
 
     def test_area_visible(self):
-        curve = Area([1, 2, 3]).options(visible=False)
+        curve = Area([1, 2, 3]).opts(visible=False)
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['visible'], False)

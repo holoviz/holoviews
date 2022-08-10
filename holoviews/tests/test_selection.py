@@ -1,4 +1,4 @@
-from unittest import SkipTest, skip, skipIf
+from unittest import skip, skipIf
 
 import holoviews as hv
 import pandas as pd
@@ -702,10 +702,7 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
     __test__ = True
 
     def setUp(self):
-        try:
-            import holoviews.plotting.plotly # noqa
-        except:
-            raise SkipTest("Plotly selection tests require plotly.")
+        import holoviews.plotting.plotly # noqa
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('plotly')
@@ -733,10 +730,7 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     __test__ = True
 
     def setUp(self):
-        try:
-            import holoviews.plotting.bokeh # noqa
-        except:
-            raise SkipTest("Bokeh selection tests require bokeh.")
+        import holoviews.plotting.bokeh # noqa
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')

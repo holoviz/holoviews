@@ -1,4 +1,4 @@
-import os, io
+import io, os, sys
 
 import numpy as np # noqa (API import)
 import param
@@ -43,6 +43,9 @@ except ImportError:
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **opts): # noqa (dummy signature)
             raise Exception("IPython notebook not available: use hv.extension instead.")
+
+if '_pyodide' in sys.modules:
+    from .pyodide import pyodide_extension as extension # noqa (API import)
 
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),

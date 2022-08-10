@@ -38,7 +38,12 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def data_types(cls):
         from spatialpandas import GeoDataFrame, GeoSeries
-        return (GeoDataFrame, GeoSeries)
+        return (GeoDataFrame, GeoSeries, cls.array_type())
+
+    @classmethod
+    def array_type(cls):
+        from spatialpandas.geometry import GeometryArray
+        return GeometryArray
 
     @classmethod
     def series_type(cls):
@@ -86,6 +91,8 @@ class SpatialPandasInterface(MultiInterface):
                 data = from_shapely(data)
             if isinstance(data, list):
                 data = from_multi(eltype, data, kdims, vdims)
+        elif isinstance(data, cls.array_type()):
+            data = GeoDataFrame({'geometry': data})
         elif not isinstance(data, cls.frame_type()):
             raise ValueError("%s only support spatialpandas DataFrames." % cls.__name__)
         elif 'geometry' not in data:
