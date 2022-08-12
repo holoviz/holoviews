@@ -14,17 +14,17 @@ import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.validation import silence
-from bokeh.layouts import WidgetBox, Row, Column
+from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
     Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
     GridBox, DatetimeAxis, CategoricalAxis
 )
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+    CustomJSTickFormatter, TickFormatter, PrintfTickFormatter
 )
 from bokeh.models.widgets import DataTable, Tabs, Div
-from bokeh.plotting import Figure
+from bokeh.plotting import figure
 from bokeh.themes.theme import Theme
 
 try:
@@ -144,7 +144,7 @@ def layout_padding(plots, renderer):
 def compute_plot_size(plot):
     """
     Computes the size of bokeh models that make up a layout such as
-    figures, rows, columns, widgetboxes and Plot.
+    figures, rows, columns, and Plot.
     """
     if isinstance(plot, GridBox):
         ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
@@ -156,7 +156,7 @@ def compute_plot_size(plot):
     elif isinstance(plot, (Div, ToolbarBox)):
         # Cannot compute size for Div or ToolbarBox
         return 0, 0
-    elif isinstance(plot, (Row, Column, WidgetBox, Tabs)):
+    elif isinstance(plot, (Row, Column, Tabs)):
         if not plot.children: return 0, 0
         if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
@@ -166,7 +166,7 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
-    elif isinstance(plot, Figure):
+    elif isinstance(plot, figure):
         if plot.plot_width:
             width = plot.plot_width
         else:
@@ -447,7 +447,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
                     y_range=ranges, plot_width=width, plot_height=size)
 
-    p = Figure(toolbar_location=None, tools=[], **opts)
+    p = figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
     p.grid.grid_line_alpha = 0
 
@@ -523,7 +523,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, DataTable):
         width = model.width
         model.width = int(table_padding*width)
-    elif isinstance(model, (WidgetBox, Div)):
+    elif isinstance(model, Div):
         width = model.width
     elif model:
         width = model.plot_width
@@ -535,7 +535,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
 def pad_plots(plots):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
-    wraps any DataTable or Tabs in a WidgetBox with appropriate
+    wraps any DataTable or Tabs in a Column with appropriate
     padding. Required to avoid overlap in gridplot.
     """
     widths = []
@@ -545,7 +545,7 @@ def pad_plots(plots):
             width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
-    plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+    plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
@@ -973,7 +973,7 @@ def wrap_formatter(formatter, axis):
                'converted to tick formatter. ' % axis)
         jsfunc = py2js_tickformatter(formatter, msg)
         if jsfunc:
-            formatter = FuncTickFormatter(code=jsfunc)
+            formatter = CustomJSTickFormatter(code=jsfunc)
         else:
             formatter = None
     else:

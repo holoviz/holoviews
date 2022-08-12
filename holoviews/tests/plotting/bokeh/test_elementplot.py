@@ -19,7 +19,7 @@ import panel as pn
 
 from bokeh.document import Document
 from bokeh.models import tools
-from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
+from bokeh.models import (CustomJSTickFormatter, PrintfTickFormatter,
                             NumeralTickFormatter, LogTicker,
                             LinearColorMapper, LogColorMapper)
 from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
@@ -217,7 +217,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10)).opts(xformatter=formatter)
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
-        self.assertIsInstance(xaxis.formatter, FuncTickFormatter)
+        self.assertIsInstance(xaxis.formatter, CustomJSTickFormatter)
 
     def test_element_yformatter_function(self):
         try:
@@ -229,7 +229,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10)).opts(yformatter=formatter)
         plot = bokeh_renderer.get_plot(curve)
         yaxis = plot.handles['yaxis']
-        self.assertIsInstance(yaxis.formatter, FuncTickFormatter)
+        self.assertIsInstance(yaxis.formatter, CustomJSTickFormatter)
 
     def test_element_xformatter_instance(self):
         formatter = NumeralTickFormatter()
@@ -333,7 +333,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             return '%s' % x
         curve = Curve(range(10), kdims=[Dimension('x', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.xaxis[0].formatter, FuncTickFormatter)
+        self.assertIsInstance(plot.xaxis[0].formatter, CustomJSTickFormatter)
 
     def test_element_formatter_yaxis(self):
         try:
@@ -344,7 +344,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             return '%s' % x
         curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
+        self.assertIsInstance(plot.yaxis[0].formatter, CustomJSTickFormatter)
 
     def test_element_xticks_datetime(self):
         dates = [(dt.datetime(2016, 1, i), i) for i in range(1, 4)]

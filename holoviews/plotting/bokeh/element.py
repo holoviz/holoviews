@@ -15,7 +15,7 @@ from bokeh.models import (
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, MercatorTickFormatter
+    CustomJSTickFormatter, TickFormatter, MercatorTickFormatter
 )
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
@@ -675,7 +675,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             formatter = wrap_formatter(formatter, axis)
             if formatter is not None:
                 axis_props['formatter'] = formatter
-        elif FuncTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
+        elif CustomJSTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
             formatter = None
             if dimension.value_format:
                 formatter = dimension.value_format
@@ -686,7 +686,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                        'converted to tick formatter. ' % dimension.name)
                 jsfunc = py2js_tickformatter(formatter, msg)
                 if jsfunc:
-                    formatter = FuncTickFormatter(code=jsfunc)
+                    formatter = CustomJSTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
 
         if axis == 'x':

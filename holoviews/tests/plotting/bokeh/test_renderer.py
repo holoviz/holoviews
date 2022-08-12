@@ -88,7 +88,7 @@ class BokehRendererTest(ComparisonTestCase):
         theme = Theme(
             json={
         'attrs' : {
-            'Figure' : {
+            'figure' : {
                 'outline_line_color': '#444444'}
         }
             })
