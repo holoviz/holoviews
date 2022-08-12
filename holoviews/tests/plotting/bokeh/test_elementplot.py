@@ -192,7 +192,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         assert not plot.handles['glyph_renderer'].visible
         checkbox.value = True
         assert plot.handles['glyph_renderer'].visible
-        
+
     def test_element_xformatter_string(self):
         curve = Curve(range(10)).opts(xformatter='%d')
         plot = bokeh_renderer.get_plot(curve)

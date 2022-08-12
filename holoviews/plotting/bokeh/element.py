@@ -516,7 +516,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
-            return bokeh.plotting.Figure(x_axis_type=x_axis_type,
+            return bokeh.plotting.figure(x_axis_type=x_axis_type,
                                          y_axis_type=y_axis_type, title=title,
                                          **properties)
 

@@ -12,7 +12,7 @@ from holoviews.util.transform import dim
 
 from bokeh.layouts import Column, Row
 from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel, Spacer, GridBox, Title
-from bokeh.plotting import Figure
+from bokeh.plotting import figure
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -197,10 +197,10 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         for grid in [inner_grid1, inner_grid2]:
             self.assertEqual(len(grid.children), 4)
             (gfig1, _, _), (gfig2, _, _), (gfig3, _, _), (gfig4, _, _) = grid.children
-            self.assertIsInstance(gfig1, Figure)
-            self.assertIsInstance(gfig2, Figure)
-            self.assertIsInstance(gfig3, Figure)
-            self.assertIsInstance(gfig4, Figure)
+            self.assertIsInstance(gfig1, figure)
+            self.assertIsInstance(gfig2, figure)
+            self.assertIsInstance(gfig3, figure)
+            self.assertIsInstance(gfig4, figure)
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
@@ -235,7 +235,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertIsInstance(toolbar, ToolbarBox)
         self.assertIsInstance(grid, GridBox)
         for (fig, _, _) in grid.children:
-            self.assertIsInstance(fig, Figure)
+            self.assertIsInstance(fig, figure)
         self.assertTrue([len([r for r in f.renderers if isinstance(r, GlyphRenderer)])
                          for (f, _, _) in grid.children], [1, 1, 1])
 
