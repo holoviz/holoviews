@@ -879,8 +879,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif not (fixed_height and fixed_width):
                 # Set initial aspect
                 aspect = self.get_aspect(xspan, yspan)
-                width = plot.frame_width or plot.plot_width or 300
-                height = plot.frame_height or plot.plot_height or 300
+                width = plot.frame_width or plot.width or 300
+                height = plot.frame_height or plot.height or 300
 
                 if not (fixed_width or fixed_height) and not self.responsive:
                     fixed_height = True
@@ -888,11 +888,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if fixed_height:
                     plot.frame_height = height
                     plot.frame_width = int(height/aspect)
-                    plot.plot_width, plot.plot_height = None, None
+                    plot.width, plot.height = None, None
                 elif fixed_width:
                     plot.frame_width = width
                     plot.frame_height = int(width*aspect)
-                    plot.plot_width, plot.plot_height = None, None
+                    plot.width, plot.height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
 

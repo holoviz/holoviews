@@ -354,8 +354,8 @@ def compute_layout_properties(
              'sizing_mode' : sizing_mode},
             {'frame_width' : frame_width,
              'frame_height': frame_height,
-             'plot_height' : height,
-             'plot_width'  : width})
+             'height' : height,
+             'width'  : width})
 
 
 @contextmanager
