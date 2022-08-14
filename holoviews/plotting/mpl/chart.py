@@ -209,7 +209,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
     style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle',
-                  'fill', 'capstyle', 'interpolate']
+                  'fill', 'capstyle', 'interpolate', 'step']
 
     _nonvectorized_styles = style_opts
 
