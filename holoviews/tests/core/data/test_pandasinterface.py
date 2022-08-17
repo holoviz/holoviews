@@ -5,7 +5,7 @@ from holoviews.core.dimension import Dimension
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Scatter, Points, Distribution
+from holoviews.element import Curve, Scatter, Points, Distribution
 
 
 from .base import HeterogeneousColumnTests, InterfaceTests
@@ -163,6 +163,12 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         df = pd.DataFrame([1], columns=['interface'])
         ds = Dataset(df)
         self.assertEqual(list(ds.data.columns), ['interface'])
+
+    def test_dataset_range_for_pd_period_range(self):
+        period_range = pd.period_range("1990", "1991", freq="M")
+        expected_range = (pd.Timestamp('1990-01-01 00:00:00'), pd.Timestamp('1991-01-01 00:00:00'))
+        curve = Curve((period_range, range(13)))
+        assert curve.range("x") == expected_range
 
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
