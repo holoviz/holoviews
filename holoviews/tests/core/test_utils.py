@@ -332,6 +332,10 @@ class TestMaxRange(unittest.TestCase):
         self.assertTrue(math.isnan(lower))
         self.assertTrue(math.isnan(upper))
 
+    def test_max_range3(self):
+        periods = [(pd.Period("1990", freq="M"), pd.Period("1991", freq="M"))]
+        expected = (np.datetime64("1990", 'ns'), np.datetime64("1991", 'ns'))
+        self.assertEqual(max_range(periods), expected)
 
 
 class TestWrapTupleStreams(unittest.TestCase):

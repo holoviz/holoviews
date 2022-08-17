@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_period_dtype
 
 from .interface import Interface, DataError
 from ..dimension import dimension_name
@@ -157,8 +156,6 @@ class PandasInterface(Interface):
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if is_period_dtype(column):
-            column = column.dt.to_timestamp()
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
                 util.LooseVersion(pd.__version__) < util.LooseVersion('0.17.0')):

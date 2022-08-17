@@ -922,7 +922,10 @@ def max_range(ranges, combined=True):
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
-                    if isinstance(l, datetime_types) and isinstance(h, datetime_types):
+                    if isinstance(l, pd.Period) and isinstance(h, pd.Period):
+                        l = l.to_timestamp().to_datetime64()
+                        h = h.to_timestamp().to_datetime64()
+                    elif isinstance(l, datetime_types) and isinstance(h, datetime_types):
                         l, h = (pd.Timestamp(l).to_datetime64(),
                                 pd.Timestamp(h).to_datetime64())
                     converted.append((l, h))
