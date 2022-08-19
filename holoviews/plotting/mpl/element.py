@@ -336,6 +336,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_zlim(bottom=zmin)
                 if valid_lim(zmax):
                     axis.set_zlim(top=zmax)
+        elif isinstance(self.projection, str) and self.projection == "polar":
+            _, b, _, t = coords
+            l = 0
+            r = 2 * np.pi
         else:
             l, b, r, t = coords
 
