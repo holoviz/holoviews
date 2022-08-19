@@ -7,6 +7,8 @@ from holoviews.streams import Stream
 from .test_plot import TestMPLPlot, mpl_renderer
 
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
+from matplotlib.projections import PolarAxes
+
 
 class TestElementPlot(TestMPLPlot):
 
@@ -149,6 +151,14 @@ class TestElementPlot(TestMPLPlot):
         zformatter = zaxis.get_major_formatter()
         self.assertIs(zformatter, formatter)
 
+    def test_element_polar_xlimits(self):
+        theta = np.arange(0, 5.4, 0.1)
+        r = np.ones(len(theta))
+        scatter = Scatter((theta, r), 'theta', 'r').opts(projection='polar')
+        plot = mpl_renderer.get_plot(scatter)
+        ax = plot.handles['axis']
+        self.assertIsInstance(ax, PolarAxes)
+        self.assertEqual(ax.get_xlim(), (0, 2 * np.pi))
 
 
 class TestColorbarPlot(TestMPLPlot):
