@@ -7,8 +7,8 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
-
 from bokeh.core.properties import value
+from bokeh.core.property.vectorization import Field, Value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
     ColorBar, ColorMapper, Legend, Renderer, Title, tools
@@ -1258,6 +1258,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 old_spec = getattr(glyph, spec)
                 new_field = new_spec.get('field') if isinstance(new_spec, dict) else new_spec
                 old_field = old_spec.get('field') if isinstance(old_spec, dict) else old_spec
+                new_field = getattr(new_field, "field", new_field)
+                old_field = getattr(old_field, "field", old_field)
                 if (data is None) or (new_field not in data or new_field in source.data or new_field == old_field):
                     continue
                 columns.append(new_field)
@@ -2201,6 +2203,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
             if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
                 continue
+            # TODO: This should be automated
+            if isinstance(label, Value):
+                label = label.value
+            if isinstance(label, Field):
+                label = label.field
+
+            # label = label.value
             if label in legend_labels:
                 prev_item = legend_labels[label]
                 prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
