@@ -256,12 +256,12 @@ class VectorFieldPlot(ColorbarPlot):
                     magnitudes = magnitudes / max_magnitude
             if self.rescale_lengths:
                 base_dist = get_min_distance(element)
-                magnitudes *= base_dist
+                magnitudes = magnitudes * base_dist
         else:
             magnitudes = np.ones(len(element))
             if self.rescale_lengths:
                 base_dist = get_min_distance(element)
-                magnitudes *= base_dist
+                magnitudes = magnitudes * base_dist
 
         return magnitudes
 
