@@ -1058,8 +1058,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(v, str):
                 if validate(k, v) == True:
                     continue
-                elif v in element or (isinstance(element, Graph) and v in element.nodes):
-                    v = dim(v)
+                elif v in element:
+                    v = dim(element.get_dimension(v))
+                elif isinstance(element, Graph) and v in element.nodes:
+                    v = dim(element.nodes.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
                     v = dim([d for d in self.overlay_dims if d==v][0])
 
