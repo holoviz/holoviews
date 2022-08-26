@@ -308,8 +308,11 @@ def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
                 clip_path = clip_path.get_fully_transformed_path()
                 bbox = Bbox.intersection(bbox,
                                          clip_path.get_extents())
-        if bbox is not None and (bbox.width != 0 or
-                                 bbox.height != 0):
+        if (
+            bbox is not None and
+            (bbox.width != 0 or bbox.height != 0) and
+            np.isfinite(bbox).all()
+        ):
             bbox_filtered.append(bbox)
     if bbox_filtered:
         _bbox = Bbox.union(bbox_filtered)
