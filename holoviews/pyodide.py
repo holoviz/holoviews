@@ -1,7 +1,6 @@
 import asyncio
 import sys
 
-from js import document
 
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
@@ -31,11 +30,12 @@ async def _link(ref, doc):
     _link_docs(doc, view.model.document)
 
 def render_html(obj):
+    from js import document
     if hasattr(sys.stdout, '_out'):
         target = sys.stdout._out # type: ignore
     else:
         raise ValueError("Could not determine target node to write to.")
-    doc = Document() 
+    doc = Document()
     as_panel(obj).server_doc(doc, location=False)
     docs_json, [render_item,] = standalone_docs_json_and_render_items(
         doc.roots, suppress_callback_warning=True
