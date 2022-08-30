@@ -5,7 +5,7 @@ from ..core import util
 from ..core import Dimension, Dataset, Element2D, NdOverlay, Overlay
 from ..core.dimension import process_dimensions
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
-from .selection import Selection1DExpr, Selection2DExpr
+from .selection import Selection1DExpr
 
 
 class Chart(Dataset, Element2D):
@@ -54,7 +54,7 @@ class Chart(Dataset, Element2D):
         return super(Chart, self).__getitem__(index)
 
 
-class Scatter(Selection2DExpr, Chart):
+class Scatter(Selection1DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
