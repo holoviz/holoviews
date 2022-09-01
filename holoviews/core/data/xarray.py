@@ -422,6 +422,10 @@ class XArrayInterface(GridInterface):
             return data.T.flatten() if flat and not keep_index else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
+            if keep_index:
+                da = dataset.data[dataset.vdims[0].name].copy().rename(dim.name)
+                da.data[:] = data
+                return da
             return data.T.flatten() if flat else data
         else:
             if keep_index:

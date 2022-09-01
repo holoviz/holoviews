@@ -73,7 +73,7 @@ def spatial_select_gridded(xvals, yvals, geometry):
         target = Image((xs, ys, np.empty(ys.shape+xs.shape)))
         poly = Polygons([geometry])
         mask = rasterize(poly, target=target, dynamic=False, aggregator='any')
-        return mask.dimension_values(2, flat=False)
+        return mask.interface.values(mask, mask.vdims[0], keep_index=True)
     else:
         mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
         return mask.reshape(xvals.shape)
