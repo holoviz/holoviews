@@ -111,9 +111,29 @@ class Plot3D(ColorbarPlot):
 
 class Scatter3DPlot(Plot3D, PointPlot):
     """
-    Subclass of PointPlot allowing plotting of Points
-    on a 3D axis, also allows mapping color and size
-    onto a particular Dimension of the data.
+    `Scatter3D` is a 3D element representing the position of a collection
+    of coordinates in a 3D space. The key dimensions (`kdims`) represent the
+    position of each coordinate along the x-, y- and z-axis.
+
+    Example
+    -------
+
+    .. code-block::
+
+        import holoviews as hv
+        from bokeh.sampledata.iris import flowers
+
+        hv.extension("matplotlib")
+
+        hv.Scatter3D(
+            flowers, kdims=["sepal_length", "sepal_width", "petal_length"]
+        ).opts(
+            color="petal_width",
+            alpha=0.7,
+            size=5,
+            cmap="fire",
+            marker='^'
+        )
     """
 
     color_index = param.ClassSelector(default=None, class_=(str, int),
