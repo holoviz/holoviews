@@ -110,6 +110,11 @@ class Plot3D(ColorbarPlot):
 
 
 class Scatter3DPlot(Plot3D, PointPlot):
+    """
+    Subclass of PointPlot allowing plotting of Points
+    on a 3D axis, also allows mapping color and size
+    onto a particular Dimension of the data.
+    """
     
     color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""

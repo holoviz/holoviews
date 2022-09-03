@@ -58,7 +58,7 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
 
 class Scatter3DPlot(Chart3DPlot, ScatterPlot):
-    
+
     style_opts = [
         'visible', 'marker', 'color', 'cmap', 'alpha', 'opacity', 'size', 'sizemin'
     ]
