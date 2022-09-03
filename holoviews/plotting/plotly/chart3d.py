@@ -58,33 +58,7 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
 
 class Scatter3DPlot(Chart3DPlot, ScatterPlot):
-    """
-    `Scatter3D` is a 3D element representing the position of a collection
-    of coordinates in a 3D space. The key dimensions (`kdims`) represent the
-    position of each coordinate along the x-, y- and z-axis.
-
-    Example
-    -------
-
-    .. code-block::
-
-        import holoviews as hv
-        from bokeh.sampledata.iris import flowers
-
-        hv.extension("plotly")
-
-        hv.Scatter3D(
-            flowers, kdims=["sepal_length", "sepal_width", "petal_length"]
-        ).opts(
-            color="petal_width",
-            alpha=0.7,
-            size=5,
-            cmap="Portland",
-            colorbar=True,
-            marker="circle",
-        )
-    """
-
+    
     style_opts = [
         'visible', 'marker', 'color', 'cmap', 'alpha', 'opacity', 'size', 'sizemin'
     ]
