@@ -243,6 +243,5 @@ class TestColorbarPlot(TestPlotlyPlot):
         y,x = np.mgrid[-5:5, -5:5] * 0.1
         z=np.sin(x**2+y**2)
         scatter = Scatter3D((x.flat,y.flat,z.flat)).opts(colorbar=True, colorbar_opts={"title": "some-title"})
-        plot = plotly_renderer.get_plot(scatter)
         state = self._get_plot_state(scatter)
         assert state['layout']['scene']['zaxis']['title']=="some-title"
