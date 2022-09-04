@@ -603,11 +603,19 @@ class ColorbarPlot(ElementPlot):
         opts = {}
         dim_name = dim_range_key(eldim)
         if self.colorbar:
-            if isinstance(eldim, dim):
-                title = str(eldim) if eldim.ops else str(eldim)[1:-1]
-            else:
-                title = eldim.pprint_label
-            opts['colorbar'] = dict(title=title, **self.colorbar_opts)
+            opts['colorbar'] = dict(**self.colorbar_opts)
+            if not "title" in opts['colorbar']:
+                if isinstance(eldim, dim):
+                    title = str(eldim)
+                    if eldim.ops:
+                        title = title
+                    elif title.startswith("dim('") and title.endswith("')"):
+                        title = title[5:-2]
+                    else:
+                        title = title[1:-1]
+                else:
+                    title = eldim.pprint_label
+                opts['colorbar']['title']=title
             opts['showscale'] = True
         else:
             opts['showscale'] = False

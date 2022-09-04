@@ -223,3 +223,26 @@ class TestOverlayPlot(TestPlotlyPlot):
         scatter = Path3D([]) * Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel='Z-Axis')
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
+
+class TestColorbarPlot(TestPlotlyPlot):
+    def test_base(self):
+        y,x = np.mgrid[-5:5, -5:5] * 0.1
+        z=np.sin(x**2+y**2)
+        scatter = Scatter3D((x.flat,y.flat,z.flat))
+        state = self._get_plot_state(scatter)
+        assert state['layout']['scene']['zaxis']['title']=="z"
+
+    def test_colorbar(self):
+        y,x = np.mgrid[-5:5, -5:5] * 0.1
+        z=np.sin(x**2+y**2)
+        scatter = Scatter3D((x.flat,y.flat,z.flat)).opts(colorbar=True)
+        state = self._get_plot_state(scatter)
+        assert state['layout']['scene']['zaxis']['title']=="z"
+
+    def test_colorbar_opts_title(self):
+        y,x = np.mgrid[-5:5, -5:5] * 0.1
+        z=np.sin(x**2+y**2)
+        scatter = Scatter3D((x.flat,y.flat,z.flat)).opts(colorbar=True, colorbar_opts={"title": "some-title"})
+        plot = plotly_renderer.get_plot(scatter)
+        state = self._get_plot_state(scatter)
+        assert state['layout']['scene']['zaxis']['title']=="some-title"
