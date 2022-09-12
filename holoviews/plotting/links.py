@@ -96,6 +96,9 @@ class RangeToolLink(Link):
     a subset of a larger dataset in more detail. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
+
+    Example of how to use RangeToolLink can be found here:
+    https://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
     """
 
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
