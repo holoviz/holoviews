@@ -14,5 +14,4 @@ def server_cleanup():
         state.kill_all_servers()
         state._indicators.clear()
         state._locations.clear()
-        state._curdoc = None
         state.cache.clear()
