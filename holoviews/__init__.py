@@ -1,3 +1,78 @@
+"""
+HoloViews makes data analysis and visualization simple
+======================================================
+
+HoloViews lets you focus on what you are trying to explore and convey, not on
+the process of plotting.
+
+HoloViews
+
+- supports a wide range of data sources including Pandas, Dask, XArray
+Rapids cuDF, Streamz, Intake, Geopandas, NetworkX and Ibis.
+- supports the plotting backends Bokeh (default), Matplotlib and Plotly.
+- allows you to drop into the rest of the
+HoloViz ecosystem when more power or flexibility is needed.
+
+For basic data exploration we recommend using the higher level hvPlot package,
+which provides the familiar Pandas `.plot` api. You can drop into HoloViews
+when needed.
+
+To learn more check out https://holoviews.org/. To report issues or contribute
+go to https://github.com/holoviz/holoviews. To join the community go to
+https://discourse.holoviz.org/.
+
+How to use HoloViews in 3 simple steps
+--------------------------------------
+
+Work with the data source you already know and ❤️
+
+>>> import pandas as pd
+>>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/master/examples/assets/station_info.csv')
+
+Import HoloViews and configure your plotting backend
+
+>>> import holoviews as hv
+>>> hv.extension('bokeh')
+
+Annotate your data
+
+>>> scatter = (
+...     hv.Scatter(station_info, kdims='services', vdims='ridership')
+...     .redim(
+...         services=hv.Dimension("services", label='Services'),
+...         ridership=hv.Dimension("ridership", label='Ridership'),
+...     )
+...     .opts(size=10, color="red", responsive=True)
+... )
+>>> scatter
+
+In a notebook this will display a nice scatter plot.
+
+Note that the `kdims` (The key dimension(s)) represents the independent
+variable(s) and the `vdims` (value dimension(s)) the dependent variable(s).
+
+For more check out https://holoviews.org/getting_started/Introduction.html
+
+How to get help
+---------------
+
+You can understand the structure of your objects by printing them.
+
+>>> print(scatter)
+:Scatter   [services]   (ridership)
+
+You can get extensive documentation using `hv.help`.
+
+>>> hv.help(scatter)
+
+In a notebook or ipython environment the usual
+
+- `help` and `?` will provide you with documentation.
+- `TAB` and `SHIFT+TAB` completion will help you navigate.
+
+To ask the community go to https://discourse.holoviz.org/.
+To report issues go to https://github.com/holoviz/holoviews.
+"""
 import io, os, sys
 
 import numpy as np # noqa (API import)
