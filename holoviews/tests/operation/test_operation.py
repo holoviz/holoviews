@@ -11,12 +11,12 @@ except:
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
-                       QuadMesh, Dataset)
+                       QuadMesh, Dataset, renderer)
 from holoviews.core.data.grid import GridInterface
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
-                                         interpolate_curve)
+                                         interpolate_curve, decimate)
 
 da_skip = skipIf(da is None, "dask.array is not available")
 
@@ -368,3 +368,13 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(operation(curve).label, str(curve.id))
         operation._preprocess_hooks = pre_backup
         operation._postprocess_hooks = post_backup
+
+    def test_decimate_ordering(self):
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+        curve = Curve((x, y))
+        decimated = decimate(curve, max_samples=20)
+        renderer("bokeh").get_plot(decimated)
+
+        index = decimated.data[()].data.index
+        assert np.all(index == np.sort(index))
