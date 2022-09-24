@@ -927,7 +927,7 @@ class Compositor(param.Parameterized):
             overlay = Overlay([overlay])
             unpack = True
 
-        prev_ids = tuple()
+        prev_ids = ()
         processed = defaultdict(list)
         while True:
             match = cls.strongest_match(overlay, mode, backend)

@@ -1840,7 +1840,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
         all_dims = [d.name for d in ndmapping.kdims]
         inds = [ndmapping.get_dimension_index(dim) for dim in idims]
-        getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
+        getter = operator.itemgetter(*inds) if inds else lambda x: ()
 
         multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
         df = pd.DataFrame(list(map(wrap_tuple, ndmapping.values())), index=multi_index)
