@@ -9,4 +9,3 @@ Attribution
 
   Author: Ian Duffy
   https://commons.wikimedia.org/wiki/File:Aptenodytes_forsteri_-Snow_Hill_Island,_Antarctica_-adults_and_juvenile-8.jpg
-

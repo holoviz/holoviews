@@ -172,7 +172,7 @@ infrastructure across too many PRs to list here.
    (`#5344 <https://github.com/holoviz/holoviews/pull/5344>`__)
 
 
-   
+
 Version 1.14
 ~~~~~~~~~~~~
 

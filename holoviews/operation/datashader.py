@@ -1277,7 +1277,7 @@ class shade(LinkableOperation):
         If ``cnorm='eq_hist`` and there are only a few discrete values,
         then ``rescale_discrete_levels=True`` (the default) decreases
         the lower limit of the autoranged span so that the values are
-        rendering towards the (more visible) top of the ``cmap`` range, 
+        rendering towards the (more visible) top of the ``cmap`` range,
         thus avoiding washout of the lower values.  Has no effect if
         ``cnorm!=`eq_hist``. Set this value to False if you need to
         match historical unscaled behavior, prior to HoloViews 1.14.4.""")

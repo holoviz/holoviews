@@ -476,7 +476,7 @@ class GridPlot(CompositePlot):
         # Get the extent of the layout elements (not the whole layout)
         key = self.keys[-1]
         axis = self.handles['axis']
-        subplot_kwargs = dict()
+        subplot_kwargs = {}
         ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges=ranges, **subplot_kwargs)

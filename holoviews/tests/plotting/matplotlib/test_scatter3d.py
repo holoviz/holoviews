@@ -93,4 +93,3 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
         self.assertEqual(z_range[0], 1.8660659830736146)
         self.assertEqual(z_range[1], 4.2870938501451725)
-

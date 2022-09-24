@@ -123,7 +123,7 @@ class BoundsCallback(PlotlyCallback):
             elif cls.boundsy:
                 stream_data = dict(boundsy=None)
             else:
-                stream_data = dict()
+                stream_data = {}
 
             event_data[trace_uid] = stream_data
 
@@ -159,7 +159,7 @@ class BoundsCallback(PlotlyCallback):
                 elif cls.boundsy:
                     stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    stream_data = dict()
+                    stream_data = {}
 
                 event_data[trace_uid] = stream_data
 
@@ -188,7 +188,7 @@ class BoundsCallback(PlotlyCallback):
                 elif cls.boundsy:
                     stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    stream_data = dict()
+                    stream_data = {}
 
                 event_data[trace_uid] = stream_data
 
@@ -332,4 +332,3 @@ callbacks[BoundsY] = BoundsYCallback
 callbacks[RangeXY] = RangeXYCallback
 callbacks[RangeX] = RangeXCallback
 callbacks[RangeY] = RangeYCallback
-
