@@ -1512,7 +1512,7 @@ def resolve_dependent_value(value):
 
     Resolves parameter values, Parameterized instance methods,
     parameterized functions with dependencies on the supplied value,
-    including such parameters embedded in a list, tuple, or dictionary.
+    including such parameters embedded in a list, tuple, dictionary, or slice.
 
     Args:
        value: A value which will be resolved
@@ -1530,6 +1530,12 @@ def resolve_dependent_value(value):
         value = {
             resolve_dependent_value(k): resolve_dependent_value(v) for k, v in value.items()
         }
+    elif isinstance(value, slice):
+        value = slice(
+            resolve_dependent_value(value.start),
+            resolve_dependent_value(value.stop),
+            resolve_dependent_value(value.step),
+        )
 
     if 'panel' in sys.modules:
         from panel.widgets import RangeSlider, Widget
