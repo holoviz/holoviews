@@ -254,7 +254,8 @@ class Dimension(param.Parameterized):
             if 'label' in params and params['label'] != all_params['label']:
                 self.param.warning(
                     'Using label as supplied by keyword ({!r}), ignoring '
-                    'tuple value {!r}'.format(params['label'], all_params['label']))
+                    'tuple value {!r}'.format(params['label'], all_params['label'])
+                )
         elif isinstance(spec, dict):
             all_params.update(spec)
             try:
