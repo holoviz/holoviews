@@ -181,6 +181,86 @@ class PointPlot(LegendPlot, ColorbarPlot):
             elmapping['angle'] = {'field': '__angle'}
         return data, elmapping, style
 
+class StickPlot(ColorbarPlot):
+
+    rescale_lengths = param.Boolean(default=True, doc="""
+        Whether the lengths will be rescaled to take into account the
+        smallest non-zero distance between two vectors.""")
+
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(str, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of dimension value transform on color option,
+        e.g. `color=dim('Magnitude')`.
+        """)
+
+    size_index = param.ClassSelector(default=None, class_=(str, int),
+                                     allow_None=True, doc="""
+        Deprecated in favor of the magnitude option, e.g.
+        `magnitude=dim('Magnitude')`.
+        """)
+
+    style_opts = line_properties + ['scale', 'cmap']
+
+    _nonvectorized_styles = ['scale', 'cmap']
+
+    _plot_methods = dict(single='ray')
+
+    def _glyph_properties(self, *args):
+        properties = super(StickPlot, self)._glyph_properties(*args)
+        properties.pop('scale', None)
+        return properties
+
+    def get_data(self, element, ranges, style):
+        # Get x, y, angle, magnitude and color data
+        rads = element.dimension_values(2)
+        if self.invert_axes:
+            xidx, yidx = (1, 0)
+            rads = np.pi/2 - rads
+        else:
+            xidx, yidx = (0, 1)
+
+        # Compute ray positions
+        xs = element.dimension_values(xidx)
+        ys = element.dimension_values(yidx)
+
+        magnitudes = element.dimension_values(3).copy()
+
+        base_dist = np.nanmean(np.diff(xs))
+        if base_dist==0:
+            # vectors may be lined up along ordinate
+            base_dist=1
+        elif np.issubdtype(base_dist, np.timedelta64):
+            base_dist /= np.timedelta64(1, 'ms')
+
+        input_scale = style.pop('scale', 1.0)
+        # is abscissa datetime axis?
+        # if yes, tweak scale a bit for better default values.
+        # needs more objective solution?
+        if np.issubdtype(xs.dtype, np.datetime64):
+            if self.invert_axes:
+                input_scale *= 10
+            else:
+                input_scale /= 10
+
+        magnitudes = magnitudes * base_dist / input_scale
+
+        cdim = element.get_dimension(self.color_index)
+        cdata, cmapping = self._get_color_data(element, ranges, style,
+                                               name='line_color')
+
+        color = None
+        if cdim:
+            color = cdata.get(cdim.name)
+
+        data = {'x': xs, 'y': ys, 'length': magnitudes, 'angle': rads}
+        mapping = dict(x='x', y='y', length='length', angle='angle')
+        if cdim and color is not None:
+            data[cdim.name] = color
+            mapping.update(cmapping)
+
+        return (data, mapping, style)
 
 
 class VectorFieldPlot(ColorbarPlot):

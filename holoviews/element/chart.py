@@ -4,7 +4,7 @@ import param
 from ..core import util
 from ..core import Dimension, Dataset, Element2D, NdOverlay, Overlay
 from ..core.dimension import process_dimensions
-from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
+from .geom import Rectangles, Points, VectorField, Sticks # noqa: backward compatible import
 from .selection import Selection1DExpr, Selection2DExpr
 
 

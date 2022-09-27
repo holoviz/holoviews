@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Rectangles)
+                        Tiles, Segments, Slope, Rectangles, Sticks)
 from ...core.options import Options, Cycle, Palette
 try:
     from ...interface import DFrame
@@ -31,7 +31,7 @@ from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
-                    AreaPlot, VectorFieldPlot)
+                    AreaPlot, VectorFieldPlot, StickPlot)
 from .geometry import SegmentPlot, RectanglesPlot
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
@@ -71,6 +71,7 @@ associations = {Overlay: OverlayPlot,
                 Spikes: SpikesPlot,
                 Area: AreaPlot,
                 VectorField: VectorFieldPlot,
+                Sticks: StickPlot,
                 Histogram: HistogramPlot,
 
                 # Rasters
