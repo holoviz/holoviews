@@ -403,7 +403,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         agg = super().aggregate(dimensions, function, spreadfn, **kwargs)
         return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg
 
-    def select(self, selection_specs=None, **selection):
+    def select(self, selection_expr=None, selection_specs=None, **selection):
         """
         Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
@@ -413,6 +413,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
+        if selection_expr is not None:
+            return super().select(selection_expr, selection_specs, **selection)
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
