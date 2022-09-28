@@ -1,3 +1,4 @@
+from functools import lru_cache
 from warnings import warn
 
 import numpy as np
@@ -10,6 +11,12 @@ from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
+
+
+@lru_cache
+def deprecation_warning(msg):
+    "To only run the warning once"
+    warn(msg)
 
 
 class PandasInterface(Interface):
@@ -58,7 +65,7 @@ class PandasInterface(Interface):
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
-                warn(
+                deprecation_warning(
                     "Having integer as a column name in a DataFrame is deprecated "
                     "and will not be supported in Holoviews version 1.16."
                 )
