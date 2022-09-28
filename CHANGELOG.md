@@ -1,3 +1,64 @@
+Version 1.15.1
+==============
+**September 28, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
+@droumis, @ddrinka and @stanwest as well as a special thanks to @HoxBro
+for his many bug fixes. Additional thank you goes out to our core
+contributors and maintainers @philippjfr, @jbednar and @jlstevens.
+
+Enhancements:
+
+- Return samples from `decimate` operation in order
+  ([#5452](https://github.com/holoviz/holoviews/pull/5452))
+- Ensure HoloViews is importable from a pyodide webworker
+  ([#5410](https://github.com/holoviz/holoviews/pull/5410))
+- Add support for stepwise Area plots
+  ([#5390](https://github.com/holoviz/holoviews/pull/5390))
+- Better error message for `hv.Cycle` when incompatible backend activated
+  ([#5379](https://github.com/holoviz/holoviews/pull/5379))
+- Improvements to VSCode notebook support
+  ([#5398](https://github.com/holoviz/holoviews/pull/5398))
+- Protect matplotlib tests from global styles
+  ([#5311](https://github.com/holoviz/holoviews/pull/5311))
+- Add pre-commit hooks to CI actions and fixes to pytest configuration
+  ([#5385](https://github.com/holoviz/holoviews/pull/5385),
+   [#5440](https://github.com/holoviz/holoviews/pull/5440))
+
+
+Bug Fixes:
+
+- Allow import of numpy 1.12
+  ([#5367](https://github.com/holoviz/holoviews/pull/5367))
+- Fixes handling of iterables in Overlays
+  ([#5320](https://github.com/holoviz/holoviews/pull/5320))
+- Always return a string when using `hv.Dimension.pprint_value`
+  ([#5383](https://github.com/holoviz/holoviews/pull/5383))
+- Supporting widgets in slices for `loc` and `iloc`
+  ([#5352](https://github.com/holoviz/holoviews/pull/5352))
+- Take account of labeled dimension in Bokeh plotting classes
+  ([#5404](https://github.com/holoviz/holoviews/pull/5404))
+- Fix handling of pandas Period ranges
+  ([#5393](https://github.com/holoviz/holoviews/pull/5393))
+- Many thanks to @HoxBro for many miscellaneous plotting fixes,
+  including fixes to plotting of BoxWhisker, VectorField elements
+  ([#5397](https://github.com/holoviz/holoviews/pull/5397),
+   [#5450](https://github.com/holoviz/holoviews/pull/5450),
+   [#5400](https://github.com/holoviz/holoviews/pull/5400),
+   [#5409](https://github.com/holoviz/holoviews/pull/5409))
+
+Documention:
+
+- Introduced module documentation
+  ([#5362](https://github.com/holoviz/holoviews/pull/5362))
+- Remove Python 2 references from README
+  ([#5365](https://github.com/holoviz/holoviews/pull/5365))
+- Update call to panel add_periodic_callback in Bokeh gallery example
+  ([#5436](https://github.com/holoviz/holoviews/pull/5436))
+- Added reference to example in `RangeToolLink`
+  ([#5435](https://github.com/holoviz/holoviews/pull/5435))
+
 Version 1.15.0
 ==============
 **July 6, 2022**
