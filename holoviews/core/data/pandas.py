@@ -13,7 +13,7 @@ from .. import util
 from .util import finite_range
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def deprecation_warning(msg):
     "To only run the warning once"
     warn(msg)
