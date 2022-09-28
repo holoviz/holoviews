@@ -5,8 +5,8 @@ Version 1.15.1
 This release contains a small number of important bug fixes. Many thanks
 to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
 @droumis, @ddrinka and @stanwest as well as a special thanks to @HoxBro
-for his many bug fixes. Additional thank you goes out to our core
-contributors and maintainers @philippjfr, @jbednar and @jlstevens.
+for his many bug fixes. An additional thank you goes out to philippjfr,
+@jbednar and @jlstevens.
 
 Enhancements:
 
