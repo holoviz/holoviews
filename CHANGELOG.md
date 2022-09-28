@@ -4,8 +4,8 @@ Version 1.15.1
 
 This release contains a small number of important bug fixes. Many thanks
 to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
-@droumis, @ddrinka and @stanwest as well as a special thanks to @HoxBro
-for his many bug fixes. An additional thank you goes out to philippjfr,
+@droumis, @ddrinka and @stanwest as well as a special thanks to @Hoxbro
+for his many bug fixes. An additional thank you goes out to @philippjfr,
 @jbednar and @jlstevens.
 
 Enhancements:
@@ -41,7 +41,7 @@ Bug Fixes:
   ([#5404](https://github.com/holoviz/holoviews/pull/5404))
 - Fix handling of pandas Period ranges
   ([#5393](https://github.com/holoviz/holoviews/pull/5393))
-- Many thanks to @HoxBro for many miscellaneous plotting fixes,
+- Many thanks to @Hoxbro for many miscellaneous plotting fixes,
   including fixes to plotting of BoxWhisker, VectorField elements
   ([#5397](https://github.com/holoviz/holoviews/pull/5397),
    [#5450](https://github.com/holoviz/holoviews/pull/5450),
