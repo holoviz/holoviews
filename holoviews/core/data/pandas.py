@@ -1,3 +1,5 @@
+from warnings import warn
+
 import numpy as np
 import pandas as pd
 
@@ -54,6 +56,12 @@ class PandasInterface(Interface):
                              if d not in kdims]
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
+
+            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
+                warn(
+                    "Having integer as a column name in a DataFrame is deprecated "
+                    "and will not be supported in Holoviews version 1.16."
+                )
 
             # Handle reset of index if kdims reference index by name
             for kd in kdims:
