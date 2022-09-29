@@ -64,7 +64,7 @@ class PandasInterface(Interface):
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
-            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
+            if any(not isinstance(d, str) for d in kdims+vdims):
                 deprecation_warning(
                     "Having a non-string as a column name in a DataFrame is deprecated "
                     "and will not be supported in Holoviews version 1.16."
