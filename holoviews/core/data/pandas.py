@@ -13,10 +13,10 @@ from .. import util
 from .util import finite_range
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=None)
 def deprecation_warning(msg):
     "To only run the warning once"
-    warn(msg)
+    warn(msg, DeprecationWarning, stacklevel=2)
 
 
 class PandasInterface(Interface):
@@ -66,7 +66,7 @@ class PandasInterface(Interface):
 
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
                 deprecation_warning(
-                    "Having integer as a column name in a DataFrame is deprecated "
+                    "Having a non-string as a column name in a DataFrame is deprecated "
                     "and will not be supported in Holoviews version 1.16."
                 )
 
