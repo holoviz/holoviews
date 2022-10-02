@@ -189,13 +189,21 @@ class HashableJSON(json.JSONEncoder):
             if len(obj) > _PANDAS_ROWS_LARGE:
                 obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
             try:
-                b = b"%s" % pd.util.hash_pandas_object(obj).sum()
+                pd_values = list(pd.util.hash_pandas_object(obj, index=True).values)
             except TypeError:
                 # Use pickle if pandas cannot hash the object for example if
                 # it contains unhashable objects.
-                b = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
-            h = hashlib.new("md5")
-            h.update(b)
+                pd_values = [pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)]
+            if isinstance(obj.columns, pd.MultiIndex):
+                columns = [name for cols in obj.columns for name in cols]
+            else:
+                columns = list(obj.columns)
+            all_vals = pd_values + columns + list(obj.index.names) + list(obj.columns.names)
+            h = hashlib.md5()
+            for val in all_vals:
+                if not isinstance(val, bytes):
+                    val = str(val).encode("utf-8")
+                h.update(val)
             return h.hexdigest()
         elif isinstance(obj, self.string_hashable):
             return str(obj)
