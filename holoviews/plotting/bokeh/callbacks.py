@@ -594,6 +594,23 @@ class RangeXYCallback(Callback):
         'y1': 'cb_obj.y1'
     }
 
+    def set_callback(self, handle):
+        super().set_callback(handle)
+        handle.js_on_event('rangesupdate', CustomJS(code="""
+        const plot = this.origin
+        const plots = plot.x_range.plots.concat(plot.y_range.plots).filter(p => {
+          return p.tags.indexOf('ranges-updating') === -1
+        })
+        const updated = [plot]
+        for (const p of plots) {
+          if (updated.indexOf(p) !== -1)
+            continue
+          p.tags.push('ranges-updating')
+          p.trigger_event(new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end))
+          p.tags = p.tags.filter(x => x !== 'ranges-updating')
+        }
+        """))
+
     def _process_msg(self, msg):
         data = {}
         if 'x0' in msg and 'x1' in msg:
