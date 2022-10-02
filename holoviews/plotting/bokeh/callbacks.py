@@ -596,6 +596,7 @@ class RangeXYCallback(Callback):
 
     def set_callback(self, handle):
         super().set_callback(handle)
+        # Trigger rangesupdate events on all plots with linked axes.
         handle.js_on_event('rangesupdate', CustomJS(code="""
         const plot = this.origin
         const plots = plot.x_range.plots.concat(plot.y_range.plots)
