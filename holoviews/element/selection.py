@@ -109,15 +109,14 @@ def spatial_select_columnar(xvals, yvals, geometry):
         poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
         geom_mask = points.intersects(poly)
     except Exception:
-        pass
-    try:
-        from shapely.geometry import Point, Polygon
-        points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
-        poly = Polygon(geometry)
-        geom_mask = np.array([poly.contains(p) for p in points])
-    except ImportError:
-        raise ImportError("Lasso selection on tabular data requires "
-                          "either spatialpandas or shapely to be available.")
+        try:
+            from shapely.geometry import Point, Polygon
+            points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
+            poly = Polygon(geometry)
+            geom_mask = np.array([poly.contains(p) for p in points])
+        except ImportError:
+            raise ImportError("Lasso selection on tabular data requires "
+                              "either spatialpandas or shapely to be available.")
     mask[np.where(mask)[0]] = geom_mask
     return mask
 
