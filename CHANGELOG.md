@@ -10,8 +10,8 @@ to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
 
 Enhancements:
 
-- Return samples from `decimate` operation in order
-  ([#5452](https://github.com/holoviz/holoviews/pull/5452))
+- Sort output of `decimate` operation so that it can be used with connected Elements
+   (Curve, Area, etc.) ([#5452](https://github.com/holoviz/holoviews/pull/5452))
 - Ensure HoloViews is importable from a pyodide webworker
   ([#5410](https://github.com/holoviz/holoviews/pull/5410))
 - Add support for stepwise Area plots
@@ -36,7 +36,7 @@ Bug Fixes:
   ([#5320](https://github.com/holoviz/holoviews/pull/5320))
 - Always return a string when using `hv.Dimension.pprint_value`
   ([#5383](https://github.com/holoviz/holoviews/pull/5383))
-- Supporting widgets in slices for `loc` and `iloc`
+- Support widgets in slices for `loc` and `iloc`
   ([#5352](https://github.com/holoviz/holoviews/pull/5352))
 - Take account of labeled dimension in Bokeh plotting classes
   ([#5404](https://github.com/holoviz/holoviews/pull/5404))
