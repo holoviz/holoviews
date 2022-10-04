@@ -4,9 +4,9 @@ Version 1.15.1
 
 This release contains a small number of important bug fixes. Many thanks
 to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
-@droumis, @ddrinka and @stanwest as well as a special thanks to @Hoxbro
-for his many bug fixes. An additional thank you goes out to @philippjfr,
-@jbednar and @jlstevens.
+@droumis, @ddrinka, @Jhsmit and @stanwest as well as a special thanks to
+@Hoxbro for his many bug fixes. An additional thank you goes out to
+@maximlt, @philippjfr, @jbednar and @jlstevens.
 
 Enhancements:
 
@@ -22,10 +22,11 @@ Enhancements:
   ([#5398](https://github.com/holoviz/holoviews/pull/5398))
 - Protect matplotlib tests from global styles
   ([#5311](https://github.com/holoviz/holoviews/pull/5311))
+- Faster hashing for arrays and pandas objects
+  ([#5455](https://github.com/holoviz/holoviews/pull/5455))
 - Add pre-commit hooks to CI actions and fixes to pytest configuration
   ([#5385](https://github.com/holoviz/holoviews/pull/5385),
    [#5440](https://github.com/holoviz/holoviews/pull/5440))
-
 
 Bug Fixes:
 
@@ -39,14 +40,25 @@ Bug Fixes:
   ([#5352](https://github.com/holoviz/holoviews/pull/5352))
 - Take account of labeled dimension in Bokeh plotting classes
   ([#5404](https://github.com/holoviz/holoviews/pull/5404))
-- Fix handling of pandas Period ranges
+- Fix handling of pandas `Period` ranges
   ([#5393](https://github.com/holoviz/holoviews/pull/5393))
+- Fixed declaration of `Scatter` to `Selection1DExpr`
+  ([#5413](https://github.com/holoviz/holoviews/pull/5413))
+- Ensure rangesupdate event fires on all plots with linked axes
+  ([#5465](https://github.com/holoviz/holoviews/pull/5465))
+- Fixed fallback to shapely spatial select
+  ([#5468](https://github.com/holoviz/holoviews/pull/5468))
 - Many thanks to @Hoxbro for many miscellaneous plotting fixes,
-  including fixes to plotting of BoxWhisker, VectorField elements
+  including fixes to plotting of `BoxWhisker`, `VectorField` elements
   ([#5397](https://github.com/holoviz/holoviews/pull/5397),
    [#5450](https://github.com/holoviz/holoviews/pull/5450),
    [#5400](https://github.com/holoviz/holoviews/pull/5400),
-   [#5409](https://github.com/holoviz/holoviews/pull/5409))
+   [#5409](https://github.com/holoviz/holoviews/pull/5409,
+   [#5460](https://github.com/holoviz/holoviews/pull/5460)))
+- Fixes to documentation building GitHub Action
+  ([#5320](https://github.com/holoviz/holoviews/pull/5456),
+  ([#5320](https://github.com/holoviz/holoviews/pull/5467)))
+
 
 Documention:
 
@@ -58,6 +70,16 @@ Documention:
   ([#5436](https://github.com/holoviz/holoviews/pull/5436))
 - Added reference to example in `RangeToolLink`
   ([#5435](https://github.com/holoviz/holoviews/pull/5435))
+
+
+API:
+
+In future, HoloViews will not allow non-string values for pandas
+DataFrame column names. This deprecation cycle starts by
+issuing a `DeprecationWarning` that should not be visible to users.
+
+- Issue DeprecationWarning for invalid DataFrame column types
+  ([#5457](https://github.com/holoviz/holoviews/pull/5457))
 
 Version 1.15.0
 ==============
@@ -150,7 +172,6 @@ Other enhancements:
  ([#5052](https://github.com/holoviz/holoviews/pull/5052))
 - Show all histograms of an `Overlay`
 ([#5031](https://github.com/holoviz/holoviews/pull/5031))
-
 
 Bug fixes:
 
