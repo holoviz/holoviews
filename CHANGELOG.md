@@ -59,7 +59,6 @@ Bug Fixes:
   ([#5320](https://github.com/holoviz/holoviews/pull/5456),
   ([#5320](https://github.com/holoviz/holoviews/pull/5467)))
 
-
 Documention:
 
 - Introduced module documentation
@@ -70,7 +69,6 @@ Documention:
   ([#5436](https://github.com/holoviz/holoviews/pull/5436))
 - Added reference to example in `RangeToolLink`
   ([#5435](https://github.com/holoviz/holoviews/pull/5435))
-
 
 API:
 
