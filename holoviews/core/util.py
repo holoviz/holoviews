@@ -194,11 +194,13 @@ class HashableJSON(json.JSONEncoder):
                 # Use pickle if pandas cannot hash the object for example if
                 # it contains unhashable objects.
                 pd_values = [pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)]
-            if isinstance(obj.columns, pd.MultiIndex):
+            if isinstance(obj, pd.Series):
+                columns = [obj.name]
+            elif isinstance(obj.columns, pd.MultiIndex):
                 columns = [name for cols in obj.columns for name in cols]
             else:
                 columns = list(obj.columns)
-            all_vals = pd_values + columns + list(obj.index.names) + list(obj.columns.names)
+            all_vals = pd_values + columns + list(obj.index.names)
             h = hashlib.md5()
             for val in all_vals:
                 if not isinstance(val, bytes):
