@@ -1,6 +1,6 @@
 Version 1.15.1
 ==============
-**September 28, 2022**
+**October 4, 2022**
 
 This release contains a small number of important bug fixes. Many thanks
 to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
@@ -53,7 +53,7 @@ Bug Fixes:
   ([#5397](https://github.com/holoviz/holoviews/pull/5397),
    [#5450](https://github.com/holoviz/holoviews/pull/5450),
    [#5400](https://github.com/holoviz/holoviews/pull/5400),
-   [#5409](https://github.com/holoviz/holoviews/pull/5409,
+   [#5409](https://github.com/holoviz/holoviews/pull/5409),
    [#5460](https://github.com/holoviz/holoviews/pull/5460)))
 - Fixes to documentation building GitHub Action
   ([#5320](https://github.com/holoviz/holoviews/pull/5456),
