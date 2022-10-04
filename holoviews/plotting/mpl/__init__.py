@@ -2,9 +2,8 @@ import os
 
 from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from matplotlib.cm import register_cmap
 from param import concrete_descendents
-from colorcet import kbc
+from colorcet import kbc, register_cmap
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
