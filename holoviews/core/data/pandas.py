@@ -3,6 +3,7 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from .interface import Interface, DataError
 from ..dimension import dimension_name, Dimension
@@ -256,8 +257,21 @@ class PandasInterface(Interface):
         else:
             fn = function
         if len(dimensions):
+            # Reason for numeric_cols is to prepare for when pandas will
+            # not automatic drop columns which is not numerical.
+            # pandas started warning about this in v1.5.0
+            if fn in [np.size]:
+                # np.size actually works with non-numerical columns
+                numeric_cols = [
+                    c for c in reindexed.columns if c not in cols
+                ]
+            else:
+                numeric_cols = [
+                    c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                    if is_numeric_dtype(d) and c not in cols
+                ]
             grouped = reindexed.groupby(cols, sort=False)
-            df = grouped.aggregate(fn, **kwargs).reset_index()
+            df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
             data = dict(((col, [v]) for col, v in zip(agg.index, agg.values)))
