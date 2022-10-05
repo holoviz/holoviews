@@ -228,6 +228,12 @@ class PandasInterface(Interface):
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
+        if len(group_by) == 1:
+            # Because of this deprecation warning from pandas 1.5.0:
+            # In a future version of pandas, a length 1 tuple will be returned
+            # when iterating over a groupby with a grouper equal to a list of length 1.
+            # Don't supply a list with a single grouper to avoid this warning.
+            group_by = group_by[0]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
