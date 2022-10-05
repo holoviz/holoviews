@@ -671,7 +671,7 @@ class XArrayInterface(GridInterface):
             if k not in dataset.kdims:
                 continue
             elif isinstance(v, xr.DataArray):
-                coords[k] = v.rename(**{v.name: k})
+                coords[k] = v.swap_dims(**{v.name: k})
                 continue
             coord_vals = cls.coords(dataset, k)
             if not coord_vals.ndim > 1 and np.all(coord_vals[1:] < coord_vals[:-1]):
