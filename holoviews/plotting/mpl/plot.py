@@ -885,6 +885,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         if xinches and yinches:
             self.handles['fig'].set_size_inches([xinches, yinches])
 
+        for ax in self.handles["fig"].get_axes():
+            # Remove previous axes because auto-removal of overlapping axes will
+            # be removed in matplotlib 3.8, and new axes is added with plt.subplot
+            # further down
+            ax.remove()
+
         self.gs = gridspec.GridSpec(rows, cols,
                                     width_ratios=wr_list,
                                     height_ratios=hr_list,
