@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from .interface import Interface, DataError
-from ..dimension import dimension_name
+from ..dimension import dimension_name, Dimension
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
@@ -64,7 +64,7 @@ class PandasInterface(Interface):
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
-            if any(not isinstance(d, str) for d in kdims+vdims):
+            if any(not isinstance(d, (str, Dimension)) for d in kdims+vdims):
                 deprecation_warning(
                     "Having a non-string as a column name in a DataFrame is deprecated "
                     "and will not be supported in Holoviews version 1.16."
