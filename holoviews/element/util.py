@@ -305,9 +305,10 @@ def connect_tri_edges_pd(trimesh):
     """
     edges = trimesh.dframe().copy()
     edges.index.name = 'trimesh_edge_index'
-    edges = edges.reset_index()
+    edges = edges.drop("color", errors="ignore", axis=1).reset_index()
     nodes = trimesh.nodes.dframe().copy()
     nodes.index.name = 'node_index'
+    nodes = nodes.drop("color", errors="ignore", axis=1)
     v1, v2, v3 = trimesh.kdims
     x, y, idx = trimesh.nodes.kdims[:3]
 
