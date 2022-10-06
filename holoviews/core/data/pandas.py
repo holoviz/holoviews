@@ -1,3 +1,5 @@
+import os
+import inspect
 from functools import lru_cache
 from warnings import warn
 
@@ -16,7 +18,25 @@ from .util import finite_range
 @lru_cache(maxsize=None)
 def deprecation_warning(msg):
     "To only run the warning once"
-    warn(msg, DeprecationWarning, stacklevel=2)
+
+    # Finding the first stacklevel outside holoviews
+    # Inspired by: pandas.util._exceptions.find_stack_level
+    import holoviews as hv
+
+    pkg_dir = os.path.dirname(hv.__file__)
+    test_dir = os.path.join(pkg_dir, "tests")
+
+    frame = inspect.currentframe()
+    stacklevel = 1
+    while frame:
+        fname = inspect.getfile(frame)
+        if fname.startswith(pkg_dir) and not fname.startswith(test_dir):
+            frame = frame.f_back
+            stacklevel += 1
+        else:
+            break
+
+    warn(msg, FutureWarning, stacklevel=stacklevel)
 
 
 class PandasInterface(Interface):
