@@ -1,7 +1,7 @@
 from holoviews import Overlay
 from holoviews.annotators import annotate, PointAnnotator, PathAnnotator
 from holoviews.element import Points, Path, Table
-from holoviews.element.tiles import OSM, Tiles
+from holoviews.element.tiles import EsriStreet, Tiles
 
 from holoviews.tests.plotting.bokeh.test_plot import TestBokehPlot
 
@@ -25,7 +25,7 @@ class Test_annotate(TestBokehPlot):
         self.assertEqual(len(tables), 3)
 
     def test_annotate_overlay(self):
-        layout = annotate(OSM() * Points([]), annotations=['Label'])
+        layout = annotate(EsriStreet() * Points([]), annotations=['Label'])
 
         overlay = layout.DynamicMap.I[()]
         tables = layout.Annotator.PointAnnotator[()]
