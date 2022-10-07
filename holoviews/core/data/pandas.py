@@ -258,8 +258,9 @@ class PandasInterface(Interface):
         else:
             fn = function
         if len(dimensions):
-            # Reason for numeric_cols is to prepare for when pandas will
-            # not automatic drop columns which is not numerical.
+            # The reason to use `numeric_cols` is to prepare for when pandas will not
+            # automatically drop columns that are not numerical for numerical
+            # functions, e.g., `np.mean`.
             # pandas started warning about this in v1.5.0
             if fn in [np.size]:
                 # np.size actually works with non-numerical columns
