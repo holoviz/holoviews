@@ -20,7 +20,7 @@ HoloViews is an
 Python library designed to make data analysis and visualization seamless
 and simple. With HoloViews, you can usually express what you want to do
 in very few lines of code, letting you focus on what you are trying to
-explore and convey, not on the process of plotting. 
+explore and convey, not on the process of plotting.
 
 Check out the [HoloViews web site](http://holoviews.org) for extensive examples and documentation.
 
@@ -58,9 +58,9 @@ Check out the [HoloViews web site](http://holoviews.org) for extensive examples 
 Installation
 ============
 
-HoloViews works with 
+HoloViews works with
 [Python 3](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest)
-on Linux, Windows, or Mac, and works seamlessly with 
+on Linux, Windows, or Mac, and works seamlessly with
 [Jupyter Notebook and JupyterLab](https://jupyter.org).
 
 The recommended way to install HoloViews is using the
@@ -104,6 +104,6 @@ extension:
 For more details on setup and configuration see [our website](https://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 For general discussion, we have a [gitter channel](https://gitter.im/pyviz/pyviz).
-If you find any bugs or have any feature suggestions please file a GitHub 
+If you find any bugs or have any feature suggestions please file a GitHub
 [issue](https://github.com/holoviz/holoviews/issues)
 or submit a [pull request](https://help.github.com/articles/about-pull-requests).

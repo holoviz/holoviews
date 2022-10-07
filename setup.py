@@ -24,6 +24,7 @@ extras_require = {}
 
 extras_require['flakes'] = [
     'flake8',
+    'pre-commit',
 ]
 
 # Test requirements
@@ -110,7 +111,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'pscript',
     'graphviz',
     'bokeh >2.2',
-    'pydata-sphinx-theme >=0.9.0',
+    'pydata-sphinx-theme ==0.9.0',
     'sphinx-copybutton',
     'pooch',
 ]

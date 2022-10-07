@@ -73,6 +73,15 @@ class TestDeepHash(ComparisonTestCase):
         self.assertEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
                          deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})))
 
+    def test_deephash_dataframe_column_inequality(self):
+        self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
+                            deephash(pd.DataFrame({'a':[1,2,3],'c':[4,5,6]})))
+
+    def test_deephash_dataframe_index_inequality(self):
+        self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
+                            deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]},
+                                                  index=pd.Series([0, 1, 2], name='Index'))))
+
     def test_deephash_dataframe_inequality(self):
         self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
                             deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,8]})))
@@ -80,6 +89,19 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_series_equality(self):
         self.assertEqual(deephash(pd.Series([1,2,3])),
                          deephash(pd.Series([1,2,3])))
+
+    def test_deephash_series_name_inequality(self):
+        self.assertNotEqual(deephash(pd.Series([1,2,3], name='Foo')),
+                            deephash(pd.Series([1,2,3], name='Bar')))
+
+    def test_deephash_series_index_inequality(self):
+        self.assertNotEqual(deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Index'))),
+                            deephash(pd.Series([1,2,3], index=pd.Series([2, 1, 0], name='Index'))))
+
+
+    def test_deephash_series_index_name_inequality(self):
+        self.assertNotEqual(deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Foo'))),
+                            deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Bar'))))
 
     def test_deephash_series_inequality(self):
         self.assertNotEqual(deephash(pd.Series([1,2,3])),

@@ -92,4 +92,3 @@ on this website::
 
     holoviews --install-examples
     cd holoviews-examples
-

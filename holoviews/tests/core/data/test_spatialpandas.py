@@ -229,9 +229,9 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
             [[[0, 0, 1, 0, 2, 2, -1, 4, 0, 0],         # Filled quadrilateral (CCW order)
               [0.5, 1,  1, 2,  1.5, 1.5,  0.5, 1],     # Triangular hole (CW order)
               [0, 2, 0, 2.5, 0.5, 2.5, 0.5, 2, 0, 2]], # Rectangular hole (CW order)
-             
+
              [[-0.5, 3, 1.5, 3, 1.5, 4, -0.5, 3]],],   # Filled triangle
-            
+
             # Second Element
             [[[1.25, 0, 1.25, 2, 4, 2, 4, 0, 1.25, 0],          # Filled rectangle (CCW order)
               [1.5, 0.25, 3.75, 0.25, 3.75, 1.75, 1.5, 1.75, 1.5, 0.25]],]

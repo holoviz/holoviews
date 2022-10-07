@@ -356,5 +356,3 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         xy = streams.PointerXY(x=1, y=2)
         dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
-
-

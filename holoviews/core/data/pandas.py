@@ -1,3 +1,6 @@
+from functools import lru_cache
+from warnings import warn
+
 import numpy as np
 import pandas as pd
 
@@ -8,6 +11,12 @@ from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
+
+
+@lru_cache(maxsize=None)
+def deprecation_warning(msg):
+    "To only run the warning once"
+    warn(msg, DeprecationWarning, stacklevel=2)
 
 
 class PandasInterface(Interface):
@@ -55,9 +64,12 @@ class PandasInterface(Interface):
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
-            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
-                raise DataError("pandas DataFrame column names used as dimensions "
-                                "must be strings not integers.", cls)
+            if any(not isinstance(d, str) for d in kdims+vdims):
+                deprecation_warning(
+                    "Having a non-string as a column name in a DataFrame is deprecated "
+                    "and will not be supported in Holoviews version 1.16."
+                )
+
             # Handle reset of index if kdims reference index by name
             for kd in kdims:
                 kd = dimension_name(kd)
@@ -67,6 +79,9 @@ class PandasInterface(Interface):
                        for name in index_names):
                     data = data.reset_index()
                     break
+            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
+                raise DataError("pandas DataFrame column names used as dimensions "
+                                "must be strings not integers.", cls)
 
             if kdims:
                 kdim = dimension_name(kdims[0])
