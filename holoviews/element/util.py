@@ -288,8 +288,11 @@ def connect_edges_pd(graph):
     df = df.rename(columns={x.name: 'dst_x', y.name: 'dst_y'})
     df = df.sort_values('graph_edge_index').drop(['graph_edge_index'], axis=1)
 
-    cols = ["src_x", "src_y", "dst_x", "dst_y"]
-    edge_segments = list(df[cols].values.reshape(df.index.size, 2, 2))
+    edge_segments = []
+    for i, edge in df.iterrows():
+        start = edge['src_x'], edge['src_y']
+        end = edge['dst_x'], edge['dst_y']
+        edge_segments.append(np.array([start, end]))
     return edge_segments
 
 
