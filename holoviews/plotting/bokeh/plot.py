@@ -8,7 +8,7 @@ from bokeh.layouts import gridplot
 from bokeh.models import (
     ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
 )
-from bokeh.models.widgets import Panel, Tabs
+from bokeh.models.layouts import TabPanel, Tabs
 
 from ...selection import NoOpSelectionDisplay
 from ...core import (
@@ -943,7 +943,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         # Wrap in appropriate layout model
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
-            panels = [Panel(child=child, title=t) for t, child in tab_plots]
+            panels = [TabPanel(child=child, title=t) for t, child in tab_plots]
             layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)

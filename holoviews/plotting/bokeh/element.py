@@ -17,6 +17,7 @@ from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
     CustomJSTickFormatter, TickFormatter, MercatorTickFormatter
 )
+from bokeh.models.layouts import TabPanel, Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
@@ -25,7 +26,6 @@ from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
 from bokeh.models.tools import Tool
-from bokeh.models.widgets import Panel, Tabs
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
@@ -2370,7 +2370,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 title = subplot._format_title(key, dimensions=False)
                 if not title:
                     title = get_tab_title(key, frame, self.hmap.last)
-                panels.append(Panel(child=child, title=title))
+                panels.append(TabPanel(child=child, title=title))
             self._merge_tools(subplot)
 
         if self.tabs:

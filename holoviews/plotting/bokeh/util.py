@@ -17,13 +17,13 @@ from bokeh.core.validation import silence
 from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
-    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis
+    Model, Toolbar, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis, Tabs
 )
 from bokeh.models.formatters import (
     CustomJSTickFormatter, TickFormatter, PrintfTickFormatter
 )
-from bokeh.models.widgets import DataTable, Tabs, Div
+from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
 from bokeh.themes.theme import Theme
 
@@ -153,7 +153,7 @@ def compute_plot_size(plot):
         width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
         height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
         return width, height
-    elif isinstance(plot, (Div, ToolbarBox)):
+    elif isinstance(plot, (Div, Toolbar)):
         # Cannot compute size for Div or ToolbarBox
         return 0, 0
     elif isinstance(plot, (Row, Column, Tabs)):
