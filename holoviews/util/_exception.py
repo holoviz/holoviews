@@ -5,7 +5,7 @@ from warnings import warn
 
 
 @lru_cache(maxsize=None)
-def deprecation_warning(msg):
+def deprecation_warning(msg, warning=FutureWarning):
     "To only run the warning once"
 
     # Finding the first stacklevel outside holoviews and param
@@ -27,4 +27,4 @@ def deprecation_warning(msg):
         else:
             break
 
-    warn(msg, FutureWarning, stacklevel=stacklevel)
+    warn(msg, warning, stacklevel=stacklevel)
