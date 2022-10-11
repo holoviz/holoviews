@@ -1,11 +1,7 @@
-import os
-import inspect
-from functools import lru_cache
-from warnings import warn
-
 import numpy as np
 import pandas as pd
 
+from ...util._exception import deprecation_warning
 from .interface import Interface, DataError
 from ..dimension import dimension_name
 from ..element import Element
@@ -13,32 +9,6 @@ from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
-
-
-@lru_cache(maxsize=None)
-def deprecation_warning(msg):
-    "To only run the warning once"
-
-    # Finding the first stacklevel outside holoviews and param
-    # Inspired by: pandas.util._exceptions.find_stack_level
-    import holoviews as hv
-    import param
-
-    pkg_dir = os.path.dirname(hv.__file__)
-    test_dir = os.path.join(pkg_dir, "tests")
-    param_dir = os.path.dirname(param.__file__)
-
-    frame = inspect.currentframe()
-    stacklevel = 1
-    while frame:
-        fname = inspect.getfile(frame)
-        if (fname.startswith(pkg_dir) or fname.startswith(param_dir)) and not fname.startswith(test_dir):
-            frame = frame.f_back
-            stacklevel += 1
-        else:
-            break
-
-    warn(msg, FutureWarning, stacklevel=stacklevel)
 
 
 class PandasInterface(Interface):
