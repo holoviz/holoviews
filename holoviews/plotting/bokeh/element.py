@@ -564,6 +564,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
+        if plot is None:
+            return
         for tool in self.active_tools:
             if isinstance(tool, str):
                 tool_type = TOOL_TYPES[tool]
