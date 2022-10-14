@@ -75,7 +75,7 @@ else:
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    active_tools = param.List(default=[], doc="""
+    active_tools = param.List(default=['pan', 'wheel_zoom'], doc="""
         Allows specifying which tools are active by default. Note
         that only one tool per gesture type can be active, e.g.
         both 'pan' and 'box_zoom' are drag tools, so if both are
