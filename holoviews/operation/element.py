@@ -15,7 +15,7 @@ from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
     LooseVersion, group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
-    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr, is_number,
 )
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
@@ -702,6 +702,14 @@ class histogram(Operation):
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
     def _process(self, element, key=None):
+
+        bad_bins_msg = 'bins only accept numerical data.'
+        if (isinstance(self.p.bins, np.ndarray) and
+           (self.p.bins.dtype.kind in 'SU' or self.bins.dtype.kind == 'O' and not isdatetime(self.bins))):
+            raise TypeError(bad_bins_msg)
+        elif isinstance(self.p.bins, (list, tuple)) and any(not is_number(bin) for bin in self.p.bins):
+            raise TypeError(bad_bins_msg)
+
         if self.p.groupby:
             if not isinstance(element, Dataset):
                 raise ValueError('Cannot use histogram groupby on non-Dataset Element')
@@ -718,8 +726,16 @@ class histogram(Operation):
 
         if hasattr(element, 'interface'):
             data = element.interface.values(element, selected_dim, compute=False)
+            dtype = element.interface.dtype(element, selected_dim)
         else:
             data = element.dimension_values(selected_dim)
+            dtype = getattr(data, 'dtype', None)
+
+        if dtype and (dtype.kind in 'SU' or dtype.kind == 'O' and not isdatetime(data)):
+            raise TypeError(
+                'The histogram operation can only be applied to a numerical dimension.'
+            )
+
 
         is_datetime = isdatetime(data)
         if is_datetime:
