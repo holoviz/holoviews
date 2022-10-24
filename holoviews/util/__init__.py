@@ -48,8 +48,24 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         print('Cannot find %s' % tree_root)
 
 
+class OptsMeta(param.parameterized.ParameterizedMetaclass):
+    """
+    Improve error message when running something
+    like: 'hv.opts.Curve()' without a plotting backend.
+    """
 
-class opts(param.ParameterizedFunction):
+    def __getattr__(self, attr):
+        try:
+            return super().__getattr__(attr)
+        except AttributeError:
+            msg = (
+                f"No entry for {attr!r} registered; this name may not refer to a valid object "
+                "or you may need to run 'hv.extension' to select a plotting backend."
+            )
+            raise AttributeError(msg) from None
+
+
+class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     """
     Utility function to set options at the global level or to provide an
     Options object that can be used with the .options method of an
