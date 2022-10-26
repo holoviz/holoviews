@@ -59,7 +59,7 @@ Bug Fixes:
   ([#5320](https://github.com/holoviz/holoviews/pull/5456),
   ([#5320](https://github.com/holoviz/holoviews/pull/5467)))
 
-Documention:
+Documentation:
 
 - Introduced module documentation
   ([#5362](https://github.com/holoviz/holoviews/pull/5362))

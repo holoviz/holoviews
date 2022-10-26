@@ -56,6 +56,12 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def test_idxmapping_init_dimstr(self):
         MultiDimensionalMapping(self.init_item_odict, kdims=self.dimension_labels)
 
+    def test_idxmapping_init_dimdict(self):
+        MultiDimensionalMapping(
+            self.init_item_odict,
+            kdims=[dict(name=label) for label in self.dimension_labels],
+        )
+
     def test_idxmapping_init_dimensions(self):
         MultiDimensionalMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
 

@@ -1,11 +1,10 @@
-from functools import lru_cache
 from packaging.version import Version
-from warnings import warn
 
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
+from ...util._exception import deprecation_warning
 from .interface import Interface, DataError
 from ..dimension import dimension_name, Dimension
 from ..element import Element
@@ -13,12 +12,6 @@ from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
-
-
-@lru_cache(maxsize=None)
-def deprecation_warning(msg):
-    "To only run the warning once"
-    warn(msg, DeprecationWarning, stacklevel=2)
 
 
 class PandasInterface(Interface):
