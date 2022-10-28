@@ -4,6 +4,7 @@ import warnings
 import bisect
 
 from collections import defaultdict, namedtuple
+from packaging.version import Version
 
 import numpy as np
 import param
@@ -547,18 +548,27 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
+    import matplotlib as mpl
     from matplotlib.colors import Colormap, ListedColormap
 
     ncolors = ncolors or 256
     if not isinstance(cmap, Colormap):
-        import matplotlib.cm as cm
         # Alias bokeh Category cmaps with mpl tab cmaps
         if cmap.startswith('Category'):
             cmap = cmap.replace('Category', 'tab')
-        try:
-            cmap = cm.get_cmap(cmap)
-        except:
-            cmap = cm.get_cmap(cmap.lower())
+
+        if Version(mpl.__version__) < Version("3.5"):
+            # This will stop working and can be removed
+            # when we do not support python 3.7
+            import matplotlib.cm as cm
+            try:
+                cmap = cm.get_cmap(cmap)
+            except:
+                cmap = cm.get_cmap(cmap.lower())
+        else:
+            from matplotlib import colormaps
+            cmap = colormaps.get(cmap, colormaps.get(cmap.lower()))
+
     if isinstance(cmap, ListedColormap):
         if categorical:
             palette = [rgb2hex(cmap.colors[i%cmap.N]) for i in range(ncolors)]

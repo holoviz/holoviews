@@ -520,10 +520,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 x_delta = r - l
                 y_delta = t - b
 
-                max_x_zoom = (np.log2(max_delta / x_delta) -
-                              np.log2(mapbox_tile_size / viewport_width))
-                max_y_zoom = (np.log2(max_delta / y_delta) -
-                              np.log2(mapbox_tile_size / viewport_height))
+                with np.errstate(divide="ignore"):
+                    max_x_zoom = (np.log2(max_delta / x_delta) -
+                                np.log2(mapbox_tile_size / viewport_width))
+                    max_y_zoom = (np.log2(max_delta / y_delta) -
+                                np.log2(mapbox_tile_size / viewport_height))
                 mapbox["zoom"] = min(max_x_zoom, max_y_zoom)
             layout["mapbox"] = mapbox
 
