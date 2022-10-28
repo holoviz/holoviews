@@ -721,7 +721,7 @@ class DimensionedPlot(Plot):
                     percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
                         dim(el_dim, np.nanpercentile, percentile).apply(el),
-                        dim(el_dim, np.nanpercentile, percentile).apply(el)
+                        dim(el_dim, np.nanpercentile, 100 - percentile).apply(el)
                     )
 
                 if (any(isinstance(r, str) for r in data_range) or
