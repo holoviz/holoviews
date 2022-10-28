@@ -599,12 +599,12 @@ class Opts(object):
         print(pprinter.pprint(self._obj))
 
     def _holomap_opts(self, *args, clone=None, **kwargs):
-
+        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
         data = OrderedDict([(k, v.opts(*args, **kwargs))
                              for k, v in self._obj.data.items()])
 
         # By default do not clone in .opts method
-        if clone:
+        if (apply_groups if clone is None else clone):
             return self._obj.clone(data)
         else:
             self._obj.data = data
@@ -612,10 +612,14 @@ class Opts(object):
 
     def _dynamicmap_opts(self, *args, clone=None, **kwargs):
         from ..util import Dynamic
+
+        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
+        # By default do not clone in .opts method
+        clone = (apply_groups if clone is None else clone)
+
         obj = self._obj if clone else self._obj.clone()
         dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
                        streams=self._obj.streams, link_inputs=True)
-        # By default do not clone in .opts method
         if not clone:
             with util.disable_constant(self._obj):
                 obj.callback = self._obj.callback
@@ -634,7 +638,14 @@ class Opts(object):
             if isinstance(arg, Options) and arg.key is None:
                 arg = arg(key=type(self._obj).__name__)
             new_args.append(arg)
+        apply_groups, options, new_kwargs = util.deprecated_opts_signature(new_args, kwargs)
 
         # By default do not clone in .opts method
+        if apply_groups:
+            from ..util import opts
+            if options is not None:
+                kwargs['options'] = options
+            return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
+
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*new_args, **kwargs)
