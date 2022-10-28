@@ -563,7 +563,7 @@ class Opts(object):
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
             if apply_groups:
                 msg = ("Calling the .opts method with options broken down by options "
-                       "group (i.e. separate plot, style and norm groups) is deprecated. "
+                       "group (i.e. separate plot, style and norm groups) has been removed. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
                 raise Exception(msg)
@@ -598,8 +598,7 @@ class Opts(object):
         pprinter = PrettyPrinter(show_options=True, show_defaults=show_defaults)
         print(pprinter.pprint(self._obj))
 
-    def _holomap_opts(self, *args, **kwargs):
-        clone = kwargs.pop('clone', None)
+    def _holomap_opts(self, *args, clone=None, **kwargs):
 
         data = OrderedDict([(k, v.opts(*args, **kwargs))
                              for k, v in self._obj.data.items()])
