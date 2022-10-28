@@ -56,7 +56,6 @@ jobs:
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          eval "$(conda shell.bash hook)"
           conda update -n base -c defaults conda
           conda config --prepend channels conda-forge
           conda config --prepend channels bokeh/label/dev
@@ -66,12 +65,10 @@ jobs:
           conda create -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: doit develop_install
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda list
           doit develop_install ${{ env.HV_REQUIREMENTS }}
@@ -80,26 +77,21 @@ jobs:
           git describe
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: doit test_flakes
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_flakes
       - name: doit test_unit
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_unit
       - name: test examples
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_examples
       - name: codecov
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           codecov
