@@ -566,7 +566,7 @@ class Opts(object):
                        "group (i.e. separate plot, style and norm groups) has been removed. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
-                raise Exception(msg)
+                raise ValueError(msg)
 
         return self._dispatch_opts( *args, **kwargs)
 
