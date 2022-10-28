@@ -566,7 +566,7 @@ class Opts(object):
                        "group (i.e. separate plot, style and norm groups) is deprecated. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
-                param.main.param.warning(msg)
+                raise Exception(msg)
 
         return self._dispatch_opts( *args, **kwargs)
 
@@ -600,28 +600,23 @@ class Opts(object):
 
     def _holomap_opts(self, *args, **kwargs):
         clone = kwargs.pop('clone', None)
-        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
+
         data = OrderedDict([(k, v.opts(*args, **kwargs))
                              for k, v in self._obj.data.items()])
 
         # By default do not clone in .opts method
-        if (apply_groups if clone is None else clone):
+        if clone:
             return self._obj.clone(data)
         else:
             self._obj.data = data
             return self._obj
 
-    def _dynamicmap_opts(self, *args, **kwargs):
+    def _dynamicmap_opts(self, *args, clone=None, **kwargs):
         from ..util import Dynamic
-
-        clone = kwargs.get('clone', None)
-        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        # By default do not clone in .opts method
-        clone = (apply_groups if clone is None else clone)
-
         obj = self._obj if clone else self._obj.clone()
         dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
                        streams=self._obj.streams, link_inputs=True)
+        # By default do not clone in .opts method
         if not clone:
             with util.disable_constant(self._obj):
                 obj.callback = self._obj.callback
@@ -632,7 +627,7 @@ class Opts(object):
         return dmap
 
 
-    def _base_opts(self, *args, **kwargs):
+    def _base_opts(self, *args, clone=None, **kwargs):
         from .options import Options
 
         new_args = []
@@ -640,15 +635,7 @@ class Opts(object):
             if isinstance(arg, Options) and arg.key is None:
                 arg = arg(key=type(self._obj).__name__)
             new_args.append(arg)
-        apply_groups, options, new_kwargs = util.deprecated_opts_signature(new_args, kwargs)
 
         # By default do not clone in .opts method
-        clone = kwargs.get('clone', None)
-        if apply_groups:
-            from ..util import opts
-            if options is not None:
-                kwargs['options'] = options
-            return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
-
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*new_args, **kwargs)
