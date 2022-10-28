@@ -717,7 +717,7 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
-                if dtype is not None and dtype.kind == 'uif' and robust:
+                if dtype is not None and dtype.kind in 'uif' and robust:
                     percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
                         dim(el_dim, np.nanpercentile, percentile).apply(el),
