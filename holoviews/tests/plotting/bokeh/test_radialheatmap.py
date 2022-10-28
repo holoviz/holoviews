@@ -34,7 +34,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
                          radius_outer=0.2,
                          radial=True)
 
-        opts = dict(HeatMap=dict(plot=plot_opts))
+        opts = dict(HeatMap=plot_opts)
 
         # provide element and plot instances for tests
         self.element = HeatMap((self.x, self.y, self.z)).opts(opts)

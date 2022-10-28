@@ -125,13 +125,13 @@ class StatisticalCompositorTest(ComparisonTestCase):
         self.assertEqual(area.vdims, [Dimension(('Value_density', 'Density'))])
 
     def test_distribution_composite_transfer_opts(self):
-        dist = Distribution(np.array([0, 1, 2])).opts(style=dict(color='red'))
+        dist = Distribution(np.array([0, 1, 2])).opts(color='red')
         area = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', area, 'style').kwargs
         self.assertEqual(opts.get('color', None), 'red')
 
     def test_distribution_composite_transfer_opts_with_group(self):
-        dist = Distribution(np.array([0, 1, 2]), group='Test').opts(style=dict(color='red'))
+        dist = Distribution(np.array([0, 1, 2]), group='Test').opts(color='red')
         area = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', area, 'style').kwargs
         self.assertEqual(opts.get('color', None), 'red')
@@ -143,13 +143,13 @@ class StatisticalCompositorTest(ComparisonTestCase):
         self.assertEqual(area.vdims, [Dimension('Test')])
 
     def test_distribution_composite_not_filled(self):
-        dist = Distribution(np.array([0, 1, 2]), ).opts(plot=dict(filled=False))
+        dist = Distribution(np.array([0, 1, 2]), ).opts(filled=False)
         curve = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(curve, Curve)
         self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Density'))])
 
     def test_distribution_composite_empty_not_filled(self):
-        dist = Distribution([]).opts(plot=dict(filled=False))
+        dist = Distribution([]).opts(filled=False)
         curve = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(curve, Curve)
         self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Density'))])
@@ -161,13 +161,13 @@ class StatisticalCompositorTest(ComparisonTestCase):
         self.assertEqual(contours.vdims, [Dimension('Density')])
 
     def test_bivariate_composite_transfer_opts(self):
-        dist = Bivariate(np.random.rand(10, 2)).opts(style=dict(cmap='Blues'))
+        dist = Bivariate(np.random.rand(10, 2)).opts(cmap='Blues')
         contours = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', contours, 'style').kwargs
         self.assertEqual(opts.get('cmap', None), 'Blues')
 
     def test_bivariate_composite_transfer_opts_with_group(self):
-        dist = Bivariate(np.random.rand(10, 2), group='Test').opts(style=dict(cmap='Blues'))
+        dist = Bivariate(np.random.rand(10, 2), group='Test').opts(cmap='Blues')
         contours = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', contours, 'style').kwargs
         self.assertEqual(opts.get('cmap', None), 'Blues')
@@ -179,20 +179,20 @@ class StatisticalCompositorTest(ComparisonTestCase):
         self.assertEqual(contours.vdims, [Dimension('Test')])
 
     def test_bivariate_composite_filled(self):
-        dist = Bivariate(np.random.rand(10, 2)).opts(plot=dict(filled=True))
+        dist = Bivariate(np.random.rand(10, 2)).opts(filled=True)
         contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Polygons)
         self.assertEqual(contours.vdims[0].name, 'Density')
 
     def test_bivariate_composite_empty_filled(self):
-        dist = Bivariate([]).opts(plot=dict(filled=True))
+        dist = Bivariate([]).opts(filled=True)
         contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Polygons)
         self.assertEqual(contours.vdims, [Dimension('Density')])
         self.assertEqual(len(contours), 0)
 
     def test_bivariate_composite_empty_not_filled(self):
-        dist = Bivariate([]).opts(plot=dict(filled=True))
+        dist = Bivariate([]).opts(filled=True)
         contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Contours)
         self.assertEqual(contours.vdims, [Dimension('Density')])

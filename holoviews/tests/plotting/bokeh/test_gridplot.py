@@ -79,7 +79,7 @@ class TestGridPlot(TestBokehPlot):
 
         # Pop key (1,) for one of the HoloMaps and make GridSpace
         hmap2.pop(1)
-        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(plot=dict(shared_datasource=True))
+        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(shared_datasource=True)
 
         # Get plot
         plot = bokeh_renderer.get_plot(grid)

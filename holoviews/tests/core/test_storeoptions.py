@@ -70,8 +70,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         data = [zip(range(10),range(10)), zip(range(5),range(5))]
         o = Overlay([Curve(c) for c in data]).opts(
-            {'Curve.Curve':{'plot':{'show_grid':True},
-                            'style':{'color':'b'}}})
+            {'Curve.Curve': {'show_grid':True, 'color':'b'}})
 
         self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'plot').kwargs['show_grid'], True)
@@ -87,7 +86,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         Short __call__ syntax.
         """
         im = Image(np.random.rand(10,10))
-        layout = (im + im).opts({'Layout':dict(plot={'hspace':5})})
+        layout = (im + im).opts({'Layout':dict({'hspace':5})})
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 5)
 
@@ -96,12 +95,12 @@ class TestStoreOptsMethod(ComparisonTestCase):
         The old (longer) syntax in __call__
         """
         im = Image(np.random.rand(10,10))
-        layout = (im + im).opts({'Layout':dict(plot={'hspace':10})})
+        layout = (im + im).opts({'Layout':dict({'hspace':10})})
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 10)
 
     def test_holomap_opts(self):
-        hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(plot=dict(xaxis=None))
+        hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(xaxis=None)
         opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
         self.assertIs(opts.kwargs['xaxis'], None)
 

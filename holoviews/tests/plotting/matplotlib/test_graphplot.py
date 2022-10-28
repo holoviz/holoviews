@@ -316,7 +316,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
                          [p.array() for p in self.trimesh._split_edgepaths.split()])
 
     def test_plot_simple_trimesh_filled(self):
-        plot = mpl_renderer.get_plot(self.trimesh.opts(plot=dict(filled=True)))
+        plot = mpl_renderer.get_plot(self.trimesh.opts(filled=True))
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
         self.assertIsInstance(edges, PolyCollection)
@@ -479,13 +479,13 @@ class TestMplChordPlot(TestMPLPlot):
         return Chord((edges, nodes), vdims='weight')
 
     def test_chord_nodes_label_text(self):
-        g = self.chord.opts(plot=dict(label_index='Label'))
+        g = self.chord.opts(label_index='Label')
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
 
     def test_chord_nodes_labels_mapping(self):
-        g = self.chord.opts(plot=dict(labels='Label'))
+        g = self.chord.opts(labels='Label')
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
@@ -512,8 +512,7 @@ class TestMplChordPlot(TestMPLPlot):
         self.assertEqual(arcs.get_clim(), (0, 2))
 
     def test_chord_edges_categorically_colormapped(self):
-        g = self.chord.opts(plot=dict(edge_color_index='start'),
-                            style=dict(edge_cmap=['#FFFFFF', '#000000']))
+        g = self.chord.opts(edge_color_index='start', edge_cmap=['#FFFFFF', '#000000'])
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
         colors = np.array([[ 1., 1., 1., 1. ],

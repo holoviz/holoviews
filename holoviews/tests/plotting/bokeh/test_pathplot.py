@@ -216,7 +216,7 @@ class TestPolygonPlot(TestBokehPlot):
 
     def test_polygons_colored_batched(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
-                              for j in range(5)}).opts(plot=dict(legend_limit=0))
+                              for j in range(5)}).opts(legend_limit=0)
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, 0)
@@ -228,7 +228,7 @@ class TestPolygonPlot(TestBokehPlot):
     def test_polygons_colored_batched_unsanitized(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)] for i in range(2)],
                                           vdims=['some ? unescaped name'])
-                              for j in range(5)}).opts(plot=dict(legend_limit=0))
+                              for j in range(5)}).opts(legend_limit=0)
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, 0)
