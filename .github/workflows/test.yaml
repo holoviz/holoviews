@@ -43,7 +43,6 @@ jobs:
     env:
       HV_REQUIREMENTS: "-o flakes -o tests -o examples_tests"
       MPLBACKEND: "Agg"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
