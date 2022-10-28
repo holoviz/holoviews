@@ -62,7 +62,7 @@ jobs:
           conda config --prepend channels bokeh/label/dev
           conda config --prepend channels pyviz/label/dev
           conda config --remove channels defaults
-          conda config --set channels-priority strict
+          conda config --set channel_priority strict
           conda create -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
         run: |
