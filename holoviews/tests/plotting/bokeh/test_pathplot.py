@@ -200,7 +200,7 @@ class TestPolygonPlot(TestBokehPlot):
                          for i in range(5)}, kdims=['Test'])
         opts = {'Polygons': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('z', '@{z}')])
 
     def test_polygons_colored(self):
