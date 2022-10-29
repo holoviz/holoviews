@@ -610,9 +610,10 @@ class Opts(object):
             self._obj.data = data
             return self._obj
 
-    def _dynamicmap_opts(self, *args, clone=None, **kwargs):
+    def _dynamicmap_opts(self, *args, **kwargs):
         from ..util import Dynamic
 
+        clone = kwargs.get('clone', None)
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
         # By default do not clone in .opts method
         clone = (apply_groups if clone is None else clone)
@@ -630,7 +631,7 @@ class Opts(object):
         return dmap
 
 
-    def _base_opts(self, *args, clone=None, **kwargs):
+    def _base_opts(self, *args, **kwargs):
         from .options import Options
 
         new_args = []
@@ -641,6 +642,7 @@ class Opts(object):
         apply_groups, options, new_kwargs = util.deprecated_opts_signature(new_args, kwargs)
 
         # By default do not clone in .opts method
+        clone = kwargs.get('clone', None)
         if apply_groups:
             from ..util import opts
             if options is not None:
