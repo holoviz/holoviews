@@ -120,7 +120,10 @@ except ImportError:
             raise Exception("IPython notebook not available: use hv.extension instead.")
 
 if '_pyodide' in sys.modules:
-    from .pyodide import pyodide_extension as extension # noqa (API import)
+    from .pyodide import pyodide_extension, in_jupyterlite
+    if not in_jupyterlite():
+        extension = pyodide_extension
+    del pyodide_extension, in_jupyterlite
 
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
