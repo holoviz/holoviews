@@ -11,7 +11,7 @@ from holoviews.util import render, opts
 from holoviews.util.transform import dim
 
 from bokeh.layouts import Column, Row
-from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel, Spacer, GridBox, Title
+from bokeh.models import Div, Toolbar, GlyphRenderer, Tabs, TabPanel, Spacer, GridBox, Title
 from bokeh.plotting import figure
 
 from ...utils import LoggingComparisonTestCase
@@ -175,7 +175,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertIsInstance(plot, Column)
         self.assertEqual(len(plot.children), 2)
         toolbar, grid = plot.children
-        self.assertIsInstance(toolbar, ToolbarBox)
+        self.assertIsInstance(toolbar, Toolbar)
         self.assertIsInstance(grid, GridBox)
         self.assertEqual(len(grid.children), 3)
         (col1, _, _), (col2, _, _), (fig, _, _) = grid.children
@@ -232,7 +232,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = (Curve([]) + Curve([]).hist()).cols(1)
         plot = bokeh_renderer.get_plot(layout)
         toolbar, grid = plot.state.children
-        self.assertIsInstance(toolbar, ToolbarBox)
+        self.assertIsInstance(toolbar, Toolbar)
         self.assertIsInstance(grid, GridBox)
         for (fig, _, _) in grid.children:
             self.assertIsInstance(fig, figure)
@@ -244,8 +244,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(layout)
         self.assertIsInstance(plot.state, Tabs)
         panel1, panel2 = plot.state.tabs
-        self.assertIsInstance(panel1, Panel)
-        self.assertIsInstance(panel2, Panel)
+        self.assertIsInstance(panel1, TabPanel)
+        self.assertIsInstance(panel2, TabPanel)
         self.assertEqual(panel1.title, 'Curve I')
         self.assertEqual(panel2.title, 'AdjointLayout I')
 
@@ -315,7 +315,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = (Curve([]) + Points([])).opts(toolbar='left')
         plot = bokeh_renderer.get_plot(layout)
         self.assertIsInstance(plot.state, Row)
-        self.assertIsInstance(plot.state.children[0], ToolbarBox)
+        self.assertIsInstance(plot.state.children[0], Toolbar)
 
     def test_layout_disable_toolbar(self):
         layout = (Curve([]) + Points([])).opts(toolbar=None)

@@ -9,7 +9,7 @@ from holoviews.streams import Stream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 from bokeh.layouts import Column
-from bokeh.models import Div, ToolbarBox
+from bokeh.models import Div, Toolbar
 from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
 
 
@@ -109,13 +109,13 @@ class TestGridPlot(TestBokehPlot):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertIsInstance(plot.state.children[0].children[0], ToolbarBox)
+        self.assertIsInstance(plot.state.children[0].children[0], Toolbar)
 
     def test_grid_disable_toolbar(self):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar=None)
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertEqual([p for p in plot.state.children if isinstance(p, ToolbarBox)], [])
+        self.assertEqual([p for p in plot.state.children if isinstance(p, Toolbar)], [])
 
     def test_grid_dimensioned_stream_title_update(self):
         stream = Stream.define('Test', test=0)()
