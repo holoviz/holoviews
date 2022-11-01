@@ -154,11 +154,11 @@ def compute_plot_size(plot):
         height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
         return width, height
     elif isinstance(plot, (Div, Toolbar)):
-        # Cannot compute size for Div or ToolbarBox
+        # Cannot compute size for Div or Toolbar
         return 0, 0
     elif isinstance(plot, (Row, Column, Tabs)):
         if not plot.children: return 0, 0
-        if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
+        if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
         elif isinstance(plot, Tabs):
             w_agg, h_agg = (np.max, np.max)
@@ -559,7 +559,7 @@ def filter_toolboxes(plots):
         plots = [filter_toolboxes(plot) for plot in plots]
     elif hasattr(plots, 'children'):
         plots.children = [filter_toolboxes(child) for child in plots.children
-                          if not isinstance(child, ToolbarBox)]
+                          if not isinstance(child, Toolbar)]
     return plots
 
 
