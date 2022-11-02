@@ -44,7 +44,6 @@ jobs:
     env:
       HV_REQUIREMENTS: "-o flakes -o tests -o examples_tests"
       MPLBACKEND: "Agg"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
@@ -57,9 +56,7 @@ jobs:
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          eval "$(conda shell.bash hook)"
           conda update -n base -c defaults conda
-          conda config --prepend channels nodefaults
           conda config --prepend channels conda-forge
           conda config --prepend channels bokeh/label/dev
           conda config --prepend channels pyviz/label/dev
@@ -67,12 +64,11 @@ jobs:
           conda create -n test-environment python=${{ matrix.python-version }} pyctdev openssl="1.1.1"
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: doit develop_install
+        if: matrix.os != 'macos-latest'
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda list
           conda install -y  "param >=1.7.0" "pyct >=0.4.4" "setuptools >=30.3.0"
@@ -81,28 +77,34 @@ jobs:
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
+      # Temporary hacked step as on MacOS doit develop_install updated CPython leading to a pyctdev failure
+      - name: doit develop_install
+        if: matrix.os == 'macos-latest'
+        run: |
+          conda activate test-environment
+          conda list
+          doit develop_install ${{ env.HV_REQUIREMENTS }} || echo "Keep going"
+          pip install --no-deps --no-build-isolation -e .
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: doit test_flakes
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_flakes
       - name: doit test_unit
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_unit
       - name: test examples
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_examples
       - name: codecov
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           codecov
