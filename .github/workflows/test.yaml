@@ -76,7 +76,7 @@ jobs:
           conda activate test-environment
           conda list
           conda install -y  "param >=1.7.0" "pyct >=0.4.4" "setuptools >=30.3.0"
-          conda install -y --freeze-installed "param >=1.9.3,<2.0" "numpy >=1.0" "pyviz_comms >=0.7.4" "panel >=0.13.1" "colorcet" "packaging" "pandas >=0.20.0" "flake8" "pre-commit" "pytest" "pytest-cov" "matplotlib >=3" "nbconvert" "bokeh" "pillow" "plotly >=4.0" "dash >=1.16" "codecov" "dask" "ibis-sqlite" "spatialpandas" "xarray >=0.10.4" "networkx" "datashader >=0.11.1" "shapely" "ffmpeg" "cftime" "scipy" "selenium" "ipython >=5.4.0" "ipython >=5.4.0" "notebook" "matplotlib >=3" "bokeh >=2.4.3" "networkx" "pillow" "xarray >=0.10.4" "plotly >=4.0" "dash >=1.16" "streamz >=0.5.0" "datashader >=0.11.1" "ffmpeg" "cftime" "netcdf4" "dask" "scipy" "shapely" "scikit-image" "pyarrow" "nbsmoke >=0.2.0"
+          conda install -y "param >=1.9.3,<2.0" "numpy >=1.0" "pyviz_comms >=0.7.4" "panel >=0.13.1" "colorcet" "packaging" "pandas >=0.20.0" "flake8" "pre-commit" "pytest" "pytest-cov" "matplotlib >=3" "nbconvert" "bokeh" "pillow" "plotly >=4.0" "dash >=1.16" "codecov" "dask" "ibis-sqlite" "spatialpandas" "xarray >=0.10.4" "networkx" "datashader >=0.11.1" "shapely" "ffmpeg" "cftime" "scipy" "selenium" "ipython >=5.4.0" "ipython >=5.4.0" "notebook" "matplotlib >=3" "bokeh >=2.4.3" "networkx" "pillow" "xarray >=0.10.4" "plotly >=4.0" "dash >=1.16" "streamz >=0.5.0" "datashader >=0.11.1" "ffmpeg" "cftime" "netcdf4" "dask" "scipy" "shapely" "scikit-image" "pyarrow" "nbsmoke >=0.2.0"
           # doit develop_install ${{ env.HV_REQUIREMENTS }}
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
