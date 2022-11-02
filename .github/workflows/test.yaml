@@ -64,7 +64,7 @@ jobs:
           conda config --prepend channels bokeh/label/dev
           conda config --prepend channels pyviz/label/dev
           conda config --remove channels defaults
-          conda create -n test-environment python=${{ matrix.python-version }} pyctdev
+          conda create -n test-environment python=${{ matrix.python-version }} pyctdev openssl="1.1.1"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
