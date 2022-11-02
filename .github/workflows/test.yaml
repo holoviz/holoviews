@@ -67,7 +67,6 @@ jobs:
           conda activate test-environment
           doit env_capture
       - name: doit develop_install
-        if: matrix.os != 'macos-latest'
         run: |
           conda activate test-environment
           conda list
@@ -77,34 +76,23 @@ jobs:
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
-      # Temporary hacked step as on MacOS doit develop_install updated CPython leading to a pyctdev failure
-      - name: doit develop_install
-        if: matrix.os == 'macos-latest'
-        run: |
-          conda activate test-environment
-          conda list
-          doit develop_install ${{ env.HV_REQUIREMENTS }} || echo "Keep going"
-          pip install --no-deps --no-build-isolation -e .
-          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
-          echo "-----"
-          git describe
       - name: doit env_capture
         run: |
           conda activate test-environment
           doit env_capture
-      - name: doit test_flakes
-        run: |
-          conda activate test-environment
-          doit test_flakes
-      - name: doit test_unit
-        run: |
-          conda activate test-environment
-          doit test_unit
-      - name: test examples
-        run: |
-          conda activate test-environment
-          doit test_examples
-      - name: codecov
-        run: |
-          conda activate test-environment
-          codecov
+      # - name: doit test_flakes
+      #   run: |
+      #     conda activate test-environment
+      #     doit test_flakes
+      # - name: doit test_unit
+      #   run: |
+      #     conda activate test-environment
+      #     doit test_unit
+      # - name: test examples
+      #   run: |
+      #     conda activate test-environment
+      #     doit test_examples
+      # - name: codecov
+      #   run: |
+      #     conda activate test-environment
+      #     codecov
