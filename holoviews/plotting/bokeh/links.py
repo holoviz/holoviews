@@ -143,8 +143,7 @@ class RangeToolLinkCallback(LinkCallback):
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if toolbars:
-            toolbar = toolbars[0].toolbar
-            toolbar.tools.append(tool)
+            toolbars[0].tools.append(tool)
 
 
 class DataLinkCallback(LinkCallback):
