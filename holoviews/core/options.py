@@ -331,8 +331,16 @@ class Cycle(param.Parameterized):
 
     def _get_values(self):
         if self.values: return self.values
-        elif self.key:
+        elif self.key and self.key in self.default_cycles:
             return list(self.default_cycles[self.key])
+        elif self.key:
+            current = Store.current_backend
+            others = " or ".join({"matplotlib", "bokeh", "plotly"} - {current})
+            raise ValueError(
+                "The key you have supplied is not available "
+                f"for the {current} backend. Try to switch to {others} "
+                "with 'hv.extension(backend)'."
+            )
         else:
             raise ValueError("Supply either a key or explicit values.")
 
@@ -927,7 +935,7 @@ class Compositor(param.Parameterized):
             overlay = Overlay([overlay])
             unpack = True
 
-        prev_ids = tuple()
+        prev_ids = ()
         processed = defaultdict(list)
         while True:
             match = cls.strongest_match(overlay, mode, backend)

@@ -1,13 +1,12 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
+from ...util._exception import deprecation_warning
 from .interface import Interface, DataError
-from ..dimension import dimension_name
+from ..dimension import dimension_name, Dimension
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
@@ -59,6 +58,12 @@ class PandasInterface(Interface):
                              if d not in kdims]
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
+
+            if any(not isinstance(d, (str, Dimension)) for d in kdims+vdims):
+                deprecation_warning(
+                    "Having a non-string as a column name in a DataFrame is deprecated "
+                    "and will not be supported in Holoviews version 1.16."
+                )
 
             # Handle reset of index if kdims reference index by name
             for kd in kdims:
@@ -218,6 +223,12 @@ class PandasInterface(Interface):
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
+        if len(group_by) == 1 and Version(pd.__version__) >= Version("1.5.0"):
+            # Because of this deprecation warning from pandas 1.5.0:
+            # In a future version of pandas, a length 1 tuple will be returned
+            # when iterating over a groupby with a grouper equal to a list of length 1.
+            # Don't supply a list with a single grouper to avoid this warning.
+            group_by = group_by[0]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
@@ -240,8 +251,22 @@ class PandasInterface(Interface):
         else:
             fn = function
         if len(dimensions):
+            # The reason to use `numeric_cols` is to prepare for when pandas will not
+            # automatically drop columns that are not numerical for numerical
+            # functions, e.g., `np.mean`.
+            # pandas started warning about this in v1.5.0
+            if fn in [np.size]:
+                # np.size actually works with non-numerical columns
+                numeric_cols = [
+                    c for c in reindexed.columns if c not in cols
+                ]
+            else:
+                numeric_cols = [
+                    c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                    if is_numeric_dtype(d) and c not in cols
+                ]
             grouped = reindexed.groupby(cols, sort=False)
-            df = grouped.aggregate(fn, **kwargs).reset_index()
+            df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
             data = dict(((col, [v]) for col, v in zip(agg.index, agg.values)))

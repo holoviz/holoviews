@@ -1,9 +1,11 @@
 import sys, warnings, operator
 import builtins as builtins   # noqa (compatibility)
+import hashlib
 import json
 import time
 import types
 import numbers
+import pickle
 import inspect
 import itertools
 import string
@@ -39,6 +41,11 @@ arraylike_types = (np.ndarray,)
 masked_types = ()
 
 anonymous_dimension_label = '_'
+
+_NP_SIZE_LARGE = 1_000_000
+_NP_SAMPLE_SIZE = 1_000_000
+_PANDAS_ROWS_LARGE = 1_000_000
+_PANDAS_SAMPLE_SIZE = 1_000_000
 
 pandas_version = LooseVersion(pd.__version__)
 try:
@@ -135,6 +142,12 @@ class Config(param.ParameterizedFunction):
 
 config = Config()
 
+
+def _int_to_bytes(i):
+    num_bytes = (i.bit_length() + 8) // 8
+    return i.to_bytes(num_bytes, "little", signed=True)
+
+
 class HashableJSON(json.JSONEncoder):
     """
     Extends JSONEncoder to generate a hashable string for as many types
@@ -164,9 +177,36 @@ class HashableJSON(json.JSONEncoder):
         if isinstance(obj, set):
             return hash(frozenset(obj))
         elif isinstance(obj, np.ndarray):
-            return obj.tolist()
+            h = hashlib.new("md5")
+            for s in obj.shape:
+                h.update(_int_to_bytes(s))
+            if obj.size >= _NP_SIZE_LARGE:
+                state = np.random.RandomState(0)
+                obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
+            h.update(obj.tobytes())
+            return h.hexdigest()
         if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
-            return obj.to_csv(header=True).encode('utf-8')
+            if len(obj) > _PANDAS_ROWS_LARGE:
+                obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
+            try:
+                pd_values = list(pd.util.hash_pandas_object(obj, index=True).values)
+            except TypeError:
+                # Use pickle if pandas cannot hash the object for example if
+                # it contains unhashable objects.
+                pd_values = [pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)]
+            if isinstance(obj, pd.Series):
+                columns = [obj.name]
+            elif isinstance(obj.columns, pd.MultiIndex):
+                columns = [name for cols in obj.columns for name in cols]
+            else:
+                columns = list(obj.columns)
+            all_vals = pd_values + columns + list(obj.index.names)
+            h = hashlib.md5()
+            for val in all_vals:
+                if not isinstance(val, bytes):
+                    val = str(val).encode("utf-8")
+                h.update(val)
+            return h.hexdigest()
         elif isinstance(obj, self.string_hashable):
             return str(obj)
         elif isinstance(obj, self.repr_hashable):
@@ -329,7 +369,7 @@ def deephash(obj):
     """
     try:
         return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
-    except:
+    except Exception:
         return None
 
 
@@ -922,7 +962,10 @@ def max_range(ranges, combined=True):
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
-                    if isinstance(l, datetime_types) and isinstance(h, datetime_types):
+                    if isinstance(l, pd.Period) and isinstance(h, pd.Period):
+                        l = l.to_timestamp().to_datetime64()
+                        h = h.to_timestamp().to_datetime64()
+                    elif isinstance(l, datetime_types) and isinstance(h, datetime_types):
                         l, h = (pd.Timestamp(l).to_datetime64(),
                                 pd.Timestamp(h).to_datetime64())
                     converted.append((l, h))
@@ -1509,7 +1552,7 @@ def resolve_dependent_value(value):
 
     Resolves parameter values, Parameterized instance methods,
     parameterized functions with dependencies on the supplied value,
-    including such parameters embedded in a list, tuple, or dictionary.
+    including such parameters embedded in a list, tuple, dictionary, or slice.
 
     Args:
        value: A value which will be resolved
@@ -1527,6 +1570,12 @@ def resolve_dependent_value(value):
         value = {
             resolve_dependent_value(k): resolve_dependent_value(v) for k, v in value.items()
         }
+    elif isinstance(value, slice):
+        value = slice(
+            resolve_dependent_value(value.start),
+            resolve_dependent_value(value.stop),
+            resolve_dependent_value(value.step),
+        )
 
     if 'panel' in sys.modules:
         from panel.widgets import RangeSlider, Widget
@@ -1840,7 +1889,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
         all_dims = [d.name for d in ndmapping.kdims]
         inds = [ndmapping.get_dimension_index(dim) for dim in idims]
-        getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
+        getter = operator.itemgetter(*inds) if inds else lambda x: ()
 
         multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
         df = pd.DataFrame(list(map(wrap_tuple, ndmapping.values())), index=multi_index)

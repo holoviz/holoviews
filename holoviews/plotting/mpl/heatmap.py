@@ -349,7 +349,7 @@ class RadialHeatMapPlot(ColorbarPlot):
             for i in range(len(xvals))[::-1]:
                 xbin = np.rad2deg(bins_segment[i:i+2])
                 width = ybin[1]-ybin[0]
-                wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width)
+                wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width=width)
                 patches.append(wedge)
 
         angles = self._get_markers(segment_ticks, self.xmarks)

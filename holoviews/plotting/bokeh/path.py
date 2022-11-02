@@ -234,7 +234,7 @@ class ContourPlot(PathPlot):
             element = element.clone([element.data], datatype=type(element).datatype)
 
         if self.static_source:
-            data = dict()
+            data = {}
             xs = self.handles['cds'].data['xs']
         else:
             if has_holes:

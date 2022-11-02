@@ -34,6 +34,24 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
         dim = Dimension('test', label='A test')
         self.assertEqual(dim.label, 'A test')
 
+    def test_dimension_dict_empty(self):
+        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+            Dimension(dict())
+
+    def test_dimension_dict_label(self):
+        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+            Dimension(dict(label='A test'))
+
+    def test_dimension_dict_name(self):
+        dim = Dimension(dict(name='test'))
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.label, 'test')
+
+    def test_dimension_dict_name_and_label(self):
+        dim = Dimension(dict(name='test', label='A test'))
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.label, 'A test')
+
     def test_dimension_label_kwarg_and_tuple(self):
         dim = Dimension(('test', 'A test'), label='Another test')
         substr = "Using label as supplied by keyword ('Another test'), ignoring tuple value 'A test'"

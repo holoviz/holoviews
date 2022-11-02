@@ -187,7 +187,7 @@ def expr_to_fn_of_stream_contents(expr, nkdims):
             args = [eval_expr(arg, kdim_values, stream_values) for arg in expr.args]
             kwargs_list = [eval_expr(kwarg, kdim_values, stream_values) for kwarg in
                            expr.kwargs]
-            kwargs = dict()
+            kwargs = {}
             for kwargs_el in kwargs_list:
                 kwargs.update(**eval_expr(kwargs_el, kdim_values, stream_values))
             # For a ParameterizedFunction (e.g. an Operation), drop keys that are not

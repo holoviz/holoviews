@@ -419,7 +419,7 @@ class Renderer(Exporter):
         # Handle rendering object as ipywidget
         widget = ipywidget(plot, combine_events=True)
         if hasattr(widget, '_repr_mimebundle_'):
-            return widget._repr_mimebundle()
+            return widget._repr_mimebundle_(), {}
         plaintext = repr(widget)
         if len(plaintext) > 110:
             plaintext = plaintext[:110] + '…'

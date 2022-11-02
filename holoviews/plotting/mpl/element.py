@@ -336,6 +336,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_zlim(bottom=zmin)
                 if valid_lim(zmax):
                     axis.set_zlim(top=zmax)
+        elif isinstance(self.projection, str) and self.projection == "polar":
+            _, b, _, t = coords
+            l = 0
+            r = 2 * np.pi
         else:
             l, b, r, t = coords
 
@@ -540,7 +544,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
              plot_kwargs.pop('vmin', None)
              plot_kwargs.pop('vmax', None)
-        artist = plot_fn(*plot_args, **plot_kwargs)
+        with warnings.catch_warnings():
+            # scatter have a default cmap and with an empty array will emit this warning
+            warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
+            artist = plot_fn(*plot_args, **plot_kwargs)
         return {'artist': artist[0] if isinstance(artist, list) and
                 len(artist) == 1 else artist}
 

@@ -11,25 +11,40 @@ on:
     - cron: '0 14 * * SUN'
 
 jobs:
+  pre_commit:
+    name: Run pre-commit hooks
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "1"
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: pre-commit
+        uses: pre-commit/action@v2.0.3
   test_suite:
     name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: ['3.7', '3.8', '3.9', '3.10']
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         shell: bash -l {0}
     env:
       HV_REQUIREMENTS: "-o flakes -o tests -o examples_tests"
       MPLBACKEND: "Agg"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge -c nodefaults"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
       - uses: conda-incubator/setup-miniconda@v2
@@ -39,50 +54,54 @@ jobs:
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          eval "$(conda shell.bash hook)"
           conda update -n base -c defaults conda
-          conda config --prepend channels nodefaults
           conda config --prepend channels conda-forge
           conda config --prepend channels bokeh/label/dev
           conda config --prepend channels pyviz/label/dev
           conda config --remove channels defaults
+          conda config --set channel_priority strict
           conda create -n test-environment python=${{ matrix.python-version }} pyctdev
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: doit develop_install
+        if: matrix.os != 'macos-latest'
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda list
           doit develop_install ${{ env.HV_REQUIREMENTS }}
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
+      # Temporary hacked step as on MacOS doit develop_install updated CPython leading to a pyctdev failure
+      - name: doit develop_install
+        if: matrix.os == 'macos-latest'
+        run: |
+          conda activate test-environment
+          conda list
+          doit develop_install ${{ env.HV_REQUIREMENTS }} || echo "Keep going"
+          pip install --no-deps --no-build-isolation -e .
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: doit test_flakes
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_flakes
       - name: doit test_unit
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_unit
       - name: test examples
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_examples
       - name: codecov
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           codecov

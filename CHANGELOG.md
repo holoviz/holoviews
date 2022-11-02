@@ -1,3 +1,84 @@
+Version 1.15.1
+==============
+**October 4, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
+@droumis, @ddrinka, @Jhsmit and @stanwest as well as a special thanks to
+@Hoxbro for his many bug fixes. An additional thank you goes out to
+@maximlt, @philippjfr, @jbednar and @jlstevens.
+
+Enhancements:
+
+- Sort output of `decimate` operation so that it can be used with connected Elements
+   (Curve, Area, etc.) ([#5452](https://github.com/holoviz/holoviews/pull/5452))
+- Ensure HoloViews is importable from a pyodide webworker
+  ([#5410](https://github.com/holoviz/holoviews/pull/5410))
+- Add support for stepwise Area plots
+  ([#5390](https://github.com/holoviz/holoviews/pull/5390))
+- Better error message for `hv.Cycle` when incompatible backend activated
+  ([#5379](https://github.com/holoviz/holoviews/pull/5379))
+- Improvements to VSCode notebook support
+  ([#5398](https://github.com/holoviz/holoviews/pull/5398))
+- Protect matplotlib tests from global styles
+  ([#5311](https://github.com/holoviz/holoviews/pull/5311))
+- Faster hashing for arrays and pandas objects
+  ([#5455](https://github.com/holoviz/holoviews/pull/5455))
+- Add pre-commit hooks to CI actions and fixes to pytest configuration
+  ([#5385](https://github.com/holoviz/holoviews/pull/5385),
+   [#5440](https://github.com/holoviz/holoviews/pull/5440))
+
+Bug Fixes:
+
+- Allow import of numpy 1.12
+  ([#5367](https://github.com/holoviz/holoviews/pull/5367))
+- Fixes handling of iterables in Overlays
+  ([#5320](https://github.com/holoviz/holoviews/pull/5320))
+- Always return a string when using `hv.Dimension.pprint_value`
+  ([#5383](https://github.com/holoviz/holoviews/pull/5383))
+- Support widgets in slices for `loc` and `iloc`
+  ([#5352](https://github.com/holoviz/holoviews/pull/5352))
+- Take account of labeled dimension in Bokeh plotting classes
+  ([#5404](https://github.com/holoviz/holoviews/pull/5404))
+- Fix handling of pandas `Period` ranges
+  ([#5393](https://github.com/holoviz/holoviews/pull/5393))
+- Fixed declaration of `Scatter` to `Selection1DExpr`
+  ([#5413](https://github.com/holoviz/holoviews/pull/5413))
+- Ensure rangesupdate event fires on all plots with linked axes
+  ([#5465](https://github.com/holoviz/holoviews/pull/5465))
+- Fixed fallback to shapely spatial select
+  ([#5468](https://github.com/holoviz/holoviews/pull/5468))
+- Many thanks to @Hoxbro for many miscellaneous plotting fixes,
+  including fixes to plotting of `BoxWhisker`, `VectorField` elements
+  ([#5397](https://github.com/holoviz/holoviews/pull/5397),
+   [#5450](https://github.com/holoviz/holoviews/pull/5450),
+   [#5400](https://github.com/holoviz/holoviews/pull/5400),
+   [#5409](https://github.com/holoviz/holoviews/pull/5409),
+   [#5460](https://github.com/holoviz/holoviews/pull/5460)))
+- Fixes to documentation building GitHub Action
+  ([#5320](https://github.com/holoviz/holoviews/pull/5456),
+  ([#5320](https://github.com/holoviz/holoviews/pull/5467)))
+
+Documentation:
+
+- Introduced module documentation
+  ([#5362](https://github.com/holoviz/holoviews/pull/5362))
+- Remove Python 2 references from README
+  ([#5365](https://github.com/holoviz/holoviews/pull/5365))
+- Update call to panel add_periodic_callback in Bokeh gallery example
+  ([#5436](https://github.com/holoviz/holoviews/pull/5436))
+- Added reference to example in `RangeToolLink`
+  ([#5435](https://github.com/holoviz/holoviews/pull/5435))
+
+API:
+
+In future, HoloViews will not allow non-string values for pandas
+DataFrame column names. This deprecation cycle starts by
+issuing a `DeprecationWarning` that should not be visible to users.
+
+- Issue DeprecationWarning for invalid DataFrame column types
+  ([#5457](https://github.com/holoviz/holoviews/pull/5457))
+
 Version 1.15.0
 ==============
 **July 6, 2022**
@@ -18,7 +99,7 @@ Compatibility:
 - Python 2 support has finally been dropped with 1.14.9 as the last
   release supporting Python 2
 - HoloViews now requires panel >0.13.1
-  ([#4329](https://github.com/holoviz/holoviews/pull/4329))  
+  ([#4329](https://github.com/holoviz/holoviews/pull/4329))
 - Colormaps for the output of the datashade operation have changed to
   address
   [holoviz/datashader#357](https://github.com/holoviz/datashader/issues/357);
@@ -89,7 +170,6 @@ Other enhancements:
  ([#5052](https://github.com/holoviz/holoviews/pull/5052))
 - Show all histograms of an `Overlay`
 ([#5031](https://github.com/holoviz/holoviews/pull/5031))
-
 
 Bug fixes:
 

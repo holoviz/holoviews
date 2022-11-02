@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import style
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Image, Curve, Scatter, Scatter3D
@@ -7,6 +8,8 @@ from holoviews.streams import Stream
 from .test_plot import TestMPLPlot, mpl_renderer
 
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
+from matplotlib.projections import PolarAxes
+
 
 class TestElementPlot(TestMPLPlot):
 
@@ -26,8 +29,16 @@ class TestElementPlot(TestMPLPlot):
         self.assertEqual(plot.handles['title'].get_text(), 'Called')
 
     def test_element_font_scaling(self):
-        curve = Curve(range(10)).opts(fontscale=2, title='A title')
-        plot = mpl_renderer.get_plot(curve)
+        curve = Curve(range(10)).options(fontscale=2, title='A title')
+        with style.context(
+            {
+                "axes.labelsize": 10,
+                "axes.titlesize": 12,
+                "xtick.labelsize": 10,
+                "ytick.labelsize": 10,
+            }
+        ):
+            plot = mpl_renderer.get_plot(curve)
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 24)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 20)
@@ -36,8 +47,17 @@ class TestElementPlot(TestMPLPlot):
         self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
 
     def test_element_font_scaling_fontsize_override_common(self):
-        curve = Curve(range(10)).opts(fontscale=2, fontsize=14, title='A title')
-        plot = mpl_renderer.get_plot(curve)
+        curve = Curve(range(10)).options(fontscale=2, fontsize=14, title='A title')
+        with style.context(
+            {
+                "axes.labelsize": 10,
+                "axes.titlesize": 12,
+                "font.size": 10,
+                "xtick.labelsize": 10,
+                "ytick.labelsize": 10,
+            }
+        ):
+            plot = mpl_renderer.get_plot(curve)
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 28)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 28)
@@ -48,7 +68,15 @@ class TestElementPlot(TestMPLPlot):
     def test_element_font_scaling_fontsize_override_specific(self):
         curve = Curve(range(10)).opts(
             fontscale=2, fontsize={'title': 16, 'xticks': 12, 'xlabel': 6}, title='A title')
-        plot = mpl_renderer.get_plot(curve)
+        with style.context(
+            {
+                "axes.labelsize": 10,
+                "axes.titlesize": 12,
+                "xtick.labelsize": 10,
+                "ytick.labelsize": 10,
+            }
+        ):
+            plot = mpl_renderer.get_plot(curve)
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 32)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 12)
@@ -149,6 +177,14 @@ class TestElementPlot(TestMPLPlot):
         zformatter = zaxis.get_major_formatter()
         self.assertIs(zformatter, formatter)
 
+    def test_element_polar_xlimits(self):
+        theta = np.arange(0, 5.4, 0.1)
+        r = np.ones(len(theta))
+        scatter = Scatter((theta, r), 'theta', 'r').opts(projection='polar')
+        plot = mpl_renderer.get_plot(scatter)
+        ax = plot.handles['axis']
+        self.assertIsInstance(ax, PolarAxes)
+        self.assertEqual(ax.get_xlim(), (0, 2 * np.pi))
 
 
 class TestColorbarPlot(TestMPLPlot):

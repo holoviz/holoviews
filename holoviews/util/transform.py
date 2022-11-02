@@ -84,7 +84,28 @@ class iloc(object):
         return dim(self.expr, self)
 
     def __call__(self, values):
-        return values[self.index]
+        if isinstance(values, (pd.Series, pd.DataFrame)):
+            return values.iloc[resolve_dependent_value(self.index)]
+        else:
+            return values[resolve_dependent_value(self.index)]
+
+
+class loc(object):
+    """Implements loc for dim expressions.
+    """
+
+    __name__ = 'loc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values.loc[resolve_dependent_value(self.index)]
 
 
 @_maybe_map
@@ -151,8 +172,19 @@ def categorize(values, categories, default=None):
     return result
 
 
+if hasattr(np, 'isin'):
+    isin = _maybe_map(np.isin)
+else:
+    # for 1.4 <= numpy < 1.13; in1d() available since 1.4
+    def _isin(element, test_elements, assume_unique=False, invert=False):
+        # from 1.13's numpy.lib.arraysetops
+        element = np.asarray(element)
+        return np.in1d(element, test_elements, assume_unique=assume_unique,
+                invert=invert).reshape(element.shape)
+    isin = _maybe_map(_isin)
+    del _isin
+
 digitize = _maybe_map(np.digitize)
-isin = _maybe_map(np.isin)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
@@ -163,7 +195,7 @@ python_isin = _maybe_map(_python_isin)
 
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc
+    MethodType, np.ufunc, iloc, loc
 )
 
 
@@ -196,6 +228,7 @@ class dim(object):
         astype: 'astype',
         round_: 'round',
         iloc: 'iloc',
+        loc: 'loc',
     }
 
     _numpy_funcs = {
@@ -327,24 +360,39 @@ class dim(object):
 
     @property
     def params(self):
+        if 'panel' in sys.modules:
+            from panel.widgets.base import Widget
+        else:
+            Widget = None
+
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
+            if hasattr(op['fn'], 'index'):
+                # Special case for loc and iloc to check for parameters
+                op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
-                if 'panel' in sys.modules:
-                    from panel.widgets.base import Widget
-                    if isinstance(op_arg, Widget):
-                        op_arg = op_arg.param.value
+                if Widget and isinstance(op_arg, Widget):
+                    op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
                 elif isinstance(op_arg, slice):
-                    if isinstance(op_arg.start, param.Parameter):
-                        params[op_arg.start.name+str(id(op_arg.start))] = op_arg.start
-                    if isinstance(op_arg.stop, param.Parameter):
-                        params[op_arg.stop.name+str(id(op_arg.stop))] = op_arg.stop
-                    if isinstance(op_arg.step, param.Parameter):
-                        params[op_arg.step.name+str(id(op_arg.step))] = op_arg.step
+                    (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
+
+                    if Widget and isinstance(start, Widget):
+                        start = start.param.value
+                    if Widget and isinstance(stop, Widget):
+                        stop = stop.param.value
+                    if Widget and isinstance(step, Widget):
+                        step = step.param.value
+
+                    if isinstance(start, param.Parameter):
+                        params[start.name+str(id(start))] = start
+                    if isinstance(stop, param.Parameter):
+                        params[stop.name+str(id(stop))] = stop
+                    if isinstance(step, param.Parameter):
+                        params[step.name+str(id(step))] = step
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
                     params[op_arg.name+str(id(op_arg))] = op_arg
@@ -583,12 +631,6 @@ class dim(object):
                     dataset, flat, expanded, ranges, all_values,
                     keep_index, compute, strict
                 )
-            elif isinstance(arg, slice):
-                arg = slice(
-                    resolve_dependent_value(arg.start),
-                    resolve_dependent_value(arg.stop),
-                    resolve_dependent_value(arg.step)
-                )
             arg = resolve_dependent_value(arg)
             fn_args.append(arg)
         fn_kwargs = {}
@@ -597,12 +639,6 @@ class dim(object):
                 v = v.apply(
                     dataset, flat, expanded, ranges, all_values,
                     keep_index, compute, strict
-                )
-            elif isinstance(v, slice):
-                v = slice(
-                    resolve_dependent_value(v.start),
-                    resolve_dependent_value(v.stop),
-                    resolve_dependent_value(v.step)
                 )
             fn_kwargs[k] = resolve_dependent_value(v)
         args = tuple(fn_args[::-1] if op['reverse'] else fn_args)
@@ -790,6 +826,8 @@ class dim(object):
                     format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
                     format_string = prev+').iloc[{0}]'.format(repr(fn.index))
+                elif isinstance(fn, loc):
+                    format_string = prev+').loc[{0}]'.format(repr(fn.index))
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+').{fn}('
@@ -871,6 +909,9 @@ class df_dim(dim):
                      if dataset.interface.multi == intfc.multi]
         return dataset.clone(datatype=datatypes)
 
+    @property
+    def loc(self):
+        return loc(self)
 
 
 class xr_dim(dim):

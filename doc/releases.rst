@@ -4,6 +4,91 @@ Releases
 Version 1.15
 ~~~~~~~~~~~~
 
+Version 1.15.1
+**************
+
+**October 4, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
+@droumis, @ddrinka, @Jhsmit and @stanwest as well as a special thanks to
+@Hoxbro for his many bug fixes. An additional thank you goes out to
+@maximlt, @philippjfr, @jbednar and @jlstevens.
+
+Enhancements:
+
+-  Sort output of ``decimate`` operation so that it can be used with
+   connected Elements (Curve, Area, etc.)
+   (`#5452 <https://github.com/holoviz/holoviews/pull/5452>`__)
+-  Ensure HoloViews is importable from a pyodide webworker
+   (`#5410 <https://github.com/holoviz/holoviews/pull/5410>`__)
+-  Add support for stepwise Area plots
+   (`#5390 <https://github.com/holoviz/holoviews/pull/5390>`__)
+-  Better error message for ``hv.Cycle`` when incompatible backend
+   activated
+   (`#5379 <https://github.com/holoviz/holoviews/pull/5379>`__)
+-  Improvements to VSCode notebook support
+   (`#5398 <https://github.com/holoviz/holoviews/pull/5398>`__)
+-  Protect matplotlib tests from global styles
+   (`#5311 <https://github.com/holoviz/holoviews/pull/5311>`__)
+-  Faster hashing for arrays and pandas objects
+   (`#5455 <https://github.com/holoviz/holoviews/pull/5455>`__)
+-  Add pre-commit hooks to CI actions and fixes to pytest configuration
+   (`#5385 <https://github.com/holoviz/holoviews/pull/5385>`__,
+   `#5440 <https://github.com/holoviz/holoviews/pull/5440>`__)
+
+Bug Fixes:
+
+-  Allow import of numpy 1.12
+   (`#5367 <https://github.com/holoviz/holoviews/pull/5367>`__)
+-  Fixes handling of iterables in Overlays
+   (`#5320 <https://github.com/holoviz/holoviews/pull/5320>`__)
+-  Always return a string when using ``hv.Dimension.pprint_value``
+   (`#5383 <https://github.com/holoviz/holoviews/pull/5383>`__)
+-  Support widgets in slices for ``loc`` and ``iloc``
+   (`#5352 <https://github.com/holoviz/holoviews/pull/5352>`__)
+-  Take account of labeled dimension in Bokeh plotting classes
+   (`#5404 <https://github.com/holoviz/holoviews/pull/5404>`__)
+-  Fix handling of pandas ``Period`` ranges
+   (`#5393 <https://github.com/holoviz/holoviews/pull/5393>`__)
+-  Fixed declaration of ``Scatter`` to ``Selection1DExpr``
+   (`#5413 <https://github.com/holoviz/holoviews/pull/5413>`__)
+-  Ensure rangesupdate event fires on all plots with linked axes
+   (`#5465 <https://github.com/holoviz/holoviews/pull/5465>`__)
+-  Fixed fallback to shapely spatial select
+   (`#5468 <https://github.com/holoviz/holoviews/pull/5468>`__)
+-  Many thanks to @Hoxbro for many miscellaneous plotting fixes,
+   including fixes to plotting of ``BoxWhisker``, ``VectorField``
+   elements (`#5397 <https://github.com/holoviz/holoviews/pull/5397>`__,
+   `#5450 <https://github.com/holoviz/holoviews/pull/5450>`__,
+   `#5400 <https://github.com/holoviz/holoviews/pull/5400>`__,
+   `#5409 <https://github.com/holoviz/holoviews/pull/5409>`__,
+   `#5460 <https://github.com/holoviz/holoviews/pull/5460>`__))
+-  Fixes to documentation building GitHub Action
+   (`#5320 <https://github.com/holoviz/holoviews/pull/5456>`__,
+   (`#5320 <https://github.com/holoviz/holoviews/pull/5467>`__))
+
+Documentation:
+
+-  Introduced module documentation
+   (`#5362 <https://github.com/holoviz/holoviews/pull/5362>`__)
+-  Remove Python 2 references from README
+   (`#5365 <https://github.com/holoviz/holoviews/pull/5365>`__)
+-  Update call to panel add_periodic_callback in Bokeh gallery example
+   (`#5436 <https://github.com/holoviz/holoviews/pull/5436>`__)
+-  Added reference to example in ``RangeToolLink``
+   (`#5435 <https://github.com/holoviz/holoviews/pull/5435>`__)
+
+API:
+
+In future, HoloViews will not allow non-string values for pandas
+DataFrame column names. This deprecation cycle starts by issuing a
+``DeprecationWarning`` that should not be visible to users.
+
+-  Issue DeprecationWarning for invalid DataFrame column types
+   (`#5457 <https://github.com/holoviz/holoviews/pull/5457>`__)
+
+
 Version 1.15.0
 **************
 
@@ -172,7 +257,7 @@ infrastructure across too many PRs to list here.
    (`#5344 <https://github.com/holoviz/holoviews/pull/5344>`__)
 
 
-   
+
 Version 1.14
 ~~~~~~~~~~~~
 

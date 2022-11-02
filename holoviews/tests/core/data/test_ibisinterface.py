@@ -303,4 +303,3 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
-

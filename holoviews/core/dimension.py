@@ -57,14 +57,8 @@ def asdim(dimension):
         A Dimension object constructed from the dimension spec. No
         copy is performed if the input is already a Dimension.
     """
-    if isinstance(dimension, Dimension):
-        return dimension
-    elif isinstance(dimension, (tuple, dict, str)):
-        return Dimension(dimension)
-    else:
-        raise ValueError('%s type could not be interpreted as Dimension. '
-                         'Dimensions must be declared as a string, tuple, '
-                         'dictionary or Dimension type.')
+    return dimension if isinstance(dimension, Dimension) else Dimension(dimension)
+
 
 def dimension_name(dimension):
     """Return the Dimension.name for a dimension-like object.
@@ -119,11 +113,6 @@ def process_dimensions(kdims, vdims):
                              "specified as tuples, strings, dictionaries or Dimension "
                              "instances, not a %s type. Ensure you passed the data as the "
                              "first argument." % (group, type(dims).__name__))
-        for dim in dims:
-            if not isinstance(dim, (tuple, str, Dimension, dict)):
-                raise ValueError('Dimensions must be defined as a tuple, '
-                                 'string, dictionary or Dimension instance, '
-                                 'found a %s type.' % type(dim).__name__)
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 
@@ -242,42 +231,52 @@ class Dimension(param.Parameterized):
         if 'name' in params:
             raise KeyError('Dimension name must only be passed as the positional argument')
 
+        all_params = {}
         if isinstance(spec, Dimension):
-            existing_params = dict(spec.param.get_param_values())
-        elif (spec, params.get('unit', None)) in self.presets.keys():
-            preset = self.presets[(str(spec), str(params['unit']))]
-            existing_params = dict(preset.param.get_param_values())
-        elif isinstance(spec, dict):
-            existing_params = spec
-        elif spec in self.presets:
-            existing_params = dict(self.presets[spec].param.get_param_values())
-        elif (spec,) in self.presets:
-            existing_params = dict(self.presets[(spec,)].param.get_param_values())
-        else:
-            existing_params = {}
-
-        all_params = dict(existing_params, **params)
-        if isinstance(spec, tuple):
-            if not all(isinstance(s, str) for s in spec) or len(spec) != 2:
-                raise ValueError("Dimensions specified as a tuple must be a tuple "
-                                 "consisting of the name and label not: %s" % str(spec))
-            name, label = spec
-            all_params['name'] = name
-            all_params['label'] = label
-            if 'label' in params and (label != params['label']):
-                if params['label'] != label:
-                    self.param.warning(
-                        'Using label as supplied by keyword ({!r}), ignoring '
-                        'tuple value {!r}'.format(params['label'], label))
-                all_params['label'] = params['label']
+            all_params.update(spec.param.get_param_values())
         elif isinstance(spec, str):
+            if (spec, params.get('unit', None)) in self.presets.keys():
+                preset = self.presets[(str(spec), str(params['unit']))]
+                all_params.update(preset.param.get_param_values())
+            elif spec in self.presets:
+                all_params.update(self.presets[spec].param.get_param_values())
+            elif (spec,) in self.presets:
+                all_params.update(self.presets[(spec,)].param.get_param_values())
             all_params['name'] = spec
-            all_params['label'] = params.get('label', spec)
+            all_params['label'] = spec
+        elif isinstance(spec, tuple):
+            try:
+                all_params['name'], all_params['label'] = spec
+            except ValueError as exc:
+                raise ValueError(
+                    "Dimensions specified as a tuple must be a tuple "
+                    "consisting of the name and label not: %s" % str(spec)
+                ) from exc
+            if 'label' in params and params['label'] != all_params['label']:
+                self.param.warning(
+                    'Using label as supplied by keyword ({!r}), ignoring '
+                    'tuple value {!r}'.format(params['label'], all_params['label'])
+                )
+        elif isinstance(spec, dict):
+            all_params.update(spec)
+            try:
+                all_params.setdefault('label', spec['name'])
+            except KeyError as exc:
+                raise ValueError(
+                    'Dimension specified as a dict must contain a "name" key'
+                ) from exc
+        else:
+            raise ValueError(
+                '%s type could not be interpreted as Dimension.  Dimensions must be '
+                'declared as a string, tuple, dictionary or Dimension type.'
+                % type(spec).__name__
+            )
+        all_params.update(params)
 
-        if all_params['name'] == '':
-            raise ValueError('Dimension name cannot be the empty string')
-        if all_params['label'] in ['', None]:
-            raise ValueError('Dimension label cannot be None or the empty string')
+        if not all_params['name']:
+            raise ValueError('Dimension name cannot be empty')
+        if not all_params['label']:
+            raise ValueError('Dimension label cannot be empty')
 
         values = params.get('values', [])
         if isinstance(values, str) and values == 'initial':

@@ -64,7 +64,12 @@ class Plot3D(ColorbarPlot):
         self.handles['fig'].set_frameon(False)
         axis.grid(self.show_grid)
         axis.view_init(elev=self.elevation, azim=self.azimuth)
-        axis.dist = self.distance
+        try:
+            axis._dist = self.distance
+        except Exception:
+            # axis.dist is deprecated see here:
+            # https://github.com/matplotlib/matplotlib/pull/22084
+            axis.dist = self.distance
 
         if self.xaxis is None:
             axis.w_xaxis.line.set_lw(0.)

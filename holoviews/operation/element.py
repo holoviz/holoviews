@@ -776,7 +776,7 @@ class histogram(Operation):
             hist_range = self.p.bin_range or element.range(selected_dim)
             # Suppress a warning emitted by Numpy when datetime or timedelta scalars
             # are compared. See https://github.com/numpy/numpy/issues/10095 and
-            # https://github.com/numpy/numpy/issues/9210. 
+            # https://github.com/numpy/numpy/issues/9210.
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     action='ignore', message='elementwise comparison failed',
@@ -909,7 +909,8 @@ class decimate(Operation):
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
-            return sliced.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
+            choice = prng.choice(len(sliced), self.p.max_samples, False)
+            return sliced.iloc[np.sort(choice)]
         return sliced
 
     def _process(self, element, key=None):
