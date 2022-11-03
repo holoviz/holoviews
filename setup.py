@@ -33,7 +33,7 @@ extras_require['tests_core'] = [
     'pytest-cov',
     'matplotlib >=3',
     'nbconvert',
-    'bokeh',
+    'bokeh <3',
     'pillow',
     'plotly >=4.0',
     'dash >=1.16',
@@ -72,7 +72,7 @@ extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
     "matplotlib >=3",
-    "bokeh >=2.4.3",
+    "bokeh >=2.4.3,<3",
 ]
 
 # Requirements to run all examples
@@ -109,7 +109,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
-    'bokeh >2.2',
+    'bokeh >2.2,<3',
     'pydata-sphinx-theme ==0.9.0',
     'sphinx-copybutton',
     'pooch',
