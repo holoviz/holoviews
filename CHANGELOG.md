@@ -1,3 +1,42 @@
+
+Version 1.15.2
+==============
+**November 3, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to @stanwest for his contribution and thank you to our maintainers
+@Hoxbro, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+- Fix support for jupyterlite
+  ([#5502](https://github.com/holoviz/holoviews/pull/5502))
+- Improve error message for `hv.opts` without a plotting backend
+  ([#5494](https://github.com/holoviz/holoviews/pull/5494))
+- Fix warnings exposed in CI logs
+  ([#5470](https://github.com/holoviz/holoviews/pull/5470))
+- Thanks to @maximlt for various CI fixes
+  ([#5484](https://github.com/holoviz/holoviews/pull/5484),
+  [#5498](https://github.com/holoviz/holoviews/pull/5498),
+  [#5485](https://github.com/holoviz/holoviews/pull/5485))
+
+Enhancement:
+
+- Enable Dimension to accept a dictionary specifications
+  ([#5333](https://github.com/holoviz/holoviews/pull/5333))
+- Refactor to remove iterrows for loop from `connect_edges_pd`
+  ([#5473](https://github.com/holoviz/holoviews/pull/5473))
+
+Deprecations:
+
+Promoted `DeprecationWarning` to `FutureWarning` when using pandas
+`DataFrame`s with non-string column names. This will change any
+functionality but will start warning users about functionality that will
+be deprecated in future.
+
+- Upgrade warning for invalid dataframe column names
+  ([#5472](https://github.com/holoviz/holoviews/pull/5472))
+
 Version 1.15.1
 ==============
 **October 4, 2022**
@@ -11,7 +50,7 @@ to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
 Enhancements:
 
 - Sort output of `decimate` operation so that it can be used with connected Elements
-   (Curve, Area, etc.) ([#5452](https://github.com/holoviz/holoviews/pull/5452))
+  (Curve, Area, etc.) ([#5452](https://github.com/holoviz/holoviews/pull/5452))
 - Ensure HoloViews is importable from a pyodide webworker
   ([#5410](https://github.com/holoviz/holoviews/pull/5410))
 - Add support for stepwise Area plots
