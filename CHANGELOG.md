@@ -22,7 +22,7 @@ Bug fixes:
 
 Enhancement:
 
-- Enable Dimension to accept a dictionary specifications
+- Allow Dimension objects to accept a dictionary specification
   ([#5333](https://github.com/holoviz/holoviews/pull/5333))
 - Refactor to remove iterrows for loop from `connect_edges_pd`
   ([#5473](https://github.com/holoviz/holoviews/pull/5473))
@@ -30,7 +30,7 @@ Enhancement:
 Deprecations:
 
 Promoted `DeprecationWarning` to `FutureWarning` when using pandas
-`DataFrame`s with non-string column names. This will change any
+`DataFrame`s with non-string column names. This will not change any
 functionality but will start warning users about functionality that will
 be deprecated in future.
 
