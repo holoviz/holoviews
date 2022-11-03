@@ -4,6 +4,46 @@ Releases
 Version 1.15
 ~~~~~~~~~~~~
 
+Version 1.15.2
+**************
+
+**November 3, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to @stanwest for his contribution and thank you to our maintainers
+@Hoxbro, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+-  Fix support for jupyterlite
+   (`#5502 <https://github.com/holoviz/holoviews/pull/5502>`__)
+-  Improve error message for ``hv.opts`` without a plotting backend
+   (`#5494 <https://github.com/holoviz/holoviews/pull/5494>`__)
+-  Fix warnings exposed in CI logs
+   (`#5470 <https://github.com/holoviz/holoviews/pull/5470>`__)
+-  Thanks to @maximlt for various CI fixes
+   (`#5484 <https://github.com/holoviz/holoviews/pull/5484>`__,
+   `#5498 <https://github.com/holoviz/holoviews/pull/5498>`__,
+   `#5485 <https://github.com/holoviz/holoviews/pull/5485>`__)
+
+Enhancement:
+
+-  Enable Dimension to accept a dictionary specifications
+   (`#5333 <https://github.com/holoviz/holoviews/pull/5333>`__)
+-  Refactor to remove iterrows for loop from ``connect_edges_pd``
+   (`#5473 <https://github.com/holoviz/holoviews/pull/5473>`__)
+
+Deprecations:
+
+Promoted ``DeprecationWarning`` to ``FutureWarning`` when using pandas
+``DataFrame``\ s with non-string column names. This will change any
+functionality but will start warning users about functionality that will
+be deprecated in future.
+
+-  Upgrade warning for invalid dataframe column names
+   (`#5472 <https://github.com/holoviz/holoviews/pull/5472>`__)
+
+
 Version 1.15.1
 **************
 
