@@ -447,10 +447,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
                 # Create dimension string used to compute matching axes
                 if isinstance(xdim, (list, tuple)):
-                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
                                         for d in xdim])
                 else:
-                    dim_str = "%s^%s^%s" % (xdim.name, xdim.label, xdim.unit)
+                    dim_str = f"{xdim.name}^{xdim.label}^{xdim.unit}"
 
                 xaxis['_dim'] = dim_str
 
@@ -485,10 +485,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
                 # Create dimension string used to compute matching axes
                 if isinstance(ydim, (list, tuple)):
-                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
                                         for d in ydim])
                 else:
-                    dim_str = "%s^%s^%s" % (ydim.name, ydim.label, ydim.unit)
+                    dim_str = f"{ydim.name}^{ydim.label}^{ydim.unit}"
 
                 yaxis['_dim'] = dim_str,
                 if 'bare' in self.yaxis:

@@ -86,7 +86,7 @@ class ProgressBar(ProgressIndicator):
             self.cache['socket'] = self._get_socket()
 
         if self.cache['socket'] is not None:
-            self.cache['socket'].send('%s|%s' % (percentage, self.label))
+            self.cache['socket'].send(f'{percentage}|{self.label}')
 
 
     def _stdout_display(self, percentage, display=True):
@@ -155,11 +155,10 @@ class RemoteProgress(ProgressBar):
                 super(RemoteProgress, self).__call__(percent)
             except KeyboardInterrupt:
                 if percent is not None:
-                    self.param.message("Exited at %.3f%% completion" % percent)
+                    self.param.message(f"Exited at {percent:.3f}% completion")
                 break
             except:
-                self.param.message("Could not process socket message: %r"
-                                  % message)
+                self.param.message(f"Could not process socket message: {message!r}")
 
 
 class RunProgress(ProgressBar):

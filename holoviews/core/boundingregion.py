@@ -93,9 +93,9 @@ class BoundingBox(BoundingRegion):
         l, b, r, t = self._aarect.lbrt()
         if (not isinstance(r, datetime_types) and r == -l and
             not isinstance(b, datetime_types) and t == -b and r == t):
-            return 'BoundingBox(radius=%s)' % (r)
+            return f'BoundingBox(radius={r})'
         else:
-            return 'BoundingBox(points=((%s,%s),(%s,%s)))' % (l, b, r, t)
+            return f'BoundingBox(points=(({l},{b}),({r},{t})))'
 
 
     def __repr__(self):
@@ -106,7 +106,7 @@ class BoundingBox(BoundingRegion):
         # Generate import statement
         cls = self.__class__.__name__
         mod = self.__module__
-        imports.append("from %s import %s" % (mod, cls))
+        imports.append(f"from {mod} import {cls}")
         return self.__str__()
 
 

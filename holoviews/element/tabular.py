@@ -59,7 +59,7 @@ class ItemTable(Element):
         if heading == ():
             return self
         if heading not in self.vdims:
-            raise KeyError("%r not in available headings." % heading)
+            raise KeyError(f"{heading!r} not in available headings.")
         return np.array(self.data.get(heading, np.NaN))
 
     def dimension_values(self, dimension, expanded=True, flat=True):

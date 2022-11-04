@@ -637,10 +637,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
         else:
-            labelsize = self._fontsize('%slabel' % axis).get('fontsize')
+            labelsize = self._fontsize(f'{axis}label').get('fontsize')
             if labelsize:
                 axis_props['axis_label_text_font_size'] = labelsize
-            ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
+            ticksize = self._fontsize(f'{axis}ticks', common=False).get('fontsize')
             if ticksize:
                 ticksize = ticksize if bokeh_version > LooseVersion('2.2.3') else value(ticksize)
                 axis_props['major_label_text_font_size'] = ticksize
@@ -715,7 +715,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # major ticks are actually minor ticks in a categorical
             # so if user inputs minor ticks sizes, then use that;
             # else keep major (group) == minor (subgroup)
-            msize = self._fontsize('minor_{0}ticks'.format(axis),
+            msize = self._fontsize(f'minor_{axis}ticks',
                 common=False).get('fontsize')
             if msize is not None:
                 axis_props['major_label_text_font_size'] = msize
@@ -966,7 +966,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_axes:
             cols = cols[::-1]
             dims = dims[:2][::-1]
-        ranges = [self.handles['%s_range' % ax] for ax in 'xy']
+        ranges = [self.handles[f'{ax}_range'] for ax in 'xy']
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and

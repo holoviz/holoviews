@@ -274,13 +274,13 @@ class cuDFInterface(PandasInterface):
             agg = agg_map.get(agg, agg)
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             df = getattr(grouped, agg)().reset_index()
         else:
             agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
             agg = agg_map.get(agg, agg)
             if not hasattr(reindexed, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
             try:
                 data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_numpy())))

@@ -330,7 +330,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         except:
             raise SkipTest('Test requires pscript')
         def formatter(x):
-            return '%s' % x
+            return f'{x}'
         curve = Curve(range(10), kdims=[Dimension('x', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].formatter, FuncTickFormatter)
@@ -341,7 +341,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         except:
             raise SkipTest('Test requires pscript')
         def formatter(x):
-            return '%s' % x
+            return f'{x}'
         curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)

@@ -39,7 +39,7 @@ class KeywordSettings(object):
                 if isinstance(allowed, set):  pass
                 elif isinstance(allowed, dict):
                     if not isinstance(value, dict):
-                        raise ValueError("Value %r not a dict type" % value)
+                        raise ValueError(f"Value {value!r} not a dict type")
                     disallowed = set(value.keys()) - set(allowed.keys())
                     if disallowed:
                         raise ValueError("Keywords %r for %r option not one of %s"
@@ -83,7 +83,7 @@ class KeywordSettings(object):
             if chunk.strip() in cls.allowed:
                 key = chunk.strip()
             else:
-                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
+                raise SyntaxError(f"Invalid keyword: {chunk.strip()}")
             # The next chunk may end in a subsequent keyword
             value = unprocessed.pop().strip()
             if len(unprocessed) != 0:
@@ -94,12 +94,12 @@ class KeywordSettings(object):
                         unprocessed.append(option)
                         break
                 else:
-                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
-            keyword = '%s=%s' % (key, value)
+                    raise SyntaxError(f"Invalid keyword: {value.split()[-1]}")
+            keyword = f'{key}={value}'
             try:
                 items.update(eval('dict(%s)' % keyword))
             except:
-                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
+                raise SyntaxError(f"Could not evaluate keyword: {keyword}")
         return items
 
 
@@ -111,7 +111,7 @@ def list_backends():
         renderer = Store.renderers[backend]
         modes = [mode for mode in renderer.param.objects('existing')['mode'].objects
                  if mode  != 'default']
-        backends += ['%s:%s' % (backend, mode) for mode in modes]
+        backends += [f'{backend}:{mode}' for mode in modes]
     return backends
 
 
@@ -197,13 +197,13 @@ class OutputSettings(KeywordSettings):
     backend_list = [] # List of possible backends
 
     def missing_dependency_exception(value, keyword, allowed):
-        raise Exception("Format %r does not appear to be supported." % value)
+        raise Exception(f"Format {value!r} does not appear to be supported.")
 
     def missing_backend_exception(value, keyword, allowed):
         if value in OutputSettings.backend_list:
-            raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
+            raise ValueError(f"Backend {value!r} not available. Has it been loaded with the notebook_extension?")
         else:
-            raise ValueError("Backend %r does not exist" % value)
+            raise ValueError(f"Backend {value!r} does not exist")
 
     custom_exceptions = {'holomap':missing_dependency_exception,
                          'backend': missing_backend_exception}
@@ -256,10 +256,10 @@ class OutputSettings(KeywordSettings):
         if 'html' in Store.display_formats:
             pass
         elif 'fig' in items and items['fig'] not in Store.display_formats:
-            msg = ("Requesting output figure format %r " % items['fig']
-                   + "not in display formats %r" % Store.display_formats)
+            msg = (f"Requesting output figure format {items['fig']!r} "
+                   + f"not in display formats {Store.display_formats!r}")
             if warnfn is None:
-                print('Warning: {msg}'.format(msg=msg))
+                print(f'Warning: {msg}')
             else:
                 warnfn(msg)
 

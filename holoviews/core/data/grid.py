@@ -108,7 +108,7 @@ class GridInterface(DictInterface):
         for dim in validate_dims:
             name = dimension_name(dim)
             if name not in data:
-                raise ValueError("Values for dimension %s not found" % dim)
+                raise ValueError(f"Values for dimension {dim} not found")
             if not isinstance(data[name], get_array_types()):
                 data[name] = np.array(data[name])
 
@@ -451,7 +451,7 @@ class GridInterface(DictInterface):
 
         invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
         if invalid:
-            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            if len(invalid) == 1: invalid = f"'{invalid[0]}'"
             raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
                              % invalid)
 
@@ -544,7 +544,7 @@ class GridInterface(DictInterface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         if selection_mask is not None:
-            raise ValueError("Masked selections currently not supported for {0}.".format(cls.__name__))
+            raise ValueError(f"Masked selections currently not supported for {cls.__name__}.")
 
         dimensions = dataset.kdims
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]

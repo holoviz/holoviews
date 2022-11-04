@@ -46,7 +46,7 @@ class RasterPlot(ColorbarPlot):
         tooltips.append((vdims[0].pprint_label, '@image'))
         for vdim in vdims[1:]:
             vname = dimension_sanitizer(vdim.name)
-            tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
+            tooltips.append((vdim.pprint_label, f'@{vname}'))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):

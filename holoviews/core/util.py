@@ -335,9 +335,7 @@ class periodic(Thread):
         self._completed.set()
 
     def __repr__(self):
-        return 'periodic(%s, %s, %s)' % (self.period,
-                                         self.count,
-                                         callable_name(self.callback))
+        return f'periodic({self.period}, {self.count}, {callable_name(self.callback)})'
     def __str__(self):
         return repr(self)
 
@@ -676,7 +674,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
                     else disable_leading_underscore)
        if disabled_ and name.startswith('_'):
           return False
-       isrepr = any(('_repr_%s_' % el) == name for el in disabled_reprs)
+       isrepr = any(f'_repr_{el}_' == name for el in disabled_reprs)
        return (name not in self_or_cls.disallowed) and not isrepr
 
     @param.parameterized.bothmethod
@@ -731,7 +729,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
            return self._lookup_table[name]
         name = bytes_to_unicode(name)
         if not self.allowable(name):
-            raise AttributeError("String %r is in the disallowed list of attribute names: %r" % (name, self.disallowed))
+            raise AttributeError(f"String {name!r} is in the disallowed list of attribute names: {self.disallowed!r}")
 
         if self.capitalize and name and name[0] in string.ascii_lowercase:
             name = name[0].upper()+name[1:]
@@ -826,7 +824,7 @@ def asarray(arraylike, strict=True):
     elif hasattr(arraylike, '__array__'):
         return np.asarray(arraylike)
     elif strict:
-        raise ValueError('Could not convert %s type to array' % type(arraylike))
+        raise ValueError(f'Could not convert {type(arraylike)} type to array')
     return arraylike
 
 
@@ -1105,7 +1103,7 @@ def int_to_alpha(n, upper=True):
 
 def int_to_roman(input):
    if type(input) != type(1):
-      raise TypeError("expected integer, got %s" % type(input))
+      raise TypeError(f"expected integer, got {type(input)}")
    if not 0 < input < 4000:
       raise ValueError("Argument must be between 1 and 3999")
    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
@@ -1960,7 +1958,7 @@ def arglexsort(arrays):
     dtypes = ','.join(array.dtype.str for array in arrays)
     recarray = np.empty(len(arrays[0]), dtype=dtypes)
     for i, array in enumerate(arrays):
-        recarray['f%s' % i] = array
+        recarray[f'f{i}'] = array
     return recarray.argsort()
 
 
@@ -2211,7 +2209,7 @@ def mimebundle_to_html(bundle):
     html = data.get('text/html', '')
     if 'application/javascript' in data:
         js = data['application/javascript']
-        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+        html += f'\n<script type="application/javascript">{js}</script>'
     return html
 
 

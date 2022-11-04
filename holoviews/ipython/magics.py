@@ -51,7 +51,7 @@ class OutputMagic(Magics):
         """
         current, count = '', 0
         for k,v in Store.output_settings.options.items():
-            keyword = '%s=%r' % (k,v)
+            keyword = f'{k}={v!r}'
             if len(current) + len(keyword) > 80:
                 print(('%output' if count==0 else '      ')  + current)
                 count += 1
@@ -93,7 +93,7 @@ class OutputMagic(Magics):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
 
         def warnfn(msg):
-            display(HTML("<b>Warning:</b> %s" % msg))
+            display(HTML(f"<b>Warning:</b> {msg}"))
 
 
         if line:
@@ -402,7 +402,7 @@ class TimerMagic(Magics):
         elif line.strip() == 'start':
             TimerMagic.start_time = time.time()
             timestamp = time.strftime("%Y/%m/%d %H:%M:%S")
-            print("Timer start: %s" % timestamp)
+            print(f"Timer start: {timestamp}")
             return
         elif self.start_time is None:
             print("Please start timer with %timer start. For more information consult %timer?")

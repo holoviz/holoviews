@@ -40,8 +40,8 @@ def param_aliases(d):
     Warning: We want to keep pickle hacking to a minimum!
     """
     for old, new in ALIASES.items():
-        old_param = '_%s_param_value' % old
-        new_param = '_%s_param_value' % new
+        old_param = f'_{old}_param_value'
+        new_param = f'_{new}_param_value'
         if old_param in d:
             d[new_param] = d.pop(old_param)
     return d
@@ -379,15 +379,15 @@ class Dimension(param.Parameterized):
     def pprint(self):
         changed = dict(self.param.get_param_values(onlychanged=True))
         if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
-            return 'Dimension({spec})'.format(spec=repr(self.name))
+            return f'Dimension({repr(self.name)})'
 
         params = self.param.objects('existing')
         ordering = sorted(
             sorted(changed.keys()), key=lambda k: (
                 -float('inf') if params[k].precedence is None
                 else params[k].precedence))
-        kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
-        return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
+        kws = ", ".join(f'{k}={changed[k]!r}' for k in ordering if k != 'name')
+        return f'Dimension({repr(self.name)}, {kws})'
 
 
     def pprint_value(self, value, print_unit=False):
@@ -874,7 +874,7 @@ class Dimensioned(LabelledData):
         for dim in dimensions:
             if isinstance(dim, Dimension): dim = dim.name
             if dim not in self.kdims:
-                raise Exception("Supplied dimensions %s not found." % dim)
+                raise Exception(f"Supplied dimensions {dim} not found.")
             valid_dimensions.append(dim)
         return valid_dimensions
 
@@ -924,7 +924,7 @@ class Dimensioned(LabelledData):
                     for dim in getattr(self, group)]
         elif isinstance(selection, list):
             dims =  [dim for group in selection
-                     for dim in getattr(self, '%sdims' % aliases.get(group))]
+                     for dim in getattr(self, f'{aliases.get(group)}dims')]
         elif aliases.get(selection) in lambdas:
             selection = aliases.get(selection, selection)
             lmbd, kwargs = lambdas[selection]
@@ -957,14 +957,14 @@ class Dimensioned(LabelledData):
             if 0 <= dimension < len(all_dims):
                 return all_dims[dimension]
             elif strict:
-                raise KeyError("Dimension %r not found" % dimension)
+                raise KeyError(f"Dimension {dimension!r} not found")
             else:
                 return default
 
         if isinstance(dimension, Dimension):
             dims = [d for d in all_dims if dimension == d]
             if strict and not dims:
-                raise KeyError("%r not found." % dimension)
+                raise KeyError(f"{dimension!r} not found.")
             elif dims:
                 return dims[0]
             else:
@@ -976,7 +976,7 @@ class Dimensioned(LabelledData):
             name_map.update({dim.label: dim for dim in all_dims})
             name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
             if strict and dimension not in name_map:
-                raise KeyError("Dimension %r not found." % dimension)
+                raise KeyError(f"Dimension {dimension!r} not found.")
             else:
                 return name_map.get(dimension, default)
 
@@ -1001,8 +1001,7 @@ class Dimensioned(LabelledData):
             dimensions = self.kdims+self.vdims
             return [i for i, d in enumerate(dimensions) if d == dim][0]
         except IndexError:
-            raise Exception("Dimension %s not found in %s." %
-                            (dim, self.__class__.__name__))
+            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.")
 
 
     def get_dimension_type(self, dim):

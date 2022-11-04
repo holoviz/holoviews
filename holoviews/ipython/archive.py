@@ -94,9 +94,9 @@ class NotebookArchive(FileArchive):
         self._timestamp = None
         self._tags = {MIME_TYPES[k]:v for k,v in HTML_TAGS.items() if k in MIME_TYPES}
 
-        keywords = ['%s=%s' % (k, v.__class__.__name__)
+        keywords = [f'{k}={v.__class__.__name__}'
                     for k, v in self.param.objects().items()]
-        self.auto.__func__.__doc__ = 'auto(enabled=Boolean, %s)' % ', '.join(keywords)
+        self.auto.__func__.__doc__ = f"auto(enabled=Boolean, {', '.join(keywords)})"
 
 
     def get_namespace(self):
@@ -109,7 +109,7 @@ class NotebookArchive(FileArchive):
            if not k.startswith('_') and v is sys.modules['holoviews']]
         if len(matches) == 0:
             raise Exception("Could not find holoviews module in namespace")
-        return '%s.archive' % matches[0]
+        return f'{matches[0]}.archive'
 
 
     def last_export_status(self):
@@ -172,7 +172,7 @@ class NotebookArchive(FileArchive):
                + r'var json_data = IPython.notebook.toJSON(); '
                + r'var json_string = JSON.stringify(json_data); '
                + capture_cmd
-               + "var pycmd = capture + ';%s._export_with_html()'; " % name
+               + f"var pycmd = capture + ';{name}._export_with_html()'; "
                + r"kernel.execute(pycmd)")
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
@@ -236,7 +236,7 @@ class NotebookArchive(FileArchive):
                 if html_key is None: continue
                 filename = self._format(basename, {'timestamp':tstamp,
                                                    'notebook':self.notebook_name})
-                fpath = filename+(('.%s' % ext) if ext else '')
+                fpath = filename+(f'.{ext}' if ext else '')
                 info = {'src':fpath, 'mime_type':info['mime_type']}
                 # No mime type
                 if 'mime_type' not in info: pass

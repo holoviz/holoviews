@@ -837,7 +837,7 @@ class histogram(Operation):
             params['vdims'] = [Dimension('Frequency', label=label)]
         else:
             label = 'Frequency' if normed else 'Count'
-            params['vdims'] = [Dimension('{0}_{1}'.format(dim.name, label.lower()),
+            params['vdims'] = [Dimension(f'{dim.name}_{label.lower()}',
                                          label=label)]
 
         if element.group != element.__class__.__name__:

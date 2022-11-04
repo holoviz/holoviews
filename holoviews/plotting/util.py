@@ -320,14 +320,14 @@ def undisplayable_info(obj, html=False):
     collate = '<tt>collate</tt>' if html else 'collate'
     info = "For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)"
     if isinstance(obj, HoloMap):
-        error = "HoloMap of %s objects cannot be displayed." % obj.type.__name__
-        remedy = "Please call the %s method to generate a displayable object" % collate
+        error = f"HoloMap of {obj.type.__name__} objects cannot be displayed."
+        remedy = f"Please call the {collate} method to generate a displayable object"
     elif isinstance(obj, Layout):
         error = "Layout containing HoloMaps of Layout or GridSpace objects cannot be displayed."
-        remedy = "Please call the %s method on the appropriate elements." % collate
+        remedy = f"Please call the {collate} method on the appropriate elements."
     elif isinstance(obj, GridSpace):
         error = "GridSpace containing HoloMaps of Layouts cannot be displayed."
-        remedy = "Please call the %s method on the appropriate elements." % collate
+        remedy = f"Please call the {collate} method on the appropriate elements."
 
     if not html:
         return '\n'.join([error, remedy, info])
@@ -626,7 +626,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
     else:
         palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
-        raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
+        raise ValueError(f"Supplied palette {cmap} not found among bokeh palettes")
     elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
         # Some bokeh palettes are doubly nested
         palette = palette.get(cmap, palette.get(cmap.capitalize()))
@@ -1009,7 +1009,7 @@ def scale_fontsize(size, scaling):
         size = size * scaling
 
     if ext is not None:
-        size = ('%.3f' % size).rstrip('0').rstrip('.') + ext
+        size = f'{size:.3f}'.rstrip('0').rstrip('.') + ext
     return size
 
 

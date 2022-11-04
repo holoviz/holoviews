@@ -577,13 +577,13 @@ def py2js_tickformatter(formatter, msg=''):
     try:
         jscode = py2js(formatter, 'formatter')
     except Exception as e:
-        error = 'Pyscript raised an error: {0}'.format(e)
+        error = f'Pyscript raised an error: {e}'
         error = error.replace('%', '%%')
         param.main.param.warning(msg+error)
         return
 
     args = inspect.getfullargspec(formatter).args
-    arg_define = 'var %s = tick;' % args[0] if args else ''
+    arg_define = f'var {args[0]} = tick;' if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
     match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
@@ -811,9 +811,7 @@ class periodic(object):
         self._pcb = None
 
     def __repr__(self):
-        return 'periodic(%s, %s, %s)' % (self.period,
-                                         self.count,
-                                         callable_name(self.callback))
+        return f'periodic({self.period}, {self.count}, {callable_name(self.callback)})'
     def __str__(self):
         return repr(self)
 
@@ -969,8 +967,7 @@ def wrap_formatter(formatter, axis):
     if isinstance(formatter, TickFormatter):
         pass
     elif isinstance(formatter, FunctionType):
-        msg = ('%sformatter could not be '
-               'converted to tick formatter. ' % axis)
+        msg = f'{axis}formatter could not be converted to tick formatter. '
         jsfunc = py2js_tickformatter(formatter, msg)
         if jsfunc:
             formatter = FuncTickFormatter(code=jsfunc)

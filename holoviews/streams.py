@@ -53,7 +53,7 @@ def streams_list_from_dict(streams):
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
-            raise TypeError('Cannot handle value %r in streams dictionary' % v)
+            raise TypeError(f'Cannot handle value {v!r} in streams dictionary')
     return Params.from_params(params)
 
 
@@ -166,7 +166,7 @@ class Stream(param.Parameterized):
             if key_count > 1 and key_count > value_count and k not in key_clashes:
                 key_clashes.append(k)
         if key_clashes:
-            print('Parameter name clashes for keys %r' % key_clashes)
+            print(f'Parameter name clashes for keys {key_clashes!r}')
 
         # Group subscribers by precedence while keeping the ordering
         # within each group
@@ -301,7 +301,7 @@ class Stream(param.Parameterized):
         """
         policies = ['all', 'user', 'internal']
         if policy not in policies:
-            raise ValueError('Policy for clearing subscribers must be one of %s' % policies)
+            raise ValueError(f'Policy for clearing subscribers must be one of {policies}')
         if policy == 'all':
             remaining = []
         elif policy == 'user':
@@ -342,7 +342,7 @@ class Stream(param.Parameterized):
         param_names = [k for k in self.param if k != 'name']
         for k, v in mapping.items():
             if k not in param_names:
-                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
+                raise KeyError(f'Cannot rename {k!r} as it is not a stream parameter')
             if k != v and v in param_names:
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
@@ -444,12 +444,12 @@ class Stream(param.Parameterized):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        kwargs = ','.join('%s=%r' % (k, v)
+        kwargs = ','.join(f'{k}={v!r}'
                           for (k, v) in self.param.get_param_values() if k != 'name')
         if not self._rename:
-            return '%s(%s)' % (cls_name, kwargs)
+            return f'{cls_name}({kwargs})'
         else:
-            return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
+            return f'{cls_name}({self._rename!r}, {kwargs})'
 
 
     def __str__(self):
@@ -749,7 +749,7 @@ class Params(Stream):
         for k, v in mapping.items():
             n = k[1] if isinstance(k, tuple) else k
             if n not in pnames:
-                raise KeyError('Cannot rename %r as it is not a stream parameter' % n)
+                raise KeyError(f'Cannot rename {n!r} as it is not a stream parameter')
             if n != v and v in pnames:
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)

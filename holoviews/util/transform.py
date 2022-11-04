@@ -779,7 +779,7 @@ class dim(object):
         return data
 
     def __repr__(self):
-        op_repr = "'%s'" % self.dimension
+        op_repr = f"'{self.dimension}'"
         accessor = False
         for i, o in enumerate(self.ops):
             if i == 0:
@@ -867,7 +867,7 @@ class dim(object):
             if op_repr.count('(') - op_repr.count(')') > 0:
                 op_repr += ')'
         if not self.ops:
-            op_repr = 'dim({repr})'.format(repr=op_repr)
+            op_repr = f'dim({op_repr})'
         if op_repr.count('(') - op_repr.count(')') > 0:
             op_repr += ')'
         return op_repr

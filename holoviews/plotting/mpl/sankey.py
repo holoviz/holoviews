@@ -104,7 +104,7 @@ class SankeyPlot(GraphPlot):
             if self.show_values:
                 value = value_dim.pprint_value(node['value'], print_unit=True)
                 if label:
-                    label = '%s - %s' % (label, value)
+                    label = f'{label} - {value}'
                 else:
                     label = value
             if label:

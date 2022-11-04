@@ -473,7 +473,7 @@ class MultiInterface(Interface):
                 if gt is not None:
                     obj['geom_type'] = gt
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
 

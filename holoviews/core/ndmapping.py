@@ -323,7 +323,7 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = asdim(dimension)
 
         if dimension in self.dimensions():
-            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+            raise Exception(f'{dimension.name} dimension already defined')
 
         if vdim and self._deep_indexable:
             raise Exception('Cannot add value dimension to object that is deep indexable')
@@ -481,12 +481,12 @@ class MultiDimensionalMapping(Dimensioned):
             dimensions = getattr(self, group)
             if dimensions:
                 group = aliases[group].split('_')[0]
-                info_str += '%s Dimensions: \n' % group.capitalize()
+                info_str += f'{group.capitalize()} Dimensions: \n'
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
-                info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
+                info_str += f'\t {d.pprint_label}: {dmin}...{dmax} \n'
         return info_str
 
 

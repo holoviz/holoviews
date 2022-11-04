@@ -37,7 +37,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         example_dir = os.path.join(filepath, '../examples')
     if os.path.exists(path):
         if not force:
-            print('%s directory already exists, either delete it or set the force flag' % path)
+            print(f'{path} directory already exists, either delete it or set the force flag')
             return
         shutil.rmtree(path)
     ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
@@ -45,7 +45,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
     if os.path.isdir(tree_root):
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
-        print('Cannot find %s' % tree_root)
+        print(f'Cannot find {tree_root}')
 
 
 class OptsMeta(param.parameterized.ParameterizedMetaclass):
@@ -138,7 +138,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                     obj.__class__.__name__, sanitized_group,
                     util.label_sanitizer(obj.label)))
             elif  sanitized_group != obj.__class__.__name__:
-                identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
+                identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
                 identifier = obj.__class__.__name__
 
@@ -232,8 +232,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                 options = OptsSpec.parse(options)
             except SyntaxError:
                 options = OptsSpec.parse(
-                    '{clsname} {options}'.format(clsname=obj.__class__.__name__,
-                                                 options=options))
+                    f'{obj.__class__.__name__} {options}')
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
@@ -345,8 +344,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
-                raise ValueError('%s type not found, could not apply options.'
-                                 % objtype)
+                raise ValueError(f'{objtype} type not found, could not apply options.')
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
             for opt, value in options.items():
@@ -431,9 +429,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
 
         reprs = []
-        ns = '{namespace}.'.format(namespace=namespace) if namespace else ''
+        ns = f'{namespace}.' if namespace else ''
         for option in options:
-            kws = ', '.join('%s=%r' % (k,option.kwargs[k]) for k in sorted(option.kwargs))
+            kws = ', '.join(f'{k}={option.kwargs[k]!r}' for k in sorted(option.kwargs))
             if '.' in option.key:
                 element = option.key.split('.')[0]
                 spec = repr('.'.join(option.key.split('.')[1:])) + ', '
@@ -448,8 +446,8 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     @classmethod
     def _create_builder(cls, element, completions):
         def builder(cls, spec=None, **kws):
-            spec = element if spec is None else '%s.%s' % (element, spec)
-            prefix = 'In opts.{element}(...), '.format(element=element)
+            spec = element if spec is None else f'{element}.{spec}'
+            prefix = f'In opts.{element}(...), '
             backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
@@ -589,8 +587,8 @@ class output(param.ParameterizedFunction):
         if ':' in pairs['backend']:
             pairs['backend'] = pairs['backend'].split(':')[0]
 
-        keywords = ', '.join('%s=%r' % (k,pairs[k]) for k in sorted(pairs.keys()))
-        print('output({kws})'.format(kws=keywords))
+        keywords = ', '.join(f'{k}={pairs[k]!r}' for k in sorted(pairs.keys()))
+        print(f'output({keywords})')
 
 
     def __call__(self, *args, **options):
@@ -610,7 +608,7 @@ class output(param.ParameterizedFunction):
                 options = Store.output_settings.extract_keywords(line, {})
             for k in options.keys():
                 if k not in Store.output_settings.allowed:
-                    raise KeyError('Invalid keyword: %s' % k)
+                    raise KeyError(f'Invalid keyword: {k}')
 
             def display_fn(obj, renderer):
                 try:
@@ -688,7 +686,7 @@ class extension(_pyviz_extension):
                 self.param.warning("%s could not be imported, ensure %s is installed."
                              % (backend, backend))
             try:
-                __import__('holoviews.plotting.%s' % imp)
+                __import__(f'holoviews.plotting.{imp}')
                 if selected_backend is None:
                     selected_backend = backend
             except util.VersionError as e:
@@ -976,7 +974,7 @@ class Dynamic(param.ParameterizedFunction):
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
-            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+            raise TypeError(msg.format(objs = ', '.join(f'{el!r}' for el in invalid)))
         return valid
 
     def _process(self, element, key=None, kwargs={}):

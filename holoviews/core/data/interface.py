@@ -263,8 +263,7 @@ class Interface(param.Parameterized):
                      "to support the supplied data format.")
             if priority_errors:
                 intfc, e, _ = priority_errors[0]
-                priority_error = ("%s raised following error:\n\n %s"
-                                  % (intfc.__name__, e))
+                priority_error = f"{intfc.__name__} raised following error:\n\n {e}"
                 error = ' '.join([error, priority_error])
                 raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
             raise DataError(error)

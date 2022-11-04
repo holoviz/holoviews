@@ -133,8 +133,8 @@ _ATTRIBUTIONS = {
 def deprecation_warning(name, url, reason):
     def deprecated_tilesource_warning():
         if util.config.raise_deprecated_tilesource_exception:
-            raise DeprecationWarning('%s tile source is deprecated: %s' % (name, reason))
-        param.main.param.warning('%s tile source is deprecated and is likely to be unusable: %s' %  (name, reason))
+            raise DeprecationWarning(f'{name} tile source is deprecated: {reason}')
+        param.main.param.warning(f'{name} tile source is deprecated and is likely to be unusable: {reason}')
         return Tiles(url, name=name)
     return deprecated_tilesource_warning
 

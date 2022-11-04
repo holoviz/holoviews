@@ -257,7 +257,7 @@ class XArrayInterface(GridInterface):
             if cls.irregular(dataset, kd):
                 irregular.append((kd, dataset.data[kd.name].dims))
         if irregular:
-            nonmatching = ['%s: %s' % (kd, dims) for kd, dims in irregular[1:]
+            nonmatching = [f'{kd}: {dims}' for kd, dims in irregular[1:]
                            if set(dims) != set(irregular[0][1])]
             if nonmatching:
                 nonmatching = ['%s: %s' % irregular[0]] + nonmatching
@@ -319,7 +319,7 @@ class XArrayInterface(GridInterface):
 
         invalid = [d for d in index_dims if dataset.data[d.name].ndim > 1]
         if invalid:
-            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            if len(invalid) == 1: invalid = f"'{invalid[0]}'"
             raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
                              % invalid)
 

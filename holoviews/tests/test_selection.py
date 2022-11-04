@@ -55,7 +55,7 @@ class TestLinkSelections(ComparisonTestCase):
                     isinstance(k, hv.DynamicMap) and k.type == hvtype:
                 return v
 
-        raise KeyError("No key with type {typ}".format(typ=hvtype))
+        raise KeyError(f"No key with type {hvtype}")
 
     @staticmethod
     def expected_selection_color(element, lnk_sel):

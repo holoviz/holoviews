@@ -236,7 +236,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axes_list.append(axis.zaxis)
 
         for ax, ax_obj in zip(axes_str, axes_list):
-            tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
+            tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
     def _finalize_artist(self, element):

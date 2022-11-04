@@ -206,7 +206,7 @@ class Renderer(Exporter):
         Given a HoloViews Viewable return a corresponding plot instance.
         """
         if isinstance(obj, DynamicMap) and obj.unbounded:
-            dims = ', '.join('%r' % dim for dim in obj.unbounded)
+            dims = ', '.join(f'{dim!r}' for dim in obj.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -358,7 +358,7 @@ class Renderer(Exporter):
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):
-            css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
+            css = '; '.join(f"{k}: {v}" for k, v in css.items())
         else:
             raise ValueError("CSS must be supplied as Python dictionary")
 
@@ -541,8 +541,7 @@ class Renderer(Exporter):
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise SkipRendering("No plotting class for {0} "
-                                "found".format(element_type.__name__))
+            raise SkipRendering(f"No plotting class for {element_type.__name__} found")
         return plotclass
 
     @classmethod
@@ -603,7 +602,7 @@ class Renderer(Exporter):
             basename.write(encoded)
             basename.seek(0)
         else:
-            filename ='%s.%s' % (basename, info['file-ext'])
+            filename =f"{basename}.{info['file-ext']}"
             with open(filename, 'wb') as f:
                 f.write(encoded)
 

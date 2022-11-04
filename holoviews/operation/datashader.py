@@ -330,21 +330,21 @@ class AggregationOperation(ResamplingOperation):
                                  "dimension." % (column,element))
             if isinstance(agg_fn, (ds.count, ds.count_cat)):
                 if vdim_prefix:
-                    vdim_name = '%s%s Count' % (vdim_prefix, column)
+                    vdim_name = f'{vdim_prefix}{column} Count'
                 else:
-                    vdim_name = '%s Count' % column
+                    vdim_name = f'{column} Count'
                 vdims = dims[0].clone(vdim_name, nodata=0)
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
         elif category:
             agg_name = type(agg_fn).__name__.title()
-            agg_label = '%s %s' % (category, agg_name)
-            vdims = Dimension('%s%s' % (vdim_prefix, agg_label), label=agg_label)
+            agg_label = f'{category} {agg_name}'
+            vdims = Dimension(f'{vdim_prefix}{agg_label}', label=agg_label)
             if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
             agg_name = type(agg_fn).__name__.title()
-            vdims = Dimension('%s%s' % (vdim_prefix, agg_name), label=agg_name, nodata=0)
+            vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
         params['vdims'] = vdims
         return params
 

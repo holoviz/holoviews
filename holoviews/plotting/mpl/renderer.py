@@ -196,7 +196,7 @@ class MPLRenderer(Renderer):
         if self.dpi is not None: anim_kwargs['dpi'] = self.dpi
         if not hasattr(anim, '_encoded_video'):
             # Windows will throw PermissionError with auto-delete
-            with NamedTemporaryFile(suffix='.%s' % fmt, delete=False) as f:
+            with NamedTemporaryFile(suffix=f'.{fmt}', delete=False) as f:
                 anim.save(f.name, writer=writer, **anim_kwargs)
                 video = f.read()
             f.close()

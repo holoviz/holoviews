@@ -302,7 +302,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
         else:
-            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
+            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
 
     def collate(self, merge_type=None, drop=[], drop_constant=False):
@@ -574,8 +574,7 @@ class Callable(param.Parameterized):
             clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
             if clashes:
                 self.param.warning(
-                    'Positional arguments %r overriden by keywords'
-                    % list(clashes))
+                    f'Positional arguments {list(clashes)!r} overriden by keywords')
             args, kwargs = (), dict(pos_kwargs, **kwargs)
 
         try:
@@ -585,8 +584,8 @@ class Callable(param.Parameterized):
             # invalid keys on DynamicMap and should not warn
             raise
         except Exception as e:
-            posstr = ', '.join(['%r' % el for el in self.args]) if self.args else ''
-            kwstr = ', '.join('%s=%r' % (k,v) for k,v in self.kwargs.items())
+            posstr = ', '.join([f'{el!r}' for el in self.args]) if self.args else ''
+            kwstr = ', '.join(f'{k}={v!r}' for k,v in self.kwargs.items())
             argstr = ', '.join([el for el in [posstr, kwstr] if el])
             message = ("Callable raised \"{e}\".\n"
                        "Invoked as {name}({argstr})")
@@ -788,7 +787,7 @@ class DynamicMap(HoloMap):
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
-            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+            raise TypeError(msg.format(objs = ', '.join(f'{el!r}' for el in invalid)))
 
         super().__init__(initial_items, callback=callback, streams=valid, **params)
 
@@ -903,12 +902,10 @@ class DynamicMap(HoloMap):
             low, high = util.max_range([kdim.range, kdim.soft_range])
             if util.is_number(low) and util.isfinite(low):
                 if val < low:
-                    raise KeyError("Key value %s below lower bound %s"
-                                   % (val, low))
+                    raise KeyError(f"Key value {val} below lower bound {low}")
             if util.is_number(high) and util.isfinite(high):
                 if val > high:
-                    raise KeyError("Key value %s above upper bound %s"
-                                   % (val, high))
+                    raise KeyError(f"Key value {val} above upper bound {high}")
 
     def event(self, **kwargs):
         """Updates attached streams and triggers events
@@ -933,7 +930,7 @@ class DynamicMap(HoloMap):
         invalid = [k for k in kwargs.keys() if k not in stream_params]
         if invalid:
             msg = 'Key(s) {invalid} do not correspond to stream parameters'
-            raise KeyError(msg.format(invalid = ', '.join('%r' % i for i in invalid)))
+            raise KeyError(msg.format(invalid = ', '.join(f'{i!r}' for i in invalid)))
 
         streams = []
         for stream in self.streams:
@@ -1750,7 +1747,7 @@ class GridSpace(Layoutable, UniformNdMapping):
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
         else:
-            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
+            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
 
     def _transform_indices(self, key):

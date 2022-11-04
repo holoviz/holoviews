@@ -252,8 +252,7 @@ class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
     @group.setter
     def group(self, group):
         if not sanitize_identifier.allowable(group):
-            raise ValueError("Supplied group %s contains invalid characters." %
-                             group)
+            raise ValueError(f"Supplied group {group} contains invalid characters.")
         else:
             self._group = group
 
@@ -271,8 +270,7 @@ class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
     @label.setter
     def label(self, label):
         if not sanitize_identifier.allowable(label):
-            raise ValueError("Supplied group %s contains invalid characters." %
-                             label)
+            raise ValueError(f"Supplied group {label} contains invalid characters.")
         self._label = label
 
     @property

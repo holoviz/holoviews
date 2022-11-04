@@ -94,7 +94,7 @@ class SpatialPandasInterface(MultiInterface):
         elif isinstance(data, cls.array_type()):
             data = GeoDataFrame({'geometry': data})
         elif not isinstance(data, cls.frame_type()):
-            raise ValueError("%s only support spatialpandas DataFrames." % cls.__name__)
+            raise ValueError(f"{cls.__name__} only support spatialpandas DataFrames.")
         elif 'geometry' not in data:
             cls.geo_column(data)
 
@@ -429,7 +429,7 @@ class SpatialPandasInterface(MultiInterface):
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
 

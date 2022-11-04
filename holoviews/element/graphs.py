@@ -216,7 +216,7 @@ class Graph(Dataset, Element2D):
         mismatch = []
         for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
             if kd1 != kd2:
-                mismatch.append('%s != %s' % (kd1, kd2))
+                mismatch.append(f'{kd1} != {kd2}')
         if mismatch:
             raise ValueError('Ensure that the first two key dimensions on '
                              'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
@@ -785,8 +785,7 @@ class Chord(Graph):
             self._angles = chord._angles
         else:
             if not isinstance(nodes, Nodes):
-                raise TypeError("Expected Nodes object in data, found %s."
-                                % type(nodes))
+                raise TypeError(f"Expected Nodes object in data, found {type(nodes)}.")
             self._nodes = nodes
             if not isinstance(edgepaths, EdgePaths):
                 raise TypeError("Expected EdgePaths object in data, found %s."

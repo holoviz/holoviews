@@ -53,7 +53,7 @@ class ComparisonInterface(object):
         Classmethod equivalent to unittest.TestCase method (longMessage = False.)
         """
         if not first==second:
-            standardMsg = '%s != %s' % (safe_repr(first), safe_repr(second))
+            standardMsg = f'{safe_repr(first)} != {safe_repr(second)}'
             raise cls.failureException(msg or standardMsg)
 
 
@@ -212,10 +212,9 @@ class Comparison(ComparisonInterface):
         keys2 = set(d2.keys())
         symmetric_diff = keys ^ keys2
         if symmetric_diff:
-            msg = ("Dictionaries have different sets of keys: %r\n\n"
-                   % symmetric_diff)
-            msg += "Dictionary 1: %s\n" % d1
-            msg += "Dictionary 2: %s" % d2
+            msg = f"Dictionaries have different sets of keys: {symmetric_diff!r}\n\n"
+            msg += f"Dictionary 1: {d1}\n"
+            msg += f"Dictionary 2: {d2}"
             raise cls.failureException(msg)
         for k in keys:
             cls.assertEqual(d1[k], d2[k])
@@ -310,8 +309,8 @@ class Comparison(ComparisonInterface):
             try:  # This is needed as two lists are not compared by contents using ==
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
-                msg = 'Dimension parameter %r mismatched: ' % k
-                raise cls.failureException("%s%s" % (msg, str(e)))
+                msg = f'Dimension parameter {k!r} mismatched: '
+                raise cls.failureException(f"{msg}{str(e)}")
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -321,7 +320,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
         if len(dlist1) != len(dlist2):
-            raise cls.failureException('%s mismatched' % msg)
+            raise cls.failureException(f'{msg} mismatched')
         for d1, d2 in zip(dlist1, dlist2):
             cls.assertEqual(d1, d2)
 
@@ -346,9 +345,9 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_trees(cls, el1, el2, msg='Trees'):
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%s have mismatched path counts." % msg)
+            raise cls.failureException(f"{msg} have mismatched path counts.")
         if el1.keys() != el2.keys():
-            raise cls.failureException("%s have mismatched paths." % msg)
+            raise cls.failureException(f"{msg} have mismatched paths.")
         for element1, element2 in zip(el1.values(),  el2.values()):
             cls.assertEqual(element1, element2)
 
@@ -376,14 +375,14 @@ class Comparison(ComparisonInterface):
     def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
         cls.compare_dimensioned(el1, el2)
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%s have different numbers of keys." % msg)
+            raise cls.failureException(f"{msg} have different numbers of keys.")
 
         if set(el1.keys()) != set(el2.keys()):
             diff1 = [el for el in el1.keys() if el not in el2.keys()]
             diff2 = [el for el in el2.keys() if el not in el1.keys()]
-            raise cls.failureException("%s have different sets of keys. " % msg
-                                       + "In first, not second %s. " % diff1
-                                       + "In second, not first: %s." % diff2)
+            raise cls.failureException(f"{msg} have different sets of keys. "
+                                       + f"In first, not second {diff1}. "
+                                       + f"In second, not first: {diff2}.")
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1, element2)
@@ -482,9 +481,9 @@ class Comparison(ComparisonInterface):
         paths1 = el1.split()
         paths2 = el2.split()
         if len(paths1) != len(paths2):
-            raise cls.failureException("%s objects do not have a matching number of paths." % msg)
+            raise cls.failureException(f"{msg} objects do not have a matching number of paths.")
         for p1, p2 in zip(paths1, paths2):
-            cls.compare_dataset(p1, p2, '%s data' % msg)
+            cls.compare_dataset(p1, p2, f'{msg} data')
 
     @classmethod
     def compare_contours(cls, el1, el2, msg='Contours'):
@@ -526,7 +525,7 @@ class Comparison(ComparisonInterface):
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
-                cls.failureException("%s %s columns have different type." % (msg, dim.pprint_label)
+                cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
                                      + " First has type %s, and second has type %s."
                                      % (d1, d2))
             if d1.dtype.kind in 'SUOV':
@@ -722,13 +721,13 @@ class Comparison(ComparisonInterface):
     def _compare_grids(cls, el1, el2, name):
 
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%ss have different numbers of items." % name)
+            raise cls.failureException(f"{name}s have different numbers of items.")
 
         if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException("%ss have different keys." % name)
+            raise cls.failureException(f"{name}s have different keys.")
 
         if len(el1) != len(el2):
-            raise cls.failureException("%ss have different depths." % name)
+            raise cls.failureException(f"{name}s have different depths.")
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1, element2)

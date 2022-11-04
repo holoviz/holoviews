@@ -442,8 +442,7 @@ class Sankey(Graph):
             self._sankey = graph
         else:
             if not isinstance(nodes, self.node_type):
-                raise TypeError("Expected Nodes object in data, found %s."
-                                % type(nodes))
+                raise TypeError(f"Expected Nodes object in data, found {type(nodes)}.")
             self._nodes = nodes
             if not isinstance(edgepaths, self.edge_type):
                 raise TypeError("Expected EdgePaths object in data, found %s."

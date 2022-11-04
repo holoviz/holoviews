@@ -247,7 +247,7 @@ class AttrTree(object):
 
         # Attributes starting with __ get name mangled
         if identifier.startswith('_' + type(self).__name__) or identifier.startswith('__'):
-            raise AttributeError('Attribute %s not found.' % identifier)
+            raise AttributeError(f'Attribute {identifier} not found.')
         elif self.fixed==True:
             raise AttributeError(self._fixed_error % identifier)
 

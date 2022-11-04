@@ -39,7 +39,7 @@ class TestFileArchive(ComparisonTestCase):
         self.assertEqual(archive.listing(), filenames)
         archive.export()
         if not os.path.isdir(export_name):
-            raise AssertionError("No directory %r created on export." % export_name)
+            raise AssertionError(f"No directory {export_name!r} created on export.")
         self.assertEqual(sorted(filenames), sorted(os.listdir(export_name)))
         self.assertEqual(archive.listing(), [])
 
@@ -54,9 +54,9 @@ class TestFileArchive(ComparisonTestCase):
         self.assertEqual(archive.listing(), filenames)
         archive.export()
         if not os.path.isfile(export_name+'.zip'):
-            raise AssertionError("No zip file %r created on export." % export_name)
+            raise AssertionError(f"No zip file {export_name!r} created on export.")
 
-        namelist = ['archive_image/%s' % f for f in filenames]
+        namelist = [f'archive_image/{f}' for f in filenames]
         with zipfile.ZipFile(export_name+'.zip', 'r') as f:
             self.assertEqual(sorted(namelist), sorted(f.namelist()))
         self.assertEqual(archive.listing(), [])
@@ -73,9 +73,9 @@ class TestFileArchive(ComparisonTestCase):
         self.assertEqual(archive.listing(), filenames)
         archive.export()
         if not os.path.isfile(export_name+'.tar'):
-            raise AssertionError("No tar file %r created on export." % export_name)
+            raise AssertionError(f"No tar file {export_name!r} created on export.")
 
-        namelist = ['archive_image/%s' % f for f in filenames]
+        namelist = [f'archive_image/{f}' for f in filenames]
         with tarfile.TarFile(export_name+'.tar', 'r') as f:
             self.assertEqual(sorted(namelist),
                              sorted([el.path for el in f.getmembers()]))
@@ -92,7 +92,7 @@ class TestFileArchive(ComparisonTestCase):
         self.assertEqual(archive.listing(), filenames)
         archive.export()
         if not os.path.isdir(export_name):
-            raise AssertionError("No directory %r created on export." % export_name)
+            raise AssertionError(f"No directory {export_name!r} created on export.")
         self.assertEqual(sorted(filenames), sorted(os.listdir(export_name)))
         self.assertEqual(archive.listing(), [])
 
@@ -106,7 +106,7 @@ class TestFileArchive(ComparisonTestCase):
         self.assertEqual(archive.listing(), filenames)
         archive.export()
         if not os.path.isdir(export_name):
-            raise AssertionError("No directory %r created on export." % export_name)
+            raise AssertionError(f"No directory {export_name!r} created on export.")
         self.assertEqual(sorted(filenames), sorted(os.listdir(export_name)))
         self.assertEqual(archive.listing(), [])
 
@@ -121,7 +121,7 @@ class TestFileArchive(ComparisonTestCase):
         archive.export()
         fname = '%s_%s' % (export_name, 'metadata.json')
         if not os.path.isfile(fname):
-            raise AssertionError("No file %r created on export." % fname)
+            raise AssertionError(f"No file {fname!r} created on export.")
         self.assertEqual(json.load(open(fname, 'r')), data)
         self.assertEqual(archive.listing(), [])
 

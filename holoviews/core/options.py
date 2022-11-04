@@ -361,7 +361,7 @@ class Cycle(param.Parameterized):
             vrepr = repr(self.key)
         else:
             vrepr = [str(el) for el in self.values]
-        return "%s(%s)" % (type(self).__name__, vrepr)
+        return f"{type(self).__name__}({vrepr})"
 
 
 
@@ -836,7 +836,7 @@ class OptionTree(AttrTree):
 
             if especs:
                 format_kws = [
-                    (t, 'dict(%s)' % ', '.join(f'{k}={v}' for k, v in sorted(kws.items())))
+                    (t, f"dict({', '.join(f'{k}={v}' for k, v in sorted(kws.items()))})")
                     for t, kws in especs
                 ]
                 ljust = max(len(t) for t,_ in format_kws)
