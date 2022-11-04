@@ -1,3 +1,5 @@
+import warnings
+
 import param
 import numpy as np
 
@@ -168,7 +170,10 @@ class GraphPlot(ColorbarPlot):
         xs, ys = plot_args['nodes']
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups)
-        nodes = ax.scatter(xs, ys, **node_opts)
+        with warnings.catch_warnings():
+            # scatter have a default cmap and with an empty array will emit this warning
+            warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
+            nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}
 
