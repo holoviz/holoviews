@@ -52,8 +52,8 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         data = [zip(range(10),range(10)), zip(range(5),range(5))]
         o = Overlay([Curve(c) for c in data]).opts(
-            dict(plot={'Curve.Curve':{'show_grid':False}},
-                 style={'Curve.Curve':{'color':'k'}}))
+            {'Curve.Curve': {'show_grid': False, 'color':'k'}}
+        )
 
         self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'plot').kwargs['show_grid'], False)
