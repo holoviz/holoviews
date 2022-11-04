@@ -350,8 +350,8 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
         scaling_factor = scaling_factor**2
     else:
         raise ValueError(
-            'Invalid value for argument "scaling_method": "{}". '
-            'Valid values are: "width", "area".'.format(scaling_method))
+            f'Invalid value for argument "scaling_method": "{scaling_method}". '
+            'Valid values are: "width", "area".')
     sizes = size_fn(sizes)
     return (base_size*scaling_factor*sizes)
 

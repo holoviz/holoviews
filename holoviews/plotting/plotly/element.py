@@ -140,8 +140,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if is_geo and not self._supports_geo:
             raise ValueError(
-                "Elements of type {typ} cannot be overlaid with Tiles elements "
-                "using the plotly backend".format(typ=type(element))
+                f"Elements of type {type(element)} cannot be overlaid "
+                "with Tiles elements using the plotly backend"
             )
 
         if element is None:

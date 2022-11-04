@@ -139,10 +139,11 @@ class MultiDimensionalMapping(Dimensioned):
                 data_type = tuple(dt.__name__ for dt in self.data_type)
             else:
                 data_type = self.data_type.__name__
-            raise TypeError('{slf} does not accept {data} type, data elements have '
-                            'to be a {restr}.'.format(slf=type(self).__name__,
-                                                      data=type(data).__name__,
-                                                      restr=data_type))
+
+            slf = type(self).__name__
+            data = type(data).__name__
+            raise TypeError(f'{slf} does not accept {data} type, data elements have '
+                            f'to be a {data_type}.')
         elif not len(dim_vals) == self.ndims:
             raise KeyError('The data contains keys of length %d, but the kdims '
                            'only declare %d dimensions. Ensure that the number '

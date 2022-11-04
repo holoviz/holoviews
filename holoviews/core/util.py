@@ -455,14 +455,13 @@ def validate_dynamic_argspec(callback, kdims, streams):
         unassigned_streams = set(stream_params) - set(argspec.args)
         if unassigned_streams:
             unassigned = ','.join(unassigned_streams)
-            raise KeyError('Callable {name!r} missing keywords to '
-                           'accept stream parameters: {unassigned}'.format(name=name,
-                                                                    unassigned=unassigned))
+            raise KeyError(f'Callable {name!r} missing keywords to '
+                           f'accept stream parameters: {unassigned}')
 
 
     if len(posargs) > len(kdims) + len(stream_params):
-        raise KeyError('Callable {name!r} accepts more positional arguments than '
-                       'there are kdims and stream parameters'.format(name=name))
+        raise KeyError(f'Callable {name!r} accepts more positional arguments than '
+                       'there are kdims and stream parameters')
     if kdims == []:                  # Can be no posargs, stream kwargs already validated
         return []
     if set(kdims) == set(posargs):   # Posargs match exactly, can all be passed as kwargs
@@ -470,16 +469,14 @@ def validate_dynamic_argspec(callback, kdims, streams):
     elif len(posargs) == len(kdims): # Posargs match kdims length, supplying names
         if argspec.args[:len(kdims)] != posargs:
             raise KeyError('Unmatched positional kdim arguments only allowed at '
-                           'the start of the signature of {name!r}'.format(name=name))
+                           f'the start of the signature of {name!r}')
 
         return posargs
     elif argspec.varargs:            # Posargs missing, passed to Callable directly
         return None
     elif set(posargs) - set(kdims):
-        raise KeyError('Callable {name!r} accepts more positional arguments {posargs} '
-                       'than there are key dimensions {kdims}'.format(name=name,
-                                                                      posargs=posargs,
-                                                                      kdims=kdims))
+        raise KeyError(f'Callable {name!r} accepts more positional arguments {posargs} '
+                       f'than there are key dimensions {kdims}')
     elif set(kdims).issubset(set(kwargs)): # Key dims can be supplied by keyword
         return kdims
     elif set(kdims).issubset(set(posargs+kwargs)):
@@ -487,10 +484,9 @@ def validate_dynamic_argspec(callback, kdims, streams):
     elif argspec.keywords:
         return kdims
     else:
-        raise KeyError('Callback {name!r} signature over {names} does not accommodate '
-                       'required kdims {kdims}'.format(name=name,
-                                                       names=list(set(posargs+kwargs)),
-                                                       kdims=kdims))
+        names = list(set(posargs+kwargs))
+        raise KeyError(f'Callback {name!r} signature over {names} does not accommodate '
+                       f'required kdims {kdims}')
 
 
 def callable_name(callable_obj):

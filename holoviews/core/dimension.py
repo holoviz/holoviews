@@ -254,9 +254,8 @@ class Dimension(param.Parameterized):
                 ) from exc
             if 'label' in params and params['label'] != all_params['label']:
                 self.param.warning(
-                    'Using label as supplied by keyword ({!r}), ignoring '
-                    'tuple value {!r}'.format(params['label'], all_params['label'])
-                )
+                    f'Using label as supplied by keyword ({params["label"]!r}), '
+                    f'ignoring tuple value {all_params["label"]!r}')
         elif isinstance(spec, dict):
             all_params.update(spec)
             try:
@@ -327,8 +326,8 @@ class Dimension(param.Parameterized):
         elif 'label' in overrides and isinstance(spec, tuple) :
             if overrides['label'] != spec[1]:
                 self.param.warning(
-                    'Using label as supplied by keyword ({!r}), ignoring '
-                    'tuple value {!r}'.format(overrides['label'], spec[1]))
+                    f'Using label as supplied by keyword ({overrides["label"]!r}), '
+                    f'ignoring tuple value {spec[1]!r}')
             spec = (spec[0],  overrides['label'])
         return self.__class__(spec, **{k:v for k,v in settings.items()
                                        if k not in ['name', 'label']})

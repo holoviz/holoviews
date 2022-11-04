@@ -1372,10 +1372,10 @@ class DynamicMap(HoloMap):
                          for i, (k, v) in enumerate(items)]
                 match = util.closest_match(spec, specs)
                 if match is None:
-                    raise KeyError('{spec} spec not found in {otype}. The split_overlays method '
+                    otype = type(obj).__name__
+                    raise KeyError(f'{spec} spec not found in {otype}. The split_overlays method '
                                    'only works consistently for a DynamicMap where the '
-                                   'layers of the {otype} do not change.'.format(
-                                       spec=spec, otype=type(obj).__name__))
+                                   f'layers of the {otype} do not change.')
                 return items[match][1]
             dmap = Dynamic(self, streams=self.streams, operation=split_overlay_callback)
             dmap.data = OrderedDict([(list(self.data.keys())[-1], self.last.data[key])])

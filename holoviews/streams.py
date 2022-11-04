@@ -996,8 +996,7 @@ class SelectionExpr(Derived):
             raise ValueError(
                 "The source of SelectionExpr must be an instance of an "
                 "Element subclass or a DynamicMap that returns such an "
-                "instance. Received value of type {typ}: {val}".format(
-                    typ=type(source), val=source)
+                f"instance. Received value of type {type(source)}: {source}"
             )
 
         input_streams = self._build_selection_streams(source)

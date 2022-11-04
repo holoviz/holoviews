@@ -147,11 +147,9 @@ class ErrorPlot(ColorbarPlot):
             with abbreviated_exception():
                 raise ValueError('Mapping a continuous or categorical '
                                  'dimension to a color on a ErrorBarPlot '
-                                 'is not supported by the {backend} backend. '
+                                 f'is not supported by the {self.renderer.backend} backend. '
                                  'To map a dimension to a color supply '
-                                 'an explicit list of rgba colors.'.format(
-                                     backend=self.renderer.backend
-                                 )
+                                 'an explicit list of rgba colors.'
                 )
 
         style['fmt'] = 'none'

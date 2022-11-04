@@ -330,12 +330,11 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             invalid.append(ydim)
         if invalid:
             dims = '%s and %s' % tuple(invalid) if len(invalid) > 1 else f'{invalid[0]}'
-            raise ValueError('{clsname} coordinates must be 1D arrays, '
-                             '{dims} dimension(s) were found to have '
+            raise ValueError(f'{clsname} coordinates must be 1D arrays, '
+                             f'{dims} dimension(s) were found to have '
                              'multiple dimensions. Either supply 1D '
                              'arrays or use the QuadMesh element for '
-                             'curvilinear coordinates.'.format(
-                                 clsname=clsname, dims=dims))
+                             'curvilinear coordinates.')
 
         xvalid = util.validate_regular_sampling(xvals, self.rtol)
         yvalid = util.validate_regular_sampling(yvals, self.rtol)

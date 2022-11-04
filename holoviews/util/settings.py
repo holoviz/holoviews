@@ -326,7 +326,7 @@ class OutputSettings(KeywordSettings):
                                  "has not been loaded, ensure you load it "
                                  "with hv.extension({ext}) before using "
                                  "hv.output.".format(ext=repr(backend)))
-            print(f'Error: {str(e)}')
+            print(f'Error: {e}')
             if help_prompt:
                 print(help_prompt)
             return
