@@ -227,7 +227,7 @@ class Comparison(ComparisonInterface):
             for v1, v2 in zip(l1, l2):
                 cls.assertEqual(v1, v2)
         except AssertionError:
-            raise AssertionError(msg or '%s != %s' % (repr(l1), repr(l2)))
+            raise AssertionError(msg or f'{l1!r} != {l2!r}')
 
 
     @classmethod
@@ -237,7 +237,7 @@ class Comparison(ComparisonInterface):
             for i1, i2 in zip(t1, t2):
                 cls.assertEqual(i1, i2)
         except AssertionError:
-            raise AssertionError(msg or '%s != %s' % (repr(t1), repr(t2)))
+            raise AssertionError(msg or f'{t1!r} != {t2!r}')
 
 
     #=====================#

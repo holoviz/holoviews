@@ -119,7 +119,7 @@ class TestFileArchive(ComparisonTestCase):
         self.assertEqual(len(archive), 1)
         self.assertEqual(archive.listing(), ['metadata.json'])
         archive.export()
-        fname = '%s_%s' % (export_name, 'metadata.json')
+        fname = f"{export_name}_metadata.json"
         if not os.path.isfile(fname):
             raise AssertionError(f"No file {fname!r} created on export.")
         self.assertEqual(json.load(open(fname, 'r')), data)

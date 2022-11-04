@@ -825,9 +825,9 @@ class dim(object):
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
-                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
+                    format_string = prev+f').iloc[{fn.index!r}]'
                 elif isinstance(fn, loc):
-                    format_string = prev+').loc[{0}]'.format(repr(fn.index))
+                    format_string = prev+f').loc[{fn.index!r}]'
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+').{fn}('

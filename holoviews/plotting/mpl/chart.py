@@ -384,7 +384,7 @@ class HistogramPlot(ColorbarPlot):
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.xticks)
-            labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
+            labels = [f"{np.rad2deg(x):.0f}\N{DEGREE SIGN}" for x in xvals]
         elif self.xticks:
             dim = element.get_dimension(0)
             inds = np.linspace(0, len(edges), self.xticks, dtype=np.int)

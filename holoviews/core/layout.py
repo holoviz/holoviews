@@ -485,7 +485,7 @@ class Layout(Layoutable, ViewableTree):
             idx = row * self._max_cols + col
             keys = list(self.data.keys())
             if idx >= len(keys) or col >= self._max_cols:
-                raise KeyError('Index %s is outside available item range' % str(key))
+                raise KeyError(f'Index {key} is outside available item range')
             key = keys[idx]
         return super().__getitem__(key)
 

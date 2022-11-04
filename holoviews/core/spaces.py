@@ -883,7 +883,7 @@ class DynamicMap(HoloMap):
         if undefined:
             msg = ('Dimension(s) {undefined_dims} do not specify range or values needed '
                    'to generate initial key')
-            undefined_dims = ', '.join(['%r' % str(dim) for dim in undefined])
+            undefined_dims = ', '.join(f'{str(dim)!r}' for dim in undefined)
             raise KeyError(msg.format(undefined_dims=undefined_dims))
 
         return tuple(key)

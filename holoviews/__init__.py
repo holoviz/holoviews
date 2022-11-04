@@ -140,7 +140,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
             try:
                 exec(code)
             except Exception as e:
-                print("Warning: Could not load %r [%r]" % (filename, str(e)))
+                print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
         del f, code
         break
     del filename

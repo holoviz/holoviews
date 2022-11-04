@@ -336,7 +336,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
-            raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
+            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.')
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)

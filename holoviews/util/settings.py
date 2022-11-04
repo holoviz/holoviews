@@ -97,7 +97,7 @@ class KeywordSettings(object):
                     raise SyntaxError(f"Invalid keyword: {value.split()[-1]}")
             keyword = f'{key}={value}'
             try:
-                items.update(eval('dict(%s)' % keyword))
+                items.update(eval(f'dict({keyword})'))
             except:
                 raise SyntaxError(f"Could not evaluate keyword: {keyword}")
         return items
@@ -326,7 +326,7 @@ class OutputSettings(KeywordSettings):
                                  "has not been loaded, ensure you load it "
                                  "with hv.extension({ext}) before using "
                                  "hv.output.".format(ext=repr(backend)))
-            print('Error: %s' % str(e))
+            print(f'Error: {str(e)}')
             if help_prompt:
                 print(help_prompt)
             return
