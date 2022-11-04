@@ -90,7 +90,7 @@ jobs:
         run: |
           conda activate test-environment
           conda uninstall panel bokeh --force -y --offline
-          conda install bokeh=3.0 -y --offline
+          conda install bokeh=3.0 -y -c bokeh
           pip install "git+https://github.com/holoviz/panel.git@bokeh3.0"
       - name: doit env_capture
         run: |
