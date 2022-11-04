@@ -5,6 +5,7 @@ import numpy as np
 from holoviews.element import BoxWhisker
 
 from .test_plot import TestBokehPlot, bokeh_renderer
+from ..utils import field_to_dict
 
 from bokeh.models import ColumnDataSource, CategoricalColorMapper, LinearColorMapper
 
@@ -64,7 +65,7 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         self.assertTrue(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
-        self.assertEqual(glyph.fill_color, {'field': 'box_color', 'transform': cmapper})
+        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
 
     def test_box_whisker_categorical_color_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -77,7 +78,7 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         self.assertEqual(source.data['box_color'], b[::5])
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
-        self.assertEqual(glyph.fill_color, {'field': 'box_color', 'transform': cmapper})
+        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
 
     def test_box_whisker_alpha_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -87,7 +88,7 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']
         self.assertEqual(source.data['box_alpha'], np.arange(5)/10.)
-        self.assertEqual(glyph.fill_alpha, {'field': 'box_alpha'})
+        self.assertEqual(field_to_dict(glyph.fill_alpha), {'field': 'box_alpha'})
 
     def test_box_whisker_line_width_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -97,4 +98,4 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']
         self.assertEqual(source.data['box_line_width'], np.arange(5))
-        self.assertEqual(glyph.line_width, {'field': 'box_line_width'})
+        self.assertEqual(field_to_dict(glyph.line_width), {'field': 'box_line_width'})

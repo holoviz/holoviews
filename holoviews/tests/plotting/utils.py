@@ -25,3 +25,18 @@ class ParamLogStream(object):
         param.parameterized.logger = self._param_logger
         self._handler.close()
         self.stream.seek(0)
+
+
+def field_to_dict(x):
+    # Convert Bokeh's Field to a dictionary
+    # Was added in bokeh 3.0
+
+    try:
+        from bokeh.core.property.vectorization import Field, Unspecified
+    except ImportError:
+        pass
+
+    if isinstance(x, Field):
+        x = {k: v for k,v in x.__dict__.items() if v != Unspecified}
+
+    return x

@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.element import VectorField
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-from ..utils import ParamLogStream
+from ..utils import ParamLogStream, field_to_dict
 
 try:
     from bokeh.models import LinearColorMapper, CategoricalColorMapper
@@ -25,7 +25,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0', '#000',
                                                       '#F00', '#0F0', '#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'color'})
 
     def test_vectorfield_linear_color_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],
@@ -38,7 +38,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2, 0, 1, 2, 0, 1, 2]))
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_vectorfield_categorical_color_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 'A'), (0, 1, 0, 1, 'B'), (0, 2, 0, 1, 'C')],
@@ -50,7 +50,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C']))
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_vectorfield_alpha_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 0.2), (0, 2, 0, 1, 0.7)],
@@ -59,7 +59,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7, 0, 0.2, 0.7, 0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
+        self.assertEqual(field_to_dict(glyph.line_alpha), {'field': 'alpha'})
 
     def test_vectorfield_line_width_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 1), (0, 1, 0, 1, 4), (0, 2, 0, 1, 8)],
@@ -68,7 +68,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8, 1, 4, 8, 1, 4, 8]))
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(field_to_dict(glyph.line_width), {'field': 'line_width'})
 
     def test_vectorfield_color_index_color_clash(self):
         vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
