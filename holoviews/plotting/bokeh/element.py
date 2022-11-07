@@ -2200,8 +2200,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if 'legend_items' not in self.handles:
             self.handles['legend_items'] = []
         legend_items = self.handles['legend_items']
-        legend_labels = {tuple(sorted(i.label.items())) if isinstance(i.label, dict) else i.label: i
-                         for i in legend_items}
+        legend_labels = {
+            tuple(sorted(i.label.items())) if isinstance(i.label, dict)
+            else getattr(i.label, "value", i.label): i
+            for i in legend_items
+        }
         for item in legend.items:
             label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
             if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
