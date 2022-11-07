@@ -2128,16 +2128,11 @@ def dt_to_int(value, time_unit='us'):
     else:
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
 
-    try:
-        # Handle python3
-        if value.tzinfo is None:
-            _epoch = dt.datetime(1970, 1, 1)
-        else:
-            _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
-        return int((value - _epoch).total_seconds() * tscale)
-    except Exception:
-        # Handle python2
-        return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
+    if value.tzinfo is None:
+        _epoch = dt.datetime(1970, 1, 1)
+    else:
+        _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+    return int((value - _epoch).total_seconds() * tscale)
 
 
 def cftime_to_timestamp(date, time_unit='us'):
