@@ -1,11 +1,6 @@
 import sys
 import warnings
 
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 from itertools import product
 
 import numpy as np

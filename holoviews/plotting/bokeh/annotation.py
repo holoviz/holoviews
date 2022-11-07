@@ -1,9 +1,5 @@
 from collections import defaultdict
-
-try:
-    from html import escape
-except ImportError:
-    from cgi import escape
+from html import escape
 
 import param
 import numpy as np

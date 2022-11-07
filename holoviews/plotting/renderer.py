@@ -6,11 +6,7 @@ regardless of plotting package or backend.
 import base64
 import os
 
-from io import BytesIO
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO, StringIO
 from contextlib import contextmanager
 from functools import partial
 

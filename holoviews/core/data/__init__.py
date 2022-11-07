@@ -1,8 +1,3 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import types
 import copy
 

@@ -1,8 +1,3 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import numpy as np
 
 from .interface import Interface, DataError

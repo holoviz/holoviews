@@ -1,8 +1,4 @@
 from collections import OrderedDict, defaultdict
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
 
 import numpy as np
 
