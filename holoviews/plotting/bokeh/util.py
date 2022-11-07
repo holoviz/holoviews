@@ -134,9 +134,9 @@ def layout_padding(plots, renderer):
         for c, p in enumerate(row):
             if p is None:
                 p = empty_plot(widths[c], heights[r])
-            elif hasattr(p, 'plot_width') and p.plot_width == 0 and p.plot_height == 0:
-                p.plot_width = widths[c]
-                p.plot_height = heights[r]
+            elif hasattr(p, 'width') and p.width == 0 and p.height == 0:
+                p.width = widths[c]
+                p.height = heights[r]
             expanded_plots[r].append(p)
     return expanded_plots
 
@@ -167,12 +167,12 @@ def compute_plot_size(plot):
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, figure):
-        if plot.plot_width:
-            width = plot.plot_width
+        if plot.width:
+            width = plot.width
         else:
             width = plot.frame_width + plot.min_border_right + plot.min_border_left
-        if plot.plot_height:
-            height = plot.plot_height
+        if plot.height:
+            height = plot.height
         else:
             height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
         return width, height
@@ -437,15 +437,15 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         height = int(axis_height + np.abs(np.sin(rotation)) *
                      ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
-                    x_range=ranges, y_range=ranges2, plot_height=height,
-                    plot_width=size)
+                    x_range=ranges, y_range=ranges2, height=height,
+                    width=size)
     else:
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
         width = int(axis_height + np.abs(np.cos(rotation)) *
                     ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
-                    y_range=ranges, plot_width=width, plot_height=size)
+                    y_range=ranges, width=width, height=size)
 
     p = figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
@@ -526,7 +526,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, Div):
         width = model.width
     elif model:
-        width = model.plot_width
+        width = model.width
     else:
         width = 0
     return width
