@@ -36,11 +36,8 @@ class Tiles(Element2D):
     group = param.String(default='Tiles', constant=True)
 
     def __init__(self, data=None, kdims=None, vdims=None, **params):
-        try:
-            from bokeh.models import MercatorTileSource
-        except ImportError:
-            MercatorTileSource = None
-        if MercatorTileSource and isinstance(data, MercatorTileSource):
+        from bokeh.models import MercatorTileSource
+        if isinstance(data, MercatorTileSource):
             data = data.url
         elif data is not None and not isinstance(data, (str, dict)):
             raise TypeError('%s data should be a tile service URL or '

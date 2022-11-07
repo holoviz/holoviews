@@ -53,24 +53,20 @@ from .util import (
 
 try:
     from bokeh.models import EqHistColorMapper
+    # Available from Bokeh 2.2.3
 except ImportError:
     EqHistColorMapper = None
 
 try:
     from bokeh.models import BinnedTicker
+    # Available from Bokeh 2.3.3
 except ImportError:
     BinnedTicker = None
 
-if bokeh_version >= LooseVersion('2.0.1'):
-    try:
-        TOOLS_MAP = Tool._known_aliases
-    except Exception:
-        TOOLS_MAP = TOOL_TYPES
-elif bokeh_version >= LooseVersion('2.0.0'):
-    from bokeh.plotting._tools import TOOLS_MAP
-else:
-    from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
-
+try:
+    TOOLS_MAP = Tool._known_aliases
+except Exception:
+    TOOLS_MAP = TOOL_TYPES
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):

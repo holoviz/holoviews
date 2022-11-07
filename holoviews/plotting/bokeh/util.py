@@ -27,10 +27,7 @@ from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
 
-try:
-    from bokeh.themes import built_in_themes
-except ImportError:
-    built_in_themes = {}
+from bokeh.themes import built_in_themes
 
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay

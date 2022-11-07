@@ -1,6 +1,7 @@
 import numpy as np
 
 from bokeh.models import CustomJS, ToolbarBox
+from bokeh.models.tools import RangeTool
 
 from ...core.util import isscalar
 from ..links import (
@@ -130,10 +131,6 @@ class RangeToolLinkCallback(LinkCallback):
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
-        try:
-            from bokeh.models.tools import RangeTool
-        except ImportError:
-            raise Exception('RangeToolLink requires bokeh >= 0.13')
         toolbars = list(root_model.select({'type': ToolbarBox}))
         axes = {}
         if 'x' in link.axes:

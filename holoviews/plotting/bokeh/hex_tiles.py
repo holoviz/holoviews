@@ -3,10 +3,7 @@ import types
 import param
 import numpy as np
 
-try:
-    from bokeh.util.hex import cartesian_to_axial
-except ImportError:
-    cartesian_to_axial = None
+from bokeh.util.hex import cartesian_to_axial
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
