@@ -902,7 +902,7 @@ class ColorbarPlot(ElementPlot):
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 clim = (np.nanmin(values), np.nanmax(values))
-                        except:
+                        except Exception:
                             clim = np.NaN, np.NaN
                 else:
                     clim = element.range(vdim)

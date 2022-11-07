@@ -362,7 +362,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         for label in labels:
             try:
                 label.remove()
-            except:
+            except Exception:
                 pass
         if 'text' not in data:
             self.handles['labels'] = []

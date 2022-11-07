@@ -17,17 +17,17 @@ from holoviews.element.comparison import ComparisonTestCase
 
 try:
     import datashader as ds
-except:
+except ImportError:
     ds = None
 
 try:
     import spatialpandas as spd
-except:
+except ImportError:
     spd = None
 
 try:
     import shapely
-except:
+except ImportError:
     shapely = None
 
 spd_available = skipIf(spd is None, "spatialpandas is not available")

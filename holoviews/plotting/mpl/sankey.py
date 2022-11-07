@@ -120,7 +120,7 @@ class SankeyPlot(GraphPlot):
         for label in labels:
             try:
                 label.remove()
-            except:
+            except Exception:
                 pass
         if 'text' not in data:
             return []

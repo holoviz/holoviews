@@ -1149,7 +1149,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         for f in self.cleanup:
             try:
                 os.remove(f)
-            except:
+            except Exception:
                 pass
 
     def test_raw_pickle(self):

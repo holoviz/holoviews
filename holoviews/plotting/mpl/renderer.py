@@ -94,7 +94,7 @@ class MPLRenderer(Renderer):
             for o in objects:
                 plots.append(self.get_plot(o))
             plt.show()
-        except:
+        except Exception:
             raise
         finally:
             MPLPlot._close_figures = True
@@ -167,7 +167,7 @@ class MPLRenderer(Renderer):
             # Attempts to precompute the tight bounding box
             try:
                 kw = self._compute_bbox(fig, kw)
-            except:
+            except Exception:
                 pass
             bytes_io = BytesIO()
             fig.canvas.print_figure(bytes_io, **kw)

@@ -24,18 +24,18 @@ try:
         shade, spread, rasterize, datashade, AggregationOperation,
         inspect, inspect_points, inspect_polygons
     )
-except:
+except ImportError:
     raise SkipTest('Datashader not available')
 
 try:
     import cudf
     import cupy
-except:
+except ImportError:
     cudf = None
 
 try:
     import spatialpandas
-except:
+except ImportError:
     spatialpandas = None
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")

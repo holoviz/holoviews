@@ -7,7 +7,7 @@ from holoviews.element.raster import HeatMap
 
 try:
     from holoviews.plotting.mpl import RadialHeatMapPlot
-except:
+except ImportError:
     pass
 
 from .test_plot import TestMPLPlot, mpl_renderer

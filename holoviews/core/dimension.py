@@ -711,7 +711,7 @@ class LabelledData(param.Parameterized):
                                             if obj_dict['_id'] in s}
             else:
                 obj_dict['_id'] = None
-        except:
+        except Exception:
             self.param.warning("Could not pickle custom style information.")
         return obj_dict
 
@@ -746,7 +746,7 @@ class LabelledData(param.Parameterized):
 
                 if opts_id is not None:
                     opts_id += Store.load_counter_offset
-        except:
+        except Exception:
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)

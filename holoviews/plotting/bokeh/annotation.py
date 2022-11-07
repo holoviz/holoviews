@@ -2,7 +2,7 @@ from collections import defaultdict
 
 try:
     from html import escape
-except:
+except ImportError:
     from cgi import escape
 
 import param
@@ -16,7 +16,7 @@ try:
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
     arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                  '-': None}
-except:
+except ImportError:
     from bokeh.models.arrow_heads import OpenHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,

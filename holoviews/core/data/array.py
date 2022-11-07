@@ -57,7 +57,7 @@ class ArrayInterface(Interface):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
                 data = np.array(data)
-            except:
+            except Exception:
                 data = None
 
         if kdims is None:

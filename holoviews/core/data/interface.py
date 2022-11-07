@@ -350,7 +350,7 @@ class Interface(param.Parameterized):
             if util.isdatetime(arr) and util.pd:
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
             if isinstance(sel, slice):
                 with warnings.catch_warnings():

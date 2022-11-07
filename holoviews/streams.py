@@ -759,8 +759,6 @@ class Params(Stream):
         try:
             self._events = list(events)
             self.trigger([self])
-        except:
-            raise
         finally:
             self._events = []
 

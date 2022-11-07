@@ -12,7 +12,7 @@ from holoviews.element.comparison import ComparisonTestCase
 
 try:
     from holoviews.operation.datashader import datashade, dynspread
-except:
+except ImportError:
     datashade = None
 
 ds_skip = skipIf(datashade is None, "Datashader not available")

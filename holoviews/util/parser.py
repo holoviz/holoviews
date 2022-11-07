@@ -111,7 +111,7 @@ class Parser(object):
             try:
                 kwargs.update(eval(f'dict({keyword})',
                                    dict(cls.namespace, **ns)))
-            except:
+            except Exception:
                 if cls.abort_on_eval_failure:
                     raise SyntaxError(f"Could not evaluate keyword: {keyword!r}")
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"

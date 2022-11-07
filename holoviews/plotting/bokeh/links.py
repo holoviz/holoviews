@@ -132,7 +132,7 @@ class RangeToolLinkCallback(LinkCallback):
     def __init__(self, root_model, link, source_plot, target_plot):
         try:
             from bokeh.models.tools import RangeTool
-        except:
+        except ImportError:
             raise Exception('RangeToolLink requires bokeh >= 0.13')
         toolbars = list(root_model.select({'type': ToolbarBox}))
         axes = {}

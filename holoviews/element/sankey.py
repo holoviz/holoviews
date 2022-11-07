@@ -429,7 +429,7 @@ class Sankey(Graph):
             elif not isinstance(nodes, Dataset):
                 try:
                     nodes = Dataset(nodes)
-                except:
+                except Exception:
                     nodes = Dataset(nodes, 'index')
             if not nodes.kdims:
                 raise ValueError('Could not determine index in supplied node data. '

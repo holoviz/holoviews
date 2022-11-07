@@ -92,7 +92,7 @@ def collate(obj):
                     collated_layout = Layout(el.collate())
                     expanded.extend(collated_layout.values())
             return Layout(expanded)
-        except:
+        except Exception:
             raise Exception(undisplayable_info(obj))
     else:
         raise Exception(undisplayable_info(obj))
@@ -563,7 +563,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
             import matplotlib.cm as cm
             try:
                 cmap = cm.get_cmap(cmap)
-            except:
+            except Exception:
                 cmap = cm.get_cmap(cmap.lower())
         else:
             from matplotlib import colormaps
@@ -707,7 +707,7 @@ def _list_cmaps(provider=None, records=False):
             cmaps += info('matplotlib', mpl_cmaps)
             cmaps += info('matplotlib', [cmap+'_r' for cmap in mpl_cmaps
                                          if not cmap.endswith('_r')])
-        except:
+        except Exception:
             pass
     if 'bokeh' in provider:
         try:
@@ -715,7 +715,7 @@ def _list_cmaps(provider=None, records=False):
             cmaps += info('bokeh', palettes.all_palettes)
             cmaps += info('bokeh', [p+'_r' for p in palettes.all_palettes
                                     if not p.endswith('_r')])
-        except:
+        except Exception:
             pass
     if 'colorcet' in provider:
         try:
@@ -724,7 +724,7 @@ def _list_cmaps(provider=None, records=False):
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
             cmaps += info('colorcet', cet_maps)
             cmaps += info('colorcet', [p+'_r' for p in cet_maps if not p.endswith('_r')])
-        except:
+        except Exception:
             pass
     return sorted(unique_iterator(cmaps))
 
@@ -924,7 +924,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         try:
             # Try processing as matplotlib colormap
             palette = mplcmap_to_palette(cmap, ncolors)
-        except:
+        except Exception:
             palette = None
     if not isinstance(palette, list):
         raise TypeError("cmap argument %s expects a list, Cycle or valid %s colormap or palette."
@@ -1056,7 +1056,7 @@ def get_min_distance(element):
     try:
         from scipy.spatial.distance import pdist
         return pdist(element.array([0, 1])).min()
-    except:
+    except Exception:
         return _get_min_distance_numpy(element)
 
 

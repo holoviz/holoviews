@@ -117,7 +117,7 @@ class notebook_extension(extension):
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except:
+        except Exception:
             return
 
         # Notebook archive relies on display hooks being set to work.

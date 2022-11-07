@@ -5,7 +5,7 @@ import numpy as np
 
 try:
     from bokeh.util.hex import cartesian_to_axial
-except:
+except ImportError:
     cartesian_to_axial = None
 
 from ...core import Dimension, Operation

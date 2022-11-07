@@ -98,7 +98,7 @@ class KeywordSettings(object):
             keyword = f'{key}={value}'
             try:
                 items.update(eval(f'dict({keyword})'))
-            except:
+            except Exception:
                 raise SyntaxError(f"Could not evaluate keyword: {keyword}")
         return items
 

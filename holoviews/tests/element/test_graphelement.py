@@ -134,7 +134,7 @@ class FromNetworkXTests(ComparisonTestCase):
     def setUp(self):
         try:
             import networkx as nx # noqa
-        except:
+        except ImportError:
             raise SkipTest('Test requires networkx to be installed')
 
     def test_from_networkx_with_node_attrs(self):

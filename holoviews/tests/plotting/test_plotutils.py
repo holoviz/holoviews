@@ -664,7 +664,7 @@ class TestBokehUtils(ComparisonTestCase):
     def setUp(self):
         try:
             import pscript # noqa
-        except:
+        except ImportError:
             raise SkipTest("Flexx required to test transpiling formatter functions.")
 
 

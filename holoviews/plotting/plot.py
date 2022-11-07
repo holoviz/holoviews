@@ -340,7 +340,7 @@ class PlotSelector(object):
     def __setattr__(self, label, value):
         try:
             return super().__setattr__(label, value)
-        except:
+        except Exception:
             raise Exception("Please set class parameters directly on classes %s"
                             % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
 
@@ -763,7 +763,7 @@ class DimensionedPlot(Plot):
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 drange = (np.nanmin(values), np.nanmax(values))
-                        except:
+                        except Exception:
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {

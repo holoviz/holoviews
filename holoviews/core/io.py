@@ -277,7 +277,8 @@ class Deserializer(Importer):
             data = self_or_cls.deserializer(f)
             try:
                 data = self_or_cls.deserializer(f)
-            except: pass
+            except Exception:
+                pass
         return data
 
     @bothmethod
@@ -605,8 +606,8 @@ class FileArchive(Archive):
         if formatter is None: return []
         try:
             parse = list(string.Formatter().parse(formatter))
-            return  set(f for f in list(zip(*parse))[1] if f is not None)
-        except:
+            return set(f for f in list(zip(*parse))[1] if f is not None)
+        except Exception:
             raise SyntaxError(f"Could not parse formatter {formatter!r}")
 
     def __init__(self, **params):
@@ -643,8 +644,10 @@ class FileArchive(Archive):
             raise Exception(f"Valid filename fields are: {','.join(sorted(self.ffields))}")
         elif not self.parse_fields(self.export_name).issubset(self.efields):
             raise Exception(f"Valid export fields are: {','.join(sorted(self.efields))}")
-        try: time.strftime(self.timestamp_format, tuple(time.localtime()))
-        except: raise Exception("Timestamp format invalid")
+        try:
+            time.strftime(self.timestamp_format, tuple(time.localtime()))
+        except Exception:
+            raise Exception("Timestamp format invalid")
 
 
     def add(self, obj=None, filename=None, data=None, info={}, **kwargs):

@@ -16,7 +16,7 @@ from ..core.util import (
 try:
     import pandas as pd
     from ..core.data import PandasInterface
-except:
+except ImportError:
     pd = None
 
 

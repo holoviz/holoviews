@@ -577,7 +577,7 @@ class RGB(Image):
         """
         try:
             from PIL import Image
-        except:
+        except ImportError:
             raise ImportError("RGB.load_image requires PIL (or Pillow).")
 
         with open(filename, 'rb') as f:
@@ -846,7 +846,7 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
                     return super().range(dim, data_range, dimension_range)
                 else:
                     drange = self.gridded.range(dim, data_range, dimension_range)
-            except:
+            except Exception:
                 drange = None
             finally:
                 self.gridded._binned = False

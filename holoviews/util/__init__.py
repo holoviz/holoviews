@@ -245,7 +245,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if isinstance(options, str):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
-            except:  ns = globals()
+            except Exception:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
         errmsg = StoreOptions.validation_error_message(options, backends=backends)
@@ -423,7 +423,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             from .parser import OptsSpec
             if ns is None:
                 try:     ns = get_ipython().user_ns  # noqa
-                except:  ns = globals()
+                except Exception:  ns = globals()
             options = options.replace('%%opts','').replace('%opts','')
             options = OptsSpec.parse_options(options, ns=ns)
 
@@ -613,7 +613,7 @@ class output(param.ParameterizedFunction):
             def display_fn(obj, renderer):
                 try:
                     from IPython.display import display
-                except:
+                except ImportError:
                     return
                 display(obj)
 
@@ -682,7 +682,7 @@ class extension(_pyviz_extension):
         for backend, imp in imports:
             try:
                 __import__(backend)
-            except:
+            except ImportError:
                 self.param.warning("%s could not be imported, ensure %s is installed."
                              % (backend, backend))
             try:

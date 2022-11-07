@@ -648,7 +648,7 @@ class Renderer(Exporter):
         with param.logging_level('ERROR'):
             try:
                 ip = get_ipython() # noqa
-            except:
+            except Exception:
                 ip = None
             if not ip or not hasattr(ip, 'kernel'):
                 return

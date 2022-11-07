@@ -756,7 +756,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, xdim)
                     try:
                         xfactors = list(np.array(xfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['x_selection'] = xfactors
         else:
@@ -771,7 +771,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, ydim)
                     try:
                         yfactors = list(np.array(yfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['y_selection'] = yfactors
         else:

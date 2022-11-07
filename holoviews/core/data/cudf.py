@@ -202,7 +202,7 @@ class cuDFInterface(PandasInterface):
             if util.isdatetime(arr) and util.pd:
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
 
             new_masks = []

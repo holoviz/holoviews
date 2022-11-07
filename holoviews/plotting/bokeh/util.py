@@ -29,7 +29,7 @@ from bokeh.themes.theme import Theme
 
 try:
     from bokeh.themes import built_in_themes
-except:
+except ImportError:
     built_in_themes = {}
 
 from ...core.ndmapping import NdMapping
@@ -644,7 +644,7 @@ def filter_batched_data(data, mapping):
             if len(unique_array(values)) == 1:
                 mapping[k] = values[0]
                 del data[v]
-        except:
+        except Exception:
             pass
 
 def cds_column_replace(source, data):
@@ -843,7 +843,7 @@ def date_to_integer(date):
     if pd and isinstance(date, pd.Timestamp):
         try:
             date = date.to_datetime64()
-        except:
+        except Exception:
             date = date.to_datetime()
 
     if isinstance(date, np.datetime64):

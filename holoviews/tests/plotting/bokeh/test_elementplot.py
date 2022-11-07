@@ -210,7 +210,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_element_xformatter_function(self):
         try:
             import pscript # noqa
-        except:
+        except ImportError:
             raise SkipTest('Test requires pscript')
         def formatter(value):
             return str(value) + ' %'
@@ -222,7 +222,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_element_yformatter_function(self):
         try:
             import pscript # noqa
-        except:
+        except ImportError:
             raise SkipTest('Test requires pscript')
         def formatter(value):
             return str(value) + ' %'
@@ -327,7 +327,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_element_formatter_xaxis(self):
         try:
             import pscript # noqa
-        except:
+        except ImportError:
             raise SkipTest('Test requires pscript')
         def formatter(x):
             return f'{x}'
@@ -338,7 +338,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_element_formatter_yaxis(self):
         try:
             import pscript # noqa
-        except:
+        except ImportError:
             raise SkipTest('Test requires pscript')
         def formatter(x):
             return f'{x}'
@@ -420,7 +420,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_cftime_transform_gregorian_no_warn(self):
         try:
             import cftime
-        except:
+        except ImportError:
             raise SkipTest('Test requires cftime library')
         gregorian_dates = [cftime.DatetimeGregorian(2000, 2, 28),
                            cftime.DatetimeGregorian(2000, 3, 1),
@@ -434,7 +434,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_cftime_transform_noleap_warn(self):
         try:
             import cftime
-        except:
+        except ImportError:
             raise SkipTest('Test requires cftime library')
         gregorian_dates = [cftime.DatetimeNoLeap(2000, 2, 28),
                            cftime.DatetimeNoLeap(2000, 3, 1),
@@ -861,7 +861,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_colormapper_cnorm_eqhist(self):
         try:
             from bokeh.models import EqHistColorMapper
-        except:
+        except ImportError:
             raise SkipTest("Option cnorm='eq_hist' requires EqHistColorMapper")
         img = Image(np.array([[0, 1], [2, 3]])).opts(cnorm='eq_hist')
         plot = bokeh_renderer.get_plot(img)

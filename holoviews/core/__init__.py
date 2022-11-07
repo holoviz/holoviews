@@ -33,7 +33,7 @@ Dimension.type_formatters[date] = '%Y-%m-%d'
 try:
     import pandas as pd
     Dimension.type_formatters[pd.Timestamp] = "%Y-%m-%d %H:%M:%S"
-except:
+except ImportError:
     pass
 
 def public(obj):

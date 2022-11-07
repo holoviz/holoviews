@@ -945,7 +945,7 @@ argument to specify a selection specification""")
             try:
                 # Should be checking the dimensions declared on the element are compatible
                 return self.clone(aggregated, kdims=kdims, vdims=vdims)
-            except:
+            except Exception:
                 datatype = self.param.objects('existing')['datatype'].default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
                                   new_type=new_type, datatype=datatype)

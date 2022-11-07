@@ -18,7 +18,7 @@ from param.parameterized import bothmethod
 try:
     from datashader.bundling import (directly_connect_edges as connect_edges,
                                      hammer_bundle)
-except:
+except ImportError:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,

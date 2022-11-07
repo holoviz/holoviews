@@ -86,7 +86,7 @@ class MPLRendererTest(ComparisonTestCase):
         devnull = subprocess.DEVNULL
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
-        except:
+        except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
         data, metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])

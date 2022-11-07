@@ -18,7 +18,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def setUp(self):
         try:
             import scipy # noqa
-        except:
+        except ImportError:
             raise SkipTest('Violin plot requires SciPy to compute kde')
         super().setUp()
 

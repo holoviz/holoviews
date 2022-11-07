@@ -18,14 +18,14 @@ from matplotlib.rcsetup import (
 try:  # starting Matplotlib 3.4.0
     from matplotlib._enums import CapStyle as validate_capstyle
     from matplotlib._enums import JoinStyle as validate_joinstyle
-except:  # before Matplotlib 3.4.0
+except ImportError:  # before Matplotlib 3.4.0
     from matplotlib.rcsetup import (
     validate_capstyle, validate_joinstyle)
 
 try:
     from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
     nc_axis_available = True
-except:
+except ImportError:
     from matplotlib.dates import DateConverter
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
@@ -122,7 +122,7 @@ def validate(style, value, vectorized=True):
     try:
         valid = validator(value)
         return False if valid == False else True
-    except:
+    except Exception:
         return False
 
 

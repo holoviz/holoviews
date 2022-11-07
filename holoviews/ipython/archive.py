@@ -270,7 +270,7 @@ class NotebookArchive(FileArchive):
             # If store cleared_notebook... save here
             super().export(timestamp=self._timestamp,
                            info={'notebook':self.notebook_name})
-        except:
+        except Exception:
             self.traceback = traceback.format_exc()
         else:
             self.export_success = True

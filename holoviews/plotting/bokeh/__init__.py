@@ -18,7 +18,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
 from ...core.options import Options, Cycle, Palette
 try:
     from ...interface import DFrame
-except:
+except ImportError:
     DFrame = None
 
 from .annotation import (

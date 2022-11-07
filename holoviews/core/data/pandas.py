@@ -174,7 +174,7 @@ class PandasInterface(Interface):
                 column = column.sort_values()
             try:
                 column = column[~column.isin([None, pd.NA])]
-            except:
+            except Exception:
                 pass
             if not len(column):
                 return np.NaN, np.NaN

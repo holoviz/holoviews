@@ -188,7 +188,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
     def test_construct_from_xarray(self):
         try:
             import xarray as xr
-        except:
+        except ImportError:
             raise SkipTest("Test requires xarray")
         coords = OrderedDict([('lat', (('y', 'x'), self.ys)),
                               ('lon', (('y', 'x'), self.xs))])
@@ -208,7 +208,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
     def test_construct_3d_from_xarray(self):
         try:
             import xarray as xr
-        except:
+        except ImportError:
             raise SkipTest("Test requires xarray")
         zs = np.arange(48).reshape(2, 4, 6)
         da = xr.DataArray(zs, dims=['z', 'y', 'x'],
@@ -224,7 +224,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
     def test_construct_from_xarray_with_invalid_irregular_coordinate_arrays(self):
         try:
             import xarray as xr
-        except:
+        except ImportError:
             raise SkipTest("Test requires xarray")
         zs = np.arange(48*6).reshape(2, 4, 6, 6)
         da = xr.DataArray(zs, dims=['z', 'y', 'x', 'b'],
@@ -237,7 +237,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
     def test_3d_xarray_with_constant_dim_canonicalized_to_2d(self):
         try:
             import xarray as xr
-        except:
+        except ImportError:
             raise SkipTest("Test requires xarray")
         zs = np.arange(24).reshape(1, 4, 6)
         # Construct DataArray with additional constant dimension
@@ -253,7 +253,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
     def test_groupby_3d_from_xarray(self):
         try:
             import xarray as xr
-        except:
+        except ImportError:
             raise SkipTest("Test requires xarray")
         zs = np.arange(48).reshape(2, 4, 6)
         da = xr.DataArray(zs, dims=['z', 'y', 'x'],

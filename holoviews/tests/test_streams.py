@@ -426,7 +426,7 @@ class TestParamMethodStream(ComparisonTestCase):
     def test_panel_param_steams_dict(self):
         try:
             import panel
-        except:
+        except ImportError:
             raise SkipTest('Panel required for widget support in streams dict')
         widget = panel.widgets.FloatSlider(value=1)
 
@@ -1393,9 +1393,9 @@ class TestExprSelectionStream(ComparisonTestCase):
     def test_selection_expr_stream_polygon_index_cols(self):
         # Create SelectionExpr on element
         try: import shapely # noqa
-        except:
+        except ImportError:
             try: import spatialpandas # noqa
-            except: raise SkipTest('Shapely required for polygon selection')
+            except ImportError: raise SkipTest('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],

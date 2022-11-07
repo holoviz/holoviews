@@ -6,7 +6,7 @@ import numpy as np
 
 try:
     import cudf
-except:
+except ImportError:
     raise SkipTest("Could not import cuDF, skipping cuDFInterface tests.")
 
 from holoviews.core.data import Dataset

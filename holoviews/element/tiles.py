@@ -38,7 +38,7 @@ class Tiles(Element2D):
     def __init__(self, data=None, kdims=None, vdims=None, **params):
         try:
             from bokeh.models import MercatorTileSource
-        except:
+        except ImportError:
             MercatorTileSource = None
         if MercatorTileSource and isinstance(data, MercatorTileSource):
             data = data.url

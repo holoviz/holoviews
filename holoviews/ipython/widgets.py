@@ -4,7 +4,7 @@ from unittest import SkipTest
 try:
     import IPython
     from IPython.core.display import clear_output
-except:
+except ImportError:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
 
@@ -119,7 +119,7 @@ class ProgressBar(ProgressIndicator):
                                             max_tries=max_tries)
             self.param.message("Progress broadcast bound to port %d" % port)
             return sock
-        except:
+        except Exception:
             self.param.message("No suitable port found for progress broadcast.")
             return None
 
@@ -157,7 +157,7 @@ class RemoteProgress(ProgressBar):
                 if percent is not None:
                     self.param.message(f"Exited at {percent:.3f}% completion")
                 break
-            except:
+            except Exception:
                 self.param.message(f"Could not process socket message: {message!r}")
 
 

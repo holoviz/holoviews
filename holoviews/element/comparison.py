@@ -256,7 +256,7 @@ class Comparison(ComparisonInterface):
             if arr2.dtype.kind == 'M':
                 arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
-        except:
+        except Exception:
             try:
                 cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:

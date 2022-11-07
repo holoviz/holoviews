@@ -80,7 +80,7 @@ try:
     import cftime
     cftime_types = (cftime.datetime,)
     datetime_types += cftime_types
-except:
+except ImportError:
     cftime_types = ()
 _STANDARD_CALENDARS = set(['standard', 'gregorian', 'proleptic_gregorian'])
 
@@ -213,7 +213,7 @@ class HashableJSON(json.JSONEncoder):
             return repr(obj)
         try:
             return hash(obj)
-        except:
+        except Exception:
             return id(obj)
 
 
@@ -802,7 +802,7 @@ def isnumeric(val):
     try:
         float(val)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -906,7 +906,7 @@ def find_minmax(lims, olims):
     try:
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
-    except:
+    except Exception:
         limits = (np.NaN, np.NaN)
     return limits
 
@@ -927,11 +927,11 @@ def find_range(values, soft_range=[]):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             return np.nanmin(values), np.nanmax(values)
-    except:
+    except Exception:
         try:
             values = sorted(values)
             return (values[0], values[-1])
-        except:
+        except Exception:
             return (None, None)
 
 
@@ -982,7 +982,7 @@ def max_range(ranges, combined=True):
                 return (np.nanmin(arr), np.nanmax(arr))
             else:
                 return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
-    except:
+    except Exception:
         return (np.NaN, np.NaN)
 
 
@@ -1868,7 +1868,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
         try:
             import pandas # noqa (optional import)
             groupby = self.groupby_pandas
-        except:
+        except ImportError:
             groupby = self.groupby_python
         return groupby(ndmapping, dimensions, container_type,
                        group_type, sort=sort, **kwargs)
@@ -2004,7 +2004,7 @@ def is_nan(x):
     """
     try:
         return np.isnan(x)
-    except:
+    except Exception:
         return False
 
 
