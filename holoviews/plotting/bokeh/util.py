@@ -18,7 +18,7 @@ from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
     Model, Toolbar, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis, Tabs
+    GridBox, DatetimeAxis, CategoricalAxis, Tabs, GridPlot
 )
 from bokeh.models.formatters import (
     CustomJSTickFormatter, TickFormatter, PrintfTickFormatter
@@ -146,7 +146,7 @@ def compute_plot_size(plot):
     Computes the size of bokeh models that make up a layout such as
     figures, rows, columns, and Plot.
     """
-    if isinstance(plot, GridBox):
+    if isinstance(plot, (GridBox, GridPlot)):
         ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
         cols = ndmapping.groupby('x')
         rows = ndmapping.groupby('y')
