@@ -267,7 +267,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         if 'title' in self.handles:
             title_div = self.handles['title']
         else:
-            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
+            title_div = Div(width=width, styles={"white-space": "nowrap"})  # so it won't wrap long titles easily
         title_div.text = title_tags
 
         return title_div
