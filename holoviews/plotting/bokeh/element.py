@@ -2211,7 +2211,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         }
         for item in legend.items:
             label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
-            if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
+            if not label or (isinstance(item.label, dict) and not hasattr(item.label, 'value', True)):
                 continue
             # TODO: This should be automated
             if isinstance(label, Value):
@@ -2237,7 +2237,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if (item in filtered or not item.renderers or
                 not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
-            if isinstance(item.label, dict) and 'value' in item.label and self.legend_labels:
+            if isinstance(item.label, (Value, dict)) and hasattr(item.label, "value") and self.legend_labels:
                 label = item.label['value']
                 item.label = {'value': self.legend_labels.get(label, label)}
             renderers += item.renderers
