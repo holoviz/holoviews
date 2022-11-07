@@ -187,8 +187,6 @@ class DataLinkCallback(LinkCallback):
             renderer.update(data_source=src_cds)
         else:
             renderer.update(source=src_cds)
-        if hasattr(renderer, 'view'):
-            renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
         target_plot.handles['cds'] = src_cds
         for callback in target_plot.callbacks:

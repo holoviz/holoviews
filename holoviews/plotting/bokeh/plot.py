@@ -303,8 +303,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
-                    if hasattr(renderer, 'view'):
-                        renderer.view.update(source=new_source)
                     plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
