@@ -148,7 +148,7 @@ class TestResetCallback(CallbackTestCase):
 class TestPointerCallbacks(CallbackTestCase):
 
     def test_pointer_x_datetime_out_of_bounds(self):
-        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)]).opts(padding=0)
         PointerX(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
