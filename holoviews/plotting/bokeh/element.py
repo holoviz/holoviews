@@ -48,7 +48,7 @@ from .util import (
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
-    prop_is_none, remove_legend, bproperty_to_dict
+    prop_is_none, remove_legend
 )
 
 try:

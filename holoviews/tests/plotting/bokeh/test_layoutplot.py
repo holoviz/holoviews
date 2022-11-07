@@ -10,7 +10,7 @@ from holoviews.streams import Stream
 from holoviews.util import render, opts
 from holoviews.util.transform import dim
 
-from bokeh.layouts import Column, Row
+from bokeh.layouts import Column
 from bokeh.models import Div, Toolbar, GlyphRenderer, Tabs, TabPanel, Spacer, GridBox, GridPlot, Title
 from bokeh.plotting import figure
 
