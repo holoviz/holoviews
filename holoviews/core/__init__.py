@@ -1,5 +1,7 @@
 from datetime import date, datetime
 
+import pandas as pd
+
 from .boundingregion import *  # noqa (API import)
 from .data import *            # noqa (API import)
 from .dimension import *       # noqa (API import)
@@ -29,12 +31,8 @@ Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[datetime] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[date] = '%Y-%m-%d'
+Dimension.type_formatters[pd.Timestamp] = "%Y-%m-%d %H:%M:%S"
 
-try:
-    import pandas as pd
-    Dimension.type_formatters[pd.Timestamp] = "%Y-%m-%d %H:%M:%S"
-except ImportError:
-    pass
 
 def public(obj):
     if not isinstance(obj, type): return False

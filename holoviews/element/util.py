@@ -2,10 +2,11 @@ import itertools
 
 import param
 import numpy as np
+import pandas as pd
 
 from ..core import Dataset, OrderedDict
 from ..core.boundingregion import BoundingBox
-from ..core.data import default_datatype
+from ..core.data import default_datatype, PandasInterface
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (
@@ -13,11 +14,6 @@ from ..core.util import (
     one_to_one, sort_topologically
 )
 
-try:
-    import pandas as pd
-    from ..core.data import PandasInterface
-except ImportError:
-    pd = None
 
 
 def split_path(path):

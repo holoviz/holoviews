@@ -1865,12 +1865,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):
-        try:
-            import pandas # noqa (optional import)
-            groupby = self.groupby_pandas
-        except ImportError:
-            groupby = self.groupby_python
-        return groupby(ndmapping, dimensions, container_type,
+        return self.groupby_pandas(ndmapping, dimensions, container_type,
                        group_type, sort=sort, **kwargs)
 
     @param.parameterized.bothmethod
@@ -2080,8 +2075,6 @@ def parse_datetime(date):
     """
     Parses dates specified as string or integer or pandas Timestamp
     """
-    if pd is None:
-        raise ImportError('Parsing dates from strings requires pandas')
     return pd.to_datetime(date).to_datetime64()
 
 

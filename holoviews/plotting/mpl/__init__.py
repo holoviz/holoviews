@@ -8,7 +8,7 @@ from colorcet import kbc, register_cmap
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
-from ...core.util import LooseVersion, pd
+from ...core.util import LooseVersion
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from ..util import fire_colors
@@ -32,13 +32,12 @@ from .renderer import MPLRenderer
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= LooseVersion('1.5.0')
 
-if pd:
-    try:
-        from pandas.plotting import register_matplotlib_converters
-        register_matplotlib_converters()
-    except ImportError:
-        from pandas.tseries import converter
-        converter.register()
+try:
+    from pandas.plotting import register_matplotlib_converters
+    register_matplotlib_converters()
+except ImportError:
+    from pandas.tseries import converter
+    converter.register()
 
 
 def set_style(key):
