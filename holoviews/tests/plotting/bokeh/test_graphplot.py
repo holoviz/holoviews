@@ -3,12 +3,12 @@ import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.element import Graph, Nodes, TriMesh, Chord, VLine, circular_layout
 from holoviews.util.transform import dim
+from holoviews.plotting.bokeh.util import bproperty_to_dict
 
 from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, NodesOnly, Patches)
 from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-from ..utils import field_to_dict
 
 
 class TestBokehGraphPlot(TestBokehPlot):
@@ -121,7 +121,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['Output', 'Input'])
         self.assertEqual(node_source.data['Label'], self.node_info['Label'])
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'Label', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'Label', 'transform': cmapper})
 
     def test_graph_nodes_numerically_colormapped(self):
         g = self.graph3.opts(color_index='Weight', cmap='viridis')
@@ -133,7 +133,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, self.weights.min())
         self.assertEqual(cmapper.high, self.weights.max())
         self.assertEqual(node_source.data['Weight'], self.node_info2['Weight'])
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'Weight', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'Weight', 'transform': cmapper})
 
     def test_graph_edges_categorical_colormapped(self):
         g = self.graph3.opts(edge_color_index='start', edge_cmap=['#FFFFFF', '#000000'])
@@ -145,7 +145,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         factors = ['0', '1', '2', '3', '4', '5', '6', '7']
         self.assertEqual(cmapper.factors, factors)
         self.assertEqual(edge_source.data['start_str__'], factors)
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'start_str__', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'start_str__', 'transform': cmapper})
 
     def test_graph_edges_numerically_colormapped(self):
         g = self.graph4.opts(edge_color_index='Weight', edge_cmap=['#FFFFFF', '#000000'])
@@ -157,7 +157,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, self.weights.min())
         self.assertEqual(cmapper.high, self.weights.max())
         self.assertEqual(edge_source.data['Weight'], self.node_info2['Weight'])
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'Weight', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'Weight', 'transform': cmapper})
 
     ###########################
     #    Styling mapping      #
@@ -171,7 +171,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color'})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color'})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array(['red', 'green', 'blue']))
 
@@ -184,7 +184,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
         cmapper = plot.handles['node_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array([0.5, 1.5, 2.5]))
 
@@ -197,7 +197,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
         cmapper = plot.handles['node_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array(['A', 'B', 'C']))
 
@@ -209,7 +209,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.size), {'field': 'node_size'})
+        self.assertEqual(bproperty_to_dict(glyph.size), {'field': 'node_size'})
         self.assertEqual(cds.data['node_size'], np.array([2, 4, 6]))
 
     def test_graph_op_node_alpha(self):
@@ -219,8 +219,8 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.fill_alpha), {'field': 'node_alpha'})
-        self.assertEqual(field_to_dict(glyph.line_alpha), {'field': 'node_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'node_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'node_alpha'})
         self.assertEqual(cds.data['node_alpha'], np.array([0.2, 0.6, 1]))
 
     def test_graph_op_node_line_width(self):
@@ -230,7 +230,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_width), {'field': 'node_line_width'})
+        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'node_line_width'})
         self.assertEqual(cds.data['node_line_width'], np.array([2, 4, 6]))
 
     def test_graph_op_edge_color(self):
@@ -239,7 +239,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color'})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color'})
         self.assertEqual(cds.data['edge_color'], np.array(['red', 'green', 'blue']))
 
     def test_graph_op_edge_color_linear(self):
@@ -249,7 +249,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
         cmapper = plot.handles['edge_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array([2, 0.5, 3]))
 
     def test_graph_op_edge_color_categorical(self):
@@ -259,7 +259,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
         cmapper = plot.handles['edge_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array(['C', 'B', 'A']))
 
     def test_graph_op_edge_alpha(self):
@@ -268,7 +268,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_alpha), {'field': 'edge_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'edge_alpha'})
         self.assertEqual(cds.data['edge_alpha'], np.array([0.1, 0.5, 0.3]))
 
     def test_graph_op_edge_line_width(self):
@@ -277,7 +277,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_width), {'field': 'edge_line_width'})
+        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'edge_line_width'})
         self.assertEqual(cds.data['edge_line_width'], np.array([2, 10, 6]))
 
 
@@ -326,7 +326,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         factors = ['0', '1', '2', '3']
         self.assertEqual(cmapper.factors, factors)
         self.assertEqual(edge_source.data['node1_str__'], ['0', '1'])
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'node1_str__', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'node1_str__', 'transform': cmapper})
 
     def test_trimesh_nodes_numerically_colormapped(self):
         g = self.trimesh_weighted.opts(
@@ -340,7 +340,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 1)
         self.assertEqual(edge_source.data['weight'], np.array([0, 1]))
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'weight', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'weight', 'transform': cmapper})
 
     ###########################
     #    Styling mapping      #
@@ -353,7 +353,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color'})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color'})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array(['red', 'green', 'blue', 'black']))
 
@@ -365,7 +365,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
         cmapper = plot.handles['node_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array([2, 1, 3, 4]))
         self.assertEqual(cmapper.low, 1)
@@ -379,7 +379,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
         cmapper = plot.handles['node_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array(['B', 'C', 'A', 'B']))
 
@@ -390,7 +390,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.size), {'field': 'node_size'})
+        self.assertEqual(bproperty_to_dict(glyph.size), {'field': 'node_size'})
         self.assertEqual(cds.data['node_size'], np.array([3, 2, 8, 4]))
 
     def test_trimesh_op_node_alpha(self):
@@ -400,8 +400,8 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.fill_alpha), {'field': 'node_alpha'})
-        self.assertEqual(field_to_dict(glyph.line_alpha), {'field': 'node_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'node_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'node_alpha'})
         self.assertEqual(cds.data['node_alpha'], np.array([0.2, 0.6, 1, 0.3]))
 
     def test_trimesh_op_node_line_width(self):
@@ -411,7 +411,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_width), {'field': 'node_line_width'})
+        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'node_line_width'})
         self.assertEqual(cds.data['node_line_width'], np.array([0.2, 0.6, 1, 0.3]))
 
     def test_trimesh_op_edge_color_linear_mean_node(self):
@@ -422,7 +422,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
         cmapper = plot.handles['edge_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array([2, 8/3.]))
         self.assertEqual(cmapper.low, 1)
         self.assertEqual(cmapper.high, 4)
@@ -434,7 +434,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color'})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color'})
         self.assertEqual(cds.data['edge_color'], np.array(['red', 'blue']))
 
     def test_trimesh_op_edge_color_linear(self):
@@ -445,7 +445,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
         cmapper = plot.handles['edge_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array([2.4, 3.6]))
         self.assertEqual(cmapper.low, 2.4)
         self.assertEqual(cmapper.high, 3.6)
@@ -458,7 +458,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cds = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
         cmapper = plot.handles['edge_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['edge_color'], np.array([2.4, 3.6]))
         self.assertEqual(cmapper.low, 2.4)
@@ -472,7 +472,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
         cmapper = plot.handles['edge_color_color_mapper']
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array(['A', 'B']))
         self.assertEqual(cmapper.factors, ['A', 'B'])
 
@@ -483,7 +483,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_alpha), {'field': 'edge_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'edge_alpha'})
         self.assertEqual(cds.data['edge_alpha'], np.array([0.7, 0.3]))
 
     def test_trimesh_op_edge_line_width(self):
@@ -493,7 +493,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertEqual(field_to_dict(glyph.line_width), {'field': 'edge_line_width'})
+        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'edge_line_width'})
         self.assertEqual(cds.data['edge_line_width'], np.array([7, 3]))
 
 
@@ -546,7 +546,7 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
         self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
         self.assertEqual(arc_source.data['Label'], np.array(['A', 'B', 'C']))
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'Label', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'Label', 'transform': cmapper})
 
     def test_chord_nodes_style_map_node_color_colormapped(self):
         g = self.chord.opts(
@@ -563,8 +563,8 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
         self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
         self.assertEqual(arc_source.data['Label'], np.array(['A', 'B', 'C']))
-        self.assertEqual(field_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
-        self.assertEqual(field_to_dict(arc_glyph.line_color), {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(arc_glyph.line_color), {'field': 'node_color', 'transform': cmapper})
 
     def test_chord_edges_categorically_colormapped(self):
         g = self.chord.opts(
@@ -578,7 +578,7 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(edge_source.data['start_str__'], ['0', '0', '1'])
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'start_str__', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'start_str__', 'transform': cmapper})
 
     def test_chord_edge_color_style_mapping(self):
         g = self.chord.opts(
@@ -592,4 +592,4 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(edge_source.data['edge_color'], np.array(['0', '0', '1']))
-        self.assertEqual(field_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})

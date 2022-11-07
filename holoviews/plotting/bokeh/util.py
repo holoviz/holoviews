@@ -979,3 +979,21 @@ def wrap_formatter(formatter, axis):
     else:
         formatter = PrintfTickFormatter(format=formatter)
     return formatter
+
+
+def bproperty_to_dict(x):
+    """
+    Convert Bokeh's property Field and Value to a dictionary
+
+    Was added in bokeh 3.0
+    """
+
+    try:
+        from bokeh.core.property.vectorization import Field, Unspecified, Value
+    except ImportError:
+        pass
+
+    if isinstance(x, (Field, Value)):
+        x = {k: v for k,v in x.__dict__.items() if v != Unspecified}
+
+    return x

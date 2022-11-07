@@ -2,10 +2,11 @@ import numpy as np
 
 from holoviews.core.dimension import Dimension
 from holoviews.element import Labels
+from holoviews.plotting.bokeh.util import bproperty_to_dict
 
 from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
-from ..utils import ParamLogStream, field_to_dict
+from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -76,7 +77,7 @@ class TestLabelsPlot(TestBokehPlot):
         self.assertEqual(glyph.x, 'x')
         self.assertEqual(glyph.y, 'y')
         self.assertEqual(glyph.text, 'Label')
-        self.assertEqual(field_to_dict(glyph.text_color), {'field': 'text_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.text_color), {'field': 'text_color', 'transform': cmapper})
         self.assertEqual(cmapper.low, 0.33333)
         self.assertEqual(cmapper.high, 0.66666)
 
@@ -94,7 +95,7 @@ class TestLabelsPlot(TestBokehPlot):
         self.assertEqual(glyph.x, 'x')
         self.assertEqual(glyph.y, 'y')
         self.assertEqual(glyph.text, 'text')
-        self.assertEqual(field_to_dict(glyph.text_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.text_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cmapper.low, 1)
         self.assertEqual(cmapper.high, 2)
 
@@ -109,7 +110,7 @@ class TestLabelsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['text_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(field_to_dict(glyph.text_color), {'field': 'text_color'})
+        self.assertEqual(bproperty_to_dict(glyph.text_color), {'field': 'text_color'})
 
     def test_label_linear_color_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -122,7 +123,7 @@ class TestLabelsPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['text_color'], np.array([0, 1, 2]))
-        self.assertEqual(field_to_dict(glyph.text_color), {'field': 'text_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.text_color), {'field': 'text_color', 'transform': cmapper})
 
     def test_label_categorical_color_op(self):
         labels = Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
@@ -134,7 +135,7 @@ class TestLabelsPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['text_color'], np.array(['A', 'B', 'C']))
-        self.assertEqual(field_to_dict(glyph.text_color), {'field': 'text_color', 'transform': cmapper})
+        self.assertEqual(bproperty_to_dict(glyph.text_color), {'field': 'text_color', 'transform': cmapper})
 
     def test_label_angle_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
@@ -143,7 +144,7 @@ class TestLabelsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['angle'], np.array([0, 0.785398, 1.570796]))
-        self.assertEqual(field_to_dict(glyph.angle), {'field': 'angle'})
+        self.assertEqual(bproperty_to_dict(glyph.angle), {'field': 'angle'})
 
     def test_label_alpha_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -152,7 +153,7 @@ class TestLabelsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['text_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(field_to_dict(glyph.text_alpha), {'field': 'text_alpha'})
+        self.assertEqual(bproperty_to_dict(glyph.text_alpha), {'field': 'text_alpha'})
 
     def test_label_font_size_op_strings(self):
         labels = Labels([(0, 0, '10pt'), (0, 1, '4pt'), (0, 2, '8pt')],
@@ -161,7 +162,7 @@ class TestLabelsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['text_font_size'], np.array(['10pt', '4pt', '8pt']))
-        self.assertEqual(field_to_dict(glyph.text_font_size), {'field': 'text_font_size'})
+        self.assertEqual(bproperty_to_dict(glyph.text_font_size), {'field': 'text_font_size'})
 
     def test_label_font_size_op_ints(self):
         labels = Labels([(0, 0, 10), (0, 1, 4), (0, 2, 8)],
@@ -170,7 +171,7 @@ class TestLabelsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['text_font_size'], ['10pt', '4pt', '8pt'])
-        self.assertEqual(field_to_dict(glyph.text_font_size), {'field': 'text_font_size'})
+        self.assertEqual(bproperty_to_dict(glyph.text_font_size), {'field': 'text_font_size'})
 
     def test_labels_color_index_color_clash(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
