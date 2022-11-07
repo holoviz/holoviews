@@ -1281,9 +1281,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                event = ModelChangedEvent(self.document, source, 'data',
-                                          source.data, empty_data, empty_data,
-                                          setter='empty')
+                event = ModelChangedEvent(
+                    document=self.document,
+                    model=source,
+                    attr='data',
+                    new=empty_data,
+                    setter='empty'
+                )
                 if bokeh_version >= LooseVersion('2.4.0'):
                     self.document.callbacks._held_events.append(event)
                 else:
