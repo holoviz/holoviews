@@ -10,8 +10,7 @@ from holoviews.streams import Stream
 from holoviews.util import render, opts
 from holoviews.util.transform import dim
 
-from bokeh.layouts import Column
-from bokeh.models import Div, Toolbar, GlyphRenderer, Tabs, TabPanel, Spacer, GridBox, GridPlot, Title
+from bokeh.models import Div, Toolbar, GlyphRenderer, Tabs, TabPanel, Spacer, GridPlot, Title
 from bokeh.plotting import figure
 
 from ...utils import LoggingComparisonTestCase
@@ -171,36 +170,27 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout_plot = bokeh_renderer.get_plot(layout)
         plot = layout_plot.state
 
-        # Unpack until getting down to two rows
-        self.assertIsInstance(plot, Column)
-        self.assertEqual(len(plot.children), 2)
-        toolbar, grid = plot.children
-        self.assertIsInstance(toolbar, Toolbar)
-        self.assertIsInstance(grid, GridBox)
-        self.assertEqual(len(grid.children), 3)
-        (col1, _, _), (col2, _, _), (fig, _, _) = grid.children
-        self.assertIsInstance(col1, Column)
-        self.assertIsInstance(col2, Column)
-        grid1 = col1.children[0]
-        grid2 = col2.children[0]
+        self.assertIsInstance(plot, GridPlot)
+        self.assertEqual(len(plot.children), 3)
+        self.assertIsInstance(plot.toolbar, Toolbar)
 
-        # Check the row of GridSpaces
+        (grid1, *_), (grid2, *_), (fig, *_) = plot.children
+        self.assertIsInstance(grid1, GridPlot)
+        self.assertIsInstance(grid2, GridPlot)
+        self.assertIsInstance(fig, figure)
+
         self.assertEqual(len(grid1.children), 3)
-        _, (col1, _, _), _ = grid1.children
-        self.assertIsInstance(col1, Column)
-        inner_grid1 = col1.children[0]
+        _, (inner_grid1, *_), _ = grid1.children
+        self.assertIsInstance(inner_grid1, GridPlot)
 
         self.assertEqual(len(grid2.children), 3)
-        _, (col2, _, _), _ = grid2.children
-        self.assertIsInstance(col2, Column)
-        inner_grid2 = col2.children[0]
+        _, (inner_grid2, *_), _ = grid2.children
+        self.assertIsInstance(inner_grid2, GridPlot)
+
         for grid in [inner_grid1, inner_grid2]:
             self.assertEqual(len(grid.children), 4)
-            (gfig1, _, _), (gfig2, _, _), (gfig3, _, _), (gfig4, _, _) = grid.children
-            self.assertIsInstance(gfig1, figure)
-            self.assertIsInstance(gfig2, figure)
-            self.assertIsInstance(gfig3, figure)
-            self.assertIsInstance(gfig4, figure)
+            for gfig, *_ in grid.children:
+                self.assertIsInstance(gfig, figure)
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +

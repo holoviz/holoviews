@@ -575,7 +575,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
         plot = gridplot(plots[::-1], merge_tools=self.merge_tools,
                         sizing_mode=self.sizing_mode,
-                        toolbar_location=self.toolbar)
+                        toolbar_location=None)
         plot = self._make_axes(plot)
 
         title = self._get_title_div(self.keys[-1])
@@ -627,7 +627,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            plot = gridplot([r1, r2])
+            plot = gridplot([r1, r2], toolbar_location=None)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
