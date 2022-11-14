@@ -21,7 +21,12 @@ from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
 from ..streams import Stream, Params, streams_list_from_dict
 
-
+try:
+    from inspect import FullArgSpec
+except ImportError:
+    # Python ≤3.10
+    from inspect import ArgSpec as FullArgSpec
+    
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):
     """
@@ -511,7 +516,7 @@ class Callable(param.Parameterized):
     @property
     def noargs(self):
         "Returns True if the callable takes no arguments"
-        noargs = inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        noargs = FullArgSpec(args=[], varargs=None, keywords=None, defaults=None)
         return self.argspec == noargs
 
 
@@ -611,7 +616,7 @@ class Generator(Callable):
 
     @property
     def argspec(self):
-        return inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        return FullArgSpec(args=[], varargs=None, keywords=None, defaults=None)
 
     def __call__(self):
         try:
