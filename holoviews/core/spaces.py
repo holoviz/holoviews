@@ -25,7 +25,7 @@ try:
 except ImportError:
     # Python ≤3.10
     from inspect import ArgSpec as FullArgSpec
-    
+
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):
     """
