@@ -38,6 +38,7 @@ extras_require['tests_core'] = [
     'plotly >=4.0',
     'dash >=1.16',
     'codecov',
+    'ipython >=5.4.0',
 ]
 
 # Optional tests dependencies, i.e. one should be able
@@ -55,7 +56,6 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy',
     'selenium',
-    'ipython >=5.4.0',
 ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
