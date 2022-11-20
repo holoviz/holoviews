@@ -133,7 +133,7 @@ jobs:
             pip install pyctdev
         - name: doit develop_install
           run: |
-            doit ecosystem=pip develop_install -o flakes -o tests -o examples_tests
+            doit ecosystem=pip develop_install -o flakes -o tests_core
         - name: doit env_capture
           run: |
             doit ecosystem=pip env_capture
@@ -143,6 +143,3 @@ jobs:
         - name: doit test_unit
           run: |
             doit ecosystem=pip test_unit
-        - name: test examples
-          run: |
-            doit ecosystem=pip test_examples
