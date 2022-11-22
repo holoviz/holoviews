@@ -75,7 +75,6 @@ To report issues go to https://github.com/holoviz/holoviews.
 """
 import io, os, sys
 
-import numpy as np # noqa (API import)
 import param
 
 __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
@@ -171,4 +170,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del io, np, os, rcfile, warnings
+del io, os, rcfile, warnings
