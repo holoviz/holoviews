@@ -170,4 +170,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del io, os, rcfile, warnings
+del os, rcfile, warnings
