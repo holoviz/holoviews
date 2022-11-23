@@ -1,4 +1,3 @@
-from unittest import SkipTest
 from unittest.mock import Mock
 
 import holoviews as hv
@@ -18,7 +17,6 @@ from .test_plot import TestPlotlyPlot
 class TestDynamicMap(TestPlotlyPlot):
 
     def test_update_dynamic_map_with_stream(self):
-        raise SkipTest("Fails inside panel, related to background bokeh change, should be removed before merge")
 
         ys = np.arange(10)
 
@@ -75,8 +73,6 @@ class TestInteractiveStream(TestPlotlyPlot):
     # routed to streams
 
     def test_interactive_streams(self):
-        raise SkipTest("Fails inside panel, related to background bokeh change, should be removed before merge")
-
         ys = np.arange(10)
         scatter1 = hv.Scatter(ys)
         scatter2 = hv.Scatter(ys)
