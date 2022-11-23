@@ -73,9 +73,8 @@ In a notebook or ipython environment the usual
 To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
 """
-import io, os, sys
+import os, sys
 
-import numpy as np # noqa (API import)
 import param
 
 __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
@@ -135,7 +134,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.config/holoviews/holoviews.rc"]:
     filename = os.path.expanduser(rcfile)
     if os.path.isfile(filename):
-        with io.open(filename, encoding='utf8') as f:
+        with open(filename, encoding='utf8') as f:
             code = compile(f.read(), filename, 'exec')
             try:
                 exec(code)
@@ -171,4 +170,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del io, np, os, rcfile, warnings
+del os, rcfile, warnings
