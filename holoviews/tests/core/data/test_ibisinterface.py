@@ -12,9 +12,12 @@ except:
 import numpy as np
 import pandas as pd
 
+from bokeh.models import axes as bokeh_axes
+from holoviews import render
 from holoviews.core.data import Dataset
 from holoviews.core.spaces import HoloMap
 from holoviews.core.data.ibis import IbisInterface
+from holoviews.element.chart import Curve
 
 from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 
@@ -303,3 +306,19 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
+
+    def test_datetime_xaxis(self):
+        """Test to make sure a DateTimeAxis can be identified for the bokeh backend"""
+        # Given
+        df = pd.DataFrame({
+            "x": [pd.Timestamp("2022-01-01"), pd.Timestamp("2022-01-02")], "y": [1,2]
+        })
+        con = ibis.pandas.connect({"df": df})
+        table = con.table("df")
+        plot_ibis = Curve(table, kdims="x", vdims="y")
+        # When
+        plot_bokeh = render(plot_ibis, "bokeh")
+        # Then
+        xaxis, yaxis = plot_bokeh.axis
+        assert isinstance(xaxis, bokeh_axes.DatetimeAxis)
+        assert isinstance(yaxis, bokeh_axes.LinearAxis)

@@ -890,7 +890,6 @@ def isfinite(val):
         return finite & (~pd.isna(val))
     return finite
 
-
 def isdatetime(value):
     """
     Whether the array or scalar is recognized datetime type.

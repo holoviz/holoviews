@@ -420,7 +420,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 categorical_x = True
             else:
                 xtype = el.get_dimension_type(xdims[0])
-                if ((xtype is np.object_ and issubclass(type(l), util.datetime_types)) or
+                if (((xtype is np.object_ or isinstance(xtype, np.object)) and issubclass(type(l), util.datetime_types)) or
                     xtype in util.datetime_types):
                     x_axis_type = 'datetime'
 
