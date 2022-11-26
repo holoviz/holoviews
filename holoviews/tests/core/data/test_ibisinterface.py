@@ -318,7 +318,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         plot_ibis = Curve(table, kdims="x", vdims="y")
         # When
         plot_bokeh = render(plot_ibis, "bokeh")
-        # Then
         xaxis, yaxis = plot_bokeh.axis
+        # Then
         assert isinstance(xaxis, bokeh_axes.DatetimeAxis)
         assert isinstance(yaxis, bokeh_axes.LinearAxis)
