@@ -322,3 +322,19 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         # Then
         assert isinstance(xaxis, bokeh_axes.DatetimeAxis)
         assert isinstance(yaxis, bokeh_axes.LinearAxis)
+
+    def test_categorical_xaxis(self):
+        """Test to make sure a Categorical axis can be identified for the bokeh backend"""
+        # Given
+        df = pd.DataFrame({
+            "x": ["A", "B"], "y": [1,2]
+        })
+        con = ibis.pandas.connect({"df": df})
+        table = con.table("df")
+        plot_ibis = Curve(table, kdims="x", vdims="y")
+        # When
+        plot_bokeh = render(plot_ibis, "bokeh")
+        xaxis, yaxis = plot_bokeh.axis
+        # Then
+        assert isinstance(xaxis, bokeh_axes.CategoricalAxis)
+        assert isinstance(yaxis, bokeh_axes.LinearAxis)
