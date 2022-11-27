@@ -172,7 +172,9 @@ class IbisInterface(Interface):
         dimension = dataset.get_dimension(dimension)
         return dataset.data.head(0).execute().dtypes[dimension.name]
 
-    dimension_type = dtype
+    @classmethod
+    def dimension_type(cls, dataset, dim):
+        return cls.dtype(dataset, dim)
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
