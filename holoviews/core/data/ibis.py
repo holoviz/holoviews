@@ -111,7 +111,12 @@ class IbisInterface(Interface):
     @cached
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.dtype(dataset, dimension).kind in 'SUO':
+        if cls.dtype(dataset, dimension).kind == 'O':
+            column = dataset.data[dimension.name]
+            first = column.first().execute()
+            last = column.last().execute()
+            return first, last
+        if cls.dtype(dataset, dimension).kind in 'SU':
             return None, None
         if dimension.nodata is not None:
             return Interface.range(dataset, dimension)
@@ -174,7 +179,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        return cls.dtype(dataset, dim)
+        return cls.dtype(dataset, dim).type
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
