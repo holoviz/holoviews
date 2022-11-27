@@ -103,6 +103,20 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             hm_db.table("hm"), kdims=[("x", "X")], vdims=[("y", "Y")]
         )
 
+        reference_df = pd.DataFrame(
+            {
+                "actual": [100, 150, 125, 140, 145, 135, 123],
+                "forecast": [90, 160, 125, 150, 141, 141, 120],
+                "numerical": [1.1, 1.9, 3.2, 3.8, 4.3, 5.0, 5.5],
+                "date": pd.date_range("2022-01-03", "2022-01-09"),
+                "string": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            },
+        )
+        reference_db = create_temp_db(reference_df, "reference_df")
+        self.reference_table = Dataset(
+            reference_db.table("reference_df"), kdims=["numerical", "date", "string"], vdims=["actual", "forecast"]
+        )
+
     def test_dataset_array_init_hm(self):
         raise SkipTest("Not supported")
 
@@ -307,15 +321,19 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
 
+    def test_range(self):
+        assert IbisInterface.range(self.reference_table, "date") == (np.datetime64('2022-01-03'), np.datetime64('2022-01-09'))
+        assert IbisInterface.range(self.reference_table, "string") == ('Mon', 'Sun')
+        assert IbisInterface.range(self.reference_table, "numerical") == (np.float64(1.1), np.float64(5.5))
+
+    def test_dimension_type(self):
+        assert IbisInterface.dimension_type(self.reference_table, "date") is np.datetime64
+        assert IbisInterface.dimension_type(self.reference_table, "string") is np.object_
+        assert IbisInterface.dimension_type(self.reference_table, "numerical") is np.float64
+
     def test_datetime_xaxis(self):
         """Test to make sure a DateTimeAxis can be identified for the bokeh backend"""
-        # Given
-        df = pd.DataFrame({
-            "x": [pd.Timestamp("2022-01-01"), pd.Timestamp("2022-01-02")], "y": [1,2]
-        })
-        con = ibis.pandas.connect({"df": df})
-        table = con.table("df")
-        plot_ibis = Curve(table, kdims="x", vdims="y")
+        plot_ibis = Curve(self.reference_table, kdims="date", vdims="actual")
         # When
         plot_bokeh = render(plot_ibis, "bokeh")
         xaxis, yaxis = plot_bokeh.axis
@@ -325,16 +343,20 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_categorical_xaxis(self):
         """Test to make sure a Categorical axis can be identified for the bokeh backend"""
-        # Given
-        df = pd.DataFrame({
-            "x": ["A", "B"], "y": [1,2]
-        })
-        con = ibis.pandas.connect({"df": df})
-        table = con.table("df")
-        plot_ibis = Curve(table, kdims="x", vdims="y")
+        plot_ibis = Curve(self.reference_table, kdims="string", vdims="actual")
         # When
         plot_bokeh = render(plot_ibis, "bokeh")
         xaxis, yaxis = plot_bokeh.axis
         # Then
         assert isinstance(xaxis, bokeh_axes.CategoricalAxis)
+        assert isinstance(yaxis, bokeh_axes.LinearAxis)
+
+    def test_numerical_xaxis(self):
+        """Test to make sure a LinearAxis axis can be identified for the bokeh backend"""
+        plot_ibis = Curve(self.reference_table, kdims="numerical", vdims="actual")
+        # When
+        plot_bokeh = render(plot_ibis, "bokeh")
+        xaxis, yaxis = plot_bokeh.axis
+        # Then
+        assert isinstance(xaxis, bokeh_axes.LinearAxis)
         assert isinstance(yaxis, bokeh_axes.LinearAxis)

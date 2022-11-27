@@ -112,9 +112,10 @@ class IbisInterface(Interface):
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         if cls.dtype(dataset, dimension).kind == 'O':
-            column = dataset.data[dimension.name]
-            first = column.first().execute()
-            last = column.last().execute()
+            # Can this be done more efficiently?
+            column = dataset.data[dimension.name].execute()
+            first = column.iloc[0]
+            last = column.iloc[-1]
             return first, last
         if cls.dtype(dataset, dimension).kind in 'SU':
             return None, None
