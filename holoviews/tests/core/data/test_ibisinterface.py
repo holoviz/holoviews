@@ -360,3 +360,50 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         # Then
         assert isinstance(xaxis, bokeh_axes.LinearAxis)
         assert isinstance(yaxis, bokeh_axes.LinearAxis)
+
+import pytest
+import ibis
+import duckdb
+from pathlib import Path
+
+def create_pandas_connection(df: pd.DataFrame, *args, **kwargs):
+    return ibis.pandas.connect({"df": df})
+
+def create_duckdb_connection(df: pd.DataFrame, *args, **kwargs):
+    tmpdir = kwargs["tmpdir"]
+    filename = str(Path(tmpdir)/"db.db")
+    duckdb_con = duckdb.connect(filename)
+    duckdb_con.execute("CREATE TABLE df AS SELECT * FROM df")
+
+    return ibis.duckdb.connect(filename)
+
+def create_sqlite_connection(df: pd.DataFrame):
+    return create_temp_db(df, "df")
+
+@pytest.fixture
+def reference_df():
+    return pd.DataFrame(
+        {
+            "actual": [100, 150, 125, 140, 145, 135, 123],
+            "forecast": [90, 160, 125, 150, 141, 141, 120],
+            "numerical": [1.1, 1.9, 3.2, 3.8, 4.3, 5.0, 5.5],
+            "date": pd.date_range("2022-01-03", "2022-01-09"),
+            "string": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        },
+    )
+
+@pytest.fixture(params=[create_pandas_connection, create_duckdb_connection, create_sqlite_connection])
+def connection(request, reference_df, tmpdir):
+    return request.param(reference_df, tmpdir=tmpdir)
+
+@pytest.fixture
+def data(connection):
+    return connection.table("df")
+
+@pytest.fixture
+def dataset(data):
+    return Dataset(data, kdims=["numerical", "date", "string"], vdims=["actual", "forecast"])
+
+def test_index_ibis_table(data):
+        table = IbisInterface._index_ibis_table(data)
+        table.execute()
