@@ -56,14 +56,9 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy',
     'selenium',
+    'spatialpandas',
+    'datashader >=0.11.1',
 ]
-
-# Packages not working on python 3.11 becauase of numba
-if sys.version_info < (3, 11):
-    extras_require['tests'] += [
-        'spatialpandas',
-        'datashader >=0.11.1',
-    ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
@@ -98,13 +93,8 @@ extras_require["examples"] = extras_require["recommended"] + [
     "shapely",
     "scikit-image",
     "pyarrow",
+    "datashader >=0.11.1",
 ]
-
-if sys.version_info < (3, 11):
-    extras_require["examples"] += [
-        "datashader >=0.11.1",
-    ]
-
 
 extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
 
