@@ -371,6 +371,13 @@ def test_range(dimension, expected, dataset):
 def test_dimension_type(dimension, expected, dataset):
     assert IbisInterface.dimension_type(dataset, dimension) is expected
 
+def test_histogram(data):
+    expr = data[data.actual.notnull()].actual
+    bins = [90.0, 113.33333333333333, 136.66666666666666, 160.0]
+    result = IbisInterface.histogram(expr, bins, density=False)
+    np.testing.assert_array_equal(result[0], np.array([1, 3, 3]))
+    np.testing.assert_array_equal(result[1], np.array(bins))
+
 @pytest.mark.parametrize(["kdims", "vdims", "xaxis_type", "yaxis_type"], [
         ("date", "actual", bokeh_axes.DatetimeAxis, bokeh_axes.LinearAxis),
         ("string", "actual", bokeh_axes.CategoricalAxis, bokeh_axes.LinearAxis),

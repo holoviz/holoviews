@@ -154,9 +154,23 @@ class IbisInterface(Interface):
     def histogram(cls, expr, bins, density=True, weights=None):
         bins = numpy.asarray(bins)
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
-        binned = expr.bucket(bins).name('bucket')
+
+        # See https://github.com/ibis-project/ibis/issues/4940#issuecomment-1334181645
+        df = expr.to_projection()
+        try:
+            hist_bins = (
+                df
+                .mutate(bucket=expr.bucket(bins))
+                .bucket
+                .value_counts()
+                .sort_by('bucket')
+            ).execute()
+        except NotImplementedError:
+            # See https://github.com/ibis-project/ibis/issues/4939
+            array = expr.execute()
+            return numpy.histogram(array, bins=bins, density=density, weights=weights)
+
         hist = numpy.zeros(len(bins)-1)
-        hist_bins = binned.value_counts().sort_by('bucket').execute()
         for b, v in zip(hist_bins['bucket'], hist_bins['count']):
             if numpy.isnan(b):
                 continue
