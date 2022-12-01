@@ -1,6 +1,5 @@
 import itertools
 import types
-import inspect
 
 from numbers import Number
 from itertools import groupby
@@ -511,7 +510,7 @@ class Callable(param.Parameterized):
     @property
     def noargs(self):
         "Returns True if the callable takes no arguments"
-        noargs = inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        noargs = util.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
         return self.argspec == noargs
 
 
@@ -611,7 +610,7 @@ class Generator(Callable):
 
     @property
     def argspec(self):
-        return inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        return util.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
 
     def __call__(self):
         try:
