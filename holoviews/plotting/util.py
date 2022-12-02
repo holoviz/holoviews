@@ -791,8 +791,10 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
 
     # Return results sorted by category if category information is provided
     if records:
-        return list(unique_iterator(python2sort(matches,
-                    key=lambda r: (r.category.split(" ")[-1],r.bg,r.name.lower(),r.provider,r.source))))
+        return list(unique_iterator(python2sort(
+            matches,
+            key=lambda r: (r.category.split(" ")[-1], r.bg or "", r.name.lower(), r.provider, r.source or "")
+        )))
     else:
         return list(unique_iterator(sorted([rec.name for rec in matches], key=lambda n:n.lower())))
 
