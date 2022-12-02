@@ -1787,7 +1787,7 @@ class StoreOptions(object):
         """
         max_ids = []
         for backend in Store.renderers.keys():
-            store_ids = Store.custom_options(backend=backend).keys()
+            store_ids = list(Store.custom_options(backend=backend))
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
         # If no backends defined (e.g. plotting not imported) return zero
