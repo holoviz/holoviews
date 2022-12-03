@@ -41,12 +41,22 @@ class IbisInterface(Interface):
         return hasattr(ibis.expr.operations, "RowID")
 
     @classmethod
-    def is_rowid_zero_indexed(cls, data):
+    def _get_backend(cls, data):
         try:
             from ibis.client import find_backends, validate_backends
             (backend,) = validate_backends(list(find_backends(data)))
+            return backend
         except Exception:
-            backend = data._find_backend()
+            pass
+
+        try:
+            return data._find_backend()
+        except ibis.common.exceptions.IbisError:
+            return "ibis.backends.not_found"
+
+    @classmethod
+    def is_rowid_zero_indexed(cls, data):
+        backend = cls._get_backend(data)
         return type(backend).__module__ in cls.zero_indexed_backend_modules
 
     @classmethod
@@ -111,7 +121,14 @@ class IbisInterface(Interface):
     @cached
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.dtype(dataset, dimension).kind in 'SUO':
+        dtype_kind = cls.dtype(dataset, dimension).kind
+        if dtype_kind == 'O':
+            # Can this be done more efficiently?
+            column = dataset.data[dimension.name].execute()
+            first = column.iloc[0]
+            last = column.iloc[-1]
+            return first, last
+        if dtype_kind in 'SU':
             return None, None
         if dimension.nodata is not None:
             return Interface.range(dataset, dimension)
@@ -147,9 +164,23 @@ class IbisInterface(Interface):
     def histogram(cls, expr, bins, density=True, weights=None):
         bins = numpy.asarray(bins)
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
-        binned = expr.bucket(bins).name('bucket')
+
+        # See https://github.com/ibis-project/ibis/issues/4940#issuecomment-1334181645
+        df = expr.to_projection()
+        try:
+            hist_bins = (
+                df
+                .mutate(bucket=expr.bucket(bins))
+                .bucket
+                .value_counts()
+                .sort_by('bucket')
+            ).execute()
+        except NotImplementedError:
+            # See https://github.com/ibis-project/ibis/issues/4939
+            array = expr.execute()
+            return numpy.histogram(array, bins=bins, density=density, weights=weights)
+
         hist = numpy.zeros(len(bins)-1)
-        hist_bins = binned.value_counts().sort_by('bucket').execute()
         for b, v in zip(hist_bins['bucket'], hist_bins['count']):
             if numpy.isnan(b):
                 continue
@@ -172,7 +203,9 @@ class IbisInterface(Interface):
         dimension = dataset.get_dimension(dimension)
         return dataset.data.head(0).execute().dtypes[dimension.name]
 
-    dimension_type = dtype
+    @classmethod
+    def dimension_type(cls, dataset, dim):
+        return cls.dtype(dataset, dim).type
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
