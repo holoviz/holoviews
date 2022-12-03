@@ -38,6 +38,9 @@ extras_require['tests_core'] = [
     'plotly >=4.0',
     'dash >=1.16',
     'codecov',
+    'ipython >=5.4.0',
+    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
+    'ipykernel <6.18.0',
 ]
 
 # Optional tests dependencies, i.e. one should be able
@@ -46,17 +49,21 @@ extras_require['tests_core'] = [
 extras_require['tests'] = extras_require['tests_core'] + [
     'dask',
     'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
-    'spatialpandas',
     'xarray >=0.10.4',
     'networkx',
-    'datashader >=0.11.1',
     'shapely',
     'ffmpeg',
     'cftime',
     'scipy',
     'selenium',
-    'ipython >=5.4.0',
 ]
+
+# Packages not working on python 3.11 becauase of numba
+if sys.version_info < (3, 11):
+    extras_require['tests'] += [
+        'spatialpandas',
+        'datashader >=0.11.1',
+    ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
@@ -83,7 +90,6 @@ extras_require["examples"] = extras_require["recommended"] + [
     "plotly >=4.0",
     'dash >=1.16',
     "streamz >=0.5.0",
-    "datashader >=0.11.1",
     "ffmpeg",
     "cftime",
     "netcdf4",
@@ -93,6 +99,12 @@ extras_require["examples"] = extras_require["recommended"] + [
     "scikit-image",
     "pyarrow",
 ]
+
+if sys.version_info < (3, 11):
+    extras_require["examples"] += [
+        "datashader >=0.11.1",
+    ]
+
 
 extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
 
@@ -175,6 +187,7 @@ setup_args.update(
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Operating System :: OS Independent",
             "Intended Audience :: Science/Research",
             "Intended Audience :: Developers",
