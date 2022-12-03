@@ -41,12 +41,22 @@ class IbisInterface(Interface):
         return hasattr(ibis.expr.operations, "RowID")
 
     @classmethod
-    def is_rowid_zero_indexed(cls, data):
+    def _get_backend(cls, data):
         try:
             from ibis.client import find_backends, validate_backends
             (backend,) = validate_backends(list(find_backends(data)))
+            return backend
         except Exception:
-            backend = data._find_backend()
+            pass
+
+        try:
+            return data._find_backend()
+        except ibis.common.exceptions.IbisError:
+            return "ibis.backends.not_found"
+
+    @classmethod
+    def is_rowid_zero_indexed(cls, data):
+        backend = cls._get_backend(data)
         return type(backend).__module__ in cls.zero_indexed_backend_modules
 
     @classmethod

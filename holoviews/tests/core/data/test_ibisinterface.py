@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import param
 import pytest
 from bokeh.models import axes as bokeh_axes
 from holoviews import render
@@ -313,10 +314,10 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
 
-def create_pandas_connection(df: pd.DataFrame, *args, **kwargs):
+def pandas_data(df: pd.DataFrame, *args, **kwargs):
     return ibis.pandas.connect({"df": df})
 
-def create_duckdb_connection(df: pd.DataFrame, *args, **kwargs):
+def ibis_duckdb_data(df: pd.DataFrame, *args, **kwargs):
     tmpdir = kwargs["tmpdir"]
     filename = str(Path(tmpdir)/"db.db")
     duckdb_con = duckdb.connect(filename)
@@ -324,8 +325,19 @@ def create_duckdb_connection(df: pd.DataFrame, *args, **kwargs):
 
     return ibis.duckdb.connect(filename)
 
-def create_sqlite_connection(df: pd.DataFrame, *args, **kwargs):
+def ibis_sqlite_data(df: pd.DataFrame, *args, **kwargs):
     return create_temp_db(df, "df")
+
+class IbisMemConnection(param.Parameterized):
+    def __init__(self, df):
+        super().__init__()
+        self._table = ibis.memtable(df)
+    
+    def table(self, df):
+        return self._table
+
+def ibis_mem_table(df: pd.DataFrame, *args, **kwargs):
+    return IbisMemConnection(df=df)
 
 @pytest.fixture
 def reference_df():
@@ -339,7 +351,7 @@ def reference_df():
         },
     )
 
-@pytest.fixture(params=[create_pandas_connection, create_duckdb_connection, create_sqlite_connection])
+@pytest.fixture(params=[pandas_data, ibis_duckdb_data, ibis_sqlite_data, ibis_mem_table])
 def connection(request, reference_df, tmpdir):
     return request.param(reference_df, tmpdir=tmpdir)
 
@@ -350,6 +362,9 @@ def data(connection):
 @pytest.fixture
 def dataset(data):
     return Dataset(data, kdims=["numerical", "date", "string"], vdims=["actual", "forecast"])
+
+def test_get_backend(data):
+    assert IbisInterface._get_backend(data)
 
 def test_index_ibis_table(data):
         table = IbisInterface._index_ibis_table(data)
