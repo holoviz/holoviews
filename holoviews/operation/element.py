@@ -788,6 +788,8 @@ class histogram(Operation):
                 hist_range = (0, 1)
             steps = self.p.num_bins + 1
             start, end = hist_range
+            if isinstance(start, str) or isinstance(end, str) or isinstance(steps, str):
+                raise ValueError("Categorical data found. Cannot create histogram from categorical data.")
             if is_datetime:
                 start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
             if self.p.log:
