@@ -13,7 +13,7 @@ import unicodedata
 import datetime as dt
 
 from collections.abc import Iterable # noqa
-from collections import defaultdict, OrderedDict # noqa (compatibility)
+from collections import defaultdict, OrderedDict, namedtuple # noqa (compatibility)
 from contextlib import contextmanager
 from packaging.version import Version as LooseVersion
 from functools import partial
@@ -41,6 +41,9 @@ arraylike_types = (np.ndarray,)
 masked_types = ()
 
 anonymous_dimension_label = '_'
+
+# Argspec was removed in Python 3.11
+ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
 _NP_SIZE_LARGE = 1_000_000
 _NP_SAMPLE_SIZE = 1_000_000
@@ -419,10 +422,8 @@ def argspec(callable_obj):
     else:
         raise ValueError("Cannot determine argspec for non-callable type.")
 
-    return inspect.ArgSpec(args=args,
-                           varargs=spec.varargs,
-                           keywords=get_keywords(spec),
-                           defaults=spec.defaults)
+    keywords = get_keywords(spec)
+    return ArgSpec(args=args, varargs=spec.varargs, keywords=keywords, defaults=spec.defaults)
 
 
 def validate_dynamic_argspec(callback, kdims, streams):
