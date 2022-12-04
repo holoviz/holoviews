@@ -58,7 +58,7 @@ jobs:
         # with the latest conda. When this is resolved,
         # move this back into the step below.
         if: matrix.python-version != '3.11'
-        run: conda update -n base -c defaults conda 
+        run: conda update -n base -c defaults conda
       - name: conda setup
         run: |
           conda config --prepend channels conda-forge
