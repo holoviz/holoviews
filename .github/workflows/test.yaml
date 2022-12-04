@@ -25,7 +25,7 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: pre-commit
-        uses: pre-commit/action@v2.0.3
+        uses: pre-commit/action@v3.0.0
   test_suite:
     name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
