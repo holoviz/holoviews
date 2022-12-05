@@ -25,7 +25,7 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: pre-commit
-        uses: pre-commit/action@v2.0.3
+        uses: pre-commit/action@v3.0.0
   test_suite:
     name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
@@ -52,9 +52,15 @@ jobs:
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
+      - name: conda update conda
+        # Temporarily update conda in its own step
+        # to filter out Python 3.11 as there are issues
+        # with the latest conda. When this is resolved,
+        # move this back into the step below.
+        if: matrix.python-version != '3.11'
+        run: conda update -n base -c defaults conda
       - name: conda setup
         run: |
-          conda update -n base -c defaults conda
           conda config --prepend channels conda-forge
           conda config --prepend channels bokeh/label/dev
           conda config --prepend channels pyviz/label/dev
