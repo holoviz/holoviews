@@ -55,10 +55,15 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: conda setup
         run: |
+          conda config --remove channels defaults
           conda create -n test-environment python=3.8 pyctdev
       - name: doit develop_install
         run: |
           conda activate test-environment
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
           doit develop_install -o doc --conda-mode=mamba
           mamba install geckodriver selenium awscli
       - name: doit env_capture
