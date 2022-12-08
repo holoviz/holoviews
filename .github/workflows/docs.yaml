@@ -47,7 +47,7 @@ jobs:
         with:
           miniconda-version: "latest"
           mamba-version: "*"
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
@@ -55,36 +55,35 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: conda setup
         run: |
+          conda config --remove channels defaults
           conda create -n test-environment python=3.8 pyctdev
       - name: doit develop_install
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
           doit develop_install -o doc --conda-mode=mamba
           mamba install geckodriver selenium awscli
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: bokeh sampledata
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           bokeh sampledata
       - name: generate rst
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite generate-rst --org holoviz --project-name holoviews
       - name: refmanual
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
       - name: build docs
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews
       - name: upload dev
@@ -92,7 +91,6 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
@@ -100,6 +98,5 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           aws s3 sync --quiet ./builtdocs s3://holoviews.org/

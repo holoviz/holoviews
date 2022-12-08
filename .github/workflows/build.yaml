@@ -82,24 +82,20 @@ jobs:
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
       - name: env setup
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit develop_install $CHANS_DEV -o flakes
           pip uninstall -y holoviews
           doit pip_on_conda
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: pip build
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit ecosystem=pip package_build --test-group=flakes
       - name: pip upload
         if: github.event_name == 'push'
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit ecosystem=pip package_upload -u $PPU -p $PPP -r $PYPI

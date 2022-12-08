@@ -117,7 +117,7 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['flakes']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.7.1',
+    'nbsite ==0.8.0rc2',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
