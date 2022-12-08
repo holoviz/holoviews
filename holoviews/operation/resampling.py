@@ -25,7 +25,6 @@ class LinkableOperation(Operation):
     _allow_extra_keywords=True
 
 
-
 class ResamplingOperation1D(LinkableOperation):
     """
     Abstract baseclass for resampling operations

@@ -33,14 +33,8 @@ import math
 import numpy as np
 import param
 
-try:
-    from numba import njit
-except:
-    njit = lambda func: func
-
 from .resampling import ResamplingOperation1D
 
-@njit
 def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
     """Vectorized triangular area argmax computation.
     Parameters
@@ -68,7 +62,39 @@ def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
         + (prev_x * avg_next_y - avg_next_x * prev_y)
     ).argmax()
 
-@njit
+
+def _lttb_inner(x, y, n_out, sampled_x, offset):
+    a = 0
+    for i in range(n_out - 3):
+        o0, o1, o2 = offset[i], offset[i + 1], offset[i + 2]
+        a = (
+            _argmax_area(
+                x[a],
+                y[a],
+                np.mean(x[o1:o2]),
+                y[o1:o2].mean(),
+                x[o0:o1],
+                y[o0:o1],
+            )
+            + offset[i]
+        )
+        sampled_x[i + 1] = a
+
+    # ------------ EDGE CASE ------------
+    # next-average of last bucket = last point
+    sampled_x[-2] = (
+        _argmax_area(
+            x[a],
+            y[a],
+            x[-1],  # last point
+            y[-1],
+            x[offset[-2] : offset[-1]],
+            y[offset[-2] : offset[-1]],
+        )
+        + offset[-2]
+    )
+
+
 def _lttb(x, y, n_out):
     """
     Downsample the data using the LTTB algorithm (python implementation).
@@ -92,34 +118,8 @@ def _lttb(x, y, n_out):
     sampled_x[0] = 0
     sampled_x[-1] = x.shape[0] - 1
 
-    a = 0
-    for i in range(n_out - 3):
-        a = (
-            _argmax_area(
-                prev_x=x[a],
-                prev_y=y[a],
-                avg_next_x=np.mean(x[offset[i + 1] : offset[i + 2]]),
-                avg_next_y=y[offset[i + 1] : offset[i + 2]].mean(),
-                x_bucket=x[offset[i] : offset[i + 1]],
-                y_bucket=y[offset[i] : offset[i + 1]],
-            )
-            + offset[i]
-        )
-        sampled_x[i + 1] = a
+    _lttb_inner(x, y, n_out, sampled_x, offset)
 
-    # ------------ EDGE CASE ------------
-    # next-average of last bucket = last point
-    sampled_x[-2] = (
-        _argmax_area(
-            prev_x=x[a],
-            prev_y=y[a],
-            avg_next_x=x[-1],  # last point
-            avg_next_y=y[-1],
-            x_bucket=x[offset[-2] : offset[-1]],
-            y_bucket=y[offset[-2] : offset[-1]],
-        )
-        + offset[-2]
-    )
     return sampled_x
 
 
