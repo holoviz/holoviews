@@ -10,7 +10,7 @@ the
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ scientific
 Python distributions::
 
-  conda install -c pyviz holoviews 
+  conda install -c pyviz holoviews
 
 This recommended installation includes the default `Matplotlib
 <http://matplotlib.org>`_ plotting library backend, the
