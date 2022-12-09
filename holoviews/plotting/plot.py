@@ -1738,6 +1738,8 @@ class GenericOverlayPlot(GenericElementPlot):
             if subplot is None:
                 continue
             subplot.document = self.document
+            if self.comm:
+                subplot.comm = self.comm
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
