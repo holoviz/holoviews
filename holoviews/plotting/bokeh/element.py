@@ -1008,10 +1008,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           for (const dr of cb_obj.origin.data_renderers) {{
             const rv = plot_view.renderer_view(dr)
             const index = rv.glyph_view.index
-            const bbox = {{{odim}0: cb_obj.{odim}0, {odim}1: cb_obj.{odim}1, {dim}0: index.bbox.{dim}0, {dim}1: index.bbox.{dim}1}}
+            const bbox = {{
+              {odim}0: cb_obj.{odim}0,
+              {odim}1: cb_obj.{odim}1,
+              {dim}0: index.bbox.{dim}0,
+              {dim}1: index.bbox.{dim}1
+            }}
             const {{{dim}0, {dim}1}} = index.bounds(bbox)
-            if ({dim}0 < vmin) {{ vmin = {dim}0 }}
-            if ({dim}1 > vmax) {{ vmax = {dim}1 }}
+            vmin = Math.min(vmin, {dim}0)
+            vmax = Math.max(vmax, {dim}1)
           }}
           const span = vmax-vmin
           const lpad = span*{p0}
