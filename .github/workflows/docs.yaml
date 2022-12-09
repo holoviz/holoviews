@@ -47,7 +47,7 @@ jobs:
         with:
           miniconda-version: "latest"
           mamba-version: "*"
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge
+          channels: pyviz/label/dev,bokeh,conda-forge
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
