@@ -59,13 +59,15 @@ jobs:
           conda config --set channel_priority strict
           conda create -n test-environment python=3.9 pyctdev
           conda create -n push-environment python-3.9 awscli
-      - name: doit develop_install
+      - name: conda info and show sources
         run: |
           conda activate test-environment
           conda info
-          conda list
           conda config --show-sources
           conda config --show
+      - name: doit develop_install
+        run: |
+          conda activate test-environment
           doit develop_install -o doc --conda-mode=mamba
       - name: doit env_capture
         run: |
