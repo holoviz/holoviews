@@ -969,9 +969,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if dim == 'x':
             didx = 0
             odim = 'y'
+            invert = self.invert_xaxis
         else:
             didx = 1
             odim = 'x'
+            invert = self.invert_yaxis
         if not self.padding:
             p0, p1 = 0, 0
         elif isinstance(self.padding, tuple):
@@ -1006,22 +1008,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
           let [vmin, vmax] = [Infinity, -Infinity] 
           for (const dr of cb_obj.origin.data_renderers) {{
-            const rv = plot_view.renderer_view(dr)
-            const index = rv.glyph_view.index
-            const bbox = {{
-              {odim}0: cb_obj.{odim}0,
-              {odim}1: cb_obj.{odim}1,
-              {dim}0: index.bbox.{dim}0,
-              {dim}1: index.bbox.{dim}1
+            const index = plot_view.renderer_view(dr).glyph_view.index.index
+            for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
+              const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
+              if ({odim}0 > cb_obj.{odim}0 && {odim}1 < cb_obj.{odim}1) {{
+                vmin = Math.min(vmin, {dim}0)
+                vmax = Math.max(vmax, {dim}1)
+              }}
             }}
-            const {{{dim}0, {dim}1}} = index.bounds(bbox)
-            vmin = Math.min(vmin, {dim}0)
-            vmax = Math.max(vmax, {dim}1)
           }}
+          const invert = {str(invert).lower()}
           const span = vmax-vmin
-          const lpad = span*{p0}
-          const upad = span*{p1}
-          cb_obj.origin.{dim}_range.setv({{start: vmin-lpad, end: vmax+upad}})
+          const lower = vmin-(span*{p0})
+          const upper = vmax+(span*{p1})
+          const [start, end] = invert ? [upper, lower] : [lower, upper]
+          cb_obj.origin.{dim}_range.setv({{start, end}})
         """))
 
     def _categorize_data(self, data, cols, dims):
