@@ -125,6 +125,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'pydata-sphinx-theme ==0.9.0',
     'sphinx-copybutton',
     'pooch',
+    'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
