@@ -65,7 +65,7 @@ jobs:
           conda config --show-sources
           conda config --show
           doit develop_install -o doc --conda-mode=mamba
-          mamba install geckodriver selenium awscli
+          mamba install geckodriver awscli
       - name: doit env_capture
         run: |
           conda activate test-environment
