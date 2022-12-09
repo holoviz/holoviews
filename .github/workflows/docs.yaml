@@ -56,7 +56,7 @@ jobs:
       - name: conda setup
         run: |
           conda config --remove channels defaults
-          conda create -n test-environment python=3.8 pyctdev
+          conda create -n test-environment python=3.9 pyctdev
       - name: doit develop_install
         run: |
           conda activate test-environment
