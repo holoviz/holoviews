@@ -68,9 +68,17 @@ jobs:
           conda activate test-environment
           doit test_unit
       - name: test examples
+        if: matrix.python-version != '3.11'
         run: |
           conda activate test-environment
+          bokeh sampledata
           doit test_examples
+      - name: test examples - python 3.11
+        if: matrix.python-version == '3.11'
+        run: |
+          conda activate test-environment
+          bokeh sampledata
+          pytest -n auto --dist loadscope --nbval-lax examples/reference/elements
       - name: codecov
         run: |
           conda activate test-environment
