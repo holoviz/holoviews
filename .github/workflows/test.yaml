@@ -20,7 +20,7 @@ jobs:
           fetch-depth: "1"
       - name: set PY
         run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
@@ -59,6 +59,10 @@ jobs:
           cache: true
           conda-update: true
         id: install
+      - name: bokeh sampledata
+        run: |
+          conda activate test-environment
+          bokeh sampledata
       - name: doit test_flakes
         run: |
           conda activate test-environment
@@ -71,7 +75,6 @@ jobs:
         if: matrix.python-version != '3.11'
         run: |
           conda activate test-environment
-          bokeh sampledata
           doit test_examples
       - name: test examples - python 3.11
         # Should be removed when numba support python 3.11
