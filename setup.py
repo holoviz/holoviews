@@ -97,6 +97,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "shapely",
     "scikit-image",
     "pyarrow",
+    "pooch",
 ]
 
 if sys.version_info < (3, 11):
