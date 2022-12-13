@@ -54,7 +54,7 @@ jobs:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests"
           cache: true
           conda-update: true
