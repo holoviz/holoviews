@@ -476,8 +476,15 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
     def test_mpl_colormap_instance(self):
-        from matplotlib.cm import get_cmap
-        cmap = get_cmap('Greys')
+        try:
+            from matplotlib import colormaps
+            cmap = colormaps.get('Greys')
+        except ImportError:
+            # This will stop working and can be removed
+            # when we do not support python 3.7
+            from matplotlib.cm import get_cmap
+            cmap = get_cmap('Greys')
+
         colors = process_cmap(cmap, 3, provider='matplotlib')
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 

@@ -288,11 +288,8 @@ def connect_edges_pd(graph):
     df = df.rename(columns={x.name: 'dst_x', y.name: 'dst_y'})
     df = df.sort_values('graph_edge_index').drop(['graph_edge_index'], axis=1)
 
-    edge_segments = []
-    for i, edge in df.iterrows():
-        start = edge['src_x'], edge['src_y']
-        end = edge['dst_x'], edge['dst_y']
-        edge_segments.append(np.array([start, end]))
+    cols = ["src_x", "src_y", "dst_x", "dst_y"]
+    edge_segments = list(df[cols].values.reshape(df.index.size, 2, 2))
     return edge_segments
 
 
@@ -305,9 +302,10 @@ def connect_tri_edges_pd(trimesh):
     """
     edges = trimesh.dframe().copy()
     edges.index.name = 'trimesh_edge_index'
-    edges = edges.reset_index()
+    edges = edges.drop("color", errors="ignore", axis=1).reset_index()
     nodes = trimesh.nodes.dframe().copy()
     nodes.index.name = 'node_index'
+    nodes = nodes.drop("color", errors="ignore", axis=1)
     v1, v2, v3 = trimesh.kdims
     x, y, idx = trimesh.nodes.kdims[:3]
 

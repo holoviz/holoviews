@@ -559,6 +559,8 @@ class Opts(object):
         Returns:
             Returns the object or a clone with the options applied
         """
+        if not(args) and not(kwargs):
+            return self._obj
         if self._mode is None:
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
             if apply_groups:

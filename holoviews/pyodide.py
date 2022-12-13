@@ -74,6 +74,10 @@ def render_png(element):
 def render_svg(element):
     return render_image(element, 'svg')
 
+def in_jupyterlite():
+    import js
+    return hasattr(js, "_JUPYTERLAB")
+
 #-----------------------------------------------------------------------------
 # Public API
 #-----------------------------------------------------------------------------
