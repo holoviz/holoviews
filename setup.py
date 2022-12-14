@@ -31,6 +31,7 @@ extras_require['flakes'] = [
 extras_require['tests_core'] = [
     'pytest',
     'pytest-cov',
+    'pytest-xdist',
     'matplotlib >=3',
     'nbconvert',
     'bokeh',
@@ -69,9 +70,7 @@ extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
 ]
 
-extras_require['tests_nb'] = [
-    'nbsmoke >=0.2.0',
-]
+extras_require['tests_nb'] = ['nbval']
 
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
@@ -98,6 +97,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "shapely",
     "scikit-image",
     "pyarrow",
+    "pooch",
 ]
 
 if sys.version_info < (3, 11):
