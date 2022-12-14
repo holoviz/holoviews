@@ -402,7 +402,6 @@ class MultiInterface(Interface):
             dvals = ds.interface.values(
                 ds, dimension, True, flat, compute, keep_index
             )
-            empty = len(dvals) == 0
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
             gt = ds.interface.geom_type(ds) if hasattr(ds.interface, 'geom_type') else None
 
@@ -410,7 +409,7 @@ class MultiInterface(Interface):
                 gt = geom_type
 
             if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
-                not geom_type == 'Points' and not empty):
+                not geom_type == 'Points' and len(dvals)):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             if scalar and not expanded:
@@ -421,7 +420,7 @@ class MultiInterface(Interface):
             if not len(dvals):
                 continue
             values.append(dvals)
-            if (not is_points and expanded) or empty:
+            if not is_points and expanded:
                 values.append([np.NaN])
 
         if not values:
