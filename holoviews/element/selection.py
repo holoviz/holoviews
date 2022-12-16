@@ -6,6 +6,7 @@ elements.
 import sys
 
 import numpy as np
+import pandas as pd
 
 from ..core import Dataset, NdOverlay, util
 from ..streams import SelectionXY, Selection1D, Lasso
@@ -117,7 +118,15 @@ def spatial_select_columnar(xvals, yvals, geometry):
         except ImportError:
             raise ImportError("Lasso selection on tabular data requires "
                               "either spatialpandas or shapely to be available.")
-    mask[np.where(mask)[0]] = geom_mask
+    try:
+        mask[np.where(mask)[0]] = geom_mask
+    except TypeError:
+        # Dask not compatible with above assignment statement.
+        # To circumvent, create a Series, fill in geom_mask values, 
+        # and use mask() method to fill in values.
+        geom_mask_expanded = pd.Series(False, index=mask.index)
+        geom_mask_expanded[np.where(mask)[0]] = geom_mask
+        mask = mask.mask(mask, geom_mask_expanded)
     return mask
 
 
