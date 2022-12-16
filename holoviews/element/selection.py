@@ -122,7 +122,7 @@ def spatial_select_columnar(xvals, yvals, geometry):
         mask[np.where(mask)[0]] = geom_mask
     except TypeError:
         # Dask not compatible with above assignment statement.
-        # To circumvent, create a Series, fill in geom_mask values, 
+        # To circumvent, create a Series, fill in geom_mask values,
         # and use mask() method to fill in values.
         geom_mask_expanded = pd.Series(False, index=mask.index)
         geom_mask_expanded[np.where(mask)[0]] = geom_mask
