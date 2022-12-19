@@ -138,12 +138,7 @@ def spatial_select(xvals, yvals, geometry):
     if xvals.ndim > 1:
         return spatial_select_gridded(xvals, yvals, geometry)
     else:
-        df = xvals.to_frame(name="xvals")
-        df["yvals"] = yvals
-        def spatial_select_df(df, geometry):
-            return spatial_select_columnar(df.xvals, df.yvals, geometry)
-        return df.map_partitions(spatial_select_df, geometry)
-        # return spatial_select_columnar(xvals, yvals, geometry)
+        return spatial_select_columnar(xvals, yvals, geometry)
 
 def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
     try:
