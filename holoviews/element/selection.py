@@ -124,9 +124,13 @@ def spatial_select_columnar(xvals, yvals, geometry):
         # Dask not compatible with above assignment statement.
         # To circumvent, create a Series, fill in geom_mask values,
         # and use mask() method to fill in values.
+        # mask() does not preserve the dtype of the original Series,
+        # and needs to be reset after the operation.
         geom_mask_expanded = pd.Series(False, index=mask.index)
         geom_mask_expanded[np.where(mask)[0]] = geom_mask
+        meta_orig = mask._meta
         mask = mask.mask(mask, geom_mask_expanded)
+        mask._meta = meta_orig
     return mask
 
 
