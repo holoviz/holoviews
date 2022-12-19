@@ -99,6 +99,19 @@ def spatial_select_columnar(xvals, yvals, geometry):
             except Exception:
                 xvals = np.asarray(xvals)
                 yvals = np.asarray(yvals)
+    if 'dask' in sys.modules:
+        import dask.dataframe as dd
+        if isinstance(xvals, dd.Series):
+            try:
+                xvals.name = "xvals"
+                yvals.name = "yvals"
+                df = xvals.to_frame().join(yvals)
+                return df.map_partitions(
+                    lambda df, geometry: spatial_select_columnar(df.xvals, df.yvals, geometry), geometry
+                )
+            except Exception:
+                xvals = np.asarray(xvals)
+                yvals = np.asarray(yvals)
     x0, x1 = geometry[:, 0].min(), geometry[:, 0].max()
     y0, y1 = geometry[:, 1].min(), geometry[:, 1].max()
     sel_mask = (xvals>=x0) & (xvals<=x1) & (yvals>=y0) & (yvals<=y1)
@@ -117,20 +130,11 @@ def spatial_select_columnar(xvals, yvals, geometry):
             geom_mask = np.array([poly.contains(p) for p in points])
         except ImportError:
             raise ImportError("Lasso selection on tabular data requires "
-                              "either spatialpandas or shapely to be available.")
-    try:
+                            "either spatialpandas or shapely to be available.")
+    if isinstance(xvals, pd.Series):
+        sel_mask[sel_mask.index[np.where(sel_mask)[0]]] = geom_mask
+    else:
         sel_mask[np.where(sel_mask)[0]] = geom_mask
-    except TypeError:
-        # Dask not compatible with above assignment statement.
-        # To circumvent, create a Series, fill in geom_mask values,
-        # and use mask() method to fill in values.
-        # mask() does not preserve the dtype of the original Series,
-        # and needs to be reset after the operation.
-        geom_mask_expanded = pd.Series(False, index=sel_mask.index)
-        geom_mask_expanded[np.where(sel_mask)[0]] = geom_mask
-        meta_orig = sel_mask._meta
-        sel_mask = sel_mask.mask(sel_mask, geom_mask_expanded)
-        sel_mask._meta = meta_orig
     return sel_mask
 
 
