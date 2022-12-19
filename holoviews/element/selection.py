@@ -73,11 +73,11 @@ def spatial_select_gridded(xvals, yvals, geometry):
         xs, ys = xvals[0], yvals[:, 0]
         target = Image((xs, ys, np.empty(ys.shape+xs.shape)))
         poly = Polygons([geometry])
-        mask = rasterize(poly, target=target, dynamic=False, aggregator='any')
-        return mask.dimension_values(2, flat=False)
+        sel_mask = rasterize(poly, target=target, dynamic=False, aggregator='any')
+        return sel_mask.dimension_values(2, flat=False)
     else:
-        mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
-        return mask.reshape(xvals.shape)
+        sel_mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
+        return sel_mask.reshape(xvals.shape)
 
 def spatial_select_columnar(xvals, yvals, geometry):
     if 'cudf' in sys.modules:
@@ -101,9 +101,9 @@ def spatial_select_columnar(xvals, yvals, geometry):
                 yvals = np.asarray(yvals)
     x0, x1 = geometry[:, 0].min(), geometry[:, 0].max()
     y0, y1 = geometry[:, 1].min(), geometry[:, 1].max()
-    mask = (xvals>=x0) & (xvals<=x1) & (yvals>=y0) & (yvals<=y1)
-    masked_xvals = xvals[mask]
-    masked_yvals = yvals[mask]
+    sel_mask = (xvals>=x0) & (xvals<=x1) & (yvals>=y0) & (yvals<=y1)
+    masked_xvals = xvals[sel_mask]
+    masked_yvals = yvals[sel_mask]
     try:
         from spatialpandas.geometry import Polygon, PointArray
         points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
@@ -119,19 +119,19 @@ def spatial_select_columnar(xvals, yvals, geometry):
             raise ImportError("Lasso selection on tabular data requires "
                               "either spatialpandas or shapely to be available.")
     try:
-        mask[np.where(mask)[0]] = geom_mask
+        sel_mask[np.where(sel_mask)[0]] = geom_mask
     except TypeError:
         # Dask not compatible with above assignment statement.
         # To circumvent, create a Series, fill in geom_mask values,
         # and use mask() method to fill in values.
         # mask() does not preserve the dtype of the original Series,
         # and needs to be reset after the operation.
-        geom_mask_expanded = pd.Series(False, index=mask.index)
-        geom_mask_expanded[np.where(mask)[0]] = geom_mask
-        meta_orig = mask._meta
-        mask = mask.mask(mask, geom_mask_expanded)
-        mask._meta = meta_orig
-    return mask
+        geom_mask_expanded = pd.Series(False, index=sel_mask.index)
+        geom_mask_expanded[np.where(sel_mask)[0]] = geom_mask
+        meta_orig = sel_mask._meta
+        sel_mask = sel_mask.mask(sel_mask, geom_mask_expanded)
+        sel_mask._meta = meta_orig
+    return sel_mask
 
 
 def spatial_select(xvals, yvals, geometry):
