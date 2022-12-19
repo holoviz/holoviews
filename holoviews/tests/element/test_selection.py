@@ -5,6 +5,8 @@ Test cases for the Comparisons class over the Chart elements
 from unittest import skipIf
 
 import numpy as np
+import pandas as pd
+import pytest
 
 from holoviews.core import NdOverlay
 from holoviews.core.options import Store
@@ -14,6 +16,7 @@ from holoviews.element import (
     QuadMesh, Polygons
 )
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element.selection import spatial_select_columnar
 
 try:
     import datashader as ds
@@ -30,11 +33,17 @@ try:
 except:
     shapely = None
 
+try:
+    import dask.dataframe as dd
+except:
+    dd = None
+
 spd_available = skipIf(spd is None, "spatialpandas is not available")
 shapelib_available = skipIf(shapely is None and spd is None,
                             'Neither shapely nor spatialpandas are available')
 shapely_available = skipIf(shapely is None, 'shapely is not available')
 ds_available = skipIf(ds is None, 'datashader not available')
+dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
 
 
 class TestSelection1DExpr(ComparisonTestCase):
@@ -592,3 +601,55 @@ class TestSelectionPolyExpr(ComparisonTestCase):
                                 'x': np.array([-0.15, 0, 0.6, 0.6])})
         self.assertEqual(expr.apply(poly, expanded=False), np.array([False, False, True]))
         self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
+
+
+@shapelib_available
+class TestSpatialSelectColumnar:
+    @pytest.fixture(scope="class")
+    def geometry(self):
+        return np.array([
+            [-1, 0.5],
+            [ 1, 0.5],
+            [ 0,-1.5],
+            [-2,-1.5]
+            ])
+
+    @pytest.fixture(scope="class")
+    def pandas_df(self):
+        return pd.DataFrame({
+            "x": [-1, 0, 1,
+                  -1, 0, 1,
+                  -1, 0, 1],
+            "y": [ 1, 1, 1,
+                   0, 0, 0,
+                  -1,-1,-1]
+            })
+
+    @pytest.fixture(scope="class")
+    def enclosed_pt_mask(self):
+        enclosed_pt_list = [
+            0, 0, 0,
+            1, 1, 0,
+            1, 1, 0,
+        ]
+        return np.array(enclosed_pt_list, dtype=np.bool)
+
+    @dd_available
+    @pytest.fixture(scope="function")
+    def dask_df(self, pandas_df):
+        return dd.from_pandas(pandas_df, npartitions=2)
+
+    def test_spatial_select_columnar_pandas(self, geometry, pandas_df, enclosed_pt_mask):
+        mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry)
+        assert np.array_equal(mask, enclosed_pt_mask)
+
+    @dd_available
+    def test_spatial_select_columnar_dask(self, geometry, dask_df, enclosed_pt_mask):
+        mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+        assert np.array_equal(mask.compute(), enclosed_pt_mask)
+
+    @dd_available
+    def test_spatial_select_columnar_meta_bool(self, geometry, dask_df, enclosed_pt_mask):
+        mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+        assert mask._meta.dtype.name == 'bool'
+
