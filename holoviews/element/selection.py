@@ -107,7 +107,9 @@ def spatial_select_columnar(xvals, yvals, geometry):
                 yvals.name = "yvals"
                 df = xvals.to_frame().join(yvals)
                 return df.map_partitions(
-                    lambda df, geometry: spatial_select_columnar(df.xvals, df.yvals, geometry), geometry
+                    lambda df, geometry: spatial_select_columnar(df.xvals, df.yvals, geometry),
+                    geometry,
+                    meta=pd.Series(dtype=bool)
                 )
             except Exception:
                 xvals = np.asarray(xvals)
@@ -130,7 +132,7 @@ def spatial_select_columnar(xvals, yvals, geometry):
             geom_mask = np.array([poly.contains(p) for p in points])
         except ImportError:
             raise ImportError("Lasso selection on tabular data requires "
-                            "either spatialpandas or shapely to be available.")
+                              "either spatialpandas or shapely to be available.")
     if isinstance(xvals, pd.Series):
         sel_mask[sel_mask.index[np.where(sel_mask)[0]]] = geom_mask
     else:
