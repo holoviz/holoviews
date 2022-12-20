@@ -605,16 +605,33 @@ class TestSelectionPolyExpr(ComparisonTestCase):
 
 @shapelib_available
 class TestSpatialSelectColumnar:
-    @pytest.fixture(scope="class")
-    def geometry(self):
-        return np.array([
-            [-1, 0.5],
-            [ 1, 0.5],
-            [ 0,-1.5],
-            [-2,-1.5]
-            ])
+    geometry_encl = np.array([
+        [-1, 0.5],
+        [ 1, 0.5],
+        [ 0,-1.5],
+        [-2,-1.5]
+    ], dtype=float)
 
-    @pytest.fixture(scope="class")
+    pt_mask_encl = np.array([
+        0, 0, 0,
+        1, 1, 0,
+        1, 1, 0,
+    ], dtype=bool)
+
+    geometry_noencl = np.array([
+        [10, 10],
+        [10, 11],
+        [11, 11],
+        [11, 10]
+    ], dtype=float)
+
+    pt_mask_noencl = np.array([
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+    ], dtype=bool)
+
+    @pytest.fixture(scope="module")
     def pandas_df(self):
         return pd.DataFrame({
             "x": [-1, 0, 1,
@@ -623,32 +640,32 @@ class TestSpatialSelectColumnar:
             "y": [ 1, 1, 1,
                    0, 0, 0,
                   -1,-1,-1]
-            })
-
-    @pytest.fixture(scope="class")
-    def enclosed_pt_mask(self):
-        enclosed_pt_list = [
-            0, 0, 0,
-            1, 1, 0,
-            1, 1, 0,
-        ]
-        return np.array(enclosed_pt_list, dtype=np.bool)
+        }, dtype=float)
 
     @dd_available
     @pytest.fixture(scope="function")
     def dask_df(self, pandas_df):
         return dd.from_pandas(pandas_df, npartitions=2)
 
-    def test_spatial_select_columnar_pandas(self, geometry, pandas_df, enclosed_pt_mask):
-        mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry)
-        assert np.array_equal(mask, enclosed_pt_mask)
+    @pytest.mark.parametrize("geometry,pt_mask", [(geometry_encl, pt_mask_encl),(geometry_noencl, pt_mask_noencl)])
+    class TestSpatialSelectColumnarPtMask:
+        def test_pandas(self, geometry, pt_mask, pandas_df):
+            mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry)
+            assert np.array_equal(mask, pt_mask)
 
-    @dd_available
-    def test_spatial_select_columnar_dask(self, geometry, dask_df, enclosed_pt_mask):
-        mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
-        assert np.array_equal(mask.compute(), enclosed_pt_mask)
+        @dd_available
+        def test_dask(self, geometry, pt_mask, dask_df):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+            assert np.array_equal(mask.compute(), pt_mask)
 
-    @dd_available
-    def test_spatial_select_columnar_meta_bool(self, geometry, dask_df, enclosed_pt_mask):
-        mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
-        assert mask._meta.dtype.name == 'bool'
+        def test_numpy(self, geometry, pt_mask, pandas_df):
+            mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry)
+            assert np.array_equal(mask, pt_mask)
+
+
+    @pytest.mark.parametrize("geometry", [geometry_encl, geometry_noencl])
+    class TestSpatialSelectColumnarDaskMeta:
+        @dd_available
+        def test_meta_dtype(self, geometry, dask_df):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+            assert mask._meta.dtype == np.bool_
