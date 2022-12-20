@@ -652,4 +652,3 @@ class TestSpatialSelectColumnar:
     def test_spatial_select_columnar_meta_bool(self, geometry, dask_df, enclosed_pt_mask):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
         assert mask._meta.dtype.name == 'bool'
-
