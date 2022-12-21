@@ -12,7 +12,7 @@ import pyct.build
 setup_args = {}
 install_requires = [
     "param >=1.9.3,<2.0",
-    "numpy >=1.0",
+    "numpy >=1.0,<1.24",  # Upper pin because of numba
     "pyviz_comms >=0.7.4",
     "panel >=0.13.1",
     "colorcet",
