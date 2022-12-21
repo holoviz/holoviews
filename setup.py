@@ -12,7 +12,7 @@ import pyct.build
 setup_args = {}
 install_requires = [
     "param >=1.9.3,<2.0",
-    "numpy >=1.0,<1.24",  # Upper pin because of numba
+    "numpy >=1.0",
     "pyviz_comms >=0.7.4",
     "panel >=0.13.1",
     "colorcet",
@@ -57,9 +57,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy',
     'selenium',
+    'numpy <1.24',  # Upper pin because of numba error
 ]
 
-# Packages not working on python 3.11 becauase of numba
+# Packages not working on python 3.11 because of numba
 if sys.version_info < (3, 11):
     extras_require['tests'] += [
         'spatialpandas',
