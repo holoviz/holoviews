@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -49,7 +49,7 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a8
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -58,6 +58,7 @@ jobs:
           envs: "-o flakes -o tests -o examples_tests"
           cache: true
           conda-update: true
+          conda-mamba: mamba
         id: install
       - name: bokeh sampledata
         run: |
