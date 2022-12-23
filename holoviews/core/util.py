@@ -305,7 +305,7 @@ class periodic(Thread):
 
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
-        elif not type(count) is type(None):
+        elif count is not None:
             raise ValueError('Count value must be a positive integer or None')
 
         if block is False and count is None and timeout is None:
