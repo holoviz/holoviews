@@ -1,5 +1,4 @@
-from collections import defaultdict
-from ..core import OrderedDict
+from collections import defaultdict, OrderedDict
 from ..core import Store
 
 

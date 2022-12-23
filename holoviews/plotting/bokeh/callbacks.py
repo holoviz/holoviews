@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 
@@ -12,7 +12,6 @@ from bokeh.models import (
 )
 from panel.io.state import state
 
-from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
     datetime_types, dimension_sanitizer, dt64_to_dt

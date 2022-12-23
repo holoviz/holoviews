@@ -1,8 +1,10 @@
+from collections import OrderedDict
+
 import numpy as np
 
 import param
 
-from ..core import OrderedDict, Element, Dataset, Tabular
+from ..core import Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
 from .selection import SelectionIndexExpr
 

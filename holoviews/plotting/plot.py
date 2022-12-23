@@ -6,7 +6,7 @@ of this Plot baseclass.
 import uuid
 import warnings
 
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, OrderedDict
 from functools import partial
 from itertools import groupby, product
 
@@ -22,7 +22,6 @@ except ImportError:
     from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
 from ..selection import NoOpSelectionDisplay
-from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
