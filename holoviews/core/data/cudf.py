@@ -4,6 +4,7 @@ import warnings
 from itertools import product
 
 import numpy as np
+import pandas as pd
 
 from .. import util
 from ..dimension import dimension_name
@@ -194,7 +195,7 @@ class cuDFInterface(PandasInterface):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim, keep_index=True)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
                 except Exception:
@@ -284,7 +285,7 @@ class cuDFInterface(PandasInterface):
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
                 data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array())}
-            df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
+            df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
         for vd in vdims:

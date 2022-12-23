@@ -831,7 +831,7 @@ def date_to_integer(date):
     Returns:
         Milliseconds since 1970-01-01 00:00:00
     """
-    if pd and isinstance(date, pd.Timestamp):
+    if isinstance(date, pd.Timestamp):
         try:
             date = date.to_datetime64()
         except Exception:

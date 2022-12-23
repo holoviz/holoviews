@@ -124,7 +124,7 @@ class DataConversion:
             else:
                 selected = self._element
         else:
-            if pd and issubclass(self._element.interface, PandasInterface):
+            if issubclass(self._element.interface, PandasInterface):
                 ds_dims = self._element.dimensions()
                 ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
                             for d in groupby+kdims]

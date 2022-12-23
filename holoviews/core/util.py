@@ -188,7 +188,7 @@ class HashableJSON(json.JSONEncoder):
                 obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
-        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
+        if isinstance(obj, (pd.Series, pd.DataFrame)):
             if len(obj) > _PANDAS_ROWS_LARGE:
                 obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
             try:
@@ -837,9 +837,9 @@ def isnat(val):
             return np.isnat(val)
         else:
             return val.view('i8') == nat_as_integer
-    elif pd and val is pd.NaT:
+    elif val is pd.NaT:
         return True
-    elif pd and isinstance(val, pandas_datetime_types+pandas_timedelta_types):
+    elif isinstance(val, pandas_datetime_types+pandas_timedelta_types):
         return pd.isna(val)
     else:
         return False
@@ -869,9 +869,9 @@ def isfinite(val):
         elif val.dtype.kind == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
         elif val.dtype.kind in 'US':
-            return ~pd.isna(val) if pd else np.ones_like(val, dtype=bool)
+            return ~pd.isna(val)
         finite = np.isfinite(val)
-        if pd and pandas_version >= Version('1.0.0'):
+        if pandas_version >= Version('1.0.0'):
             finite &= ~pd.isna(val)
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
@@ -879,7 +879,7 @@ def isfinite(val):
     elif isinstance(val, (str, bytes)):
         return True
     finite = np.isfinite(val)
-    if pd and pandas_version >= Version('1.0.0'):
+    if pandas_version >= Version('1.0.0'):
         if finite is pd.NA:
             return False
         return finite & (~pd.isna(val))
@@ -953,7 +953,7 @@ def max_range(ranges, combined=True):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
+            if any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
@@ -1476,7 +1476,7 @@ def is_dataframe(data):
     dd = None
     if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
         import dask.dataframe as dd
-    return((pd is not None and isinstance(data, pd.DataFrame)) or
+    return((isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
 
 
@@ -1487,7 +1487,7 @@ def is_series(data):
     dd = None
     if 'dask.dataframe' in sys.modules:
         import dask.dataframe as dd
-    return((pd is not None and isinstance(data, pd.Series)) or
+    return (isinstance(data, pd.Series) or
           (dd is not None and isinstance(data, dd.Series)))
 
 
@@ -2063,7 +2063,7 @@ def date_range(start, end, length, time_unit='us'):
     of samples.
     """
     step = (1./compute_density(start, end, length, time_unit))
-    if pd and isinstance(start, pd.Timestamp):
+    if isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
     step = np.timedelta64(int(round(step)), time_unit)
     return start+step/2.+np.arange(length)*step

@@ -25,11 +25,11 @@ def split_path(path):
     values = path.dimension_values(0)
     splits = np.concatenate([[0], np.where(np.isnan(values))[0]+1, [None]])
     subpaths = []
-    data = PandasInterface.as_dframe(path) if pd else path.array()
+    data = PandasInterface.as_dframe(path)
     for i in range(len(splits)-1):
         end = splits[i+1]
         slc = slice(splits[i], None if end is None else end-1)
-        subpath = data.iloc[slc] if pd else data[slc]
+        subpath = data.iloc[slc]
         if len(subpath):
             subpaths.append(subpath)
     return subpaths
@@ -91,7 +91,7 @@ def reduce_fn(x):
     """
     Aggregation function to get the first non-zero value.
     """
-    values = x.values if pd and isinstance(x, pd.Series) else x
+    values = x.values if isinstance(x, pd.Series) else x
     for v in values:
         if not is_nan(v):
             return v

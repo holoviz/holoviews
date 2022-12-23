@@ -4,6 +4,7 @@ import types
 from collections import OrderedDict
 
 import numpy as np
+import pandas as pd
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
@@ -646,7 +647,7 @@ class XArrayInterface(GridInterface):
         names = [kd.name for kd in dataset.kdims]
         samples = [dataset.data.sel(**{k: [v] for k, v in zip(names, s)}).to_dataframe().reset_index()
                    for s in samples]
-        return util.pd.concat(samples)
+        return pd.concat(samples)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):

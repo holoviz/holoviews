@@ -15,6 +15,7 @@ from types import FunctionType
 from packaging.version import Version
 
 import param
+import pandas as pd
 import numpy as np
 
 from .core import util
@@ -525,7 +526,7 @@ class Buffer(Pipe):
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
-        if (util.pd and isinstance(data, util.pd.DataFrame)):
+        if isinstance(data, pd.DataFrame):
             example = data
         elif isinstance(data, np.ndarray):
             if data.ndim != 2:
@@ -556,7 +557,7 @@ class Buffer(Pipe):
             data.stream.sink(self.send)
             self.sdf = data
 
-        if index and (util.pd and isinstance(example, util.pd.DataFrame)):
+        if index and isinstance(example, pd.DataFrame):
             example = example.reset_index()
         params['data'] = example
         super().__init__(**params)
@@ -578,7 +579,7 @@ class Buffer(Pipe):
             elif x.shape[1] != self.data.shape[1]:
                 raise ValueError("Streamed array data expeced to have %d columns, "
                                  "got %d." % (self.data.shape[1], x.shape[1]))
-        elif util.pd and isinstance(x, util.pd.DataFrame) and list(x.columns) != list(self.data.columns):
+        elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
             raise IndexError("Input expected to have columns %s, got %s" %
                              (list(self.data.columns), list(x.columns)))
         elif isinstance(x, dict):
@@ -594,7 +595,7 @@ class Buffer(Pipe):
         "Clears the data in the stream"
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
-        elif util.pd and isinstance(self.data, util.pd.DataFrame):
+        elif isinstance(self.data, pd.DataFrame):
             data = self.data.iloc[:0]
         elif isinstance(self.data, dict):
             data = {k: v[:0] for k, v in self.data.items()}
@@ -617,13 +618,13 @@ class Buffer(Pipe):
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
                 data = data[-self.length:]
-        elif util.pd and isinstance(data, util.pd.DataFrame):
+        elif isinstance(data, pd.DataFrame):
             data_length = len(data)
             if not self.length:
-                data = util.pd.concat([self.data, data])
+                data = pd.concat([self.data, data])
             elif data_length < self.length:
                 prev_chunk = self.data.iloc[-(self.length-data_length):]
-                data = util.pd.concat([prev_chunk, data])
+                data = pd.concat([prev_chunk, data])
             elif data_length > self.length:
                 data = data.iloc[-self.length:]
         elif isinstance(data, dict) and data:
@@ -650,7 +651,7 @@ class Buffer(Pipe):
         """
         data = kwargs.get('data')
         if data is not None:
-            if (util.pd and isinstance(data, util.pd.DataFrame) and
+            if (isinstance(data, pd.DataFrame) and
                 list(data.columns) != list(self.data.columns) and self._index):
                 data = data.reset_index()
             self.verify(data)

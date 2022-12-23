@@ -224,7 +224,7 @@ class Interface(param.Parameterized):
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
-            elif 'dataframe' in datatype and util.pd:
+            elif 'dataframe' in datatype:
                 data = data.dframe()
             else:
                 data = tuple(data.columns().values())
@@ -347,7 +347,7 @@ class Interface(param.Parameterized):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
                 except Exception:

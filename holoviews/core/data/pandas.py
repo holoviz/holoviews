@@ -16,7 +16,7 @@ from .util import finite_range
 
 class PandasInterface(Interface):
 
-    types = (pd.DataFrame if pd else None,)
+    types = (pd.DataFrame,)
 
     datatype = 'dataframe'
 

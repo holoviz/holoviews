@@ -4,11 +4,12 @@ import sys
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import pandas as pd
 import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import flatten, pd, resolve_dependent_value, unique_iterator
+from ..core.util import flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):

@@ -498,7 +498,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def key_select_mask(cls, dataset, values, ind):
-        if util.pd and values.dtype.kind == 'M':
+        if values.dtype.kind == 'M':
             ind = util.parse_datetime_selection(ind)
         if isinstance(ind, tuple):
             ind = slice(*ind)
