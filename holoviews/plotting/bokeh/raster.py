@@ -143,7 +143,7 @@ class RGBPlot(LegendPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     def __init__(self, hmap, **params):
-        super(RGBPlot, self).__init__(hmap, **params)
+        super().__init__(hmap, **params)
         self._legend_plot = None
 
     def _hover_opts(self, element):
@@ -152,7 +152,7 @@ class RGBPlot(LegendPlot):
                 ('RGBA', '@image')], {}
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(RGBPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
         if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
             return
         try:

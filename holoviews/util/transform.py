@@ -318,7 +318,7 @@ class dim:
                 # transform itself, so set namespace to None
                 ns = None
         extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
-        if attr in extras and attr not in super(dim, self).__dir__():
+        if attr in extras and attr not in super().__dir__():
             return type(self)(self, attr, accessor=True)
         else:
             return super().__getattribute__(attr)
@@ -329,7 +329,7 @@ class dim:
             ns = getattr(ns, self._current_accessor)
         extras = {attr for attr in dir(ns) if not attr.startswith('_')}
         try:
-            return sorted(set(super(dim, self).__dir__()) | extras)
+            return sorted(set(super().__dir__()) | extras)
         except Exception:
             return sorted(set(dir(type(self))) | set(self.__dict__) | extras)
 

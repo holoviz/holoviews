@@ -58,7 +58,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
                   'filterrad', 'clims', 'norm']
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -124,7 +124,7 @@ class RGBPlot(RasterBasePlot, LegendPlot):
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        handles = super(RGBPlot, self).init_artists(ax, plot_args, plot_kwargs)
+        handles = super().init_artists(ax, plot_args, plot_kwargs)
         if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
             return handles
         try:

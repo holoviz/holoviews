@@ -402,7 +402,7 @@ class MultiDimensionalMapping(Dimensioned):
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
         else:
-            return super(MultiDimensionalMapping, self).dimension_values(dimension, expanded, flat)
+            return super().dimension_values(dimension, expanded, flat)
 
 
     def reindex(self, kdims=[], force=False):

@@ -152,7 +152,7 @@ class RemoteProgress(ProgressBar):
                 [percent_str, label] = message.split('|')
                 percent = float(percent_str)
                 self.label = label
-                super(RemoteProgress, self).__call__(percent)
+                super().__call__(percent)
             except KeyboardInterrupt:
                 if percent is not None:
                     self.param.message(f"Exited at {percent:.3f}% completion")
