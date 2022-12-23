@@ -662,21 +662,15 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    if bokeh_version >= Version('2.4'):
-        old_policy = document.callbacks.hold_value
-        document.callbacks._hold = policy
-    else:
-        old_policy = document._hold
-        document._hold = policy
+    old_policy = document.callbacks.hold_value
+    document.callbacks._hold = policy
     try:
         yield
     finally:
         if server and not old_policy:
             document.unhold()
-        elif bokeh_version >= Version('2.4'):
-            document.callbacks._hold = old_policy
         else:
-            document._hold = old_policy
+            document.callbacks._hold = old_policy
 
 
 def recursive_model_update(model, props):
@@ -723,7 +717,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             source.data.clear()
             if doc:
-                event_obj = doc.callbacks if bokeh_version >= Version('2.4') else doc
+                event_obj = doc.callbacks
                 event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)

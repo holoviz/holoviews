@@ -21,7 +21,6 @@ try:
 except ImportError:
     from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
-from packaging.version import Version
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
 from ..core import util, traversal
@@ -113,18 +112,11 @@ class Plot(param.Parameterized):
             self.root is self.handles.get('plot') and
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
-            from .bokeh.util import bokeh_version
-            if self._document and bokeh_version >= Version('2.4.0'):
+            if self._document:
                 if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
                     self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
                 else:
                     self._document.callbacks._session_destroyed_callbacks.pop(self._session_destroy, None)
-
-            elif self._document:
-                if isinstance(self._document._session_destroyed_callbacks, set):
-                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
-                else:
-                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
 
         self._document = doc
         if self.subplots:

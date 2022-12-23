@@ -5,7 +5,6 @@ import param
 import numpy as np
 
 from bokeh.models import FactorRange, Circle, VBar, HBar
-from packaging.version import Version
 
 from .selection import BokehOverlaySelectionDisplay
 from ...core import NdOverlay
@@ -21,7 +20,7 @@ from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
 from .styles import base_properties, fill_properties, line_properties
-from .util import bokeh_version, decode_bytes
+from .util import decode_bytes
 
 
 class DistributionPlot(AreaPlot):
@@ -103,7 +102,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
         if self.show_legend and not element.kdims and self.overlaid:
-            legend_prop = 'legend_label' if bokeh_version >= Version('1.3.5') else 'legend'
+            legend_prop = 'legend_label'
             properties[legend_prop] = element.label
         return properties
 
@@ -310,8 +309,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = list(unique_iterator(factors))
 
         if self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= Version('1.3.5') else 'legend'
-            vbar_map[legend_prop] = cdim.name
+            vbar_map['legend_field'] = cdim.name
 
         return data, mapping, style
 
@@ -593,8 +591,7 @@ class ViolinPlot(BoxWhiskerPlot):
                 group='violin', factors=factors)
             style['violin_fill_color'] = {'field': repr(split_dim), 'transform': cmapper}
             if self.show_legend:
-                legend_prop = 'legend_field' if bokeh_version >= Version('1.3.5') else 'legend'
-                kde_map[legend_prop] = repr(split_dim)
+                kde_map['legend_field'] = repr(split_dim)
 
         for k, v in list(style.items()):
             if k.startswith('violin_line'):

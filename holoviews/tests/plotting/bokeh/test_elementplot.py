@@ -21,9 +21,7 @@ from bokeh.document import Document
 from bokeh.models import tools
 from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
                             NumeralTickFormatter, LogTicker,
-                            LinearColorMapper, LogColorMapper)
-from holoviews.plotting.bokeh.util import bokeh_version
-from packaging.version import Version
+                            LinearColorMapper, LogColorMapper, EqHistColorMapper)
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
@@ -38,20 +36,11 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        if bokeh_version > Version('2.2.3'):
-            self.assertEqual(fig.title.text_font_size, '24pt')
-        else:
-            self.assertEqual(fig.title.text_font_size, {'value': '24pt'})
-        if bokeh_version < Version('2.0.2'):
-            self.assertEqual(xaxis.axis_label_text_font_size, '20pt')
-            self.assertEqual(yaxis.axis_label_text_font_size, '20pt')
-            self.assertEqual(xaxis.major_label_text_font_size, '16pt')
-            self.assertEqual(yaxis.major_label_text_font_size, '16pt')
-        else:
-            self.assertEqual(xaxis.axis_label_text_font_size, '26px')
-            self.assertEqual(yaxis.axis_label_text_font_size, '26px')
-            self.assertEqual(xaxis.major_label_text_font_size, '22px')
-            self.assertEqual(yaxis.major_label_text_font_size, '22px')
+        self.assertEqual(fig.title.text_font_size, '24pt')
+        self.assertEqual(xaxis.axis_label_text_font_size, '26px')
+        self.assertEqual(yaxis.axis_label_text_font_size, '26px')
+        self.assertEqual(xaxis.major_label_text_font_size, '22px')
+        self.assertEqual(yaxis.major_label_text_font_size, '22px')
 
     def test_element_font_scaling_fontsize_override_common(self):
         curve = Curve(range(10)).opts(fontscale=2, fontsize='14pt', title='A title')
@@ -59,18 +48,11 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        if bokeh_version > Version('2.2.3'):
-            self.assertEqual(fig.title.text_font_size, '28pt')
-        else:
-            self.assertEqual(fig.title.text_font_size, {'value': '28pt'})
+        self.assertEqual(fig.title.text_font_size, '28pt')
         self.assertEqual(xaxis.axis_label_text_font_size, '28pt')
         self.assertEqual(yaxis.axis_label_text_font_size, '28pt')
-        if bokeh_version < Version('2.0.2'):
-            self.assertEqual(xaxis.major_label_text_font_size, '16pt')
-            self.assertEqual(yaxis.major_label_text_font_size, '16pt')
-        else:
-            self.assertEqual(xaxis.major_label_text_font_size, '22px')
-            self.assertEqual(yaxis.major_label_text_font_size, '22px')
+        self.assertEqual(xaxis.major_label_text_font_size, '22px')
+        self.assertEqual(yaxis.major_label_text_font_size, '22px')
 
     def test_element_font_scaling_fontsize_override_specific(self):
         curve = Curve(range(10)).opts(
@@ -80,18 +62,11 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        if bokeh_version > Version('2.2.3'):
-            self.assertEqual(fig.title.text_font_size, '200%')
-        else:
-            self.assertEqual(fig.title.text_font_size, {'value': '200%'})
+        self.assertEqual(fig.title.text_font_size, '200%')
         self.assertEqual(xaxis.axis_label_text_font_size, '24pt')
         self.assertEqual(xaxis.major_label_text_font_size, '2.4em')
-        if bokeh_version < Version('2.0.2'):
-            self.assertEqual(yaxis.axis_label_text_font_size, '20pt')
-            self.assertEqual(yaxis.major_label_text_font_size, '16pt')
-        else:
-            self.assertEqual(yaxis.axis_label_text_font_size, '26px')
-            self.assertEqual(yaxis.major_label_text_font_size, '22px')
+        self.assertEqual(yaxis.axis_label_text_font_size, '26px')
+        self.assertEqual(yaxis.major_label_text_font_size, '22px')
 
     def test_element_xaxis_top(self):
         curve = Curve(range(10)).opts(xaxis='top')
@@ -859,10 +834,6 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertTrue(cmapper, LogColorMapper)
 
     def test_colormapper_cnorm_eqhist(self):
-        try:
-            from bokeh.models import EqHistColorMapper
-        except ImportError:
-            raise SkipTest("Option cnorm='eq_hist' requires EqHistColorMapper")
         img = Image(np.array([[0, 1], [2, 3]])).opts(cnorm='eq_hist')
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
@@ -887,12 +858,8 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         img = Image(np.array([[0, 1], [2, 3]])).opts(colorbar=True, fontscale=2)
         plot = bokeh_renderer.get_plot(img)
         colorbar = plot.handles['colorbar']
-        if bokeh_version < Version('2.0.2'):
-            self.assertEqual(colorbar.title_text_font_size, '20pt')
-            self.assertEqual(colorbar.major_label_text_font_size, '16pt')
-        else:
-            self.assertEqual(colorbar.title_text_font_size, '26px')
-            self.assertEqual(colorbar.major_label_text_font_size, '22px')
+        self.assertEqual(colorbar.title_text_font_size, '26px')
+        self.assertEqual(colorbar.major_label_text_font_size, '22px')
 
     def test_explicit_categorical_cmap_on_integer_data(self):
         explicit_mapping = OrderedDict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
