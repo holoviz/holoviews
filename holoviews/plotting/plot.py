@@ -14,12 +14,9 @@ import numpy as np
 import param
 
 from panel.config import config
+from panel.io.document import unlocked
 from panel.io.notebook import push
 from panel.io.state import state
-try:
-    from panel.io.document import unlocked
-except ImportError:
-    from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
 from ..selection import NoOpSelectionDisplay
 from ..core import util, traversal
