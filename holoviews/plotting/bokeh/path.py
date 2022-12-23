@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import param
 import numpy as np
+from packaging.version import Version
 
 from ...core import util
 from ...element import Contours, Polygons
@@ -13,7 +14,7 @@ from .styles import (
     expand_batched_style, base_properties, line_properties, fill_properties,
     mpl_to_bokeh, validate
 )
-from .util import LooseVersion, bokeh_version, multi_polygons_data
+from .util import bokeh_version, multi_polygons_data
 
 
 class PathPlot(LegendPlot, ColorbarPlot):
@@ -273,7 +274,7 @@ class ContourPlot(PathPlot):
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         if self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
+            legend_prop = 'legend_field' if bokeh_version >= Version('1.3.5') else 'legend'
             mapping[legend_prop] = dim_name
         return data, mapping, style
 

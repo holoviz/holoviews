@@ -9,7 +9,7 @@ import param
 from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import LooseVersion
+from holoviews.core.util import Version
 from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
@@ -330,7 +330,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if LooseVersion(param.__version__) < LooseVersion('1.8.0'):
+        if Version(param.__version__) < Version('1.8.0'):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):

@@ -14,6 +14,7 @@ import dask.dataframe as dd
 
 from datashader.colors import color_lookup
 from param.parameterized import bothmethod
+from packaging.version import Version
 
 try:
     from datashader.bundling import (directly_connect_edges as connect_edges,
@@ -25,7 +26,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay, OrderedDict, Store)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
-    Iterable, LooseVersion, cast_array_to_int64, cftime_types, cftime_to_timestamp,
+    Iterable, cast_array_to_int64, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, isfinite, get_param_values, max_range
 )
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
@@ -34,7 +35,7 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
 from ..element.util import connect_tri_edges_pd
 from ..streams import RangeXY, PlotSize, PointerXY
 
-ds_version = LooseVersion(ds.__version__)
+ds_version = Version(ds.__version__)
 
 
 class LinkableOperation(Operation):
@@ -508,7 +509,7 @@ class aggregate(LineAggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         agg_kwargs = {}
-        if self.p.line_width and glyph == 'line' and ds_version >= LooseVersion('0.14.0'):
+        if self.p.line_width and glyph == 'line' and ds_version >= Version('0.14.0'):
             agg_kwargs['line_width'] = self.p.line_width
 
         dfdata = PandasInterface.as_dframe(data)
@@ -529,13 +530,13 @@ class aggregate(LineAggregationOperation):
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
-            eldata = agg if ds_version > LooseVersion('0.5.0') else (xs, ys, agg.data)
+            eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
             layers = {}
             for c in agg.coords[agg_fn.column].data:
                 cagg = agg.sel(**{agg_fn.column: c})
-                eldata = cagg if ds_version > LooseVersion('0.5.0') else (xs, ys, cagg.data)
+                eldata = cagg if ds_version > Version('0.5.0') else (xs, ys, cagg.data)
                 layers[c] = self.p.element_type(eldata, **params)
             return NdOverlay(layers, kdims=[data.get_dimension(agg_fn.column)])
 
@@ -787,7 +788,7 @@ class spikes_aggregate(LineAggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         agg_kwargs = {}
-        if ds_version >= LooseVersion('0.14.0'):
+        if ds_version >= Version('0.14.0'):
             agg_kwargs['line_width'] = self.p.line_width
 
         agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, **agg_kwargs).rename(rename_dict)
@@ -846,13 +847,13 @@ class geom_aggregate(AggregationOperation):
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
-            eldata = agg if ds_version > LooseVersion('0.5.0') else (xs, ys, agg.data)
+            eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
             layers = {}
             for c in agg.coords[agg_fn.column].data:
                 cagg = agg.sel(**{agg_fn.column: c})
-                eldata = cagg if ds_version > LooseVersion('0.5.0') else (xs, ys, cagg.data)
+                eldata = cagg if ds_version > Version('0.5.0') else (xs, ys, cagg.data)
                 layers[c] = self.p.element_type(eldata, **params)
             return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
 
@@ -864,7 +865,7 @@ class segments_aggregate(geom_aggregate, LineAggregationOperation):
 
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
         agg_kwargs = {}
-        if ds_version >= LooseVersion('0.14.0'):
+        if ds_version >= Version('0.14.0'):
             agg_kwargs['line_width'] = self.p.line_width
 
         return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1, **agg_kwargs)
@@ -954,7 +955,7 @@ class regrid(AggregationOperation):
 
 
     def _process(self, element, key=None):
-        if ds_version <= LooseVersion('0.5.0'):
+        if ds_version <= Version('0.5.0'):
             raise RuntimeError('regrid operation requires datashader>=0.6.0')
 
         # Compute coords, anges and size
@@ -1116,7 +1117,7 @@ class trimesh_rasterize(aggregate):
         precompute = self.p.precompute
         if interp == 'linear': interp = 'bilinear'
         wireframe = False
-        if (not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims))) and ds_version <= LooseVersion('0.6.9'):
+        if (not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims))) and ds_version <= Version('0.6.9'):
             self.p.aggregator = ds.any() if isinstance(agg, ds.any) or agg == 'any' else ds.count()
             return aggregate._process(self, element, key)
         elif ((not interp and (isinstance(agg, (ds.any, ds.count)) or
@@ -1176,11 +1177,11 @@ class quadmesh_rasterize(trimesh_rasterize):
     """
 
     def _precompute(self, element, agg):
-        if ds_version <= LooseVersion('0.7.0'):
+        if ds_version <= Version('0.7.0'):
             return super()._precompute(element.trimesh(), agg)
 
     def _process(self, element, key=None):
-        if ds_version <= LooseVersion('0.7.0'):
+        if ds_version <= Version('0.7.0'):
             return super()._process(element, key)
 
         if element.interface.datatype != 'xarray':
@@ -1368,7 +1369,7 @@ class shade(LinkableOperation):
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
         )
-        if ds_version >= LooseVersion('0.14.0'):
+        if ds_version >= Version('0.14.0'):
             shade_opts['rescale_discrete_levels'] = self.p.rescale_discrete_levels
 
         # Compute shading options depending on whether
@@ -1402,7 +1403,7 @@ class shade(LinkableOperation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif ds_version > LooseVersion('0.5.0') and self.p.cnorm != 'eq_hist':
+        elif ds_version > Version('0.5.0') and self.p.cnorm != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
         params = dict(get_param_values(element), kdims=kdims,
@@ -1473,7 +1474,7 @@ class geometry_rasterize(LineAggregationOperation):
         if isinstance(element, Polygons):
             agg = cvs.polygons(data, **agg_kwargs)
         elif isinstance(element, Path):
-            if self.p.line_width and ds_version >= LooseVersion('0.14.0'):
+            if self.p.line_width and ds_version >= Version('0.14.0'):
                 agg_kwargs['line_width'] = self.p.line_width
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
@@ -1660,7 +1661,7 @@ class SpreadingOperation(LinkableOperation):
     to make sparse plots more visible.
     """
 
-    how = param.ObjectSelector(default='source' if ds_version <= LooseVersion('0.11.1') else None,
+    how = param.ObjectSelector(default='source' if ds_version <= Version('0.11.1') else None,
             objects=[None, 'source', 'over', 'saturate', 'add', 'max', 'min'], doc="""
         The name of the compositing operator to use when combining
         pixels. Default of None uses 'over' operator for RGB elements

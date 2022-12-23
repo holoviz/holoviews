@@ -14,6 +14,7 @@ from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from matplotlib.rcsetup import (
     validate_fontsize, validate_fonttype, validate_hatch)
+from packaging.version import Version
 
 try:  # starting Matplotlib 3.4.0
     from matplotlib._enums import CapStyle as validate_capstyle
@@ -31,12 +32,12 @@ except ImportError:
     nc_axis_available = False
 
 from ...core.util import (
-    LooseVersion, arraylike_types, cftime_types, is_number
+    arraylike_types, cftime_types, is_number
 )
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
-mpl_version = LooseVersion(matplotlib.__version__)
+mpl_version = Version(matplotlib.__version__)
 
 
 def is_color(color):
@@ -85,7 +86,7 @@ def get_old_rcparams():
     ]
     old_rcparams = {
         k: v for k, v in matplotlib.rcParams.items()
-        if mpl_version < LooseVersion('3.0') or k not in deprecated_rcparams
+        if mpl_version < Version('3.0') or k not in deprecated_rcparams
     }
     return old_rcparams
 

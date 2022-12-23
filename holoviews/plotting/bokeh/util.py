@@ -26,19 +26,19 @@ from bokeh.models.formatters import (
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
-
 from bokeh.themes import built_in_themes
+from packaging.version import Version
 
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
-    LooseVersion, arraylike_types, callable_name, cftime_types,
+    arraylike_types, callable_name, cftime_types,
     cftime_to_timestamp, isnumeric, pd, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
-bokeh_version = LooseVersion(bokeh.__version__)  # noqa
+bokeh_version = Version(bokeh.__version__)  # noqa
 
 
 TOOL_TYPES = {
@@ -662,7 +662,7 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    if bokeh_version >= LooseVersion('2.4'):
+    if bokeh_version >= Version('2.4'):
         old_policy = document.callbacks.hold_value
         document.callbacks._hold = policy
     else:
@@ -673,7 +673,7 @@ def hold_policy(document, policy, server=False):
     finally:
         if server and not old_policy:
             document.unhold()
-        elif bokeh_version >= LooseVersion('2.4'):
+        elif bokeh_version >= Version('2.4'):
             document.callbacks._hold = old_policy
         else:
             document._hold = old_policy
@@ -723,7 +723,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             source.data.clear()
             if doc:
-                event_obj = doc.callbacks if bokeh_version >= LooseVersion('2.4') else doc
+                event_obj = doc.callbacks if bokeh_version >= Version('2.4') else doc
                 event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)

@@ -4,11 +4,11 @@ from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from param import concrete_descendents
 from colorcet import kbc, register_cmap
+from packaging.version import Version
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
-from ...core.util import LooseVersion
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from ..util import fire_colors
@@ -30,7 +30,7 @@ from .tabular import * # noqa (API import)
 from .renderer import MPLRenderer
 
 
-mpl_ge_150 = LooseVersion(mpl.__version__) >= LooseVersion('1.5.0')
+mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
 
 try:
     from pandas.plotting import register_matplotlib_converters

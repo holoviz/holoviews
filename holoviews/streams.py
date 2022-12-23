@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
 from types import FunctionType
+from packaging.version import Version
 
 import param
 import numpy as np
@@ -679,7 +680,7 @@ class Params(Stream):
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-        if util.param_version < util.LooseVersion('1.8.0') and watch:
+        if util.param_version < Version('1.8.0') and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         if parameters is None:

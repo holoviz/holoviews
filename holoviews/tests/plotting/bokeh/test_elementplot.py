@@ -22,8 +22,8 @@ from bokeh.models import tools
 from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
                             NumeralTickFormatter, LogTicker,
                             LinearColorMapper, LogColorMapper)
-from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
-
+from holoviews.plotting.bokeh.util import bokeh_version
+from packaging.version import Version
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
@@ -38,11 +38,11 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        if bokeh_version > LooseVersion('2.2.3'):
+        if bokeh_version > Version('2.2.3'):
             self.assertEqual(fig.title.text_font_size, '24pt')
         else:
             self.assertEqual(fig.title.text_font_size, {'value': '24pt'})
-        if bokeh_version < LooseVersion('2.0.2'):
+        if bokeh_version < Version('2.0.2'):
             self.assertEqual(xaxis.axis_label_text_font_size, '20pt')
             self.assertEqual(yaxis.axis_label_text_font_size, '20pt')
             self.assertEqual(xaxis.major_label_text_font_size, '16pt')
@@ -59,13 +59,13 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        if bokeh_version > LooseVersion('2.2.3'):
+        if bokeh_version > Version('2.2.3'):
             self.assertEqual(fig.title.text_font_size, '28pt')
         else:
             self.assertEqual(fig.title.text_font_size, {'value': '28pt'})
         self.assertEqual(xaxis.axis_label_text_font_size, '28pt')
         self.assertEqual(yaxis.axis_label_text_font_size, '28pt')
-        if bokeh_version < LooseVersion('2.0.2'):
+        if bokeh_version < Version('2.0.2'):
             self.assertEqual(xaxis.major_label_text_font_size, '16pt')
             self.assertEqual(yaxis.major_label_text_font_size, '16pt')
         else:
@@ -80,13 +80,13 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        if bokeh_version > LooseVersion('2.2.3'):
+        if bokeh_version > Version('2.2.3'):
             self.assertEqual(fig.title.text_font_size, '200%')
         else:
             self.assertEqual(fig.title.text_font_size, {'value': '200%'})
         self.assertEqual(xaxis.axis_label_text_font_size, '24pt')
         self.assertEqual(xaxis.major_label_text_font_size, '2.4em')
-        if bokeh_version < LooseVersion('2.0.2'):
+        if bokeh_version < Version('2.0.2'):
             self.assertEqual(yaxis.axis_label_text_font_size, '20pt')
             self.assertEqual(yaxis.major_label_text_font_size, '16pt')
         else:
@@ -887,7 +887,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         img = Image(np.array([[0, 1], [2, 3]])).opts(colorbar=True, fontscale=2)
         plot = bokeh_renderer.get_plot(img)
         colorbar = plot.handles['colorbar']
-        if bokeh_version < LooseVersion('2.0.2'):
+        if bokeh_version < Version('2.0.2'):
             self.assertEqual(colorbar.title_text_font_size, '20pt')
             self.assertEqual(colorbar.major_label_text_font_size, '16pt')
         else:

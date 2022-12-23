@@ -15,11 +15,11 @@ import panel as pn
 
 from bokeh.io import curdoc
 from holoviews.plotting.bokeh import BokehRenderer
-from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
+from holoviews.plotting.bokeh.util import bokeh_version
 from bokeh.themes.theme import Theme
 
 from panel.widgets import DiscreteSlider, Player, FloatSlider
-
+from packaging.version import Version
 
 class BokehRendererTest(ComparisonTestCase):
 
@@ -67,7 +67,7 @@ class BokehRendererTest(ComparisonTestCase):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
-        if bokeh_version < LooseVersion('2.0.2'):
+        if bokeh_version < Version('2.0.2'):
             self.assertEqual((w, h), (444, 436))
         else:
             self.assertEqual((w, h), (446, 437))

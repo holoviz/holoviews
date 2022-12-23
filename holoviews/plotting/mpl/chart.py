@@ -1,6 +1,7 @@
 import param
 import numpy as np
 import matplotlib as mpl
+from packaging.version import Version
 
 from matplotlib import cm
 from matplotlib.collections import LineCollection
@@ -9,7 +10,7 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    LooseVersion, match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
+    match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
     unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
@@ -123,7 +124,7 @@ class ErrorPlot(ColorbarPlot):
     def init_artists(self, ax, plot_data, plot_kwargs):
         handles = ax.errorbar(*plot_data, **plot_kwargs)
         bottoms, tops = None, None
-        if mpl_version >= LooseVersion('2.0'):
+        if mpl_version >= Version('2.0'):
             _, caps, verts = handles
             if caps:
                 bottoms, tops = caps

@@ -16,6 +16,7 @@ from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.embed import file_html
 from bokeh.resources import CDN, INLINE
+from packaging.version import Version
 from panel import config
 from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
@@ -29,14 +30,14 @@ from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unbound_dimensions, LooseVersion
+from ..core.util import unbound_dimensions
 from ..streams import Stream
 from . import Plot
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
 
-panel_version = LooseVersion(panel.__version__)
+panel_version = Version(panel.__version__)
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
