@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from packaging.version import Version
 
 import numpy as np
@@ -8,7 +9,6 @@ from ...util._exception import deprecation_warning
 from .interface import Interface, DataError
 from ..dimension import dimension_name, Dimension
 from ..element import Element
-from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
@@ -99,7 +99,7 @@ class PandasInterface(Interface):
             columns = list(util.unique_iterator([dimension_name(d) for d in kdims+vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
-                data = cyODict(((d, data[d]) for d in columns))
+                data = OrderedDict(((d, data[d]) for d in columns))
             elif isinstance(data, list) and len(data) == 0:
                 data = {c: np.array([]) for c in columns}
             elif isinstance(data, (list, dict)) and data in ([], {}):
@@ -114,7 +114,7 @@ class PandasInterface(Interface):
                                     "values.")
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                                     for k, v in column_data))
-                data = cyODict(((c, col) for c, col in zip(columns, column_data)))
+                data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:

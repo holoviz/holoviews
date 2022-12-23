@@ -6,7 +6,6 @@ from .dictionary import DictInterface
 from .interface import Interface, DataError
 from ..dimension import dimension_name
 from ..element import Element
-from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range, is_dask, dask_array_module, get_array_types
@@ -29,7 +28,7 @@ class GridInterface(DictInterface):
     longitudes can specify the position of NxM temperature samples.
     """
 
-    types = (dict, OrderedDict, cyODict)
+    types = (dict, OrderedDict)
 
     datatype = 'grid'
 
