@@ -595,17 +595,14 @@ class RangeXYCallback(Callback):
     }
 
     _js_on_event = """
+    if (this._updating)
+        return
     const plot = this.origin
     const plots = plot.x_range.plots.concat(plot.y_range.plots)
-    const updated = [plot]
     for (const p of plots) {
-      if (updated.indexOf(p) >= 0 || p.tags.indexOf('ranges-updating') >= 0)
-        continue
-      p.tags.push('ranges-updating')
       const event = new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end)
+      event._updating = true
       p.trigger_event(event)
-      p.tags = p.tags.filter(x => x !== 'ranges-updating')
-      updated.push(p)
     }
     """
 
