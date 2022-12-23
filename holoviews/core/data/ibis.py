@@ -41,7 +41,7 @@ class IbisInterface(Interface):
         try:
             from ibis.client import find_backends, validate_backends
             (backend,) = validate_backends(list(find_backends(data)))
-        except Exception:
+        except ImportError:
             backend = data._find_backend()
         return type(backend).__module__ in cls.zero_indexed_backend_modules
 

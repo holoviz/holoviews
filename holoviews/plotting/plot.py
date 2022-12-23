@@ -18,7 +18,7 @@ from panel.io.notebook import push
 from panel.io.state import state
 try:
     from panel.io.document import unlocked
-except Exception:
+except ImportError:
     from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
 

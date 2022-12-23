@@ -35,7 +35,7 @@ except ImportError:
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
 
 spd_available = skipIf(spd is None, "spatialpandas is not available")
