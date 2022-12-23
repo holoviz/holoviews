@@ -4,7 +4,6 @@ from unittest import SkipTest
 import param
 import holoviews
 
-from IPython import version_info
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
@@ -122,10 +121,8 @@ class notebook_extension(extension):
 
         # Notebook archive relies on display hooks being set to work.
         try:
-            if version_info[0] >= 4:
-                import nbformat # noqa (ensures availability)
-            else:
-                from IPython import nbformat # noqa (ensures availability)
+            import nbformat  # noqa: F401
+
             try:
                 from .archive import notebook_archive
                 holoviews.archive = notebook_archive
