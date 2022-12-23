@@ -3,7 +3,7 @@ from ..core import OrderedDict
 from ..core import Store
 
 
-class KeywordSettings(object):
+class KeywordSettings:
     """
     Base class for options settings used to specified collections of
     keyword options.

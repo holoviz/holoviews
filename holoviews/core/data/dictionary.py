@@ -304,9 +304,9 @@ class DictInterface(Interface):
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key)))
-            group_data = OrderedDict(((d.name, dataset.data[d.name] if isscalar(dataset.data[d.name])
+            group_data = OrderedDict((d.name, dataset.data[d.name] if isscalar(dataset.data[d.name])
                                        else dataset.data[d.name][mask])
-                                      for d in kdims+vdims))
+                                      for d in kdims+vdims)
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 

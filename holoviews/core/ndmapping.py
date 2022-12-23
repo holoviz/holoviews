@@ -17,7 +17,7 @@ from .util import (
     process_ellipses, get_ndmapping_label
 )
 
-class item_check(object):
+class item_check:
     """
     Context manager to allow creating NdMapping types without
     performing the usual item_checks, providing significant
@@ -37,7 +37,7 @@ class item_check(object):
         MultiDimensionalMapping._check_items = self._enabled
 
 
-class sorted_context(object):
+class sorted_context:
     """
     Context manager to temporarily disable sorting on NdMapping
     types. Retains the current sort order, which can be useful as
@@ -434,7 +434,7 @@ class MultiDimensionalMapping(Dimensioned):
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set([d.name for d in self.kdims]).difference(kdims)
+        reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
 

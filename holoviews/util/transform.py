@@ -69,7 +69,7 @@ def lognorm(values, min=None, max=None):
     return (np.log(values) - min) / (max-min)
 
 
-class iloc(object):
+class iloc:
     """Implements integer array indexing for dim expressions.
     """
 
@@ -90,7 +90,7 @@ class iloc(object):
             return values[resolve_dependent_value(self.index)]
 
 
-class loc(object):
+class loc:
     """Implements loc for dim expressions.
     """
 
@@ -199,7 +199,7 @@ function_types = (
 )
 
 
-class dim(object):
+class dim:
     """
     dim transform objects are a way to express deferred transforms on
     Datasets. dim transforms support all mathematical and bitwise

@@ -178,8 +178,8 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         # If either is a HoloMap compute Dimension values
         if not isinstance(self, DynamicMap) or not isinstance(other, DynamicMap):
             keys = sorted((d, v) for k in keys for d, v in k)
-            grouped =  dict([(g, [v for _, v in group])
-                             for g, group in groupby(keys, lambda x: x[0])])
+            grouped =  {g: [v for _, v in group]
+                             for g, group in groupby(keys, lambda x: x[0])}
             dimensions = [d.clone(values=grouped[d.name]) for d in dimensions]
             map_obj = None
 
@@ -668,7 +668,7 @@ def dynamicmap_memoization(callable_obj, streams):
 
 
 
-class periodic(object):
+class periodic:
     """
     Implements the utility of the same name on DynamicMap.
 
@@ -1086,7 +1086,7 @@ class DynamicMap(HoloMap):
             product = tuple_key[0]
         else:
             args = [set(el) if isinstance(el, (list,set))
-                    else set([el]) for el in tuple_key]
+                    else {el} for el in tuple_key]
             product = itertools.product(*args)
 
         data = []
@@ -1840,7 +1840,7 @@ class GridSpace(Layoutable, UniformNdMapping):
         keys = self.keys()
         if self.ndims == 1:
             return (len(keys), 1)
-        return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
+        return len({k[0] for k in keys}), len({k[1] for k in keys})
 
     def decollate(self):
         """Packs GridSpace of DynamicMaps into a single DynamicMap that returns a

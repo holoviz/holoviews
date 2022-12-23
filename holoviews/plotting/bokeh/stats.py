@@ -404,7 +404,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if len(split_cats) > 2:
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
-                    'greater than 2. Found {0} categories: {1}'.format(
+                    'greater than 2. Found {} categories: {}'.format(
                         len(split_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)

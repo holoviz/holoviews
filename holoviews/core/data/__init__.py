@@ -65,7 +65,7 @@ def concat(datasets, datatype=None):
     return Interface.concatenate(datasets, datatype)
 
 
-class DataConversion(object):
+class DataConversion:
     """
     DataConversion is a very simple container object which can be
     given an existing Dataset Element and provides methods to convert
@@ -815,7 +815,7 @@ argument to specify a selection specification""")
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
-        lens = set(len(util.wrap_tuple(s)) for s in samples)
+        lens = {len(util.wrap_tuple(s)) for s in samples}
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 

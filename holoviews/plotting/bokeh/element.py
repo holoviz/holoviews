@@ -2099,7 +2099,7 @@ class LegendPlot(ElementPlot):
 
 
 
-class AnnotationPlot(object):
+class AnnotationPlot:
     """
     Mix-in plotting subclass for AnnotationPlots which do not have a legend.
     """

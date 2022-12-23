@@ -11,7 +11,7 @@ from ..links import (
 from ..plot import GenericElementPlot, GenericOverlayPlot
 
 
-class LinkCallback(object):
+class LinkCallback:
 
     source_model = None
     target_model = None

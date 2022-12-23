@@ -76,7 +76,7 @@ class ParamFilter(param.ParameterizedFunction):
         return inner_filter
 
 
-class InfoPrinter(object):
+class InfoPrinter:
     """
     Class for printing other information related to an object that is
     of use to the user.
@@ -185,8 +185,8 @@ class InfoPrinter(object):
 
         targets = obj.traverse(cls.get_target)
         elements, containers = zip(*targets)
-        element_set = set(el for el in elements if el is not None)
-        container_set = set(c for c in containers if c is not None)
+        element_set = {el for el in elements if el is not None}
+        container_set = {c for c in containers if c is not None}
 
         element_info = None
         if len(element_set) == 1:

@@ -747,7 +747,7 @@ def categorize_array(array, dim):
     return np.array([dim.pprint_value(x) for x in array])
 
 
-class periodic(object):
+class periodic:
     """
     Mocks the API of periodic Thread in hv.core.util, allowing a smooth
     API transition on bokeh server.

@@ -4,7 +4,7 @@ from . import util
 from .pprint import PrettyPrinter
 
 
-class AttrTree(object):
+class AttrTree:
     """
     An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined

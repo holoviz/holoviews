@@ -29,7 +29,7 @@ allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
-class Parser(object):
+class Parser:
     """
     Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
@@ -54,7 +54,7 @@ class Parser(object):
                 new_tok = [s for t in tok for s in
                            (cls.recurse_token(t, inner)
                             if isinstance(t, list) else [t])]
-                recursed.append((inner % ''.join(new_tok)))
+                recursed.append(inner % ''.join(new_tok))
             else:
                 recursed.append(tok)
         return inner % ''.join(recursed)

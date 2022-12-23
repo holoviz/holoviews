@@ -288,7 +288,7 @@ class Plot(param.Parameterized):
 
 
 
-class PlotSelector(object):
+class PlotSelector:
     """
     Proxy that allows dynamic selection of a plotting class based on a
     function of the plotted object. Behaves like a Plot class and
@@ -957,7 +957,7 @@ class DimensionedPlot(Plot):
         return len(self.keys)
 
 
-class CallbackPlot(object):
+class CallbackPlot:
 
     backend = None
 
@@ -1875,7 +1875,7 @@ class GenericCompositePlot(DimensionedPlot):
                          dimensions=dimensions, **params)
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
-        self.streams = list(set([s for streams in nested_streams for s in streams]))
+        self.streams = list({s for streams in nested_streams for s in streams})
         self._link_dimensioned_streams()
 
     def _link_dimensioned_streams(self):

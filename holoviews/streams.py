@@ -533,7 +533,7 @@ class Buffer(Pipe):
         elif isinstance(data, dict):
             if not all(isinstance(v, np.ndarray) for v in data.values()):
                 raise ValueError("Data in dictionary must be of array types.")
-            elif len(set(len(v) for v in data.values())) > 1:
+            elif len({len(v) for v in data.values()}) > 1:
                 raise ValueError("Columns in dictionary must all be the same length.")
             example = data
         else:
@@ -584,7 +584,7 @@ class Buffer(Pipe):
             if any(c not in x for c in self.data):
                 raise IndexError("Input expected to have columns %s, got %s" %
                                  (sorted(self.data.keys()), sorted(x.keys())))
-            elif len(set(len(v) for v in x.values())) > 1:
+            elif len({len(v) for v in x.values()}) > 1:
                 raise ValueError("Input columns expected to have the "
                                  "same number of rows.")
 

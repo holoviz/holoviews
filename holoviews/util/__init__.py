@@ -120,7 +120,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         "Format option group kwargs into canonical options format"
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
-            raise Exception("Keyword options %s must be one of  %s" % (groups,
+            raise Exception("Keyword options {} must be one of  {}".format(groups,
                             ','.join(repr(g) for g in groups)))
         elif not all(isinstance(v, dict) for v in kwargs.values()):
             raise Exception("The %s options must be specified using dictionary groups" %
@@ -134,7 +134,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('%s.%s.%s' % (
+                identifier = ('{}.{}.{}'.format(
                     obj.__class__.__name__, sanitized_group,
                     util.label_sanitizer(obj.label)))
             elif  sanitized_group != obj.__class__.__name__:
@@ -176,7 +176,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         for spec, groups in options.items():
             if 'output' not in groups.keys() or len(groups['output'])==0:
                 dfltdict[backend or Store.current_backend][spec.strip()] = groups
-            elif set(groups['output'].keys()) - set(['backend']):
+            elif set(groups['output'].keys()) - {'backend'}:
                 dfltdict[groups['output']['backend']][spec.strip()] = groups
             elif ['backend'] == list(groups['output'].keys()):
                 filtered = {k:v for k,v in groups.items() if k != 'output'}

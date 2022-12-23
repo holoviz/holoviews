@@ -283,7 +283,7 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
         bbox = get_tight_bbox(fig, extra_artists)
         top = bbox.intervaly[1]
         if title and title.get_text():
-            title.set_y((top/(w*aspect)))
+            title.set_y(top/(w*aspect))
 
 
 def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):

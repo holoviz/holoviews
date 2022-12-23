@@ -160,7 +160,7 @@ class GridInterface(DictInterface):
         new_data[dim.name] = np.array(values)
         for vdim in vdims:
             arrays = [grid[vdim.name] for grid in grids]
-            shapes = set(arr.shape for arr in arrays)
+            shapes = {arr.shape for arr in arrays}
             if len(shapes) > 1:
                 raise DataError('When concatenating gridded data the shape '
                                 'of arrays must match. %s found that arrays '

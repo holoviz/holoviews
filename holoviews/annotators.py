@@ -379,7 +379,7 @@ class PathAnnotator(Annotator):
         # Validate annotations
         poly_data = {c: element.dimension_values(c, expanded=False)
                      for c in validate}
-        if validate and len(set(len(v) for v in poly_data.values())) != 1:
+        if validate and len({len(v) for v in poly_data.values()}) != 1:
             raise ValueError('annotations must refer to value dimensions '
                              'which vary per path while at least one of '
                              '%s varies by vertex.' % validate)

@@ -456,7 +456,7 @@ def validate_unbounded_mode(holomaps, dynmaps):
     composite = HoloMap(enumerate(holomaps), kdims=['testing_kdim'])
     holomap_kdims = set(unique_iterator([kd.name for dm in holomaps for kd in dm.kdims]))
     hmranges = {d: composite.range(d) for d in holomap_kdims}
-    if any(not set(d.name for d in dm.kdims) <= holomap_kdims
+    if any(not {d.name for d in dm.kdims} <= holomap_kdims
                         for dm in dynmaps):
         raise Exception('DynamicMap that are unbounded must have key dimensions that are a '
                         'subset of dimensions of the HoloMap(s) defining the keys.')
@@ -1088,7 +1088,7 @@ def rgb2hex(rgb):
     """
     if len(rgb) > 3:
         rgb = rgb[:-1]
-    return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+    return "#{:02x}{:02x}{:02x}".format(*(int(v*255) for v in rgb))
 
 
 def dim_range_key(eldim):

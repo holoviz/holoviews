@@ -674,7 +674,7 @@ class layout_chords(Operation):
         areas_in_radians = (weights_of_areas / weights_of_areas.sum()) * (2 * np.pi)
 
         # We add a zero in the begging for the cumulative sum
-        points = np.zeros((areas_in_radians.shape[0] + 1))
+        points = np.zeros(areas_in_radians.shape[0] + 1)
         points[1:] = areas_in_radians
         points = points.cumsum()
 

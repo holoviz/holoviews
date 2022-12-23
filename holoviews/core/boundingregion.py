@@ -12,7 +12,7 @@ from param.parameterized import get_occupied_slots
 from .util import datetime_types
 
 
-class BoundingRegion(object):
+class BoundingRegion:
     """
     Abstract bounding region class, for any portion of a 2D plane.
 
@@ -242,7 +242,7 @@ class BoundingEllipse(BoundingBox):
 # JABALERT: Should probably remove top, bottom, etc. accessor functions,
 # and use the slot itself instead.
 ###################################################
-class AARectangle(object):
+class AARectangle:
     """
     Axis-aligned rectangle class.
 

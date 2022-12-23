@@ -306,7 +306,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             global data
             data *= test
             return img
-        stream = Stream.define(str('Test'), test=1)()
+        stream = Stream.define('Test', test=1)()
         dmap = DynamicMap(get_img, streams=[stream])
         plot = bokeh_renderer.get_plot(dmap, doc=Document())
         source = plot.handles['source']
@@ -317,7 +317,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertNotIn(source, plot.current_handles)
 
     def test_stream_cleanup(self):
-        stream = Stream.define(str('Test'), test=1)()
+        stream = Stream.define('Test', test=1)()
         dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
         plot = bokeh_renderer.get_plot(dmap)
         self.assertTrue(bool(stream._subscribers))

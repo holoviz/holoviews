@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests of the helper functions in utils
 """

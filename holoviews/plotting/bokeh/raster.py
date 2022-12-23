@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 import numpy as np
@@ -56,7 +54,7 @@ class RasterPlot(ColorbarPlot):
             return
 
         element = self.current_frame
-        xdim, ydim = [dimension_sanitizer(kd.name) for kd in element.kdims]
+        xdim, ydim = (dimension_sanitizer(kd.name) for kd in element.kdims)
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
@@ -275,8 +273,8 @@ class QuadMeshPlot(ColorbarPlot):
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]
-            X, Y = [element.interface.coords(element, d, expanded=True, edges=True)
-                    for d in dims]
+            X, Y = (element.interface.coords(element, d, expanded=True, edges=True)
+                    for d in dims)
             X, Y = colormesh(X, Y)
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
             XS, YS = [], []

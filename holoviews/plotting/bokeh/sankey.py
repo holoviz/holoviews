@@ -220,7 +220,7 @@ class SankeyPlot(GraphPlot):
         if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
         lidx = element.nodes.get_dimension(self.label_index)
-        src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
+        src, tgt = (dimension_sanitizer(kd.name) for kd in element.kdims[:2])
         if src == 'start': src += '_values'
         if tgt == 'end':   tgt += '_values'
         lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))

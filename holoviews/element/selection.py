@@ -14,7 +14,7 @@ from ..util.transform import dim
 from .annotation import HSpan, VSpan
 
 
-class SelectionIndexExpr(object):
+class SelectionIndexExpr:
 
     _selection_dims = None
 

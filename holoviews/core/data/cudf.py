@@ -278,12 +278,12 @@ class cuDFInterface(PandasInterface):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
             try:
-                data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_numpy())))
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy())}
             except Exception:
                 # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
-                data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array())}
             df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []

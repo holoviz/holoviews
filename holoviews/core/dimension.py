@@ -377,7 +377,7 @@ class Dimension(param.Parameterized):
 
     def pprint(self):
         changed = dict(self.param.get_param_values(onlychanged=True))
-        if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
+        if len({changed.get(k, k) for k in ['name','label']}) == 1:
             return f'Dimension({repr(self.name)})'
 
         params = self.param.objects('existing')

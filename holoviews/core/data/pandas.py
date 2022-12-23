@@ -269,7 +269,7 @@ class PandasInterface(Interface):
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            data = dict(((col, [v]) for col, v in zip(agg.index, agg.values)))
+            data = {col: [v] for col, v in zip(agg.index, agg.values)}
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []

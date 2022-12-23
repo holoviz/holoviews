@@ -39,7 +39,7 @@ class PlotlyCallbackMetaClass(type):
 
 
 @add_metaclass(PlotlyCallbackMetaClass)
-class PlotlyCallback(object):
+class PlotlyCallback:
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot

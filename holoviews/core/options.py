@@ -211,7 +211,7 @@ class AbbreviatedException(Exception):
         traceback.print_exception(self.etype, self.value, self.traceback)
 
 
-class abbreviated_exception(object):
+class abbreviated_exception:
     """
     Context manager used to to abbreviate tracebacks using an
     AbbreviatedException when a backend may raise an error due to
@@ -778,7 +778,7 @@ class OptionTree(AttrTree):
         if cache_key in cache:
             return cache[cache_key]
 
-        target = '.'.join((c for c in opts_spec if c))
+        target = '.'.join(c for c in opts_spec if c)
         options = self.find(opts_spec).options(
             group, target=target, defaults=defaults, backend=backend)
         cache[cache_key] = options
@@ -1119,7 +1119,7 @@ class Compositor(param.Parameterized):
         return transformed
 
 
-class Store(object):
+class Store:
     """
     The Store is what links up HoloViews objects to their
     corresponding options and to the appropriate classes of the chosen
@@ -1288,7 +1288,7 @@ class Store(object):
         Given an object, lookup the corresponding customized option
         tree if a single custom tree is applicable.
         """
-        ids = set([el for el in obj.traverse(lambda x: x.id) if el is not None])
+        ids = {el for el in obj.traverse(lambda x: x.id) if el is not None}
         if len(ids) == 0:
             raise Exception("Object does not own a custom options tree")
         elif len(ids) != 1:
@@ -1373,8 +1373,8 @@ class Store(object):
         for view_class, plot in cls.registry[backend].items():
             expanded_opts = [opt for key in plot.style_opts
                              for opt in style_aliases.get(key, [])]
-            style_opts = sorted(set(opt for opt in (expanded_opts + plot.style_opts)
-                                    if opt not in plot._disabled_opts))
+            style_opts = sorted({opt for opt in (expanded_opts + plot.style_opts)
+                                    if opt not in plot._disabled_opts})
 
             # Special handling for PlotSelector which just proxies parameters
             params = list(plot.param) if hasattr(plot, 'param') else plot.params()
@@ -1432,7 +1432,7 @@ class Store(object):
         return data, metadata
 
 
-class StoreOptions(object):
+class StoreOptions:
     """
     A collection of utilities for advanced users for creating and
     setting customized option trees on the Store. Designed for use by
@@ -1491,8 +1491,8 @@ class StoreOptions(object):
 
     @classmethod
     def get_object_ids(cls, obj):
-        return set(el for el
-                   in obj.traverse(lambda x: getattr(x, 'id', None)))
+        return {el for el
+                   in obj.traverse(lambda x: getattr(x, 'id', None))}
 
     @classmethod
     def tree_to_dict(cls, tree):
@@ -1716,7 +1716,7 @@ class StoreOptions(object):
               )
 
         options = {} if (options is None) else dict(**options)
-        all_keys = set(k for d in kwargs.values() for k in d)
+        all_keys = {k for d in kwargs.values() for k in d}
         for spec_key in all_keys:
             additions = {}
             for k, d in kwargs.items():

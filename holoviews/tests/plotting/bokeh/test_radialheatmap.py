@@ -155,7 +155,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         glyphs = self.plot._style_groups.keys()
         glyphs_mapped = self.plot.get_default_mapping(None, None).keys()
-        glyphs_plain = set([x[:-2] for x in glyphs_mapped])
+        glyphs_plain = {x[:-2] for x in glyphs_mapped}
 
         self.assertTrue(all([x in glyphs_plain for x in glyphs]))
 
@@ -259,7 +259,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         for check in [data, mapping]:
             glyphs_mapped = check.keys()
-            glyphs_plain = set([x[:-2] for x in glyphs_mapped])
+            glyphs_plain = {x[:-2] for x in glyphs_mapped}
             self.assertTrue(all([x in glyphs_plain for x in glyphs]))
 
     def test_plot_data_source(self):

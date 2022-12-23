@@ -248,5 +248,5 @@ class TriSurfacePlot(Plot3D):
     def get_data(self, element, ranges, style):
         dims = element.dimensions()
         self._norm_kwargs(element, ranges, style, dims[2])
-        x, y, z = [element.dimension_values(d) for d in dims]
+        x, y, z = (element.dimension_values(d) for d in dims)
         return (x, y, z), style, {}

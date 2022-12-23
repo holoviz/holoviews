@@ -1,12 +1,7 @@
 import sys
 import numpy
+from collections.abc import Iterable
 from packaging.version import Version
-
-try:
-    from collections.abc import Iterable
-except ImportError:
-    # Old way and will be removed in python 3.10
-    from collections import Iterable
 
 from .. import util
 from ..element import Element

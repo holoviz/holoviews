@@ -132,7 +132,7 @@ class Exporter(param.ParameterizedFunction):
         Returns a merged metadata info dictionary from the supplied
         function and additional dictionaries
         """
-        merged = dict([(k,v) for d in dicts for (k,v) in d.items()])
+        merged = {k:v for d in dicts for (k,v) in d.items()}
         return dict(merged, **fn(obj)) if fn else merged
 
     def __call__(self, obj, fmt=None):
@@ -344,7 +344,7 @@ class Pickler(Exporter):
                 components = list(obj.data.values())
                 entries = entries if len(entries) > 1 else [entries[0]+'(L)']
             else:
-                entries = ['%s.%s' % (group_sanitizer(obj.group, False),
+                entries = ['{}.{}'.format(group_sanitizer(obj.group, False),
                                       label_sanitizer(obj.label, False))]
                 components = [obj]
 
@@ -606,7 +606,7 @@ class FileArchive(Archive):
         if formatter is None: return []
         try:
             parse = list(string.Formatter().parse(formatter))
-            return set(f for f in list(zip(*parse))[1] if f is not None)
+            return {f for f in list(zip(*parse))[1] if f is not None}
         except Exception:
             raise SyntaxError(f"Could not parse formatter {formatter!r}")
 
@@ -740,7 +740,7 @@ class FileArchive(Archive):
 
     def _single_file_archive(self, export_name, files, root):
         ((basename, ext), entry) = files[0]
-        full_fname = '%s_%s' % (export_name, basename)
+        full_fname = f'{export_name}_{basename}'
         (unique_name, ext) = self._unique_name(full_fname, ext, root)
         filename = self._truncate_name(self._normalize_name(unique_name), ext=ext)
         fpath = os.path.join(root, filename)

@@ -85,7 +85,7 @@ try:
     datetime_types += cftime_types
 except ImportError:
     cftime_types = ()
-_STANDARD_CALENDARS = set(['standard', 'gregorian', 'proleptic_gregorian'])
+_STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
 
 
 class VersionError(Exception):
@@ -1099,7 +1099,7 @@ def int_to_alpha(n, upper=True):
 
 
 def int_to_roman(input):
-   if type(input) != type(1):
+   if not isinstance(input, int):
       raise TypeError(f"expected integer, got {type(input)}")
    if not 0 < input < 4000:
       raise ValueError("Argument must be between 1 and 3999")
@@ -1962,7 +1962,7 @@ def dimensioned_streams(dmap):
     dimensioned = []
     for stream in dmap.streams:
         stream_params = stream_parameters([stream])
-        if set([str(k) for k in dmap.kdims]) & set(stream_params):
+        if {str(k) for k in dmap.kdims} & set(stream_params):
             dimensioned.append(stream)
     return dimensioned
 

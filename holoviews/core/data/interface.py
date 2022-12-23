@@ -20,7 +20,7 @@ class DataError(ValueError):
         super().__init__(msg)
 
 
-class Accessor(object):
+class Accessor:
     def __init__(self, dataset):
         self.dataset = dataset
 

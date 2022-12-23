@@ -86,7 +86,7 @@ class AccessorPipelineMeta(type):
 
 
 @add_metaclass(AccessorPipelineMeta)
-class Apply(object):
+class Apply:
     """
     Utility to apply a function or operation to all viewable elements
     inside the object.
@@ -289,7 +289,7 @@ class Apply(object):
 
 
 @add_metaclass(AccessorPipelineMeta)
-class Redim(object):
+class Redim:
     """
     Utility that supports re-dimensioning any HoloViews object via the
     redim method.
@@ -489,7 +489,7 @@ class Redim(object):
 
 
 @add_metaclass(AccessorPipelineMeta)
-class Opts(object):
+class Opts:
 
     def __init__(self, obj, mode=None):
         self._mode = mode

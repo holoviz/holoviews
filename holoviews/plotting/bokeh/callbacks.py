@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import asyncio
 import time
 
@@ -30,7 +28,7 @@ from ...streams import (
 from .util import convert_timestamp
 
 
-class Callback(object):
+class Callback:
     """
     Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback

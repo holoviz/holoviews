@@ -1323,7 +1323,7 @@ class shade(LinkableOperation):
         """
         if len(rgb) > 3:
             rgb = rgb[:-1]
-        return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+        return "#{:02x}{:02x}{:02x}".format(*(int(v*255) for v in rgb))
 
 
     @classmethod

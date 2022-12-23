@@ -4,7 +4,7 @@ import logging
 import param
 
 
-class ParamLogStream(object):
+class ParamLogStream:
     """
     Context manager that replaces the param logger and captures
     log messages in a StringIO stream.

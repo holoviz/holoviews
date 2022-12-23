@@ -32,7 +32,7 @@ from ..core.util import (pd, cast_array_to_int64, datetime_types, dt_to_int,
                          is_float)
 
 
-class ComparisonInterface(object):
+class ComparisonInterface:
     """
     This class is designed to allow equality testing to work
     seamlessly with unittest.TestCase as a mix-in by implementing a

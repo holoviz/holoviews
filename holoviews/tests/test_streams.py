@@ -95,7 +95,7 @@ class TestStreamsDefine(ComparisonTestCase):
 
     def test_XY_subscriber_triggered(self):
 
-        class Inner(object):
+        class Inner:
             def __init__(self): self.state=None
             def __call__(self, x,y): self.state=(x,y)
 
@@ -120,7 +120,7 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(self.ExplicitTest.param['test'].doc, 'Test docstring')
 
 
-class _TestSubscriber(object):
+class _TestSubscriber:
 
     def __init__(self, cb=None):
         self.call_count = 0
@@ -1170,7 +1170,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3)))
+                repr((dim('x')>=1)&(dim('x')<=3))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1225,7 +1225,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=4)))
+                repr((dim('x')>=1)&(dim('x')<=4))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1287,7 +1287,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3)))
+                repr((dim('x')>=1)&(dim('x')<=3))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1492,7 +1492,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3)))
+                repr((dim('x')>=1)&(dim('x')<=3))
             )
             self.assertEqual(
                 expr_stream.bbox,

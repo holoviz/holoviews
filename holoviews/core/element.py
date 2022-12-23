@@ -472,5 +472,5 @@ class Collator(NdMapping):
         return new_item
 
 
-__all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+__all__ = list({_k for _k, _v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)})
