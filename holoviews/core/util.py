@@ -1573,14 +1573,11 @@ def resolve_dependent_value(value):
         )
 
     if 'panel' in sys.modules:
-        from panel.widgets import RangeSlider, Widget
+        from panel.depends import param_value_if_widget
+        from panel.widgets import RangeSlider
         range_widget = isinstance(value, RangeSlider)
-        try:
-            from panel.depends import param_value_if_widget
-            value = param_value_if_widget(value)
-        except Exception:
-            if isinstance(value, Widget):
-                value = value.param.value
+        value = param_value_if_widget(value)
+
     if is_param_method(value, has_deps=True):
         value = value()
     elif isinstance(value, param.Parameter) and isinstance(value.owner, param.Parameterized):
