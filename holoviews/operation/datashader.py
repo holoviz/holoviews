@@ -125,7 +125,7 @@ class ResamplingOperation(LinkableOperation):
     @bothmethod
     def instance(self_or_cls,**params):
         filtered = {k:v for k,v in params.items() if k in self_or_cls.param}
-        inst = super(ResamplingOperation, self_or_cls).instance(**filtered)
+        inst = super().instance(**filtered)
         inst._precomputed = {}
         return inst
 
@@ -1921,7 +1921,7 @@ class inspect(Operation):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(inspect, self_or_cls).instance(**params)
+        inst = super().instance(**params)
         inst._op = None
         return inst
 

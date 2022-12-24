@@ -99,7 +99,7 @@ class PandasInterface(Interface):
             columns = list(util.unique_iterator([dimension_name(d) for d in kdims+vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
-                data = OrderedDict(((d, data[d]) for d in columns))
+                data = OrderedDict((d, data[d]) for d in columns)
             elif isinstance(data, list) and len(data) == 0:
                 data = {c: np.array([]) for c in columns}
             elif isinstance(data, (list, dict)) and data in ([], {}):
