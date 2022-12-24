@@ -1,5 +1,4 @@
 import sys, warnings, operator
-import builtins as builtins   # noqa (compatibility)
 import hashlib
 import json
 import time

@@ -3,6 +3,7 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+import builtins
 import re
 import datetime as dt
 import weakref
@@ -488,7 +489,7 @@ class LabelledData(param.Parameterized):
 
         self._id = None
         self.id = id
-        self._plot_id = plot_id or util.builtins.id(self)
+        self._plot_id = plot_id or builtins.id(self)
         if isinstance(params.get('label',None), tuple):
             (alias, long_name) = params['label']
             util.label_sanitizer.add_aliases(**{alias:long_name})
