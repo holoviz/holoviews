@@ -64,7 +64,6 @@ class layout_nodes(Operation):
             target = element.dimension_values(1, expanded=False)
             nodes = np.unique(np.concatenate([source, target]))
             if self.p.layout:
-                import pandas as pd
                 df = pd.DataFrame({'index': nodes})
                 nodes = self.p.layout(df, element.dframe(), **self.p.kwargs)
                 nodes = nodes[['x', 'y', 'index']]

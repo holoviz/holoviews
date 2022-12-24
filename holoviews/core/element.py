@@ -2,6 +2,7 @@ from itertools import groupby
 import numpy as np
 
 import param
+import pandas as pd
 
 from .dimension import Dimensioned, ViewableElement, asdim
 from .layout import Composable, Layout, NdLayout
@@ -208,7 +209,6 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             DataFrame of columns corresponding to each dimension
         """
-        import pandas as pd
         if dimensions is None:
             dimensions = [d.name for d in self.dimensions()]
         else:

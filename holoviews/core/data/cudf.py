@@ -49,7 +49,6 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import cudf
-        import pandas as pd
 
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']

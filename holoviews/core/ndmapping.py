@@ -7,6 +7,7 @@ also enables slicing over multiple dimension ranges.
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
+import pandas as pd
 
 import param
 
@@ -882,7 +883,6 @@ class UniformNdMapping(NdMapping):
         Returns:
             DataFrame of columns corresponding to each dimension
         """
-        import pandas as pd
         if dimensions is None:
             outer_dimensions = self.kdims
             inner_dimensions = None

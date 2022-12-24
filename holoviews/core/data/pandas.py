@@ -312,7 +312,6 @@ class PandasInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        import pandas as pd
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(dataset.data, pd.DataFrame) or
