@@ -1194,14 +1194,12 @@ class Dimensioned(LabelledData):
         if not dimension_range:
             return lower, upper
         return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
+
     def __repr__(self):
         return PrettyPrinter.pprint(self)
 
     def __str__(self):
         return repr(self)
-
-    def __unicode__(self):
-        return PrettyPrinter.pprint(self)
 
     def options(self, *args, clone=True, **kwargs):
         """Applies simplified option definition returning a new object.

@@ -291,7 +291,6 @@ class Keywords(param.Parameterized):
     def __str__(self):           return str(self.values)
     def __iter__(self):          return iter(self.values)
     def __bool__(self):          return bool(self.values)
-    def __nonzero__(self):       return bool(self.values)
     def __contains__(self, val): return val in self.values
 
 

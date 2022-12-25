@@ -78,7 +78,7 @@ class Element(ViewableElement, Composable, Overlayable):
             raise NotImplementedError("%s currently does not support getitem" %
                                       type(self).__name__)
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Indicates whether the element is empty.
 
         Subclasses may override this to signal that the Element
@@ -93,8 +93,6 @@ class Element(ViewableElement, Composable, Overlayable):
     def __iter__(self):
         "Disable iterator interface."
         raise NotImplementedError('Iteration on Elements is not supported.')
-
-    __bool__ = __nonzero__
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.

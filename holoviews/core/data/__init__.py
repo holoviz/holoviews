@@ -1064,11 +1064,9 @@ argument to specify a selection specification""")
         "Number of values in the Dataset."
         return self.interface.length(self)
 
-    def __nonzero__(self):
+    def __bool__(self):
         "Whether the Dataset contains any values"
         return self.interface.nonzero(self)
-
-    __bool__ = __nonzero__
 
     @property
     def shape(self):
