@@ -19,6 +19,7 @@ considered different.
 """
 from functools import partial
 import numpy as np
+import pandas as pd
 from unittest.util import safe_repr
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
@@ -28,7 +29,7 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
-from ..core.util import (pd, cast_array_to_int64, datetime_types, dt_to_int,
+from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
                          is_float)
 
 
@@ -115,8 +116,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
 
         # Pandas dataframe comparison
-        if pd:
-            cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
+        cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions

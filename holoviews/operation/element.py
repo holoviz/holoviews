@@ -12,10 +12,10 @@ from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
-from ..core.data import ArrayInterface, DictInterface, default_datatype
+from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
-    group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
+    group_sanitizer, label_sanitizer, datetime_types, isfinite,
     dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
 )
 from ..element.chart import Histogram, Scatter
@@ -24,10 +24,7 @@ from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)
 from ..streams import RangeXY
 
-column_interfaces = [ArrayInterface, DictInterface]
-if pd:
-    from ..core.data import PandasInterface
-    column_interfaces.append(PandasInterface)
+column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
 
 def identity(x,k): return x

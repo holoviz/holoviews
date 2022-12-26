@@ -185,12 +185,9 @@ class categorical_aggregate2d(Operation):
         reindexed = concat_data.reindex([xdim, ydim], vdims)
         if not reindexed:
             agg = reindexed
-        elif pd:
-            df = PandasInterface.as_dframe(reindexed)
-            df = df.groupby([xdim, ydim], sort=False).first().reset_index()
-            agg = reindexed.clone(df)
-        else:
-            agg = reindexed.aggregate([xdim, ydim], reduce_fn)
+        df = PandasInterface.as_dframe(reindexed)
+        df = df.groupby([xdim, ydim], sort=False).first().reset_index()
+        agg = reindexed.clone(df)
 
         # Convert data to a gridded dataset
         for vdim in vdims:
@@ -225,12 +222,8 @@ class categorical_aggregate2d(Operation):
             raise ValueError("Must have at two dimensions to aggregate over"
                              "and one value dimension to aggregate on.")
 
-        if pd:
-            obj = Dataset(obj, datatype=['dataframe'])
-            return self._aggregate_dataset_pandas(obj)
-        else:
-            obj = Dataset(obj, datatype=['dictionary'])
-            return self._aggregate_dataset(obj)
+        obj = Dataset(obj, datatype=['dataframe'])
+        return self._aggregate_dataset_pandas(obj)
 
 
 def circular_layout(nodes):

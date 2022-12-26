@@ -1150,22 +1150,18 @@ def unique_array(arr):
     """
     if not len(arr):
         return np.asarray(arr)
-    elif pd:
-        if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
-            # Avoid expensive unpacking if not potentially datetime
-            return pd.unique(arr)
 
-        values = []
-        for v in arr:
-            if (isinstance(v, datetime_types) and
-                not isinstance(v, cftime_types)):
-                v = pd.Timestamp(v).to_datetime64()
-            values.append(v)
-        return pd.unique(values)
-    else:
-        arr = np.asarray(arr)
-        _, uniq_inds = np.unique(arr, return_index=True)
-        return arr[np.sort(uniq_inds)]
+    if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
+        # Avoid expensive unpacking if not potentially datetime
+        return pd.unique(arr)
+
+    values = []
+    for v in arr:
+        if (isinstance(v, datetime_types) and
+            not isinstance(v, cftime_types)):
+            v = pd.Timestamp(v).to_datetime64()
+        values.append(v)
+    return pd.unique(values)
 
 
 def match_spec(element, specification):
@@ -2095,15 +2091,14 @@ def dt_to_int(value, time_unit='us'):
     """
     Converts a datetime type to an integer with the supplied time unit.
     """
-    if pd:
-        if isinstance(value, pd.Period):
-            value = value.to_timestamp()
-        if isinstance(value, pd.Timestamp):
-            try:
-                value = value.to_datetime64()
-            except Exception:
-                value = np.datetime64(value.to_pydatetime())
-    elif isinstance(value, cftime_types):
+    if isinstance(value, pd.Period):
+        value = value.to_timestamp()
+    if isinstance(value, pd.Timestamp):
+        try:
+            value = value.to_datetime64()
+        except Exception:
+            value = np.datetime64(value.to_pydatetime())
+    if isinstance(value, cftime_types):
         return cftime_to_timestamp(value, time_unit)
 
     # date class is a parent for datetime class
