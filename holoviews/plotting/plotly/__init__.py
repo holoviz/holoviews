@@ -1,12 +1,13 @@
 import plotly
 
 from param import concrete_descendents
+from packaging.version import Version
 
 from ...core import (
     Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
 )
 from ...core.options import Store, Cycle, Options
-from ...core.util import LooseVersion, VersionError
+from ...core.util import VersionError
 from ...element import *              # noqa (Element import for registration)
 
 from .element import ElementPlot
@@ -25,7 +26,7 @@ from .callbacks import *             # noqa (API import)
 from .shapes import *                # noqa (API import)
 from .images import *                # noqa (API import)
 
-if LooseVersion(plotly.__version__) < LooseVersion('4.0.0'):
+if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
         "please upgrade from plotly %s to a more recent version."

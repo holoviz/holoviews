@@ -1,9 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import asyncio
 import time
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 
@@ -14,7 +12,6 @@ from bokeh.models import (
 )
 from panel.io.state import state
 
-from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
     datetime_types, dimension_sanitizer, dt64_to_dt
@@ -30,7 +27,7 @@ from ...streams import (
 from .util import convert_timestamp
 
 
-class Callback(object):
+class Callback:
     """
     Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback
@@ -233,7 +230,7 @@ class Callback(object):
         be the same as the model.
         """
         if not cb_obj:
-            raise Exception('Bokeh plot attribute %s could not be found' % spec)
+            raise Exception(f'Bokeh plot attribute {spec} could not be found')
         if model is None:
             model = cb_obj
         spec = spec.split('.')
@@ -753,7 +750,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, xdim)
                     try:
                         xfactors = list(np.array(xfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['x_selection'] = xfactors
         else:
@@ -768,7 +765,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, ydim)
                     try:
                         yfactors = list(np.array(yfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['y_selection'] = yfactors
         else:

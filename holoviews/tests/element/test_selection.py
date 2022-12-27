@@ -20,22 +20,22 @@ from holoviews.element.selection import spatial_select_columnar
 
 try:
     import datashader as ds
-except:
+except ImportError:
     ds = None
 
 try:
     import spatialpandas as spd
-except:
+except ImportError:
     spd = None
 
 try:
     import shapely
-except:
+except ImportError:
     shapely = None
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
 
 spd_available = skipIf(spd is None, "spatialpandas is not available")

@@ -9,7 +9,7 @@ from holoviews.streams import Stream, PlotSize, RangeXY
 
 try:
     from holoviews.operation.datashader import spread, datashade
-except:
+except ImportError:
     spread = datashade = None
 
 datashade_skip = skipIf(datashade is None, "datashade is not available")

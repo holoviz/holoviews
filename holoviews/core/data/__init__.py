@@ -1,8 +1,3 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import types
 import copy
 
@@ -70,7 +65,7 @@ def concat(datasets, datatype=None):
     return Interface.concatenate(datasets, datatype)
 
 
-class DataConversion(object):
+class DataConversion:
     """
     DataConversion is a very simple container object which can be
     given an existing Dataset Element and provides methods to convert
@@ -129,7 +124,7 @@ class DataConversion(object):
             else:
                 selected = self._element
         else:
-            if pd and issubclass(self._element.interface, PandasInterface):
+            if issubclass(self._element.interface, PandasInterface):
                 ds_dims = self._element.dimensions()
                 ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
                             for d in groupby+kdims]
@@ -283,15 +278,14 @@ class Dataset(Element):
         """
         if isinstance(data, DynamicMap):
             class_name = cls.__name__
-            repr_kdims = 'kdims=%r' % kdims if kdims else None
-            repr_vdims = 'vdims=%r' % vdims if vdims else None
-            repr_kwargs = (', '.join('%s=%r' % (k,v) for k,v in kwargs.items())
+            repr_kdims = f'kdims={kdims!r}' if kdims else None
+            repr_vdims = f'vdims={vdims!r}' if vdims else None
+            repr_kwargs = (', '.join(f'{k}={v!r}' for k,v in kwargs.items())
                            if kwargs else None)
             extras = ', '.join([el for el in [repr_kdims, repr_vdims, repr_kwargs]
                                if el is not None])
             extras = ', ' + extras if extras else ''
-            apply_args= 'hv.{class_name}{extras}'.format(class_name=class_name,
-                                                         extras=extras)
+            apply_args= f'hv.{class_name}{extras}'
             msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap. Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call .apply({apply_args}) on the supplied DynamicMap."
             cls.param.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
@@ -540,7 +534,7 @@ class Dataset(Element):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
-            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+            raise Exception(f'{dimension.name} dimension already defined')
 
         if vdim:
             dims = self.vdims[:]
@@ -716,7 +710,7 @@ argument to specify a selection specification""")
             value_select = slices[self.ndims]
         elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
                                                         (Dimension,str)):
-            raise IndexError("%r is not an available value dimension" % slices[self.ndims])
+            raise IndexError(f"{slices[self.ndims]!r} is not an available value dimension")
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
@@ -821,7 +815,7 @@ argument to specify a selection specification""")
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
-        lens = set(len(util.wrap_tuple(s)) for s in samples)
+        lens = {len(util.wrap_tuple(s)) for s in samples}
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
@@ -946,7 +940,7 @@ argument to specify a selection specification""")
             try:
                 # Should be checking the dimensions declared on the element are compatible
                 return self.clone(aggregated, kdims=kdims, vdims=vdims)
-            except:
+            except Exception:
                 datatype = self.param.objects('existing')['datatype'].default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
                                   new_type=new_type, datatype=datatype)
@@ -1070,11 +1064,9 @@ argument to specify a selection specification""")
         "Number of values in the Dataset."
         return self.interface.length(self)
 
-    def __nonzero__(self):
+    def __bool__(self):
         "Whether the Dataset contains any values"
         return self.interface.nonzero(self)
-
-    __bool__ = __nonzero__
 
     @property
     def shape(self):

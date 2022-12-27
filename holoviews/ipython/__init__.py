@@ -4,7 +4,6 @@ from unittest import SkipTest
 import param
 import holoviews
 
-from IPython import version_info
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
@@ -55,7 +54,7 @@ class IPTestCase(ComparisonTestCase):
     def get_object(self, name):
         obj = self.ip._object_find(name).obj
         if obj is None:
-            raise self.failureException("Could not find object %s" % name)
+            raise self.failureException(f"Could not find object {name}")
         return obj
 
 
@@ -117,15 +116,13 @@ class notebook_extension(extension):
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except:
+        except Exception:
             return
 
         # Notebook archive relies on display hooks being set to work.
         try:
-            if version_info[0] >= 4:
-                import nbformat # noqa (ensures availability)
-            else:
-                from IPython import nbformat # noqa (ensures availability)
+            import nbformat  # noqa: F401
+
             try:
                 from .archive import notebook_archive
                 holoviews.archive = notebook_archive
@@ -155,7 +152,7 @@ class notebook_extension(extension):
             msg = ('Output magic unable to control displayed format '
                    'as IPython notebook uses fixed precedence '
                    'between %r' % p.display_formats)
-            display(HTML('<b>Warning</b>: %s' % msg))
+            display(HTML(f'<b>Warning</b>: {msg}'))
 
         loaded = notebook_extension._loaded
         if loaded == False:
@@ -171,7 +168,7 @@ class notebook_extension(extension):
         if p.width is not None:
             css += '<style>div.container { width: %s%% }</style>' % p.width
         if p.css:
-            css += '<style>%s</style>' % p.css
+            css += f'<style>{p.css}</style>'
 
         if css:
             display(HTML(css))

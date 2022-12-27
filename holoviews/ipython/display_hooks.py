@@ -36,10 +36,10 @@ ABBREVIATE_TRACEBACKS = True
 
 def max_frame_warning(max_frames):
     sys.stderr.write(
-        "Animation longer than the max_frames limit {max_frames};\n"
+        f"Animation longer than the max_frames limit {max_frames};\n"
         "skipping rendering to avoid unexpected lengthy computations.\n"
         "If desired, the limit can be increased using:\n"
-        "hv.output(max_frames=<insert number>)".format(max_frames=max_frames)
+        "hv.output(max_frames=<insert number>)"
     )
 
 def process_object(obj):

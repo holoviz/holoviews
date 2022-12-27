@@ -39,7 +39,7 @@ class PlotlyCallbackMetaClass(type):
 
 
 @add_metaclass(PlotlyCallbackMetaClass)
-class PlotlyCallback(object):
+class PlotlyCallback:
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -235,8 +235,8 @@ class RangeCallback(PlotlyCallback):
 
             xaxis = trace.get('xaxis', 'x').replace('x', 'xaxis')
             yaxis = trace.get('yaxis', 'y').replace('y', 'yaxis')
-            xprop = '{xaxis}.range'.format(xaxis=xaxis)
-            yprop = '{yaxis}.range'.format(yaxis=yaxis)
+            xprop = f'{xaxis}.range'
+            yprop = f'{yaxis}.range'
 
             if not property_value:
                 x_range = None

@@ -14,7 +14,7 @@ from ..util.transform import dim
 from .annotation import HSpan, VSpan
 
 
-class SelectionIndexExpr(object):
+class SelectionIndexExpr:
 
     _selection_dims = None
 
@@ -96,7 +96,7 @@ def spatial_select_columnar(xvals, yvals, geometry):
                     geometry[:, 1],
                 )
                 return result.values
-            except Exception:
+            except ImportError:
                 xvals = np.asarray(xvals)
                 yvals = np.asarray(yvals)
     if 'dask' in sys.modules:
@@ -124,7 +124,7 @@ def spatial_select_columnar(xvals, yvals, geometry):
         points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
         poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
         geom_mask = points.intersects(poly)
-    except Exception:
+    except ImportError:
         try:
             from shapely.geometry import Point, Polygon
             points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
