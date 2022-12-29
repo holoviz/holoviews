@@ -55,7 +55,7 @@ To get the very latest development version using ``pip``, you can use::
   pip install git+https://github.com/holoviz/holoviews.git
 
 The alternative approach using git archive (e.g ``pip install
-https://github.com/holoviz/holoviews/archive/master.zip``) is *not*
+https://github.com/holoviz/holoviews/archive/main.zip``) is *not*
 recommended as you will have incomplete version strings.
 
 Anyone interested in following development can get the very latest
