@@ -244,7 +244,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if self.trace_kwargs(is_geo=is_geo).get('type', None) in legend_trace_types:
             opts.update(
-                showlegend=self.show_legend, legendgroup=element.group)
+                showlegend=self.show_legend, legendgroup=element.group+'_'+legend) # make legendgroup unique for single trace enable/disable
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
