@@ -177,7 +177,7 @@ Compatibility:
 Major features:
 
 After a long period of hotfix releases for the 1.14.9 series, many new
-features on the master branch have been released. Features relating to
+features on the main branch have been released. Features relating to
 datashader support, linked selection and improvements to the Bokeh
 plotting backend are called out in their own sections.
 

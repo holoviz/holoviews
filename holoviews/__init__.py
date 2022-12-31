@@ -27,7 +27,7 @@ How to use HoloViews in 3 simple steps
 Work with the data source you already know and ❤️
 
 >>> import pandas as pd
->>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/master/examples/assets/station_info.csv')
+>>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/main/examples/assets/station_info.csv')
 
 Import HoloViews and configure your plotting backend
 
