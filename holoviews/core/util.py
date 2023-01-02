@@ -2010,7 +2010,7 @@ def bound_range(vals, density, time_unit='us'):
         invert = True
     if not density:
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
+            warnings.filterwarnings('ignore', r'invalid value encountered in (double_scalars|scalar divide)')
             full_precision_density = compute_density(low, high, len(vals)-1)
             with np.errstate(over='ignore'):
                 density = round(full_precision_density, sys.float_info.dig)
