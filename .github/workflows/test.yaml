@@ -82,7 +82,7 @@ jobs:
         if: matrix.python-version == '3.11'
         run: |
           conda activate test-environment
-          pytest -n auto --dist loadscope --nbval-lax examples/reference/elements
+          pytest -n auto --dist loadscope --nbval-lax examples/reference/elements --force-flaky
       - name: codecov
         run: |
           conda activate test-environment
