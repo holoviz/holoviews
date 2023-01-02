@@ -17,4 +17,9 @@ filterwarnings = [
     "ignore:Please use `append` from the:DeprecationWarning:pickle",
     # 2022-12-27: Warnings which should be fixed in Panel
     "ignore:make_current is deprecated; start the event loop first:DeprecationWarning:panel.io.server",
+    # 2023-01-02: Numpy 1.24 warnings
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/pull/12690
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:cupy",  # https://github.com/cupy/cupy/issues/7211
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:plotly.express.imshow_utils",  # https://github.com/plotly/plotly.py/pull/3997
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype",  # https://github.com/scikit-image/scikit-image/pull/6637
 ]
