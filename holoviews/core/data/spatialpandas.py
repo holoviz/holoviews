@@ -804,7 +804,7 @@ def to_geom_dict(eltype, data, kdims, vdims, interface=None):
 
     xname, yname = (kd.name for kd in kdims[:2])
     if isinstance(data, dict):
-        data = {k: _asarray(v) for k, v in data.items()}
+        data = {k: v if isscalar(v) else _asarray(v) for k, v in data.items()}
         return data
     new_el = Dataset(data, kdims, vdims)
     if new_el.interface is interface:
@@ -889,11 +889,9 @@ def from_shapely(data):
 
 
 def _asarray(v):
-    """Convert input to scaler or array
+    """Convert input to array
 
-    If the value is scalar it returns it immediately.
-
-    Then it tries with a normal `np.asarray(v)` if this does not work
+    First it tries with a normal `np.asarray(v)` if this does not work
     it tries with `np.asarray(v, dtype=object)`.
 
     The ValueError raised is because of an inhomogeneous shape of the input,
@@ -901,10 +899,7 @@ def _asarray(v):
 
     Reason why it is not located in holoviews.core.util is that there is a already a
     function called `asarray`.
-
     """
-    if isscalar(v):
-        return v
     try:
         return np.asarray(v)
     except ValueError:
