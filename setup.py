@@ -99,6 +99,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "scikit-image",
     "pyarrow",
     "pooch",
+    "numpy <1.24",  # Upper pin because of numba error
 ]
 
 if sys.version_info < (3, 11):
