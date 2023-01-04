@@ -5,7 +5,7 @@ channels:
 
 dependencies:
   - python=3.9
-  - holoviews==1.15.3
+  - holoviews=1.15
   # Notebook dependencies already installed by binder
   # Recommended installs
   - matplotlib>=2.2
