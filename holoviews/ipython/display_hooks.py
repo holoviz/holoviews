@@ -178,7 +178,7 @@ def element_display(element, max_frames):
     info = process_object(element)
     if info:
         display(HTML(info))
-        return
+        return None
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:

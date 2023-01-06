@@ -62,8 +62,8 @@ class Empty(Dimensioned, Composable):
 
     group = param.String(default='Empty')
 
-    def __init__(self):
-        super().__init__(None)
+    def __init__(self, **params) -> None:
+        super().__init__(None, **params)
 
 
 
