@@ -138,7 +138,7 @@ class Plot(param.Parameterized):
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
-                if not plot.root:
+                if plot is None or not plot.root:
                     continue
                 for cb in getattr(plot, 'callbacks', []):
                     if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):

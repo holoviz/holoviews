@@ -15,7 +15,7 @@ from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
 from ..core import (
     ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
-    Layout, CompositeOverlay, DynamicMap, Dimensioned
+    Layout, CompositeOverlay, DynamicMap, Dimensioned, Empty
 )
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
@@ -253,6 +253,8 @@ def display(obj, raw_output=False, **kwargs):
             output = map_display(obj)
     elif isinstance(obj, Plot):
         output = render(obj)
+    elif isinstance(obj, Empty):
+        output = ({}, {})
     else:
         output = obj
         raw = kwargs.pop('raw', False)
