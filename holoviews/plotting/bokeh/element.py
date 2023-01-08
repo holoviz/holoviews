@@ -1602,7 +1602,7 @@ class CompositeElementPlot(ElementPlot):
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
-                self._draw_colorbar(plot, v, k[:-12])
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
 
 
     def _process_properties(self, key, properties, mapping):
@@ -2011,7 +2011,7 @@ class ColorbarPlot(ElementPlot):
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
-                self._draw_colorbar(plot, v, k[:-12])
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
         return ret
 
 

@@ -371,6 +371,11 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             if self.handles['hover'].renderers == 'auto':
                 self.handles['hover'].renderers = []
             self.handles['hover'].renderers.append(renderer)
+        if self.colorbar:
+            for k, v in list(self.handles.items()):
+                if not k.endswith('color_mapper'):
+                    continue
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
 
 
 
