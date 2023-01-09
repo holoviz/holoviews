@@ -3,7 +3,7 @@ import panel as pn
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
 from holoviews.core.options import Cycle
-from holoviews.element import Bars, Curve, ErrorBars, HLine, Points, Scatter, Text, VLine
+from holoviews.element import Bars, Box, Curve, ErrorBars, HLine, Points, Scatter, Text, VLine
 from holoviews.streams import Stream, Tap
 from holoviews.util import Dynamic
 
@@ -357,6 +357,7 @@ class TestLegends(TestBokehPlot):
         plot.update((3,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
         self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}, {'value': 'C'}])
+
     def test_dynamicmap_ndoverlay_shrink_number_of_items(self):
         selected = Stream.define('selected', items=3)()
         def callback(items):
@@ -365,3 +366,21 @@ class TestLegends(TestBokehPlot):
         plot = bokeh_renderer.get_plot(dmap)
         selected.event(items=2)
         self.assertEqual(len([r for r in plot.state.renderers if r.visible]), 2)
+
+    def test_dynamicmap_variable_length_overlay(self):
+        selected = Stream.define('selected', items=[1])()
+        def callback(items):
+            return Overlay([Box(0, 0, radius*2) for radius in items])
+        dmap = DynamicMap(callback, streams=[selected])
+        plot = bokeh_renderer.get_plot(dmap)
+        assert len(plot.subplots) == 1
+        selected.event(items=[1, 2, 4])
+        assert len(plot.subplots) == 3
+        selected.event(items=[1, 4])
+        sp1, sp2, sp3 = plot.subplots.values()
+        assert sp1.handles['cds'].data['xs'][0].min() == -1
+        assert sp1.handles['glyph_renderer'].visible
+        assert sp2.handles['cds'].data['xs'][0].min() == -4
+        assert sp2.handles['glyph_renderer'].visible
+        assert sp3.handles['cds'].data['xs'][0].min() == -4
+        assert not sp3.handles['glyph_renderer'].visible

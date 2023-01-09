@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test cases for rendering exporters
 """
@@ -86,7 +85,7 @@ class MPLRendererTest(ComparisonTestCase):
         devnull = subprocess.DEVNULL
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
-        except:
+        except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
         data, metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
@@ -163,7 +162,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual(y[2], 3.1)
 
     def test_render_dynamicmap_with_stream(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
@@ -177,7 +176,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual(y[2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for dim transforms
 """
@@ -15,12 +14,12 @@ import param
 try:
     import dask.dataframe as dd
     import dask.array as da
-except:
+except ImportError:
     da, dd = None, None
 
 try:
     import xarray as xr
-except:
+except ImportError:
     xr = None
 
 xr_skip = skipIf(xr is None, "xarray not available")

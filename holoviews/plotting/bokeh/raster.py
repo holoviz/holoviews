@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 import numpy as np
@@ -46,7 +44,7 @@ class RasterPlot(ColorbarPlot):
         tooltips.append((vdims[0].pprint_label, '@image'))
         for vdim in vdims[1:]:
             vname = dimension_sanitizer(vdim.name)
-            tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
+            tooltips.append((vdim.pprint_label, f'@{vname}'))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
@@ -56,7 +54,7 @@ class RasterPlot(ColorbarPlot):
             return
 
         element = self.current_frame
-        xdim, ydim = [dimension_sanitizer(kd.name) for kd in element.kdims]
+        xdim, ydim = (dimension_sanitizer(kd.name) for kd in element.kdims)
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
@@ -145,7 +143,7 @@ class RGBPlot(LegendPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     def __init__(self, hmap, **params):
-        super(RGBPlot, self).__init__(hmap, **params)
+        super().__init__(hmap, **params)
         self._legend_plot = None
 
     def _hover_opts(self, element):
@@ -154,7 +152,7 @@ class RGBPlot(LegendPlot):
                 ('RGBA', '@image')], {}
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(RGBPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
         if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
             return
         try:
@@ -275,8 +273,8 @@ class QuadMeshPlot(ColorbarPlot):
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]
-            X, Y = [element.interface.coords(element, d, expanded=True, edges=True)
-                    for d in dims]
+            X, Y = (element.interface.coords(element, d, expanded=True, edges=True)
+                    for d in dims)
             X, Y = colormesh(X, Y)
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
             XS, YS = [], []

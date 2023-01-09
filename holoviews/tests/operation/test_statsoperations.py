@@ -2,7 +2,7 @@ from unittest import SkipTest
 
 try:
     import scipy # noqa
-except:
+except ImportError:
     raise SkipTest('SciPy not available')
 
 import numpy as np

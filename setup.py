@@ -31,6 +31,7 @@ extras_require['flakes'] = [
 extras_require['tests_core'] = [
     'pytest',
     'pytest-cov',
+    'pytest-xdist',
     'matplotlib >=3',
     'nbconvert',
     'bokeh',
@@ -56,9 +57,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy',
     'selenium',
+    'numpy <1.24',  # Upper pin because of numba error
 ]
 
-# Packages not working on python 3.11 becauase of numba
+# Packages not working on python 3.11 because of numba
 if sys.version_info < (3, 11):
     extras_require['tests'] += [
         'spatialpandas',
@@ -69,9 +71,7 @@ extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
 ]
 
-extras_require['tests_nb'] = [
-    'nbsmoke >=0.2.0',
-]
+extras_require['tests_nb'] = ['nbval']
 
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
@@ -98,6 +98,8 @@ extras_require["examples"] = extras_require["recommended"] + [
     "shapely",
     "scikit-image",
     "pyarrow",
+    "pooch",
+    "numpy <1.24",  # Upper pin because of numba error
 ]
 
 if sys.version_info < (3, 11):
@@ -117,7 +119,7 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['flakes']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.7.1',
+    'nbsite ==0.8.0rc2',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
@@ -125,6 +127,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'pydata-sphinx-theme ==0.9.0',
     'sphinx-copybutton',
     'pooch',
+    'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
