@@ -129,6 +129,9 @@ _ATTRIBUTIONS = {
 
 def deprecation_warning(name, url, reason):
     def deprecated_tilesource_warning():
+        """
+        NOTE: The function name `deprecated_tilesource_warning' used to filter deprecated tile_sources
+        """
         if util.config.raise_deprecated_tilesource_exception:
             raise DeprecationWarning(f'{name} tile source is deprecated: {reason}')
         param.main.param.warning(f'{name} tile source is deprecated and is likely to be unusable: {reason}')
@@ -185,6 +188,8 @@ OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OS
 OpenTopoMap = lambda: Tiles('https://a.tile.opentopomap.org/{Z}/{X}/{Y}.png', name="OpenTopoMap")
 Wikipedia = wikimedia_replacement
 
-tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in
+_all_tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in
                 ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat',
                  'deprecation_warning', 'wikimedia_replacement']}
+
+tile_sources = {k: v for k, v in _all_tile_sources.items() if v.__name__ != 'deprecated_tilesource_warning'}
