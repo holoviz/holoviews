@@ -10,8 +10,6 @@ from types import FunctionType
 
 import param
 
-from param.parameterized import add_metaclass
-
 from . import util
 from .pprint import PrettyPrinter
 
@@ -85,8 +83,7 @@ class AccessorPipelineMeta(type):
         return pipelined_call
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Apply:
+class Apply(metaclass=AccessorPipelineMeta):
     """
     Utility to apply a function or operation to all viewable elements
     inside the object.
@@ -288,8 +285,7 @@ class Apply:
         return self.__call__('transform', **kwargs)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Redim:
+class Redim(metaclass=AccessorPipelineMeta):
     """
     Utility that supports re-dimensioning any HoloViews object via the
     redim method.
@@ -488,8 +484,7 @@ class Redim:
         return self._redim('values', specs, **ranges)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Opts:
+class Opts(metaclass=AccessorPipelineMeta):
 
     def __init__(self, obj, mode=None):
         self._mode = mode
