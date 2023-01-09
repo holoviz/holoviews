@@ -187,6 +187,15 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(cds.data['node_color'], np.array([0.5, 1.5, 2.5]))
 
+    def test_graph_op_node_color_colorbar(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
+                      vdims='color')
+        graph = Graph((edges, nodes)).opts(node_color='color', colorbar=True)
+        plot = bokeh_renderer.get_plot(graph)
+        assert 'node_color_colorbar' in plot.handles
+        assert plot.handles['node_color_colorbar'].color_mapper is plot.handles['node_color_color_mapper']
+
     def test_graph_op_node_color_categorical(self):
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 'A'), (0, 1, 1, 'B'), (1, 1, 2, 'C')],
@@ -250,6 +259,13 @@ class TestBokehGraphPlot(TestBokehPlot):
         cmapper = plot.handles['edge_color_color_mapper']
         self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array([2, 0.5, 3]))
+
+    def test_graph_op_edge_color_colorbar(self):
+        edges = [(0, 1, 2), (0, 2, 0.5), (1, 3, 3)]
+        graph = Graph(edges, vdims='color').opts(edge_color='color', colorbar=True)
+        plot = bokeh_renderer.get_plot(graph)
+        assert 'edge_color_colorbar' in plot.handles
+        assert plot.handles['edge_color_colorbar'].color_mapper is plot.handles['edge_color_color_mapper']
 
     def test_graph_op_edge_color_categorical(self):
         edges = [(0, 1, 'C'), (0, 2, 'B'), (1, 3, 'A')]
