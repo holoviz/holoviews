@@ -28,7 +28,7 @@ class TestLabelsPlot(TestMPLPlot):
         self.assertEqual(artist, [])
 
     def test_labels_formatter(self):
-        vdim = Dimension('text', value_format=lambda x: '%.1f' % x)
+        vdim = Dimension('text', value_format=lambda x: f'{x:.1f}')
         labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)], vdims=vdim)
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']

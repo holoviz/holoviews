@@ -1,8 +1,10 @@
+from collections import OrderedDict
+
 import numpy as np
 
 import param
 
-from ..core import OrderedDict, Element, Dataset, Tabular
+from ..core import Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
 from .selection import SelectionIndexExpr
 
@@ -59,7 +61,7 @@ class ItemTable(Element):
         if heading == ():
             return self
         if heading not in self.vdims:
-            raise KeyError("%r not in available headings." % heading)
+            raise KeyError(f"{heading!r} not in available headings.")
         return np.array(self.data.get(heading, np.NaN))
 
     def dimension_values(self, dimension, expanded=True, flat=True):

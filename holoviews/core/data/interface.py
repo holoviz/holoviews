@@ -1,7 +1,6 @@
 import sys
 import warnings
 
-import six
 import param
 import numpy as np
 
@@ -20,7 +19,7 @@ class DataError(ValueError):
         super().__init__(msg)
 
 
-class Accessor(object):
+class Accessor:
     def __init__(self, dataset):
         self.dataset = dataset
 
@@ -224,7 +223,7 @@ class Interface(param.Parameterized):
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
-            elif 'dataframe' in datatype and util.pd:
+            elif 'dataframe' in datatype:
                 data = data.dframe()
             else:
                 data = tuple(data.columns().values())
@@ -263,10 +262,9 @@ class Interface(param.Parameterized):
                      "to support the supplied data format.")
             if priority_errors:
                 intfc, e, _ = priority_errors[0]
-                priority_error = ("%s raised following error:\n\n %s"
-                                  % (intfc.__name__, e))
+                priority_error = f"{intfc.__name__} raised following error:\n\n {e}"
                 error = ' '.join([error, priority_error])
-                raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
+                raise DataError(error, intfc).with_traceback(sys.exc_info()[2])
             raise DataError(error)
 
         return data, interface, dims, extra_kws
@@ -348,10 +346,10 @@ class Interface(param.Parameterized):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
             if isinstance(sel, slice):
                 with warnings.catch_warnings():

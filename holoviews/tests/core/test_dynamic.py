@@ -965,7 +965,7 @@ class DynamicStreamReset(ComparisonTestCase):
 class TestPeriodicStreamUpdate(ComparisonTestCase):
 
     def test_periodic_counter_blocking(self):
-        class Counter(object):
+        class Counter:
             def __init__(self):
                 self.count = 0
             def __call__(self):

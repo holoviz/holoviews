@@ -10,7 +10,7 @@ class ExampleElement(Element):
     pass
 
 
-class MockRenderer(object):
+class MockRenderer:
 
     def __init__(self, backend):
         self.backend = backend

@@ -11,12 +11,12 @@ try:
         MultiPolygonArray, LineDtype, PointDtype, PolygonDtype,
         MultiLineDtype, MultiPointDtype, MultiPolygonDtype
     )
-except Exception:
+except ImportError:
     spatialpandas = None
 
 try:
     import dask.dataframe as dd
-except Exception:
+except ImportError:
     dd = None
 
 from holoviews.core.data import (
