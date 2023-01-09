@@ -4,7 +4,7 @@ import pandas as pd
 
 try:
     import scipy # noqa
-except:
+except ImportError:
     scipy = None
 scipy_skip = skipIf(scipy is None, "SciPy is not available.")
 

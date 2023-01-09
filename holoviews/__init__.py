@@ -27,7 +27,7 @@ How to use HoloViews in 3 simple steps
 Work with the data source you already know and ❤️
 
 >>> import pandas as pd
->>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/master/examples/assets/station_info.csv')
+>>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/main/examples/assets/station_info.csv')
 
 Import HoloViews and configure your plotting backend
 
@@ -73,9 +73,8 @@ In a notebook or ipython environment the usual
 To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
 """
-import io, os, sys
+import os, sys
 
-import numpy as np # noqa (API import)
 import param
 
 __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
@@ -120,7 +119,12 @@ except ImportError:
             raise Exception("IPython notebook not available: use hv.extension instead.")
 
 if '_pyodide' in sys.modules:
-    from .pyodide import pyodide_extension as extension # noqa (API import)
+    from .pyodide import pyodide_extension, in_jupyterlite
+    # The notebook_extension is needed inside jupyterlite,
+    # so the override is only done if we are not inside jupyterlite.
+    if not in_jupyterlite():
+        extension = pyodide_extension
+    del pyodide_extension, in_jupyterlite
 
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
@@ -130,12 +134,12 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.config/holoviews/holoviews.rc"]:
     filename = os.path.expanduser(rcfile)
     if os.path.isfile(filename):
-        with io.open(filename, encoding='utf8') as f:
+        with open(filename, encoding='utf8') as f:
             code = compile(f.read(), filename, 'exec')
             try:
                 exec(code)
             except Exception as e:
-                print("Warning: Could not load %r [%r]" % (filename, str(e)))
+                print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
         del f, code
         break
     del filename
@@ -166,4 +170,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del io, np, os, rcfile, warnings
+del os, rcfile, warnings

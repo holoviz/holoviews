@@ -36,7 +36,7 @@ class ElementConstructorTest(ComparisonTestCase):
                 continue
             try:
                 el([])
-            except:
+            except Exception:
                 failed_elements.append(name)
         self.assertEqual(failed_elements, [])
 

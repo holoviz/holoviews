@@ -10,7 +10,7 @@ the
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ scientific
 Python distributions::
 
-  conda install -c pyviz holoviews bokeh
+  conda install -c pyviz holoviews
 
 This recommended installation includes the default `Matplotlib
 <http://matplotlib.org>`_ plotting library backend, the
@@ -55,7 +55,7 @@ To get the very latest development version using ``pip``, you can use::
   pip install git+https://github.com/holoviz/holoviews.git
 
 The alternative approach using git archive (e.g ``pip install
-https://github.com/holoviz/holoviews/archive/master.zip``) is *not*
+https://github.com/holoviz/holoviews/archive/main.zip``) is *not*
 recommended as you will have incomplete version strings.
 
 Anyone interested in following development can get the very latest

@@ -51,7 +51,7 @@ class Chart(Dataset, Element2D):
         super().__init__(data, **params)
 
     def __getitem__(self, index):
-        return super(Chart, self).__getitem__(index)
+        return super().__getitem__(index)
 
 
 class Scatter(Selection1DExpr, Chart):

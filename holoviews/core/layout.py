@@ -48,7 +48,7 @@ class Composable(Layoutable):
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data.values()+[self])
         else:
-            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
+            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
 
 
@@ -262,7 +262,7 @@ class AdjointLayout(Layoutable, Dimensioned):
             return self if data_slice is None else self.clone([el[data_slice]
                                                                for el in self])
         else:
-            raise KeyError("Key {0} not found in AdjointLayout.".format(key))
+            raise KeyError(f"Key {key} not found in AdjointLayout.")
 
 
     def __setitem__(self, key, value):
@@ -272,7 +272,7 @@ class AdjointLayout(Layoutable, Dimensioned):
             else:
                 raise ValueError('AdjointLayout only accepts Element types.')
         else:
-            raise Exception('Position %s not valid in AdjointLayout.' % key)
+            raise Exception(f'Position {key} not valid in AdjointLayout.')
 
 
     def __lshift__(self, other):
@@ -485,7 +485,7 @@ class Layout(Layoutable, ViewableTree):
             idx = row * self._max_cols + col
             keys = list(self.data.keys())
             if idx >= len(keys) or col >= self._max_cols:
-                raise KeyError('Index %s is outside available item range' % str(key))
+                raise KeyError(f'Index {key} is outside available item range')
             key = keys[idx]
         return super().__getitem__(key)
 
@@ -554,6 +554,6 @@ class Layout(Layoutable, ViewableTree):
         return self.__mul__(other, reverse=True)
 
 
-__all__ = list(set([_k for _k, _v in locals().items()
+__all__ = list({_k for _k, _v in locals().items()
                     if isinstance(_v, type) and (issubclass(_v, Dimensioned)
-                                                 or issubclass(_v, Layout))]))
+                                                 or issubclass(_v, Layout))})

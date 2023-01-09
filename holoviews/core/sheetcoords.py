@@ -115,7 +115,7 @@ from .util import datetime_types
 
 
 
-class SheetCoordinateSystem(object):
+class SheetCoordinateSystem:
     """
     Provides methods to allow conversion between sheet and matrix
     coordinates.

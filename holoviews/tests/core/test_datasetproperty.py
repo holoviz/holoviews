@@ -5,7 +5,7 @@ import pandas as pd
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
 
 from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
@@ -15,7 +15,7 @@ from holoviews.operation import histogram, function
 
 try:
     from holoviews.operation.datashader import dynspread, datashade, rasterize
-except:
+except ImportError:
     dynspread = datashade = rasterize = None
 
 

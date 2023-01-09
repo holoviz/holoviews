@@ -1,4 +1,4 @@
-.. HoloViews documentation master file
+.. HoloViews documentation main file
 
 .. raw:: html
 
@@ -11,7 +11,7 @@
   <div style="display: flex">
     <div style="width: 70%">
 
-HoloViews is an `open-source <https://github.com/holoviz/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
+HoloViews is an `open-source <https://github.com/holoviz/holoviews/blob/main/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
 For examples, check out the thumbnails below and the other items in the `Gallery <gallery>`_ of demos and apps and the `Reference Gallery <reference>`_ that shows every HoloViews component.  Be sure to look at the code, not just the pictures, to appreciate how easy it is to create such plots yourself!
 
@@ -120,9 +120,9 @@ After you have successfully installed and configured HoloViews, please see `Gett
 .. _CondaPkg: https://anaconda.org/pyviz/holoviews
 
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
-.. _License: https://github.com/holoviz/holoviews/blob/master/LICENSE.txt
+.. _License: https://github.com/holoviz/holoviews/blob/main/LICENSE.txt
 
-.. |Coverage| image:: https://codecov.io/gh/holoviz/holoviews/branch/master/graph/badge.svg
+.. |Coverage| image:: https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg
 .. _Coveralls: https://codecov.io/gh/holoviz/holoviews
 
 .. toctree::

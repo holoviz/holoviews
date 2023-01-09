@@ -1,4 +1,4 @@
-Copyright (c) 2005-2019, holoviz (https://holoviz.org)
+Copyright (c) 2005, holoviz (https://holoviz.org)
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

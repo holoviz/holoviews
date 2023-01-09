@@ -6,7 +6,7 @@ from ..element.util import categorical_aggregate2d
 from .util import get_axis_padding
 
 
-class GeomMixin(object):
+class GeomMixin:
 
     def get_extents(self, element, ranges, range_type='combined'):
         """
@@ -36,7 +36,7 @@ class GeomMixin(object):
         return super().get_extents(element, ranges, range_type)
 
 
-class ChordMixin(object):
+class ChordMixin:
 
     def get_extents(self, element, ranges, range_type='combined'):
         """
@@ -53,7 +53,7 @@ class ChordMixin(object):
         return (x0, y0, x1, y1)
 
 
-class HeatMapMixin(object):
+class HeatMapMixin:
 
     def get_extents(self, element, ranges, range_type='combined'):
         if range_type in ('data', 'combined'):
@@ -74,7 +74,7 @@ class HeatMapMixin(object):
             return super().get_extents(element, ranges, range_type)
 
 
-class SpikesMixin(object):
+class SpikesMixin:
 
     def get_extents(self, element, ranges, range_type='combined'):
         opts = self.lookup_options(element, 'plot').options
@@ -109,7 +109,7 @@ class SpikesMixin(object):
                                    ydim=proxy_dim)
 
 
-class AreaMixin(object):
+class AreaMixin:
 
     def get_extents(self, element, ranges, range_type='combined'):
         vdims = element.vdims[:2]
@@ -128,7 +128,7 @@ class AreaMixin(object):
         return super().get_extents(element, ranges, range_type)
 
 
-class BarsMixin(object):
+class BarsMixin:
 
     def get_extents(self, element, ranges, range_type='combined'):
         """

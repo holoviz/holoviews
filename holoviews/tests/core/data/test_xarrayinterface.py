@@ -8,7 +8,7 @@ import pandas as pd
 
 try:
     import xarray as xr
-except:
+except ImportError:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
 
 from holoviews.core.data import Dataset, concat
@@ -295,7 +295,7 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     def setUp(self):
         try:
             import dask.array # noqa
-        except:
+        except ImportError:
             raise SkipTest('Dask could not be imported, cannot test '
                            'dask arrays with XArrayInterface')
         super().setUp()

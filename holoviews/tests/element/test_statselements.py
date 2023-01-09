@@ -112,7 +112,7 @@ class StatisticalCompositorTest(ComparisonTestCase):
     def setUp(self):
         try:
             import scipy # noqa
-        except:
+        except ImportError:
             raise SkipTest('SciPy not available')
         self.renderer = hv.renderer('matplotlib')
         np.random.seed(42)

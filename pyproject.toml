@@ -4,3 +4,22 @@ requires = [
     "pyct >=0.4.4",
     "setuptools >=30.3.0",
 ]
+
+[tool.pytest.ini_options]
+addopts = "-p no:dash"
+filterwarnings = [
+    # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
+    "ignore:elementwise comparison failed:DeprecationWarning:bokeh.core.property.bases",
+    "ignore:dropping variables using `drop` will be deprecated; using drop_vars is encouraged:PendingDeprecationWarning:xarray.core.dataarray",
+    # 2022-12-27: Plotly don't use packagings version yet
+    "ignore:distutils Version classes are deprecated:DeprecationWarning:plotly.graph_objs",
+    # 2022-12-27: A weird warning which could be related to Datashader
+    "ignore:Please use `append` from the:DeprecationWarning:pickle",
+    # 2022-12-27: Warnings which should be fixed in Panel
+    "ignore:make_current is deprecated; start the event loop first:DeprecationWarning:panel.io.server",
+    # 2023-01-02: Numpy 1.24 warnings
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/pull/12690
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:cupy",  # https://github.com/cupy/cupy/pull/7245
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:plotly.express.imshow_utils",  # https://github.com/plotly/plotly.py/pull/3997
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype",  # https://github.com/scikit-image/scikit-image/pull/6637
+]
