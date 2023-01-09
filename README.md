@@ -5,7 +5,7 @@ itself.**
 
 |    |    |
 | --- | --- |
-| Build Status | [![Build Status](https://github.com/holoviz/holoviews/workflows/pytest/badge.svg?query=branch:main)](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest+branch%3Amain) |
+| Build Status | [![Build Status](https://github.com/holoviz/holoviews/workflows/tests/badge.svg?query=branch:main)](https://github.com/holoviz/holoviews/actions/workflows/test.yaml?query=branch%3Amain) |
 | Coverage | [![codecov](https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg)](https://codecov.io/gh/holoviz/holoviews) |
 | Latest dev release | [![Github tag](https://img.shields.io/github/tag/holoviz/holoviews.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/holoviews/tags) [![dev-site](https://img.shields.io/website-up-down-green-red/http/dev.holoviews.org.svg?label=dev%20website)](http://dev.holoviews.org) |
 | Latest release | [![Github release](https://img.shields.io/github/release/holoviz/holoviews.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/holoviews/releases) [![PyPI version](https://img.shields.io/pypi/v/holoviews.svg?colorB=cc77dd)](https://pypi.python.org/pypi/holoviews) [![holoviews version](https://img.shields.io/conda/v/pyviz/holoviews.svg?colorB=4488ff&style=flat)](https://anaconda.org/pyviz/holoviews) [![conda-forge version](https://img.shields.io/conda/v/conda-forge/holoviews.svg?label=conda%7Cconda-forge&colorB=4488ff)](https://anaconda.org/conda-forge/holoviews) [![defaults version](https://img.shields.io/conda/v/anaconda/holoviews.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)](https://anaconda.org/anaconda/holoviews) |
