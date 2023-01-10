@@ -64,7 +64,7 @@ except Exception:
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    active_tools = param.List(default=[], doc="""
+    active_tools = param.List(default=['pan', 'wheel_zoom'], doc="""
         Allows specifying which tools are active by default. Note
         that only one tool per gesture type can be active, e.g.
         both 'pan' and 'box_zoom' are drag tools, so if both are
@@ -553,6 +553,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
+        if plot is None:
+            return
         for tool in self.active_tools:
             if isinstance(tool, str):
                 tool_type = TOOL_TYPES[tool]
