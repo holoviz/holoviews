@@ -4,6 +4,35 @@ Releases
 Version 1.15
 ~~~~~~~~~~~~
 
+Version 1.15.3
+**************
+
+**December 6, 2022**
+
+This release contains a small number of important bug fixes and
+adds support for Python 3.11. Many thanks to our maintainers
+@Hoxbro, @maximlt and @jlstevens.
+
+Bug Fixes:
+
+  - Fix for empty opts warning and incorrect clearing semantics
+    (`#5496 <https://github.com/holoviz/holoviews/pull/5496>`__)
+  - Fix potential race condition in the Options system
+    (`#5535 <https://github.com/holoviz/holoviews/pull/5535>`__)
+
+Enhancements:
+
+  - Add support to Python 3.11
+    (`#5513 <https://github.com/holoviz/holoviews/pull/5513>`__)
+  - Cleanup the top `__init__` module
+    (`#5516 <https://github.com/holoviz/holoviews/pull/5516>`__)
+
+Documentation:
+
+  - Fixes to release notes and CHANGELOG
+    (`#5506 <https://github.com/holoviz/holoviews/pull/5506>`__)
+
+
 Version 1.15.2
 **************
 
@@ -163,7 +192,7 @@ Compatibility:
 Major features:
 
 After a long period of hotfix releases for the 1.14.9 series, many new
-features on the master branch have been released. Features relating to
+features on the main branch have been released. Features relating to
 datashader support, linked selection and improvements to the Bokeh
 plotting backend are called out in their own sections.
 

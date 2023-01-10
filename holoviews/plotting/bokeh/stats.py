@@ -20,7 +20,7 @@ from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
 from .styles import base_properties, fill_properties, line_properties
-from .util import LooseVersion, bokeh_version, decode_bytes
+from .util import decode_bytes
 
 
 class DistributionPlot(AreaPlot):
@@ -102,7 +102,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
         if self.show_legend and not element.kdims and self.overlaid:
-            legend_prop = 'legend_label' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
+            legend_prop = 'legend_label'
             properties[legend_prop] = element.label
         return properties
 
@@ -309,8 +309,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = list(unique_iterator(factors))
 
         if self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
-            vbar_map[legend_prop] = cdim.name
+            vbar_map['legend_field'] = cdim.name
 
         return data, mapping, style
 
@@ -404,7 +403,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if len(split_cats) > 2:
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
-                    'greater than 2. Found {0} categories: {1}'.format(
+                    'greater than 2. Found {} categories: {}'.format(
                         len(split_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
@@ -592,8 +591,7 @@ class ViolinPlot(BoxWhiskerPlot):
                 group='violin', factors=factors)
             style['violin_fill_color'] = {'field': repr(split_dim), 'transform': cmapper}
             if self.show_legend:
-                legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
-                kde_map[legend_prop] = repr(split_dim)
+                kde_map['legend_field'] = repr(split_dim)
 
         for k, v in list(style.items()):
             if k.startswith('violin_line'):

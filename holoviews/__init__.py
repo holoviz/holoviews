@@ -27,7 +27,7 @@ How to use HoloViews in 3 simple steps
 Work with the data source you already know and ❤️
 
 >>> import pandas as pd
->>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/master/examples/assets/station_info.csv')
+>>> station_info = pd.read_csv('https://raw.githubusercontent.com/holoviz/holoviews/main/examples/assets/station_info.csv')
 
 Import HoloViews and configure your plotting backend
 
@@ -139,7 +139,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
             try:
                 exec(code)
             except Exception as e:
-                print("Warning: Could not load %r [%r]" % (filename, str(e)))
+                print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
         del f, code
         break
     del filename

@@ -18,7 +18,7 @@ from collections import OrderedDict
 import pandas as pd
 
 
-class DatatypeContext(object):
+class DatatypeContext:
 
     def __init__(self, datatypes, dataset_type=Dataset):
         self.datatypes = datatypes
@@ -73,7 +73,7 @@ class InterfaceTests(ComparisonTestCase):
 
 
 
-class HomogeneousColumnTests(object):
+class HomogeneousColumnTests:
     """
     Tests for data formats that require all dataset to have the same
     type (e.g. numpy arrays)
@@ -863,7 +863,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
 
 
-class ScalarColumnTests(object):
+class ScalarColumnTests:
     """
     Tests for interfaces that allow on or more columns to be of scalar
     types.
@@ -924,7 +924,7 @@ class ScalarColumnTests(object):
 
 
 
-class GriddedInterfaceTests(object):
+class GriddedInterfaceTests:
     """
     Tests for the grid interfaces
     """
@@ -1107,12 +1107,12 @@ class GriddedInterfaceTests(object):
                          expanded_ys)
 
     def test_dataset_dim_vals_dimensions_match_shape(self):
-        self.assertEqual(len(set(self.dataset_grid.dimension_values(i, flat=False).shape
-                                 for i in range(3))), 1)
+        self.assertEqual(len({self.dataset_grid.dimension_values(i, flat=False).shape
+                                 for i in range(3)}), 1)
 
     def test_dataset_dim_vals_dimensions_match_shape_inv(self):
-        self.assertEqual(len(set(self.dataset_grid_inv.dimension_values(i, flat=False).shape
-                                 for i in range(3))), 1)
+        self.assertEqual(len({self.dataset_grid_inv.dimension_values(i, flat=False).shape
+                                 for i in range(3)}), 1)
 
     def test_dataset_dim_vals_grid_vdims_zs_flat(self):
         expanded_zs = np.array([0, 2, 4, 1, 3, 5])

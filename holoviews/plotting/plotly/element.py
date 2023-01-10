@@ -140,8 +140,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if is_geo and not self._supports_geo:
             raise ValueError(
-                "Elements of type {typ} cannot be overlaid with Tiles elements "
-                "using the plotly backend".format(typ=type(element))
+                f"Elements of type {type(element)} cannot be overlaid "
+                "with Tiles elements using the plotly backend"
             )
 
         if element is None:
@@ -244,7 +244,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if self.trace_kwargs(is_geo=is_geo).get('type', None) in legend_trace_types:
             opts.update(
-                showlegend=self.show_legend, legendgroup=element.group)
+                showlegend=self.show_legend, legendgroup=element.group+'_'+legend) # make legendgroup unique for single trace enable/disable
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
@@ -447,10 +447,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
                 # Create dimension string used to compute matching axes
                 if isinstance(xdim, (list, tuple)):
-                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
                                         for d in xdim])
                 else:
-                    dim_str = "%s^%s^%s" % (xdim.name, xdim.label, xdim.unit)
+                    dim_str = f"{xdim.name}^{xdim.label}^{xdim.unit}"
 
                 xaxis['_dim'] = dim_str
 
@@ -485,10 +485,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
                 # Create dimension string used to compute matching axes
                 if isinstance(ydim, (list, tuple)):
-                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
                                         for d in ydim])
                 else:
-                    dim_str = "%s^%s^%s" % (ydim.name, ydim.label, ydim.unit)
+                    dim_str = f"{ydim.name}^{ydim.label}^{ydim.unit}"
 
                 yaxis['_dim'] = dim_str,
                 if 'bare' in self.yaxis:

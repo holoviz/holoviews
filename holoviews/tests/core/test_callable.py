@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests of the Callable object that wraps user callbacks. Also test
 how DynamicMap validates and invokes Callable based on its signature.
@@ -16,7 +15,7 @@ from holoviews.operation import contours
 
 from ..utils import LoggingComparisonTestCase
 
-class CallableClass(object):
+class CallableClass:
 
     @staticmethod
     def somestaticmethod(): pass
@@ -52,7 +51,7 @@ class TestCallableName(ComparisonTestCase):
         self.assertEqual(cb.name.startswith('functools.partial('), True)
 
     def test_generator_expression_name(self):
-        cb = Generator((i for i in range(10)))
+        cb = Generator(i for i in range(10))
         self.assertEqual(cb.name, '<genexpr>')
 
     def test_generator_name(self):

@@ -144,7 +144,7 @@ class GraphPlot(ColorbarPlot):
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
+        return super().get_extents(element.nodes, ranges, range_type)
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         # Draw edges
@@ -362,7 +362,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         for label in labels:
             try:
                 label.remove()
-            except:
+            except Exception:
                 pass
         if 'text' not in data:
             self.handles['labels'] = []

@@ -139,7 +139,7 @@ def to_function_spec(hvobj):
 
     # Check for unbounded dimensions
     if isinstance(hvobj, DynamicMap) and hvobj.unbounded:
-        dims = ', '.join('%r' % dim for dim in hvobj.unbounded)
+        dims = ', '.join(f'{dim!r}' for dim in hvobj.unbounded)
         msg = ('DynamicMap cannot be displayed without explicit indexing '
                'as {dims} dimension(s) are unbounded. '
                '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -618,9 +618,7 @@ def to_dash(
             [Input(component_id=kdim_slider_id, component_property="value")]
         )
         def update_kdim_label(value, kdim_label=kdim_label):
-            return "{kdim_label}: {value:.2f}".format(
-                kdim_label=kdim_label, value=value
-            )
+            return f"{kdim_label}: {value:.2f}"
 
     # Collect Dash components into DashComponents namedtuple
     components = DashComponents(

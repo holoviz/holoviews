@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from packaging.version import Version
 
 import numpy as np
@@ -8,7 +9,6 @@ from ...util._exception import deprecation_warning
 from .interface import Interface, DataError
 from ..dimension import dimension_name, Dimension
 from ..element import Element
-from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
@@ -16,7 +16,7 @@ from .util import finite_range
 
 class PandasInterface(Interface):
 
-    types = (pd.DataFrame if pd else None,)
+    types = (pd.DataFrame,)
 
     datatype = 'dataframe'
 
@@ -99,7 +99,7 @@ class PandasInterface(Interface):
             columns = list(util.unique_iterator([dimension_name(d) for d in kdims+vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
-                data = cyODict(((d, data[d]) for d in columns))
+                data = OrderedDict((d, data[d]) for d in columns)
             elif isinstance(data, list) and len(data) == 0:
                 data = {c: np.array([]) for c in columns}
             elif isinstance(data, (list, dict)) and data in ([], {}):
@@ -114,7 +114,7 @@ class PandasInterface(Interface):
                                     "values.")
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                                     for k, v in column_data))
-                data = cyODict(((c, col) for c, col in zip(columns, column_data)))
+                data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
@@ -168,13 +168,13 @@ class PandasInterface(Interface):
         column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
-                util.LooseVersion(pd.__version__) < util.LooseVersion('0.17.0')):
+                util.pandas_version < Version('0.17.0')):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
             try:
                 column = column[~column.isin([None, pd.NA])]
-            except:
+            except Exception:
                 pass
             if not len(column):
                 return np.NaN, np.NaN
@@ -191,7 +191,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
-        if util.pandas_version >= util.LooseVersion('0.23.0'):
+        if util.pandas_version >= Version('0.23.0'):
             kwargs['sort'] = False
         return pd.concat(dataframes, **kwargs)
 
@@ -223,7 +223,7 @@ class PandasInterface(Interface):
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
-        if len(group_by) == 1 and Version(pd.__version__) >= Version("1.5.0"):
+        if len(group_by) == 1 and util.pandas_version >= Version("1.5.0"):
             # Because of this deprecation warning from pandas 1.5.0:
             # In a future version of pandas, a length 1 tuple will be returned
             # when iterating over a groupby with a grouper equal to a list of length 1.
@@ -269,7 +269,7 @@ class PandasInterface(Interface):
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            data = dict(((col, [v]) for col, v in zip(agg.index, agg.values)))
+            data = {col: [v] for col, v in zip(agg.index, agg.values)}
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []
@@ -312,11 +312,10 @@ class PandasInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        import pandas as pd
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(dataset.data, pd.DataFrame) or
-            util.LooseVersion(pd.__version__) < util.LooseVersion('0.17.0')):
+            util.pandas_version < Version('0.17.0')):
             return dataset.data.sort(columns=cols, ascending=not reverse)
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 

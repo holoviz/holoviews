@@ -32,8 +32,7 @@ class StatisticsElement(Dataset, Element2D):
         if not vdims:
             self.vdims = [Dimension('Density')]
         elif len(vdims) > 1:
-            raise ValueError("%s expects at most one vdim." %
-                             type(self).__name__)
+            raise ValueError(f"{type(self).__name__} expects at most one vdim.")
         else:
             self.vdims = process_dimensions(None, vdims)['vdims']
 

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from ...core.overlay import NdOverlay, Overlay
 
 from ...selection import OverlaySelectionDisplay

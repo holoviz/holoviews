@@ -25,7 +25,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
         hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
         plot = bokeh_renderer.get_plot(hmap+hmap2)
-        subplot1, subplot2 = [p for k, p in sorted(plot.subplots.items())]
+        subplot1, subplot2 = (p for k, p in sorted(plot.subplots.items()))
         subplot1 = subplot1.subplots['main']
         subplot2 = subplot2.subplots['main']
         self.assertTrue(subplot1.handles['glyph_renderer'].visible)

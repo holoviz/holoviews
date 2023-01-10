@@ -224,7 +224,7 @@ class Annotator(PaneBase):
         super().__init__(None, **params)
         self.object = self._process_element(object)
         self._table_row = Row()
-        self.editor = Tabs(('%s' % param_name(self.name), self._table_row))
+        self.editor = Tabs((f'{param_name(self.name)}', self._table_row))
         self.plot = DynamicMap(self._get_plot)
         self.plot.callback.inputs[:] = [self.object]
         self._tables = []
@@ -336,19 +336,19 @@ class PathAnnotator(Annotator):
     def __init__(self, object=None, **params):
         self._vertex_table_row = Row()
         super().__init__(object, **params)
-        self.editor.append(('%s Vertices' % param_name(self.name),
+        self.editor.append((f'{param_name(self.name)} Vertices',
                             self._vertex_table_row))
 
     def _init_stream(self):
         name = param_name(self.name)
         self._stream = PolyDraw(
             source=self.plot, data={}, num_objects=self.num_objects,
-            show_vertices=self.show_vertices, tooltip='%s Tool' % name,
+            show_vertices=self.show_vertices, tooltip=f'{name} Tool',
             vertex_style=self.vertex_style, empty_value=self.empty_value
         )
         if self.edit_vertices:
             self._vertex_stream = PolyEdit(
-                source=self.plot, tooltip='%s Edit Tool' % name,
+                source=self.plot, tooltip=f'{name} Edit Tool',
                 vertex_style=self.vertex_style,
             )
 
@@ -379,7 +379,7 @@ class PathAnnotator(Annotator):
         # Validate annotations
         poly_data = {c: element.dimension_values(c, expanded=False)
                      for c in validate}
-        if validate and len(set(len(v) for v in poly_data.values())) != 1:
+        if validate and len({len(v) for v in poly_data.values()}) != 1:
             raise ValueError('annotations must refer to value dimensions '
                              'which vary per path while at least one of '
                              '%s varies by vertex.' % validate)
@@ -419,7 +419,7 @@ class PathAnnotator(Annotator):
         self._table = Table(table_data, annotations, [], label=name).opts(
             show_title=False, **self.table_opts)
         self._vertex_table = Table(
-            [], table.kdims, list(self.vertex_annotations), label='%s Vertices' % name
+            [], table.kdims, list(self.vertex_annotations), label=f'{name} Vertices'
         ).opts(show_title=False, **self.table_opts)
         self._update_links()
         self._table_row[:] = [self._table]
@@ -458,7 +458,7 @@ class _GeomAnnotator(Annotator):
         name = param_name(self.name)
         self._stream = self._stream_type(
             source=self.plot, data={}, num_objects=self.num_objects,
-            tooltip='%s Tool' % name, empty_value=self.empty_value
+            tooltip=f'{name} Tool', empty_value=self.empty_value
         )
 
     def _process_element(self, object):
@@ -519,7 +519,7 @@ class CurveAnnotator(_GeomAnnotator):
     def _init_stream(self):
         name = param_name(self.name)
         self._stream = self._stream_type(
-            source=self.plot, data={}, tooltip='%s Tool' % name,
+            source=self.plot, data={}, tooltip=f'{name} Tool',
             style=self.vertex_style
         )
 
