@@ -228,6 +228,14 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(s1.height, 0)
         self.assertEqual(f1.plot_height, f2.plot_height)
 
+    def test_empty_adjoint_plot_with_renderer(self):
+        # https://github.com/holoviz/holoviews/pull/5584
+        scatter = Scatter(range(10))
+        adjoin_layout_plot = scatter << Empty() << scatter.hist(adjoin=False)
+
+        # To render the plot
+        bokeh_renderer(adjoin_layout_plot)
+
     def test_layout_plot_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).cols(1)
         plot = bokeh_renderer.get_plot(layout)
