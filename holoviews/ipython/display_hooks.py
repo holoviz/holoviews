@@ -15,7 +15,7 @@ from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
 from ..core import (
     ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
-    Layout, CompositeOverlay, DynamicMap, Dimensioned
+    Layout, CompositeOverlay, DynamicMap, Dimensioned, Empty
 )
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
@@ -178,7 +178,7 @@ def element_display(element, max_frames):
     info = process_object(element)
     if info:
         display(HTML(info))
-        return
+        return None
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
@@ -253,6 +253,8 @@ def display(obj, raw_output=False, **kwargs):
             output = map_display(obj)
     elif isinstance(obj, Plot):
         output = render(obj)
+    elif isinstance(obj, Empty):
+        output = ({}, {})
     else:
         output = obj
         raw = kwargs.pop('raw', False)
