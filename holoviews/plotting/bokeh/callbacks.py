@@ -931,8 +931,7 @@ class CDSCallback(Callback):
                 # Example:
                 # ['pm9vF9dSY8EAAADgPFNjwQAAAMAmU2PBAAAAAMtSY8E=','float64', 'little', [4]]
                 buffer = base64.decodebytes(values[0].encode())
-                byteorders = {"little": "<", "big": ">"}
-                dtype = np.dtype(values[1]).newbyteorder(byteorders[values[2]])
+                dtype = np.dtype(values[1]).newbyteorder(values[2])
                 values = np.frombuffer(buffer, dtype)
             msg['data'][col] = values
         return self._transform(msg)
