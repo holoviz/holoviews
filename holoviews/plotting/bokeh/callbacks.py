@@ -925,7 +925,12 @@ class CDSCallback(Callback):
                 values = new_values
             elif any(isinstance(v, (int, float)) for v in values):
                 values = [np.nan if v is None else v for v in values]
-            elif isinstance(values, list) and len(values) == 4 and isinstance(values[3], list):
+            elif (
+                isinstance(values, list)
+                and len(values) == 4
+                and values[2] in ("big", "little")
+                and isinstance(values[3], list)
+            ):
                 # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
                 # This could be fixed in Bokeh 3.0, but has not been tested.
                 # Example:
