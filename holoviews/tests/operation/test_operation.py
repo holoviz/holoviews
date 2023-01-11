@@ -1,5 +1,6 @@
 import datetime as dt
 from unittest import skipIf
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -255,6 +256,12 @@ class OperationTests(ComparisonTestCase):
         }
         hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
+
+    def test_histogram_categorical(self):
+        series = Dataset(pd.Series(['A', 'B', 'C']))
+        kwargs = {'bin_range': ('A', 'C'), 'normed': False, 'cumulative': False, 'num_bins': 3}
+        with pytest.raises(ValueError):
+            histogram(series, **kwargs)
 
     def test_points_histogram_weighted(self):
         points = Points([float(i) for i in range(10)])
