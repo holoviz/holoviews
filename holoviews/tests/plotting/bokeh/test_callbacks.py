@@ -21,7 +21,7 @@ from bokeh.events import Tap
 from bokeh.io.doc import set_curdoc
 from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
 from holoviews.plotting.bokeh.callbacks import (
-    Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
+    Callback, CDSCallback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
     BoxEditCallback, PointerXCallback, TapCallback
 )
 from holoviews.plotting.bokeh.renderer import BokehRenderer
@@ -435,3 +435,15 @@ class TestServerCallbacks(CallbackTestCase):
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
+
+
+def test_msg_with_base64_array():
+    # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+    data = np.array([10.0, 20.0, 30.0, 40.0])
+
+    data_before = ["AAAAAAAAJEAAAAAAAAA0QAAAAAAAAD5AAAAAAAAAREA=", "float64", "little", [4]]
+    msg_before = {"data": {"x": data_before}}
+    msg_after = CDSCallback(None, None, None)._process_msg(msg_before)
+    data_after = msg_after["data"]["x"]
+
+    assert np.equal(data, data_after).all()
