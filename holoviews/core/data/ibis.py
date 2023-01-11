@@ -95,13 +95,19 @@ class IbisInterface(Interface):
     @cached
     def length(self, dataset):
         # Get the length by counting the length of an empty query.
-        return dataset.data[[]].count().execute()
+        if ibis_version >= Version("4.0"):
+            return dataset.data.count().execute()
+        else:
+            return dataset.data[[]].count().execute()
 
     @classmethod
     @cached
     def nonzero(cls, dataset):
         # Make an empty query to see if a row is returned.
-        return bool(len(dataset.data[[]].head(1).execute()))
+        if ibis_version >= Version("4.0"):
+            return bool(len(dataset.data.head(1).execute()))
+        else:
+            return bool(len(dataset.data[[]].head(1).execute()))
 
     @classmethod
     @cached
@@ -244,7 +250,12 @@ class IbisInterface(Interface):
         Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if len(data.columns) > 1 or data[[]].count().execute() != 1:
+        if ibis_version >= Version("4.0"):
+            count = data.count().execute()
+        else:
+            count = data[[]].count().execute()
+
+        if len(data.columns) > 1 or count != 1:
             return data
         return data.execute().iat[0, 0]
 
