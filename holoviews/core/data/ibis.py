@@ -13,7 +13,8 @@ from .util import cached
 
 try:
     import ibis
-    ibis_version =  Version(ibis.__version__)
+    ibis_version = Version(ibis.__version__)
+    ibis4 = ibis_version >= Version("4.0")
 except ImportError:
     pass
 
@@ -95,7 +96,7 @@ class IbisInterface(Interface):
     @cached
     def length(self, dataset):
         # Get the length by counting the length of an empty query.
-        if ibis_version >= Version("4.0"):
+        if ibis4:
             return dataset.data.count().execute()
         else:
             return dataset.data[[]].count().execute()
@@ -104,7 +105,7 @@ class IbisInterface(Interface):
     @cached
     def nonzero(cls, dataset):
         # Make an empty query to see if a row is returned.
-        if ibis_version >= Version("4.0"):
+        if ibis4:
             return bool(len(dataset.data.head(1).execute()))
         else:
             return bool(len(dataset.data[[]].head(1).execute()))
@@ -201,7 +202,7 @@ class IbisInterface(Interface):
         if "hv_row_id__" in data.columns:
             return data
 
-        if ibis_version >= Version("4.0"):
+        if ibis4:
             return data.mutate(hv_row_id__=ibis.row_number())
         else:
             if cls.is_rowid_zero_indexed(data):
@@ -254,7 +255,7 @@ class IbisInterface(Interface):
         Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if ibis_version >= Version("4.0"):
+        if ibis4:
             count = data.count().execute()
         else:
             count = data[[]].count().execute()
