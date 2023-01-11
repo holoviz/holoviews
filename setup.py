@@ -49,7 +49,7 @@ extras_require['tests_core'] = [
 # of those.
 extras_require['tests'] = extras_require['tests_core'] + [
     'dask',
-    'ibis-framework <4',  # Mapped to ibis-sqlite in setup.cfg for conda
+    'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
     'xarray >=0.10.4',
     'networkx',
     'shapely',
