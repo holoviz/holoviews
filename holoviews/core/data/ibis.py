@@ -152,7 +152,12 @@ class IbisInterface(Interface):
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
         hist = numpy.zeros(len(bins)-1)
-        hist_bins = binned.value_counts().sort_by('bucket').execute()
+        if ibis4:
+            hist_bins = binned.value_counts().order_by('bucket').execute()
+        else:
+            # sort_by will be removed in Ibis 5.0
+            hist_bins = binned.value_counts().sort_by('bucket').execute()
+
         for b, v in zip(hist_bins['bucket'], hist_bins['count']):
             if numpy.isnan(b):
                 continue
@@ -179,7 +184,11 @@ class IbisInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        return dataset.data.sort_by([(dataset.get_dimension(x).name, not reverse) for x in by])
+        if ibis4:
+            return dataset.data.order_by([(dataset.get_dimension(x).name, not reverse) for x in by])
+        else:
+            # sort_by will be removed in Ibis 5.0
+            return dataset.data.sort_by([(dataset.get_dimension(x).name, not reverse) for x in by])
 
     @classmethod
     def redim(cls, dataset, dimensions):
@@ -242,12 +251,17 @@ class IbisInterface(Interface):
                 if rows.stop:
                     predicates += [data.hv_row_id__ < rows.stop]
 
-                return data.filter(predicates).drop(["hv_row_id__"])
+                data = data.filter(predicates)
         else:
             if not isinstance(rows, Iterable):
                 rows = [rows]
-            return data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
-        return data.drop(["hv_row_id__"])
+            data = data.filter([data.hv_row_id__.isin(rows)])
+
+        if ibis4:
+            return data.drop("hv_row_id__")
+        else:
+            # Passing a sequence of fields to `drop` will be removed in Ibis 5.0
+            return data.drop(["hv_row_id__"])
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
@@ -279,7 +293,11 @@ class IbisInterface(Interface):
         group_by = [d.name for d in index_dims]
 
         # execute a query against the table to find the unique groups.
-        groups = dataset.data.groupby(group_by).aggregate().execute()
+        if ibis4:
+            groups = dataset.data.group_by(group_by).aggregate().execute()
+        else:
+            # groupby will be removed in Ibis 5.0
+            groups = dataset.data.groupby(group_by).aggregate().execute()
 
         # filter each group based on the predicate defined.
         data = [
@@ -340,7 +358,14 @@ class IbisInterface(Interface):
                 selection_mask = numpy.where(selection_mask)[0]
             data = data.filter(
                 data["hv_row_id__"].isin(list(map(int, selection_mask)))
-            ).drop(["hv_row_id__"])
+            )
+
+            if ibis4:
+                data = data.drop("hv_row_id__")
+            else:
+                # Passing a sequence of fields to `drop` will be removed in Ibis 5.0
+                data = data.drop(["hv_row_id__"])
+
         elif selection_mask is not None and not (isinstance(selection_mask, list) and not selection_mask):
             data = data.filter(selection_mask)
 
@@ -436,7 +461,12 @@ class IbisInterface(Interface):
         }.get(function, function)
 
         if len(dimensions):
-            selection = new.groupby(columns)
+            if ibis4:
+                 selection = new.group_by(columns)
+            else:
+                # groupby will be removed in Ibis 5.0
+                selection = new.groupby(columns)
+
             if function is numpy.count_nonzero:
                 aggregation = selection.aggregate(
                     **{
