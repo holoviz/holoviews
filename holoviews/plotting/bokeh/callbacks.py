@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import time
 
 from collections import defaultdict, OrderedDict
@@ -924,6 +925,19 @@ class CDSCallback(Callback):
                 values = new_values
             elif any(isinstance(v, (int, float)) for v in values):
                 values = [np.nan if v is None else v for v in values]
+            elif (
+                isinstance(values, list)
+                and len(values) == 4
+                and values[2] in ("big", "little")
+                and isinstance(values[3], list)
+            ):
+                # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+                # This could be fixed in Bokeh 3.0, but has not been tested.
+                # Example:
+                # ['pm9vF9dSY8EAAADgPFNjwQAAAMAmU2PBAAAAAMtSY8E=','float64', 'little', [4]]
+                buffer = base64.decodebytes(values[0].encode())
+                dtype = np.dtype(values[1]).newbyteorder(values[2])
+                values = np.frombuffer(buffer, dtype)
             msg['data'][col] = values
         return self._transform(msg)
 
