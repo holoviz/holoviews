@@ -200,10 +200,14 @@ class IbisInterface(Interface):
 
         if "hv_row_id__" in data.columns:
             return data
-        if cls.is_rowid_zero_indexed(data):
-            return data.mutate(hv_row_id__=data.rowid())
+
+        if ibis_version >= Version("4.0"):
+            return data.mutate(hv_row_id__=ibis.row_number())
         else:
-            return data.mutate(hv_row_id__=data.rowid() - 1)
+            if cls.is_rowid_zero_indexed(data):
+                return data.mutate(hv_row_id__=data.rowid())
+            else:
+                return data.mutate(hv_row_id__=data.rowid() - 1)
 
     @classmethod
     def iloc(cls, dataset, index):
