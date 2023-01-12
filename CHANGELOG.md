@@ -3,7 +3,7 @@ Version 1.15.4
 **January 12, 2023**
 
 This release contains a small number of enhancements and important bug fixes.
-Many thanks to our new contributors @mmorys, @jj-github-jj, and @sandhujasmine, but also our returning contributions @droumis, @jlstevens, @MarcSkovMadsen, @maximlt, @philippjfr, @stanwest, and @Hoxbro.
+Many thanks to our new contributors @mmorys, @jj-github-jj, and @sandhujasmine, but also our returning contributors @droumis, @jlstevens, @MarcSkovMadsen, @maximlt, @philippjfr, @stanwest, and @Hoxbro.
 
 
 Enhancements:
