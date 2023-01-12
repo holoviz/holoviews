@@ -2,6 +2,7 @@ import sys
 
 import param
 import numpy as np
+from packaging.version import Version
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
@@ -11,7 +12,7 @@ from ..util import categorical_legend
 from .chart import PointPlot
 from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
-from .util import LooseVersion, get_raster_array, mpl_version
+from .util import get_raster_array, mpl_version
 
 
 class RasterBasePlot(ElementPlot):
@@ -58,7 +59,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
                   'filterrad', 'clims', 'norm']
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -124,7 +125,7 @@ class RGBPlot(RasterBasePlot, LegendPlot):
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        handles = super(RGBPlot, self).init_artists(ax, plot_args, plot_kwargs)
+        handles = super().init_artists(ax, plot_args, plot_kwargs)
         if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
             return handles
         try:
@@ -191,7 +192,7 @@ class QuadMeshPlot(ColorbarPlot):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
-        if colorbar and mpl_version < LooseVersion('3.1'):
+        if colorbar and mpl_version < Version('3.1'):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
                 # Compatibility with mpl < 3

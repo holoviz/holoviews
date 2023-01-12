@@ -476,8 +476,15 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
     def test_mpl_colormap_instance(self):
-        from matplotlib.cm import get_cmap
-        cmap = get_cmap('Greys')
+        try:
+            from matplotlib import colormaps
+            cmap = colormaps.get('Greys')
+        except ImportError:
+            # This will stop working and can be removed
+            # when we do not support python 3.7
+            from matplotlib.cm import get_cmap
+            cmap = get_cmap('Greys')
+
         colors = process_cmap(cmap, 3, provider='matplotlib')
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
@@ -657,12 +664,12 @@ class TestBokehUtils(ComparisonTestCase):
     def setUp(self):
         try:
             import pscript # noqa
-        except:
+        except ImportError:
             raise SkipTest("Flexx required to test transpiling formatter functions.")
 
 
     def test_py2js_funcformatter_single_arg(self):
-        def test(x):  return '%s$' % x
+        def test(x):  return f'{x}$'
         jsfunc = util.py2js_tickformatter(test)
         js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
                    '    return "" + x + "$";\n};\n\nreturn formatter();\n')
@@ -670,7 +677,7 @@ class TestBokehUtils(ComparisonTestCase):
 
 
     def test_py2js_funcformatter_two_args(self):
-        def test(x, pos):  return '%s$' % x
+        def test(x, pos):  return f'{x}$'
         jsfunc = util.py2js_tickformatter(test)
         js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
                    '    return "" + x + "$";\n};\n\nreturn formatter();\n')
@@ -678,7 +685,7 @@ class TestBokehUtils(ComparisonTestCase):
 
 
     def test_py2js_funcformatter_arg_and_kwarg(self):
-        def test(x, pos=None):  return '%s$' % x
+        def test(x, pos=None):  return f'{x}$'
         jsfunc = util.py2js_tickformatter(test)
         js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
                    '    pos = (pos === undefined) ? null: pos;\n    return "" '

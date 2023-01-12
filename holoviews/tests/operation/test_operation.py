@@ -6,7 +6,7 @@ import pandas as pd
 
 try:
     import dask.array as da
-except:
+except ImportError:
     da = None
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,

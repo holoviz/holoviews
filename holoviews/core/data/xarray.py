@@ -4,6 +4,7 @@ import types
 from collections import OrderedDict
 
 import numpy as np
+import pandas as pd
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
@@ -257,7 +258,7 @@ class XArrayInterface(GridInterface):
             if cls.irregular(dataset, kd):
                 irregular.append((kd, dataset.data[kd.name].dims))
         if irregular:
-            nonmatching = ['%s: %s' % (kd, dims) for kd, dims in irregular[1:]
+            nonmatching = [f'{kd}: {dims}' for kd, dims in irregular[1:]
                            if set(dims) != set(irregular[0][1])]
             if nonmatching:
                 nonmatching = ['%s: %s' % irregular[0]] + nonmatching
@@ -319,7 +320,7 @@ class XArrayInterface(GridInterface):
 
         invalid = [d for d in index_dims if dataset.data[d.name].ndim > 1]
         if invalid:
-            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            if len(invalid) == 1: invalid = f"'{invalid[0]}'"
             raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
                              % invalid)
 
@@ -646,7 +647,7 @@ class XArrayInterface(GridInterface):
         names = [kd.name for kd in dataset.kdims]
         samples = [dataset.data.sel(**{k: [v] for k, v in zip(names, s)}).to_dataframe().reset_index()
                    for s in samples]
-        return util.pd.concat(samples)
+        return pd.concat(samples)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):

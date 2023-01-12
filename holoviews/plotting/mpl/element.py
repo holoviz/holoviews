@@ -10,6 +10,7 @@ import matplotlib.colors as mpl_colors
 from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
+from packaging.version import Version
 
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
@@ -21,7 +22,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import LooseVersion, EqHistNormalize, mpl_version, validate, wrap_formatter
+from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -130,7 +131,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                if mpl_version <= LooseVersion('1.5.9'):
+                if mpl_version <= Version('1.5.9'):
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)
@@ -236,7 +237,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axes_list.append(axis.zaxis)
 
         for ax, ax_obj in zip(axes_str, axes_list):
-            tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
+            tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
     def _finalize_artist(self, element):
@@ -544,7 +545,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
              plot_kwargs.pop('vmin', None)
              plot_kwargs.pop('vmax', None)
-        artist = plot_fn(*plot_args, **plot_kwargs)
+        with warnings.catch_warnings():
+            # scatter have a default cmap and with an empty array will emit this warning
+            warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
+            artist = plot_fn(*plot_args, **plot_kwargs)
         return {'artist': artist[0] if isinstance(artist, list) and
                 len(artist) == 1 else artist}
 
@@ -899,7 +903,7 @@ class ColorbarPlot(ElementPlot):
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 clim = (np.nanmin(values), np.nanmax(values))
-                        except:
+                        except Exception:
                             clim = np.NaN, np.NaN
                 else:
                     clim = element.range(vdim)

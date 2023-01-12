@@ -8,7 +8,7 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 try:
     from holoviews.plotting.mpl import OverlayPlot
-except:
+except ImportError:
     pass
 
 

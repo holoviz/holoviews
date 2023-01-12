@@ -29,7 +29,7 @@ allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
-class Parser(object):
+class Parser:
     """
     Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
@@ -54,7 +54,7 @@ class Parser(object):
                 new_tok = [s for t in tok for s in
                            (cls.recurse_token(t, inner)
                             if isinstance(t, list) else [t])]
-                recursed.append((inner % ''.join(new_tok)))
+                recursed.append(inner % ''.join(new_tok))
             else:
                 recursed.append(tok)
         return inner % ''.join(recursed)
@@ -109,12 +109,11 @@ class Parser(object):
                               (',.', '.')]:
                 keyword = keyword.replace(fst, snd)
             try:
-                kwargs.update(eval('dict(%s)' % keyword,
+                kwargs.update(eval(f'dict({keyword})',
                                    dict(cls.namespace, **ns)))
-            except:
+            except Exception:
                 if cls.abort_on_eval_failure:
-                    raise SyntaxError("Could not evaluate keyword: %r"
-                                      % keyword)
+                    raise SyntaxError(f"Could not evaluate keyword: {keyword!r}")
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"
                 parsewarning.warning(msg % keyword)
 
@@ -235,8 +234,7 @@ class OptsSpec(Parser):
                                   " contain repeated %r" % normopt)
 
         if not all(opt in options for opt in opts):
-            raise SyntaxError("Normalization option not one of %s"
-                              % ", ".join(options))
+            raise SyntaxError(f"Normalization option not one of {', '.join(options)}")
         excluded = [('+framewise', '-framewise'), ('+axiswise', '-axiswise')]
         for pair in excluded:
             if all(exclude in opts for exclude in pair):
@@ -313,7 +311,7 @@ class OptsSpec(Parser):
             e = parses[0][2]
             processed = line[:e]
             if (processed.strip() != line.strip()):
-                raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
+                raise SyntaxError(f"Failed to parse remainder of string: {line[e:]!r}")
 
         grouped_paths = cls._group_paths_without_options(cls.opts_spec.parseString(line))
         parse = {}
@@ -414,7 +412,7 @@ class CompositorSpec(Parser):
             e = parses[0][2]
             processed = line[:e]
             if (processed.strip() != line.strip()):
-                raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
+                raise SyntaxError(f"Failed to parse remainder of string: {line[e:]!r}")
 
         opmap = {op.__name__:op for op in Compositor.operations}
         for group in cls.compositor_spec.parseString(line):

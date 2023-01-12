@@ -121,7 +121,7 @@ class TestPathShape(TestShape):
 
         # Check svg path
         expected_path = 'M' + 'L'.join([
-            '{x} {y}'.format(x=x, y=y) for x, y in
+            f'{x} {y}' for x, y in
             zip(element.dimension_values(0), element.dimension_values(1))]) + 'Z'
 
         self.assertEqual(shape['path'], expected_path)

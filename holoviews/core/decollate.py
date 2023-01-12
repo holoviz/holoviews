@@ -177,7 +177,7 @@ def to_expr_extract_streams(
     elif isinstance(hvobj, Element):
         return hvobj.clone(link=False)
     else:
-        raise NotImplementedError("Type {typ} not implemented".format(typ=type(hvobj)))
+        raise NotImplementedError(f"Type {type(hvobj)} not implemented")
 
 
 def expr_to_fn_of_stream_contents(expr, nkdims):

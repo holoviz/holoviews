@@ -72,7 +72,7 @@ class HeatMapPlot(ColorbarPlot):
         return transform.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
 
     def get_data(self, element, ranges, style):
-        x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
+        x, y, z = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:3])
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if 'line_alpha' not in style and 'line_width' not in style:
@@ -474,7 +474,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         # dimension labels
         dim_labels = element.dimensions(label=True)[:3]
-        x, y, z = [dimension_sanitizer(d) for d in dim_labels]
+        x, y, z = (dimension_sanitizer(d) for d in dim_labels)
         if self.invert_axes: x, y = y, x
 
         # color mapper

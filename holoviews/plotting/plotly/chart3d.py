@@ -102,7 +102,7 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
     def get_data(self, element, ranges, style, **kwargs):
         try:
             from scipy.spatial import Delaunay
-        except:
+        except ImportError:
             raise SkipRendering("SciPy not available, cannot plot TriSurface")
         x, y, z = (element.dimension_values(i) for i in range(3))
         points2D = np.vstack([x, y]).T

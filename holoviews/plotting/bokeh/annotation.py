@@ -1,9 +1,5 @@
 from collections import defaultdict
-
-try:
-    from html import escape
-except:
-    from cgi import escape
+from html import escape
 
 import param
 import numpy as np
@@ -16,7 +12,7 @@ try:
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
     arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                  '-': None}
-except:
+except ImportError:
     from bokeh.models.arrow_heads import OpenHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
@@ -289,7 +285,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
-    style_opts = (['arrow_%s' % p for p in line_properties+fill_properties+['size']] +
+    style_opts = ([f'arrow_{p}' for p in line_properties+fill_properties+['size']] +
                   text_properties)
 
     _style_groups = {'arrow': 'arrow', 'text': 'text'}
