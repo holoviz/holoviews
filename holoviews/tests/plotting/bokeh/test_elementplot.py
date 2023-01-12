@@ -971,3 +971,14 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot((curve*scatter).redim.values(x=['A', 'C']))
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, ['A', 'C'])
+
+    def test_clim_percentile(self):
+        arr = np.random.rand(10,10)
+        arr[0, 0] = -100
+        arr[-1, -1] = 100
+        im = Image(arr).opts(clim_percentile=True)
+
+        plot = bokeh_renderer.get_plot(im)
+        low, high = plot.ranges[('Image',)]['z']['robust']
+        assert low > 0
+        assert high < 1
