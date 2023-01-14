@@ -2,14 +2,13 @@ import os
 
 from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from matplotlib.cm import register_cmap
 from param import concrete_descendents
-from colorcet import kbc
+from colorcet import kbc, register_cmap
+from packaging.version import Version
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
-from ...core.util import LooseVersion, pd
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from ..util import fire_colors
@@ -31,15 +30,14 @@ from .tabular import * # noqa (API import)
 from .renderer import MPLRenderer
 
 
-mpl_ge_150 = LooseVersion(mpl.__version__) >= LooseVersion('1.5.0')
+mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
 
-if pd:
-    try:
-        from pandas.plotting import register_matplotlib_converters
-        register_matplotlib_converters()
-    except ImportError:
-        from pandas.tseries import converter
-        converter.register()
+try:
+    from pandas.plotting import register_matplotlib_converters
+    register_matplotlib_converters()
+except ImportError:
+    from pandas.tseries import converter
+    converter.register()
 
 
 def set_style(key):

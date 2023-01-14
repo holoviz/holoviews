@@ -56,7 +56,7 @@ class BarsComparisonTest(ComparisonTestCase):
             self.assertEqual(self.bars1, self.bars2)
         except AssertionError as e:
             if not 'not almost equal' in str(e):
-                raise Exception('Bars mismatched data error not raised. %s' % e)
+                raise Exception(f'Bars mismatched data error not raised. {e}')
 
     def test_bars_unequal_keydims(self):
         try:
@@ -197,4 +197,3 @@ class VectorFieldComparisonTest(ComparisonTestCase):
         except  AssertionError as e:
             if not str(e).startswith("VectorField not almost equal to 6 decimals"):
                 raise self.failureException("VectorField  data mismatch error not raised.")
-

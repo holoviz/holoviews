@@ -815,7 +815,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
 
-        super(TestCrossBackendOptions, self).tearDown()
+        super().tearDown()
 
 
     def test_mpl_bokeh_mpl(self):
@@ -1149,7 +1149,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         for f in self.cleanup:
             try:
                 os.remove(f)
-            except:
+            except Exception:
                 pass
 
     def test_raw_pickle(self):

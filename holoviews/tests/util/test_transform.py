@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for dim transforms
 """
 import pickle
+import warnings
 
 from collections import OrderedDict
 from unittest import skipIf
@@ -14,12 +14,12 @@ import param
 try:
     import dask.dataframe as dd
     import dask.array as da
-except:
+except ImportError:
     da, dd = None, None
 
 try:
     import xarray as xr
-except:
+except ImportError:
     xr = None
 
 xr_skip = skipIf(xr is None, "xarray not available")
@@ -462,7 +462,13 @@ class TestDimTransforms(ComparisonTestCase):
 
     def test_pandas_chained_methods(self):
         expr = dim('int').df.rolling(1).mean()
-        self.assert_apply(expr, self.linear_ints.rolling(1).mean())
+
+        with warnings.catch_warnings():
+            # The kwargs is {'axis': None} and is already handled by the code.
+            # This context manager can be removed, when it raises an TypeError instead of warning.
+            warnings.simplefilter("ignore", "Passing additional kwargs to Rolling.mean")
+            self.assert_apply(expr, self.linear_ints.rolling(1).mean())
+
 
     @xr_skip
     def test_xarray_namespace_method_repr(self):

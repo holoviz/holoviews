@@ -476,7 +476,7 @@ class GridPlot(CompositePlot):
         # Get the extent of the layout elements (not the whole layout)
         key = self.keys[-1]
         axis = self.handles['axis']
-        subplot_kwargs = dict()
+        subplot_kwargs = {}
         ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges=ranges, **subplot_kwargs)
@@ -513,7 +513,7 @@ class GridPlot(CompositePlot):
         layout_axis.patch.set_visible(False)
 
         for ax, ax_obj in zip(['x', 'y'], [layout_axis.xaxis, layout_axis.yaxis]):
-            tick_fontsize = self._fontsize('%sticks' % ax,'labelsize', common=False)
+            tick_fontsize = self._fontsize(f'{ax}ticks','labelsize', common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
         # Set labels
@@ -938,7 +938,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             elif empty:
                 obj = AdjointLayout([])
             elif not view.traverse(lambda x: x, [Element]):
-                self.param.warning('%s is empty, skipping subplot.' % obj.main)
+                self.param.warning(f'{obj.main} is empty, skipping subplot.')
                 continue
             elif self.transpose:
                 layout_count = (c*self.rows+(r+1))

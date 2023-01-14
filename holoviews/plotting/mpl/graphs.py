@@ -1,3 +1,5 @@
+import warnings
+
 import param
 import numpy as np
 
@@ -142,7 +144,7 @@ class GraphPlot(ColorbarPlot):
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
+        return super().get_extents(element.nodes, ranges, range_type)
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         # Draw edges
@@ -168,7 +170,10 @@ class GraphPlot(ColorbarPlot):
         xs, ys = plot_args['nodes']
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups)
-        nodes = ax.scatter(xs, ys, **node_opts)
+        with warnings.catch_warnings():
+            # scatter have a default cmap and with an empty array will emit this warning
+            warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
+            nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}
 
@@ -357,7 +362,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         for label in labels:
             try:
                 label.remove()
-            except:
+            except Exception:
                 pass
         if 'text' not in data:
             self.handles['labels'] = []

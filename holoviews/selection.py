@@ -181,7 +181,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 # This is a DynamicMap that we don't know how to recurse into.
                 self.param.warning(
                     "linked selection: Encountered DynamicMap that we don't know "
-                    "how to recurse into:\n{!r}".format(hvobj)
+                    f"how to recurse into:\n{hvobj!r}"
                 )
                 return hvobj
         elif isinstance(hvobj, Element):
@@ -464,7 +464,7 @@ class link_selections(_base_link_selections):
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
 
 
-class SelectionDisplay(object):
+class SelectionDisplay:
     """
     Base class for selection display classes.  Selection display classes are
     responsible for transforming an element (or DynamicMap that produces an

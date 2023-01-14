@@ -5,6 +5,8 @@ Test cases for the Comparisons class over the Chart elements
 from unittest import skipIf
 
 import numpy as np
+import pandas as pd
+import pytest
 
 from holoviews.core import NdOverlay
 from holoviews.core.options import Store
@@ -14,27 +16,34 @@ from holoviews.element import (
     QuadMesh, Polygons
 )
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element.selection import spatial_select_columnar
 
 try:
     import datashader as ds
-except:
+except ImportError:
     ds = None
 
 try:
     import spatialpandas as spd
-except:
+except ImportError:
     spd = None
 
 try:
     import shapely
-except:
+except ImportError:
     shapely = None
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    dd = None
 
 spd_available = skipIf(spd is None, "spatialpandas is not available")
 shapelib_available = skipIf(shapely is None and spd is None,
                             'Neither shapely nor spatialpandas are available')
 shapely_available = skipIf(shapely is None, 'shapely is not available')
 ds_available = skipIf(ds is None, 'datashader not available')
+dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
 
 
 class TestSelection1DExpr(ComparisonTestCase):
@@ -282,33 +291,33 @@ class TestSelection2DExpr(ComparisonTestCase):
     def test_scatter_selection_numeric(self):
         scatter = Scatter([3, 2, 1, 3, 4])
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
-        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
-        self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(1, 0, 3, 2)]) * Path([]))
+        self.assertEqual(bbox, {'x': (1, 3)})
+        self.assertEqual(expr.apply(scatter), np.array([False, True, True, True, False]))
+        self.assertEqual(region, NdOverlay({0: VSpan(1, 3)}))
 
     def test_scatter_selection_numeric_inverted(self):
         scatter = Scatter([3, 2, 1, 3, 4]).opts(invert_axes=True)
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
-        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
-        self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
+        self.assertEqual(bbox, {'x': (1, 3)})
+        self.assertEqual(expr.apply(scatter), np.array([False, True, True, True, False]))
+        self.assertEqual(region, NdOverlay({0: HSpan(1, 3)}))
 
     def test_scatter_selection_categorical(self):
         scatter = Scatter((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(
             bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C'], y_selection=None
         )
-        self.assertEqual(bbox, {'x': ['B', 'A', 'C'], 'y': (1, 3)})
+        self.assertEqual(bbox, {'x': ['B', 'A', 'C']})
         self.assertEqual(expr.apply(scatter), np.array([True, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
+        self.assertEqual(region, NdOverlay({0: VSpan(0, 2)}))
 
     def test_scatter_selection_numeric_index_cols(self):
         scatter = Scatter([3, 2, 1, 3, 2])
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(
             bounds=(1, 0, 3, 2), index_cols=['y']
         )
-        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
-        self.assertEqual(expr.apply(scatter), np.array([False, False, True, False, False]))
+        self.assertEqual(bbox, {'x': (1, 3)})
+        self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, True]))
         self.assertEqual(region, None)
 
     def test_image_selection_numeric(self):
@@ -592,3 +601,71 @@ class TestSelectionPolyExpr(ComparisonTestCase):
                                 'x': np.array([-0.15, 0, 0.6, 0.6])})
         self.assertEqual(expr.apply(poly, expanded=False), np.array([False, False, True]))
         self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
+
+
+@shapelib_available
+class TestSpatialSelectColumnar:
+    geometry_encl = np.array([
+        [-1, 0.5],
+        [ 1, 0.5],
+        [ 0,-1.5],
+        [-2,-1.5]
+    ], dtype=float)
+
+    pt_mask_encl = np.array([
+        0, 0, 0,
+        1, 1, 0,
+        1, 1, 0,
+    ], dtype=bool)
+
+    geometry_noencl = np.array([
+        [10, 10],
+        [10, 11],
+        [11, 11],
+        [11, 10]
+    ], dtype=float)
+
+    pt_mask_noencl = np.array([
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+    ], dtype=bool)
+
+    @pytest.fixture(scope="module")
+    def pandas_df(self):
+        return pd.DataFrame({
+            "x": [-1, 0, 1,
+                  -1, 0, 1,
+                  -1, 0, 1],
+            "y": [ 1, 1, 1,
+                   0, 0, 0,
+                  -1,-1,-1]
+        }, dtype=float)
+
+    @dd_available
+    @pytest.fixture(scope="function")
+    def dask_df(self, pandas_df):
+        return dd.from_pandas(pandas_df, npartitions=2)
+
+    @pytest.mark.parametrize("geometry,pt_mask", [(geometry_encl, pt_mask_encl),(geometry_noencl, pt_mask_noencl)])
+    class TestSpatialSelectColumnarPtMask:
+        def test_pandas(self, geometry, pt_mask, pandas_df):
+            mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry)
+            assert np.array_equal(mask, pt_mask)
+
+        @dd_available
+        def test_dask(self, geometry, pt_mask, dask_df):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+            assert np.array_equal(mask.compute(), pt_mask)
+
+        def test_numpy(self, geometry, pt_mask, pandas_df):
+            mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry)
+            assert np.array_equal(mask, pt_mask)
+
+
+    @pytest.mark.parametrize("geometry", [geometry_encl, geometry_noencl])
+    class TestSpatialSelectColumnarDaskMeta:
+        @dd_available
+        def test_meta_dtype(self, geometry, dask_df):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+            assert mask._meta.dtype == np.bool_

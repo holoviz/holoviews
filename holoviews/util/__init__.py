@@ -37,7 +37,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         example_dir = os.path.join(filepath, '../examples')
     if os.path.exists(path):
         if not force:
-            print('%s directory already exists, either delete it or set the force flag' % path)
+            print(f'{path} directory already exists, either delete it or set the force flag')
             return
         shutil.rmtree(path)
     ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
@@ -45,11 +45,27 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
     if os.path.isdir(tree_root):
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
-        print('Cannot find %s' % tree_root)
+        print(f'Cannot find {tree_root}')
 
 
+class OptsMeta(param.parameterized.ParameterizedMetaclass):
+    """
+    Improve error message when running something
+    like: 'hv.opts.Curve()' without a plotting backend.
+    """
 
-class opts(param.ParameterizedFunction):
+    def __getattr__(self, attr):
+        try:
+            return super().__getattr__(attr)
+        except AttributeError:
+            msg = (
+                f"No entry for {attr!r} registered; this name may not refer to a valid object "
+                "or you may need to run 'hv.extension' to select a plotting backend."
+            )
+            raise AttributeError(msg) from None
+
+
+class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     """
     Utility function to set options at the global level or to provide an
     Options object that can be used with the .options method of an
@@ -104,7 +120,7 @@ class opts(param.ParameterizedFunction):
         "Format option group kwargs into canonical options format"
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
-            raise Exception("Keyword options %s must be one of  %s" % (groups,
+            raise Exception("Keyword options {} must be one of  {}".format(groups,
                             ','.join(repr(g) for g in groups)))
         elif not all(isinstance(v, dict) for v in kwargs.values()):
             raise Exception("The %s options must be specified using dictionary groups" %
@@ -118,11 +134,11 @@ class opts(param.ParameterizedFunction):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('%s.%s.%s' % (
+                identifier = ('{}.{}.{}'.format(
                     obj.__class__.__name__, sanitized_group,
                     util.label_sanitizer(obj.label)))
             elif  sanitized_group != obj.__class__.__name__:
-                identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
+                identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
                 identifier = obj.__class__.__name__
 
@@ -160,7 +176,7 @@ class opts(param.ParameterizedFunction):
         for spec, groups in options.items():
             if 'output' not in groups.keys() or len(groups['output'])==0:
                 dfltdict[backend or Store.current_backend][spec.strip()] = groups
-            elif set(groups['output'].keys()) - set(['backend']):
+            elif set(groups['output'].keys()) - {'backend'}:
                 dfltdict[groups['output']['backend']][spec.strip()] = groups
             elif ['backend'] == list(groups['output'].keys()):
                 filtered = {k:v for k,v in groups.items() if k != 'output'}
@@ -216,8 +232,7 @@ class opts(param.ParameterizedFunction):
                 options = OptsSpec.parse(options)
             except SyntaxError:
                 options = OptsSpec.parse(
-                    '{clsname} {options}'.format(clsname=obj.__class__.__name__,
-                                                 options=options))
+                    f'{obj.__class__.__name__} {options}')
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
@@ -230,7 +245,7 @@ class opts(param.ParameterizedFunction):
         if isinstance(options, str):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
-            except:  ns = globals()
+            except Exception:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
         errmsg = StoreOptions.validation_error_message(options, backends=backends)
@@ -321,7 +336,7 @@ class opts(param.ParameterizedFunction):
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
-            raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
+            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.')
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)
@@ -329,8 +344,7 @@ class opts(param.ParameterizedFunction):
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
-                raise ValueError('%s type not found, could not apply options.'
-                                 % objtype)
+                raise ValueError(f'{objtype} type not found, could not apply options.')
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
             for opt, value in options.items():
@@ -409,15 +423,15 @@ class opts(param.ParameterizedFunction):
             from .parser import OptsSpec
             if ns is None:
                 try:     ns = get_ipython().user_ns  # noqa
-                except:  ns = globals()
+                except Exception:  ns = globals()
             options = options.replace('%%opts','').replace('%opts','')
             options = OptsSpec.parse_options(options, ns=ns)
 
 
         reprs = []
-        ns = '{namespace}.'.format(namespace=namespace) if namespace else ''
+        ns = f'{namespace}.' if namespace else ''
         for option in options:
-            kws = ', '.join('%s=%r' % (k,option.kwargs[k]) for k in sorted(option.kwargs))
+            kws = ', '.join(f'{k}={option.kwargs[k]!r}' for k in sorted(option.kwargs))
             if '.' in option.key:
                 element = option.key.split('.')[0]
                 spec = repr('.'.join(option.key.split('.')[1:])) + ', '
@@ -432,8 +446,8 @@ class opts(param.ParameterizedFunction):
     @classmethod
     def _create_builder(cls, element, completions):
         def builder(cls, spec=None, **kws):
-            spec = element if spec is None else '%s.%s' % (element, spec)
-            prefix = 'In opts.{element}(...), '.format(element=element)
+            spec = element if spec is None else f'{element}.{spec}'
+            prefix = f'In opts.{element}(...), '
             backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
@@ -573,8 +587,8 @@ class output(param.ParameterizedFunction):
         if ':' in pairs['backend']:
             pairs['backend'] = pairs['backend'].split(':')[0]
 
-        keywords = ', '.join('%s=%r' % (k,pairs[k]) for k in sorted(pairs.keys()))
-        print('output({kws})'.format(kws=keywords))
+        keywords = ', '.join(f'{k}={pairs[k]!r}' for k in sorted(pairs.keys()))
+        print(f'output({keywords})')
 
 
     def __call__(self, *args, **options):
@@ -594,12 +608,12 @@ class output(param.ParameterizedFunction):
                 options = Store.output_settings.extract_keywords(line, {})
             for k in options.keys():
                 if k not in Store.output_settings.allowed:
-                    raise KeyError('Invalid keyword: %s' % k)
+                    raise KeyError(f'Invalid keyword: {k}')
 
             def display_fn(obj, renderer):
                 try:
                     from IPython.display import display
-                except:
+                except ImportError:
                     return
                 display(obj)
 
@@ -668,11 +682,11 @@ class extension(_pyviz_extension):
         for backend, imp in imports:
             try:
                 __import__(backend)
-            except:
+            except ImportError:
                 self.param.warning("%s could not be imported, ensure %s is installed."
                              % (backend, backend))
             try:
-                __import__('holoviews.plotting.%s' % imp)
+                __import__(f'holoviews.plotting.{imp}')
                 if selected_backend is None:
                     selected_backend = backend
             except util.VersionError as e:
@@ -960,7 +974,7 @@ class Dynamic(param.ParameterizedFunction):
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
-            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+            raise TypeError(msg.format(objs = ', '.join(f'{el!r}' for el in invalid)))
         return valid
 
     def _process(self, element, key=None, kwargs={}):

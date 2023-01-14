@@ -125,5 +125,5 @@ class TestLinkCallbacks(TestBokehPlot):
         DataLink(a, b)
         try:
             bokeh_renderer.get_plot(a+b)
-        except:
+        except Exception:
             self.fail()

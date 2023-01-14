@@ -105,7 +105,7 @@ class TestBokehServer(ComparisonTestCase):
     def session(self):
         url = "http://localhost:" + str(self._port) + "/"
         return pull_session(session_id='Test', url=url)
-    
+
     def test_launch_simple_server(self):
         obj = Curve([])
         self._launcher(obj, port=6001)

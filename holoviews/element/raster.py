@@ -58,7 +58,7 @@ class Raster(Element2D):
         elif len(slices) > (2 + self.depth):
             raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
+            raise KeyError(f"{self.vdims[0].name!r} is the only selectable value dimension")
 
         slc_types = [isinstance(sl, slice) for sl in slices[:2]]
         data = self.data.__getitem__(slices[:2][::-1])
@@ -133,7 +133,7 @@ class Raster(Element2D):
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(dimension)
             if sample_ind is None:
-                raise Exception("Dimension %s not found during sampling" % dimension)
+                raise Exception(f"Dimension {dimension} not found during sampling")
             other_dimension = [d for i, d in enumerate(self.kdims) if
                                i != sample_ind]
 
@@ -329,13 +329,12 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if yvals.ndim > 1:
             invalid.append(ydim)
         if invalid:
-            dims = '%s and %s' % tuple(invalid) if len(invalid) > 1 else '%s' % invalid[0]
-            raise ValueError('{clsname} coordinates must be 1D arrays, '
-                             '{dims} dimension(s) were found to have '
+            dims = '%s and %s' % tuple(invalid) if len(invalid) > 1 else f'{invalid[0]}'
+            raise ValueError(f'{clsname} coordinates must be 1D arrays, '
+                             f'{dims} dimension(s) were found to have '
                              'multiple dimensions. Either supply 1D '
                              'arrays or use the QuadMesh element for '
-                             'curvilinear coordinates.'.format(
-                                 clsname=clsname, dims=dims))
+                             'curvilinear coordinates.')
 
         xvalid = util.validate_regular_sampling(xvals, self.rtol)
         yvalid = util.validate_regular_sampling(yvals, self.rtol)
@@ -346,9 +345,9 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                "{clsname} constructor.")
         dims = None
         if not xvalid:
-            dims = ' %s is ' % xdim if yvalid else '(s) %s and %s are' % (xdim, ydim)
+            dims = f' {xdim} is ' if yvalid else f'(s) {xdim} and {ydim} are'
         elif not yvalid:
-            dims = ' %s is' % ydim
+            dims = f' {ydim} is'
         if dims:
             self.param.warning(
                 msg.format(clsname=clsname, dims=dims, rtol=self.rtol))
@@ -578,7 +577,7 @@ class RGB(Image):
         """
         try:
             from PIL import Image
-        except:
+        except ImportError:
             raise ImportError("RGB.load_image requires PIL (or Pillow).")
 
         with open(filename, 'rb') as f:
@@ -847,7 +846,7 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
                     return super().range(dim, data_range, dimension_range)
                 else:
                     drange = self.gridded.range(dim, data_range, dimension_range)
-            except:
+            except Exception:
                 drange = None
             finally:
                 self.gridded._binned = False

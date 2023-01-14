@@ -111,7 +111,7 @@ class Normalization(Operation):
             try:
                 index = keys.index(key)
                 specs = ranges[index]
-            except:
+            except Exception:
                 raise KeyError("Could not match element key to defined keys")
         else:
             raise ValueError("Key list length must match length of supplied ranges")
@@ -170,5 +170,3 @@ class raster_normalization(Normalization):
                 if range:
                     norm_raster.data[:,:,depth] /= range
         return norm_raster
-
-

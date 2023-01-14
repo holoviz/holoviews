@@ -118,4 +118,4 @@ def public(obj):
         return False
     return issubclass(obj, Element)
 
-__all__ = list(set([_k for _k, _v in locals().items() if public(_v)]))
+__all__ = list({_k for _k, _v in locals().items() if public(_v)})

@@ -1,22 +1,23 @@
 import datetime as dt
 from unittest import skipIf
+import pytest
 
 import numpy as np
 import pandas as pd
 
 try:
     import dask.array as da
-except:
+except ImportError:
     da = None
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
-                       QuadMesh, Dataset)
+                       QuadMesh, Dataset, renderer)
 from holoviews.core.data.grid import GridInterface
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
-                                         interpolate_curve)
+                                         interpolate_curve, decimate)
 
 da_skip = skipIf(da is None, "dask.array is not available")
 
@@ -256,6 +257,12 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
+    def test_histogram_categorical(self):
+        series = Dataset(pd.Series(['A', 'B', 'C']))
+        kwargs = {'bin_range': ('A', 'C'), 'normed': False, 'cumulative': False, 'num_bins': 3}
+        with pytest.raises(ValueError):
+            histogram(series, **kwargs)
+
     def test_points_histogram_weighted(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, weight_dimension='y', normed=True)
@@ -368,3 +375,13 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(operation(curve).label, str(curve.id))
         operation._preprocess_hooks = pre_backup
         operation._postprocess_hooks = post_backup
+
+    def test_decimate_ordering(self):
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+        curve = Curve((x, y))
+        decimated = decimate(curve, max_samples=20)
+        renderer("bokeh").get_plot(decimated)
+
+        index = decimated.data[()].data.index
+        assert np.all(index == np.sort(index))

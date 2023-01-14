@@ -254,7 +254,7 @@ class TestPointPlot(TestMPLPlot):
         leg = plot.handles['axis'].get_legend()
         legend_labels = [l.get_text() for l in leg.texts]
         self.assertEqual(legend_labels, ['A point', 'B point'])
-        
+
     def test_point_size_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
                         vdims='size').opts(s='size')

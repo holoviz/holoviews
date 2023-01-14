@@ -1,9 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import asyncio
+import base64
 import time
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 
@@ -14,7 +13,6 @@ from bokeh.models import (
 )
 from panel.io.state import state
 
-from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
     datetime_types, dimension_sanitizer, dt64_to_dt
@@ -30,7 +28,7 @@ from ...streams import (
 from .util import convert_timestamp
 
 
-class Callback(object):
+class Callback:
     """
     Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback
@@ -233,7 +231,7 @@ class Callback(object):
         be the same as the model.
         """
         if not cb_obj:
-            raise Exception('Bokeh plot attribute %s could not be found' % spec)
+            raise Exception(f'Bokeh plot attribute {spec} could not be found')
         if model is None:
             model = cb_obj
         spec = spec.split('.')
@@ -594,6 +592,22 @@ class RangeXYCallback(Callback):
         'y1': 'cb_obj.y1'
     }
 
+    _js_on_event = """
+    if (this._updating)
+        return
+    const plot = this.origin
+    const plots = plot.x_range.plots.concat(plot.y_range.plots)
+    for (const p of plots) {
+      const event = new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end)
+      event._updating = true
+      p.trigger_event(event)
+    }
+    """
+
+    def set_callback(self, handle):
+        super().set_callback(handle)
+        handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
+
     def _process_msg(self, msg):
         data = {}
         if 'x0' in msg and 'x1' in msg:
@@ -737,7 +751,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, xdim)
                     try:
                         xfactors = list(np.array(xfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['x_selection'] = xfactors
         else:
@@ -752,7 +766,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, ydim)
                     try:
                         yfactors = list(np.array(yfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['y_selection'] = yfactors
         else:
@@ -911,6 +925,19 @@ class CDSCallback(Callback):
                 values = new_values
             elif any(isinstance(v, (int, float)) for v in values):
                 values = [np.nan if v is None else v for v in values]
+            elif (
+                isinstance(values, list)
+                and len(values) == 4
+                and values[2] in ("big", "little")
+                and isinstance(values[3], list)
+            ):
+                # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+                # This could be fixed in Bokeh 3.0, but has not been tested.
+                # Example:
+                # ['pm9vF9dSY8EAAADgPFNjwQAAAMAmU2PBAAAAAMtSY8E=','float64', 'little', [4]]
+                buffer = base64.decodebytes(values[0].encode())
+                dtype = np.dtype(values[1]).newbyteorder(values[2])
+                values = np.frombuffer(buffer, dtype)
             msg['data'][col] = values
         return self._transform(msg)
 

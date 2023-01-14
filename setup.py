@@ -24,12 +24,14 @@ extras_require = {}
 
 extras_require['flakes'] = [
     'flake8',
+    'pre-commit',
 ]
 
 # Test requirements
 extras_require['tests_core'] = [
     'pytest',
     'pytest-cov',
+    'pytest-xdist',
     'matplotlib >=3',
     'nbconvert',
     'bokeh',
@@ -37,6 +39,9 @@ extras_require['tests_core'] = [
     'plotly >=4.0',
     'dash >=1.16',
     'codecov',
+    'ipython >=5.4.0',
+    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
+    'ipykernel <6.18.0',
 ]
 
 # Optional tests dependencies, i.e. one should be able
@@ -44,26 +49,29 @@ extras_require['tests_core'] = [
 # of those.
 extras_require['tests'] = extras_require['tests_core'] + [
     'dask',
-    'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
-    'spatialpandas',
+    'ibis-framework <4',  # Mapped to ibis-sqlite in setup.cfg for conda
     'xarray >=0.10.4',
     'networkx',
-    'datashader >=0.11.1',
     'shapely',
     'ffmpeg',
     'cftime',
     'scipy',
     'selenium',
-    'ipython >=5.4.0',
+    'numpy <1.24',  # Upper pin because of numba error
 ]
+
+# Packages not working on python 3.11 because of numba
+if sys.version_info < (3, 11):
+    extras_require['tests'] += [
+        'spatialpandas',
+        'datashader >=0.11.1',
+    ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
 ]
 
-extras_require['tests_nb'] = [
-    'nbsmoke >=0.2.0',
-]
+extras_require['tests_nb'] = ['nbval']
 
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
@@ -82,7 +90,6 @@ extras_require["examples"] = extras_require["recommended"] + [
     "plotly >=4.0",
     'dash >=1.16',
     "streamz >=0.5.0",
-    "datashader >=0.11.1",
     "ffmpeg",
     "cftime",
     "netcdf4",
@@ -91,7 +98,15 @@ extras_require["examples"] = extras_require["recommended"] + [
     "shapely",
     "scikit-image",
     "pyarrow",
+    "pooch",
+    "numpy <1.24",  # Upper pin because of numba error
 ]
+
+if sys.version_info < (3, 11):
+    extras_require["examples"] += [
+        "datashader >=0.11.1",
+    ]
+
 
 extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
 
@@ -104,14 +119,15 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['flakes']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.7.1',
+    'nbsite ==0.8.0rc2',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
     'bokeh >2.2',
-    'pydata-sphinx-theme >=0.9.0',
+    'pydata-sphinx-theme ==0.9.0',
     'sphinx-copybutton',
     'pooch',
+    'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
@@ -174,6 +190,7 @@ setup_args.update(
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Operating System :: OS Independent",
             "Intended Audience :: Science/Research",
             "Intended Audience :: Developers",

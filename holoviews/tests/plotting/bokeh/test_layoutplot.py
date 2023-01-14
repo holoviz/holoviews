@@ -25,7 +25,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
         hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
         plot = bokeh_renderer.get_plot(hmap+hmap2)
-        subplot1, subplot2 = [p for k, p in sorted(plot.subplots.items())]
+        subplot1, subplot2 = (p for k, p in sorted(plot.subplots.items()))
         subplot1 = subplot1.subplots['main']
         subplot2 = subplot2.subplots['main']
         self.assertTrue(subplot1.handles['glyph_renderer'].visible)
@@ -227,6 +227,14 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(s1.width, 0)
         self.assertEqual(s1.height, 0)
         self.assertEqual(f1.plot_height, f2.plot_height)
+
+    def test_empty_adjoint_plot_with_renderer(self):
+        # https://github.com/holoviz/holoviews/pull/5584
+        scatter = Scatter(range(10))
+        adjoin_layout_plot = scatter << Empty() << scatter.hist(adjoin=False)
+
+        # To render the plot
+        bokeh_renderer(adjoin_layout_plot)
 
     def test_layout_plot_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).cols(1)

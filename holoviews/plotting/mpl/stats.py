@@ -78,7 +78,8 @@ class BoxPlot(ChartPlot):
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            data.append(group[group.vdims[0]])
+            d = group[group.vdims[0]]
+            data.append(d[np.isfinite(d)])
             labels.append(label)
         style['labels'] = labels
         style = {k: v for k, v in style.items()
