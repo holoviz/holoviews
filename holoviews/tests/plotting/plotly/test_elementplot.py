@@ -1,6 +1,7 @@
 from collections import deque
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Scatter3D, Path3D
@@ -226,22 +227,25 @@ class TestOverlayPlot(TestPlotlyPlot):
 
 class TestColorbarPlot(TestPlotlyPlot):
     def test_base(self):
-        y,x = np.mgrid[-5:5, -5:5] * 0.1
-        z=np.sin(x**2+y**2)
-        scatter = Scatter3D((x.flat,y.flat,z.flat))
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df)
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['title']=="z"
+        assert "colorbar" not in state["data"][0]["marker"]
 
     def test_colorbar(self):
-        y,x = np.mgrid[-5:5, -5:5] * 0.1
-        z=np.sin(x**2+y**2)
-        scatter = Scatter3D((x.flat,y.flat,z.flat)).opts(colorbar=True)
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df).opts(color="T", colorbar=True)
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['title']=="z"
+        assert "colorbar" in state["data"][0]["marker"]
+        assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "T"
 
     def test_colorbar_opts_title(self):
-        y,x = np.mgrid[-5:5, -5:5] * 0.1
-        z=np.sin(x**2+y**2)
-        scatter = Scatter3D((x.flat,y.flat,z.flat)).opts(colorbar=True, colorbar_opts={"title": "some-title"})
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df).opts(
+            color="T",
+            colorbar=True,
+            colorbar_opts={"title": "some-title"}
+        )
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['title']=="some-title"
+        assert "colorbar" in state["data"][0]["marker"]
+        assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "some-title"
