@@ -1,6 +1,6 @@
 Version 1.15.4
 ==============
-**January 12, 2023**
+**January 16, 2023**
 
 This release contains a small number of enhancements and important bug fixes.
 Many thanks to our new contributors @mmorys, @jj-github-jj, and @sandhujasmine, but also our returning contributors @droumis, @jlstevens, @MarcSkovMadsen, @maximlt, @philippjfr, @stanwest, and @Hoxbro.
@@ -11,6 +11,7 @@ Enhancements:
 - Make plotly legend group unique ([#5570](https://github.com/holoviz/holoviews/pull/5570))
 - Set pan and wheel_zoom as the default Bokeh active tools ([#5480](https://github.com/holoviz/holoviews/pull/5480))
 - Enable rendering colorbars on bokeh GraphPlots ([#5585](https://github.com/holoviz/holoviews/pull/5585))
+- Add Plotly Scatter3d documentation and fix colorbar title ([#5418](https://github.com/holoviz/holoviews/pull/5418))
 
 Bug fixes:
 - Only trigger range-update once in callbacks ([#5558](https://github.com/holoviz/holoviews/pull/5558))
