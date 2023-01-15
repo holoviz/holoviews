@@ -70,8 +70,50 @@ class Scatter3D(Element3D, Points):
     """
     Scatter3D is a 3D element representing the position of a collection
     of coordinates in a 3D space. The key dimensions represent the
-    position of each coordinate along the x-, y- and z-axis while the
-    value dimensions can optionally supply additional information.
+    position of each coordinate along the x-, y- and z-axis.
+
+    Scatter3D is not available for the default Bokeh backend.
+
+    Example - Matplotlib
+    --------------------
+
+    .. code-block::
+
+        import holoviews as hv
+        from bokeh.sampledata.iris import flowers
+
+        hv.extension("matplotlib")
+
+        hv.Scatter3D(
+            flowers, kdims=["sepal_length", "sepal_width", "petal_length"]
+        ).opts(
+            color="petal_width",
+            alpha=0.7,
+            size=5,
+            cmap="fire",
+            marker='^'
+        )
+
+    Example - Plotly
+    ----------------
+
+    .. code-block::
+
+        import holoviews as hv
+        from bokeh.sampledata.iris import flowers
+
+        hv.extension("plotly")
+
+        hv.Scatter3D(
+            flowers, kdims=["sepal_length", "sepal_width", "petal_length"]
+        ).opts(
+            color="petal_width",
+            alpha=0.7,
+            size=5,
+            cmap="Portland",
+            colorbar=True,
+            marker="circle",
+        )
     """
 
     kdims = param.List(default=[Dimension('x'),
