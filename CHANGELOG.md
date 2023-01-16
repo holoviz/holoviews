@@ -7,6 +7,7 @@ Many thanks to our new contributors @mmorys, @jj-github-jj, and @sandhujasmine, 
 
 
 Enhancements:
+
 - Make lasso select mask values using a Dask-compatible method ([#5568](https://github.com/holoviz/holoviews/pull/5568))
 - Make plotly legend group unique ([#5570](https://github.com/holoviz/holoviews/pull/5570))
 - Set pan and wheel_zoom as the default Bokeh active tools ([#5480](https://github.com/holoviz/holoviews/pull/5480))
@@ -14,6 +15,7 @@ Enhancements:
 - Add Plotly `Scatter3d` documentation and fix colorbar title ([#5418](https://github.com/holoviz/holoviews/pull/5418))
 
 Bug fixes:
+
 - Only trigger range-update once in callbacks ([#5558](https://github.com/holoviz/holoviews/pull/5558))
 - Ensure dynamically created subplots can be updated ([#5555](https://github.com/holoviz/holoviews/pull/5555))
 - Fix start of stack-level in deprecations ([#5569](https://github.com/holoviz/holoviews/pull/5569))
@@ -24,16 +26,19 @@ Bug fixes:
 - Fix `clim_percentile` ([#5495](https://github.com/holoviz/holoviews/pull/5495))
 
 Compatibility:
+
 - Compatibility with Shapely 2.0 ([#5561](https://github.com/holoviz/holoviews/pull/5561))
 - Compatibility with Numpy 1.24 ([#5581](https://github.com/holoviz/holoviews/pull/5581))
 - Compatibility with Ibis 4.0 ([#5588](https://github.com/holoviz/holoviews/pull/5588))
 
 Documentation:
+
 - Installation instructions update ([#5562](https://github.com/holoviz/holoviews/pull/5562))
 - Use OSM for reference tile source in notebook documentation ([#5536](https://github.com/holoviz/holoviews/pull/5536))
 - Enhance Tiles example notebook ([#5563](https://github.com/holoviz/holoviews/pull/5563))
 
 Maintenance:
+
 - Various fixes and general maintenance of the CI ([#5384](https://github.com/holoviz/holoviews/pull/5384), [#5573](https://github.com/holoviz/holoviews/pull/5573), [#5576](https://github.com/holoviz/holoviews/pull/5576), [#5582](https://github.com/holoviz/holoviews/pull/5582))
 - Updated codebase to modern Python conventions ([#5509](https://github.com/holoviz/holoviews/pull/5509), [#5577](https://github.com/holoviz/holoviews/pull/5577))
 - Renamed `master` branch to `main` ([#5579](https://github.com/holoviz/holoviews/pull/5579))
