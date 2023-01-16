@@ -10,16 +10,16 @@ Enhancements:
 - Make lasso select mask values using a Dask-compatible method ([#5568](https://github.com/holoviz/holoviews/pull/5568))
 - Make plotly legend group unique ([#5570](https://github.com/holoviz/holoviews/pull/5570))
 - Set pan and wheel_zoom as the default Bokeh active tools ([#5480](https://github.com/holoviz/holoviews/pull/5480))
-- Enable rendering colorbars on bokeh GraphPlots ([#5585](https://github.com/holoviz/holoviews/pull/5585))
-- Add Plotly Scatter3d documentation and fix colorbar title ([#5418](https://github.com/holoviz/holoviews/pull/5418))
+- Enable rendering colorbars on bokeh `GraphPlot`s ([#5585](https://github.com/holoviz/holoviews/pull/5585))
+- Add Plotly `Scatter3d` documentation and fix colorbar title ([#5418](https://github.com/holoviz/holoviews/pull/5418))
 
 Bug fixes:
 - Only trigger range-update once in callbacks ([#5558](https://github.com/holoviz/holoviews/pull/5558))
 - Ensure dynamically created subplots can be updated ([#5555](https://github.com/holoviz/holoviews/pull/5555))
 - Fix start of stack-level in deprecations ([#5569](https://github.com/holoviz/holoviews/pull/5569))
 - When sorting colormap records, replace None with an empty string ([#5539](https://github.com/holoviz/holoviews/pull/5539))
-- Add deserialization of non-deserialized base64 data ([#5587](https://github.com/holoviz/holoviews/pull/5587))
-- Fix hv.Empty not working in AdjointLayout plot ([#5584](https://github.com/holoviz/holoviews/pull/5584))
+- Fix annotator in Geoviews by adding deserialization of non-deserialized base64 data ([#5587](https://github.com/holoviz/holoviews/pull/5587))
+- Fix `hv.Empty` not working in `AdjointLayout` plot ([#5584](https://github.com/holoviz/holoviews/pull/5584))
 - Check for categorical data to histogram ([#5540](https://github.com/holoviz/holoviews/pull/5540))
 - Fix `clim_percentile` ([#5495](https://github.com/holoviz/holoviews/pull/5495))
 
@@ -30,14 +30,14 @@ Compatibility:
 
 Documentation:
 - Installation instructions update ([#5562](https://github.com/holoviz/holoviews/pull/5562))
-- use OSM for reference tile source ([#5536](https://github.com/holoviz/holoviews/pull/5536))
+- Use OSM for reference tile source in notebook documentation ([#5536](https://github.com/holoviz/holoviews/pull/5536))
 - Enhance Tiles example notebook ([#5563](https://github.com/holoviz/holoviews/pull/5563))
 
 Maintenance:
 - Various fixes and general maintenance of the CI ([#5384](https://github.com/holoviz/holoviews/pull/5384), [#5573](https://github.com/holoviz/holoviews/pull/5573), [#5576](https://github.com/holoviz/holoviews/pull/5576), [#5582](https://github.com/holoviz/holoviews/pull/5582))
-- Maintenance of the codebase ([#5509](https://github.com/holoviz/holoviews/pull/5509), [#5577](https://github.com/holoviz/holoviews/pull/5577))
-- master to main ([#5579](https://github.com/holoviz/holoviews/pull/5579))
-- Update binder ([#5583](https://github.com/holoviz/holoviews/pull/5583))
+- Updated codebase to modern Python conventions ([#5509](https://github.com/holoviz/holoviews/pull/5509), [#5577](https://github.com/holoviz/holoviews/pull/5577))
+- Renamed `master` branch to `main` ([#5579](https://github.com/holoviz/holoviews/pull/5579))
+- Update binder link and dependency pinning ([#5583](https://github.com/holoviz/holoviews/pull/5583))
 - Update copyright to only contain start year ([#5580](https://github.com/holoviz/holoviews/pull/5580))
 
 
