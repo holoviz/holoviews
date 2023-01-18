@@ -10,7 +10,7 @@ from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting              # noqa Register backends
+from holoviews import plotting
 
 Options.skip_invalid = False
 
@@ -921,8 +921,8 @@ class TestLookupOptions(ComparisonTestCase):
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
-        import holoviews.plotting.mpl # noqa
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.mpl
+        import holoviews.plotting.bokeh
         import holoviews.plotting.plotly # noqa
 
         backends = Store.loaded_backends()

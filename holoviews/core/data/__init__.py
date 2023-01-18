@@ -18,16 +18,16 @@ from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
 
-from .array import ArrayInterface             # noqa (API import)
+from .array import ArrayInterface
 from .cudf import cuDFInterface               # noqa (API import)
 from .dask import DaskInterface               # noqa (API import)
 from .dictionary import DictInterface         # noqa (API import)
 from .grid import GridInterface               # noqa (API import)
 from .ibis import IbisInterface               # noqa (API import)
-from .interface import Interface, iloc, ndloc # noqa (API import)
+from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
-from .pandas import PandasInterface           # noqa (API import)
+from .pandas import PandasInterface
 from .spatialpandas import SpatialPandasInterface     # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)

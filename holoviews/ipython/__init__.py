@@ -15,7 +15,7 @@ from ..element.comparison import ComparisonTestCase
 from ..util import extension
 from ..plotting.renderer import Renderer
 from .magics import load_magics
-from .display_hooks import display  # noqa (API import)
+from .display_hooks import display
 from .display_hooks import pprint_display, png_display, svg_display
 
 

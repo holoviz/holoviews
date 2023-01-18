@@ -14,7 +14,7 @@ import unicodedata
 import datetime as dt
 
 from collections.abc import Iterable # noqa
-from collections import defaultdict, OrderedDict, namedtuple # noqa (compatibility)
+from collections import defaultdict, OrderedDict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
 from functools import partial

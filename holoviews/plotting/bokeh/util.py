@@ -38,7 +38,7 @@ from ...core.util import (
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
-bokeh_version = Version(bokeh.__version__)  # noqa
+bokeh_version = Version(bokeh.__version__)
 
 
 TOOL_TYPES = {

@@ -37,8 +37,8 @@ select = [
     "PLE",
     "PLR",
     "PLW",
-    # "RUF",
-    # "UP",
+    "RUF",
+    "UP",
     "W",
 ]
 
