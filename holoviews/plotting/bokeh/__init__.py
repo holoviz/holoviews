@@ -83,7 +83,6 @@ associations = {Overlay: OverlayPlot,
                 # Paths
                 Path: PathPlot,
                 Contours: ContourPlot,
-                Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,

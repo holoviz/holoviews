@@ -784,24 +784,26 @@ class TestPlotSizeTransform(ComparisonTestCase):
 class TestPipeStream(ComparisonTestCase):
 
     def test_pipe_send(self):
-        test = None
         def subscriber(data):
-            global test
-            test = data
+            subscriber.test = data
+        subscriber.test = None
+
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
         pipe.send('Test')
         self.assertEqual(pipe.data, 'Test')
+        self.assertEqual(subscriber.test, 'Test')
 
     def test_pipe_event(self):
-        test = None
         def subscriber(data):
-            global test
-            test = data
+            subscriber.test = data
+        subscriber.test = None
+
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
         pipe.event(data='Test')
         self.assertEqual(pipe.data, 'Test')
+        self.assertEqual(subscriber.test, 'Test')
 
     def test_pipe_update(self):
         pipe = Pipe()

@@ -12,7 +12,15 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
+import re
+import os
+import time
+import string
+import zipfile
+import tarfile
+import shutil
+import itertools
+import pickle
 from collections import defaultdict
 
 from io import BytesIO

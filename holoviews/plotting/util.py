@@ -36,7 +36,7 @@ def displayable(obj):
                                         for o in obj):
         return False
     if isinstance(obj, HoloMap):
-        return not (obj.type in [Layout, GridSpace, NdLayout, DynamicMap])
+        return obj.type not in [Layout, GridSpace, NdLayout, DynamicMap]
     if isinstance(obj, (GridSpace, Layout, NdLayout)):
         for el in obj.values():
             if not displayable(el):
@@ -610,7 +610,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         reverse = True
 
     # Some colormaps are inverted compared to matplotlib
-    inverted = (not cmap_categorical and not cmap.capitalize() in palettes.mpl
+    inverted = (not cmap_categorical and cmap.capitalize() not in palettes.mpl
                 and not cmap.startswith('fire'))
     if inverted:
         reverse=not reverse

@@ -4,7 +4,8 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import sys, traceback
+import sys
+import traceback
 
 import IPython
 from IPython import get_ipython

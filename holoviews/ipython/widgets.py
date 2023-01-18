@@ -1,4 +1,6 @@
-import sys, math, time
+import sys
+import math
+import time
 from unittest import SkipTest
 
 try:

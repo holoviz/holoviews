@@ -135,7 +135,7 @@ class Callback:
         if self.handle_ids:
             handles = self._init_plot_handles()
             for handle_name in self.models:
-                if not (handle_name in handles):
+                if handle_name not in handles:
                     continue
                 handle = handles[handle_name]
                 cb_hash = (id(handle), id(type(self)))

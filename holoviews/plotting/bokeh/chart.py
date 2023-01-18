@@ -502,7 +502,7 @@ class SideHistogramPlot(HistogramPlot):
         Returns a Bokeh glyph object.
         """
         ret = super()._init_glyph(plot, mapping, properties)
-        if not 'field' in mapping.get('fill_color', {}):
+        if "field" not in mapping.get("fill_color", {}):
             return ret
         dim = mapping['fill_color']['field']
         sources = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),

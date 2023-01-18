@@ -1523,7 +1523,7 @@ class StoreOptions:
         obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
         # Clean up the custom tree if it was not applied
-        if not new_id in Store.custom_options(backend=backend):
+        if new_id not in Store.custom_options(backend=backend):
             raise AssertionError("New option id %d does not match any "
                                  "option trees in Store.custom_options."
                                  % new_id)

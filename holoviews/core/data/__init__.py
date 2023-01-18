@@ -653,12 +653,12 @@ argument to specify a selection specification""")
             # If no key dimensions are defined and interface is gridded
             # drop all scalar key dimensions
             key_dims = [d for d in self.kdims if (not vdims or d not in vdims)
-                        and not d in scalars]
+                        and d not in scalars]
         elif not isinstance(kdims, list):
             key_dims = [self.get_dimension(kdims, strict=True)]
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
-        dropped = [d for d in self.kdims if not d in key_dims and not d in scalars]
+        dropped = [d for d in self.kdims if d not in key_dims and d not in scalars]
 
         new_type = None
         if vdims is None:

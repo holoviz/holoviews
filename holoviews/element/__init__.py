@@ -114,7 +114,7 @@ Dataset._conversion_interface = ElementConversion
 
 
 def public(obj):
-    if not isinstance(obj, type) or getattr(obj, 'abstract', False) and not obj is Element:
+    if not isinstance(obj, type) or getattr(obj, 'abstract', False) and obj is not Element:
         return False
     return issubclass(obj, Element)
 

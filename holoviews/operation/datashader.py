@@ -499,7 +499,7 @@ class aggregate(LineAggregationOperation):
 
         if x is None or y is None or width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
-        elif not getattr(data, 'interface', None) is DaskInterface and not len(data):
+        elif getattr(data, "interface", None) is not DaskInterface and not len(data):
             empty_val = 0 if isinstance(agg_fn, ds.count) else np.NaN
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})

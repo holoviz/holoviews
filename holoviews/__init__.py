@@ -73,7 +73,8 @@ In a notebook or ipython environment the usual
 To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
 """
-import os, sys
+import os
+import sys
 
 import param
 

@@ -216,7 +216,7 @@ class MPLRenderer(Renderer):
         """
         fig_id = id(fig)
         if kw['bbox_inches'] == 'tight':
-            if not fig_id in MPLRenderer.drawn:
+            if fig_id not in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
                 extra_artists = kw.pop("bbox_extra_artists", [])

@@ -55,7 +55,7 @@ class BarsComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.bars1, self.bars2)
         except AssertionError as e:
-            if not 'not almost equal' in str(e):
+            if "not almost equal" not in str(e):
                 raise Exception(f'Bars mismatched data error not raised. {e}')
 
     def test_bars_unequal_keydims(self):

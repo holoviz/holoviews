@@ -230,7 +230,7 @@ class AttrTree:
         super().__setattr__(identifier, val)
 
         if util.tree_attribute(identifier):
-            if not identifier in self.children:
+            if identifier not in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
 
