@@ -32,7 +32,7 @@ target-version = "py37"
 select = [
     "E",
     "F",
-    # "ICN",
+    "ICN",
     "PLC",
     "PLE",
     "PLR",
