@@ -4,7 +4,8 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import sys, traceback
+import sys
+import traceback
 
 import IPython
 from IPython import get_ipython
@@ -273,7 +274,7 @@ def pprint_display(obj):
         return None
 
     # If pretty printing is off, return None (fallback to next display format)
-    ip = get_ipython()  #  # noqa (in IPython namespace)
+    ip = get_ipython()
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
     return display(obj, raw_output=True)

@@ -1,4 +1,6 @@
-import sys, warnings, operator
+import sys
+import warnings
+import operator
 import hashlib
 import json
 import time
@@ -12,7 +14,7 @@ import unicodedata
 import datetime as dt
 
 from collections.abc import Iterable # noqa
-from collections import defaultdict, OrderedDict, namedtuple # noqa (compatibility)
+from collections import defaultdict, OrderedDict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
 from functools import partial
@@ -1401,7 +1403,7 @@ def layer_sort(hmap):
    orderings = {}
    for o in hmap:
       okeys = [get_overlay_spec(o, k, v) for k, v in o.data.items()]
-      if len(okeys) == 1 and not okeys[0] in orderings:
+      if len(okeys) == 1 and okeys[0] not in orderings:
          orderings[okeys[0]] = []
       else:
          orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys)})
@@ -1425,7 +1427,7 @@ def group_select(selects, length=None, depth=None):
     Given a list of key tuples to select, groups them into sensible
     chunks to avoid duplicating indexing operations.
     """
-    if length == None and depth == None:
+    if length is None and depth is None:
         length = depth = len(selects[0])
     getter = operator.itemgetter(depth-length)
     if length > 1:

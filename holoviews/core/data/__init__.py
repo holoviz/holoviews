@@ -18,16 +18,16 @@ from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
 
-from .array import ArrayInterface             # noqa (API import)
+from .array import ArrayInterface
 from .cudf import cuDFInterface               # noqa (API import)
 from .dask import DaskInterface               # noqa (API import)
 from .dictionary import DictInterface         # noqa (API import)
 from .grid import GridInterface               # noqa (API import)
 from .ibis import IbisInterface               # noqa (API import)
-from .interface import Interface, iloc, ndloc # noqa (API import)
+from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
-from .pandas import PandasInterface           # noqa (API import)
+from .pandas import PandasInterface
 from .spatialpandas import SpatialPandasInterface     # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
@@ -653,12 +653,12 @@ argument to specify a selection specification""")
             # If no key dimensions are defined and interface is gridded
             # drop all scalar key dimensions
             key_dims = [d for d in self.kdims if (not vdims or d not in vdims)
-                        and not d in scalars]
+                        and d not in scalars]
         elif not isinstance(kdims, list):
             key_dims = [self.get_dimension(kdims, strict=True)]
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
-        dropped = [d for d in self.kdims if not d in key_dims and not d in scalars]
+        dropped = [d for d in self.kdims if d not in key_dims and d not in scalars]
 
         new_type = None
         if vdims is None:

@@ -3,7 +3,10 @@ Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
 
-import time, sys, os, traceback
+import time
+import sys
+import os
+import traceback
 
 from IPython import version_info
 from IPython.display import Javascript, display

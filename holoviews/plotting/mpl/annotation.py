@@ -2,7 +2,7 @@ import param
 import numpy as np
 import matplotlib
 
-from matplotlib import patches as patches
+from matplotlib import patches
 from matplotlib.lines import Line2D
 
 from ...core.util import match_spec

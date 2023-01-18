@@ -1071,7 +1071,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = self._element_transform(v, element, ranges)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
-                ((not 'color' in k or validate('color', val)) or k in self._nonvectorized_styles)):
+                (('color' not in k or validate('color', val)) or k in self._nonvectorized_styles)):
                 val = val[0]
 
             if not util.isscalar(val):
@@ -2134,7 +2134,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                            if isinstance(p, LegendPlot) and
                            not isinstance(p, OverlayPlot))
         non_annotation = [p for p in subplots if not
-                          (isinstance(p, OverlayPlot) or isinstance(p, AnnotationPlot))]
+                          isinstance(p, (AnnotationPlot, OverlayPlot))]
         if (not self.show_legend or len(plot.legend) == 0 or
             (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
             return super()._process_legend()
@@ -2433,7 +2433,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
                 if (triggering and all(s not in triggering for s in subplot.streams) and
-                    not subplot in self.dynamic_subplots):
+                    subplot not in self.dynamic_subplots):
                     continue
             subplot.update_frame(key, ranges, element=el)
 

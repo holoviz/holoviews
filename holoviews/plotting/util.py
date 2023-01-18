@@ -36,7 +36,7 @@ def displayable(obj):
                                         for o in obj):
         return False
     if isinstance(obj, HoloMap):
-        return not (obj.type in [Layout, GridSpace, NdLayout, DynamicMap])
+        return obj.type not in [Layout, GridSpace, NdLayout, DynamicMap]
     if isinstance(obj, (GridSpace, Layout, NdLayout)):
         for el in obj.values():
             if not displayable(el):
@@ -560,7 +560,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if Version(mpl.__version__) < Version("3.5"):
             # This will stop working and can be removed
             # when we do not support python 3.7
-            import matplotlib.cm as cm
+            from matplotlib import cm
             try:
                 cmap = cm.get_cmap(cmap)
             except Exception:
@@ -610,7 +610,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         reverse = True
 
     # Some colormaps are inverted compared to matplotlib
-    inverted = (not cmap_categorical and not cmap.capitalize() in palettes.mpl
+    inverted = (not cmap_categorical and cmap.capitalize() not in palettes.mpl
                 and not cmap.startswith('fire'))
     if inverted:
         reverse=not reverse
@@ -699,7 +699,7 @@ def _list_cmaps(provider=None, records=False):
 
     if 'matplotlib' in provider:
         try:
-            import matplotlib.cm as cm
+            from matplotlib import cm
             if hasattr(cm, '_cmap_registry'):
                 mpl_cmaps = list(cm._cmap_registry)
             else:

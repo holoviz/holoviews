@@ -595,7 +595,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 val = v.apply(element, ranges)
 
             if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
-                (not 'color' in k or validate('color', val))):
+                ("color" not in k or validate('color', val))):
                 val = val[0]
 
             if not np.isscalar(val) and k in self._nonvectorized_styles:

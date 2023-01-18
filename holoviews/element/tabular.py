@@ -49,7 +49,7 @@ class ItemTable(Element):
             data = OrderedDict(data)
         else:
             data = OrderedDict(list(data)) # Python 3
-        if not 'vdims' in params:
+        if "vdims" not in params:
             params['vdims'] = list(data.keys())
         str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
         super().__init__(str_keys, **params)

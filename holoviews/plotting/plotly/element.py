@@ -356,7 +356,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 val = v.apply(element, ranges=ranges, flat=True)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1
-                and not 'color' in k):
+                and 'color' not in k):
                 val = val[0]
 
             if not util.isscalar(val):
@@ -605,7 +605,7 @@ class ColorbarPlot(ElementPlot):
         dim_name = dim_range_key(eldim)
         if self.colorbar:
             opts['colorbar'] = dict(**self.colorbar_opts)
-            if not "title" in opts['colorbar']:
+            if 'title' not in opts['colorbar']:
                 if isinstance(eldim, dim):
                     title = str(eldim)
                     if eldim.ops:

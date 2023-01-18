@@ -38,7 +38,7 @@ from ...core.util import (
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
-bokeh_version = Version(bokeh.__version__)  # noqa
+bokeh_version = Version(bokeh.__version__)
 
 
 TOOL_TYPES = {
@@ -771,7 +771,7 @@ class periodic:
     def __call__(self, period, count, callback, timeout=None, block=False):
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
-        elif not type(count) is type(None):
+        elif type(count) is not type(None):
             raise ValueError('Count value must be a positive integer or None')
 
         self.callback = callback

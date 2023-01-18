@@ -1,4 +1,4 @@
-from ..core.operation import Operation                # noqa (API import)
+from ..core.operation import Operation
 from ..core.options import Compositor
 
 from .element import *      # noqa (API import)

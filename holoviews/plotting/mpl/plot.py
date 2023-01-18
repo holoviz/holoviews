@@ -610,7 +610,7 @@ class GridPlot(CompositePlot):
             else:
                 r = 0
                 c += 1
-            if not ax is None:
+            if ax is not None:
                 ax.set_position([xpos, ypos, ax_w, ax_h])
 
 
@@ -674,7 +674,7 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
         checks = [self.view_positions, self.subaxes, self.subplots]
         right = all('right' in check for check in checks)
         top = all('top' in check for check in checks)
-        if not 'main' in self.subplots or not (top or right):
+        if "main" not in self.subplots or not (top or right):
             return
         if redraw:
             self.handles['fig'].canvas.draw()

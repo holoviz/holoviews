@@ -570,7 +570,7 @@ class Buffer(Pipe):
 
     def verify(self, x):
         """ Verify consistency of dataframes that pass through this stream """
-        if type(x) != type(self.data):
+        if type(x) != type(self.data):  # noqa: E721
             raise TypeError("Input expected to be of type %s, got %s." %
                             (type(self.data).__name__, type(x).__name__))
         elif isinstance(x, np.ndarray):

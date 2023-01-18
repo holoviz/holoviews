@@ -3,7 +3,7 @@ from unittest import skipIf
 import pandas as pd
 
 try:
-    import scipy # noqa
+    import scipy
 except ImportError:
     scipy = None
 scipy_skip = skipIf(scipy is None, "SciPy is not available.")

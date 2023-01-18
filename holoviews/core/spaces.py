@@ -1528,7 +1528,7 @@ class DynamicMap(HoloMap):
         group_type = group_type if group_type else type(self)
 
         outer_kdims = [self.get_dimension(d) for d in dimensions]
-        inner_kdims = [d for d in self.kdims if not d in outer_kdims]
+        inner_kdims = [d for d in self.kdims if d not in outer_kdims]
 
         outer_dynamic = issubclass(container_type, DynamicMap)
         inner_dynamic = issubclass(group_type, DynamicMap)

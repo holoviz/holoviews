@@ -1,5 +1,5 @@
 import sys
-import numpy
+import numpy as np
 from collections.abc import Iterable
 from packaging.version import Version
 
@@ -148,10 +148,10 @@ class IbisInterface(Interface):
 
     @classmethod
     def histogram(cls, expr, bins, density=True, weights=None):
-        bins = numpy.asarray(bins)
+        bins = np.asarray(bins)
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
-        hist = numpy.zeros(len(bins)-1)
+        hist = np.zeros(len(bins)-1)
         if ibis4:
             hist_bins = binned.value_counts().order_by('bucket').execute()
         else:
@@ -159,7 +159,7 @@ class IbisInterface(Interface):
             hist_bins = binned.value_counts().sort_by('bucket').execute()
 
         for b, v in zip(hist_bins['bucket'], hist_bins['count']):
-            if numpy.isnan(b):
+            if np.isnan(b):
                 continue
             hist[int(b)] = v
         if weights is not None:
@@ -226,7 +226,7 @@ class IbisInterface(Interface):
 
         if isinstance(columns, slice):
             columns = [x.name for x in dataset.dimensions()[columns]]
-        elif numpy.isscalar(columns):
+        elif np.isscalar(columns):
             columns = [dataset.get_dimension(columns).name]
         else:
             columns = [dataset.get_dimension(d).name for d in columns]
@@ -327,7 +327,7 @@ class IbisInterface(Interface):
         import ibis
         data = dataset.data
         if dimension.name not in data.columns:
-            if not isinstance(values, ibis.Expr) and not numpy.isscalar(values):
+            if not isinstance(values, ibis.Expr) and not np.isscalar(values):
                 raise ValueError("Cannot assign %s type as a Ibis table column, "
                                  "expecting either ibis.Expr or scalar."
                                  % type(values).__name__)
@@ -352,10 +352,10 @@ class IbisInterface(Interface):
         indexed = cls.indexed(dataset, selection)
         data = dataset.data
 
-        if isinstance(selection_mask, numpy.ndarray):
+        if isinstance(selection_mask, np.ndarray):
             data = cls._index_ibis_table(data)
-            if selection_mask.dtype == numpy.dtype("bool"):
-                selection_mask = numpy.where(selection_mask)[0]
+            if selection_mask.dtype == np.dtype("bool"):
+                selection_mask = np.where(selection_mask)[0]
             data = data.filter(
                 data["hv_row_id__"].isin(list(map(int, selection_mask)))
             )
@@ -445,18 +445,18 @@ class IbisInterface(Interface):
         new = data[columns + values]
 
         function = {
-            numpy.min: ibis.expr.operations.Min,
-            numpy.nanmin: ibis.expr.operations.Min,
-            numpy.max: ibis.expr.operations.Max,
-            numpy.nanmax: ibis.expr.operations.Max,
-            numpy.mean: ibis.expr.operations.Mean,
-            numpy.nanmean: ibis.expr.operations.Mean,
-            numpy.std: ibis.expr.operations.StandardDev,
-            numpy.nanstd: ibis.expr.operations.StandardDev,
-            numpy.sum: ibis.expr.operations.Sum,
-            numpy.nansum: ibis.expr.operations.Sum,
-            numpy.var: ibis.expr.operations.Variance,
-            numpy.nanvar: ibis.expr.operations.Variance,
+            np.min: ibis.expr.operations.Min,
+            np.nanmin: ibis.expr.operations.Min,
+            np.max: ibis.expr.operations.Max,
+            np.nanmax: ibis.expr.operations.Max,
+            np.mean: ibis.expr.operations.Mean,
+            np.nanmean: ibis.expr.operations.Mean,
+            np.std: ibis.expr.operations.StandardDev,
+            np.nanstd: ibis.expr.operations.StandardDev,
+            np.sum: ibis.expr.operations.Sum,
+            np.nansum: ibis.expr.operations.Sum,
+            np.var: ibis.expr.operations.Variance,
+            np.nanvar: ibis.expr.operations.Variance,
             len: ibis.expr.operations.Count,
         }.get(function, function)
 
@@ -467,7 +467,7 @@ class IbisInterface(Interface):
                 # groupby will be removed in Ibis 5.0
                 selection = new.groupby(columns)
 
-            if function is numpy.count_nonzero:
+            if function is np.count_nonzero:
                 aggregation = selection.aggregate(
                     **{
                         x: ibis.expr.operations.Count(new[x], where=new[x] != 0).to_expr()
@@ -493,7 +493,7 @@ class IbisInterface(Interface):
 
     @classmethod
     @cached
-    def mask(cls, dataset, mask, mask_value=numpy.nan):
+    def mask(cls, dataset, mask, mask_value=np.nan):
         raise NotImplementedError('Mask is not implemented for IbisInterface.')
 
     @classmethod

@@ -1247,7 +1247,7 @@ class GenericElementPlot(DimensionedPlot):
         frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, '_force', False)
 
-        if not key in self.keys and len(key) == self.hmap.ndims and self.dynamic:
+        if key not in self.keys and len(key) == self.hmap.ndims and self.dynamic:
             self.keys.append(key)
         self.current_frame = frame
         self.current_key = key

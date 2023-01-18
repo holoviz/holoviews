@@ -15,10 +15,10 @@ repos:
       - id: end-of-file-fixer
         exclude: \.min\.js$
       - id: trailing-whitespace
-  - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.225'
     hooks:
-      - id: flake8 # See 'setup.cfg' for args
+      - id: ruff
         args: [holoviews]
         files: holoviews/
   - repo: https://github.com/hoxbro/clean_notebook

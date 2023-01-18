@@ -64,10 +64,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: doit test_flakes
-        run: |
-          conda activate test-environment
-          doit test_flakes
       - name: doit test_unit
         run: |
           conda activate test-environment
