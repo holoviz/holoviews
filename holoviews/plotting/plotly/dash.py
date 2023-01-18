@@ -24,8 +24,7 @@ try:
     import dash_core_components as dcc
     import dash_html_components as html
 except ImportError:
-    import dash.dcc as dcc
-    import dash.html as html
+    from dash import dcc, html
 from dash import callback_context
 from dash.dependencies import Output, Input, State
 

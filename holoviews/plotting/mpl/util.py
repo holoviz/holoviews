@@ -62,10 +62,11 @@ validators = {
     'fonttype': validate_fonttype,
     'hatch': validate_hatch,
     'joinstyle': validate_joinstyle,
-    'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
-                         or isinstance(x, Path) or
-                         (isinstance(x, str) and x.startswith('$')
-                          and x.endswith('$'))),
+    'marker': lambda x: (
+        x in Line2D.markers
+        or isinstance(x, (MarkerStyle, Path))
+        or (isinstance(x, str) and x.startswith('$') and x.endswith('$'))
+    ),
     's': lambda x: is_number(x) and (x >= 0)
 }
 

@@ -58,7 +58,7 @@ class OutputMagic(Magics):
                 current = keyword
             else:
                 current += ' '+ keyword
-        else:
+        else:  # noqa: PLW0120
             print(('%output' if count==0 else '      ')  + current)
 
     @classmethod

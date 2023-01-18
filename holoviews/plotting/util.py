@@ -560,7 +560,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if Version(mpl.__version__) < Version("3.5"):
             # This will stop working and can be removed
             # when we do not support python 3.7
-            import matplotlib.cm as cm
+            from matplotlib import cm
             try:
                 cmap = cm.get_cmap(cmap)
             except Exception:
@@ -699,7 +699,7 @@ def _list_cmaps(provider=None, records=False):
 
     if 'matplotlib' in provider:
         try:
-            import matplotlib.cm as cm
+            from matplotlib import cm
             if hasattr(cm, '_cmap_registry'):
                 mpl_cmaps = list(cm._cmap_registry)
             else:

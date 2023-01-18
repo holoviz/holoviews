@@ -1,6 +1,6 @@
 import numpy as np
 import param
-import matplotlib.cm as cm
+from matplotlib import cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from packaging.version import Version
 
