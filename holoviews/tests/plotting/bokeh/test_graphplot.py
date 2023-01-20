@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.element import Graph, Nodes, TriMesh, Chord, VLine, circular_layout
 from holoviews.util.transform import dim
-from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.plotting.bokeh.util import property_to_dict, bokeh3
 
 from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, NodesOnly, Patches)
 from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
@@ -36,7 +36,11 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(node_source.data['index'], self.source)
         self.assertEqual(edge_source.data['start'], self.source)
         self.assertEqual(edge_source.data['end'], self.target)
-        layout = {int(z): (x, y) for x, y, z in self.graph.nodes.array()}
+        if bokeh3:
+            layout = {z: (x, y) for x, y, z in self.graph.nodes.array()}
+        else:
+            layout = {str(z): (x, y) for x, y, z in self.graph.nodes.array()}
+
         self.assertEqual(layout_source.graph_layout, layout)
 
     def test_plot_graph_annotation_overlay(self):
