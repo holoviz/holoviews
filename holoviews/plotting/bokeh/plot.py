@@ -8,7 +8,7 @@ from bokeh.layouts import gridplot
 from bokeh.models import (
     ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
 )
-from bokeh.models.layouts import TabPanel, Tabs
+from bokeh.models.layouts import Tabs
 
 from ...selection import NoOpSelectionDisplay
 from ...core import (
@@ -30,9 +30,14 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
-    filter_toolboxes, make_axis, update_shared_sources, empty_plot,
+    bokeh3, filter_toolboxes, make_axis, update_shared_sources, empty_plot,
     decode_bytes, theme_attr_json, cds_column_replace, get_default
 )
+
+if bokeh3:
+    from bokeh.models.layouts import TabPanel
+else:
+    from bokeh.models.layouts import Panel as TabPanel
 
 
 class BokehPlot(DimensionedPlot, CallbackPlot):
@@ -266,8 +271,10 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
         if 'title' in self.handles:
             title_div = self.handles['title']
-        else:
+        elif bokeh3:
             title_div = Div(width=width, styles={"white-space": "nowrap"})  # so it won't wrap long titles easily
+        else:
+            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
         title_div.text = title_tags
 
         return title_div
@@ -303,6 +310,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
+                    if hasattr(renderer, 'view') and not bokeh3:
+                        renderer.view.update(source=new_source)
                     plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
@@ -573,9 +582,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 passed_plots.append(None)
 
+        toolbar_location = None if bokeh3 else self.toolbar
         plot = gridplot(plots[::-1], merge_tools=self.merge_tools,
                         sizing_mode=self.sizing_mode,
-                        toolbar_location=None)
+                        toolbar_location=toolbar_location)
         plot = self._make_axes(plot)
 
         title = self._get_title_div(self.keys[-1])
@@ -627,7 +637,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            plot = gridplot([r1, r2], toolbar_location=None)
+            if bokeh3:
+                plot = gridplot([r1, r2], toolbar_location=None)
+            else:
+                plot = gridplot([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
