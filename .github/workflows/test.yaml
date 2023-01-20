@@ -36,6 +36,7 @@ jobs:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ['3.9']
+        bokeh-version: [2, 3]
         # python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
@@ -52,7 +53,7 @@ jobs:
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
-          name: unit_test_suite
+          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults
@@ -66,6 +67,7 @@ jobs:
           conda activate test-environment
           bokeh sampledata
       - name: Install bokeh 3.0 compatibility packages
+        if: matrix.bokeh-version == '3'
         run: |
           conda activate test-environment
           conda uninstall panel bokeh --force -y --offline || echo "packages already removed"
