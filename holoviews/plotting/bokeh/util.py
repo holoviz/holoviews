@@ -1023,7 +1023,7 @@ def property_to_dict(x):
         from bokeh.core.property.vectorization import Field, Unspecified, Value
 
         if isinstance(x, (Field, Value)):
-            x = {k: v for k,v in x.__dict__.items() if v != Unspecified}
+            x = {k: v for k, v in x.__dict__.items() if v != Unspecified}
     except ImportError:
         pass
 

@@ -85,7 +85,7 @@ jobs:
         run: |
           conda activate test-environment
           mkdir -p ~/.jupyter/
-          echo "c.ExecutePreprocessor.startup_timeout=120" >> ~/.jupyter/jupyter_nbconvert_config.py
+          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
           doit test_examples
       - name: test examples - python 3.11
         # Should be removed when numba support python 3.11
@@ -93,7 +93,7 @@ jobs:
         run: |
           conda activate test-environment
           mkdir -p ~/.jupyter/
-          echo "c.ExecutePreprocessor.startup_timeout=120" >> ~/.jupyter/jupyter_nbconvert_config.py
+          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
           pytest -n auto --dist loadscope --nbval-lax examples/reference/elements
       - name: codecov
         run: |
