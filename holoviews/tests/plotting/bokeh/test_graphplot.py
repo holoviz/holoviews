@@ -64,7 +64,10 @@ class TestBokehGraphPlot(TestBokehPlot):
         edges = graph.edgepaths.split()
         self.assertEqual(edge_source.data['xs'], [path.dimension_values(0) for path in edges])
         self.assertEqual(edge_source.data['ys'], [path.dimension_values(1) for path in edges])
-        layout = {int(z): (x, y) for x, y, z in self.graph.nodes.array()}
+        if bokeh3:
+            layout = {z: (x, y) for x, y, z in self.graph.nodes.array()}
+        else:
+            layout = {str(z): (x, y) for x, y, z in self.graph.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
 
     def test_graph_inspection_policy_nodes(self):
@@ -319,7 +322,10 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         self.assertEqual(node_source.data['index'], np.arange(4))
         self.assertEqual(edge_source.data['start'], np.arange(2))
         self.assertEqual(edge_source.data['end'], np.arange(1, 3))
-        layout = {int(z): (x, y) for x, y, z in self.trimesh.nodes.array()}
+        if bokeh3:
+            layout = {z: (x, y) for x, y, z in self.trimesh.nodes.array()}
+        else:
+            layout = {str(z): (x, y) for x, y, z in self.trimesh.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
 
     def test_plot_simple_trimesh_filled(self):
@@ -331,7 +337,10 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         self.assertEqual(node_source.data['index'], np.arange(4))
         self.assertEqual(edge_source.data['start'], np.arange(2))
         self.assertEqual(edge_source.data['end'], np.arange(1, 3))
-        layout = {int(z): (x, y) for x, y, z in self.trimesh.nodes.array()}
+        if bokeh3:
+            layout = {z: (x, y) for x, y, z in self.trimesh.nodes.array()}
+        else:
+            layout = {str(z): (x, y) for x, y, z in self.trimesh.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
 
     def test_trimesh_edges_categorical_colormapped(self):
