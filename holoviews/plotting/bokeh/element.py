@@ -15,9 +15,9 @@ from bokeh.models import (
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    CustomJSTickFormatter, TickFormatter, MercatorTickFormatter
+    TickFormatter, MercatorTickFormatter
 )
-from bokeh.models.layouts import TabPanel, Tabs
+from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
@@ -52,6 +52,13 @@ from .util import (
     compute_layout_properties, wrap_formatter, match_ax_type,
     prop_is_none, remove_legend, property_to_dict
 )
+
+if bokeh3:
+    from bokeh.models.formatters import CustomJSTickFormatter
+    from bokeh.models.layouts import TabPanel
+else:
+    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+    from bokeh.models.layouts import Panel as TabPanel
 
 try:
     TOOLS_MAP = Tool._known_aliases
@@ -498,13 +505,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties.update(**self._plot_properties(key, element))
 
+        if bokeh3:
+            figure = bokeh.plotting.figure
+        else:
+            figure = bokeh.plotting.Figure
+
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
-            return bokeh.plotting.figure(x_axis_type=x_axis_type,
-                                         y_axis_type=y_axis_type, title=title,
-                                         **properties)
+            return figure(x_axis_type=x_axis_type,
+                          y_axis_type=y_axis_type, title=title,
+                          **properties)
 
 
     def _plot_properties(self, key, element):
@@ -863,7 +875,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     xpad = (desired_xspan-xspan)/2.
                     l, r = l-xpad, r+xpad
                     xupdate = True
-            elif not (fixed_height and fixed_width):
+            elif not (fixed_height and fixed_width) and bokeh3:
                 # Set initial aspect
                 aspect = self.get_aspect(xspan, yspan)
                 width = plot.frame_width or plot.width or 300
@@ -880,6 +892,29 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot.frame_width = width
                     plot.frame_height = int(width*aspect)
                     plot.width, plot.height = None, None
+                else:
+                    plot.aspect_ratio = 1./aspect
+            elif not (fixed_height and fixed_width):  # Bokeh 2 support
+                # Should mirror the previous if-statement
+                # with the exception of plot.width -> plot.plot_width
+                # and plot.height -> plot.plot_height.
+
+                # Set initial aspect
+                aspect = self.get_aspect(xspan, yspan)
+                width = plot.frame_width or plot.plot_width or 300
+                height = plot.frame_height or plot.plot_height or 300
+
+                if not (fixed_width or fixed_height) and not self.responsive:
+                    fixed_height = True
+
+                if fixed_height:
+                    plot.frame_height = height
+                    plot.frame_width = int(height/aspect)
+                    plot.plot_width, plot.plot_height = None, None
+                elif fixed_width:
+                    plot.frame_width = width
+                    plot.frame_height = int(width*aspect)
+                    plot.plot_width, plot.plot_height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
 
@@ -2191,7 +2226,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if isinstance(property_to_dict(i.label), dict) else i.label: i
             for i in legend_items
         }
-
         for item in legend.items:
             item_label = property_to_dict(item.label)
             label = tuple(sorted(item_label.items())) if isinstance(item_label, dict) else item_label
