@@ -55,5 +55,5 @@ def public(obj):
     is_renderer = any([issubclass(obj, bc) for bc in [Renderer]])
     return (is_plot_or_cycle or is_renderer)
 
-_public = list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = list({_k for _k, _v in locals().items() if public(_v)})
 __all__ = _public

@@ -15,11 +15,9 @@ import panel as pn
 
 from bokeh.io import curdoc
 from holoviews.plotting.bokeh import BokehRenderer
-from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
 from bokeh.themes.theme import Theme
 
 from panel.widgets import DiscreteSlider, Player, FloatSlider
-
 
 class BokehRendererTest(ComparisonTestCase):
 
@@ -67,10 +65,7 @@ class BokehRendererTest(ComparisonTestCase):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
-        if bokeh_version < LooseVersion('2.0.2'):
-            self.assertEqual((w, h), (444, 436))
-        else:
-            self.assertEqual((w, h), (446, 437))
+        self.assertEqual((w, h), (446, 437))
 
     def test_get_size_table(self):
         table = Table(range(10), kdims=['x'])
@@ -180,7 +175,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual(cds.data['y'][2], 3.1)
 
     def test_render_dynamicmap_with_stream(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
@@ -192,7 +187,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual(cds.data['y'][2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)

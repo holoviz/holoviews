@@ -4,6 +4,154 @@ Releases
 Version 1.15
 ~~~~~~~~~~~~
 
+Version 1.15.4
+**************
+
+**January 16, 2023**
+
+This release contains a small number of enhancements and important bug
+fixes. Many thanks to our new contributors @mmorys, @jj-github-jj, and
+@sandhujasmine, but also our returning contributors @droumis,
+@jlstevens, @MarcSkovMadsen, @maximlt, @philippjfr, @stanwest, and
+@Hoxbro.
+
+Enhancements:
+
+-  Make lasso select mask values using a Dask-compatible method
+   (`#5568 <https://github.com/holoviz/holoviews/pull/5568>`__)
+-  Make plotly legend group unique
+   (`#5570 <https://github.com/holoviz/holoviews/pull/5570>`__)
+-  Set pan and wheel_zoom as the default Bokeh active tools
+   (`#5480 <https://github.com/holoviz/holoviews/pull/5480>`__)
+-  Enable rendering colorbars on bokeh ``GraphPlot``\ s
+   (`#5585 <https://github.com/holoviz/holoviews/pull/5585>`__)
+-  Add Plotly ``Scatter3d`` documentation and fix colorbar title
+   (`#5418 <https://github.com/holoviz/holoviews/pull/5418>`__)
+
+Bug fixes:
+
+-  Only trigger range-update once in callbacks
+   (`#5558 <https://github.com/holoviz/holoviews/pull/5558>`__)
+-  Ensure dynamically created subplots can be updated
+   (`#5555 <https://github.com/holoviz/holoviews/pull/5555>`__)
+-  Fix start of stack-level in deprecations
+   (`#5569 <https://github.com/holoviz/holoviews/pull/5569>`__)
+-  When sorting colormap records, replace None with an empty string
+   (`#5539 <https://github.com/holoviz/holoviews/pull/5539>`__)
+-  Fix annotator in Geoviews by adding deserialization of
+   non-deserialized base64 data
+   (`#5587 <https://github.com/holoviz/holoviews/pull/5587>`__)
+-  Fix ``hv.Empty`` not working in ``AdjointLayout`` plot
+   (`#5584 <https://github.com/holoviz/holoviews/pull/5584>`__)
+-  Check for categorical data to histogram
+   (`#5540 <https://github.com/holoviz/holoviews/pull/5540>`__)
+-  Fix ``clim_percentile``
+   (`#5495 <https://github.com/holoviz/holoviews/pull/5495>`__)
+
+Compatibility:
+
+-  Compatibility with Shapely 2.0
+   (`#5561 <https://github.com/holoviz/holoviews/pull/5561>`__)
+-  Compatibility with Numpy 1.24
+   (`#5581 <https://github.com/holoviz/holoviews/pull/5581>`__)
+-  Compatibility with Ibis 4.0
+   (`#5588 <https://github.com/holoviz/holoviews/pull/5588>`__)
+
+Documentation:
+
+-  Installation instructions update
+   (`#5562 <https://github.com/holoviz/holoviews/pull/5562>`__)
+-  Use OSM for reference tile source in notebook documentation
+   (`#5536 <https://github.com/holoviz/holoviews/pull/5536>`__)
+-  Enhance Tiles example notebook
+   (`#5563 <https://github.com/holoviz/holoviews/pull/5563>`__)
+
+Maintenance:
+
+-  Various fixes and general maintenance of the CI
+   (`#5384 <https://github.com/holoviz/holoviews/pull/5384>`__,
+   `#5573 <https://github.com/holoviz/holoviews/pull/5573>`__,
+   `#5576 <https://github.com/holoviz/holoviews/pull/5576>`__,
+   `#5582 <https://github.com/holoviz/holoviews/pull/5582>`__)
+-  Updated codebase to modern Python conventions
+   (`#5509 <https://github.com/holoviz/holoviews/pull/5509>`__,
+   `#5577 <https://github.com/holoviz/holoviews/pull/5577>`__)
+-  Renamed ``master`` branch to ``main``
+   (`#5579 <https://github.com/holoviz/holoviews/pull/5579>`__)
+-  Update binder link and dependency pinning
+   (`#5583 <https://github.com/holoviz/holoviews/pull/5583>`__)
+-  Update copyright to only contain start year
+   (`#5580 <https://github.com/holoviz/holoviews/pull/5580>`__)
+
+Version 1.15.3
+**************
+
+**December 6, 2022**
+
+This release contains a small number of important bug fixes and
+adds support for Python 3.11. Many thanks to our maintainers
+@Hoxbro, @maximlt and @jlstevens.
+
+Bug Fixes:
+
+- Fix for empty opts warning and incorrect clearing semantics
+  (`#5496 <https://github.com/holoviz/holoviews/pull/5496>`__)
+- Fix potential race condition in the Options system
+  (`#5535 <https://github.com/holoviz/holoviews/pull/5535>`__)
+
+Enhancements:
+
+- Add support to Python 3.11
+  (`#5513 <https://github.com/holoviz/holoviews/pull/5513>`__)
+- Cleanup the top `__init__` module
+  (`#5516 <https://github.com/holoviz/holoviews/pull/5516>`__)
+
+Documentation:
+
+- Fixes to release notes and CHANGELOG
+  (`#5506 <https://github.com/holoviz/holoviews/pull/5506>`__)
+
+
+Version 1.15.2
+**************
+
+**November 3, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to @stanwest for his contribution and thank you to our maintainers
+@Hoxbro, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+-  Fix support for jupyterlite
+   (`#5502 <https://github.com/holoviz/holoviews/pull/5502>`__)
+-  Improve error message for ``hv.opts`` without a plotting backend
+   (`#5494 <https://github.com/holoviz/holoviews/pull/5494>`__)
+-  Fix warnings exposed in CI logs
+   (`#5470 <https://github.com/holoviz/holoviews/pull/5470>`__)
+-  Thanks to @maximlt for various CI fixes
+   (`#5484 <https://github.com/holoviz/holoviews/pull/5484>`__,
+   `#5498 <https://github.com/holoviz/holoviews/pull/5498>`__,
+   `#5485 <https://github.com/holoviz/holoviews/pull/5485>`__)
+
+Enhancement:
+
+-  Allow Dimension objects to accept a dictionary specification
+   (`#5333 <https://github.com/holoviz/holoviews/pull/5333>`__)
+-  Refactor to remove iterrows for loop from ``connect_edges_pd``
+   (`#5473 <https://github.com/holoviz/holoviews/pull/5473>`__)
+
+Deprecations:
+
+Promoted ``DeprecationWarning`` to ``FutureWarning`` when using pandas
+``DataFrame``\ s with non-string column names. This will not change any
+functionality but will start warning users about functionality that will
+be deprecated in future.
+
+-  Upgrade warning for invalid dataframe column names
+   (`#5472 <https://github.com/holoviz/holoviews/pull/5472>`__)
+
+
 Version 1.15.1
 **************
 
@@ -123,7 +271,7 @@ Compatibility:
 Major features:
 
 After a long period of hotfix releases for the 1.14.9 series, many new
-features on the master branch have been released. Features relating to
+features on the main branch have been released. Features relating to
 datashader support, linked selection and improvements to the Bokeh
 plotting backend are called out in their own sections.
 

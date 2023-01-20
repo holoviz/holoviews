@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests of the helper functions in utils
 """
+from collections import OrderedDict
+
 from holoviews import notebook_extension
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import Store
 from holoviews.util import output, opts, OutputSettings, Options
-from holoviews.core import OrderedDict
 
 from holoviews.core.options import OptionTree
 from pyviz_comms import CommManager

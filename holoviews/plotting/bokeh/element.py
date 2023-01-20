@@ -11,7 +11,8 @@ from bokeh.core.properties import value
 from bokeh.core.property.vectorization import Field, Value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
-    ColorBar, ColorMapper, Legend, Renderer, Title, tools
+    BinnedTicker, ColorBar, ColorMapper, EqHistColorMapper,
+    Legend, Renderer, Title, tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
@@ -26,6 +27,8 @@ from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
 from bokeh.models.tools import Tool
+
+from packaging.version import Version
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
@@ -44,38 +47,24 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    LooseVersion, TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
+    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
     prop_is_none, remove_legend
 )
 
-try:
-    from bokeh.models import EqHistColorMapper
-except ImportError:
-    EqHistColorMapper = None
+
 
 try:
-    from bokeh.models import BinnedTicker
-except ImportError:
-    BinnedTicker = None
-
-if bokeh_version >= LooseVersion('2.0.1'):
-    try:
-        TOOLS_MAP = Tool._known_aliases
-    except Exception:
-        TOOLS_MAP = TOOL_TYPES
-elif bokeh_version >= LooseVersion('2.0.0'):
-    from bokeh.plotting._tools import TOOLS_MAP
-else:
-    from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
-
+    TOOLS_MAP = Tool._known_aliases
+except Exception:
+    TOOLS_MAP = TOOL_TYPES
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    active_tools = param.List(default=[], doc="""
+    active_tools = param.List(default=['pan', 'wheel_zoom'], doc="""
         Allows specifying which tools are active by default. Note
         that only one tool per gesture type can be active, e.g.
         both 'pan' and 'box_zoom' are drag tools, so if both are
@@ -564,6 +553,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
+        if plot is None:
+            return
         for tool in self.active_tools:
             if isinstance(tool, str):
                 tool_type = TOOL_TYPES[tool]
@@ -596,7 +587,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
         if title_font != '12pt':
-            title_font = title_font if bokeh_version > LooseVersion('2.2.3') else value(title_font)
             opts['text_font_size'] = title_font
         return opts
 
@@ -632,18 +622,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare', 'bare'])):
-            zero_pt = '0pt' if bokeh_version > LooseVersion('2.2.3') else value('0pt')
+            zero_pt = '0pt'
             axis_props['axis_label_text_font_size'] = zero_pt
             axis_props['major_label_text_font_size'] = zero_pt
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
         else:
-            labelsize = self._fontsize('%slabel' % axis).get('fontsize')
+            labelsize = self._fontsize(f'{axis}label').get('fontsize')
             if labelsize:
                 axis_props['axis_label_text_font_size'] = labelsize
-            ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
+            ticksize = self._fontsize(f'{axis}ticks', common=False).get('fontsize')
             if ticksize:
-                ticksize = ticksize if bokeh_version > LooseVersion('2.2.3') else value(ticksize)
                 axis_props['major_label_text_font_size'] = ticksize
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
@@ -716,7 +705,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # major ticks are actually minor ticks in a categorical
             # so if user inputs minor ticks sizes, then use that;
             # else keep major (group) == minor (subgroup)
-            msize = self._fontsize('minor_{0}ticks'.format(axis),
+            msize = self._fontsize(f'minor_{axis}ticks',
                 common=False).get('fontsize')
             if msize is not None:
                 axis_props['major_label_text_font_size'] = msize
@@ -967,7 +956,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_axes:
             cols = cols[::-1]
             dims = dims[:2][::-1]
-        ranges = [self.handles['%s_range' % ax] for ax in 'xy']
+        ranges = [self.handles[f'{ax}_range'] for ax in 'xy']
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
@@ -1083,7 +1072,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = self._element_transform(v, element, ranges)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
-                ((not 'color' in k or validate('color', val)) or k in self._nonvectorized_styles)):
+                (('color' not in k or validate('color', val)) or k in self._nonvectorized_styles)):
                 val = val[0]
 
             if not util.isscalar(val):
@@ -1206,8 +1195,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 legend = element.label
             if legend and self.overlaid:
-                legend_prop = 'legend_label' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
-                properties[legend_prop] = legend
+                properties['legend_label'] = legend
         return properties
 
 
@@ -1234,7 +1222,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        legend_props = ('legend_field', 'legend_label') if bokeh_version >= LooseVersion('1.3.5') else ('legend',)
+        legend_props = ('legend_field', 'legend_label')
         for lp in legend_props:
             legend = merged.pop(lp, None)
             if legend is not None:
@@ -1281,17 +1269,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                event = ModelChangedEvent(
-                    document=self.document,
-                    model=source,
-                    attr='data',
-                    new=empty_data,
-                    setter='empty'
-                )
-                if bokeh_version >= LooseVersion('2.4.0'):
-                    self.document.callbacks._held_events.append(event)
+                if bokeh_version >= Version('3.0'):
+                    event = ModelChangedEvent(
+                        document=self.document,
+                        model=source,
+                        attr='data',
+                        new=empty_data,
+                        setter='empty'
+                    )
                 else:
-                    self.document._held_events.append(event)
+                    event = ModelChangedEvent(
+                        self.document, source, 'data', source.data, empty_data, empty_data, setter='empty'
+                    )
+                self.document.callbacks._held_events.append(event)
 
         if legend is not None:
             for leg in self.state.legend:
@@ -1626,7 +1616,7 @@ class CompositeElementPlot(ElementPlot):
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
-                self._draw_colorbar(plot, v, k[:-12])
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
 
 
     def _process_properties(self, key, properties, mapping):
@@ -1795,7 +1785,7 @@ class ColorbarPlot(ElementPlot):
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
-        if EqHistColorMapper and isinstance(color_mapper, EqHistColorMapper) and BinnedTicker:
+        if isinstance(color_mapper, EqHistColorMapper):
             ticker = BinnedTicker(mapper=color_mapper)
         elif isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
             ticker = LogTicker()
@@ -1975,8 +1965,7 @@ class ColorbarPlot(ElementPlot):
 
         data[field] = cdata
         if factors is not None and self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
-            mapping[legend_prop] = field
+            mapping['legend_field'] = field
         mapping[name] = {'field': field, 'transform': mapper}
 
         return data, mapping
@@ -2002,12 +1991,8 @@ class ColorbarPlot(ElementPlot):
                         "the `clim` option."
                     )
             elif self.cnorm == 'eq_hist':
-                if EqHistColorMapper is None:
-                    raise ImportError("Could not import bokeh.models.EqHistColorMapper. "
-                                      "Note that the option cnorm='eq_hist' requires "
-                                      "bokeh 2.2.3 or higher.")
                 colormapper = EqHistColorMapper
-                if bokeh_version > LooseVersion('2.4.2'):
+                if bokeh_version > Version('2.4.2'):
                     opts['rescale_discrete_levels'] = self.rescale_discrete_levels
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
@@ -2040,7 +2025,7 @@ class ColorbarPlot(ElementPlot):
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
-                self._draw_colorbar(plot, v, k[:-12])
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
         return ret
 
 
@@ -2110,7 +2095,7 @@ class LegendPlot(ElementPlot):
 
 
 
-class AnnotationPlot(object):
+class AnnotationPlot:
     """
     Mix-in plotting subclass for AnnotationPlots which do not have a legend.
     """
@@ -2161,7 +2146,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                            if isinstance(p, LegendPlot) and
                            not isinstance(p, OverlayPlot))
         non_annotation = [p for p in subplots if not
-                          (isinstance(p, OverlayPlot) or isinstance(p, AnnotationPlot))]
+                          isinstance(p, (AnnotationPlot, OverlayPlot))]
         if (not self.show_legend or len(plot.legend) == 0 or
             (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
             return super()._process_legend()
@@ -2470,7 +2455,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
                 if (triggering and all(s not in triggering for s in subplot.streams) and
-                    not subplot in self.dynamic_subplots):
+                    subplot not in self.dynamic_subplots):
                     continue
             subplot.update_frame(key, ranges, element=el)
 

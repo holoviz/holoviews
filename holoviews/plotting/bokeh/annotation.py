@@ -1,9 +1,5 @@
 from collections import defaultdict
-
-try:
-    from html import escape
-except:
-    from cgi import escape
+from html import escape
 
 import param
 import numpy as np
@@ -284,7 +280,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
-    style_opts = (['arrow_%s' % p for p in line_properties+fill_properties+['size']] +
+    style_opts = ([f'arrow_{p}' for p in line_properties+fill_properties+['size']] +
                   text_properties)
 
     _style_groups = {'arrow': 'arrow', 'text': 'text'}

@@ -14,7 +14,7 @@ from param import get_logger
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
 
 

@@ -1,6 +1,7 @@
 import datetime as dt
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core import NdOverlay, HoloMap
 from holoviews.core.options import Cycle
@@ -422,7 +423,6 @@ class TestContoursPlot(TestBokehPlot):
         self.assertEqual(cmapper.high, 7)
 
     def test_contours_empty_path(self):
-        import pandas as pd
         contours = Contours([
             pd.DataFrame([], columns=['x', 'y', 'color', 'line_width']),
             pd.DataFrame({'x': np.random.rand(10), 'y': np.random.rand(10),

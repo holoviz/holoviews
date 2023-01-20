@@ -1,14 +1,10 @@
 import sys
 import warnings
 
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 from itertools import product
 
 import numpy as np
+import pandas as pd
 
 from .. import util
 from ..dimension import dimension_name
@@ -53,7 +49,6 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import cudf
-        import pandas as pd
 
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
@@ -199,10 +194,10 @@ class cuDFInterface(PandasInterface):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim, keep_index=True)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
 
             new_masks = []
@@ -274,22 +269,22 @@ class cuDFInterface(PandasInterface):
             agg = agg_map.get(agg, agg)
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             df = getattr(grouped, agg)().reset_index()
         else:
             agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
             agg = agg_map.get(agg, agg)
             if not hasattr(reindexed, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
             try:
-                data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_numpy())))
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy())}
             except Exception:
                 # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
-                data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
-            df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array())}
+            df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
         for vd in vdims:

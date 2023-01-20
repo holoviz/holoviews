@@ -8,7 +8,7 @@ from ..utils import ParamLogStream
 
 try:
     from bokeh.models import LinearColorMapper, CategoricalColorMapper
-except:
+except ImportError:
     pass
 
 

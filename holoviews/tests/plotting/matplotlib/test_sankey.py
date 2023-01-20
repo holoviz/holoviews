@@ -33,7 +33,7 @@ class TestSankeyPlot(TestMPLPlot):
             'y1': [250.909091, 480.0, 97.575758, 340.606061, 500.0]
         }
         for i, rect in enumerate(rects.get_paths()):
-            x0, x1, y0, y1 = [quad_data[c][i] for c in ('x0', 'x1', 'y0', 'y1')]
+            x0, x1, y0, y1 = (quad_data[c][i] for c in ('x0', 'x1', 'y0', 'y1'))
             arr = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]])
             self.assertEqual(rect.vertices, arr)
 

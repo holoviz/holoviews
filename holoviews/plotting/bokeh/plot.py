@@ -237,7 +237,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         fontsize in pt.
         """
         size = super()._fontsize(key, label, common)
-        return {k: v if isinstance(v, str) else '%spt' % v
+        return {k: v if isinstance(v, str) else f'{v}pt'
                 for k, v in size.items()}
 
     def _get_title_div(self, key, default_fontsize='15pt', width=450):
@@ -718,7 +718,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             if empty or view.main is None:
                 continue
             elif not view.traverse(lambda x: x, [Element]):
-                self.param.warning('%s is empty, skipping subplot.' % view.main)
+                self.param.warning(f'{view.main} is empty, skipping subplot.')
                 continue
             else:
                 layout_count += 1

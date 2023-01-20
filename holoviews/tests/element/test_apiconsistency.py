@@ -12,7 +12,7 @@ class TestParameterDeclarations(ComparisonTestCase):
         for element_name in all_elements:
             el = getattr(element, element_name)
             self.assertEqual(el.param['group'].constant, True,
-                             msg='Group parameter of element %s not constant' % element_name)
+                             msg=f'Group parameter of element {element_name} not constant')
 
     def test_element_label_parameter_declared_constant(self):
         """
@@ -21,4 +21,4 @@ class TestParameterDeclarations(ComparisonTestCase):
         for element_name in all_elements:
             el = getattr(element, element_name)
             self.assertEqual(el.param['label'].constant, True,
-                             msg='Label parameter of element %s not constant' % element_name)
+                             msg=f'Label parameter of element {element_name} not constant')

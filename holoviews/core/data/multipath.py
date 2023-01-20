@@ -409,7 +409,7 @@ class MultiInterface(Interface):
                 gt = geom_type
 
             if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
-                not geom_type == 'Points'):
+                not geom_type == 'Points' and len(dvals)):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             if scalar and not expanded:
@@ -473,7 +473,7 @@ class MultiInterface(Interface):
                 if gt is not None:
                     obj['geom_type'] = gt
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
 

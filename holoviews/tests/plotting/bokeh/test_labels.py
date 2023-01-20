@@ -38,7 +38,7 @@ class TestLabelsPlot(TestBokehPlot):
         self.assertEqual(glyph.text, 'Label')
 
     def test_labels_formatter(self):
-        vdim = Dimension('text', value_format=lambda x: '%.1f' % x)
+        vdim = Dimension('text', value_format=lambda x: f'{x:.1f}')
         labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)], vdims=vdim)
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']

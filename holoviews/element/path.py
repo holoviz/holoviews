@@ -92,8 +92,7 @@ class Path(SelectionPolyExpr, Geometry):
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
         if not all(isinstance(k, slice) for k in key):
-            raise KeyError("%s only support slice indexing" %
-                             self.__class__.__name__)
+            raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = key
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
@@ -173,7 +172,7 @@ class Path(SelectionPolyExpr, Geometry):
             elif datatype is None:
                 obj = self.clone([self.data])
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
 

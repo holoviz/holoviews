@@ -26,23 +26,20 @@ from bokeh.models.formatters import (
 from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
 from bokeh.themes.theme import Theme
-
-try:
-    from bokeh.themes import built_in_themes
-except:
-    built_in_themes = {}
+from bokeh.themes import built_in_themes
+from packaging.version import Version
 
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
-    LooseVersion, arraylike_types, callable_name, cftime_types,
+    arraylike_types, callable_name, cftime_types,
     cftime_to_timestamp, isnumeric, pd, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
-bokeh_version = LooseVersion(bokeh.__version__)  # noqa
-
+bokeh_version = Version(bokeh.__version__)
+bokeh3 = bokeh_version >= Version("3.0")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -577,13 +574,13 @@ def py2js_tickformatter(formatter, msg=''):
     try:
         jscode = py2js(formatter, 'formatter')
     except Exception as e:
-        error = 'Pyscript raised an error: {0}'.format(e)
+        error = f'Pyscript raised an error: {e}'
         error = error.replace('%', '%%')
         param.main.param.warning(msg+error)
         return
 
     args = inspect.getfullargspec(formatter).args
-    arg_define = 'var %s = tick;' % args[0] if args else ''
+    arg_define = f'var {args[0]} = tick;' if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
     match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
@@ -644,7 +641,7 @@ def filter_batched_data(data, mapping):
             if len(unique_array(values)) == 1:
                 mapping[k] = values[0]
                 del data[v]
-        except:
+        except Exception:
             pass
 
 def cds_column_replace(source, data):
@@ -665,21 +662,15 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    if bokeh_version >= LooseVersion('2.4'):
-        old_policy = document.callbacks.hold_value
-        document.callbacks._hold = policy
-    else:
-        old_policy = document._hold
-        document._hold = policy
+    old_policy = document.callbacks.hold_value
+    document.callbacks._hold = policy
     try:
         yield
     finally:
         if server and not old_policy:
             document.unhold()
-        elif bokeh_version >= LooseVersion('2.4'):
-            document.callbacks._hold = old_policy
         else:
-            document._hold = old_policy
+            document.callbacks._hold = old_policy
 
 
 def recursive_model_update(model, props):
@@ -726,7 +717,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             source.data.clear()
             if doc:
-                event_obj = doc.callbacks if bokeh_version >= LooseVersion('2.4') else doc
+                event_obj = doc.callbacks
                 event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)
@@ -750,7 +741,7 @@ def categorize_array(array, dim):
     return np.array([dim.pprint_value(x) for x in array])
 
 
-class periodic(object):
+class periodic:
     """
     Mocks the API of periodic Thread in hv.core.util, allowing a smooth
     API transition on bokeh server.
@@ -780,7 +771,7 @@ class periodic(object):
     def __call__(self, period, count, callback, timeout=None, block=False):
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
-        elif not type(count) is type(None):
+        elif type(count) is not type(None):
             raise ValueError('Count value must be a positive integer or None')
 
         self.callback = callback
@@ -811,9 +802,7 @@ class periodic(object):
         self._pcb = None
 
     def __repr__(self):
-        return 'periodic(%s, %s, %s)' % (self.period,
-                                         self.count,
-                                         callable_name(self.callback))
+        return f'periodic({self.period}, {self.count}, {callable_name(self.callback)})'
     def __str__(self):
         return repr(self)
 
@@ -842,10 +831,10 @@ def date_to_integer(date):
     Returns:
         Milliseconds since 1970-01-01 00:00:00
     """
-    if pd and isinstance(date, pd.Timestamp):
+    if isinstance(date, pd.Timestamp):
         try:
             date = date.to_datetime64()
-        except:
+        except Exception:
             date = date.to_datetime()
 
     if isinstance(date, np.datetime64):
@@ -969,8 +958,7 @@ def wrap_formatter(formatter, axis):
     if isinstance(formatter, TickFormatter):
         pass
     elif isinstance(formatter, FunctionType):
-        msg = ('%sformatter could not be '
-               'converted to tick formatter. ' % axis)
+        msg = f'{axis}formatter could not be converted to tick formatter. '
         jsfunc = py2js_tickformatter(formatter, msg)
         if jsfunc:
             formatter = CustomJSTickFormatter(code=jsfunc)

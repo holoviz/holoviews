@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from unittest import SkipTest
 
 import numpy as np
@@ -19,7 +17,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def setUp(self):
         try:
             import scipy # noqa
-        except:
+        except ImportError:
             raise SkipTest('Violin plot requires SciPy to compute kde')
         super().setUp()
 
@@ -72,7 +70,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertIn('segment_1_glyph_renderer', plot.handles)
         seg_source = plot.handles['segment_1_source']
         q1, q2, q3 = (np.percentile(values, q=q) for q in range(25,100,25))
-        y0, y1, y2 = [xs[np.argmin(np.abs(xs-v))] for v in (q1, q2, q3)]
+        y0, y1, y2 = (xs[np.argmin(np.abs(xs-v))] for v in (q1, q2, q3))
         self.assertEqual(seg_source.data['x'], np.array([y0, y1, y2]))
 
     def test_violin_inner_stick(self):

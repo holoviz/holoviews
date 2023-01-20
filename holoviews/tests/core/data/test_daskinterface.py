@@ -5,7 +5,7 @@ import pandas as pd
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     raise SkipTest("Could not import dask, skipping DaskInterface tests.")
 
 from holoviews.core.data import Dataset
