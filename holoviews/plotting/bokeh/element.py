@@ -8,7 +8,6 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
-from bokeh.core.property.vectorization import Field, Value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
     BinnedTicker, ColorBar, ColorMapper, EqHistColorMapper,
@@ -47,7 +46,7 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
+    TOOL_TYPES, bokeh_version, bokeh3, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
@@ -1267,7 +1266,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                if bokeh_version >= Version('3.0'):
+                if bokeh3:
                     event = ModelChangedEvent(
                         document=self.document,
                         model=source,
@@ -2188,21 +2187,17 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['legend_items'] = []
         legend_items = self.handles['legend_items']
         legend_labels = {
-            tuple(sorted(i.label.items())) if isinstance(i.label, dict)
-            else getattr(i.label, "value", i.label): i
+            tuple(sorted(property_to_dict(i.label).items()))
+            if isinstance(property_to_dict(i.label), dict) else i.label: i
             for i in legend_items
         }
-        for item in legend.items:
-            label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
-            if not label or (isinstance(item.label, dict) and not hasattr(item.label, 'value', True)):
-                continue
-            # TODO: This should be automated
-            if isinstance(label, Value):
-                label = label.value
-            if isinstance(label, Field):
-                label = label.field
 
-            # label = label.value
+        for item in legend.items:
+            item_label = property_to_dict(item.label)
+            label = tuple(sorted(item_label.items())) if isinstance(item_label, dict) else item_label
+            if not label or (isinstance(item_label, dict) and not item_label.get('value', True)):
+                continue
+
             if label in legend_labels:
                 prev_item = legend_labels[label]
                 prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
@@ -2220,8 +2215,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if (item in filtered or not item.renderers or
                 not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
-            if isinstance(item.label, (Value, dict)) and hasattr(item.label, "value") and self.legend_labels:
-                label = item.label['value']
+            item_label = property_to_dict(item.label)
+            if isinstance(item_label, dict) and 'value' in item_label and self.legend_labels:
+                label = item_label['value']
                 item.label = {'value': self.legend_labels.get(label, label)}
             renderers += item.renderers
             filtered.append(item)
