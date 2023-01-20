@@ -14,7 +14,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 if bokeh3:
     from bokeh.models import Toolbar
 else:
-    from bokeh.models import ToolbarBox as Toolbar
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
 
 
 class LinkCallback:

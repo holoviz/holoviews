@@ -50,7 +50,7 @@ else:
     from bokeh.layouts import WidgetBox
     from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
     from bokeh.models.widgets import Tabs
-    from bokeh.models import ToolbarBox as Toolbar
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
     from bokeh.plotting import Figure as figure
     class GridPlot: pass  # Does not exist in Bokeh 2
 
