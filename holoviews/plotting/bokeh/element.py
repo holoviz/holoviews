@@ -581,8 +581,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plot.toolbar.active_scroll = tool
             if isinstance(tool, tools.Tap):
                 plot.toolbar.active_tap = tool
-            if hasattr(tools, "Inspection") and isinstance(tool, tools.Inspection):
-                # Inspection is no longer valid from bokeh >3.0.0
+            if not bokeh3 and isinstance(tool, tools.Inspection):
                 plot.toolbar.active_inspect.append(tool)
 
 

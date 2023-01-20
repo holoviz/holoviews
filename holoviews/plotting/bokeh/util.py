@@ -561,7 +561,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, DataTable):
         width = model.width
         model.width = int(table_padding*width)
-    elif isinstance(model, Div):
+    elif isinstance(model, (WidgetBox, Div)):
         width = model.width
     elif model:
         width = model.width
