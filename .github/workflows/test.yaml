@@ -68,7 +68,7 @@ jobs:
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment
-          conda uninstall panel bokeh -c bokeh/label/dev --force -y --offline || echo "packages already removed"
+          conda uninstall panel bokeh --force -y --offline || echo "packages already removed"
           pip install "git+https://github.com/holoviz/panel.git@branch-1.0"
       - name: doit test_unit
         run: |
