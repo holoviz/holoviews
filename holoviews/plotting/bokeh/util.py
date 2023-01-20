@@ -17,14 +17,13 @@ from bokeh.core.validation import silence
 from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
-    Model, Toolbar, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis, Tabs, GridPlot
+    Model, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis
 )
 from bokeh.models.formatters import (
-    CustomJSTickFormatter, TickFormatter, PrintfTickFormatter
+    TickFormatter, PrintfTickFormatter
 )
 from bokeh.models.widgets import DataTable, Div
-from bokeh.plotting import figure
 from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
 from packaging.version import Version
@@ -40,6 +39,20 @@ from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
+
+if bokeh3:
+    from bokeh.models.formatters import CustomJSTickFormatter
+    from bokeh.models import Toolbar, Tabs, GridPlot
+    from bokeh.plotting import figure
+    class WidgetBox: pass  # Does not exist in Bokeh 3
+
+else:
+    from bokeh.layouts import WidgetBox
+    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+    from bokeh.models.widgets import Tabs
+    from bokeh.models import ToolbarBox as Toolbar
+    from bokeh.plotting import Figure as figure
+    class GridPlot: pass  # Does not exist in Bokeh 2
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -131,9 +144,12 @@ def layout_padding(plots, renderer):
         for c, p in enumerate(row):
             if p is None:
                 p = empty_plot(widths[c], heights[r])
-            elif hasattr(p, 'width') and p.width == 0 and p.height == 0:
+            elif bokeh3 and hasattr(p, 'width') and p.width == 0 and p.height == 0:
                 p.width = widths[c]
                 p.height = heights[r]
+            elif hasattr(p, 'plot_width') and p.plot_width == 0 and p.plot_height == 0:
+                p.plot_width = widths[c]
+                p.plot_height = heights[r]
             expanded_plots[r].append(p)
     return expanded_plots
 
@@ -153,7 +169,7 @@ def compute_plot_size(plot):
     elif isinstance(plot, (Div, Toolbar)):
         # Cannot compute size for Div or Toolbar
         return 0, 0
-    elif isinstance(plot, (Row, Column, Tabs)):
+    elif isinstance(plot, (Row, Column, Tabs, WidgetBox)):
         if not plot.children: return 0, 0
         if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
@@ -164,12 +180,16 @@ def compute_plot_size(plot):
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, figure):
-        if plot.width:
+        if bokeh3 and plot.width:
             width = plot.width
+        elif not bokeh3 and plot.plot_width:
+            width = plot.plot_width
         else:
             width = plot.frame_width + plot.min_border_right + plot.min_border_left
-        if plot.height:
+        if bokeh3 and plot.height:
             height = plot.height
+        elif not bokeh3 and plot.plot_height:
+            height = plot.plot_height
         else:
             height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
         return width, height
@@ -345,14 +365,28 @@ def compute_layout_properties(
                        'provide a numeric value, \'equal\' or '
                        '\'square\'.')
 
-    return ({'aspect_ratio': aspect_ratio,
-             'aspect_scale': aspect_scale,
-             'match_aspect': match_aspect,
-             'sizing_mode' : sizing_mode},
-            {'frame_width' : frame_width,
-             'frame_height': frame_height,
-             'height' : height,
-             'width'  : width})
+    aspect_info = {
+        'aspect_ratio': aspect_ratio,
+        'aspect_scale': aspect_scale,
+        'match_aspect': match_aspect,
+        'sizing_mode' : sizing_mode
+    }
+    if bokeh3:
+        dimension_info =  {
+            'frame_width' : frame_width,
+            'frame_height': frame_height,
+            'height' : height,
+            'width'  : width
+        }
+    else:
+        dimension_info =  {
+            'frame_width' : frame_width,
+            'frame_height': frame_height,
+            'plot_height' : height,
+            'plot_width'  : width
+        }
+
+    return aspect_info, dimension_info
 
 
 @contextmanager
@@ -434,15 +468,22 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         height = int(axis_height + np.abs(np.sin(rotation)) *
                      ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
-                    x_range=ranges, y_range=ranges2, height=height,
-                    width=size)
+                    x_range=ranges, y_range=ranges2)
+        if bokeh3:
+            opts = {**opts, 'height': height, 'width': size}
+        else:
+            opts = {**opts, 'plot_height': height, 'plot_width': size}
     else:
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
         width = int(axis_height + np.abs(np.cos(rotation)) *
                     ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
-                    y_range=ranges, width=width, height=size)
+                    y_range=ranges)
+        if bokeh3:
+            opts = {**opts, 'height': size, 'width': width}
+        else:
+            opts = {**opts, 'plot_height': size, 'plot_width': width}
 
     p = figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
@@ -542,7 +583,9 @@ def pad_plots(plots):
             width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
-    plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+
+    layout = Column if bokeh3 else WidgetBox
+    plots = [[layout(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
