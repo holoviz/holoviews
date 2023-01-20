@@ -1276,12 +1276,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # Ensure that data is populated before updating glyph
             dataspecs = glyph.dataspecs()
             for spec in dataspecs:
-                new_spec = filtered.get(spec)
-                old_spec = getattr(glyph, spec)
+                new_spec = property_to_dict(filtered.get(spec))
+                old_spec = property_to_dict(getattr(glyph, spec))
                 new_field = new_spec.get('field') if isinstance(new_spec, dict) else new_spec
                 old_field = old_spec.get('field') if isinstance(old_spec, dict) else old_spec
-                new_field = getattr(new_field, "field", new_field)
-                old_field = getattr(old_field, "field", old_field)
                 if (data is None) or (new_field not in data or new_field in source.data or new_field == old_field):
                     continue
                 columns.append(new_field)
