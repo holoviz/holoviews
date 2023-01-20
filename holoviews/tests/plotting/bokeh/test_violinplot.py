@@ -5,7 +5,7 @@ import numpy as np
 from holoviews.element import Violin
 from holoviews.operation.stats import univariate_kde
 from holoviews.util.transform import dim
-from holoviews.plotting.bokeh.util import bproperty_to_dict
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -120,7 +120,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertTrue(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'violin_color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'violin_color', 'transform': cmapper})
 
     def test_violin_categorical_color_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -133,7 +133,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertEqual(source.data['violin_color'], b[::5])
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'violin_color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'violin_color', 'transform': cmapper})
 
     def test_violin_alpha_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -143,7 +143,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
         self.assertEqual(source.data['violin_alpha'], np.arange(5)/10.)
-        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'violin_alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'violin_alpha'})
 
     def test_violin_line_width_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -153,7 +153,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
         self.assertEqual(source.data['outline_line_width'], np.arange(5))
-        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'outline_line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'outline_line_width'})
 
     def test_violin_split_op_multi(self):
         a = np.repeat(np.arange(5), 5)
@@ -165,7 +165,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         cmapper = plot.handles['violin_color_mapper']
         values = ['False', 'True', 'False', 'True', 'False', 'True', 'False', 'True', 'False', 'True']
         self.assertEqual(source.data["dim('b')>2"], values)
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': "dim('b')>2", 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': "dim('b')>2", 'transform': cmapper})
 
     def test_violin_split_op_single(self):
         a = np.repeat(np.arange(2), 5)
@@ -175,7 +175,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         glyph = plot.handles['patches_1_glyph']
         cmapper = plot.handles['violin_color_mapper']
         self.assertEqual(source.data["dim('a')"], ['0', '1'])
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': "dim('a')", 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': "dim('a')", 'transform': cmapper})
 
     def test_violin_box_linear_color_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -189,7 +189,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertTrue(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
 
     def test_violin_box_categorical_color_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -202,7 +202,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertEqual(source.data['box_color'], b[::5])
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
 
     def test_violin_box_alpha_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -212,7 +212,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']
         self.assertEqual(source.data['box_alpha'], np.arange(5)/10.)
-        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'box_alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'box_alpha'})
 
     def test_violin_box_line_width_op(self):
         a = np.repeat(np.arange(5), 5)
@@ -222,4 +222,4 @@ class TestBokehViolinPlot(TestBokehPlot):
         source = plot.handles['vbar_1_source']
         glyph = plot.handles['vbar_1_glyph']
         self.assertEqual(source.data['box_line_width'], np.arange(5))
-        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'box_line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'box_line_width'})

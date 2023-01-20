@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.core.overlay import NdOverlay
 from holoviews.element import Bars
-from holoviews.plotting.bokeh.util import bproperty_to_dict
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
@@ -161,8 +161,8 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color'})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), 'black')
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.line_color), 'black')
 
     def test_bars_linear_color_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -175,8 +175,8 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), 'black')
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), 'black')
 
     def test_bars_categorical_color_op(self):
         bars = Bars([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
@@ -188,8 +188,8 @@ class TestBarPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), 'black')
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), 'black')
 
     def test_bars_line_color_op(self):
         bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -198,8 +198,8 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertNotEqual(bproperty_to_dict(glyph.fill_color), {'field': 'line_color'})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'line_color'})
+        self.assertNotEqual(property_to_dict(glyph.fill_color), {'field': 'line_color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'line_color'})
 
     def test_bars_fill_color_op(self):
         bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -208,8 +208,8 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'fill_color'})
-        self.assertNotEqual(bproperty_to_dict(glyph.line_color), {'field': 'fill_color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'fill_color'})
+        self.assertNotEqual(property_to_dict(glyph.line_color), {'field': 'fill_color'})
 
     def test_bars_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -218,7 +218,7 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'alpha'})
 
     def test_bars_line_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -227,8 +227,8 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
-        self.assertNotEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
+        self.assertNotEqual(property_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
 
     def test_bars_fill_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -237,8 +237,8 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
-        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'fill_alpha'})
+        self.assertNotEqual(property_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'fill_alpha'})
 
     def test_bars_line_width_op(self):
         bars = Bars([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -247,7 +247,7 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
 
     def test_op_ndoverlay_value(self):
         colors = ['blue', 'red']

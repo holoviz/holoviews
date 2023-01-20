@@ -5,7 +5,7 @@ from holoviews.core import NdOverlay
 from holoviews.element import Spikes
 
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
-from holoviews.plotting.bokeh.util import bproperty_to_dict
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -160,7 +160,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color'})
 
     def test_spikes_linear_color_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -173,7 +173,7 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_spikes_categorical_color_op(self):
         spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
@@ -185,7 +185,7 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_spikes_line_color_op(self):
         spikes = Spikes([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -194,7 +194,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'line_color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'line_color'})
 
     def test_spikes_alpha_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -203,7 +203,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'alpha'})
 
     def test_spikes_line_alpha_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -212,7 +212,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
 
     def test_spikes_line_width_op(self):
         spikes = Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -221,7 +221,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
 
     def test_op_ndoverlay_value(self):
         colors = ['blue', 'red']

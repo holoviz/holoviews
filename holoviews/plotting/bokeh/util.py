@@ -969,7 +969,7 @@ def wrap_formatter(formatter, axis):
     return formatter
 
 
-def bproperty_to_dict(x):
+def property_to_dict(x):
     """
     Convert Bokeh's property Field and Value to a dictionary
 
@@ -978,10 +978,10 @@ def bproperty_to_dict(x):
 
     try:
         from bokeh.core.property.vectorization import Field, Unspecified, Value
+
+        if isinstance(x, (Field, Value)):
+            x = {k: v for k,v in x.__dict__.items() if v != Unspecified}
     except ImportError:
         pass
-
-    if isinstance(x, (Field, Value)):
-        x = {k: v for k,v in x.__dict__.items() if v != Unspecified}
 
     return x

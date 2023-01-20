@@ -7,7 +7,7 @@ from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Points
 from holoviews.streams import Stream
-from holoviews.plotting.bokeh.util import bproperty_to_dict
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
@@ -346,8 +346,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color'})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color'})
 
     def test_point_linear_color_op(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -360,8 +360,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_point_categorical_color_op(self):
         points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
@@ -373,8 +373,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_point_categorical_color_op_legend_with_labels(self):
         labels = {'A': 'A point', 'B': 'B point', 'C': 'C point'}
@@ -383,7 +383,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         legend = plot.state.legend[0].items[0]
-        assert bproperty_to_dict(legend.label) == {'field': '_color_labels'}
+        assert property_to_dict(legend.label) == {'field': '_color_labels'}
         assert cds.data['_color_labels'] == ['A point', 'B point', 'C point']
 
     def test_point_categorical_dtype_color_op(self):
@@ -397,8 +397,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['apple', 'pear'])
         self.assertEqual(np.asarray(cds.data['color']), np.array(['apple', 'pear', 'apple', 'pear']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_point_explicit_cmap_color_op(self):
         points = Points([(0, 0), (0, 1), (0, 2)]).opts(
@@ -411,8 +411,8 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(cmapper.palette, ['red', 'green', 'blue'])
         self.assertEqual(cds.data['color_str__'], ['0', '1', '2'])
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'color_str__', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color_str__', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color_str__', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color_str__', 'transform': cmapper})
 
     def test_point_line_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -421,8 +421,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertNotEqual(bproperty_to_dict(glyph.fill_color), {'field': 'line_color'})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'line_color'})
+        self.assertNotEqual(property_to_dict(glyph.fill_color), {'field': 'line_color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'line_color'})
 
     def test_point_fill_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -431,8 +431,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'fill_color'})
-        self.assertNotEqual(bproperty_to_dict(glyph.line_color), {'field': 'fill_color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'fill_color'})
+        self.assertNotEqual(property_to_dict(glyph.line_color), {'field': 'fill_color'})
 
     def test_point_angle_op(self):
         points = Points([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
@@ -441,7 +441,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['angle'], np.array([0, 0.785398, 1.570796]))
-        self.assertEqual(bproperty_to_dict(glyph.angle), {'field': 'angle'})
+        self.assertEqual(property_to_dict(glyph.angle), {'field': 'angle'})
 
     def test_point_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -450,7 +450,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'alpha'})
 
     def test_point_line_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -459,8 +459,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
-        self.assertNotEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
+        self.assertNotEqual(property_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
 
     def test_point_fill_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -469,8 +469,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(bproperty_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
-        self.assertEqual(bproperty_to_dict(glyph.fill_alpha), {'field': 'fill_alpha'})
+        self.assertNotEqual(property_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'fill_alpha'})
 
     def test_point_size_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -479,7 +479,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['size'], np.array([1, 4, 8]))
-        self.assertEqual(bproperty_to_dict(glyph.size), {'field': 'size'})
+        self.assertEqual(property_to_dict(glyph.size), {'field': 'size'})
 
     def test_point_line_width_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -488,7 +488,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(bproperty_to_dict(glyph.line_width), {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
 
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
@@ -497,7 +497,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['marker'], np.array(['circle', 'triangle', 'square']))
-        self.assertEqual(bproperty_to_dict(glyph.marker), {'field': 'marker'})
+        self.assertEqual(property_to_dict(glyph.marker), {'field': 'marker'})
 
     def test_op_ndoverlay_value(self):
         markers = ['circle', 'triangle']
@@ -527,8 +527,8 @@ class TestPointPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['fill_color_color_mapper']
         cmapper2 = plot.handles['color_mapper']
-        self.assertEqual(bproperty_to_dict(glyph.fill_color), {'field': 'fill_color', 'transform': cmapper})
-        self.assertEqual(bproperty_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper2})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'fill_color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper2})
 
     def test_point_size_index_size_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
