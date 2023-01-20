@@ -145,8 +145,11 @@ class RangeToolLinkCallback(LinkCallback):
             axes['y_range'] = target_plot.handles['y_range']
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
-        if toolbars:
+        if bokeh3 and toolbars:
             toolbars[0].tools.append(tool)
+        elif toolbars:
+            toolbar = toolbars[0].toolbar
+            toolbar.tools.append(tool)
 
 
 class DataLinkCallback(LinkCallback):
@@ -190,6 +193,8 @@ class DataLinkCallback(LinkCallback):
             renderer.update(data_source=src_cds)
         else:
             renderer.update(source=src_cds)
+        if not bokeh3 and hasattr(renderer, 'view'):
+            renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
         target_plot.handles['cds'] = src_cds
         for callback in target_plot.callbacks:

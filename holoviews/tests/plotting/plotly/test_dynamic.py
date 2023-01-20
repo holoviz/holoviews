@@ -17,7 +17,6 @@ from .test_plot import TestPlotlyPlot
 class TestDynamicMap(TestPlotlyPlot):
 
     def test_update_dynamic_map_with_stream(self):
-
         ys = np.arange(10)
 
         # Build stream

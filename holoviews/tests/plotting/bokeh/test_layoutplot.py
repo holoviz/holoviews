@@ -9,13 +9,22 @@ from holoviews.element import Curve, Image, Points, Histogram, Scatter
 from holoviews.streams import Stream
 from holoviews.util import render, opts
 from holoviews.util.transform import dim
+from holoviews.plotting.bokeh.util import bokeh3
 
-from bokeh.models import Div, Toolbar, GlyphRenderer, Tabs, TabPanel, Spacer, GridPlot, Title
-from bokeh.plotting import figure
+from bokeh.models import Div, Toolbar, GlyphRenderer, Tabs, Spacer, Title
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
+if bokeh3:
+    from bokeh.models.layouts import TabPanel
+    from bokeh.plotting import figure
+    from bokeh.models import GridPlot
+
+else:
+    from bokeh.models.layouts import Panel as TabPanel
+    from bokeh.plotting import Figure as figure
+    from bokeh.models import GridBox as GridPlot  # Not completely correct
 
 
 class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):

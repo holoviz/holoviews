@@ -111,7 +111,11 @@ class TestGridPlot(TestBokehPlot):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
+        if bokeh3:
+            self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
+        else:
+            self.assertIsInstance(plot.state.children[0].children[0], Toolbar)
+
 
     def test_grid_disable_toolbar(self):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar=None)
