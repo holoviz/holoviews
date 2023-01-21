@@ -1,17 +1,7 @@
 import sys
 import math
 import time
-from unittest import SkipTest
-
-try:
-    import IPython
-    from IPython.core.display import clear_output
-except ImportError:
-    clear_output = None
-    raise SkipTest("IPython extension requires IPython >= 0.12")
-
-# IPython 0.13 does not have version_info
-ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
+from IPython.core.display import clear_output
 
 import param
 from ..core.util import ProgressIndicator
@@ -71,8 +61,8 @@ class ProgressBar(ProgressIndicator):
         elif self.display == 'stdout':
             if percentage==100 and self.elapsed_time:
                 elapsed = time.time() -  self.start_time
-                if clear_output and not ipython2: clear_output()
-                if clear_output and ipython2: clear_output(wait=True)
+                if clear_output:
+                    clear_output(wait=True)
                 self.out = '\r' + ('100%% %s %02d:%02d:%02d'
                                    % (self.label.lower(), elapsed//3600,
                                       elapsed//60, elapsed%60))
@@ -92,8 +82,8 @@ class ProgressBar(ProgressIndicator):
 
 
     def _stdout_display(self, percentage, display=True):
-        if clear_output and not ipython2: clear_output()
-        if clear_output and ipython2: clear_output(wait=True)
+        if clear_output:
+            clear_output(wait=True)
         percent_per_char = 100.0 / self.width
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)

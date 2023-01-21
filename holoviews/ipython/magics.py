@@ -1,11 +1,7 @@
 import time
 import sys
 
-try:
-    from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
-except ImportError:
-    from unittest import SkipTest
-    raise SkipTest("IPython extension requires IPython >= 0.13")
+from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
 
 
 from ..core.options import Options, Store, StoreOptions, options_policy

@@ -8,43 +8,14 @@ import sys
 import os
 import traceback
 
-from IPython import version_info
 from IPython.display import Javascript, display
 from .preprocessors import Substitute
 
-# Import appropriate nbconvert machinery
-if version_info[0] >= 4:
-    # Jupyter/IPython >=4.0
-    from nbformat import reader
-    from nbconvert import HTMLExporter
+from nbformat import reader
+from nbconvert import HTMLExporter
 
-    from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
-    from nbconvert import NotebookExporter
-else:
-    # IPython <= 3.0
-    from IPython.nbformat import reader
-    from IPython.nbconvert import HTMLExporter
-
-    if version_info[0] == 3:
-        # IPython 3
-        from IPython.nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
-        from IPython.nbconvert import NotebookExporter
-    else:
-        # IPython 2
-        from IPython.nbformat import current
-        NotebookExporter, ClearOutputPreprocessor = None, None
-
-        def v3_strip_output(nb):
-            """strip the outputs from a notebook object"""
-            nb["nbformat"] = 3
-            nb["nbformat_minor"] = 0
-            nb.metadata.pop('signature', None)
-            for cell in nb.worksheets[0].cells:
-                if 'outputs' in cell:
-                    cell['outputs'] = []
-                if 'prompt_number' in cell:
-                    cell['prompt_number'] = None
-            return nb
+from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
+from nbconvert import NotebookExporter
 
 import param
 from ..core.io import FileArchive, Pickler
@@ -217,13 +188,9 @@ class NotebookArchive(FileArchive):
 
 
     def _clear_notebook(self, node):                # pragma: no cover
-        if NotebookExporter is not None:
-            exporter = NotebookExporter()
-            exporter.register_preprocessor(ClearOutputPreprocessor(enabled=True))
-            cleared,_ = exporter.from_notebook_node(node)
-        else:
-            stripped_node = v3_strip_output(node)
-            cleared = current.writes(stripped_node, 'ipynb')
+        exporter = NotebookExporter()
+        exporter.register_preprocessor(ClearOutputPreprocessor(enabled=True))
+        cleared, _ = exporter.from_notebook_node(node)
         return cleared
 
 
