@@ -702,6 +702,8 @@ def _list_cmaps(provider=None, records=False):
             import matplotlib as mpl
             from matplotlib import cm
 
+            # matplotlib.colormaps has been introduced in matplotlib 3.5
+            # matplotlib.cm._cmap_registry was removed in matplotlib 3.6
             if hasattr(mpl, "colormaps"):
                 mpl_cmaps = list(mpl.colormaps)
             elif hasattr(cm, '_cmap_registry'):
