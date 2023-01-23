@@ -699,8 +699,12 @@ def _list_cmaps(provider=None, records=False):
 
     if 'matplotlib' in provider:
         try:
+            import matplotlib as mpl
             from matplotlib import cm
-            if hasattr(cm, '_cmap_registry'):
+
+            if hasattr(mpl, "colormaps"):
+                mpl_cmaps = list(mpl.colormaps)
+            elif hasattr(cm, '_cmap_registry'):
                 mpl_cmaps = list(cm._cmap_registry)
             else:
                 mpl_cmaps = list(cm.cmaps_listed)+list(cm.datad)
