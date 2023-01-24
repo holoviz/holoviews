@@ -893,7 +893,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot.width, plot.height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
-            elif not (fixed_height and fixed_width):  # Bokeh 2.0 suport
+            elif not (fixed_height and fixed_width):  # Bokeh 2.x support
                 # Should mirror the previous if-statement
                 # with the exception of plot.width -> plot.plot_width
                 # and plot.height -> plot.plot_height.
