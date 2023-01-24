@@ -27,7 +27,7 @@ jobs:
       - name: pre-commit
         uses: pre-commit/action@v3.0.0
   test_suite:
-    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -36,12 +36,17 @@ jobs:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
+        bokeh-version: ['2', '3']
+        exclude:
+            # Bokeh 3 does not support Python 3.7
+          - bokeh-version: '3'
+            python-version: '3.7'
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
+      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
@@ -51,7 +56,7 @@ jobs:
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
-          name: unit_test_suite
+          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults
@@ -64,6 +69,12 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
+      - name: Install bokeh 3.0 compatibility packages
+        if: matrix.bokeh-version == '3'
+        run: |
+          conda activate test-environment
+          conda uninstall panel bokeh --force -y --offline || echo "packages already removed"
+          pip install "git+https://github.com/holoviz/panel.git@branch-1.0"
       - name: doit test_unit
         run: |
           conda activate test-environment
@@ -73,7 +84,7 @@ jobs:
         run: |
           conda activate test-environment
           mkdir -p ~/.jupyter/
-          echo "c.ExecutePreprocessor.startup_timeout=120" >> ~/.jupyter/jupyter_nbconvert_config.py
+          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
           doit test_examples
       - name: test examples - python 3.11
         # Should be removed when numba support python 3.11
@@ -81,7 +92,7 @@ jobs:
         run: |
           conda activate test-environment
           mkdir -p ~/.jupyter/
-          echo "c.ExecutePreprocessor.startup_timeout=120" >> ~/.jupyter/jupyter_nbconvert_config.py
+          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
           pytest -n auto --dist loadscope --nbval-lax examples/reference/elements
       - name: codecov
         run: |

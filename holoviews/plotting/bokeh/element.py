@@ -7,7 +7,6 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
-
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
@@ -16,8 +15,9 @@ from bokeh.models import (
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, MercatorTickFormatter
+    TickFormatter, MercatorTickFormatter
 )
+from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
@@ -26,7 +26,6 @@ from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
 from bokeh.models.tools import Tool
-from bokeh.models.widgets import Panel, Tabs
 
 from packaging.version import Version
 
@@ -47,14 +46,19 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
+    TOOL_TYPES, bokeh_version, bokeh3, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
-    prop_is_none, remove_legend
+    prop_is_none, remove_legend, property_to_dict
 )
 
-
+if bokeh3:
+    from bokeh.models.formatters import CustomJSTickFormatter
+    from bokeh.models.layouts import TabPanel
+else:
+    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+    from bokeh.models.layouts import Panel as TabPanel
 
 try:
     TOOLS_MAP = Tool._known_aliases
@@ -501,13 +505,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties.update(**self._plot_properties(key, element))
 
+        if bokeh3:
+            figure = bokeh.plotting.figure
+        else:
+            figure = bokeh.plotting.Figure
+
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
-            return bokeh.plotting.Figure(x_axis_type=x_axis_type,
-                                         y_axis_type=y_axis_type, title=title,
-                                         **properties)
+            return figure(x_axis_type=x_axis_type,
+                          y_axis_type=y_axis_type, title=title,
+                          **properties)
 
 
     def _plot_properties(self, key, element):
@@ -572,7 +581,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plot.toolbar.active_scroll = tool
             if isinstance(tool, tools.Tap):
                 plot.toolbar.active_tap = tool
-            if isinstance(tool, tools.Inspection):
+            if isinstance(tool, tools.InspectTool):
                 plot.toolbar.active_inspect.append(tool)
 
 
@@ -664,7 +673,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             formatter = wrap_formatter(formatter, axis)
             if formatter is not None:
                 axis_props['formatter'] = formatter
-        elif FuncTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
+        elif CustomJSTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
             formatter = None
             if dimension.value_format:
                 formatter = dimension.value_format
@@ -675,7 +684,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                        'converted to tick formatter. ' % dimension.name)
                 jsfunc = py2js_tickformatter(formatter, msg)
                 if jsfunc:
-                    formatter = FuncTickFormatter(code=jsfunc)
+                    formatter = CustomJSTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
 
         if axis == 'x':
@@ -868,8 +877,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif not (fixed_height and fixed_width):
                 # Set initial aspect
                 aspect = self.get_aspect(xspan, yspan)
-                width = plot.frame_width or plot.plot_width or 300
-                height = plot.frame_height or plot.plot_height or 300
+                width = plot.frame_width or plot.width or 300
+                height = plot.frame_height or plot.height or 300
 
                 if not (fixed_width or fixed_height) and not self.responsive:
                     fixed_height = True
@@ -877,11 +886,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if fixed_height:
                     plot.frame_height = height
                     plot.frame_width = int(height/aspect)
-                    plot.plot_width, plot.plot_height = None, None
+                    plot.width, plot.height = None, None
                 elif fixed_width:
                     plot.frame_width = width
                     plot.frame_height = int(width*aspect)
-                    plot.plot_width, plot.plot_height = None, None
+                    plot.width, plot.height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
 
@@ -1244,8 +1253,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # Ensure that data is populated before updating glyph
             dataspecs = glyph.dataspecs()
             for spec in dataspecs:
-                new_spec = filtered.get(spec)
-                old_spec = getattr(glyph, spec)
+                new_spec = property_to_dict(filtered.get(spec))
+                old_spec = property_to_dict(getattr(glyph, spec))
                 new_field = new_spec.get('field') if isinstance(new_spec, dict) else new_spec
                 old_field = old_spec.get('field') if isinstance(old_spec, dict) else old_spec
                 if (data is None) or (new_field not in data or new_field in source.data or new_field == old_field):
@@ -1266,9 +1275,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                event = ModelChangedEvent(self.document, source, 'data',
-                                          source.data, empty_data, empty_data,
-                                          setter='empty')
+                if bokeh3:
+                    event = ModelChangedEvent(
+                        document=self.document,
+                        model=source,
+                        attr='data',
+                        new=empty_data,
+                        setter='empty'
+                    )
+                else:
+                    event = ModelChangedEvent(
+                        self.document, source, 'data', source.data, empty_data, empty_data, setter='empty'
+                    )
                 self.document.callbacks._held_events.append(event)
 
         if legend is not None:
@@ -2177,12 +2195,17 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if 'legend_items' not in self.handles:
             self.handles['legend_items'] = []
         legend_items = self.handles['legend_items']
-        legend_labels = {tuple(sorted(i.label.items())) if isinstance(i.label, dict) else i.label: i
-                         for i in legend_items}
+        legend_labels = {
+            tuple(sorted(property_to_dict(i.label).items()))
+            if isinstance(property_to_dict(i.label), dict) else i.label: i
+            for i in legend_items
+        }
         for item in legend.items:
-            label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
-            if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
+            item_label = property_to_dict(item.label)
+            label = tuple(sorted(item_label.items())) if isinstance(item_label, dict) else item_label
+            if not label or (isinstance(item_label, dict) and not item_label.get('value', True)):
                 continue
+
             if label in legend_labels:
                 prev_item = legend_labels[label]
                 prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
@@ -2200,8 +2223,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if (item in filtered or not item.renderers or
                 not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
-            if isinstance(item.label, dict) and 'value' in item.label and self.legend_labels:
-                label = item.label['value']
+            item_label = property_to_dict(item.label)
+            if isinstance(item_label, dict) and 'value' in item_label and self.legend_labels:
+                label = item_label['value']
                 item.label = {'value': self.legend_labels.get(label, label)}
             renderers += item.renderers
             filtered.append(item)
@@ -2343,7 +2367,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 title = subplot._format_title(key, dimensions=False)
                 if not title:
                     title = get_tab_title(key, frame, self.hmap.last)
-                panels.append(Panel(child=child, title=title))
+                panels.append(TabPanel(child=child, title=title))
             self._merge_tools(subplot)
 
         if self.tabs:

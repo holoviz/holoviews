@@ -8,6 +8,7 @@ from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -171,7 +172,7 @@ class TestPathPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(path)
         item = plot.state.legend[0].items[0]
         legend = {'field': 'color_str__'}
-        self.assertEqual(item.label, legend)
+        self.assertEqual(property_to_dict(item.label), legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
     def test_path_continuously_varying_color_legend_with_labels(self):
@@ -190,7 +191,7 @@ class TestPathPlot(TestBokehPlot):
         item = plot.state.legend[0].items[0]
         legend = {'field': '_color_str___labels'}
         self.assertEqual(cds.data['_color_str___labels'], ['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B'])
-        self.assertEqual(item.label, legend)
+        self.assertEqual(property_to_dict(item.label), legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
 
@@ -282,7 +283,7 @@ class TestPolygonPlot(TestBokehPlot):
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'fill_color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
         self.assertEqual(cds.data['fill_color'], np.array(['green', 'red']))
 
@@ -295,7 +296,7 @@ class TestPolygonPlot(TestBokehPlot):
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
 
     def test_polygons_linear_color_op(self):
@@ -308,7 +309,7 @@ class TestPolygonPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertIsInstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
@@ -324,7 +325,7 @@ class TestPolygonPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['b', 'a'])
@@ -337,8 +338,8 @@ class TestPolygonPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
-        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'alpha'})
         self.assertEqual(cds.data['alpha'], np.array([0.7, 0.3]))
 
     def test_polygons_line_width_op(self):
@@ -349,7 +350,7 @@ class TestPolygonPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
 
     def test_polygons_holes_initialize(self):
@@ -403,7 +404,7 @@ class TestContoursPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
 
     def test_contours_linear_color_op(self):
@@ -415,7 +416,7 @@ class TestContoursPlot(TestBokehPlot):
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertIsInstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
@@ -450,7 +451,7 @@ class TestContoursPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         plot.update((0,))
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
@@ -468,7 +469,7 @@ class TestContoursPlot(TestBokehPlot):
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['b', 'a'])
@@ -481,7 +482,7 @@ class TestContoursPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'alpha'})
         self.assertEqual(cds.data['alpha'], np.array([0.7, 0.3]))
 
     def test_contours_line_width_op(self):
@@ -492,5 +493,5 @@ class TestContoursPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))

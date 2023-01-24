@@ -3,6 +3,7 @@ import numpy as np
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import ErrorBars
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -74,7 +75,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color'})
 
     def test_errorbars_linear_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 0), (0, 1, 0.2, 0.4, 1), (0, 2, 0.6, 1.2, 2)],
@@ -87,7 +88,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_errorbars_categorical_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 'A'), (0, 1, 0.2, 0.4, 'B'), (0, 2, 0.6, 1.2, 'C')],
@@ -99,7 +100,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
 
     def test_errorbars_line_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, '#000'), (0, 1, 0.2, 0.4, '#F00'), (0, 2, 0.6, 1.2, '#0F0')],
@@ -108,7 +109,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.line_color, {'field': 'line_color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'line_color'})
 
     def test_errorbars_alpha_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 0), (0, 1, 0.2, 0.4, 0.2), (0, 2, 0.6, 1.2, 0.7)],
@@ -117,7 +118,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'alpha'})
 
     def test_errorbars_line_alpha_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 0), (0, 1, 0.2, 0.4, 0.2), (0, 2, 0.6, 1.2, 0.7)],
@@ -126,7 +127,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, {'field': 'line_alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
 
     def test_errorbars_line_width_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 1), (0, 1, 0.2, 0.4, 4), (0, 2, 0.6, 1.2, 8)],
@@ -135,4 +136,4 @@ class TestErrorBarsPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})

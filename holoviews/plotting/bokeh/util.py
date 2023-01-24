@@ -14,17 +14,16 @@ import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.validation import silence
-from bokeh.layouts import WidgetBox, Row, Column
+from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
-    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    Model, FactorRange, Range1d, Plot, Spacer, CustomJS,
     GridBox, DatetimeAxis, CategoricalAxis
 )
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+    TickFormatter, PrintfTickFormatter
 )
-from bokeh.models.widgets import DataTable, Tabs, Div
-from bokeh.plotting import Figure
+from bokeh.models.widgets import DataTable, Div
 from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
 from packaging.version import Version
@@ -39,7 +38,21 @@ from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
+bokeh3 = bokeh_version >= Version("3.0")
 
+if bokeh3:
+    from bokeh.models.formatters import CustomJSTickFormatter
+    from bokeh.models import Toolbar, Tabs, GridPlot
+    from bokeh.plotting import figure
+    class WidgetBox: pass  # Does not exist in Bokeh 3
+
+else:
+    from bokeh.layouts import WidgetBox
+    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+    from bokeh.models.widgets import Tabs
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
+    from bokeh.plotting import Figure as figure
+    class GridPlot: pass  # Does not exist in Bokeh 2
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -131,9 +144,9 @@ def layout_padding(plots, renderer):
         for c, p in enumerate(row):
             if p is None:
                 p = empty_plot(widths[c], heights[r])
-            elif hasattr(p, 'plot_width') and p.plot_width == 0 and p.plot_height == 0:
-                p.plot_width = widths[c]
-                p.plot_height = heights[r]
+            elif hasattr(p, 'width') and p.width == 0 and p.height == 0:
+                p.width = widths[c]
+                p.height = heights[r]
             expanded_plots[r].append(p)
     return expanded_plots
 
@@ -141,21 +154,21 @@ def layout_padding(plots, renderer):
 def compute_plot_size(plot):
     """
     Computes the size of bokeh models that make up a layout such as
-    figures, rows, columns, widgetboxes and Plot.
+    figures, rows, columns, and Plot.
     """
-    if isinstance(plot, GridBox):
+    if isinstance(plot, (GridBox, GridPlot)):
         ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
         cols = ndmapping.groupby('x')
         rows = ndmapping.groupby('y')
         width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
         height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
         return width, height
-    elif isinstance(plot, (Div, ToolbarBox)):
-        # Cannot compute size for Div or ToolbarBox
+    elif isinstance(plot, (Div, Toolbar)):
+        # Cannot compute size for Div or Toolbar
         return 0, 0
-    elif isinstance(plot, (Row, Column, WidgetBox, Tabs)):
+    elif isinstance(plot, (Row, Column, Tabs, WidgetBox)):
         if not plot.children: return 0, 0
-        if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
+        if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
         elif isinstance(plot, Tabs):
             w_agg, h_agg = (np.max, np.max)
@@ -163,13 +176,13 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
-    elif isinstance(plot, Figure):
-        if plot.plot_width:
-            width = plot.plot_width
+    elif isinstance(plot, figure):
+        if plot.width:
+            width = plot.width
         else:
             width = plot.frame_width + plot.min_border_right + plot.min_border_left
-        if plot.plot_height:
-            height = plot.plot_height
+        if plot.height:
+            height = plot.height
         else:
             height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
         return width, height
@@ -345,14 +358,20 @@ def compute_layout_properties(
                        'provide a numeric value, \'equal\' or '
                        '\'square\'.')
 
-    return ({'aspect_ratio': aspect_ratio,
-             'aspect_scale': aspect_scale,
-             'match_aspect': match_aspect,
-             'sizing_mode' : sizing_mode},
-            {'frame_width' : frame_width,
-             'frame_height': frame_height,
-             'plot_height' : height,
-             'plot_width'  : width})
+    aspect_info = {
+        'aspect_ratio': aspect_ratio,
+        'aspect_scale': aspect_scale,
+        'match_aspect': match_aspect,
+        'sizing_mode' : sizing_mode
+    }
+    dimension_info =  {
+        'frame_width' : frame_width,
+        'frame_height': frame_height,
+        'height' : height,
+        'width'  : width
+    }
+
+    return aspect_info, dimension_info
 
 
 @contextmanager
@@ -434,17 +453,17 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         height = int(axis_height + np.abs(np.sin(rotation)) *
                      ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
-                    x_range=ranges, y_range=ranges2, plot_height=height,
-                    plot_width=size)
+                    x_range=ranges, y_range=ranges2, height=height,
+                    width=size)
     else:
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
         width = int(axis_height + np.abs(np.cos(rotation)) *
                     ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
-                    y_range=ranges, plot_width=width, plot_height=size)
+                    y_range=ranges, height=size, width=width)
 
-    p = Figure(toolbar_location=None, tools=[], **opts)
+    p = figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
     p.grid.grid_line_alpha = 0
 
@@ -523,7 +542,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, (WidgetBox, Div)):
         width = model.width
     elif model:
-        width = model.plot_width
+        width = model.width
     else:
         width = 0
     return width
@@ -532,7 +551,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
 def pad_plots(plots):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
-    wraps any DataTable or Tabs in a WidgetBox with appropriate
+    wraps any DataTable or Tabs in a Column with appropriate
     padding. Required to avoid overlap in gridplot.
     """
     widths = []
@@ -542,7 +561,9 @@ def pad_plots(plots):
             width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
-    plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+
+    layout = Column if bokeh3 else WidgetBox
+    plots = [[layout(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
@@ -556,7 +577,7 @@ def filter_toolboxes(plots):
         plots = [filter_toolboxes(plot) for plot in plots]
     elif hasattr(plots, 'children'):
         plots.children = [filter_toolboxes(child) for child in plots.children
-                          if not isinstance(child, ToolbarBox)]
+                          if not isinstance(child, Toolbar)]
     return plots
 
 
@@ -961,9 +982,27 @@ def wrap_formatter(formatter, axis):
         msg = f'{axis}formatter could not be converted to tick formatter. '
         jsfunc = py2js_tickformatter(formatter, msg)
         if jsfunc:
-            formatter = FuncTickFormatter(code=jsfunc)
+            formatter = CustomJSTickFormatter(code=jsfunc)
         else:
             formatter = None
     else:
         formatter = PrintfTickFormatter(format=formatter)
     return formatter
+
+
+def property_to_dict(x):
+    """
+    Convert Bokeh's property Field and Value to a dictionary
+
+    Was added in bokeh 3.0
+    """
+
+    try:
+        from bokeh.core.property.vectorization import Field, Unspecified, Value
+
+        if isinstance(x, (Field, Value)):
+            x = {k: v for k, v in x.__dict__.items() if v != Unspecified}
+    except ImportError:
+        pass
+
+    return x
