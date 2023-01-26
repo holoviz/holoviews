@@ -534,10 +534,12 @@ class Renderer(Exporter):
             element_type = obj
         else:
             element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+            if element_type is None:
+                raise SkipRendering(f"{type(obj).__name__} was empty, could not determine plotting class.")
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise SkipRendering(f"No plotting class for {element_type.__name__} found")
+            raise SkipRendering(f"No plotting class for {element_type.__name__} found.")
         return plotclass
 
     @classmethod
