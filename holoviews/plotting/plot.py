@@ -876,6 +876,8 @@ class DimensionedPlot(Plot):
             Looks up options for object, including plot defaults.
             keyfn determines returned key otherwise None key is used.
             """
+            if isinstance(x, DynamicMap):
+                return (None, {})
             options = cls.lookup_options(x, opt_type)
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
