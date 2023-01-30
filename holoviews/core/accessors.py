@@ -659,9 +659,6 @@ class Opts(metaclass=AccessorPipelineMeta):
                 f"{item!r} is not in opts. Valid items is {', '.join(options)}."
             )
 
-    def __setitem__(self, item, value):
-        self(**{item: value})
-
     def __repr__(self):
         options = self.get().kwargs
         kws = ', '.join(f"{k}={options[k]!r}" for k in sorted(options.keys()))
