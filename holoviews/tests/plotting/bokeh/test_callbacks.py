@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import pyviz_comms as comms
-import flaky
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
@@ -288,7 +287,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
-    @flaky
+    @pytest.mark.flaky
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
