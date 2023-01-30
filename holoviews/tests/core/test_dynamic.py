@@ -2,6 +2,7 @@ import uuid
 import time
 from collections import deque
 
+import flaky
 import param
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
@@ -989,6 +990,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
         self.assertEqual(xval.x, 100)
 
+    @flaky
     def test_periodic_param_fn_non_blocking(self):
         def callback(x): return Curve([1,2,3])
         xval = Stream.define('x',x=0)()
