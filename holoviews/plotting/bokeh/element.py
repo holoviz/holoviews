@@ -986,9 +986,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             p0, p1 = self.padding, self.padding
 
 
-        lower, upper = self.ylim
-        lower = None if (lower is None) or np.isnan(lower) else lower
-        upper = None if (upper is None) or np.isnan(upper) else upper
+        if dim == 'x':
+            lower, upper = self.xlim
+            lower = None if (lower is None) or np.isnan(lower) else lower
+            upper = None if (upper is None) or np.isnan(upper) else upper
+
+        else:
+            lower, upper = self.ylim
+            lower = None if (lower is None) or np.isnan(lower) else lower
+            upper = None if (upper is None) or np.isnan(upper) else upper
 
         # Clean this up in bokeh 3.0 using View.find_one API
         self.state.js_on_event('rangesupdate', CustomJS(code=f"""
