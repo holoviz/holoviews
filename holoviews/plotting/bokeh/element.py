@@ -1006,7 +1006,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           }}
           if (plot_view == null)
             return
-          let [vmin, vmax] = [Infinity, -Infinity] 
+          let [vmin, vmax] = [Infinity, -Infinity]
           for (const dr of cb_obj.origin.data_renderers) {{
             const index = plot_view.renderer_view(dr).glyph_view.index.index
             for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
