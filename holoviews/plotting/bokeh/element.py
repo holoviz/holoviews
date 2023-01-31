@@ -984,6 +984,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 p0, p1 = pad, pad
         else:
             p0, p1 = self.padding, self.padding
+
+        lower, upper = None, None
+        if self.ylim is not (np.nan, np.nan):
+            lower, upper = self.ylim
+
         # Clean this up in bokeh 3.0 using View.find_one API
         self.state.js_on_event('rangesupdate', CustomJS(code=f"""
           const ref = cb_obj.origin.id
@@ -1017,12 +1022,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
               }}
             }}
           }}
+
+          const use_auto_lower =  {"true" if lower is None else "false"}
+          const use_auto_upper =  {"true" if upper is None else "false"}
+          vmin = use_auto_lower ? vmin : {lower}
+          vmax = use_auto_upper ? vmax : {upper}
+
           const invert = {str(invert).lower()}
           const span = vmax-vmin
           const lower = vmin-(span*{p0})
           const upper = vmax+(span*{p1})
           const [start, end] = invert ? [upper, lower] : [lower, upper]
-          cb_obj.origin.{dim}_range.setv({{start, end}})
+          const start_finite = window.Number.isFinite(start)
+          const end_finite = window.Number.isFinite(end)
+
+          if (start == end) {{
+            return
+          }}
+
+          if (start_finite && end_finite)  {{
+            cb_obj.origin.{dim}_range.setv({{start, end}})
+          }}
         """))
 
     def _categorize_data(self, data, cols, dims):
