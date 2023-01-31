@@ -1030,10 +1030,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             }}
           }}
 
-          const use_auto_lower =  {"true" if lower is None else "false"}
-          const use_auto_upper =  {"true" if upper is None else "false"}
-          vmin = use_auto_lower ? vmin : {lower}
-          vmax = use_auto_upper ? vmax : {upper}
+          vmin = {"vmin" if lower is None else lower}
+          vmax = {"vmax" if upper is None else upper}
 
           const invert = {str(invert).lower()}
           const span = vmax-vmin
