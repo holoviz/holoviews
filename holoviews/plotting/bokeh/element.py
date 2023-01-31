@@ -10,7 +10,7 @@ import bokeh.plotting
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
-    BinnedTicker, ColorBar, ColorMapper, EqHistColorMapper,
+    BinnedTicker, ColorBar, ColorMapper, CustomJS, EqHistColorMapper,
     Legend, Renderer, Title, tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
@@ -76,6 +76,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
+
+    autorange = param.ObjectSelector(default=None, objects=['x', 'y'], doc="""
+        Whether to auto-range along either the x- or y-axis, i.e.
+        when panning or zooming along the orthogonal axis it will
+        ensure all the data along the selected axis remains visible.""")
 
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
@@ -953,6 +958,97 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if invert: factors = factors[::-1]
             axis_range.factors = factors
 
+    def _setup_autorange(self):
+        """
+        Sets up a callback which will iterate over available data
+        renderers and auto-range along one axis.
+        """
+        if self.autorange is None:
+            return
+        dim = self.autorange
+        if dim == 'x':
+            didx = 0
+            odim = 'y'
+            invert = self.invert_xaxis
+        else:
+            didx = 1
+            odim = 'x'
+            invert = self.invert_yaxis
+        if not self.padding:
+            p0, p1 = 0, 0
+        elif isinstance(self.padding, tuple):
+            pad = self.padding[didx]
+            if isinstance(pad, tuple):
+                p0, p1 = pad
+            else:
+                p0, p1 = pad, pad
+        else:
+            p0, p1 = self.padding, self.padding
+
+
+        if dim == 'x':
+            lower, upper = self.xlim
+            lower = None if (lower is None) or np.isnan(lower) else lower
+            upper = None if (upper is None) or np.isnan(upper) else upper
+
+        else:
+            lower, upper = self.ylim
+            lower = None if (lower is None) or np.isnan(lower) else lower
+            upper = None if (upper is None) or np.isnan(upper) else upper
+
+        # Clean this up in bokeh 3.0 using View.find_one API
+        self.state.js_on_event('rangesupdate', CustomJS(code=f"""
+          const ref = cb_obj.origin.id
+          const find = (view) => {{
+            for (const sv of view.child_views) {{
+              if (sv.model.id == ref)
+                return sv
+              const obj = find(sv)
+              if (obj !== null)
+                return obj
+            }}
+            return null
+          }}
+          let plot_view = null;
+          for (const root of cb_obj.origin.document.roots()) {{
+            const root_view = window.Bokeh.index[root.id]
+            plot_view = find(root_view)
+            if (plot_view != null)
+              break
+          }}
+          if (plot_view == null)
+            return
+          let [vmin, vmax] = [Infinity, -Infinity]
+          for (const dr of cb_obj.origin.data_renderers) {{
+            const index = plot_view.renderer_view(dr).glyph_view.index.index
+            for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
+              const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
+              if ({odim}0 > cb_obj.{odim}0 && {odim}1 < cb_obj.{odim}1) {{
+                vmin = Math.min(vmin, {dim}0)
+                vmax = Math.max(vmax, {dim}1)
+              }}
+            }}
+          }}
+
+          vmin = {"vmin" if lower is None else lower}
+          vmax = {"vmax" if upper is None else upper}
+
+          const invert = {str(invert).lower()}
+          const span = vmax-vmin
+          const lower = vmin-(span*{p0})
+          const upper = vmax+(span*{p1})
+          const [start, end] = invert ? [upper, lower] : [lower, upper]
+          const start_finite = window.Number.isFinite(start)
+          const end_finite = window.Number.isFinite(end)
+
+          if (start == end) {{
+            return
+          }}
+
+          if (start_finite && end_finite)  {{
+            cb_obj.origin.{dim}_range.setv({{start, end}})
+          }}
+        """))
 
     def _categorize_data(self, data, cols, dims):
         """
@@ -1397,6 +1493,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
 
+        if self.autorange:
+            self._setup_autorange()
         self._init_glyphs(plot, element, ranges, source)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
