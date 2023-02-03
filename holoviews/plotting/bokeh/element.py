@@ -1015,6 +1015,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           let plot_view = null;
           for (const root of plot.document.roots()) {{
             const root_view = window.Bokeh.index[root.id]
+            if (root_view === undefined)
+              return
             plot_view = find(root_view)
             if (plot_view != null)
               break
