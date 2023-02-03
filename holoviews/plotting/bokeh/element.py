@@ -964,6 +964,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Sets up a callback which will iterate over available data
         renderers and auto-range along one axis.
         """
+        if not isinstance(self, OverlayPlot) and not self.apply_ranges:
+            return
+
         if self.autorange is None:
             return
         dim = self.autorange
