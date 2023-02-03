@@ -1,22 +1,40 @@
-from itertools import chain
 from contextlib import contextmanager
+from itertools import chain
 
-import param
-import numpy as np
 import matplotlib as mpl
-
-from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
-from matplotlib import pyplot as plt
-from matplotlib import gridspec, animation, rcParams
+import numpy as np
+import param
+from matplotlib import (
+    animation,
+    gridspec,
+    pyplot as plt,
+    rcParams,
+)
 from matplotlib.font_manager import font_scalings
+from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 
-from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
-                     GridSpace, Element, CompositeOverlay, Empty,
-                     Collator, GridMatrix, Layout)
-from ...core.options import Store, SkipRendering
-from ...core.util import int_to_roman, int_to_alpha, wrap_tuple_streams
-from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-                    GenericElementPlot, GenericAdjointLayoutPlot)
+from ...core import (
+    AdjointLayout,
+    Collator,
+    CompositeOverlay,
+    Element,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    OrderedDict,
+)
+from ...core.options import SkipRendering, Store
+from ...core.util import int_to_alpha, int_to_roman, wrap_tuple_streams
+from ..plot import (
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
+)
 from ..util import attach_streams, collate, displayable
 from .util import compute_ratios, fix_aspect, get_old_rcparams
 

@@ -1,10 +1,11 @@
 from numbers import Number
+
 import numpy as np
 import param
 
-from ..core.util import datetime_types
-from ..core import Dimension, Element2D, Element
+from ..core import Dimension, Element, Element2D
 from ..core.data import Dataset
+from ..core.util import datetime_types
 
 
 class Annotation(Element2D):

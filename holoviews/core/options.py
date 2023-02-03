@@ -36,19 +36,16 @@ import difflib
 import inspect
 import pickle
 import traceback
-
-from contextlib import contextmanager
 from collections import defaultdict
+from contextlib import contextmanager
 
 import numpy as np
 import param
 
-from .accessors import Opts # noqa (clean up in 2.0)
-from .tree import AttrTree
-from .util import (
-    OrderedDict, group_sanitizer, label_sanitizer, sanitize_identifier
-)
+from .accessors import Opts  # noqa (clean up in 2.0)
 from .pprint import InfoPrinter
+from .tree import AttrTree
+from .util import OrderedDict, group_sanitizer, label_sanitizer, sanitize_identifier
 
 
 def cleanup_custom_options(id, weakref=None):
@@ -928,7 +925,7 @@ class Compositor(param.Parameterized):
         Finds any applicable compositor and applies it.
         """
         from .element import Element
-        from .overlay import Overlay, CompositeOverlay
+        from .overlay import CompositeOverlay, Overlay
         unpack = False
         if not isinstance(overlay, CompositeOverlay):
             overlay = Overlay([overlay])

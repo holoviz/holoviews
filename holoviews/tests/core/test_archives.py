@@ -2,14 +2,16 @@
 Unit test of the archive system, namely FileArchive with different
 exporters (not including renderers).
 """
+import json
 import os
 import shutil
-import json
-import zipfile
 import tarfile
+import zipfile
+
 import numpy as np
+
 from holoviews import Image
-from holoviews.core.io import Serializer, FileArchive
+from holoviews.core.io import FileArchive, Serializer
 from holoviews.element.comparison import ComparisonTestCase
 
 

@@ -1,8 +1,6 @@
 import numpy as np
 
-from holoviews.element import (
-    HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope
-)
+from holoviews.element import Arrow, HLine, HSpan, Labels, Slope, Text, VLine, VSpan
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

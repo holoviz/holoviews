@@ -3,7 +3,6 @@ Unit tests for dim transforms
 """
 import pickle
 import warnings
-
 from collections import OrderedDict
 from unittest import skipIf
 
@@ -12,8 +11,8 @@ import pandas as pd
 import param
 
 try:
-    import dask.dataframe as dd
     import dask.array as da
+    import dask.dataframe as dd
 except ImportError:
     da, dd = None, None
 

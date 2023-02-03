@@ -1,10 +1,9 @@
 import numpy as np
+from bokeh.models import ColumnDataSource
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Curve, Polygons, Table, Scatter, Path, Points
-from holoviews.plotting.links import (Link, RangeToolLink, DataLink)
-
-from bokeh.models import ColumnDataSource
+from holoviews.element import Curve, Path, Points, Polygons, Scatter, Table
+from holoviews.plotting.links import DataLink, Link, RangeToolLink
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

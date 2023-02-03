@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import Raster, Image, RGB
+from holoviews.element import RGB, Image, Raster
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

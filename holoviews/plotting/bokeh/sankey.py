@@ -1,13 +1,11 @@
-import param
 import numpy as np
-
+import param
 from bokeh.models import Patches
 
 from ...core.data import Dataset
-from ...core.util import max_range, dimension_sanitizer
+from ...core.util import dimension_sanitizer, max_range
 from ...util.transform import dim
 from .graphs import GraphPlot
-
 
 
 class SankeyPlot(GraphPlot):

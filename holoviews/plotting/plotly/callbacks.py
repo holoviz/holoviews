@@ -1,13 +1,18 @@
 from weakref import WeakValueDictionary
 
-from ...streams import (
-    Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY,
-    SelectionXY
-)
-
-from .util import _trace_to_subplot
-
 from ...element import Tiles
+from ...streams import (
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
+    SelectionXY,
+    Stream,
+)
+from .util import _trace_to_subplot
 
 
 class PlotlyCallbackMetaClass(type):

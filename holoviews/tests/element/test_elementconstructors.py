@@ -1,14 +1,37 @@
-import param
 import numpy as np
+import param
 
 from holoviews import (
-    Dimension, Dataset, Element, Annotation, Curve, Path, Histogram,
-    HeatMap, Contours, Scatter, Points, Polygons, VectorField, Spikes,
-    Area, Bars, ErrorBars, BoxWhisker, Raster, Image, QuadMesh, RGB,
-    Graph, TriMesh, Div, Tiles
+    RGB,
+    Annotation,
+    Area,
+    Bars,
+    BoxWhisker,
+    Contours,
+    Curve,
+    Dataset,
+    Dimension,
+    Div,
+    Element,
+    ErrorBars,
+    Graph,
+    HeatMap,
+    Histogram,
+    Image,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Raster,
+    Scatter,
+    Spikes,
+    Tiles,
+    TriMesh,
+    VectorField,
 )
-from holoviews.element.path import BaseShape
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element.path import BaseShape
+
 
 class ElementConstructorTest(ComparisonTestCase):
     """

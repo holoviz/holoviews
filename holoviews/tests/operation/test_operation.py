@@ -1,23 +1,43 @@
 import datetime as dt
 from unittest import skipIf
-import pytest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 try:
     import dask.array as da
 except ImportError:
     da = None
 
-from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
-                       Contours, Polygons, Points, Histogram, Curve, Area,
-                       QuadMesh, Dataset, renderer)
+from holoviews import (
+    Area,
+    Contours,
+    Curve,
+    Dataset,
+    GridSpace,
+    Histogram,
+    HoloMap,
+    Image,
+    NdLayout,
+    NdOverlay,
+    Points,
+    Polygons,
+    QuadMesh,
+    renderer,
+)
 from holoviews.core.data.grid import GridInterface
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation.element import (operation, transform, threshold,
-                                         gradient, contours, histogram,
-                                         interpolate_curve, decimate)
+from holoviews.operation.element import (
+    contours,
+    decimate,
+    gradient,
+    histogram,
+    interpolate_curve,
+    operation,
+    threshold,
+    transform,
+)
 
 da_skip = skipIf(da is None, "dask.array is not available")
 

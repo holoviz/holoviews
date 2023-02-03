@@ -32,6 +32,7 @@ target-version = "py37"
 select = [
     "E",
     "F",
+    "I",
     "ICN",
     "PLC",
     "PLE",
@@ -60,3 +61,8 @@ unfixable = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
+
+[tool.ruff.isort]
+known-first-party = ["holoviews"]
+force-wrap-aliases = true
+combine-as-imports = true

@@ -18,19 +18,32 @@ thus would not supply any information regarding *why* two elements are
 considered different.
 """
 from functools import partial
+from unittest import TestCase
+from unittest.util import safe_repr
+
 import numpy as np
 import pandas as pd
-from unittest.util import safe_repr
-from unittest import TestCase
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from . import *    # noqa (All Elements need to support comparison)
-from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
-                    HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix, OrderedDict)
-from ..core.options import Options, Cycle
-from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
-                         is_float)
+from ..core import (
+    AdjointLayout,
+    Dimension,
+    Dimensioned,
+    DynamicMap,
+    Element,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    OrderedDict,
+    Overlay,
+)
+from ..core.options import Cycle, Options
+from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
+from . import *  # noqa (All Elements need to support comparison)
 
 
 class ComparisonInterface:

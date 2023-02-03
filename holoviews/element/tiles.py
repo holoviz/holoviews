@@ -1,12 +1,12 @@
 from types import FunctionType
 
-import param
 import numpy as np
+import param
 
 from ..core import util
 from ..core.dimension import Dimension
 from ..core.element import Element2D
-from ..util.transform import lon_lat_to_easting_northing, easting_northing_to_lon_lat
+from ..util.transform import easting_northing_to_lon_lat, lon_lat_to_easting_northing
 
 
 class Tiles(Element2D):

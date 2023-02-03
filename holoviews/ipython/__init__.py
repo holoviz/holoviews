@@ -2,22 +2,20 @@ import os
 from unittest import SkipTest
 
 import param
-import holoviews
-
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
 
-from ..core.dimension import LabelledData
-from ..core.tree import AttrTree
-from ..core.options import Store
-from ..element.comparison import ComparisonTestCase
-from ..util import extension
-from ..plotting.renderer import Renderer
-from .magics import load_magics
-from .display_hooks import display
-from .display_hooks import pprint_display, png_display, svg_display
+import holoviews
 
+from ..core.dimension import LabelledData
+from ..core.options import Store
+from ..core.tree import AttrTree
+from ..element.comparison import ComparisonTestCase
+from ..plotting.renderer import Renderer
+from ..util import extension
+from .display_hooks import display, png_display, pprint_display, svg_display
+from .magics import load_magics
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 

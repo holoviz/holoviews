@@ -1,29 +1,28 @@
-import sys
-import warnings
-import operator
+import datetime as dt
 import hashlib
-import json
-import time
-import types
-import numbers
-import pickle
 import inspect
 import itertools
+import json
+import numbers
+import operator
+import pickle
 import string
+import sys
+import time
+import types
 import unicodedata
-import datetime as dt
-
-from collections.abc import Iterable # noqa
-from collections import defaultdict, OrderedDict, namedtuple
+import warnings
+from collections import OrderedDict, defaultdict, namedtuple
+from collections.abc import Iterable  # noqa
 from contextlib import contextmanager
-from packaging.version import Version
 from functools import partial
-from threading import Thread, Event
+from threading import Event, Thread
 from types import FunctionType
 
 import numpy as np
 import pandas as pd
 import param
+from packaging.version import Version
 
 # Python 2 builtins
 basestring = str
@@ -55,16 +54,19 @@ pandas_version = Version(pd.__version__)
 try:
     if pandas_version >= Version('1.3.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
+        from pandas.core.dtypes.generic import (
+            ABCIndex as ABCIndexClass,
+            ABCSeries,
+        )
     elif pandas_version >= Version('0.24.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+        from pandas.core.dtypes.generic import ABCIndexClass, ABCSeries
     elif pandas_version > Version('0.20.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+        from pandas.core.dtypes.generic import ABCIndexClass, ABCSeries
     else:
         from pandas.types.dtypes import DatetimeTZDtypeType
-        from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
+        from pandas.types.dtypes.generic import ABCIndexClass, ABCSeries
     pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
     pandas_timedelta_types = (pd.Timedelta,)
     datetime_types = datetime_types + pandas_datetime_types

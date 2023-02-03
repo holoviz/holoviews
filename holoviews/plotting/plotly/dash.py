@@ -1,23 +1,31 @@
 # standard library imports
-import uuid
-import copy
-from collections import OrderedDict, namedtuple
-import pickle
 import base64
+import copy
+import pickle
+import uuid
+from collections import OrderedDict, namedtuple
+
+from dash.exceptions import PreventUpdate
 
 # Holoviews imports
 import holoviews as hv
-from dash.exceptions import PreventUpdate
-from holoviews.plotting.plotly import PlotlyRenderer, DynamicMap
-from holoviews.plotting.plotly.util import clean_internal_figure_properties
 from holoviews.core.decollate import (
-    initialize_dynamic, to_expr_extract_streams, expr_to_fn_of_stream_contents
+    expr_to_fn_of_stream_contents,
+    initialize_dynamic,
+    to_expr_extract_streams,
 )
-from holoviews.streams import Derived, History
+from holoviews.plotting.plotly import DynamicMap, PlotlyRenderer
 from holoviews.plotting.plotly.callbacks import (
-    Selection1DCallback, RangeXYCallback, RangeXCallback, RangeYCallback,
-    BoundsXYCallback, BoundsXCallback, BoundsYCallback
+    BoundsXCallback,
+    BoundsXYCallback,
+    BoundsYCallback,
+    RangeXCallback,
+    RangeXYCallback,
+    RangeYCallback,
+    Selection1DCallback,
 )
+from holoviews.plotting.plotly.util import clean_internal_figure_properties
+from holoviews.streams import Derived, History
 
 # Dash imports
 try:
@@ -25,11 +33,10 @@ try:
     import dash_html_components as html
 except ImportError:
     from dash import dcc, html
-from dash import callback_context
-from dash.dependencies import Output, Input, State
-
 # plotly.py imports
 import plotly.graph_objects as go
+from dash import callback_context
+from dash.dependencies import Input, Output, State
 
 # Activate plotly as current HoloViews extension
 hv.extension("plotly")

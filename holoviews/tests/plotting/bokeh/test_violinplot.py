@@ -1,15 +1,14 @@
 from unittest import SkipTest
 
 import numpy as np
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import Violin
 from holoviews.operation.stats import univariate_kde
-from holoviews.util.transform import dim
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 
 class TestBokehViolinPlot(TestBokehPlot):

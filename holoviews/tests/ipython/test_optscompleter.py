@@ -3,6 +3,7 @@ Tests the OptsCompleter class for tab-completion in the opts magic.
 """
 
 from unittest import SkipTest
+
 try:
     from holoviews.ipython import IPTestCase
     from holoviews.ipython.magics import OptsCompleter

@@ -1,16 +1,13 @@
-import param
 import numpy as np
-
+import param
 from bokeh.models.glyphs import AnnularWedge
 
 from ...core.data import GridInterface
-from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
+from ...core.util import dimension_sanitizer, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import (
-    base_properties, line_properties, fill_properties, text_properties
-)
+from .styles import base_properties, fill_properties, line_properties, text_properties
 
 
 class HeatMapPlot(ColorbarPlot):

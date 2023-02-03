@@ -4,6 +4,7 @@ from holoviews.element import Tiles
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
+
 class TestTilePlot(TestBokehPlot):
 
     def test_xyzservices_tileprovider(self):

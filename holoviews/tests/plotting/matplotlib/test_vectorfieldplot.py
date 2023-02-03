@@ -3,8 +3,8 @@ import numpy as np
 from holoviews.core.spaces import HoloMap
 from holoviews.element import VectorField
 
-from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestVectorFieldPlot(TestMPLPlot):

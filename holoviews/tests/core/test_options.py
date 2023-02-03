@@ -4,13 +4,26 @@ import pickle
 import numpy as np
 import pytest
 
-from holoviews import util
-from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts
+from holoviews import (
+    Curve,
+    DynamicMap,
+    Histogram,
+    Image,
+    Points,
+    Store,
+    opts,
+    plotting,
+    util,
+)
 from holoviews.core.options import (
-    OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
+    Cycle,
+    OptionError,
+    Options,
+    OptionTree,
+    StoreOptions,
+    options_policy,
 )
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting
 
 Options.skip_invalid = False
 
@@ -921,9 +934,9 @@ class TestLookupOptions(ComparisonTestCase):
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
-        import holoviews.plotting.mpl
         import holoviews.plotting.bokeh
-        import holoviews.plotting.plotly # noqa
+        import holoviews.plotting.mpl
+        import holoviews.plotting.plotly  # noqa
 
         backends = Store.loaded_backends()
 

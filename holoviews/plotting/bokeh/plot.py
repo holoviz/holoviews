@@ -1,37 +1,66 @@
-from itertools import groupby
 from collections import defaultdict
+from itertools import groupby
 
 import numpy as np
 import param
-
 from bokeh.layouts import gridplot
 from bokeh.models import (
-    ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
+    Axis,
+    ColorBar,
+    Column,
+    ColumnDataSource,
+    Div,
+    Legend,
+    Row,
+    Title,
 )
 from bokeh.models.layouts import Tabs
 
-from ...selection import NoOpSelectionDisplay
 from ...core import (
-    OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
-    GridSpace, HoloMap, Element
+    AdjointLayout,
+    Element,
+    Empty,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    OrderedDict,
+    Store,
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    cftime_to_timestamp, cftime_types, get_method_owner,
-    is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
-    _STANDARD_CALENDARS
+    _STANDARD_CALENDARS,
+    cftime_to_timestamp,
+    cftime_types,
+    get_method_owner,
+    is_param_method,
+    unique_iterator,
+    wrap_tuple,
+    wrap_tuple_streams,
 )
+from ...selection import NoOpSelectionDisplay
 from ..links import Link
 from ..plot import (
-    DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot,
-    CallbackPlot
+    CallbackPlot,
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
+    GenericOverlayPlot,
 )
-from ..util import attach_streams, displayable, collate
+from ..util import attach_streams, collate, displayable
 from .links import LinkCallback
 from .util import (
-    bokeh3, filter_toolboxes, make_axis, update_shared_sources, empty_plot,
-    decode_bytes, theme_attr_json, cds_column_replace, get_default
+    bokeh3,
+    cds_column_replace,
+    decode_bytes,
+    empty_plot,
+    filter_toolboxes,
+    get_default,
+    make_axis,
+    theme_attr_json,
+    update_shared_sources,
 )
 
 if bokeh3:

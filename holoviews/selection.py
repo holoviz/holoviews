@@ -2,19 +2,23 @@ from collections import namedtuple
 
 import numpy as np
 import param
-
 from param.parameterized import bothmethod
 
 from .core.data import Dataset
 from .core.dimension import OrderedDict
 from .core.element import Element, Layout
+from .core.layout import AdjointLayout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
-from .core.layout import AdjointLayout
 from .core.spaces import GridSpace
 from .streams import (
-    Stream, SelectionExprSequence, CrossFilterSet,
-    Derived, PlotReset, SelectMode, Pipe
+    CrossFilterSet,
+    Derived,
+    Pipe,
+    PlotReset,
+    SelectionExprSequence,
+    SelectMode,
+    Stream,
 )
 from .util import DynamicMap
 

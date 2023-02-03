@@ -1,24 +1,27 @@
 from collections import defaultdict
 from functools import partial
 
-import param
 import numpy as np
+import param
+from bokeh.models import Circle, FactorRange, HBar, VBar
 
-from bokeh.models import FactorRange, Circle, VBar, HBar
-
-from .selection import BokehOverlaySelectionDisplay
 from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
-    dimension_sanitizer, wrap_tuple, unique_iterator, isfinite,
-    is_dask_array, is_cupy_array
+    dimension_sanitizer,
+    is_cupy_array,
+    is_dask_array,
+    isfinite,
+    unique_iterator,
+    wrap_tuple,
 )
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
 from .chart import AreaPlot
-from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .path import PolygonPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties
 from .util import decode_bytes
 

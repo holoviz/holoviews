@@ -1,32 +1,41 @@
 import datetime as dt
 import re
 
-import pytest
 import numpy as np
+import pytest
+from bokeh.models import Column, Div, GlyphRenderer, Row, Spacer, Tabs, Title
 
-from holoviews.core import (HoloMap, GridSpace, Layout, Empty, Dataset,
-                            NdOverlay, NdLayout, DynamicMap, Dimension)
-from holoviews.element import Curve, Image, Points, Histogram, Scatter
-from holoviews.streams import Stream
-from holoviews.util import render, opts
-from holoviews.util.transform import dim
+from holoviews.core import (
+    Dataset,
+    Dimension,
+    DynamicMap,
+    Empty,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+)
+from holoviews.element import Curve, Histogram, Image, Points, Scatter
 from holoviews.plotting.bokeh.util import bokeh3
-
-from bokeh.models import Div, GlyphRenderer, Tabs, Spacer, Title, Row, Column
+from holoviews.streams import Stream
+from holoviews.util import opts, render
+from holoviews.util.transform import dim
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 if bokeh3:
+    from bokeh.models import GridPlot, Toolbar
     from bokeh.models.layouts import TabPanel
     from bokeh.plotting import figure
-    from bokeh.models import GridPlot
-    from bokeh.models import Toolbar
 else:
+    from bokeh.models import (
+        GridBox as GridPlot,  # Not completely correct
+        ToolbarBox as Toolbar,  # Not completely correct
+    )
     from bokeh.models.layouts import Panel as TabPanel
     from bokeh.plotting import Figure as figure
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
-    from bokeh.models import GridBox as GridPlot  # Not completely correct
 
 
 class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):

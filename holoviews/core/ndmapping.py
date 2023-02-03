@@ -6,17 +6,22 @@ also enables slicing over multiple dimension ranges.
 
 from itertools import cycle
 from operator import itemgetter
+
 import numpy as np
 import pandas as pd
-
 import param
 
 from . import util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
+from .dimension import Dimension, Dimensioned, OrderedDict, ViewableElement, asdim
 from .util import (
-    unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
-    process_ellipses, get_ndmapping_label
+    dimension_sort,
+    get_ndmapping_label,
+    process_ellipses,
+    sanitize_identifier,
+    unique_iterator,
+    wrap_tuple,
 )
+
 
 class item_check:
     """

@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from holoviews import HLine, VLine, Text, Arrow, Annotation, Spline
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews import Annotation, Arrow, HLine, Spline, Text, VLine
 from holoviews.element import Points
+from holoviews.element.comparison import ComparisonTestCase
 
 
 class AnnotationTests(ComparisonTestCase):

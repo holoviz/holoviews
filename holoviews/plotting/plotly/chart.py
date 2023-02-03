@@ -1,10 +1,10 @@
-import param
 import numpy as np
+import param
 
-from ...operation import interpolate_curve
 from ...element import Tiles
+from ...operation import interpolate_curve
 from ..mixins import AreaMixin, BarsMixin
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 
 

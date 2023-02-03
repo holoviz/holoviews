@@ -1,18 +1,27 @@
 import uuid
-
 from unittest import TestCase
 from unittest.mock import Mock
 
 import plotly.graph_objs as go
 
 from holoviews import Tiles
-from holoviews.streams import (
-    BoundsXY, BoundsX, BoundsY, RangeXY, RangeX, RangeY, Selection1D
-)
 from holoviews.plotting.plotly.callbacks import (
-    RangeXYCallback, RangeXCallback, RangeYCallback,
-    BoundsXYCallback, BoundsXCallback, BoundsYCallback,
-    Selection1DCallback
+    BoundsXCallback,
+    BoundsXYCallback,
+    BoundsYCallback,
+    RangeXCallback,
+    RangeXYCallback,
+    RangeYCallback,
+    Selection1DCallback,
+)
+from holoviews.streams import (
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
 )
 
 

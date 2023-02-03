@@ -2,14 +2,17 @@ from unittest import SkipTest
 
 import holoviews as hv
 from holoviews.core.options import Store
+
 try:
     from holoviews import ipython            # noqa (Import test)
     from holoviews.ipython import IPTestCase
 except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing magics")
 
-from holoviews.operation import Compositor
 from pyviz_comms import CommManager
+
+from holoviews.operation import Compositor
+
 
 class ExtensionTestCase(IPTestCase):
 

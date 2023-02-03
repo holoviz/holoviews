@@ -14,7 +14,7 @@ import numpy as np
 import param
 import pyparsing as pp
 
-from ..core.options import Options, Cycle, Palette
+from ..core.options import Cycle, Options, Palette
 from ..core.util import merge_option_dicts
 from ..operation import Compositor
 from .transform import dim

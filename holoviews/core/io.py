@@ -12,29 +12,28 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-import re
-import os
-import time
-import string
-import zipfile
-import tarfile
-import shutil
 import itertools
+import os
 import pickle
+import re
+import shutil
+import string
+import tarfile
+import time
+import zipfile
 from collections import defaultdict
-
-from io import BytesIO
 from hashlib import sha256
+from io import BytesIO
 
 import param
 from param.parameterized import bothmethod
 
 from .dimension import LabelledData
 from .element import Collator, Element
-from .overlay import Overlay, Layout
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
+from .ndmapping import NdMapping, OrderedDict, UniformNdMapping
 from .options import Store
-from .util import unique_iterator, group_sanitizer, label_sanitizer
+from .overlay import Layout, Overlay
+from .util import group_sanitizer, label_sanitizer, unique_iterator
 
 
 def sanitizer(name, replacements=[(':','_'), ('/','_'), ('\\','_')]):

@@ -15,12 +15,10 @@ import re
 import textwrap
 
 import param
-
 from param.ipython import ParamPager
 from param.parameterized import bothmethod
 
 from .util import group_sanitizer, label_sanitizer
-
 
 
 class ParamFilter(param.ParameterizedFunction):
@@ -360,7 +358,7 @@ class PrettyPrinter(param.Parameterized):
     def option_info(cls_or_slf, node):
         if not cls_or_slf.show_options:
             return None
-        from .options import Store, Options
+        from .options import Options, Store
         options = {}
         for g in Options._option_groups:
             gopts = Store.lookup_options(Store.current_backend, node, g,

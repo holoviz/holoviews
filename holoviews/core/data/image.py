@@ -1,13 +1,13 @@
 import numpy as np
 
+from .. import util
 from ..boundingregion import BoundingBox
 from ..dimension import dimension_name
 from ..element import Element
-from ..ndmapping import  NdMapping, item_check
-from ..sheetcoords import Slice, SheetCoordinateSystem
-from .. import util
+from ..ndmapping import NdMapping, item_check
+from ..sheetcoords import SheetCoordinateSystem, Slice
 from .grid import GridInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 from .util import finite_range
 
 

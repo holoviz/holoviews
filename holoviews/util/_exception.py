@@ -1,5 +1,5 @@
-import os
 import inspect
+import os
 from functools import lru_cache
 from warnings import warn
 
@@ -10,8 +10,9 @@ def deprecation_warning(msg, warning=FutureWarning):
 
     # Finding the first stacklevel outside holoviews and param
     # Inspired by: pandas.util._exceptions.find_stack_level
-    import holoviews as hv
     import param
+
+    import holoviews as hv
 
     pkg_dir = os.path.dirname(hv.__file__)
     test_dir = os.path.join(pkg_dir, "tests")

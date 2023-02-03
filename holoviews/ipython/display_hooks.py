@@ -1,25 +1,32 @@
 """
 Definition and registration of display hooks for the IPython Notebook.
 """
-from functools import wraps
-from contextlib import contextmanager
-
 import sys
 import traceback
+from contextlib import contextmanager
+from functools import wraps
 
 import IPython
 from IPython import get_ipython
 from IPython.display import HTML
 
 import holoviews
-from ..core.options import (Store, StoreOptions, SkipRendering,
-                            AbbreviatedException)
+
 from ..core import (
-    ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
-    Layout, CompositeOverlay, DynamicMap, Dimensioned, Empty
+    AdjointLayout,
+    CompositeOverlay,
+    Dimensioned,
+    DynamicMap,
+    Empty,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    ViewableElement,
 )
-from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
+from ..core.options import AbbreviatedException, SkipRendering, Store, StoreOptions
+from ..core.traversal import unique_dimkeys
 from ..core.util import mimebundle_to_html
 from ..plotting import Plot
 from ..plotting.renderer import MIME_TYPES

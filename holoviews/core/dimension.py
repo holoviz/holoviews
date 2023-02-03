@@ -4,22 +4,21 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 import builtins
-import re
 import datetime as dt
+import re
 import weakref
-
-from operator import itemgetter
-from collections import defaultdict, Counter
-from itertools import chain
-from functools import partial
+from collections import Counter, defaultdict
 from collections.abc import Iterable
+from functools import partial
+from itertools import chain
+from operator import itemgetter
 
-import param
 import numpy as np
+import param
 
 from . import util
-from .accessors import Opts, Apply, Redim
-from .options import Store, Options, cleanup_custom_options
+from .accessors import Apply, Opts, Redim
+from .options import Options, Store, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import OrderedDict, bytes_to_unicode

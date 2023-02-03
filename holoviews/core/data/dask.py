@@ -6,7 +6,7 @@ import pandas as pd
 from .. import util
 from ..dimension import Dimension
 from ..element import Element
-from ..ndmapping import NdMapping, item_check, OrderedDict, sorted_context
+from ..ndmapping import NdMapping, OrderedDict, item_check, sorted_context
 from .interface import Interface
 from .pandas import PandasInterface
 

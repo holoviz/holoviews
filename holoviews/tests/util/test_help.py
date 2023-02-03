@@ -1,5 +1,6 @@
 import holoviews as hv
 
+
 def test_help_pattern(capsys):
     import holoviews.plotting.bokeh  # noqa
     hv.help(hv.Curve, pattern='border')

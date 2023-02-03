@@ -1,7 +1,7 @@
 from collections import defaultdict
 
-import param
 import numpy as np
+import param
 
 from ...core import util
 from ...element import Contours, Polygons
@@ -10,8 +10,12 @@ from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
-    expand_batched_style, base_properties, line_properties, fill_properties,
-    mpl_to_bokeh, validate
+    base_properties,
+    expand_batched_style,
+    fill_properties,
+    line_properties,
+    mpl_to_bokeh,
+    validate,
 )
 from .util import multi_polygons_data
 

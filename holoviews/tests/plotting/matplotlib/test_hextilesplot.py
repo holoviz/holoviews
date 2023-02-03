@@ -2,7 +2,6 @@ import numpy as np
 
 from holoviews.element import HexTiles
 
-
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

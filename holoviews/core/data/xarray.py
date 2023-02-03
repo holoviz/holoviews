@@ -1,6 +1,5 @@
 import sys
 import types
-
 from collections import OrderedDict
 
 import numpy as np
@@ -8,10 +7,10 @@ import pandas as pd
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
-from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .grid import GridInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
 
 

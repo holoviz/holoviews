@@ -2,7 +2,8 @@
 Unit tests of Path types.
 """
 import numpy as np
-from holoviews import Dataset, Ellipse, Box, Polygons, Path
+
+from holoviews import Box, Dataset, Ellipse, Path, Polygons
 from holoviews.core.data.interface import DataError
 from holoviews.element.comparison import ComparisonTestCase
 

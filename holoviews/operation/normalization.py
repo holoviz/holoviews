@@ -14,10 +14,11 @@ each element.
 """
 
 import param
-from ..core.operation import Operation
-from ..element import Raster
+
 from ..core import Overlay
+from ..core.operation import Operation
 from ..core.util import match_spec
+from ..element import Raster
 
 
 class Normalization(Operation):

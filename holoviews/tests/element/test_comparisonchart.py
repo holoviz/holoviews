@@ -3,7 +3,8 @@ Test cases for the Comparisons class over the Chart elements
 """
 
 import numpy as np
-from holoviews import Dimension, Curve, Bars, Histogram, Scatter, Points, VectorField
+
+from holoviews import Bars, Curve, Dimension, Histogram, Points, Scatter, VectorField
 from holoviews.element.comparison import ComparisonTestCase
 
 

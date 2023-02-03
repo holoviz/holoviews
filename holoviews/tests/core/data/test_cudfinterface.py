@@ -1,5 +1,4 @@
 import logging
-
 from unittest import SkipTest
 
 import numpy as np

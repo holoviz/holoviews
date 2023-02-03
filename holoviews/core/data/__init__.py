@@ -1,37 +1,38 @@
-import types
 import copy
-
+import types
 from contextlib import contextmanager
 from functools import wraps
 
 import numpy as np
+import pandas as pd  # noqa
 import param
-import pandas as pd # noqa
-
 from param.parameterized import ParameterizedMetaclass
 
+from .. import util as core_util
 from ..accessors import Redim
 from ..dimension import (
-    Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
+    Dimension,
+    Dimensioned,
+    LabelledData,
+    dimension_name,
+    process_dimensions,
 )
 from ..element import Element
-from ..ndmapping import OrderedDict, MultiDimensionalMapping
-from ..spaces import HoloMap, DynamicMap
-from .. import util as core_util
-
+from ..ndmapping import MultiDimensionalMapping, OrderedDict
+from ..spaces import DynamicMap, HoloMap
 from .array import ArrayInterface
-from .cudf import cuDFInterface               # noqa (API import)
-from .dask import DaskInterface               # noqa (API import)
-from .dictionary import DictInterface         # noqa (API import)
-from .grid import GridInterface               # noqa (API import)
-from .ibis import IbisInterface               # noqa (API import)
+from .cudf import cuDFInterface  # noqa (API import)
+from .dask import DaskInterface  # noqa (API import)
+from .dictionary import DictInterface  # noqa (API import)
+from .grid import GridInterface  # noqa (API import)
+from .ibis import IbisInterface  # noqa (API import)
+from .image import ImageInterface  # noqa (API import)
 from .interface import Interface, iloc, ndloc
-from .multipath import MultiInterface         # noqa (API import)
-from .image import ImageInterface             # noqa (API import)
+from .multipath import MultiInterface  # noqa (API import)
 from .pandas import PandasInterface
-from .spatialpandas import SpatialPandasInterface     # noqa (API import)
-from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
-from .xarray import XArrayInterface           # noqa (API import)
+from .spatialpandas import SpatialPandasInterface  # noqa (API import)
+from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
+from .xarray import XArrayInterface  # noqa (API import)
 
 default_datatype = 'dataframe'
 
@@ -291,7 +292,8 @@ class Dataset(Element, metaclass=PipelineMeta):
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
-            chain as chain_op, factory
+            chain as chain_op,
+            factory,
         )
         self._in_method = False
         input_data = data
@@ -787,7 +789,7 @@ argument to specify a selection specification""")
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
-        from ...element import Table, Curve
+        from ...element import Curve, Table
         datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}

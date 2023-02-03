@@ -2,14 +2,13 @@ from collections import OrderedDict, defaultdict
 
 import numpy as np
 
-from .dictionary import DictInterface
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
-from .util import finite_range, is_dask, dask_array_module, get_array_types
-
+from .dictionary import DictInterface
+from .interface import DataError, Interface
+from .util import dask_array_module, finite_range, get_array_types, is_dask
 
 
 class GridInterface(DictInterface):

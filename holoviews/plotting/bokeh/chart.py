@@ -2,27 +2,26 @@ from collections import defaultdict
 
 import numpy as np
 import param
-
-from bokeh.models import (
-    CategoricalColorMapper, CustomJS, FactorRange, Range1d, Whisker
-)
+from bokeh.models import CategoricalColorMapper, CustomJS, FactorRange, Range1d, Whisker
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
-from ...core.util import (
-    OrderedDict, dimension_sanitizer, isfinite
-)
+from ...core.util import OrderedDict, dimension_sanitizer, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
-from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
+from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
-    expand_batched_style, base_properties, line_properties, fill_properties,
-    mpl_to_bokeh, rgb2hex
+    base_properties,
+    expand_batched_style,
+    fill_properties,
+    line_properties,
+    mpl_to_bokeh,
+    rgb2hex,
 )
 from .util import categorize_array
 

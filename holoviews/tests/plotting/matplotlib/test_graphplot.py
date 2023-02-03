@@ -1,12 +1,12 @@
 import numpy as np
+from matplotlib.collections import LineCollection, PolyCollection
+from packaging.version import Version
 
 from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
+from holoviews.element import Chord, Graph, Nodes, TriMesh, circular_layout
 from holoviews.util.transform import dim
-from matplotlib.collections import LineCollection, PolyCollection
-from packaging.version import Version
 
 from .test_plot import TestMPLPlot, mpl_renderer
 

@@ -1,29 +1,33 @@
-import param
-import numpy as np
 import matplotlib as mpl
-from packaging.version import Version
-
+import numpy as np
+import param
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
+from packaging.version import Version
 
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
-    unique_array, isscalar, isdatetime
+    dt64_to_dt,
+    dt_to_int,
+    isdatetime,
+    isfinite,
+    isscalar,
+    match_spec,
+    search_indices,
+    unique_array,
 )
-from ...element import Raster, HeatMap
+from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..plot import PlotSelector
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
-from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
-from .element import ElementPlot, ColorbarPlot, LegendPlot
-from .path  import PathPlot
+from ..plot import PlotSelector
+from ..util import compute_sizes, get_min_distance, get_sideplot_ranges
+from .element import ColorbarPlot, ElementPlot, LegendPlot
+from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
 from .util import mpl_version
-
 
 
 class ChartPlot(ElementPlot):

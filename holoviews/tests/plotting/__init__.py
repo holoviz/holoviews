@@ -1,6 +1,6 @@
 from itertools import combinations
 
-from holoviews.core.options import Store, Options
+from holoviews.core.options import Options, Store
 
 
 def option_intersections(backend):

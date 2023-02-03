@@ -1,4 +1,5 @@
 from holoviews.element import Points
+
 from .test_plot import TestPlotlyPlot
 
 

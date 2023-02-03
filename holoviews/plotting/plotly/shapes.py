@@ -1,7 +1,7 @@
-import param
 import numpy as np
+import param
 
-from ...element import HLine, VLine, HSpan, VSpan, Tiles
+from ...element import HLine, HSpan, Tiles, VLine, VSpan
 from ..mixins import GeomMixin
 from .element import ElementPlot
 

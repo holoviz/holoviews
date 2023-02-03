@@ -1,19 +1,22 @@
 import itertools
 
-import param
 import numpy as np
 import pandas as pd
+import param
 
 from ..core import Dataset, OrderedDict
 from ..core.boundingregion import BoundingBox
-from ..core.data import default_datatype, PandasInterface
+from ..core.data import PandasInterface, default_datatype
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (
-    cartesian_product, datetime_types, is_cyclic, is_nan,
-    one_to_one, sort_topologically
+    cartesian_product,
+    datetime_types,
+    is_cyclic,
+    is_nan,
+    one_to_one,
+    sort_topologically,
 )
-
 
 
 def split_path(path):

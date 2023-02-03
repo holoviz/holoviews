@@ -1,11 +1,13 @@
-from itertools import product
 import datetime as dt
+from itertools import product
+
 import numpy as np
 import pandas as pd
 
 from holoviews.core import HoloMap
-from holoviews.element import Image, Contours, Curve
+from holoviews.element import Contours, Curve, Image
 from holoviews.element.comparison import ComparisonTestCase
+
 
 class DimensionedSelectionTest(ComparisonTestCase):
 

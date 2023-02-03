@@ -2,17 +2,23 @@ from unittest.mock import MagicMock, patch
 
 from dash._callback_context import CallbackContext
 
-from .test_plot import TestPlotlyPlot
+from holoviews import Bounds, DynamicMap, Scatter
 from holoviews.plotting.plotly.dash import (
-    to_dash, DashComponents, encode_store_data, decode_store_data
+    DashComponents,
+    decode_store_data,
+    encode_store_data,
+    to_dash,
 )
-from holoviews import Scatter, DynamicMap, Bounds
 from holoviews.streams import BoundsXY, RangeXY, Selection1D
+
+from .test_plot import TestPlotlyPlot
+
 try:
     from dash_core_components import Store
 except ImportError:
     from dash.dcc import Store
 import plotly.io as pio
+
 pio.templates.default = None
 
 

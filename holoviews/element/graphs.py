@@ -1,18 +1,23 @@
-from types import FunctionType
 from collections import defaultdict
+from types import FunctionType
 
-import param
 import numpy as np
 import pandas as pd
+import param
 
-from ..core import Dimension, Dataset, Element2D
+from ..core import Dataset, Dimension, Element2D
 from ..core.accessors import Redim
-from ..core.util import is_dataframe, max_range, search_indices
 from ..core.operation import Operation
+from ..core.util import is_dataframe, max_range, search_indices
 from .chart import Points
 from .path import Path
-from .util import (split_path, circular_layout,
-                   connect_edges_pd, quadratic_bezier, connect_tri_edges_pd)
+from .util import (
+    circular_layout,
+    connect_edges_pd,
+    connect_tri_edges_pd,
+    quadratic_bezier,
+    split_path,
+)
 
 
 class RedimGraph(Redim):

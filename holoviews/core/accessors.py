@@ -3,7 +3,6 @@ Module for accessor objects for viewable HoloViews objects.
 """
 import copy
 import sys
-
 from collections import OrderedDict
 from functools import wraps
 from types import FunctionType
@@ -26,7 +25,10 @@ class AccessorPipelineMeta(type):
     def pipelined(mcs, __call__):
         @wraps(__call__)
         def pipelined_call(*args, **kwargs):
-            from ..operation.element import method as method_op, factory
+            from ..operation.element import (
+                factory,
+                method as method_op,
+            )
             from .data import Dataset, MultiDimensionalMapping
             inst = args[0]
 
@@ -132,11 +134,11 @@ class Apply(metaclass=AccessorPipelineMeta):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        from ..util import Dynamic
         from .data import Dataset
         from .dimension import ViewableElement
         from .element import Element
-        from .spaces import HoloMap, DynamicMap
-        from ..util import Dynamic
+        from .spaces import DynamicMap, HoloMap
 
         if isinstance(self._obj, DynamicMap) and dynamic == False:
             samples = tuple(d.values for d in self._obj.kdims)
@@ -227,8 +229,8 @@ class Apply(metaclass=AccessorPipelineMeta):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
-        from ..util.transform import dim
         from ..streams import Params
+        from ..util.transform import dim
         params = {}
         for arg in kwargs.values():
             if isinstance(arg, dim):
@@ -272,8 +274,8 @@ class Apply(metaclass=AccessorPipelineMeta):
         See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
         for more information.
         """
-        from ..util.transform import dim
         from ..streams import Params
+        from ..util.transform import dim
         params = {}
         for _, arg in list(args)+list(kwargs.items()):
             if isinstance(arg, dim):
@@ -358,8 +360,8 @@ class Redim(metaclass=AccessorPipelineMeta):
         return dimension
 
     def _create_expression_transform(self, kdims, vdims, exclude=[]):
-        from .dimension import dimension_name
         from ..util.transform import dim
+        from .dimension import dimension_name
 
         def _transform_expression(expression):
             if dimension_name(expression.dimension) in exclude:
@@ -503,7 +505,7 @@ class Opts(metaclass=AccessorPipelineMeta):
             Options object associated with the object containing the
             applied option keywords.
         """
-        from .options import Store, Options
+        from .options import Options, Store
         keywords = {}
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend

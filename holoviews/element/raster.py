@@ -1,20 +1,20 @@
+import colorsys
 from operator import itemgetter
 
 import numpy as np
-import colorsys
 import param
 
-from ..core import util, config, Dimension, Element2D, Overlay, Dataset
+from ..core import Dataset, Dimension, Element2D, Overlay, config, util
+from ..core.boundingregion import BoundingBox, BoundingRegion
 from ..core.data import ImageInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
-from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
 from .geom import Selection2DExpr
 from .graphs import TriMesh
 from .tabular import Table
-from .util import compute_slice_bounds, categorical_aggregate2d
+from .util import categorical_aggregate2d, compute_slice_bounds
 
 
 class Raster(Element2D):

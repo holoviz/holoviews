@@ -1,7 +1,7 @@
 import numpy as np
 
-from holoviews.core import HoloMap, NdOverlay, DynamicMap
-from holoviews.element import Image, Curve
+from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews.element import Curve, Image
 from holoviews.streams import Stream
 
 from ...utils import LoggingComparisonTestCase

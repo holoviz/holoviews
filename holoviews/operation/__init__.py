@@ -1,8 +1,8 @@
+from ..core import Overlay  # noqa (API import)
 from ..core.operation import Operation
 from ..core.options import Compositor
+from .element import *  # noqa (API import)
 
-from .element import *      # noqa (API import)
-from ..core import Overlay  # noqa (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False

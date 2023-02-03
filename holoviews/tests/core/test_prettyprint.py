@@ -3,9 +3,9 @@ Test cases for the pretty printing system.
 """
 
 
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews import Store, Element, Curve, Overlay, Layout
+from holoviews import Curve, Element, Layout, Overlay, Store
 from holoviews.core.pprint import PrettyPrinter
+from holoviews.element.comparison import ComparisonTestCase
 
 from .test_dimensioned import CustomBackendTestCase, ExampleElement
 

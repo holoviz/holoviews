@@ -1,6 +1,5 @@
 import numpy as np
-
-from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource
+from bokeh.models import BBoxTileSource, QUADKEYTileSource, WMTSTileSource
 
 from ...core.options import SkipRendering
 from ...element.tiles import _ATTRIBUTIONS

@@ -1,16 +1,15 @@
 import warnings
 
-import param
 import numpy as np
-
+import param
 from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import unique_array, search_indices, is_number, isscalar
+from ...core.util import is_number, isscalar, search_indices, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..util import get_directed_graph_paths, process_cmap
 from .element import ColorbarPlot
 from .util import filter_styles
 

@@ -6,17 +6,17 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 import sys
 import weakref
-from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
+from numbers import Number
 from types import FunctionType
-from packaging.version import Version
 
-import param
-import pandas as pd
 import numpy as np
+import pandas as pd
+import param
+from packaging.version import Version
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
@@ -544,7 +544,10 @@ class Buffer(Pipe):
                 loaded = True
             except ImportError:
                 try:
-                    from streamz.dataframe import DataFrame as StreamingDataFrame, Series as StreamingSeries
+                    from streamz.dataframe import (
+                        DataFrame as StreamingDataFrame,
+                        Series as StreamingSeries,
+                    )
                     loaded = True
                 except ImportError:
                     loaded = False
@@ -981,8 +984,8 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
-        from .element import Element
         from .core.spaces import DynamicMap
+        from .element import Element
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)
@@ -1815,7 +1818,7 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Rectangles, Polygons
+        from .element import Polygons, Rectangles
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last

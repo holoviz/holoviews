@@ -1,30 +1,32 @@
-import os
-import sys
 import inspect
+import os
 import shutil
-
+import sys
 from collections import defaultdict
 from inspect import Parameter, Signature
-from types import FunctionType
 from pathlib import Path
+from types import FunctionType
 
 import param
-
 from pyviz_comms import extension as _pyviz_extension
 
 from ..core import (
-    Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
-    StoreOptions, Store
+    Dataset,
+    Dimensioned,
+    DynamicMap,
+    HoloMap,
+    Store,
+    StoreOptions,
+    ViewableElement,
+    util,
 )
+from ..core.operation import Operation, OperationCallable
 from ..core.options import Keywords, Options, options_policy
-from ..core.operation import Operation
 from ..core.overlay import Overlay
-from ..core.util import merge_options_to_dict, OrderedDict
-from ..core.operation import OperationCallable
-from ..core import util
+from ..core.util import OrderedDict, merge_options_to_dict
 from ..operation.element import function
-from ..streams import Stream, Params, streams_list_from_dict
-from .settings import OutputSettings, list_formats, list_backends
+from ..streams import Params, Stream, streams_list_from_dict
+from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
 

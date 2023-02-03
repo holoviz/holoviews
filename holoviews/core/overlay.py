@@ -9,13 +9,14 @@ for indexing, slicing and animating collections of Views.
 
 from collections import OrderedDict
 from functools import reduce
-import numpy as np
 
+import numpy as np
 import param
+
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
+from .layout import AdjointLayout, Composable, Layout, Layoutable
 from .ndmapping import UniformNdMapping
-from .layout import Composable, Layout, AdjointLayout, Layoutable
-from .util import sanitize_identifier, unique_array, dimensioned_streams
+from .util import dimensioned_streams, sanitize_identifier, unique_array
 
 
 class Overlayable:

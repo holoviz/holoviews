@@ -5,12 +5,12 @@ AdjointLayout allows one or two Views to be adjoined to a primary View
 to act as supplementary elements.
 """
 
-import param
 import numpy as np
+import param
 
-from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from . import traversal
+from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
+from .ndmapping import NdMapping, OrderedDict, UniformNdMapping
 
 
 class Layoutable:

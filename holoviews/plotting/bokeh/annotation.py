@@ -1,22 +1,19 @@
 from collections import defaultdict
 from html import escape
 
-import param
 import numpy as np
-
-from bokeh.models import BoxAnnotation, Span, Arrow, Slope
-from panel.models import HTML
-
-from bokeh.models import TeeHead, NormalHead
+import param
+from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
 from bokeh.transform import dodge
+from panel.models import HTML
 
 from ...core.util import datetime_types, dimension_sanitizer
 from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
-from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
+from .plot import BokehPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
-from .plot import BokehPlot
 from .util import date_to_integer
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}

@@ -1,16 +1,16 @@
 from collections import OrderedDict
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
+from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
 
 from ...util._exception import deprecation_warning
-from .interface import Interface, DataError
-from ..dimension import dimension_name, Dimension
+from .. import util
+from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
+from .interface import DataError, Interface
 from .util import finite_range
 
 

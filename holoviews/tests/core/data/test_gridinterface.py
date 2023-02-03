@@ -1,14 +1,14 @@
 import datetime as dt
-
 from collections import OrderedDict
 from itertools import product
 from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+
 from holoviews.core.data import Dataset
 from holoviews.core.util import date_range
-from holoviews.element import Image, Curve, RGB, HSV
+from holoviews.element import HSV, RGB, Curve, Image
 from holoviews.util.transform import dim
 
 try:
@@ -18,11 +18,15 @@ except ImportError:
 
 
 from .base import (
-    GriddedInterfaceTests, InterfaceTests, HomogeneousColumnTests, DatatypeContext
+    DatatypeContext,
+    GriddedInterfaceTests,
+    HomogeneousColumnTests,
+    InterfaceTests,
 )
 from .test_imageinterface import (
-    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
-    BaseHSVElementInterfaceTests
+    BaseHSVElementInterfaceTests,
+    BaseImageElementInterfaceTests,
+    BaseRGBElementInterfaceTests,
 )
 
 

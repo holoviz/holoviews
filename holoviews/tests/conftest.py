@@ -1,5 +1,4 @@
 import pytest
-
 from panel.io import state
 
 

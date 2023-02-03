@@ -1,25 +1,23 @@
 import itertools
 import types
-
-from numbers import Number
-from itertools import groupby
-from functools import partial
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import partial
+from itertools import groupby
+from numbers import Number
 from types import FunctionType
 
 import numpy as np
 import param
 
+from ..streams import Params, Stream, streams_list_from_dict
 from . import traversal, util
 from .accessors import Opts, Redim
-from .dimension import OrderedDict, Dimension, ViewableElement
-from .layout import Layout, AdjointLayout, NdLayout, Empty, Layoutable
-from .ndmapping import UniformNdMapping, NdMapping, item_check
-from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
+from .dimension import Dimension, OrderedDict, ViewableElement
+from .layout import AdjointLayout, Empty, Layout, Layoutable, NdLayout
+from .ndmapping import NdMapping, UniformNdMapping, item_check
 from .options import Store, StoreOptions
-from ..streams import Stream, Params, streams_list_from_dict
-
+from .overlay import CompositeOverlay, NdOverlay, Overlay, Overlayable
 
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):

@@ -1,5 +1,4 @@
 import datetime as dt
-
 from collections import deque, namedtuple
 from unittest import SkipTest
 
@@ -7,24 +6,39 @@ import numpy as np
 import pandas as pd
 import pytest
 import pyviz_comms as comms
+from bokeh.events import Tap
+from bokeh.io.doc import set_curdoc
+from bokeh.models import ColumnDataSource, Plot, PolyEditTool, Range1d, Selection
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
+from holoviews.element import Box, Curve, Points, Polygons, Rectangles, Table
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import (
-    PointDraw, PolyDraw, PolyEdit, BoxEdit, PointerXY, PointerX,
-    PlotReset, Selection1D, RangeXY, PlotSize, CDSStream, SingleTap
-)
-
-from bokeh.events import Tap
-from bokeh.io.doc import set_curdoc
-from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
 from holoviews.plotting.bokeh.callbacks import (
-    Callback, CDSCallback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-    BoxEditCallback, PointerXCallback, TapCallback
+    BoxEditCallback,
+    Callback,
+    CDSCallback,
+    PointDrawCallback,
+    PointerXCallback,
+    PolyDrawCallback,
+    PolyEditCallback,
+    TapCallback,
 )
 from holoviews.plotting.bokeh.renderer import BokehRenderer
+from holoviews.streams import (
+    BoxEdit,
+    CDSStream,
+    PlotReset,
+    PlotSize,
+    PointDraw,
+    PointerX,
+    PointerXY,
+    PolyDraw,
+    PolyEdit,
+    RangeXY,
+    Selection1D,
+    SingleTap,
+)
 
 bokeh_server_renderer = BokehRenderer.instance(mode='server')
 bokeh_renderer = BokehRenderer.instance()

@@ -1,13 +1,21 @@
 from unittest import SkipTest
 
 import numpy as np
-import holoviews as hv
 import pandas as pd
 
+import holoviews as hv
 from holoviews.core.dimension import Dimension
 from holoviews.core.options import Compositor, Store
-from holoviews.element import (Distribution, Bivariate, Points, Image,
-                               Curve, Area, Contours, Polygons)
+from holoviews.element import (
+    Area,
+    Bivariate,
+    Contours,
+    Curve,
+    Distribution,
+    Image,
+    Points,
+    Polygons,
+)
 from holoviews.element.comparison import ComparisonTestCase
 
 

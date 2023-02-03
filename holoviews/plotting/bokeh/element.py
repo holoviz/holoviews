@@ -1,56 +1,82 @@
 import warnings
-
 from itertools import chain
 from types import FunctionType
 
-import param
-import numpy as np
 import bokeh
 import bokeh.plotting
+import numpy as np
+import param
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
-    BinnedTicker, ColorBar, ColorMapper, CustomJS, EqHistColorMapper,
-    Legend, Renderer, Title, tools,
+    BinnedTicker,
+    ColorBar,
+    ColorMapper,
+    CustomJS,
+    EqHistColorMapper,
+    Legend,
+    Renderer,
+    Title,
+    tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
-from bokeh.models.formatters import (
-    TickFormatter, MercatorTickFormatter
-)
+from bokeh.models.formatters import MercatorTickFormatter, TickFormatter
 from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
-    LinearColorMapper, LogColorMapper, CategoricalColorMapper
+    CategoricalColorMapper,
+    LinearColorMapper,
+    LogColorMapper,
 )
-from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
+from bokeh.models.ranges import DataRange1d, FactorRange, Range1d
 from bokeh.models.tickers import (
-    Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
+    BasicTicker,
+    FixedTicker,
+    LogTicker,
+    MercatorTicker,
+    Ticker,
 )
 from bokeh.models.tools import Tool
-
 from packaging.version import Version
 
-from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
-from ...core.options import abbreviated_exception, SkipRendering
-from ...core import util
-from ...element import (
-    Annotation, Contours, Graph, Path, Tiles, VectorField
-)
-from ...streams import Buffer, RangeXY, PlotSize
+from ...core import CompositeOverlay, Dataset, Dimension, DynamicMap, Element, util
+from ...core.options import SkipRendering, abbreviated_exception
+from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
+from ...streams import Buffer, PlotSize, RangeXY
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import process_cmap, color_intervals, dim_range_key
+from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import BokehPlot
 from .styles import (
-    base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
-    property_prefixes, rgba_tuple, text_properties, validate
+    base_properties,
+    legend_dimensions,
+    line_properties,
+    mpl_to_bokeh,
+    property_prefixes,
+    rgba_tuple,
+    text_properties,
+    validate,
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, bokeh3, date_to_integer, decode_bytes, get_tab_title,
-    glyph_order, py2js_tickformatter, recursive_model_update,
-    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type,
-    prop_is_none, remove_legend, property_to_dict
+    TOOL_TYPES,
+    bokeh3,
+    bokeh_version,
+    cds_column_replace,
+    compute_layout_properties,
+    date_to_integer,
+    decode_bytes,
+    get_tab_title,
+    glyph_order,
+    hold_policy,
+    match_ax_type,
+    match_dim_specs,
+    prop_is_none,
+    property_to_dict,
+    py2js_tickformatter,
+    recursive_model_update,
+    remove_legend,
+    theme_attr_json,
+    wrap_formatter,
 )
 
 if bokeh3:

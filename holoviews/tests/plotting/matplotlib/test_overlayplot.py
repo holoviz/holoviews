@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.core import Overlay, NdOverlay, DynamicMap, HoloMap
+from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve, Scatter
 
 from ...utils import LoggingComparisonTestCase

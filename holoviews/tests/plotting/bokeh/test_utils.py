@@ -1,7 +1,7 @@
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.bokeh.util import filter_batched_data, glyph_order
 from holoviews.plotting.bokeh.styles import expand_batched_style
+from holoviews.plotting.bokeh.util import filter_batched_data, glyph_order
 
 bokeh_renderer = Store.renderers['bokeh']
 

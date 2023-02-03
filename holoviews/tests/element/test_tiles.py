@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from holoviews import Tiles
 
+from holoviews import Tiles
 from holoviews.element.comparison import ComparisonTestCase
 
 

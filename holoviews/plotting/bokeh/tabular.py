@@ -1,15 +1,21 @@
 import param
-
 from bokeh.models import Column
 from bokeh.models.widgets import (
-    DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
-    DateEditor, StringFormatter, StringEditor, IntEditor
+    DataTable,
+    DateEditor,
+    DateFormatter,
+    IntEditor,
+    NumberEditor,
+    NumberFormatter,
+    StringEditor,
+    StringFormatter,
+    TableColumn,
 )
 
 from ...core import Dataset, Dimension
+from ...core.util import dimension_sanitizer, isdatetime
 from ...element import ItemTable
 from ...streams import Buffer
-from ...core.util import dimension_sanitizer, isdatetime
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 from .selection import TabularSelectionDisplay

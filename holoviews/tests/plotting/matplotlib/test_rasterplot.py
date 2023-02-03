@@ -1,10 +1,9 @@
 import numpy as np
+from matplotlib.colors import ListedColormap
 
-from holoviews.element import Raster, Image
+from holoviews.element import Image, Raster
 
 from .test_plot import TestMPLPlot, mpl_renderer
-
-from matplotlib.colors import ListedColormap
 
 
 class TestRasterPlot(TestMPLPlot):

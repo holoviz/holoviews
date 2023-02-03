@@ -1,16 +1,28 @@
 import param
 
 from holoviews.plotting.util import attach_streams
-from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
-                     HoloMap, GridSpace, GridMatrix)
-from ...element import Histogram
+
+from ...core import (
+    AdjointLayout,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    NdLayout,
+    OrderedDict,
+)
 from ...core.options import Store
 from ...core.util import wrap_tuple
+from ...element import Histogram
 from ..plot import (
-    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+    CallbackPlot,
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
 )
-from .util import figure_grid, configure_matching_axes_from_dims
+from .util import configure_matching_axes_from_dims, figure_grid
 
 
 class PlotlyPlot(DimensionedPlot, CallbackPlot):

@@ -5,39 +5,48 @@ of this Plot baseclass.
 """
 import uuid
 import warnings
-
-from collections import Counter, defaultdict, OrderedDict
+from collections import Counter, OrderedDict, defaultdict
 from functools import partial
 from itertools import groupby, product
 
 import numpy as np
 import param
-
 from panel.config import config
 from panel.io.document import unlocked
 from panel.io.notebook import push
 from panel.io.state import state
 from pyviz_comms import JupyterComm
-from ..selection import NoOpSelectionDisplay
-from ..core import util, traversal
+
+from ..core import traversal, util
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
-from ..core.overlay import Overlay, CompositeOverlay
-from ..core.layout import Empty, NdLayout, Layout
-from ..core.options import Store, Compositor, SkipRendering, lookup_options
-from ..core.overlay import NdOverlay
-from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph
-from ..streams import Stream, RangeXY, RangeX, RangeY
+from ..core.layout import Empty, Layout, NdLayout
+from ..core.options import Compositor, SkipRendering, Store, lookup_options
+from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
+from ..core.spaces import DynamicMap, HoloMap
+from ..core.util import isfinite, stream_parameters
+from ..element import Graph, Table
+from ..selection import NoOpSelectionDisplay
+from ..streams import RangeX, RangeXY, RangeY, Stream
 from ..util.transform import dim
 from .util import (
-    get_dynamic_mode, initialize_unbounded, dim_axis_label,
-    attach_streams, traverse_setter, get_nested_streams,
-    compute_overlayable_zorders, get_nested_plot_frame,
-    split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
-    get_plot_frame, scale_fontsize, dynamic_update
+    attach_streams,
+    compute_overlayable_zorders,
+    dim_axis_label,
+    dynamic_update,
+    get_axis_padding,
+    get_dynamic_mode,
+    get_minimum_span,
+    get_nested_plot_frame,
+    get_nested_streams,
+    get_plot_frame,
+    get_range,
+    initialize_unbounded,
+    scale_fontsize,
+    split_dmap_overlay,
+    traverse_setter,
 )
+
 
 class Plot(param.Parameterized):
     """

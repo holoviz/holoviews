@@ -1,16 +1,16 @@
 from ..core import HoloMap
-from ..core.data import Dataset, DataConversion
-from .annotation import * # noqa (API import)
-from .chart import * # noqa (API import)
-from .geom import * # noqa (API import)
-from .chart3d import * # noqa (API import)
-from .graphs import * # noqa (API import)
-from .path import * # noqa (API import)
-from .raster import * # noqa (API import)
-from .sankey import * # noqa (API import)
-from .stats import * # noqa (API import)
-from .tabular import * # noqa (API import)
-from .tiles import * # noqa (API import)
+from ..core.data import DataConversion, Dataset
+from .annotation import *  # noqa (API import)
+from .chart import *  # noqa (API import)
+from .chart3d import *  # noqa (API import)
+from .geom import *  # noqa (API import)
+from .graphs import *  # noqa (API import)
+from .path import *  # noqa (API import)
+from .raster import *  # noqa (API import)
+from .sankey import *  # noqa (API import)
+from .stats import *  # noqa (API import)
+from .tabular import *  # noqa (API import)
+from .tiles import *  # noqa (API import)
 
 
 class ElementConversion(DataConversion):

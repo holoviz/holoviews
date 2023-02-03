@@ -1,7 +1,6 @@
 import sqlite3
-from unittest import SkipTest
-
 from tempfile import NamedTemporaryFile
+from unittest import SkipTest
 
 try:
     import ibis
@@ -13,10 +12,10 @@ import numpy as np
 import pandas as pd
 
 from holoviews.core.data import Dataset
-from holoviews.core.spaces import HoloMap
 from holoviews.core.data.ibis import IbisInterface
+from holoviews.core.spaces import HoloMap
 
-from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
+from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
 
 
 def create_temp_db(df, name, index=False):

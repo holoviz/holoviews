@@ -1,30 +1,25 @@
 import plotly
-
-from param import concrete_descendents
 from packaging.version import Version
+from param import concrete_descendents
 
-from ...core import (
-    Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
-)
-from ...core.options import Store, Cycle, Options
+from ...core import GridMatrix, GridSpace, Layout, NdLayout, NdOverlay, Overlay, config
+from ...core.options import Cycle, Options, Store
 from ...core.util import VersionError
-from ...element import *              # noqa (Element import for registration)
-
+from ...element import *  # noqa (Element import for registration)
+from .annotation import *  # noqa (API import)
+from .callbacks import *  # noqa (API import)
+from .chart import *  # noqa (API import)
+from .chart3d import *  # noqa (API import)
 from .element import ElementPlot
+from .element import *  # noqa (API import)
+from .images import *  # noqa (API import)
+from .plot import *  # noqa (API import)
+from .raster import *  # noqa (API import)
 from .renderer import PlotlyRenderer
-
-from .annotation import *            # noqa (API import)
-from .tiles import *                 # noqa (API import)
-from .element import *               # noqa (API import)
-from .chart import *                 # noqa (API import)
-from .chart3d import *               # noqa (API import)
-from .raster import *                # noqa (API import)
-from .plot import *                  # noqa (API import)
-from .stats import *                 # noqa (API import)
-from .tabular import *               # noqa (API import)
-from .callbacks import *             # noqa (API import)
-from .shapes import *                # noqa (API import)
-from .images import *                # noqa (API import)
+from .shapes import *  # noqa (API import)
+from .stats import *  # noqa (API import)
+from .tabular import *  # noqa (API import)
+from .tiles import *  # noqa (API import)
 
 if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(

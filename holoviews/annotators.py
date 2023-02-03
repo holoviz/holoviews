@@ -1,19 +1,22 @@
 import sys
-
 from collections import OrderedDict
 from inspect import getmro
 
 import param
-
-from panel.pane import PaneBase
 from panel.layout import Row, Tabs
+from panel.pane import PaneBase
 from panel.util import param_name
 
-from .core import DynamicMap, HoloMap, ViewableElement, Element, Layout, Overlay, Store
+from .core import DynamicMap, Element, HoloMap, Layout, Overlay, Store, ViewableElement
 from .core.util import isscalar
-from .element import Rectangles, Path, Polygons, Points, Table, Curve
-from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw, CurveEdit
+from .element import Curve, Path, Points, Polygons, Rectangles, Table
+from .plotting.links import (
+    DataLink,
+    RectanglesTableLink,
+    SelectionLink,
+    VertexTableLink,
+)
+from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
 
 
 def preprocess(function, current=[]):

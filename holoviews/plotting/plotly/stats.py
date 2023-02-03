@@ -1,8 +1,8 @@
 import param
 
-from .selection import PlotlyOverlaySelectionDisplay
 from .chart import ChartPlot
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class BivariatePlot(ChartPlot, ColorbarPlot):

@@ -1,13 +1,12 @@
 import numpy as np
+from matplotlib import pyplot
 
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Points
 
-from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
-
-from matplotlib import pyplot
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestPointPlot(TestMPLPlot):

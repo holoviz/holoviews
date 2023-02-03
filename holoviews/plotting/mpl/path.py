@@ -1,8 +1,7 @@
-import param
 import numpy as np
-
-from matplotlib.collections import PatchCollection, LineCollection
-from matplotlib.dates import date2num, DateFormatter
+import param
+from matplotlib.collections import LineCollection, PatchCollection
+from matplotlib.dates import DateFormatter, date2num
 
 from ...core import util
 from ...core.dimension import Dimension

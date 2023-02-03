@@ -10,9 +10,9 @@ from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import Version
-from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
+from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import * # noqa (Test all available streams)
+from holoviews.streams import *  # noqa (Test all available streams)
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 

@@ -1,28 +1,30 @@
 import datetime as dt
-
-from unittest import SkipTest
 from collections import OrderedDict
+from unittest import SkipTest
 
 import numpy as np
+import panel as pn
+from bokeh.document import Document
+from bokeh.models import (
+    EqHistColorMapper,
+    LinearColorMapper,
+    LogColorMapper,
+    LogTicker,
+    NumeralTickFormatter,
+    PrintfTickFormatter,
+    tools,
+)
 
-from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay
 from holoviews.core.util import dt_to_int
-from holoviews.element import Curve, Image, Scatter, Labels
-from holoviews.streams import Stream, PointDraw
-from holoviews.plotting.util import process_cmap
+from holoviews.element import Curve, Image, Labels, Scatter
 from holoviews.plotting.bokeh.util import bokeh3
+from holoviews.plotting.util import process_cmap
+from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
 
-from .test_plot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
-
-import panel as pn
-
-from bokeh.document import Document
-from bokeh.models import tools
-from bokeh.models import (PrintfTickFormatter,
-                            NumeralTickFormatter, LogTicker,
-                            LinearColorMapper, LogColorMapper, EqHistColorMapper)
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 if bokeh3:
     from bokeh.models.formatters import CustomJSTickFormatter

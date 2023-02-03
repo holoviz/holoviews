@@ -5,13 +5,13 @@ any third-party plotting/rendering package.
 This file defines the HTML tags used to wrap rendered output for
 display in the IPython Notebook (optional).
 """
-from ..core.options import Cycle, Compositor
-from ..element import Area, Image, QuadMesh, Polygons, Raster
-from ..element.sankey import _layout_sankey, Sankey
+from ..core.options import Compositor, Cycle
+from ..element import Area, Image, Polygons, QuadMesh, Raster
+from ..element.sankey import Sankey, _layout_sankey
+from ..operation.stats import bivariate_kde, univariate_kde
 from .plot import Plot
-from .renderer import Renderer, HTML_TAGS # noqa (API import)
-from .util import apply_nodata, list_cmaps # noqa (API import)
-from ..operation.stats import univariate_kde, bivariate_kde
+from .renderer import HTML_TAGS, Renderer  # noqa (API import)
+from .util import apply_nodata, list_cmaps  # noqa (API import)
 
 Compositor.register(Compositor("Image", apply_nodata, None,
                                'data', transfer_options=True,

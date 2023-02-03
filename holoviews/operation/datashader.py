@@ -1,39 +1,70 @@
 import warnings
-
 from collections.abc import Callable
 from functools import partial
 
-import param
-import numpy as np
-import pandas as pd
-import xarray as xr
+import dask.dataframe as dd
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
-import dask.dataframe as dd
-
+import numpy as np
+import pandas as pd
+import param
+import xarray as xr
 from datashader.colors import color_lookup
-from param.parameterized import bothmethod
 from packaging.version import Version
+from param.parameterized import bothmethod
 
 try:
-    from datashader.bundling import (directly_connect_edges as connect_edges,
-                                     hammer_bundle)
+    from datashader.bundling import (
+        directly_connect_edges as connect_edges,
+        hammer_bundle,
+    )
 except ImportError:
     hammer_bundle, connect_edges = object, object
 
-from ..core import (Operation, Element, Dimension, NdOverlay,
-                    CompositeOverlay, Dataset, Overlay, OrderedDict, Store)
-from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
-from ..core.util import (
-    Iterable, cast_array_to_int64, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range
+from ..core import (
+    CompositeOverlay,
+    Dataset,
+    Dimension,
+    Element,
+    NdOverlay,
+    Operation,
+    OrderedDict,
+    Overlay,
+    Store,
 )
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
-                       QuadMesh, Contours, Spikes, Area, Rectangles,
-                       Spread, Segments, Scatter, Points, Polygons)
+from ..core.data import DaskInterface, PandasInterface, XArrayInterface, cuDFInterface
+from ..core.util import (
+    Iterable,
+    cast_array_to_int64,
+    cftime_to_timestamp,
+    cftime_types,
+    datetime_types,
+    dt_to_int,
+    get_param_values,
+    isfinite,
+    max_range,
+)
+from ..element import (
+    RGB,
+    Area,
+    Contours,
+    Curve,
+    Graph,
+    Image,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Scatter,
+    Segments,
+    Spikes,
+    Spread,
+    TriMesh,
+)
 from ..element.util import connect_tri_edges_pd
-from ..streams import RangeXY, PlotSize, PointerXY
+from ..streams import PlotSize, PointerXY, RangeXY
 
 ds_version = Version(ds.__version__)
 

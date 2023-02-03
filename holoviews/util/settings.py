@@ -1,4 +1,5 @@
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
+
 from ..core import Store
 
 
@@ -242,7 +243,7 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def _generate_signature(cls):
-        from inspect import Signature, Parameter
+        from inspect import Parameter, Signature
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         return Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])

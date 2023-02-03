@@ -1,10 +1,9 @@
 import numpy as np
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core.dimension import Dimension
 from holoviews.element import Labels
 from holoviews.plotting.bokeh.util import property_to_dict
-
-from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer

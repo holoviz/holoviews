@@ -1,10 +1,9 @@
 import numpy as np
 import param
 
-from ..core import util
-from ..core import Dimension, Dataset, Element2D, NdOverlay, Overlay
+from ..core import Dataset, Dimension, Element2D, NdOverlay, Overlay, util
 from ..core.dimension import process_dimensions
-from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
+from .geom import Points, Rectangles, VectorField  # noqa: backward compatible import
 from .selection import Selection1DExpr
 
 

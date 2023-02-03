@@ -1,26 +1,38 @@
+import bisect
 import re
 import traceback
 import warnings
-import bisect
-
 from collections import defaultdict, namedtuple
-from packaging.version import Version
 
 import numpy as np
 import param
+from packaging.version import Version
 
 from ..core import (
-    HoloMap, DynamicMap, CompositeOverlay, Layout, Overlay, GridSpace,
-    NdLayout, NdOverlay, AdjointLayout
+    AdjointLayout,
+    CompositeOverlay,
+    DynamicMap,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
 )
-from ..core.options import CallbackError, Cycle
-from ..core.operation import Operation
 from ..core.ndmapping import item_check
+from ..core.operation import Operation
+from ..core.options import CallbackError, Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (
-    match_spec, wrap_tuple, get_overlay_spec, unique_iterator,
-    closest_match, is_number, isfinite, disable_constant,
-    arraylike_types
+    arraylike_types,
+    closest_match,
+    disable_constant,
+    get_overlay_spec,
+    is_number,
+    isfinite,
+    match_spec,
+    unique_iterator,
+    wrap_tuple,
 )
 from ..element import Points
 from ..streams import LinkedStream, Params
@@ -725,7 +737,7 @@ def _list_cmaps(provider=None, records=False):
             pass
     if 'colorcet' in provider:
         try:
-            from colorcet import palette_n, glasbey_hv
+            from colorcet import glasbey_hv, palette_n
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
             cmaps += info('colorcet', cet_maps)
@@ -1315,7 +1327,8 @@ class categorical_legend(Operation):
 
     def _process(self, element, key=None):
         import datashader as ds
-        from ..operation.datashader import shade, rasterize, datashade
+
+        from ..operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
         if isinstance(rasterize_op, datashade):
             shade_op = rasterize_op

@@ -1,14 +1,13 @@
 import numpy as np
 from matplotlib import style
+from matplotlib.projections import PolarAxes
+from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Image, Curve, Scatter, Scatter3D
+from holoviews.element import Curve, Image, Scatter, Scatter3D
 from holoviews.streams import Stream
 
 from .test_plot import TestMPLPlot, mpl_renderer
-
-from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
-from matplotlib.projections import PolarAxes
 
 
 class TestElementPlot(TestMPLPlot):

@@ -1,7 +1,7 @@
 import param
 
-from .chart import ScatterPlot
 from ...element import Tiles
+from .chart import ScatterPlot
 
 
 class LabelPlot(ScatterPlot):

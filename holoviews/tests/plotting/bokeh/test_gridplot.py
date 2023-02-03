@@ -1,16 +1,21 @@
 import numpy as np
-
-from holoviews.core import (HoloMap, GridSpace, NdOverlay, Dataset,
-                            DynamicMap, GridMatrix)
-from holoviews.element import Curve, Image, Points
-from holoviews.operation import gridmatrix
-from holoviews.streams import Stream
-from holoviews.plotting.bokeh.util import bokeh3
-
-from .test_plot import TestBokehPlot, bokeh_renderer
-
 from bokeh.layouts import Column
 from bokeh.models import Div
+
+from holoviews.core import (
+    Dataset,
+    DynamicMap,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    NdOverlay,
+)
+from holoviews.element import Curve, Image, Points
+from holoviews.operation import gridmatrix
+from holoviews.plotting.bokeh.util import bokeh3
+from holoviews.streams import Stream
+
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 if bokeh3:
     from bokeh.models import Toolbar

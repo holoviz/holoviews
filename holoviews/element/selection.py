@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from ..core import Dataset, NdOverlay, util
-from ..streams import SelectionXY, Selection1D, Lasso
+from ..streams import Lasso, Selection1D, SelectionXY
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
 
@@ -63,8 +63,8 @@ class SelectionIndexExpr:
 def spatial_select_gridded(xvals, yvals, geometry):
     rectilinear = (np.diff(xvals, axis=0) == 0).all()
     if rectilinear:
-        from .raster import Image
         from .path import Polygons
+        from .raster import Image
         try:
             from ..operation.datashader import rasterize
         except ImportError:
@@ -120,7 +120,7 @@ def spatial_select_columnar(xvals, yvals, geometry):
     masked_xvals = xvals[sel_mask]
     masked_yvals = yvals[sel_mask]
     try:
-        from spatialpandas.geometry import Polygon, PointArray
+        from spatialpandas.geometry import PointArray, Polygon
         points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
         poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
         geom_mask = points.intersects(poly)
@@ -148,7 +148,7 @@ def spatial_select(xvals, yvals, geometry):
 
 def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
     try:
-        from shapely.geometry import box, Polygon
+        from shapely.geometry import Polygon, box
         boxes = (box(x0, y0, x1, y1) for x0, y0, x1, y1 in
                  zip(x0vals, y0vals, x1vals, y1vals))
         poly = Polygon(geometry)

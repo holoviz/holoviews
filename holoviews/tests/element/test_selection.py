@@ -11,9 +11,22 @@ import pytest
 from holoviews.core import NdOverlay
 from holoviews.core.options import Store
 from holoviews.element import (
-    Area, BoxWhisker, Curve, Distribution, HSpan, Image, Points,
-    Rectangles, RGB, Scatter, Segments, Violin, VSpan, Path,
-    QuadMesh, Polygons
+    RGB,
+    Area,
+    BoxWhisker,
+    Curve,
+    Distribution,
+    HSpan,
+    Image,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Scatter,
+    Segments,
+    Violin,
+    VSpan,
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.selection import spatial_select_columnar

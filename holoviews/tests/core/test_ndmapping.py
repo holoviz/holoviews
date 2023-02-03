@@ -1,12 +1,16 @@
 from collections import OrderedDict
 
+import numpy as np
+
+from holoviews import Dataset, HoloMap
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import (
-    MultiDimensionalMapping, NdMapping, UniformNdMapping
+    MultiDimensionalMapping,
+    NdMapping,
+    UniformNdMapping,
 )
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import HoloMap, Dataset
-import numpy as np
+
 
 class DimensionTest(ComparisonTestCase):
 

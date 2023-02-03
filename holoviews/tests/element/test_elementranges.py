@@ -2,7 +2,7 @@
 Test cases for computing ranges on elements which are not simply
 the (min, max) of the dimension values array.
 """
-from holoviews import Dimension, Histogram, ErrorBars
+from holoviews import Dimension, ErrorBars, Histogram
 from holoviews.element.comparison import ComparisonTestCase
 
 

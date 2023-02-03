@@ -1,5 +1,5 @@
-import param
 import numpy as np
+import param
 
 from ...core.ndmapping import sorted_context
 from .chart import AreaPlot, ChartPlot

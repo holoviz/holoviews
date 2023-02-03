@@ -3,11 +3,10 @@ Test cases for the Comparisons class over the Raster types.
 """
 import numpy as np
 
-
+from holoviews import Image
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import Image
 
 
 class RasterTestCase(ComparisonTestCase):

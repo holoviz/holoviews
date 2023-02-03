@@ -12,7 +12,7 @@ import numpy as np
 
 from holoviews import Curve, Scatter
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation.timeseries import (rolling, resample, rolling_outlier_std)
+from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
 
 
 class TimeseriesOperationTests(ComparisonTestCase):

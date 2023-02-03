@@ -1,5 +1,4 @@
 import numpy as np
-
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import ErrorBars

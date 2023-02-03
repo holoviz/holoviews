@@ -1,34 +1,32 @@
 import os
 
-from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from param import concrete_descendents
 from colorcet import kbc, register_cmap
+from matplotlib import rc_params_from_file
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from packaging.version import Version
+from param import concrete_descendents
 
-from ...core import Layout, Collator, GridMatrix, config
-from ...core.options import Cycle, Palette, Options
+from ...core import Collator, GridMatrix, Layout, config
+from ...core.options import Cycle, Options, Palette
 from ...core.overlay import NdOverlay, Overlay
-from ...element import * # noqa (API import)
+from ...element import *  # noqa (API import)
 from ..plot import PlotSelector
 from ..util import fire_colors
-from .annotation import * # noqa (API import)
-from .chart import * # noqa (API import)
-from .chart3d import * # noqa (API import)
+from .annotation import *  # noqa (API import)
+from .chart import *  # noqa (API import)
+from .chart3d import *  # noqa (API import)
 from .element import ElementPlot
-from .geometry import * # noqa (API import)
-from .graphs import * # noqa (API import)
-from .heatmap import * # noqa (API import)
-from .hex_tiles import * # noqa (API import)
-from .path import * # noqa (API import)
-from .plot import * # noqa (API import)
-from .raster import * # noqa (API import)
-from .sankey import * # noqa (API import)
-from .stats import * # noqa (API import)
-from .tabular import * # noqa (API import)
-
+from .geometry import *  # noqa (API import)
+from .graphs import *  # noqa (API import)
+from .heatmap import *  # noqa (API import)
+from .hex_tiles import *  # noqa (API import)
+from .path import *  # noqa (API import)
+from .plot import *  # noqa (API import)
+from .raster import *  # noqa (API import)
 from .renderer import MPLRenderer
-
+from .sankey import *  # noqa (API import)
+from .stats import *  # noqa (API import)
+from .tabular import *  # noqa (API import)
 
 mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
 

@@ -1,15 +1,15 @@
 import sys
-import numpy as np
 from collections.abc import Iterable
+
+import numpy as np
 from packaging.version import Version
 
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .interface import Interface
 from . import pandas
+from .interface import Interface
 from .util import cached
-
 
 try:
     import ibis

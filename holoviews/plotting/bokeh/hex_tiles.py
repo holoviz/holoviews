@@ -1,8 +1,7 @@
 import types
 
-import param
 import numpy as np
-
+import param
 from bokeh.util.hex import cartesian_to_axial
 
 from ...core import Dimension, Operation
@@ -12,7 +11,7 @@ from ...element import HexTiles
 from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import base_properties, line_properties, fill_properties
+from .styles import base_properties, fill_properties, line_properties
 
 
 class hex_binning(Operation):

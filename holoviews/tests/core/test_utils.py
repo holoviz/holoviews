@@ -4,22 +4,34 @@ Unit tests of the helper functions in core.utils
 import datetime
 import math
 import unittest
-
-from itertools import product
 from collections import OrderedDict
+from itertools import product
 
 import numpy as np
 import pandas as pd
 
-from holoviews.core.util import (
-    sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
-    deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match,
-    dimension_range, tree_attribute
-)
 from holoviews import Dimension, Element
-from holoviews.streams import PointerXY
+from holoviews.core.util import (
+    closest_match,
+    compute_density,
+    compute_edges,
+    cross_index,
+    date_range,
+    deephash,
+    dimension_range,
+    dt_to_int,
+    find_range,
+    get_path,
+    isfinite,
+    make_path_unique,
+    max_range,
+    merge_dimensions,
+    sanitize_identifier_fn,
+    tree_attribute,
+    wrap_tuple_streams,
+)
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.streams import PointerXY
 
 sanitize_identifier = sanitize_identifier_fn.instance()
 

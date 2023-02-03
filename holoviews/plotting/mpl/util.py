@@ -2,39 +2,38 @@ import inspect
 import re
 import warnings
 
-import numpy as np
 import matplotlib
-
-from matplotlib import units as munits
-from matplotlib import ticker
+import numpy as np
+from matplotlib import (
+    ticker,
+    units as munits,
+)
 from matplotlib.colors import Normalize, cnames
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
-from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-from matplotlib.rcsetup import (
-    validate_fontsize, validate_fonttype, validate_hatch)
+from matplotlib.rcsetup import validate_fontsize, validate_fonttype, validate_hatch
+from matplotlib.transforms import Affine2D, Bbox, TransformedBbox
 from packaging.version import Version
 
 try:  # starting Matplotlib 3.4.0
-    from matplotlib._enums import CapStyle as validate_capstyle
-    from matplotlib._enums import JoinStyle as validate_joinstyle
+    from matplotlib._enums import (
+        CapStyle as validate_capstyle,
+        JoinStyle as validate_joinstyle,
+    )
 except ImportError:  # before Matplotlib 3.4.0
-    from matplotlib.rcsetup import (
-    validate_capstyle, validate_joinstyle)
+    from matplotlib.rcsetup import validate_capstyle, validate_joinstyle
 
 try:
-    from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
+    from nc_time_axis import CalendarDateTime, NetCDFTimeConverter
     nc_axis_available = True
 except ImportError:
     from matplotlib.dates import DateConverter
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
-from ...core.util import (
-    arraylike_types, cftime_types, is_number
-)
-from ...element import Raster, RGB, Polygons
+from ...core.util import arraylike_types, cftime_types, is_number
+from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 mpl_version = Version(matplotlib.__version__)

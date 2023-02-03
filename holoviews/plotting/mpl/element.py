@@ -3,24 +3,30 @@ import math
 import warnings
 from types import FunctionType
 
-import param
-import numpy as np
 import matplotlib.colors as mpl_colors
-
+import numpy as np
+import param
 from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
 from packaging.version import Version
 
-from ...core import util
-from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
-                     CompositeOverlay, Element3D, Element)
+from ...core import (
+    CompositeOverlay,
+    Dataset,
+    DynamicMap,
+    Element,
+    Element3D,
+    NdOverlay,
+    OrderedDict,
+    util,
+)
 from ...core.options import abbreviated_exception
 from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import process_cmap, color_intervals, dim_range_key
+from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import MPLPlot, mpl_rc_context
 from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
 

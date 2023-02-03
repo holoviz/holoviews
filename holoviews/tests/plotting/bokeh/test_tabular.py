@@ -1,9 +1,15 @@
 from datetime import datetime as dt
 
 from bokeh.models.widgets import (
-        NumberEditor, NumberFormatter, DateFormatter,
-    DateEditor, StringFormatter, StringEditor, IntEditor
+    DateEditor,
+    DateFormatter,
+    IntEditor,
+    NumberEditor,
+    NumberFormatter,
+    StringEditor,
+    StringFormatter,
 )
+
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Table

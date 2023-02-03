@@ -8,8 +8,13 @@ import numpy as np
 try:
     import spatialpandas
     from spatialpandas.geometry import (
-        MultiPolygonArray, LineDtype, PointDtype, PolygonDtype,
-        MultiLineDtype, MultiPointDtype, MultiPolygonDtype
+        LineDtype,
+        MultiLineDtype,
+        MultiPointDtype,
+        MultiPolygonArray,
+        MultiPolygonDtype,
+        PointDtype,
+        PolygonDtype,
     )
 except ImportError:
     spatialpandas = None
@@ -20,7 +25,9 @@ except ImportError:
     dd = None
 
 from holoviews.core.data import (
-    Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
+    DaskSpatialPandasInterface,
+    Dataset,
+    SpatialPandasInterface,
 )
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons

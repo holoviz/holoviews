@@ -1,12 +1,10 @@
-import param
 import numpy as np
+import param
 
-from ..core import Dimension, Dataset, NdOverlay
+from ..core import Dataset, Dimension, NdOverlay
 from ..core.operation import Operation
 from ..core.util import cartesian_product, isfinite
-from ..element import (Curve, Area, Image, Distribution, Bivariate,
-                       Contours, Polygons)
-
+from ..element import Area, Bivariate, Contours, Curve, Distribution, Image, Polygons
 from .element import contours
 
 

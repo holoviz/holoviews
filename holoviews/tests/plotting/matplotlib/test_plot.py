@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import pyviz_comms as comms
+from param import concrete_descendents
 
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.mpl.element import ElementPlot
-from param import concrete_descendents
 
 from .. import option_intersections
 

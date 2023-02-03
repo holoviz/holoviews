@@ -1,5 +1,4 @@
 import datetime as dt
-
 from collections import OrderedDict
 from unittest import SkipTest
 
@@ -14,13 +13,14 @@ except ImportError:
 from holoviews.core.data import Dataset, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Image, RGB, HSV, QuadMesh
+from holoviews.element import HSV, RGB, Image, QuadMesh
 
-from .test_imageinterface import (
-    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
-    BaseHSVElementInterfaceTests
-)
 from .test_gridinterface import BaseGridInterfaceTests
+from .test_imageinterface import (
+    BaseHSVElementInterfaceTests,
+    BaseImageElementInterfaceTests,
+    BaseRGBElementInterfaceTests,
+)
 
 
 class XArrayInterfaceTests(BaseGridInterfaceTests):

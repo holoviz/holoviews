@@ -6,22 +6,37 @@ import warnings
 
 import numpy as np
 import param
-
 from packaging.version import Version
 from param import _is_number
 
-from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
-                    HoloMap, Dataset, Element, Collator, Dimension)
+from ..core import (
+    Collator,
+    Dataset,
+    Dimension,
+    Element,
+    GridMatrix,
+    HoloMap,
+    NdOverlay,
+    Operation,
+    Overlay,
+)
 from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
-    group_sanitizer, label_sanitizer, datetime_types, isfinite,
-    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+    datetime_types,
+    dt_to_int,
+    group_sanitizer,
+    is_cupy_array,
+    is_dask_array,
+    is_ibis_expr,
+    isdatetime,
+    isfinite,
+    label_sanitizer,
 )
 from ..element.chart import Histogram, Scatter
-from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
-from ..element.util import categorical_aggregate2d # noqa (API import)
+from ..element.raster import RGB, Image
+from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 
 column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
@@ -545,10 +560,10 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from matplotlib.contour import QuadContourSet
             from matplotlib.axes import Axes
+            from matplotlib.contour import QuadContourSet
+            from matplotlib.dates import date2num, num2date
             from matplotlib.figure import Figure
-            from matplotlib.dates import num2date, date2num
         except ImportError:
             raise ImportError("contours operation requires matplotlib.")
         extent = element.range(0) + element.range(1)[::-1]

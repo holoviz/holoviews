@@ -6,10 +6,10 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.core.dimension import Dimension
-from holoviews.core.spaces import HoloMap
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
+from holoviews.core.dimension import Dimension
+from holoviews.core.spaces import HoloMap
 from holoviews.core.util import OrderedDict
 from holoviews.element import Histogram, QuadMesh
 from holoviews.element.comparison import ComparisonTestCase

@@ -3,54 +3,62 @@ import datetime as dt
 import inspect
 import re
 import time
-
 from collections import defaultdict
 from contextlib import contextmanager
 from types import FunctionType
 
-import param
 import bokeh
 import numpy as np
-
-from bokeh.core.json_encoder import serialize_json # noqa (API import)
+import param
+from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.validation import silence
-from bokeh.layouts import Row, Column
-from bokeh.models import tools
+from bokeh.layouts import Column, Row
 from bokeh.models import (
-    Model, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis
+    CategoricalAxis,
+    CustomJS,
+    DatetimeAxis,
+    FactorRange,
+    GridBox,
+    Model,
+    Plot,
+    Range1d,
+    Spacer,
+    tools,
 )
-from bokeh.models.formatters import (
-    TickFormatter, PrintfTickFormatter
-)
+from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.widgets import DataTable, Div
-from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
+from bokeh.themes.theme import Theme
 from packaging.version import Version
 
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
+from ...core.spaces import DynamicMap, get_nested_dmaps
 from ...core.util import (
-    arraylike_types, callable_name, cftime_types,
-    cftime_to_timestamp, isnumeric, pd, unique_array
+    arraylike_types,
+    callable_name,
+    cftime_to_timestamp,
+    cftime_types,
+    isnumeric,
+    pd,
+    unique_array,
 )
-from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
 
 if bokeh3:
+    from bokeh.models import GridPlot, Tabs, Toolbar
     from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models import Toolbar, Tabs, GridPlot
     from bokeh.plotting import figure
     class WidgetBox: pass  # Does not exist in Bokeh 3
 
 else:
     from bokeh.layouts import WidgetBox
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
     from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
     from bokeh.models.widgets import Tabs
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
     from bokeh.plotting import Figure as figure
     class GridPlot: pass  # Does not exist in Bokeh 2
 
