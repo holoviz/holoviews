@@ -649,3 +649,17 @@ class Opts(metaclass=AccessorPipelineMeta):
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*new_args, **kwargs)
+
+    def __getitem__(self, item):
+        options = self.get().kwargs
+        if item in options:
+            return options[item]
+        else:
+            raise KeyError(
+                f"{item!r} is not in opts. Valid items is {', '.join(options)}."
+            )
+
+    def __repr__(self):
+        options = self.get().kwargs
+        kws = ', '.join(f"{k}={options[k]!r}" for k in sorted(options.keys()))
+        return f"Opts({kws})"
