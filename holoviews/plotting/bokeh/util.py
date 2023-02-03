@@ -9,6 +9,7 @@ from types import FunctionType
 
 import bokeh
 import numpy as np
+import pandas as pd
 import param
 from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.validation import silence
@@ -40,7 +41,6 @@ from ...core.util import (
     cftime_to_timestamp,
     cftime_types,
     isnumeric,
-    pd,
     unique_array,
 )
 from ..util import dim_axis_label
