@@ -11,7 +11,7 @@ from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
     BinnedTicker, ColorBar, ColorMapper, CustomJS, EqHistColorMapper,
-    Legend, Renderer, Title, tools,
+    GlyphRenderer, Legend, Renderer, Title, tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
@@ -221,6 +221,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
+        self._js_on_data_callbacks = []
 
         # Flag to check whether plot has been updated
         self._updated = False
@@ -985,7 +986,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             p0, p1 = self.padding, self.padding
 
-
         if dim == 'x':
             lower, upper = self.xlim
             lower = None if (lower is None) or np.isnan(lower) else lower
@@ -997,8 +997,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             upper = None if (upper is None) or np.isnan(upper) else upper
 
         # Clean this up in bokeh 3.0 using View.find_one API
-        self.state.js_on_event('rangesupdate', CustomJS(code=f"""
-          const ref = cb_obj.origin.id
+        callback = CustomJS(code=f"""
+        const cb = function() {{
+          const ref = plot.id
           const find = (view) => {{
             for (const sv of view.child_views) {{
               if (sv.model.id == ref)
@@ -1010,7 +1011,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return null
           }}
           let plot_view = null;
-          for (const root of cb_obj.origin.document.roots()) {{
+          for (const root of plot.document.roots()) {{
             const root_view = window.Bokeh.index[root.id]
             plot_view = find(root_view)
             if (plot_view != null)
@@ -1019,11 +1020,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           if (plot_view == null)
             return
           let [vmin, vmax] = [Infinity, -Infinity]
-          for (const dr of cb_obj.origin.data_renderers) {{
-            const index = plot_view.renderer_view(dr).glyph_view.index.index
+          for (const dr of plot.data_renderers) {{
+            const glyph_view = plot_view.renderer_view(dr).glyph_view
+            const index = glyph_view.index.index
             for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
               const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
-              if ({odim}0 > cb_obj.{odim}0 && {odim}1 < cb_obj.{odim}1) {{
+              if ({odim}0 > plot.{odim}_range.start && {odim}1 < plot.{odim}_range.end) {{
                 vmin = Math.min(vmin, {dim}0)
                 vmax = Math.max(vmax, {dim}1)
               }}
@@ -1046,9 +1048,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           }}
 
           if (start_finite && end_finite)  {{
-            cb_obj.origin.{dim}_range.setv({{start, end}})
+            plot.{dim}_range.setv({{start, end}})
           }}
-        """))
+        }}
+        // The plot changes will not propagate to the glyph until
+        // after the data change event has occurred.
+        setTimeout(cb, 0);
+        """, args={'plot': self.state})
+        self.state.js_on_event('rangesupdate', callback)
+        self._js_on_data_callbacks.append(callback)
 
     def _categorize_data(self, data, cols, dims):
         """
@@ -1509,12 +1517,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.overlaid:
             self._set_active_tools(plot)
             self._process_legend()
+            self._setup_data_callbacks(plot)
         self._execute_hooks(element)
 
         self.drawn = True
 
         return plot
 
+    def _setup_data_callbacks(self, plot):
+        if not self._js_on_data_callbacks:
+            return
+        for renderer in plot.select({'type': GlyphRenderer}):
+            cds = renderer.data_source
+            for cb in self._js_on_data_callbacks:
+                if cb not in cds.js_property_callbacks.get('change:data', []):
+                    cds.js_on_change('data', cb)
 
     def _update_glyphs(self, element, ranges, style):
         plot = self.handles['plot']
@@ -1623,6 +1640,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
             self._set_active_tools(plot)
+            self._setup_data_callbacks(plot)
             self._updated = True
 
         if 'hover' in self.handles:
@@ -2571,6 +2589,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             plot = self.handles['plot']
             self._update_plot(key, plot, element)
             self._set_active_tools(plot)
+            self._setup_data_callbacks(plot)
 
         self._updated = True
         self._process_legend(element)
