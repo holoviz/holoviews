@@ -1000,8 +1000,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         callback = CustomJS(code=f"""
         const cb = function() {{
           const ref = plot.id
+
           const find = (view) => {{
-            for (const sv of view.child_views) {{
+            let iterable = view.child_views === undefined ? []  : view.child_views
+            for (const sv of iterable) {{
               if (sv.model.id == ref)
                 return sv
               const obj = find(sv)
