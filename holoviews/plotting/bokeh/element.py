@@ -1028,13 +1028,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
           let [vmin, vmax] = [Infinity, -Infinity]
           for (const dr of plot.data_renderers) {{
-            const glyph_view = plot_view.renderer_view(dr).glyph_view
-            const index = glyph_view.index.index
-            for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
-              const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
-              if ({odim}0 > plot.{odim}_range.start && {odim}1 < plot.{odim}_range.end) {{
-                vmin = Math.min(vmin, {dim}0)
-                vmax = Math.max(vmax, {dim}1)
+            const renderer = plot_view.renderer_view(dr)
+            const glyph_view = renderer.glyph_view
+
+            if (!renderer.glyph.model.tags.includes('no_apply_ranges')) {{
+              const index = glyph_view.index.index
+              for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
+                const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
+                if ({odim}0 > plot.{odim}_range.start && {odim}1 < plot.{odim}_range.end) {{
+                  vmin = Math.min(vmin, {dim}0)
+                  vmax = Math.max(vmax, {dim}1)
+                }}
               }}
             }}
           }}
@@ -1145,6 +1149,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a Bokeh glyph object.
         """
+        mapping['tags'] = ['apply_ranges' if self.apply_ranges else 'no_apply_ranges']
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         if isinstance(plot_method, tuple):
