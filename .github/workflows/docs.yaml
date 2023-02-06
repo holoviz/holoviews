@@ -57,7 +57,7 @@ jobs:
         run: |
           conda config --remove channels defaults
           conda config --set channel_priority strict
-          conda create -n test-environment python=3.9 pyctdev
+          conda create -n test-environment python=3.10 pyctdev
           conda create -n push-environment python=3.9 awscli
       - name: conda info and show sources
         run: |
