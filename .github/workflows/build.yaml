@@ -83,7 +83,7 @@ jobs:
       - name: env setup
         run: |
           conda activate test-environment
-          doit develop_install $CHANS_DEV -o flakes
+          doit develop_install $CHANS_DEV
           pip uninstall -y holoviews
           doit pip_on_conda
       - name: doit env_capture
@@ -93,7 +93,7 @@ jobs:
       - name: pip build
         run: |
           conda activate test-environment
-          doit ecosystem=pip package_build --test-group=flakes
+          doit ecosystem=pip package_build --test-group=simple
       - name: pip upload
         if: github.event_name == 'push'
         run: |
