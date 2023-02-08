@@ -68,11 +68,12 @@ except Exception:
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    active_tools = param.List(default=['pan', 'wheel_zoom'], doc="""
+    active_tools = param.List(default=None, doc="""
         Allows specifying which tools are active by default. Note
         that only one tool per gesture type can be active, e.g.
         both 'pan' and 'box_zoom' are drag tools, so if both are
-        listed only the last one will be active.""")
+        listed only the last one will be active. As a default 'pan'
+        and 'wheel_zoom' will be used if the tools are enabled.""")
 
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
@@ -569,15 +570,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         "Activates the list of active tools"
         if plot is None:
             return
-        for tool in self.active_tools:
+
+        if self.active_tools is None:
+            enabled_tools = set(self.default_tools + self.tools)
+            active_tools =  {'pan', 'wheel_zoom'} & enabled_tools
+        else:
+            active_tools = self.active_tools
+
+        for tool in active_tools:
             if isinstance(tool, str):
-                tool_type = TOOL_TYPES[tool]
+                tool_type = TOOL_TYPES.get(tool, type(None))
                 matching = [t for t in plot.toolbar.tools
                             if isinstance(t, tool_type)]
                 if not matching:
-                    self.param.warning('Tool of type %r could not be found '
-                                       'and could not be activated by default.'
-                                       % tool)
+                    self.param.warning(
+                        f'Tool of type {tool!r} could not be found '
+                        'and could not be activated by default.'
+                    )
                     continue
                 tool = matching[0]
             if isinstance(tool, tools.Drag):
