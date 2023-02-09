@@ -990,7 +990,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
         self.assertEqual(xval.x, 100)
 
-    @pytest.mark.flaky
+    @pytest.mark.flaky(max_runs=3)
     def test_periodic_param_fn_non_blocking(self):
         def callback(x): return Curve([1,2,3])
         xval = Stream.define('x',x=0)()
