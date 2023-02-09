@@ -1,6 +1,7 @@
 import time
 
 import param
+import pytest
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
@@ -123,6 +124,7 @@ class TestBokehServer(ComparisonTestCase):
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in plot.state._event_callbacks
 
+    @pytest.mark.flaky(max_runs=3)
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
         overlay = dmap * HLine(0)

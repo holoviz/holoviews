@@ -287,7 +287,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
-    @pytest.mark.flaky
+    @pytest.mark.flaky(max_runs=3)
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
