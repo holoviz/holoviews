@@ -894,7 +894,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # ALERT: extra ranges need shared, logx, and stream handling
         streaming, log, shared = False, False, False
-        for dim, extra_y_range in self.handles['extra_y_ranges'].items():
+        multi_dim = 'x' if self.invert_axes else 'y'
+        for dim, extra_y_range in self.handles[f'extra_{multi_dim}_ranges'].items():
             _, b, _, t = self.get_extents(element, ranges, dimension=dim)
             factors = self._get_dimension_factors(element, ranges, dim)
             self._update_range(
