@@ -860,7 +860,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         l, b, r, t = None, None, None, None
         if any(isinstance(r, (Range1d, DataRange1d)) for r in [x_range, y_range]):
-            l, b, r, t = self.get_extents(element, ranges, dimension=y_range.name)
+            if self.multi_y:
+                range_dim = x_range.name if self.invert_axes else y_range.name
+            else:
+                range_dim = None
+            l, b, r, t = self.get_extents(element, ranges, dimension=range_dim)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
