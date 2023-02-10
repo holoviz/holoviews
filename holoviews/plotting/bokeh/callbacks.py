@@ -25,7 +25,7 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from .util import convert_timestamp
+from .util import bokeh3, convert_timestamp
 
 
 class Callback:
@@ -606,7 +606,8 @@ class RangeXYCallback(Callback):
 
     def set_callback(self, handle):
         super().set_callback(handle)
-        handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
+        if not bokeh3:
+            handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
 
     def _process_msg(self, msg):
         data = {}
