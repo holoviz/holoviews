@@ -186,9 +186,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    multix = param.Boolean(default=False)
-    
-    multiy = param.Boolean(default=False)
+    multi_y = param.Boolean(default=False)
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
@@ -426,8 +424,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             specs = None
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
-        ax = 'y' if pos else 'x'
-        if getattr(self, f'multi{ax}'):
+        if pos and self.multi_y:
             # ALERT: Handle invert_axes and we have to not use combined but manually compute hard (or soft) + padding
             v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
             axis_label = str(dim)
@@ -503,21 +500,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         subplots = list(self.subplots.values()) if self.subplots else []
 
-        axes = {'x': {}, 'y': {}}
-        for el in element:
-            xd, yd = el.get_dimension(0), el.get_dimension(1)
-            opts = el.opts.get('plot', backend='bokeh').kwargs
-            if xd.name not in axes['x']:
-                axes['x'][xd.name] = opts.get('xaxis', 'top' if len(axes['x']) else 'bottom')
-            if yd.name not in axes['y']:
-                axes['y'][yd.name] = opts.get('yaxis', 'right' if len(axes['y']) else 'left')
-        self.handles['axes'] = axes
+        axis_specs = {'x': {}, 'y': {}}
+        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
+        if self.multi_y:
+            yaxes = {}
+            for el in element:
+                yd = el.get_dimension(1)
+                opts = el.opts.get('plot', backend='bokeh').kwargs
+                if yd.name not in yaxes:
+                    yaxes[yd.name] = opts.get('yaxis', 'right' if len(yaxes) else 'left')
 
-        axis_specs = defaultdict(dict)
-        for xdim, position in axes['x'].items():
-            axis_specs['x'][xdim] = self._axis_props(plots, subplots, element, ranges, pos=0, dim=xdim)
-        for ydim, position in axes['y'].items():
-            axis_specs['y'][ydim] = self._axis_props(plots, subplots, element, ranges, pos=1, dim=ydim)
+            for ydim, position in yaxes.items():
+                axis_specs['y'][ydim] = self._axis_props(plots, subplots, element, ranges, pos=1, dim=ydim)
+        else:
+            axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1)
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
@@ -564,13 +560,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             warnings.simplefilter('ignore', UserWarning)
             fig = figure(title=title, **properties)
 
-            for dim, range_obj in properties.get('extra_x_ranges', {}).items():
-                ax_cls, ax_kwargs = _get_axis_class(axis_specs['x'][dim][0], range_obj, dim=0)
-                fig.add_layout(ax_cls(x_range_name=dim, **ax_kwargs), axes['x'][dim])
-
             for dim, range_obj in properties.get('extra_y_ranges', {}).items():
                 ax_cls, ax_kwargs = _get_axis_class(axis_specs['y'][dim][0], range_obj, dim=1)
-                fig.add_layout(ax_cls(y_range_name=dim, **ax_kwargs), axes['y'][dim])
+                fig.add_layout(ax_cls(y_range_name=dim, axis_label=dim, **ax_kwargs), yaxes[dim])
         return fig
 
     def _plot_properties(self, key, element):
@@ -1081,7 +1073,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if util.isfinite(high):
             updates['end'] = (axis_range.end, high)
             updates['reset_end'] = updates['end']
-        print(updates)
         for k, (old, new) in updates.items():
             if isinstance(new, util.cftime_types):
                 new = date_to_integer(new)
