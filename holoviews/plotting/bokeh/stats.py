@@ -16,6 +16,7 @@ from ...core.util import (
 )
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
+from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
@@ -63,7 +64,7 @@ class BivariatePlot(PolygonPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop='cmap', is_cmap=True)
 
 
-class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -90,14 +91,6 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     _stream_data = False # Plot does not support streaming data
 
     selection_display = BokehOverlaySelectionDisplay(color_prop='box_color')
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
-
-    def _get_axis_dims(self, element):
-        return element.kdims, element.vdims[0]
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)

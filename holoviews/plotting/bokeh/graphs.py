@@ -12,7 +12,7 @@ from ...core.options import Cycle, abbreviated_exception
 from ...core.util import dimension_sanitizer, unique_array
 from ...element import Graph
 from ...util.transform import dim
-from ..mixins import ChordMixin
+from ..mixins import ChordMixin, GraphMixin
 from ..util import process_cmap, get_directed_graph_paths
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
@@ -23,7 +23,7 @@ from .styles import (
 from .util import bokeh3
 
 
-class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     arrowhead_length = param.Number(default=0.025, doc="""
       If directed option is enabled this determines the length of the
@@ -94,14 +94,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         else:
             dims = []
         return dims, {}
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(element.nodes, ranges, range_type)
-
-    def _get_axis_dims(self, element):
-        if isinstance(element, Graph):
-            element = element.nodes
-        return element.dimensions()[:2]
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
         cdim = element.get_dimension(self.edge_color_index)

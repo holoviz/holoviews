@@ -1,5 +1,6 @@
 import warnings
 
+from collections import defaultdict
 from itertools import chain
 from types import FunctionType
 
@@ -21,6 +22,7 @@ from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
+from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
@@ -64,6 +66,49 @@ try:
     TOOLS_MAP = Tool._known_aliases
 except Exception:
     TOOLS_MAP = TOOL_TYPES
+
+# Copied from bokeh.plotting._plot
+def get_scale(range_input, axis_type):
+    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", None]:
+        return LinearScale()
+    elif isinstance(range_input, (DataRange1d, Range1d)) and axis_type == "log":
+        return LogScale()
+    elif isinstance(range_input, FactorRange):
+        return CategoricalScale()
+    else:
+        raise ValueError(f"Unable to determine proper scale for: '{range_input}'")
+
+from bokeh.core.property.datetime import Datetime
+from bokeh.models import CategoricalAxis, LinearAxis, LogAxis
+    
+def _get_axis_class(axis_type, range_input, dim):
+    if axis_type is None:
+        return None, {}
+    elif axis_type == "linear":
+        return LinearAxis, {}
+    elif axis_type == "log":
+        return LogAxis, {}
+    elif axis_type == "datetime":
+        return DatetimeAxis, {}
+    elif axis_type == "mercator":
+        return MercatorAxis, dict(dimension='lon' if dim == 0 else 'lat')
+    elif axis_type == "auto":
+        if isinstance(range_input, FactorRange):
+            return CategoricalAxis, {}
+        elif isinstance(range_input, Range1d):
+            try:
+                value = range_input.start
+                # Datetime accepts ints/floats as timestamps, but we don't want
+                # to assume that implies a datetime axis
+                if Datetime.is_timestamp(value):
+                    return LinearAxis, {}
+                Datetime.validate(Datetime(), value)
+                return DatetimeAxis, {}
+            except ValueError:
+                pass
+        return LinearAxis, {}
+    else:
+        raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -140,6 +185,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
+
+    multix = param.Boolean(default=False)
+    
+    multiy = param.Boolean(default=False)
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
@@ -361,127 +410,90 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
 
-    def _get_axis_dims(self, element):
-        """Returns the dimensions corresponding to each axis.
-
-        Should return a list of dimensions or list of lists of
-        dimensions, which will be formatted to label the axis
-        and to link axes.
-        """
-        dims = element.dimensions()[:2]
-        if len(dims) == 1:
-            return dims + [None, None]
-        else:
-            return dims + [None]
-
-    def _axes_props(self, plots, subplots, element, ranges):
-        # Get the bottom layer and range element
+    def _axis_props(self, plots, subplots, element, ranges, pos, dim=None):
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
         if isinstance(el, Graph):
             el = el.nodes
 
-        dims = self._get_axis_dims(el)
-        xlabel, ylabel, zlabel = self._get_axis_labels(dims)
-        if self.invert_axes:
-            xlabel, ylabel = ylabel, xlabel
-            dims = dims[:2][::-1]
-        xdims, ydims = dims[:2]
-        if xdims:
-            if not isinstance(xdims, list):
-                xdims = [xdims]
-            xspecs = tuple((xd.name, xd.label, xd.unit) for xd in xdims)
+        # ALERT: Cannot just ask for join axis_dims
+        dims = self._get_axis_dims(el)[pos]
+        if dims:
+            if not isinstance(dims, list):
+                dims = [dims]
+            specs = tuple((d.name, d.label, d.unit) for d in dims)
         else:
-            xspecs = None
-        if ydims:
-            if not isinstance(ydims, list):
-                ydims = [ydims]
-            yspecs = tuple((yd.name, yd.label, yd.unit) for yd in ydims)
-        else:
-            yspecs = None
+            specs = None
 
-        # Get the Element that determines the range and get_extents
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
-        l, b, r, t = self.get_extents(range_el, ranges)
-        if self.invert_axes:
-            l, b, r, t = b, l, t, r
+        ax = 'y' if pos else 'x'
+        if getattr(self, f'multi{ax}'):
+            # ALERT: Handle invert_axes and we have to not use combined but manually compute hard (or soft) + padding
+            v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
+            axis_label = str(dim)
+        else:
+            if isinstance(self, OverlayPlot):
+                l, b, r, t = self.get_extents(range_el, ranges, dim)
+            else:
+                l, b, r, t = self.get_extents(range_el, ranges)
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
+            v0, v1 = (l, r) if pos == 0 else (b, t)
 
+            xlabel, ylabel, zlabel = self._get_axis_labels(dims)
+            if self.invert_axes:
+                xlabel, ylabel = ylabel, xlabel
+                dims = dims[:2][::-1]
+            axis_label = ylabel if pos else xlabel
+
+        # ALERT: Cannot just traverse all subplots 
         categorical = any(self.traverse(lambda x: x._categorical))
-        if xdims is not None and any(xdim.name in ranges and 'factors' in ranges[xdim.name] for xdim in xdims):
-            categorical_x = True
+        if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
+            categorical = True
         else:
-            categorical_x = any(isinstance(x, (str, bytes)) for x in (l, r))
-
-        if ydims is not None and any(ydim.name in ranges and 'factors' in ranges[ydim.name] for ydim in ydims):
-            categorical_y = True
-        else:
-            categorical_y = any(isinstance(y, (str, bytes)) for y in (b, t))
+            categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
-        x_range_type, y_range_type = range_types
-        x_axis_type = 'log' if self.logx else 'auto'
-        if xdims:
-            if len(xdims) > 1 or x_range_type is FactorRange:
-                x_axis_type = 'auto'
-                categorical_x = True
+        range_type = range_types[pos]
+        # If multi_x/y then grab opts from element
+        axis_type = 'log' if (self.logx, self.logy)[pos] else 'linear'
+        if dims:
+            if len(dims) > 1 or range_type is FactorRange:
+                axis_type = 'auto'
+                categorical = True
             else:
-                xtype = el.get_dimension_type(xdims[0])
-                if ((xtype is np.object_ and issubclass(type(l), util.datetime_types)) or
-                    xtype in util.datetime_types):
-                    x_axis_type = 'datetime'
+                dim_type = el.get_dimension_type(dims[0])
+                if ((dim_type is np.object_ and issubclass(type(v0), util.datetime_types)) or
+                    dim_type in util.datetime_types):
+                    axis_type = 'datetime'
 
-        y_axis_type = 'log' if self.logy else 'auto'
-        if ydims:
-            if len(ydims) > 1 or y_range_type is FactorRange:
-                y_axis_type = 'auto'
-                categorical_y = True
-            else:
-                if isinstance(el, Graph):
-                    ytype = el.nodes.get_dimension_type(ydims[0])
-                else:
-                    ytype = el.get_dimension_type(ydims[0])
-                if ((ytype is np.object_ and issubclass(type(b), util.datetime_types))
-                    or ytype in util.datetime_types):
-                    y_axis_type = 'datetime'
-
-        plot_ranges = {}
+        # ALERT: Rewrite _merge_ranges to handle axes separately
         # Try finding shared ranges in other plots in the same Layout
-        norm_opts = self.lookup_options(el, 'norm').options
-        if plots and self.shared_axes and not norm_opts.get('axiswise', False):
-            plot_ranges = self._merge_ranges(plots, xspecs, yspecs, x_axis_type, y_axis_type)
+        #plot_ranges = {}
+        #norm_opts = self.lookup_options(el, 'norm').options
+        #if plots and self.shared_axes and not norm_opts.get('axiswise', False):
+        #    plot_ranges = self._merge_ranges(plots, xspecs, yspecs, x_axis_type, y_axis_type)
 
         # Declare shared axes
-        x_range, y_range = plot_ranges.get('x_range'), plot_ranges.get('y_range')
-        if x_range and not (x_range_type is FactorRange and not isinstance(x_range, FactorRange)):
-            self._shared['x'] = True
-        if y_range and not (y_range_type is FactorRange and not isinstance(y_range, FactorRange)):
-            self._shared['y'] = True
+        # x_range, y_range = plot_ranges.get('x_range'), plot_ranges.gext('y_range')
+        #if x_range and not (x_range_type is FactorRange and not isinstance(x_range, FactorRange)):
+        #    self._shared['x'] = True
+        #if y_range and not (y_range_type is FactorRange and not isinstance(y_range, FactorRange)):
+        #    self._shared['y'] = True
 
-        if self._shared['x']:
-            pass
-        elif categorical or categorical_x:
-            x_axis_type = 'auto'
-            plot_ranges['x_range'] = FactorRange()
+        #if self._shared['x']:
+        #    pass
+        if categorical:
+            axis_type = 'auto'
+            dim_range = FactorRange()
         else:
-            plot_ranges['x_range'] = x_range_type()
+            dim_range = range_type(start=v0, end=v1, name=dim)
 
-        if self._shared['y']:
-            pass
-        elif categorical or categorical_y:
-            y_axis_type = 'auto'
-            plot_ranges['y_range'] = FactorRange()
-        elif 'y_range' not in plot_ranges:
-            plot_ranges['y_range'] = y_range_type()
+        if not dim_range.tags and specs is not None:
+            dim_range.tags.append(specs)
 
-        x_range, y_range = plot_ranges['x_range'], plot_ranges['y_range']
-        if not x_range.tags and xspecs is not None:
-            x_range.tags.append(xspecs)
-        if not y_range.tags and yspecs is not None:
-            y_range.tags.append(yspecs)
-
-        return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
-
+        return axis_type, axis_label, dim_range
 
     def _init_plot(self, key, element, plots, ranges=None):
         """
@@ -491,12 +503,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         subplots = list(self.subplots.values()) if self.subplots else []
 
-        axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
-        xlabel, ylabel, _ = labels
-        x_axis_type, y_axis_type = axis_types
-        properties = dict(plot_ranges)
-        properties['x_axis_label'] = xlabel if 'x' in self.labelled or self.xlabel else ' '
-        properties['y_axis_label'] = ylabel if 'y' in self.labelled or self.ylabel else ' '
+        axes = {'x': {}, 'y': {}}
+        for el in element:
+            xd, yd = el.get_dimension(0), el.get_dimension(1)
+            opts = el.opts.get('plot', backend='bokeh').kwargs
+            if xd.name not in axes['x']:
+                axes['x'][xd.name] = opts.get('xaxis', 'top' if len(axes['x']) else 'bottom')
+            if yd.name not in axes['y']:
+                axes['y'][yd.name] = opts.get('yaxis', 'right' if len(axes['y']) else 'left')
+        self.handles['axes'] = axes
+
+        axis_specs = defaultdict(dict)
+        for xdim, position in axes['x'].items():
+            axis_specs['x'][xdim] = self._axis_props(plots, subplots, element, ranges, pos=0, dim=xdim)
+        for ydim, position in axes['y'].items():
+            axis_specs['y'][ydim] = self._axis_props(plots, subplots, element, ranges, pos=1, dim=ydim)
+
+        properties = {}
+        for axis, axis_spec in axis_specs.items():
+            for (dim, (axis_type, axis_label, axis_range)) in axis_spec.items():
+                scale = get_scale(axis_range, axis_type)
+                if f'{axis}_range' in properties:
+                    properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
+                    properties[f'extra_{axis}_scales'] = extra_scales = properties.get(f'extra_{axis}_scales', {})
+                    extra_ranges[dim] = axis_range
+                    extra_scales[dim] = scale
+                else:
+                    properties[f'{axis}_range'] = axis_range
+                    properties[f'{axis}_scale'] = scale
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -528,10 +562,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
-            return figure(x_axis_type=x_axis_type,
-                          y_axis_type=y_axis_type, title=title,
-                          **properties)
+            fig = figure(title=title, **properties)
 
+            for dim, range_obj in properties.get('extra_x_ranges', {}).items():
+                ax_cls, ax_kwargs = _get_axis_class(axis_specs['x'][dim][0], range_obj, dim=0)
+                fig.add_layout(ax_cls(x_range_name=dim, **ax_kwargs), axes['x'][dim])
+
+            for dim, range_obj in properties.get('extra_y_ranges', {}).items():
+                ax_cls, ax_kwargs = _get_axis_class(axis_specs['y'][dim][0], range_obj, dim=1)
+                fig.add_layout(ax_cls(y_range_name=dim, **ax_kwargs), axes['y'][dim])
+        return fig
 
     def _plot_properties(self, key, element):
         """
@@ -634,6 +674,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.xaxis[:] = plot.above
         self.handles['xaxis'] = plot.xaxis[0]
         self.handles['x_range'] = plot.x_range
+        self.handles['extra_x_ranges'] = plot.extra_x_ranges
 
         if self.yaxis is None:
             plot.yaxis.visible = False
@@ -643,6 +684,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.yaxis[:] = plot.right
         self.handles['yaxis'] = plot.yaxis[0]
         self.handles['y_range'] = plot.y_range
+        self.handles['extra_y_ranges'] = plot.extra_y_ranges
 
 
     def _axis_properties(self, axis, key, plot, dimension=None,
@@ -841,15 +883,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.xgrid[0].update(**xopts)
         plot.ygrid[0].update(**yopts)
 
-
     def _update_ranges(self, element, ranges):
-        plot = self.handles['plot']
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
+        self._update_main_ranges(element, x_range, y_range, ranges)
+
+        # ALERT: extra ranges need shared, logx, and stream handling
+        streaming, log, shared = False, False, False
+        for dim, extra_x_range in self.handles['extra_x_ranges'].items():
+            l, _, r, _ = self.get_extents(element, ranges, dimension=dim)
+            factors = self._get_dimension_factors(element, ranges, dim)
+            self._update_range(
+                extra_x_range, l, r, factors, self.invert_xaxis,
+                shared, log, streaming
+            )
+        for dim, extra_y_range in self.handles['extra_y_ranges'].items():
+            _, b, _, t = self.get_extents(element, ranges, dimension=dim)
+            factors = self._get_dimension_factors(element, ranges, dim)
+            self._update_range(
+                extra_y_range, b, t, factors, self.invert_yaxis,
+                shared, log, streaming
+            )
+
+    def _update_main_ranges(self, element, x_range, y_range, ranges):
+        plot = self.handles['plot']
 
         l, b, r, t = None, None, None, None
         if any(isinstance(r, (Range1d, DataRange1d)) for r in [x_range, y_range]):
-            l, b, r, t = self.get_extents(element, ranges)
+            l, b, r, t = self.get_extents(element, ranges, dimension=y_range.name)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
@@ -982,46 +1043,51 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
-        if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
-            if isinstance(low, util.cftime_types):
-                pass
-            elif (low == high and low is not None):
-                if isinstance(low, util.datetime_types):
-                    offset = np.timedelta64(500, 'ms')
-                    low, high = np.datetime64(low), np.datetime64(high)
-                    low -= offset
-                    high += offset
-                else:
-                    offset = abs(low*0.1 if low else 0.5)
-                    low -= offset
-                    high += offset
-            if shared:
-                shared = (axis_range.start, axis_range.end)
-                low, high = util.max_range([(low, high), shared])
-            if invert: low, high = high, low
-            if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
-                low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
-                self.param.warning(
-                    "Logarithmic axis range encountered value less "
-                    "than or equal to zero, please supply explicit "
-                    "lower-bound to override default of %.3f." % low)
-            updates = {}
-            if util.isfinite(low):
-                updates['start'] = (axis_range.start, low)
-                updates['reset_start'] = updates['start']
-            if util.isfinite(high):
-                updates['end'] = (axis_range.end, high)
-                updates['reset_end'] = updates['end']
-            for k, (old, new) in updates.items():
-                if isinstance(new, util.cftime_types):
-                    new = date_to_integer(new)
-                axis_range.update(**{k:new})
-                if streaming and not k.startswith('reset_'):
-                    axis_range.trigger(k, old, new)
-        elif isinstance(axis_range, FactorRange):
+        if isinstance(axis_range, FactorRange):
             factors = list(decode_bytes(factors))
             if invert: factors = factors[::-1]
             axis_range.factors = factors
+            return
+
+        if not (isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges):
+            return
+
+        if isinstance(low, util.cftime_types):
+            pass
+        elif (low == high and low is not None):
+            if isinstance(low, util.datetime_types):
+                offset = np.timedelta64(500, 'ms')
+                low, high = np.datetime64(low), np.datetime64(high)
+                low -= offset
+                high += offset
+            else:
+                offset = abs(low*0.1 if low else 0.5)
+                low -= offset
+                high += offset
+        if shared:
+            shared = (axis_range.start, axis_range.end)
+            low, high = util.max_range([(low, high), shared])
+        if invert: low, high = high, low
+        if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
+            low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
+            self.param.warning(
+                "Logarithmic axis range encountered value less "
+                "than or equal to zero, please supply explicit "
+                "lower-bound to override default of %.3f." % low)
+        updates = {}
+        if util.isfinite(low):
+            updates['start'] = (axis_range.start, low)
+            updates['reset_start'] = updates['start']
+        if util.isfinite(high):
+            updates['end'] = (axis_range.end, high)
+            updates['reset_end'] = updates['end']
+        print(updates)
+        for k, (old, new) in updates.items():
+            if isinstance(new, util.cftime_types):
+                new = date_to_integer(new)
+            axis_range.update(**{k:new})
+            if streaming and not k.startswith('reset_'):
+                axis_range.trigger(k, old, new)
 
     def _setup_autorange(self):
         """
@@ -1170,34 +1236,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             return 1
 
+    def _get_dimension_factors(self, element, ranges, dimension):
+        if dimension.values:
+            values = dimension.values
+        elif 'factors' in ranges.get(dimension.name, {}):
+            values = ranges[dimension.name]['factors']
+        else:
+            values = element.dimension_values(dimension, False)
+        values = np.asarray(values)
+        if not self._allow_implicit_categories:
+            values = values if values.dtype.kind in 'SU' else []
+        return [v if values.dtype.kind in 'SU' else dimension.pprint_value(v) for v in values]
 
     def _get_factors(self, element, ranges):
         """
         Get factors for categorical axes.
         """
         xdim, ydim = element.dimensions()[:2]
-        if xdim.values:
-            xvals = xdim.values
-        elif 'factors' in ranges.get(xdim.name, {}):
-            xvals = ranges[xdim.name]['factors']
-        else:
-            xvals = element.dimension_values(0, False)
-
-        if ydim.values:
-            yvals = ydim.values
-        elif 'factors' in ranges.get(ydim.name, {}):
-            yvals = ranges[ydim.name]['factors']
-        else:
-            yvals = element.dimension_values(1, False)
-        xvals, yvals = np.asarray(xvals), np.asarray(yvals)
-        if not self._allow_implicit_categories:
-            xvals = xvals if xvals.dtype.kind in 'SU' else []
-            yvals = yvals if yvals.dtype.kind in 'SU' else []
-        coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
-                       for dim, vals in [(xdim, xvals), (ydim, yvals)])
+        xvals, yvals = self._get_dimension_factors(xdim, ydim)
+        coords = (xvals, yvals)
         if self.invert_axes: coords = coords[::-1]
         return coords
-
 
     def _process_legend(self):
         """
@@ -1207,7 +1266,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             l.items[:] = []
             l.border_line_alpha = 0
             l.background_fill_alpha = 0
-
 
     def _init_glyph(self, plot, mapping, properties):
         """
@@ -1221,6 +1279,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_method = plot_method[int(self.invert_axes)]
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
+
+        # ALERT: This only handles XYGlyph types right now
+        if 'x' in mapping and mapping['x'] in plot.extra_x_ranges:
+            properties['x_range_name'] = mapping['x']
+        if 'y' in mapping and mapping['y'] in plot.extra_y_ranges:
+            properties['y_range_name'] = mapping['y']
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
@@ -2328,7 +2392,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive', 'fontscale']
+                          'frame_height', 'responsive', 'fontscale', 'multix',
+                          'multiy']
 
     @property
     def _x_range_type(self):
@@ -2511,6 +2576,19 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 tool.renderers = list(util.unique_iterator(renderers))
                 if 'hover' not in self.handles:
                     self.handles['hover'] = tool
+
+    def _get_dimension_factors(self, overlay, ranges, dimension):
+        factors = []
+        for k, sp in self.subplots.items():
+            el = overlay.data.get(k)
+            if el is None or not sp.apply_ranges or not sp._has_axis_dimension(el, dimension):
+                continue
+            dim = el.get_dimension(dimension)
+            elranges = util.match_spec(el, ranges)
+            fs = sp._get_dimension_factors(el, elranges, dim)
+            if len(fs):
+                factors.append(fs)
+        return list(util.unique_iterator(chain(*factors)))
 
     def _get_factors(self, overlay, ranges):
         xfactors, yfactors = [], []
