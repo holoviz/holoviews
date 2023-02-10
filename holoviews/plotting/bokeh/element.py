@@ -1070,7 +1070,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower-bound to override default of %.3f." % low)
+                "lower bound to override default of %.3f." % low)
         updates = {}
         if util.isfinite(low):
             updates['start'] = (axis_range.start, low)
