@@ -693,11 +693,6 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
     _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
 
-    def _get_axis_dims(self, element):
-        if 'spike_length' in self.lookup_options(element, 'plot').options:
-            return  [element.dimensions()[0], None, None]
-        return super()._get_axis_dims(element)
-
     def get_data(self, element, ranges, style):
         dims = element.dimensions()
 
@@ -814,13 +809,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 props['group_text_align'] = 'right'
                 props['group_text_baseline'] = 'middle'
         return props
-
-    def _get_axis_dims(self, element):
-        if element.ndims > 1 and not (self.stacked or not self.multi_level):
-            xdims = element.kdims
-        else:
-            xdims = element.kdims[0]
-        return (xdims, element.vdims[0])
 
     def _get_factors(self, element, ranges):
         xvals, gvals = self._get_coords(element, ranges)

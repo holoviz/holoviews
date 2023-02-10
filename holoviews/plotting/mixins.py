@@ -76,6 +76,11 @@ class HeatMapMixin:
 
 class SpikesMixin:
 
+    def _get_axis_dims(self, element):
+        if 'spike_length' in self.lookup_options(element, 'plot').options:
+            return  [element.dimensions()[0], None, None]
+        return super()._get_axis_dims(element)
+
     def get_extents(self, element, ranges, range_type='combined'):
         opts = self.lookup_options(element, 'plot').options
         if len(element.dimensions()) > 1 and 'spike_length' not in opts:
@@ -129,6 +134,13 @@ class AreaMixin:
 
 
 class BarsMixin:
+
+    def _get_axis_dims(self, element):
+        if element.ndims > 1 and not (self.stacked or not self.multi_level):
+            xdims = element.kdims
+        else:
+            xdims = element.kdims[0]
+        return (xdims, element.vdims[0])
 
     def get_extents(self, element, ranges, range_type='combined'):
         """
@@ -223,3 +235,25 @@ class BarsMixin:
             c_is_str = xvals.dtype.kind in 'SU' or not as_string
             xvals = [x if c_is_str else xdim.pprint_value(x) for x in xvals]
             return xvals, None
+
+
+class MultiDistributionMixin:
+    
+    def _get_axis_dims(self, element):
+        return element.kdims, element.vdims[0]
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        return super().get_extents(
+            element, ranges, range_type, 'categorical', element.vdims[0]
+        )
+
+
+class GraphMixin:
+
+    def _get_axis_dims(self, element):
+        if isinstance(element, Graph):
+            element = element.nodes
+        return element.dimensions()[:2]
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        return super().get_extents(element.nodes, ranges, range_type)
