@@ -407,20 +407,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if isinstance(el, Graph):
             el = el.nodes
 
-        # ALERT: Cannot just ask for join axis_dims
-        dims = self._get_axis_dims(el)[pos]
-        if dims:
-            if not isinstance(dims, list):
-                dims = [dims]
-            specs = tuple((d.name, d.label, d.unit) for d in dims)
-        else:
-            specs = None
-
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
-        if pos and self.multi_y:
-            # ALERT: Handle invert_axes and we have to not use combined but manually compute hard (or soft) + padding
+        if pos and dim:
+            dims = [dim]
             v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
             axis_label = str(dim)
+            specs = ((dim.name, dim.label, dim.unit),)
         else:
             if isinstance(self, OverlayPlot):
                 l, b, r, t = self.get_extents(range_el, ranges, dim)
@@ -429,6 +421,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
             v0, v1 = (l, r) if pos == 0 else (b, t)
+
+            dims = self._get_axis_dims(el)[pos]
+            if dims:
+                if not isinstance(dims, list):
+                    dims = [dims]
+                specs = tuple((d.name, d.label, d.unit) for d in dims)
+            else:
+                specs = None
 
             xlabel, ylabel, zlabel = self._get_axis_labels(dims)
             if self.invert_axes:
@@ -452,7 +452,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if len(dims) > 1 or range_type is FactorRange:
                 axis_type = 'auto'
                 categorical = True
-            else:
+            elif el.get_dimension(dims[0]):
                 dim_type = el.get_dimension_type(dims[0])
                 if ((dim_type is np.object_ and issubclass(type(v0), util.datetime_types)) or
                     dim_type in util.datetime_types):
@@ -478,7 +478,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_type = 'auto'
             dim_range = FactorRange()
         else:
-            dim_range = range_type(start=v0, end=v1, name=dim)
+            dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
 
         if not dim_range.tags and specs is not None:
             dim_range.tags.append(specs)
@@ -494,19 +494,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
+        if self.invert_axes:
+            x, y = 'y', 'x'
+            axpos0, axpos1 = 'below', 'above'
+        else:
+            x, y = 'x', 'y'
+            axpos0, axpos1 = 'left', 'right'
+        axis_specs[x]['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
         if self.multi_y:
-            yaxes = {}
+            yaxes, dimensions = {}, {}
             for el in element:
                 yd = el.get_dimension(1)
+                dimensions[yd.name] = yd
                 opts = el.opts.get('plot', backend='bokeh').kwargs
                 if yd.name not in yaxes:
-                    yaxes[yd.name] = opts.get('yaxis', 'right' if len(yaxes) else 'left')
+                    yaxes[yd.name] = opts.get(f'{y}axis', axpos1 if len(yaxes) else axpos0)
 
             for ydim, position in yaxes.items():
-                axis_specs['y'][ydim] = self._axis_props(plots, subplots, element, ranges, pos=1, dim=ydim)
+                axis_specs[y][ydim] = self._axis_props(
+                    plots, subplots, element, ranges, pos=1, dim=dimensions[ydim]
+                )
         else:
-            axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1)
+            axis_specs[y]['y'] = self._axis_props(plots, subplots, element, ranges, pos=1)
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
@@ -553,9 +562,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             warnings.simplefilter('ignore', UserWarning)
             fig = figure(title=title, **properties)
 
-            for dim, range_obj in properties.get('extra_y_ranges', {}).items():
-                ax_cls, ax_kwargs = _get_axis_class(axis_specs['y'][dim][0], range_obj, dim=1)
-                fig.add_layout(ax_cls(y_range_name=dim, axis_label=dim, **ax_kwargs), yaxes[dim])
+        multi_ax = 'x' if self.invert_axes else 'y'
+        for dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
+            axis_type, axis_label, _ = axis_specs[multi_ax][dim]
+            ax_cls, ax_kwargs = _get_axis_class(axis_type, range_obj, dim=1)
+            ax_kwargs[f'{multi_ax}_range_name'] = dim
+            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), yaxes[dim])
         return fig
 
     def _plot_properties(self, key, element):
@@ -834,13 +846,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # ALERT: extra ranges need shared, logx, and stream handling
         streaming, log, shared = False, False, False
-        for dim, extra_x_range in self.handles['extra_x_ranges'].items():
-            l, _, r, _ = self.get_extents(element, ranges, dimension=dim)
-            factors = self._get_dimension_factors(element, ranges, dim)
-            self._update_range(
-                extra_x_range, l, r, factors, self.invert_xaxis,
-                shared, log, streaming
-            )
         for dim, extra_y_range in self.handles['extra_y_ranges'].items():
             _, b, _, t = self.get_extents(element, ranges, dimension=dim)
             factors = self._get_dimension_factors(element, ranges, dim)
