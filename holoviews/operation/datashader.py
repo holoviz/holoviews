@@ -326,9 +326,9 @@ class AggregationOperation(ResamplingOperation):
         if column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
-                raise ValueError("Aggregation column '%s' not found on '%s' element. "
+                raise ValueError("Aggregation column '{}' not found on '{}' element. "
                                  "Ensure the aggregator references an existing "
-                                 "dimension." % (column,element))
+                                 "dimension.".format(column,element))
             if isinstance(agg_fn, (ds.count, ds.count_cat)):
                 if vdim_prefix:
                     vdim_name = f'{vdim_prefix}{column} Count'
@@ -1078,10 +1078,10 @@ class trimesh_rasterize(aggregate):
                 else:
                     p, n = 'vertices', 'simplexes'
                 self.param.warning(
-                    "TriMesh %s were provided as dask DataFrame but %s "
+                    "TriMesh {} were provided as dask DataFrame but {} "
                     "were not. Datashader will not use dask to parallelize "
                     "rasterization unless both are provided as dask "
-                    "DataFrames." % (p, n))
+                    "DataFrames.".format(p, n))
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes):

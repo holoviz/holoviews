@@ -1,6 +1,6 @@
 import param
 import numpy as np
-import matplotlib
+import matplotlib as mpl
 
 from matplotlib import patches
 from matplotlib.lines import Line2D
@@ -279,7 +279,7 @@ class SplinePlot(AnnotationPlot):
         verts, codes = data
         if not len(verts):
             return []
-        patch = patches.PathPatch(matplotlib.path.Path(verts, codes),
+        patch = patches.PathPatch(mpl.path.Path(verts, codes),
                                   facecolor='none', **opts)
         axis.add_patch(patch)
         return [patch]

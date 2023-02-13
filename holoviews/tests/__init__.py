@@ -1,6 +1,6 @@
 try:
     # Standardize backend due to random inconsistencies
-    from matplotlib import pyplot
-    pyplot.switch_backend('agg')
+    import matplotlib.pyplot as plt
+    plt.switch_backend('agg')
 except ImportError:
     pass

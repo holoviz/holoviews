@@ -398,9 +398,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                     found.append(lb)
         if found:
             param.main.param.warning(
-                'Option %r for %s type not valid for selected '
-                'backend (%r). Option only applies to following '
-                'backends: %r' % (opt, objtype, current_backend, found))
+                'Option {!r} for {} type not valid for selected '
+                'backend ({!r}). Option only applies to following '
+                'backends: {!r}'.format(opt, objtype, current_backend, found))
             return
 
         if matches:
@@ -409,9 +409,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              'for current extension (%r) are: %s.' %
                              (opt, objtype, current_backend, matches))
         else:
-            raise ValueError('Unexpected option %r for %s type '
+            raise ValueError('Unexpected option {!r} for {} type '
                              'across all extensions. No similar options '
-                             'found.' % (opt, objtype))
+                             'found.'.format(opt, objtype))
 
     @classmethod
     def _builder_reprs(cls, options, namespace=None, ns=None):

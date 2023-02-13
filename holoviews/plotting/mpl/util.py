@@ -3,7 +3,7 @@ import re
 import warnings
 
 import numpy as np
-import matplotlib
+import matplotlib as mpl
 
 from matplotlib import units as munits
 from matplotlib import ticker
@@ -37,7 +37,7 @@ from ...core.util import (
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
-mpl_version = Version(matplotlib.__version__)
+mpl_version = Version(mpl.__version__)
 
 
 def is_color(color):
@@ -86,7 +86,7 @@ def get_old_rcparams():
         'savefig.jpeg_quality' # deprecated in MPL 3.3.1
     ]
     old_rcparams = {
-        k: v for k, v in matplotlib.rcParams.items()
+        k: v for k, v in mpl.rcParams.items()
         if mpl_version < Version('3.0') or k not in deprecated_rcparams
     }
     return old_rcparams

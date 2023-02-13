@@ -106,8 +106,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook %r could not be "
-                                   "applied:\n\n %s" % (hook, e))
+                self.param.warning("Plotting hook {!r} could not be "
+                                   "applied:\n\n {}".format(hook, e))
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):

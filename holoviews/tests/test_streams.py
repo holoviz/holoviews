@@ -424,11 +424,8 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(dmap[()], Points([10]))
 
     def test_panel_param_steams_dict(self):
-        try:
-            import panel
-        except ImportError:
-            raise SkipTest('Panel required for widget support in streams dict')
-        widget = panel.widgets.FloatSlider(value=1)
+        import panel as pn
+        widget = pn.widgets.FloatSlider(value=1)
 
         def test(x):
             return Points([x])

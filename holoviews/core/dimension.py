@@ -110,10 +110,10 @@ def process_dimensions(kdims, vdims):
         elif isinstance(dims, (tuple, str, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
-            raise ValueError("%s argument expects a Dimension or list of dimensions, "
+            raise ValueError("{} argument expects a Dimension or list of dimensions, "
                              "specified as tuples, strings, dictionaries or Dimension "
-                             "instances, not a %s type. Ensure you passed the data as the "
-                             "first argument." % (group, type(dims).__name__))
+                             "instances, not a {} type. Ensure you passed the data as the "
+                             "first argument.".format(group, type(dims).__name__))
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 

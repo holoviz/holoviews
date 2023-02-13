@@ -132,9 +132,9 @@ class GridInterface(DictInterface):
                             'by the key dimensions. Expected %d-D array, '
                             'found %d-D array.' % (vdim, len(expected), len(shape)))
             elif any((s!=e and (s+1)!=e) for s, e in zip(shape, valid_shape)):
-                raise error('Key dimension values and value array %s '
-                            'shapes do not match. Expected shape %s, '
-                            'actual shape: %s' % (vdim, valid_shape, shape), cls)
+                raise error('Key dimension values and value array {} '
+                            'shapes do not match. Expected shape {}, '
+                            'actual shape: {}'.format(vdim, valid_shape, shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -568,11 +568,11 @@ class GridInterface(DictInterface):
                 if np.isscalar(ind):
                     emin, emax = edges.min(), edges.max()
                     if ind < emin:
-                        raise IndexError("Index %s less than lower bound "
-                                         "of %s for %s dimension." % (ind, emin, dim))
+                        raise IndexError("Index {} less than lower bound "
+                                         "of {} for {} dimension.".format(ind, emin, dim))
                     elif ind >= emax:
-                        raise IndexError("Index %s more than or equal to upper bound "
-                                         "of %s for %s dimension." % (ind, emax, dim))
+                        raise IndexError("Index {} more than or equal to upper bound "
+                                         "of {} for {} dimension.".format(ind, emax, dim))
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
                     mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True
