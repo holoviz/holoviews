@@ -1233,7 +1233,7 @@ class InspectorTests(ComparisonTestCase):
         if spatialpandas is None:
             return
 
-        xs1 = [1, 2, 3]; xs2 = [6, 7, 3];ys1 = [2, 0, 7]; ys2 = [7, 5, 2]
+        xs1, xs2, ys1, ys2 = [1, 2, 3], [6, 7, 3], [2, 0, 7], [7, 5, 2]
         holes = [ [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],]
         polydata = [{'x': xs1, 'y': ys1, 'holes': holes, 'z': 1},
                     {'x': xs2, 'y': ys2, 'holes': [[]], 'z': 2}]

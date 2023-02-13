@@ -207,10 +207,10 @@ class notebook_extension(extension):
         if word.endswith('='):     prio1 = -1
         if word.startswith('%%'):
             if '%' not in word[2:]:
-                word = word[2:];   prio2 = 2
+                word, prio2 = word[2:], 2
         elif word.startswith('%'):
             if '%' not in word[1:]:
-                word = word[1:];   prio2 = 1
+                word, prio2 = word[1:], 1
         return prio1, word, prio2
 
 

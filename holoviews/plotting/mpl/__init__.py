@@ -9,23 +9,23 @@ from packaging.version import Version
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
-from ...element import * # noqa (API import)
+from ...element import *
 from ..plot import PlotSelector
 from ..util import fire_colors
-from .annotation import * # noqa (API import)
-from .chart import * # noqa (API import)
-from .chart3d import * # noqa (API import)
+from .annotation import *
+from .chart import *
+from .chart3d import *
 from .element import ElementPlot
-from .geometry import * # noqa (API import)
-from .graphs import * # noqa (API import)
-from .heatmap import * # noqa (API import)
-from .hex_tiles import * # noqa (API import)
-from .path import * # noqa (API import)
-from .plot import * # noqa (API import)
-from .raster import * # noqa (API import)
-from .sankey import * # noqa (API import)
-from .stats import * # noqa (API import)
-from .tabular import * # noqa (API import)
+from .geometry import *
+from .graphs import *
+from .heatmap import *
+from .hex_tiles import *
+from .path import *
+from .plot import *
+from .raster import *
+from .sankey import *
+from .stats import *
+from .tabular import *
 
 from .renderer import MPLRenderer
 
