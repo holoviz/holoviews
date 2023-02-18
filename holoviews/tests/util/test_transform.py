@@ -537,13 +537,13 @@ def df_fixture():
     
     data_text = (
         """
-        idx_fail| idx_ok| name|   a|    b
-             101|      0|   P1|  7.|   3.
-             102|      1|   P2|  3.|   4.
-             103|      2|   P3|  .5|   3.
-             104|      3|   P4|  2.|   2.
-             105|      4|   P5|  1.|   2.
-             106|      5|   P6|  1.|   1.
+        idx| name|   a|    b
+        101|   P1|  7.|   3.
+        102|   P2|  3.|   4.
+        103|   P3|  .5|   3.
+        104|   P4|  2.|   2.
+        105|   P5|  1.|   2.
+        106|   P6|  1.|   1.
         """)
 
     # read in data using non-zero based index
@@ -551,8 +551,12 @@ def df_fixture():
  
     
 
-def test_dataset_transform_spatial_spatial_select_expr(df_fixture):
-
+def test_dataset_transform_by_spatial_select_expr_index_not_0_based(df_fixture):
+    """Ensure 'spatial_select' expression works when index not zero-based.
+    
+    Use 'spatial_select' defined by four nodes to select index 104, 105.
+    Apply expression to dataset.transform to generate new 'flag' column where True
+    for the two indexes."""
     arr = np.array(
         [
             [3.0, 1.7],
@@ -561,16 +565,16 @@ def test_dataset_transform_spatial_spatial_select_expr(df_fixture):
             [3.0, 2.7]
         ]
     )
-
-
     spatial_expr = hv.dim('a', hv.element.selection.spatial_select, hv.dim('b'), geometry=arr)
     ds = hv.Dataset(df_fixture)
     df_out = ds.transform(**{'flag': spatial_expr}).dframe()
-    assert all(df_out['flag'].loc[104:105])
-    # ls = hv.selection.link_selections.instance(unselected_alpha=.2)
-    # points = hv.Points(df_fixture, kdims=['a', 'b']).opts(size=26, fill_color='yellow', line_color='black')
-    # labels = hv.Labels(df_fixture, kdims=['a', 'b'], vdims=['name'])  # .opts(fontsize={'labels':'7pt'})
-    # plg = hv.Polygons(arr, kdims=['a', 'c']).opts(fill_color='None', line_color='red', line_width=3.0)
-    # ls(plot).opts(opts.RGB(tools=['poly_select'])) * points * labels * plg
-    # plot = hv.operations.datashader.datashade(points, x_sampling=1, y_sampling=.5).opts(padding=.3)
-    # ls.selection_expr = spatial_expr
+    expected_series = pd.Series(
+        {
+            101: False,
+            102: False,
+            103: False,
+            104: True,
+            105: True,
+            106: False}
+        )
+    pd.testing.assert_series_equal(df_out['flag'], expected_series, check_names=False)
