@@ -4,8 +4,13 @@ Unit tests for dim transforms
 import pickle
 import warnings
 
+import holoviews as hv
+from io import StringIO
+hv.extension('bokeh')
+
 from collections import OrderedDict
 from unittest import skipIf
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -520,3 +525,52 @@ class TestDimTransforms(ComparisonTestCase):
         expr = (((dim('float')-2)*3)**2)
         expr2 = pickle.loads(pickle.dumps(expr))
         self.assertEqual(expr, expr2)
+
+
+@pytest.fixture    
+def df_fixture():
+    """Prepare dataframe fixture.
+
+    Returns:
+        pd.DataFrame: Output data with 
+    """
+    
+    data_text = (
+        """
+        idx_fail| idx_ok| name|   a|    b
+             101|      0|   P1|  7.|   3.
+             102|      1|   P2|  3.|   4.
+             103|      2|   P3|  .5|   3.
+             104|      3|   P4|  2.|   2.
+             105|      4|   P5|  1.|   2.
+             106|      5|   P6|  1.|   1.
+        """)
+
+    # read in data using non-zero based index
+    return pd.read_csv(StringIO(data_text), sep='|', skipinitialspace=True, index_col=0)
+ 
+    
+
+def test_dataset_transform_spatial_spatial_select_expr(df_fixture):
+
+    arr = np.array(
+        [
+            [3.0, 1.7],
+            [0.3, 1.7],
+            [0.3, 2.7],
+            [3.0, 2.7]
+        ]
+    )
+
+
+    spatial_expr = hv.dim('a', hv.element.selection.spatial_select, hv.dim('b'), geometry=arr)
+    ds = hv.Dataset(df_fixture)
+    df_out = ds.transform(**{'flag': spatial_expr}).dframe()
+    assert all(df_out['flag'].loc[104:105])
+    # ls = hv.selection.link_selections.instance(unselected_alpha=.2)
+    # points = hv.Points(df_fixture, kdims=['a', 'b']).opts(size=26, fill_color='yellow', line_color='black')
+    # labels = hv.Labels(df_fixture, kdims=['a', 'b'], vdims=['name'])  # .opts(fontsize={'labels':'7pt'})
+    # plg = hv.Polygons(arr, kdims=['a', 'c']).opts(fill_color='None', line_color='red', line_width=3.0)
+    # ls(plot).opts(opts.RGB(tools=['poly_select'])) * points * labels * plg
+    # plot = hv.operations.datashader.datashade(points, x_sampling=1, y_sampling=.5).opts(padding=.3)
+    # ls.selection_expr = spatial_expr
