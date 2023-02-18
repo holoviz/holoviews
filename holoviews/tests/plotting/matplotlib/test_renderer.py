@@ -10,7 +10,6 @@ import numpy as np
 import param
 import panel as pn
 from matplotlib import style
-from packaging.version import Version
 
 from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
                        GridSpace, Table, Curve)
@@ -18,7 +17,6 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream
 from holoviews.plotting.mpl import MPLRenderer, CurvePlot
 from holoviews.plotting.renderer import Renderer
-from holoviews.plotting.mpl.util import mpl_version
 from panel.widgets import DiscreteSlider, Player, FloatSlider
 from pyviz_comms import CommManager
 
@@ -59,19 +57,13 @@ class MPLRendererTest(ComparisonTestCase):
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        if mpl_version >= Version("3.7"):
-            self.assertEqual((w, h), (576, 259))
-        else:
-            self.assertEqual((w, h), (576, 257))
+        self.assertEqual((w, h), (576, 257))
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        if mpl_version >= Version("3.7"):
-            self.assertEqual((w, h), (288, 511))
-        else:
-            self.assertEqual((w, h), (288, 509))
+        self.assertEqual((w, h), (288, 509))
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
