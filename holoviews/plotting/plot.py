@@ -1392,7 +1392,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', xdim=None, ydim=None, zdim=None):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
