@@ -5,12 +5,9 @@ import pickle
 import warnings
 
 import holoviews as hv
-from io import StringIO
-hv.extension('bokeh')
 
 from collections import OrderedDict
 from unittest import skipIf
-import pytest
 
 import numpy as np
 import pandas as pd
@@ -527,37 +524,14 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(expr, expr2)
 
 
-@pytest.fixture    
-def df_fixture():
-    """Prepare dataframe fixture.
-
-    Returns:
-        pd.DataFrame: Output data with 
-    """
-    
-    data_text = (
-        """
-        idx| name|   a|    b
-        101|   P1|  7.|   3.
-        102|   P2|  3.|   4.
-        103|   P3|  .5|   3.
-        104|   P4|  2.|   2.
-        105|   P5|  1.|   2.
-        106|   P6|  1.|   1.
-        """)
-
-    # read in data using non-zero based index
-    return pd.read_csv(StringIO(data_text), sep='|', skipinitialspace=True, index_col=0)
- 
-    
-
-def test_dataset_transform_by_spatial_select_expr_index_not_0_based(df_fixture):
+def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
     """Ensure 'spatial_select' expression works when index not zero-based.
     
     Use 'spatial_select' defined by four nodes to select index 104, 105.
     Apply expression to dataset.transform to generate new 'flag' column where True
     for the two indexes."""
-    arr = np.array(
+    df = pd.DataFrame({"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=range(101, 107))
+    geometry = np.array(
         [
             [3.0, 1.7],
             [0.3, 1.7],
@@ -565,8 +539,8 @@ def test_dataset_transform_by_spatial_select_expr_index_not_0_based(df_fixture):
             [3.0, 2.7]
         ]
     )
-    spatial_expr = hv.dim('a', hv.element.selection.spatial_select, hv.dim('b'), geometry=arr)
-    ds = hv.Dataset(df_fixture)
+    spatial_expr = hv.dim('a', hv.element.selection.spatial_select, hv.dim('b'), geometry=geometry)
+    ds = hv.Dataset(df)
     df_out = ds.transform(**{'flag': spatial_expr}).dframe()
     expected_series = pd.Series(
         {
