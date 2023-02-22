@@ -50,8 +50,9 @@ ignore = [
     "E741",     # Ambiguous variable name
     "F405",     # From star imports
     "PLR2004",  # Magic value used in comparison
-    "RUF00",    # Ambiguous unicode character
+    "RUF005",   # Consider {expr} instead of concatenation
     "PLR091",   # Too many arguments/branches/statements
+    "PLE0604",  # Invalid object in `__all__`, must contain only strings
     "PLE0605",  # Invalid format for __all__
     "E701",     # Multiple statements on one line
 ]
@@ -63,3 +64,4 @@ unfixable = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
+"holoviews/tests/*" = ["RUF001", "RUF002", "RUF003"]  # Ambiguous unicode character
