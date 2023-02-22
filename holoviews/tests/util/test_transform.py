@@ -540,8 +540,8 @@ def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
         ]
     )
     spatial_expr = hv.dim('a', hv.element.selection.spatial_select, hv.dim('b'), geometry=geometry)
-    ds = hv.Dataset(df)
-    df_out = ds.transform(**{'flag': spatial_expr}).dframe()
+    dataset = hv.Dataset(df)
+    df_out = dataset.transform(**{'flag': spatial_expr}).dframe()
     expected_series = pd.Series(
         {
             101: False,
