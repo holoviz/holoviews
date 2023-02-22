@@ -526,7 +526,6 @@ class TestDimTransforms(ComparisonTestCase):
 
 def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
     """Ensure 'spatial_select' expression works when index not zero-based.
-    
     Use 'spatial_select' defined by four nodes to select index 104, 105.
     Apply expression to dataset.transform to generate new 'flag' column where True
     for the two indexes."""
