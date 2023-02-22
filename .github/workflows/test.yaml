@@ -74,7 +74,7 @@ jobs:
         run: |
           conda activate test-environment
           conda uninstall panel bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/panel.git"
+          pip install "git+https://github.com/holoviz/panel.git@aae2074941b73fd3d8e2dbad4e2c68acfd70b968"
       - name: doit test_unit
         run: |
           conda activate test-environment
