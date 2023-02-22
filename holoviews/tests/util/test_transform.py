@@ -529,7 +529,7 @@ def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
     Use 'spatial_select' defined by four nodes to select index 104, 105.
     Apply expression to dataset.transform to generate new 'flag' column where True
     for the two indexes."""
-    df = pd.DataFrame({"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=range(101, 107))
+    df = pd.DataFrame({"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=list(range(101, 107)))
     geometry = np.array(
         [
             [3.0, 1.7],
