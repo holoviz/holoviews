@@ -722,10 +722,10 @@ class dim:
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
 
         if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
-            raise KeyError("One or more dimensions in the expression %r "
-                           "could not resolve on '%s'. Ensure all "
+            raise KeyError("One or more dimensions in the expression {!r} "
+                           "could not resolve on '{}'. Ensure all "
                            "dimensions referenced by the expression are "
-                           "present on the supplied object." % (self, dataset))
+                           "present on the supplied object.".format(self, dataset))
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
                 raise ValueError("The expression %r assumes a %s-like "

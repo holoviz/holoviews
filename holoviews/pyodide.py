@@ -17,6 +17,7 @@ from .util import extension as _extension
 #-----------------------------------------------------------------------------
 # Private API
 #-----------------------------------------------------------------------------
+_background_task = set()
 
 async def _link(ref, doc):
     from js import Bokeh
@@ -44,7 +45,9 @@ def render_html(obj):
         render_item.roots._roots[root] = target
     document.getElementById(target).classList.add('bk-root')
     script = script_for_render_items(docs_json, [render_item])
-    asyncio.create_task(_link(doc.roots[0].ref['id'], doc))
+    task = asyncio.create_task(_link(doc.roots[0].ref['id'], doc))
+    _background_task.add(task)
+    task.add_done_callback(_background_task.discard)
     return {'text/html': wrap_in_script_tag(script)}, {}
 
 def render_image(element, fmt):

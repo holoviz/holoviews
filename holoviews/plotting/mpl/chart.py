@@ -631,8 +631,8 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
             if sizes is None:
                 eltype = type(element).__name__
                 self.param.warning(
-                    '%s dimension is not numeric, cannot use to '
-                    'scale %s size.' % (sdim.pprint_label, eltype))
+                    '{} dimension is not numeric, cannot use to '
+                    'scale {} size.'.format(sdim.pprint_label, eltype))
             else:
                 style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')

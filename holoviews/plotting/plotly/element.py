@@ -346,8 +346,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.param.warning('Specified %s dim transform %r could not be applied, as not all '
-                             'dimensions could be resolved.' % (k, v))
+                self.param.warning('Specified {} dim transform {!r} could not be applied, as not all '
+                             'dimensions could be resolved.'.format(k, v))
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:

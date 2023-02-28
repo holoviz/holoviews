@@ -57,8 +57,8 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
 
     def test_simple_constructor_streams_dict_panel_widget(self):
-        import panel
-        DynamicMap(lambda x: x, streams=dict(x=panel.widgets.FloatSlider()))
+        import panel as pn
+        DynamicMap(lambda x: x, streams=dict(x=pn.widgets.FloatSlider()))
 
     def test_simple_constructor_streams_dict_parameter(self):
         test = ExampleParameterized()

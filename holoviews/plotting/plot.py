@@ -1261,8 +1261,8 @@ class GenericElementPlot(DimensionedPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook %r could not be "
-                                   "applied:\n\n %s" % (hook, e))
+                self.param.warning("Plotting hook {!r} could not be "
+                                   "applied:\n\n {}".format(hook, e))
 
     def get_aspect(self, xspan, yspan):
         """
@@ -1645,8 +1645,8 @@ class GenericOverlayPlot(GenericElementPlot):
         plottype = registry.get(vtype, None)
         if plottype is None:
             self.param.warning(
-                "No plotting class for %s type and %s backend "
-                "found. " % (vtype.__name__, self.renderer.backend))
+                "No plotting class for {} type and {} backend "
+                "found. ".format(vtype.__name__, self.renderer.backend))
             return None
 
         # Get zorder and style counter

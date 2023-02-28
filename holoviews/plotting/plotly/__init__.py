@@ -8,23 +8,23 @@ from ...core import (
 )
 from ...core.options import Store, Cycle, Options
 from ...core.util import VersionError
-from ...element import *              # noqa (Element import for registration)
+from ...element import *
 
 from .element import ElementPlot
 from .renderer import PlotlyRenderer
 
-from .annotation import *            # noqa (API import)
-from .tiles import *                 # noqa (API import)
-from .element import *               # noqa (API import)
-from .chart import *                 # noqa (API import)
-from .chart3d import *               # noqa (API import)
-from .raster import *                # noqa (API import)
-from .plot import *                  # noqa (API import)
-from .stats import *                 # noqa (API import)
-from .tabular import *               # noqa (API import)
-from .callbacks import *             # noqa (API import)
-from .shapes import *                # noqa (API import)
-from .images import *                # noqa (API import)
+from .annotation import *
+from .tiles import *
+from .element import *
+from .chart import *
+from .chart3d import *
+from .raster import *
+from .plot import *
+from .stats import *
+from .tabular import *
+from .callbacks import *
+from .shapes import *
+from .images import *
 
 if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(

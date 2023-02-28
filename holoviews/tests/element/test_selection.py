@@ -402,7 +402,7 @@ class TestSelection2DExpr(ComparisonTestCase):
     def test_quadmesh_selection(self):
         n = 4
         coords = np.linspace(-1.5,1.5,n)
-        X,Y = np.meshgrid(coords, coords);
+        X,Y = np.meshgrid(coords, coords)
         Qx = np.cos(Y) - np.cos(X)
         Qy = np.sin(Y) + np.sin(X)
         Z = np.sqrt(X**2 + Y**2)
@@ -420,7 +420,7 @@ class TestSelection2DExpr(ComparisonTestCase):
     def test_quadmesh_selection_inverted(self):
         n = 4
         coords = np.linspace(-1.5,1.5,n)
-        X,Y = np.meshgrid(coords, coords);
+        X,Y = np.meshgrid(coords, coords)
         Qx = np.cos(Y) - np.cos(X)
         Qy = np.sin(Y) + np.sin(X)
         Z = np.sqrt(X**2 + Y**2)

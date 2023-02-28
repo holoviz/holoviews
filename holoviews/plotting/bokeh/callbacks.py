@@ -101,6 +101,9 @@ class Callback:
     _callbacks = {}
     _transforms = []
 
+    # Asyncio background task
+    _baskground_task = set()
+
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
@@ -271,7 +274,9 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            asyncio.create_task(self.process_on_change())
+            task = asyncio.create_task(self.process_on_change())
+            self.background_task.add(task)
+            task.add_done_callback(self._baskground_task.discard)
 
     async def on_event(self, event):
         """
@@ -282,7 +287,9 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            asyncio.create_task(self.process_on_event())
+            task = asyncio.create_task(self.process_on_event())
+            self.background_task.add(task)
+            task.add_done_callback(self._baskground_task.discard)
 
     async def process_on_event(self, timeout=None):
         """
@@ -308,7 +315,9 @@ class Callback:
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        asyncio.create_task(self.process_on_event())
+        task = asyncio.create_task(self.process_on_event())
+        self.background_task.add(task)
+        task.add_done_callback(self._baskground_task.discard)
 
     async def process_on_change(self):
         # Give on_change time to process new events
@@ -341,7 +350,9 @@ class Callback:
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             self._prev_msg = msg
-        asyncio.create_task(self.process_on_change())
+        task = asyncio.create_task(self.process_on_change())
+        self.background_task.add(task)
+        task.add_done_callback(self._baskground_task.discard)
 
     def set_callback(self, handle):
         """

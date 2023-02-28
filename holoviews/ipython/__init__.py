@@ -2,7 +2,7 @@ import os
 from unittest import SkipTest
 
 import param
-import holoviews
+import holoviews as hv
 
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
@@ -125,7 +125,7 @@ class notebook_extension(extension):
 
             try:
                 from .archive import notebook_archive
-                holoviews.archive = notebook_archive
+                hv.archive = notebook_archive
             except AttributeError as e:
                 if str(e) != "module 'tornado.web' has no attribute 'asynchronous'":
                     raise
@@ -136,7 +136,7 @@ class notebook_extension(extension):
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
             svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
-            holoviews.archive.exporters = [svg_exporter] + holoviews.archive.exporters
+            hv.archive.exporters = [svg_exporter] + hv.archive.exporters
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         if p.case_sensitive_completion:
@@ -207,10 +207,10 @@ class notebook_extension(extension):
         if word.endswith('='):     prio1 = -1
         if word.startswith('%%'):
             if '%' not in word[2:]:
-                word = word[2:];   prio2 = 2
+                word, prio2 = word[2:], 2
         elif word.startswith('%'):
             if '%' not in word[1:]:
-                word = word[1:];   prio2 = 1
+                word, prio2 = word[1:], 1
         return prio1, word, prio2
 
 

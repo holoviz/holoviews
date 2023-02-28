@@ -239,7 +239,7 @@ class OptsSpec(Parser):
         for pair in excluded:
             if all(exclude in opts for exclude in pair):
                 raise SyntaxError("Normalization specification cannot"
-                                  " contain both %s and %s" % (pair[0], pair[1]))
+                                  " contain both {} and {}".format(pair[0], pair[1]))
 
         # If unspecified, default is -axiswise and -framewise
         if len(opts) == 1 and opts[0].endswith('framewise'):

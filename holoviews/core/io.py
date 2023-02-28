@@ -853,7 +853,7 @@ class FileArchive(Archive):
             print(f"Empty {self.__class__.__name__}")
             return
 
-        fnames = [self._truncate_name(maxlen=maxlen, *k) for k in self._files]
+        fnames = [self._truncate_name(*k, maxlen=maxlen) for k in self._files]
         max_len = max([len(f) for f in fnames])
         for name,v in zip(fnames, self._files.values()):
             mime_type = v[1].get('mime_type', 'no mime type')

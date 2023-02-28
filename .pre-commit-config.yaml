@@ -16,12 +16,12 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.225'
+    rev: v0.0.251
     hooks:
       - id: ruff
         args: [holoviews]
         files: holoviews/
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: 0.1.5
+    rev: v0.1.6
     hooks:
       - id: clean-notebook

@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from functools import partial
 
 import param
-import panel
+import panel as pn
 
 from bokeh.document import Document
 from bokeh.io import curdoc
@@ -37,7 +37,7 @@ from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
 
-panel_version = Version(panel.__version__)
+panel_version = Version(pn.__version__)
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -320,8 +320,8 @@ class Renderer(Exporter):
             try:
                 data = hook(data, obj)
             except Exception as e:
-                self.param.warning("The post_render_hook %r could not "
-                                   "be applied:\n\n %s" % (hook, e))
+                self.param.warning("The post_render_hook {!r} could not "
+                                   "be applied:\n\n {}".format(hook, e))
         return data
 
     def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):

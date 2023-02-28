@@ -97,7 +97,7 @@ from .core.spaces import (HoloMap, Callable, DynamicMap, # noqa (API import)
                           GridSpace, GridMatrix)
 
 from .operation import Operation                         # noqa (API import)
-from .element import *                                   # noqa (API import)
+from .element import *
 from .element import __all__ as elements_list
 from .selection import link_selections                   # noqa (API import)
 from .util import (extension, renderer, output, opts,    # noqa (API import)
