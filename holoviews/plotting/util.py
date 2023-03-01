@@ -1334,7 +1334,7 @@ class categorical_legend(Operation):
                 cats = list(hvds.data.dtypes[column].categories)
             except TypeError:
                 # Issue #5619, cudf.core.index.StringIndex is not iterable.
-                cats = list(hvds.data.dtypes[column].categories.values_host)
+                cats = list(hvds.data.dtypes[column].categories.to_pandas())
             if cats == ['__UNKNOWN_CATEGORIES__']:
                 cats = list(hvds.data[column].cat.as_known().categories)
         else:
