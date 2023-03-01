@@ -1330,7 +1330,11 @@ class categorical_legend(Operation):
             return
         column = agg.column
         if hasattr(hvds.data, 'dtypes'):
-            cats = list(hvds.data.dtypes[column].categories)
+            try:
+                cats = list(hvds.data.dtypes[column].categories)
+            except TypeError:
+                # Issue #5619, cudf.core.index.StringIndex is not iterable.
+                cats = list(hvds.data.dtypes[column].categories.values_host)
             if cats == ['__UNKNOWN_CATEGORIES__']:
                 cats = list(hvds.data[column].cat.as_known().categories)
         else:
