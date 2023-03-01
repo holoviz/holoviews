@@ -59,8 +59,8 @@ jobs:
           name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
-          channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o flakes -o tests -o examples_tests"
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          envs: "-o flakes -o tests -o examples_tests -o bokeh${{ matrix.bokeh-version }}"
           cache: true
           conda-update: true
           conda-mamba: mamba
@@ -69,12 +69,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: Install bokeh 3.0 compatibility packages
-        if: matrix.bokeh-version == '3'
-        run: |
-          conda activate test-environment
-          conda uninstall panel bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/panel.git@aae2074941b73fd3d8e2dbad4e2c68acfd70b968"
       - name: doit test_unit
         run: |
           conda activate test-environment
