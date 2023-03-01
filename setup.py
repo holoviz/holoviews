@@ -19,7 +19,7 @@ def get_setup_version(reponame):
 
 
 def find_all_packages():
-    regular_packages = find_namespace_packages()
+    regular_packages = find_namespace_packages(include=["holoviews*"])
     example_subpackages = [
         f"holoviews.examples.{p}"
         for p in find_namespace_packages(where="examples")
