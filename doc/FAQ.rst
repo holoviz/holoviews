@@ -94,7 +94,7 @@ normalized independently by changing ``framewise`` to True:
 
     your_holomap.opts(framewise=True)
 
-**Q: How do I make only a single axis be shared across a layout?
+**Q: How do I make only a single axis be shared across a layout?**
 
 **A:** Even when `shared_axes=True`, HoloViews will only share axes
 that have the same Dimension, so just make sure that axes that you
