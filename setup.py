@@ -133,6 +133,9 @@ extras_require['doc'] = extras_require['examples'] + [
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
+extras_require['bokeh2'] = ["panel <1.0.0a1"]
+extras_require['bokeh3'] = ["panel >=1.0.0a1"]
+
 extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
