@@ -325,6 +325,12 @@ class QuadMeshPlot(ColorbarPlot):
     def _collect_hover_data(element, mask=(), transpose=False):
         """
         Returns a dict mapping hover dimension names to flattened arrays.
+
+        Note that `Quad` glyphs are used when given 1-D coords but `Patches`
+        are used for 2-D coords, and Bokeh inserts data into these glyphs in
+        the opposite order such that the relationship b/w the `invert_axis`
+        parameter and the need to transpose the arrays before flattening is
+        reversed.
         """
         hover_dims = element.dimensions()[3:]
         hover_vals = [element.dimension_values(hover_dim, flat=False)
