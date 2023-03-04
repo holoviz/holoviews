@@ -307,17 +307,27 @@ class QuadMeshPlot(ColorbarPlot):
                     'bottom': y0, 'top': y1}
 
             if 'hover' in self.handles and not self.static_source:
-                hover_dims = element.dimensions()[3:]
-                hover_data = [element.dimension_values(hover_dim, flat=False)
-                              for hover_dim in hover_dims]
-                for hdim, hdat in zip(hover_dims, hover_data):
-                    data[dimension_sanitizer(hdim.name)] = (hdat.flatten()
-                        if self.invert_axes else hdat.T.flatten())
-                data[x] = element.dimension_values(x)
-                data[y] = element.dimension_values(y)
+                hover_data = self._collect_hover_data(
+                        element, transpose=(not self.invert_axes))
+                hover_data[x] = element.dimension_values(x)
+                hover_data[y] = element.dimension_values(y)
+                data.update(hover_data)
 
         return data, mapping, style
 
+    @staticmethod
+    def _collect_hover_data(element, mask=(), transpose=False):
+        """
+        Returns a dict mapping hover dimension names to flattened arrays.
+        """
+        hover_dims = element.dimensions()[3:]
+        hover_vals = [element.dimension_values(hover_dim, flat=False)
+                      for hover_dim in hover_dims]
+        hover_data = {}
+        for hdim, hvals in zip(hover_dims, hover_vals):
+            hdat = hvals.T.flatten() if transpose else hvals.flatten()
+            hover_data[dimension_sanitizer(hdim.name)] = hdat[mask]
+        return hover_data
 
     def _init_glyph(self, plot, mapping, properties):
         """
