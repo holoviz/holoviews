@@ -269,6 +269,7 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
+        hover_data = {}
 
         if irregular:
             dims = element.kdims
@@ -291,11 +292,15 @@ class QuadMeshPlot(ColorbarPlot):
                         yc.append(ys.mean())
                 else:
                     mask.append(False)
+            mask = np.array(mask)
 
-            data = {'xs': XS, 'ys': YS, z.name: zvals[np.array(mask)]}
+            data = {'xs': XS, 'ys': YS, z.name: zvals[mask]}
             if 'hover' in self.handles:
-                data[x] = np.array(xc)
-                data[y] = np.array(yc)
+                if not self.static_source:
+                    hover_data = self._collect_hover_data(
+                            element, mask, transpose=self.invert_axes)
+                hover_data[x] = np.array(xc)
+                hover_data[y] = np.array(yc)
         else:
             xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
                       element.interface.coords(element, y, edges=True, ordered=True))
@@ -311,7 +316,8 @@ class QuadMeshPlot(ColorbarPlot):
                         element, transpose=(not self.invert_axes))
                 hover_data[x] = element.dimension_values(x)
                 hover_data[y] = element.dimension_values(y)
-                data.update(hover_data)
+
+        data.update(hover_data)
 
         return data, mapping, style
 
