@@ -639,10 +639,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            if bokeh3:
-                plot = gridplot([r1, r2], toolbar_location=None)
-            else:
-                plot = gridplot([r1, r2])
+            plot = gridplot([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]

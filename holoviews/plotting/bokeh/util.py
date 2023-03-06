@@ -607,6 +607,8 @@ def filter_toolboxes(plots):
     """
     if isinstance(plots, list):
         plots = [filter_toolboxes(plot) for plot in plots]
+    elif hasattr(plots, 'toolbar'):
+        plots.toolbar_location = None
     elif hasattr(plots, 'children'):
         plots.children = [filter_toolboxes(child) for child in plots.children
                           if not isinstance(child, Toolbar)]
