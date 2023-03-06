@@ -41,8 +41,9 @@ bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
 
 if bokeh3:
+    from bokeh.layouts import group_tools
     from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models import Toolbar, Tabs, GridPlot
+    from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
     from bokeh.plotting import figure
     class WidgetBox: pass  # Does not exist in Bokeh 3
 
@@ -373,6 +374,25 @@ def compute_layout_properties(
 
     return aspect_info, dimension_info
 
+
+def merge_tools(plot_grid):
+    tools = []
+    for row in plot_grid:
+        for item in row:
+            if isinstance(item, LayoutDOM):
+                print(item)
+                for p in item.select(dict(type=Plot)):
+                    tools.extend(p.toolbar.tools)
+
+    def merge(cls, group):
+        if issubclass(cls, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
+            return cls()
+        else:
+            return None
+
+    ignore = {'js_property_callbacks', 'renderers', 'overlay', 'zoom_on_axis', 'match_aspect'}
+
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
 
 @contextmanager
 def silence_warnings(*warnings):
