@@ -298,7 +298,7 @@ class QuadMeshPlot(ColorbarPlot):
             if 'hover' in self.handles:
                 if not self.static_source:
                     hover_data = self._collect_hover_data(
-                            element, mask, transpose=self.invert_axes)
+                            element, mask, irregular=True)
                 hover_data[x] = np.array(xc)
                 hover_data[y] = np.array(yc)
         else:
@@ -312,8 +312,7 @@ class QuadMeshPlot(ColorbarPlot):
                     'bottom': y0, 'top': y1}
 
             if 'hover' in self.handles and not self.static_source:
-                hover_data = self._collect_hover_data(
-                        element, transpose=(not self.invert_axes))
+                hover_data = self._collect_hover_data(element)
                 hover_data[x] = element.dimension_values(x)
                 hover_data[y] = element.dimension_values(y)
 
@@ -321,17 +320,18 @@ class QuadMeshPlot(ColorbarPlot):
 
         return data, mapping, style
 
-    @staticmethod
-    def _collect_hover_data(element, mask=(), transpose=False):
+    def _collect_hover_data(self, element, mask=(), irregular=False):
         """
         Returns a dict mapping hover dimension names to flattened arrays.
 
-        Note that `Quad` glyphs are used when given 1-D coords but `Patches`
-        are used for 2-D coords, and Bokeh inserts data into these glyphs in
-        the opposite order such that the relationship b/w the `invert_axis`
+        Note that `Quad` glyphs are used when given 1-D coords but `Patches` are
+        used for "irregular" 2-D coords, and Bokeh inserts data into these glyphs
+        in the opposite order such that the relationship b/w the `invert_axes`
         parameter and the need to transpose the arrays before flattening is
         reversed.
         """
+        transpose = self.invert_axes if irregular else not self.invert_axes
+
         hover_dims = element.dimensions()[3:]
         hover_vals = [element.dimension_values(hover_dim, flat=False)
                       for hover_dim in hover_dims]
