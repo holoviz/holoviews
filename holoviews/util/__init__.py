@@ -9,7 +9,7 @@ from types import FunctionType
 from pathlib import Path
 
 import param
-
+import panel as pn
 from pyviz_comms import extension as _pyviz_extension
 
 from ..core import (
@@ -718,6 +718,18 @@ class extension(_pyviz_extension):
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
         Store.set_current_backend(selected_backend)
+
+        if pn.config.comms == "default":
+            try:
+                import google.colab  # noqa
+                pn.config.comms = "colab"
+                return
+            except ImportError:
+                pass
+
+            if "VSCODE_PID" in os.environ:
+                pn.config.comms = "vscode"
+                return
 
     @classmethod
     def register_backend_callback(cls, backend, callback):
