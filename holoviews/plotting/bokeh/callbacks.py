@@ -275,7 +275,7 @@ class Callback:
             self._active = True
             self._set_busy(True)
             task = asyncio.create_task(self.process_on_change())
-            self.background_task.add(task)
+            self._background_task.add(task)
             task.add_done_callback(self._baskground_task.discard)
 
     async def on_event(self, event):
@@ -288,7 +288,7 @@ class Callback:
             self._active = True
             self._set_busy(True)
             task = asyncio.create_task(self.process_on_event())
-            self.background_task.add(task)
+            self._background_task.add(task)
             task.add_done_callback(self._baskground_task.discard)
 
     async def process_on_event(self, timeout=None):
@@ -316,7 +316,7 @@ class Callback:
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
         task = asyncio.create_task(self.process_on_event())
-        self.background_task.add(task)
+        self._background_task.add(task)
         task.add_done_callback(self._baskground_task.discard)
 
     async def process_on_change(self):
@@ -351,7 +351,7 @@ class Callback:
             self.on_msg(msg)
             self._prev_msg = msg
         task = asyncio.create_task(self.process_on_change())
-        self.background_task.add(task)
+        self._background_task.add(task)
         task.add_done_callback(self._baskground_task.discard)
 
     def set_callback(self, handle):
