@@ -175,7 +175,9 @@ class ResamplingOperation(LinkableOperation):
         (xstart, xend), (ystart, yend) = x_range, y_range
 
         xtype = 'numeric'
-        if isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
+        if isinstance(xstart, str) or isinstance(xend, str):
+            raise ValueError("Categorical data is not supported")
+        elif isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
             xstart, xend = dt_to_int(xstart, 'ns'), dt_to_int(xend, 'ns')
             xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
@@ -184,7 +186,9 @@ class ResamplingOperation(LinkableOperation):
                 xtype = 'datetime'
 
         ytype = 'numeric'
-        if isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
+        if isinstance(ystart, str) or isinstance(yend, str):
+            raise ValueError("Categorical data is not supported")
+        elif isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
             ystart, yend = dt_to_int(ystart, 'ns'), dt_to_int(yend, 'ns')
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
