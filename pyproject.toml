@@ -26,6 +26,8 @@ filterwarnings = [
     "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy",  # https://github.com/ibis-project/ibis/issues/5048
     # 2023-03: https://github.com/tornadoweb/tornado/issues/3216
     "ignore: make_current is deprecated:DeprecationWarning",
+    # 2023-03: Already handling the nested sequence
+    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
 ]
 
 [tool.ruff]
