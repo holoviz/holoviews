@@ -126,7 +126,6 @@ extras_require["unit_tests"] = extras_require["examples"] + extras_require["test
 
 extras_require['doc'] = extras_require['examples'] + [
     'nbsite ==0.8.0rc2',
-    'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
     'bokeh >2.2',
