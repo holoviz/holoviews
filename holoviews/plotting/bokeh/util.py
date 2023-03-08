@@ -389,9 +389,9 @@ def merge_tools(plot_grid, disambiguation_properties=None):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
 
-    def merge(cls, group):
-        if issubclass(cls, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
-            return cls()
+    def merge(tool, group):
+        if issubclass(tool, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
+            return tool()
         else:
             return None
 
