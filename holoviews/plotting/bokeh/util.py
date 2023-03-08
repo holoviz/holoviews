@@ -388,6 +388,8 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
+            if isinstance(item, GridPlot):
+                item.toolbar_location = None
 
     def merge(tool, group):
         if issubclass(tool, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
