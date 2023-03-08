@@ -41,8 +41,6 @@ extras_require['tests_core'] = [
     'dash >=1.16',
     'codecov',
     'ipython >=5.4.0',
-    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
-    'ipykernel <6.18.0',
 ]
 
 # Optional tests dependencies, i.e. one should be able
