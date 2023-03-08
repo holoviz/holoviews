@@ -587,7 +587,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                         sizing_mode=self.sizing_mode,
                         toolbar_location=self.toolbar)
         plot = self._make_axes(plot)
-        if bokeh3:
+        if bokeh3 and hasattr(plot, "toolbar"):
             plot.toolbar = merge_tools(plots)
 
         title = self._get_title_div(self.keys[-1])
