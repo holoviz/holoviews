@@ -3,7 +3,7 @@ import re
 import warnings
 
 import numpy as np
-import matplotlib
+import matplotlib as mpl
 
 from matplotlib import units as munits
 from matplotlib import ticker
@@ -14,29 +14,30 @@ from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from matplotlib.rcsetup import (
     validate_fontsize, validate_fonttype, validate_hatch)
+from packaging.version import Version
 
 try:  # starting Matplotlib 3.4.0
     from matplotlib._enums import CapStyle as validate_capstyle
     from matplotlib._enums import JoinStyle as validate_joinstyle
-except:  # before Matplotlib 3.4.0
+except ImportError:  # before Matplotlib 3.4.0
     from matplotlib.rcsetup import (
     validate_capstyle, validate_joinstyle)
 
 try:
     from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
     nc_axis_available = True
-except:
+except ImportError:
     from matplotlib.dates import DateConverter
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
 from ...core.util import (
-    LooseVersion, arraylike_types, cftime_types, is_number
+    arraylike_types, cftime_types, is_number
 )
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
-mpl_version = LooseVersion(matplotlib.__version__)
+mpl_version = Version(mpl.__version__)
 
 
 def is_color(color):
@@ -61,10 +62,11 @@ validators = {
     'fonttype': validate_fonttype,
     'hatch': validate_hatch,
     'joinstyle': validate_joinstyle,
-    'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
-                         or isinstance(x, Path) or
-                         (isinstance(x, str) and x.startswith('$')
-                          and x.endswith('$'))),
+    'marker': lambda x: (
+        x in Line2D.markers
+        or isinstance(x, (MarkerStyle, Path))
+        or (isinstance(x, str) and x.startswith('$') and x.endswith('$'))
+    ),
     's': lambda x: is_number(x) and (x >= 0)
 }
 
@@ -84,8 +86,8 @@ def get_old_rcparams():
         'savefig.jpeg_quality' # deprecated in MPL 3.3.1
     ]
     old_rcparams = {
-        k: v for k, v in matplotlib.rcParams.items()
-        if mpl_version < LooseVersion('3.0') or k not in deprecated_rcparams
+        k: v for k, v in mpl.rcParams.items()
+        if mpl_version < Version('3.0') or k not in deprecated_rcparams
     }
     return old_rcparams
 
@@ -122,7 +124,7 @@ def validate(style, value, vectorized=True):
     try:
         valid = validator(value)
         return False if valid == False else True
-    except:
+    except Exception:
         return False
 
 
@@ -283,7 +285,7 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
         bbox = get_tight_bbox(fig, extra_artists)
         top = bbox.intervaly[1]
         if title and title.get_text():
-            title.set_y((top/(w*aspect)))
+            title.set_y(top/(w*aspect))
 
 
 def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):

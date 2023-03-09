@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests of the helper functions in core.utils
 """
@@ -39,10 +38,10 @@ class TestDeepHash(ComparisonTestCase):
         self.assertNotEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_set_equality(self):
-        self.assertEqual(deephash(set([1,2,3])), deephash(set([1,3,2])))
+        self.assertEqual(deephash({1,2,3}), deephash({1,3,2}))
 
     def test_deephash_set_inequality(self):
-        self.assertNotEqual(deephash(set([1,2,3])), deephash(set([1,3,4])))
+        self.assertNotEqual(deephash({1,2,3}), deephash({1,3,4}))
 
     def test_deephash_dict_equality_v1(self):
         self.assertEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'a'}))
@@ -128,22 +127,22 @@ class TestDeepHash(ComparisonTestCase):
         self.assertNotEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_nested_mixed_equality(self):
-        obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
+        obj1 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
-        obj2 = [datetime.datetime(1,2,3), set([1,2,3]),
+        obj2 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
         self.assertEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_nested_mixed_inequality(self):
-        obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
+        obj1 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '2':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
-        obj2 = [datetime.datetime(1,2,3), set([1,2,3]),
+        obj2 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]

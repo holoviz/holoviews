@@ -5,12 +5,17 @@ from holoviews.core import (HoloMap, GridSpace, NdOverlay, Dataset,
 from holoviews.element import Curve, Image, Points
 from holoviews.operation import gridmatrix
 from holoviews.streams import Stream
+from holoviews.plotting.bokeh.util import bokeh3
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 from bokeh.layouts import Column
-from bokeh.models import Div, ToolbarBox
-from holoviews.plotting.bokeh.util import LooseVersion, bokeh_version
+from bokeh.models import Div
+
+if bokeh3:
+    from bokeh.models import Toolbar
+else:
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
 
 
 
@@ -63,10 +68,7 @@ class TestGridPlot(TestBokehPlot):
                             for j in range(2,4) if not (i==1 and j == 2)})
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        if bokeh_version < LooseVersion('2.0.2'):
-            self.assertEqual(size, (318, 310))
-        else:
-            self.assertEqual(size, (320, 311))
+        self.assertEqual(size, (320, 311))
 
     def test_grid_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
@@ -109,13 +111,17 @@ class TestGridPlot(TestBokehPlot):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertIsInstance(plot.state.children[0].children[0], ToolbarBox)
+        if bokeh3:
+            self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
+        else:
+            self.assertIsInstance(plot.state.children[0].children[0], Toolbar)
+
 
     def test_grid_disable_toolbar(self):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar=None)
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertEqual([p for p in plot.state.children if isinstance(p, ToolbarBox)], [])
+        self.assertEqual([p for p in plot.state.children if isinstance(p, Toolbar)], [])
 
     def test_grid_dimensioned_stream_title_update(self):
         stream = Stream.define('Test', test=0)()

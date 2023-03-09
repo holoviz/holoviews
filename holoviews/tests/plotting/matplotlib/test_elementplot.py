@@ -14,7 +14,7 @@ from matplotlib.projections import PolarAxes
 class TestElementPlot(TestMPLPlot):
 
     def test_stream_cleanup(self):
-        stream = Stream.define(str('Test'), test=1)()
+        stream = Stream.define('Test', test=1)()
         dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
         self.assertTrue(bool(stream._subscribers))

@@ -1,10 +1,12 @@
-import sys, math, time
+import sys
+import math
+import time
 from unittest import SkipTest
 
 try:
     import IPython
     from IPython.core.display import clear_output
-except:
+except ImportError:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
 
@@ -86,7 +88,7 @@ class ProgressBar(ProgressIndicator):
             self.cache['socket'] = self._get_socket()
 
         if self.cache['socket'] is not None:
-            self.cache['socket'].send('%s|%s' % (percentage, self.label))
+            self.cache['socket'].send(f'{percentage}|{self.label}')
 
 
     def _stdout_display(self, percentage, display=True):
@@ -119,7 +121,7 @@ class ProgressBar(ProgressIndicator):
                                             max_tries=max_tries)
             self.param.message("Progress broadcast bound to port %d" % port)
             return sock
-        except:
+        except Exception:
             self.param.message("No suitable port found for progress broadcast.")
             return None
 
@@ -152,14 +154,13 @@ class RemoteProgress(ProgressBar):
                 [percent_str, label] = message.split('|')
                 percent = float(percent_str)
                 self.label = label
-                super(RemoteProgress, self).__call__(percent)
+                super().__call__(percent)
             except KeyboardInterrupt:
                 if percent is not None:
-                    self.param.message("Exited at %.3f%% completion" % percent)
+                    self.param.message(f"Exited at {percent:.3f}% completion")
                 break
-            except:
-                self.param.message("Could not process socket message: %r"
-                                  % message)
+            except Exception:
+                self.param.message(f"Could not process socket message: {message!r}")
 
 
 class RunProgress(ProgressBar):

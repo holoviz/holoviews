@@ -10,8 +10,6 @@ from types import FunctionType
 
 import param
 
-from param.parameterized import add_metaclass
-
 from . import util
 from .pprint import PrettyPrinter
 
@@ -85,8 +83,7 @@ class AccessorPipelineMeta(type):
         return pipelined_call
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Apply(object):
+class Apply(metaclass=AccessorPipelineMeta):
     """
     Utility to apply a function or operation to all viewable elements
     inside the object.
@@ -288,8 +285,7 @@ class Apply(object):
         return self.__call__('transform', **kwargs)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Redim(object):
+class Redim(metaclass=AccessorPipelineMeta):
     """
     Utility that supports re-dimensioning any HoloViews object via the
     redim method.
@@ -488,8 +484,7 @@ class Redim(object):
         return self._redim('values', specs, **ranges)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Opts(object):
+class Opts(metaclass=AccessorPipelineMeta):
 
     def __init__(self, obj, mode=None):
         self._mode = mode
@@ -653,3 +648,17 @@ class Opts(object):
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*new_args, **kwargs)
+
+    def __getitem__(self, item):
+        options = self.get().kwargs
+        if item in options:
+            return options[item]
+        else:
+            raise KeyError(
+                f"{item!r} is not in opts. Valid items is {', '.join(options)}."
+            )
+
+    def __repr__(self):
+        options = self.get().kwargs
+        kws = ', '.join(f"{k}={options[k]!r}" for k in sorted(options.keys()))
+        return f"Opts({kws})"

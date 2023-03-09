@@ -4,11 +4,12 @@ import sys
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import pandas as pd
 import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import flatten, pd, resolve_dependent_value, unique_iterator
+from ..core.util import flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -69,7 +70,7 @@ def lognorm(values, min=None, max=None):
     return (np.log(values) - min) / (max-min)
 
 
-class iloc(object):
+class iloc:
     """Implements integer array indexing for dim expressions.
     """
 
@@ -90,7 +91,7 @@ class iloc(object):
             return values[resolve_dependent_value(self.index)]
 
 
-class loc(object):
+class loc:
     """Implements loc for dim expressions.
     """
 
@@ -199,7 +200,7 @@ function_types = (
 )
 
 
-class dim(object):
+class dim:
     """
     dim transform objects are a way to express deferred transforms on
     Datasets. dim transforms support all mathematical and bitwise
@@ -318,7 +319,7 @@ class dim(object):
                 # transform itself, so set namespace to None
                 ns = None
         extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
-        if attr in extras and attr not in super(dim, self).__dir__():
+        if attr in extras and attr not in super().__dir__():
             return type(self)(self, attr, accessor=True)
         else:
             return super().__getattribute__(attr)
@@ -329,7 +330,7 @@ class dim(object):
             ns = getattr(ns, self._current_accessor)
         extras = {attr for attr in dir(ns) if not attr.startswith('_')}
         try:
-            return sorted(set(super(dim, self).__dir__()) | extras)
+            return sorted(set(super().__dir__()) | extras)
         except Exception:
             return sorted(set(dir(type(self))) | set(self.__dict__) | extras)
 
@@ -721,10 +722,10 @@ class dim(object):
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
 
         if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
-            raise KeyError("One or more dimensions in the expression %r "
-                           "could not resolve on '%s'. Ensure all "
+            raise KeyError("One or more dimensions in the expression {!r} "
+                           "could not resolve on '{}'. Ensure all "
                            "dimensions referenced by the expression are "
-                           "present on the supplied object." % (self, dataset))
+                           "present on the supplied object.".format(self, dataset))
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
                 raise ValueError("The expression %r assumes a %s-like "
@@ -779,7 +780,7 @@ class dim(object):
         return data
 
     def __repr__(self):
-        op_repr = "'%s'" % self.dimension
+        op_repr = f"'{self.dimension}'"
         accessor = False
         for i, o in enumerate(self.ops):
             if i == 0:
@@ -825,9 +826,9 @@ class dim(object):
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
-                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
+                    format_string = prev+f').iloc[{fn.index!r}]'
                 elif isinstance(fn, loc):
-                    format_string = prev+').loc[{0}]'.format(repr(fn.index))
+                    format_string = prev+f').loc[{fn.index!r}]'
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+').{fn}('
@@ -867,7 +868,7 @@ class dim(object):
             if op_repr.count('(') - op_repr.count(')') > 0:
                 op_repr += ')'
         if not self.ops:
-            op_repr = 'dim({repr})'.format(repr=op_repr)
+            op_repr = f'dim({op_repr})'
         if op_repr.count('(') - op_repr.count(')') > 0:
             op_repr += ')'
         return op_repr

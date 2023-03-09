@@ -1,12 +1,9 @@
-import types
+from collections.abc import Callable
 
 import param
 import numpy as np
 
-try:
-    from bokeh.util.hex import cartesian_to_axial
-except:
-    cartesian_to_axial = None
+from bokeh.util.hex import cartesian_to_axial
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
@@ -27,7 +24,7 @@ class hex_binning(Operation):
     """
 
     aggregator = param.ClassSelector(
-        default=np.size, class_=(types.FunctionType, tuple), doc="""
+        default=np.size, class_=(Callable, tuple), doc="""
       Aggregation function or dimension transform used to compute bin
       values. Defaults to np.size to count the number of values
       in each bin.""")
@@ -104,7 +101,7 @@ Compositor.register(compositor)
 class HexTilesPlot(ColorbarPlot):
 
     aggregator = param.ClassSelector(
-        default=np.size, class_=(types.FunctionType, tuple), doc="""
+        default=np.size, class_=(Callable, tuple), doc="""
       Aggregation function or dimension transform used to compute
       bin values.  Defaults to np.size to count the number of values
       in each bin.""")

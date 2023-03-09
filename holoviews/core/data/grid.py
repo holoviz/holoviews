@@ -1,17 +1,11 @@
 from collections import OrderedDict, defaultdict
 
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import numpy as np
 
 from .dictionary import DictInterface
 from .interface import Interface, DataError
 from ..dimension import dimension_name
 from ..element import Element
-from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range, is_dask, dask_array_module, get_array_types
@@ -34,7 +28,7 @@ class GridInterface(DictInterface):
     longitudes can specify the position of NxM temperature samples.
     """
 
-    types = (dict, OrderedDict, cyODict)
+    types = (dict, OrderedDict)
 
     datatype = 'grid'
 
@@ -108,7 +102,7 @@ class GridInterface(DictInterface):
         for dim in validate_dims:
             name = dimension_name(dim)
             if name not in data:
-                raise ValueError("Values for dimension %s not found" % dim)
+                raise ValueError(f"Values for dimension {dim} not found")
             if not isinstance(data[name], get_array_types()):
                 data[name] = np.array(data[name])
 
@@ -138,9 +132,9 @@ class GridInterface(DictInterface):
                             'by the key dimensions. Expected %d-D array, '
                             'found %d-D array.' % (vdim, len(expected), len(shape)))
             elif any((s!=e and (s+1)!=e) for s, e in zip(shape, valid_shape)):
-                raise error('Key dimension values and value array %s '
-                            'shapes do not match. Expected shape %s, '
-                            'actual shape: %s' % (vdim, valid_shape, shape), cls)
+                raise error('Key dimension values and value array {} '
+                            'shapes do not match. Expected shape {}, '
+                            'actual shape: {}'.format(vdim, valid_shape, shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -165,7 +159,7 @@ class GridInterface(DictInterface):
         new_data[dim.name] = np.array(values)
         for vdim in vdims:
             arrays = [grid[vdim.name] for grid in grids]
-            shapes = set(arr.shape for arr in arrays)
+            shapes = {arr.shape for arr in arrays}
             if len(shapes) > 1:
                 raise DataError('When concatenating gridded data the shape '
                                 'of arrays must match. %s found that arrays '
@@ -451,7 +445,7 @@ class GridInterface(DictInterface):
 
         invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
         if invalid:
-            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            if len(invalid) == 1: invalid = f"'{invalid[0]}'"
             raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
                              % invalid)
 
@@ -504,7 +498,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def key_select_mask(cls, dataset, values, ind):
-        if util.pd and values.dtype.kind == 'M':
+        if values.dtype.kind == 'M':
             ind = util.parse_datetime_selection(ind)
         if isinstance(ind, tuple):
             ind = slice(*ind)
@@ -544,7 +538,7 @@ class GridInterface(DictInterface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         if selection_mask is not None:
-            raise ValueError("Masked selections currently not supported for {0}.".format(cls.__name__))
+            raise ValueError(f"Masked selections currently not supported for {cls.__name__}.")
 
         dimensions = dataset.kdims
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]
@@ -574,11 +568,11 @@ class GridInterface(DictInterface):
                 if np.isscalar(ind):
                     emin, emax = edges.min(), edges.max()
                     if ind < emin:
-                        raise IndexError("Index %s less than lower bound "
-                                         "of %s for %s dimension." % (ind, emin, dim))
+                        raise IndexError("Index {} less than lower bound "
+                                         "of {} for {} dimension.".format(ind, emin, dim))
                     elif ind >= emax:
-                        raise IndexError("Index %s more than or equal to upper bound "
-                                         "of %s for %s dimension." % (ind, emax, dim))
+                        raise IndexError("Index {} more than or equal to upper bound "
+                                         "of {} for {} dimension.".format(ind, emax, dim))
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
                     mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True

@@ -7,14 +7,15 @@ import warnings
 import numpy as np
 import param
 
+from packaging.version import Version
 from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
-from ..core.data import ArrayInterface, DictInterface, default_datatype
+from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
-    LooseVersion, group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
+    group_sanitizer, label_sanitizer, datetime_types, isfinite,
     dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
 )
 from ..element.chart import Histogram, Scatter
@@ -23,10 +24,7 @@ from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)
 from ..streams import RangeXY
 
-column_interfaces = [ArrayInterface, DictInterface]
-if pd:
-    from ..core.data import PandasInterface
-    column_interfaces.append(PandasInterface)
+column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
 
 def identity(x,k): return x
@@ -730,7 +728,7 @@ class histogram(Operation):
         is_cupy = is_cupy_array(data)
         if is_cupy:
             import cupy
-            full_cupy_support = LooseVersion(cupy.__version__) > LooseVersion('8.0')
+            full_cupy_support = Version(cupy.__version__) > Version('8.0')
             if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False
@@ -788,6 +786,8 @@ class histogram(Operation):
                 hist_range = (0, 1)
             steps = self.p.num_bins + 1
             start, end = hist_range
+            if isinstance(start, str) or isinstance(end, str) or isinstance(steps, str):
+                raise ValueError("Categorical data found. Cannot create histogram from categorical data.")
             if is_datetime:
                 start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
             if self.p.log:
@@ -837,7 +837,7 @@ class histogram(Operation):
             params['vdims'] = [Dimension('Frequency', label=label)]
         else:
             label = 'Frequency' if normed else 'Count'
-            params['vdims'] = [Dimension('{0}_{1}'.format(dim.name, label.lower()),
+            params['vdims'] = [Dimension(f'{dim.name}_{label.lower()}',
                                          label=label)]
 
         if element.group != element.__class__.__name__:

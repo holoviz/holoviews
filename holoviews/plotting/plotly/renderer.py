@@ -131,7 +131,7 @@ class PlotlyRenderer(Renderer):
             if fmt == 'svg':
                 data = data.decode('utf-8')
         else:
-            raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
+            raise ValueError(f"Unsupported format: {fmt}")
 
         if as_script:
             b64 = base64.b64encode(data).decode("utf-8")

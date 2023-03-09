@@ -3,10 +3,10 @@ import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
-from holoviews.core.util import LooseVersion
 from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
 from holoviews.util.transform import dim
 from matplotlib.collections import LineCollection, PolyCollection
+from packaging.version import Version
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -202,7 +202,7 @@ class TestMplGraphPlot(TestMPLPlot):
         nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
         graph = Graph((edges, nodes)).opts(node_alpha='alpha')
 
-        if LooseVersion(mpl.__version__) < LooseVersion("3.4.0"):
+        if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
             with self.assertRaises(Exception):
                 mpl_renderer.get_plot(graph)
@@ -395,7 +395,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
         trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).opts(node_alpha='alpha')
 
-        if LooseVersion(mpl.__version__) < LooseVersion("3.4.0"):
+        if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
             with self.assertRaises(Exception):
                 mpl_renderer.get_plot(trimesh)

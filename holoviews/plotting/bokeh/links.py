@@ -1,7 +1,9 @@
 import numpy as np
 
-from bokeh.models import CustomJS, ToolbarBox
+from bokeh.models import CustomJS
+from bokeh.models.tools import RangeTool
 
+from .util import bokeh3
 from ...core.util import isscalar
 from ..links import (
     Link, RectanglesTableLink, DataLink, RangeToolLink,
@@ -9,8 +11,13 @@ from ..links import (
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
 
+if bokeh3:
+    from bokeh.models import Toolbar
+else:
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
 
-class LinkCallback(object):
+
+class LinkCallback:
 
     source_model = None
     target_model = None
@@ -130,11 +137,7 @@ class RangeToolLinkCallback(LinkCallback):
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
-        try:
-            from bokeh.models.tools import RangeTool
-        except:
-            raise Exception('RangeToolLink requires bokeh >= 0.13')
-        toolbars = list(root_model.select({'type': ToolbarBox}))
+        toolbars = list(root_model.select({'type': Toolbar}))
         axes = {}
         if 'x' in link.axes:
             axes['x_range'] = target_plot.handles['x_range']
@@ -142,7 +145,9 @@ class RangeToolLinkCallback(LinkCallback):
             axes['y_range'] = target_plot.handles['y_range']
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
-        if toolbars:
+        if bokeh3 and toolbars:
+            toolbars[0].tools.append(tool)
+        elif toolbars:
             toolbar = toolbars[0].toolbar
             toolbar.tools.append(tool)
 
@@ -188,7 +193,7 @@ class DataLinkCallback(LinkCallback):
             renderer.update(data_source=src_cds)
         else:
             renderer.update(source=src_cds)
-        if hasattr(renderer, 'view'):
+        if not bokeh3 and hasattr(renderer, 'view'):
             renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
         target_plot.handles['cds'] = src_cds

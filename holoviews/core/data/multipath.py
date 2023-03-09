@@ -59,8 +59,8 @@ class MultiInterface(Interface):
                                 if hasattr(Interface.interfaces.get(dt), 'has_holes')]
                 geom_type = d.get('geom_type')
                 if geom_type is not None and geom_type not in cls.geom_types:
-                    raise DataError("Geometry type '%s' not recognized, "
-                                    "must be one of %s." % (geom_type, cls.geom_types))
+                    raise DataError("Geometry type '{}' not recognized, "
+                                    "must be one of {}.".format(geom_type, cls.geom_types))
                 else:
                     datatype = [dt for dt in datatype
                                 if hasattr(Interface.interfaces.get(dt), 'geom_type')]
@@ -409,7 +409,7 @@ class MultiInterface(Interface):
                 gt = geom_type
 
             if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
-                not geom_type == 'Points'):
+                not geom_type == 'Points' and len(dvals)):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             if scalar and not expanded:
@@ -473,7 +473,7 @@ class MultiInterface(Interface):
                 if gt is not None:
                     obj['geom_type'] = gt
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
 
