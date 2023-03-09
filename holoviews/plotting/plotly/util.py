@@ -606,7 +606,7 @@ def _compute_subplot_domains(widths, spacing):
     Parameters
     ----------
     widths: list of float
-        List of the desired withs of each subplot. The length of this list
+        List of the desired widths of each subplot. The length of this list
         is also the specification of the number of desired subplots
     spacing: float
         Spacing between subplots in normalized coordinates

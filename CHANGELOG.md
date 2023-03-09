@@ -867,7 +867,7 @@ Bug fixes:
 
 - Improvements to iteration over Series in CuDF data backend
   ([#4624](https://github.com/holoviz/holoviews/pull/4624))
-- Added .values_host calls needed for iteraction in CuDF backend
+- Added .values_host calls needed for interaction in CuDF backend
   ([#4646](https://github.com/holoviz/holoviews/pull/4646))
 - Fixed bug resetting ranges
   ([#4654](https://github.com/holoviz/holoviews/pull/4654))
