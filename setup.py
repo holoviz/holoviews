@@ -106,11 +106,6 @@ if sys.version_info < (3, 11):
         "datashader >=0.11.1",
     ]
 
-if sys.version_info < (3, 8):
-    extras_require["tests"] += [
-        "fsspec == 2023.1",
-    ]
-
 
 extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
 
