@@ -403,7 +403,7 @@ Bug fixes:
 Documentation:
 
 - Updated Large data guide to reflect changes in Datashader and
-  antialising support
+  antialiasing support
   ([#5267](https://github.com/holoviz/holoviews/pull/5267),
   [#5290](https://github.com/holoviz/holoviews/pull/5290))
 
@@ -566,7 +566,7 @@ and @philippjfr for contributing.
 
 Enhancements:
 
-- Reenable `SaveTool` for plots with `Tiles`
+- Re-enable `SaveTool` for plots with `Tiles`
   ([#4922](https://github.com/holoviz/holoviews/pull/4922))
 - Enable dask `TriMesh` rasterization using datashader
   ([#4935](https://github.com/holoviz/holoviews/pull/4935))
@@ -732,7 +732,7 @@ Bug fixes:
   ([#4757](https://github.com/holoviz/holoviews/pull/4757))
 - Do not drop tools in linked selections
   ([#4756](https://github.com/holoviz/holoviews/pull/4756))
-- Fixed access to possibly non-existant key
+- Fixed access to possibly non-existent key
   ([#4742](https://github.com/holoviz/holoviews/pull/4742))
 
 Documentation:
@@ -1051,7 +1051,7 @@ Bug fixes:
   ([#4337](https://github.com/holoviz/holoviews/pull/4337))
 - Fix color and alpha option on bokeh Arrow plot
   ([#4338](https://github.com/holoviz/holoviews/pull/4338))
-- Fix undefined JS varaibles in various bokeh links
+- Fix undefined JS variables in various bokeh links
   ([#4341](https://github.com/holoviz/holoviews/pull/4341))
 - Fix matplotlib >=3.2.1 deprecation warnings
   ([#4335](https://github.com/holoviz/holoviews/pull/4335))
@@ -1469,7 +1469,7 @@ This is a minor release with a number of important bug fixes and a
 small number of enhancements. Many thanks to our users for reporting
 these issues, and special thanks to our internal developers
 @philippjfr, @jlstevens and @jonmease and external contributors
-incluing @ahuang11 and @arabidopsis for their contributions to the
+including @ahuang11 and @arabidopsis for their contributions to the
 code and the documentation.
 
 Enhancements:
@@ -2381,7 +2381,7 @@ improvements and bug fixes, including streaming and graph support,
 binary transfer of Bokeh data, fast Image/RGB regridding, first-class
 statistics elements and a complete overhaul of the geometry elements.
 
-Particular thanks to all users and contributers who have reported
+Particular thanks to all users and contributors who have reported
 issues and submitted pull requests.
 
 Features:
@@ -2463,7 +2463,7 @@ Version 1.8.4
 =============
 **September 13, 2017**
 
-This bugfix release includes a number of critical fixes for compatiblity
+This bugfix release includes a number of critical fixes for compatibility
 with Bokeh 0.12.9 along with various other bug fixes. Many thanks to our
 users for various detailed bug reports, feedback and contributions.
 

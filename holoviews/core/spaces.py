@@ -535,7 +535,7 @@ class Callable(param.Parameterized):
         """Calls the callable function with supplied args and kwargs.
 
         If enabled uses memoization to avoid calling function
-        unneccessarily.
+        unnecessarily.
 
         Args:
             *args: Arguments passed to the callable function
@@ -573,7 +573,7 @@ class Callable(param.Parameterized):
             clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
             if clashes:
                 self.param.warning(
-                    f'Positional arguments {list(clashes)!r} overriden by keywords')
+                    f'Positional arguments {list(clashes)!r} overridden by keywords')
             args, kwargs = (), dict(pos_kwargs, **kwargs)
 
         try:

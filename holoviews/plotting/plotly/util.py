@@ -651,7 +651,7 @@ def figure_grid(figures_grid,
         produce the resulting figure.  None values maybe used to leave empty
         grid cells
     row_spacing: float (default 50)
-        Vertical spacing between rows in the gird in pixels
+        Vertical spacing between rows in the grid in pixels
     column_spacing: float (default 50)
         Horizontal spacing between columns in the grid in pixels
         coordinates
@@ -873,7 +873,7 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
             # Get axis reference as used by matching ('xaxis3' -> 'x3')
             axis_ref = k.replace('axis', '')
 
-            # Append axis entry to maping
+            # Append axis entry to mapping
             axis_pair = (axis_ref, v)
             axis_map[matching_val].append(axis_pair)
 
