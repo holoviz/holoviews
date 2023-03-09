@@ -1,6 +1,7 @@
 from collections import deque
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Scatter3D, Path3D
@@ -35,17 +36,17 @@ class TestElementPlot(TestPlotlyPlot):
     ### Axis labelling ###
 
     def test_element_plot_xlabel(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(xlabel='X-Axis')
+        curve = Curve([(10, 1), (100, 2), (1000, 3)]).opts(xlabel='X-Axis')
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'X-Axis')
 
     def test_element_plot_ylabel(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(ylabel='Y-Axis')
+        curve = Curve([(10, 1), (100, 2), (1000, 3)]).opts(ylabel='Y-Axis')
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'Y-Axis')
 
     def test_element_plot_zlabel(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(zlabel='Z-Axis')
+        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel='Z-Axis')
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
 
@@ -57,12 +58,12 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['xaxis']['range'], [10, 1000])
 
     def test_element_plot_xlim(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(xlim=(0, 1010))
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(xlim=(0, 1010))
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['range'], [0, 1010])
 
     def test_element_plot_invert_xaxis(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(invert_xaxis=True)
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(invert_xaxis=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['range'], [3, 1])
 
@@ -72,12 +73,12 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
 
     def test_element_plot_ylim(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(ylim=(0, 8))
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(ylim=(0, 8))
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['range'], [0, 8])
 
     def test_element_plot_invert_yaxis(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(invert_yaxis=True)
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(invert_yaxis=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['range'], [100, 1])
 
@@ -87,40 +88,40 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [2, 5])
 
     def test_element_plot_zlim(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(zlim=(1, 6))
+        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlim=(1, 6))
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [1, 6])
 
     def test_element_plot_invert_zaxis(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(invert_zaxis=True)
+        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(invert_zaxis=True)
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [5, 2])
 
     def test_element_plot_xpadding(self):
-        curve = Curve([(0, 1), (1, 2), (2, 3)]).options(padding=(0.1, 0))
+        curve = Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=(0.1, 0))
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['range'], [-0.2, 2.2])
         self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
 
     def test_element_plot_ypadding(self):
-        curve = Curve([(0, 1), (1, 2), (2, 3)]).options(padding=(0, 0.1))
+        curve = Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=(0, 0.1))
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['range'], [0, 2])
         self.assertEqual(state['layout']['yaxis']['range'], [0.8, 3.2])
 
     def test_element_plot_zpadding(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(padding=(0, 0, 0.1))
+        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(padding=(0, 0, 0.1))
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [1.7, 5.3])
 
     def test_element_plot_padding(self):
-        curve = Curve([(0, 1), (1, 2), (2, 3)]).options(padding=0.1)
+        curve = Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=0.1)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['range'], [-0.2, 2.2])
         self.assertEqual(state['layout']['yaxis']['range'], [0.8, 3.2])
 
     def test_element_plot3d_padding(self):
-        scatter = Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 5)]).options(padding=0.1)
+        scatter = Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 5)]).opts(padding=0.1)
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['xaxis']['range'], [-0.2, 2.2])
         self.assertEqual(state['layout']['scene']['yaxis']['range'], [0.8, 3.2])
@@ -129,52 +130,52 @@ class TestElementPlot(TestPlotlyPlot):
     ### Axis log ###
 
     def test_element_plot_logx(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(logx=True)
+        curve = Curve([(10, 1), (100, 2), (1000, 3)]).opts(logx=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['type'], 'log')
 
     def test_element_plot_logy(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(logy=True)
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(logy=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['type'], 'log')
 
     def test_element_plot_logz(self):
-        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).options(logz=True)
+        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(logz=True)
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['type'], 'log')
 
     ### Axis ticks ###
 
     def test_element_plot_xticks_values(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(xticks=[1, 5, 10])
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(xticks=[1, 5, 10])
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['tickvals'], [1, 5, 10])
 
     def test_element_plot_yticks_values(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(yticks=[1, 1.5, 2.5, 3])
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(yticks=[1, 1.5, 2.5, 3])
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['tickvals'], [1, 1.5, 2.5, 3])
 
     def test_element_plot_zticks_values(self):
-        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).options(zticks=[0, 500, 1000])
+        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(zticks=[0, 500, 1000])
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], [0, 500, 1000])
 
     def test_element_plot_xticks_items(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(xticks=[(1, 'A'), (5, 'B'), (10, 'C')])
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(xticks=[(1, 'A'), (5, 'B'), (10, 'C')])
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['tickvals'], [1, 5, 10])
         self.assertEqual(state['layout']['xaxis']['ticktext'], ['A', 'B', 'C'])
 
     def test_element_plot_yticks_items(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(
             yticks=[(1, 'A'), (1.5, 'B'), (2.5, 'C'), (3, 'D')])
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['tickvals'], [1, 1.5, 2.5, 3])
         self.assertEqual(state['layout']['yaxis']['ticktext'], ['A', 'B', 'C', 'D'])
 
     def test_element_plot_zticks_items(self):
-        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).options(
+        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(
             zticks=[(0, 'A'), (500, 'B'), (1000, 'C')])
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], [0, 500, 1000])
@@ -193,33 +194,58 @@ class TestOverlayPlot(TestPlotlyPlot):
     ### Axis log ###
 
     def test_overlay_plot_logx(self):
-        curve = (Curve([(10, 1), (100, 2), (1000, 3)]) * Curve([])).options(logx=True)
+        curve = (Curve([(10, 1), (100, 2), (1000, 3)]) * Curve([])).opts(logx=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['type'], 'log')
 
     def test_overlay_plot_logy(self):
-        curve = (Curve([(1, 1), (2, 10), (3, 100)]) * Curve([])).options(logy=True)
+        curve = (Curve([(1, 1), (2, 10), (3, 100)]) * Curve([])).opts(logy=True)
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['type'], 'log')
 
     def test_overlay_plot_logz(self):
-        scatter = (Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]) * Path3D([])).options(logz=True)
+        scatter = (Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]) * Path3D([])).opts(logz=True)
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['type'], 'log')
 
     ### Axis labelling ###
 
     def test_overlay_plot_xlabel(self):
-        overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).options(xlabel='X-Axis')
+        overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).opts(xlabel='X-Axis')
         state = self._get_plot_state(overlay)
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'X-Axis')
 
     def test_overlay_plot_ylabel(self):
-        overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).options(ylabel='Y-Axis')
+        overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).opts(ylabel='Y-Axis')
         state = self._get_plot_state(overlay)
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'Y-Axis')
 
     def test_overlay_plot_zlabel(self):
-        scatter = Path3D([]) * Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(zlabel='Z-Axis')
+        scatter = Path3D([]) * Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel='Z-Axis')
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
+
+class TestColorbarPlot(TestPlotlyPlot):
+    def test_base(self):
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df)
+        state = self._get_plot_state(scatter)
+        assert "colorbar" not in state["data"][0]["marker"]
+
+    def test_colorbar(self):
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df).opts(color="T", colorbar=True)
+        state = self._get_plot_state(scatter)
+        assert "colorbar" in state["data"][0]["marker"]
+        assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "T"
+
+    def test_colorbar_opts_title(self):
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df).opts(
+            color="T",
+            colorbar=True,
+            colorbar_opts={"title": "some-title"}
+        )
+        state = self._get_plot_state(scatter)
+        assert "colorbar" in state["data"][0]["marker"]
+        assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "some-title"

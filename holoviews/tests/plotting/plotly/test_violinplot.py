@@ -19,7 +19,7 @@ class TestViolinPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_violin_single_invert_axes(self):
-        violin = Violin([1, 1, 2, 3, 3, 4, 5, 5]).options(invert_axes=True)
+        violin = Violin([1, 1, 2, 3, 3, 4, 5, 5]).opts(invert_axes=True)
         state = self._get_plot_state(violin)
         self.assertEqual(len(state['data']), 1)
         self.assertEqual(state['data'][0]['type'], 'violin')
@@ -44,7 +44,7 @@ class TestViolinPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_violin_multi_invert_axes(self):
-        violin = Violin((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').options(
+        violin = Violin((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').opts(
             invert_axes=True)
         state = self._get_plot_state(violin)
         self.assertEqual(len(state['data']), 2)
@@ -59,6 +59,6 @@ class TestViolinPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
 
     def test_visible(self):
-        element = Violin([1, 1, 2, 3, 3, 4, 5, 5]).options(visible=False)
+        element = Violin([1, 1, 2, 3, 3, 4, 5, 5]).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)

@@ -2,10 +2,7 @@ import numpy as np
 
 from holoviews.element import HeatMap, Points, Image
 
-try:
-    from bokeh.models import FactorRange, HoverTool, Range1d
-except:
-    pass
+from bokeh.models import FactorRange, HoverTool, Range1d
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -23,7 +20,7 @@ class TestHeatMapPlot(TestBokehPlot):
         tooltips = "<div><h1>Test</h1></div>"
         custom_hover = HoverTool(tooltips=tooltips)
         hm = HeatMap([(1,1,1), (2,2,0)], kdims=['x with space', 'y with $pecial symbol'])
-        hm = hm.options(tools=[custom_hover])
+        hm = hm.opts(tools=[custom_hover])
         plot = bokeh_renderer.get_plot(hm)
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, tooltips)
@@ -107,7 +104,7 @@ class TestHeatMapPlot(TestBokehPlot):
         self.assertEqual(source.data['y'], hm.dimension_values(0))
 
     def test_heatmap_dilate(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(dilate=True)
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(dilate=True)
         plot = bokeh_renderer.get_plot(hmap)
         glyph = plot.handles['glyph']
         self.assertTrue(glyph.dilate)

@@ -43,8 +43,7 @@ class Annotation(Element2D):
         elif len(key) == 0:
             return self.clone()
         if not all(isinstance(k, slice) for k in key):
-            raise KeyError("%s only support slice indexing" %
-                           self.__class__.__name__)
+            raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = tuple(key[:len(self.kdims)])
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop

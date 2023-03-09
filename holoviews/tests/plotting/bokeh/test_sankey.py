@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
 
-from holoviews.core.data import Dataset
+from holoviews import render
+from holoviews.core.data import Dataset, Dimension
 from holoviews.element import Sankey
 
 
@@ -53,7 +55,7 @@ class TestSankeyPlot(TestBokehPlot):
             (0, 2, 5), (0, 3, 7), (0, 4, 6),
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
             Dataset(enumerate('ABXYZ'), 'index', 'label'))
-        ).options(label_index='label', tools=['hover'])
+        ).opts(label_index='label', tools=['hover'])
         plot = bokeh_renderer.get_plot(sankey)
 
         scatter_source = plot.handles['scatter_1_source']
@@ -81,3 +83,18 @@ class TestSankeyPlot(TestBokehPlot):
         graph_renderer = plot.handles['glyph_renderer']
         self.assertTrue(renderers.index(graph_renderer)<renderers.index(quad_renderer))
         self.assertTrue(renderers.index(quad_renderer)<renderers.index(text_renderer))
+
+    def test_dimension_label(self):
+        # Ref: https://github.com/holoviz/holoviews/issues/5386
+        data = [
+            ["source1", "dest1", 3],
+            ["source1", "dest2", 1],
+        ]
+        df = pd.DataFrame(data, columns=["Source", "Dest", "Count"])
+
+        kdims = [Dimension("Source"), Dimension("Dest", label="Dest Label")]
+        plot = Sankey(df, kdims=kdims, vdims=["Count"])
+        plot = plot.opts(edge_color="Dest Label")
+
+        # To provoke the error in the issue
+        render(plot)

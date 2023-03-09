@@ -28,7 +28,7 @@ class TestLabelsPlot(TestMPLPlot):
         self.assertEqual(artist, [])
 
     def test_labels_formatter(self):
-        vdim = Dimension('text', value_format=lambda x: '%.1f' % x)
+        vdim = Dimension('text', value_format=lambda x: f'{x:.1f}')
         labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)], vdims=vdim)
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
@@ -40,7 +40,7 @@ class TestLabelsPlot(TestMPLPlot):
             self.assertEqual(text.get_text(), expected['text'][i])
 
     def test_labels_inverted(self):
-        labels = Labels([(0, 1, 'A'), (1, 0, 'B')]).options(invert_axes=True)
+        labels = Labels([(0, 1, 'A'), (1, 0, 'B')]).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         expected = {'x': np.array([0, 1]), 'y': np.array([1, 0]), 'Label': ['A', 'B']}
@@ -50,7 +50,7 @@ class TestLabelsPlot(TestMPLPlot):
             self.assertEqual(text.get_text(), expected['Label'][i])
 
     def test_labels_color_mapped(self):
-        labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)]).options(color_index=2)
+        labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)]).opts(color_index=2)
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         expected = {'x': np.array([0, 1]), 'y': np.array([1, 0]),
@@ -69,7 +69,7 @@ class TestLabelsPlot(TestMPLPlot):
 
     def test_label_color_op(self):
         labels = Labels([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
-                        vdims='color').options(color='color')
+                        vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_color() for a in artist],
@@ -80,7 +80,7 @@ class TestLabelsPlot(TestMPLPlot):
             0: Labels([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
                       vdims='color'),
             1: Labels([(0, 0, '#FF0000'), (0, 1, '#00FF00'), (0, 2, '#0000FF')],
-                      vdims='color')}).options(color='color')
+                      vdims='color')}).opts(color='color')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_color() for a in artist],
@@ -92,7 +92,7 @@ class TestLabelsPlot(TestMPLPlot):
 
     def test_label_linear_color_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(color='color')
+                        vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([rgb2hex(a.get_color()) for a in artist],
@@ -100,7 +100,7 @@ class TestLabelsPlot(TestMPLPlot):
 
     def test_label_categorical_color_op(self):
         labels = Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
-                        vdims='color').options(color='color', cmap='tab10')
+                        vdims='color').opts(color='color', cmap='tab10')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([rgb2hex(a.get_color()) for a in artist],
@@ -108,7 +108,7 @@ class TestLabelsPlot(TestMPLPlot):
 
     def test_label_size_op(self):
         labels = Labels([(0, 0, 8), (0, 1, 12), (0, 2, 6)],
-                        vdims='size').options(size='size')
+                        vdims='size').opts(size='size')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_fontsize() for a in artist], [8, 12, 6])
@@ -118,7 +118,7 @@ class TestLabelsPlot(TestMPLPlot):
             0: Labels([(0, 0, 8), (0, 1, 6), (0, 2, 12)],
                       vdims='size'),
             1: Labels([(0, 0, 9), (0, 1, 4), (0, 2, 3)],
-                      vdims='size')}).options(size='size')
+                      vdims='size')}).opts(size='size')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_fontsize() for a in artist], [8, 6, 12])
@@ -128,7 +128,7 @@ class TestLabelsPlot(TestMPLPlot):
 
     def test_label_alpha_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
-                        vdims='alpha').options(alpha='alpha')
+                        vdims='alpha').opts(alpha='alpha')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_alpha() for a in artist],
@@ -139,7 +139,7 @@ class TestLabelsPlot(TestMPLPlot):
             0: Labels([(0, 0, 0.3), (0, 1, 1), (0, 2, 0.6)],
                       vdims='alpha'),
             1: Labels([(0, 0, 0.6), (0, 1, 0.1), (0, 2, 1)],
-                      vdims='alpha')}).options(alpha='alpha')
+                      vdims='alpha')}).opts(alpha='alpha')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_alpha() for a in artist],
@@ -151,7 +151,7 @@ class TestLabelsPlot(TestMPLPlot):
 
     def test_label_rotation_op(self):
         labels = Labels([(0, 0, 90), (0, 1, 180), (0, 2, 270)],
-                        vdims='rotation').options(rotation='rotation')
+                        vdims='rotation').opts(rotation='rotation')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_rotation() for a in artist],
@@ -162,7 +162,7 @@ class TestLabelsPlot(TestMPLPlot):
             0: Labels([(0, 0, 45), (0, 1, 180), (0, 2, 90)],
                       vdims='rotation'),
             1: Labels([(0, 0, 30), (0, 1, 120), (0, 2, 60)],
-                      vdims='rotation')}).options(rotation='rotation')
+                      vdims='rotation')}).opts(rotation='rotation')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
         self.assertEqual([a.get_rotation() for a in artist],

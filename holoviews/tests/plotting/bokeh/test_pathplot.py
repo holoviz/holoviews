@@ -1,26 +1,25 @@
 import datetime as dt
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core import NdOverlay, HoloMap
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import LinearColorMapper, CategoricalColorMapper
-except:
-    pass
+from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 
 class TestPathPlot(TestBokehPlot):
 
     def test_batched_path_line_color_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Path': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Path': dict(line_color=Cycle(values=['red', 'blue']))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -28,8 +27,8 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
 
     def test_batched_path_alpha_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Path': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Path': dict(alpha=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -39,8 +38,8 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['color'], color)
 
     def test_batched_path_line_width_and_color(self):
-        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
-                'Path': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        opts = {'NdOverlay': dict(legend_limit=0),
+                'Path': dict(line_width=Cycle(values=[0.5, 1]))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
@@ -54,7 +53,7 @@ class TestPathPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Path': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}')])
 
     def test_path_colored_and_split_with_extra_vdims(self):
@@ -63,7 +62,9 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).options(color_index='color', tools=['hover'])
+        path = Path([data], vdims=['color','other']).opts(
+            color_index='color', tools=['hover']
+        )
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
@@ -78,7 +79,9 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).options(color=dim('color')*2, tools=['hover'])
+        path = Path([data], vdims=['color','other']).opts(
+            color=dim('color')*2, tools=['hover']
+        )
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
@@ -95,7 +98,7 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).options(
+        path = Path([data], vdims=['color', 'date']).opts(
             color_index='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -117,7 +120,7 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).options(
+        path = Path([data], vdims=['color', 'date']).opts(
             color='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -136,7 +139,7 @@ class TestPathPlot(TestBokehPlot):
         ys = xs[::-1]
         alpha = [0.1, 0.7, 0.3, 0.2]
         data = {'x': xs, 'y': ys, 'alpha': alpha}
-        path = Path([data], vdims='alpha').options(alpha='alpha')
+        path = Path([data], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
@@ -148,7 +151,7 @@ class TestPathPlot(TestBokehPlot):
         ys = xs[::-1]
         line_width = [1, 7, 3, 2]
         data = {'x': xs, 'y': ys, 'line_width': line_width}
-        path = Path([data], vdims='line_width').options(line_width='line_width')
+        path = Path([data], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
@@ -169,9 +172,27 @@ class TestPathPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(path)
         item = plot.state.legend[0].items[0]
         legend = {'field': 'color_str__'}
-        self.assertEqual(item.label, legend)
+        self.assertEqual(property_to_dict(item.label), legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
+    def test_path_continuously_varying_color_legend_with_labels(self):
+        data = {
+            "x": [1,2,3,4,5,6,7,8,9],
+            "y":   [1,2,3,4,5,6,7,8,9],
+            "cat": [0,1,2,0,1,2,0,1,2]
+        }
+
+        colors = ["#FF0000", "#00FF00", "#0000FF"]
+        levels=[0,1,2,3]
+
+        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
+        plot = bokeh_renderer.get_plot(path)
+        cds = plot.handles['cds']
+        item = plot.state.legend[0].items[0]
+        legend = {'field': '_color_str___labels'}
+        self.assertEqual(cds.data['_color_str___labels'], ['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B'])
+        self.assertEqual(property_to_dict(item.label), legend)
+        self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
 
 class TestPolygonPlot(TestBokehPlot):
@@ -257,12 +278,12 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(fill_color='color', tools=['hover'])
+        ], vdims='color').opts(fill_color='color', tools=['hover'])
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'fill_color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
         self.assertEqual(cds.data['fill_color'], np.array(['green', 'red']))
 
@@ -270,25 +291,25 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
 
     def test_polygons_linear_color_op(self):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertIsInstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
@@ -298,13 +319,13 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['b', 'a'])
@@ -313,23 +334,23 @@ class TestPolygonPlot(TestBokehPlot):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
-        ], vdims='alpha').options(alpha='alpha')
+        ], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
-        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'alpha'})
         self.assertEqual(cds.data['alpha'], np.array([0.7, 0.3]))
 
     def test_polygons_line_width_op(self):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
-        ], vdims='line_width').options(line_width='line_width')
+        ], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(polygons)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
 
     def test_polygons_holes_initialize(self):
@@ -379,30 +400,29 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
 
     def test_contours_linear_color_op(self):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertIsInstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
 
     def test_contours_empty_path(self):
-        import pandas as pd
         contours = Contours([
             pd.DataFrame([], columns=['x', 'y', 'color', 'line_width']),
             pd.DataFrame({'x': np.random.rand(10), 'y': np.random.rand(10),
@@ -425,13 +445,13 @@ class TestContoursPlot(TestBokehPlot):
             1: Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 5},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 2}
-            ], vdims='color')}).options(color='color', framewise=True)
+            ], vdims='color')}).opts(color='color', framewise=True)
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         plot.update((0,))
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
@@ -444,12 +464,12 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
-        ], vdims='color').options(color='color')
+        ], vdims='color').opts(color='color')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['b', 'a'])
@@ -458,20 +478,20 @@ class TestContoursPlot(TestBokehPlot):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
-        ], vdims='alpha').options(alpha='alpha')
+        ], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'alpha'})
         self.assertEqual(cds.data['alpha'], np.array([0.7, 0.3]))
 
     def test_contours_line_width_op(self):
         contours = Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
-        ], vdims='line_width').options(line_width='line_width')
+        ], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))

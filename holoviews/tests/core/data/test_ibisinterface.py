@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 try:
     import ibis
     from ibis import sqlite
-except:
+except ImportError:
     raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
 
 import numpy as np
@@ -303,4 +303,3 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
-

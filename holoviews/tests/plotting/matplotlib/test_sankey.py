@@ -33,7 +33,7 @@ class TestSankeyPlot(TestMPLPlot):
             'y1': [250.909091, 480.0, 97.575758, 340.606061, 500.0]
         }
         for i, rect in enumerate(rects.get_paths()):
-            x0, x1, y0, y1 = [quad_data[c][i] for c in ('x0', 'x1', 'y0', 'y1')]
+            x0, x1, y0, y1 = (quad_data[c][i] for c in ('x0', 'x1', 'y0', 'y1'))
             arr = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]])
             self.assertEqual(rect.vertices, arr)
 
@@ -43,7 +43,7 @@ class TestSankeyPlot(TestMPLPlot):
             (0, 2, 5), (0, 3, 7), (0, 4, 6),
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
             Dataset(enumerate('ABXYZ'), 'index', 'label'))
-        ).options(label_index='label')
+        ).opts(label_index='label')
         plot = mpl_renderer.get_plot(sankey)
         labels = plot.handles['labels']
 

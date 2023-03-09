@@ -65,4 +65,3 @@ class TestBoundingBox(unittest.TestCase):
         self.assertTrue(self.region.contains(self.xc, self.bottom))
     def test_top_boundary(self):
         self.assertTrue(self.region.contains(self.xc, self.top))
-

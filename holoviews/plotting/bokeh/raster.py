@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 import numpy as np
@@ -46,7 +44,7 @@ class RasterPlot(ColorbarPlot):
         tooltips.append((vdims[0].pprint_label, '@image'))
         for vdim in vdims[1:]:
             vname = dimension_sanitizer(vdim.name)
-            tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
+            tooltips.append((vdim.pprint_label, f'@{vname}'))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
@@ -56,7 +54,7 @@ class RasterPlot(ColorbarPlot):
             return
 
         element = self.current_frame
-        xdim, ydim = [dimension_sanitizer(kd.name) for kd in element.kdims]
+        xdim, ydim = (dimension_sanitizer(kd.name) for kd in element.kdims)
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
@@ -118,7 +116,7 @@ class RasterPlot(ColorbarPlot):
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.NaN]])
-            if ((self.invert_axes and not type(element) is Raster) or
+            if ((self.invert_axes and type(element) is not Raster) or
                 (not self.invert_axes and type(element) is Raster)):
                 img = img.T
             if self.invert_xaxis:
@@ -145,7 +143,7 @@ class RGBPlot(LegendPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     def __init__(self, hmap, **params):
-        super(RGBPlot, self).__init__(hmap, **params)
+        super().__init__(hmap, **params)
         self._legend_plot = None
 
     def _hover_opts(self, element):
@@ -154,8 +152,8 @@ class RGBPlot(LegendPlot):
                 ('RGBA', '@image')], {}
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(RGBPlot, self)._init_glyphs(plot, element, ranges, source)
-        if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
+        super()._init_glyphs(plot, element, ranges, source)
+        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
             return
         try:
             legend = categorical_legend(element, backend=self.backend)
@@ -271,12 +269,13 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
+        hover_data = {}
 
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]
-            X, Y = [element.interface.coords(element, d, expanded=True, edges=True)
-                    for d in dims]
+            X, Y = (element.interface.coords(element, d, expanded=True, edges=True)
+                    for d in dims)
             X, Y = colormesh(X, Y)
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
             XS, YS = [], []
@@ -293,11 +292,15 @@ class QuadMeshPlot(ColorbarPlot):
                         yc.append(ys.mean())
                 else:
                     mask.append(False)
+            mask = np.array(mask)
 
-            data = {'xs': XS, 'ys': YS, z.name: zvals[np.array(mask)]}
+            data = {'xs': XS, 'ys': YS, z.name: zvals[mask]}
             if 'hover' in self.handles:
-                data[x] = np.array(xc)
-                data[y] = np.array(yc)
+                if not self.static_source:
+                    hover_data = self._collect_hover_data(
+                            element, mask, irregular=True)
+                hover_data[x] = np.array(xc)
+                hover_data[y] = np.array(yc)
         else:
             xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
                       element.interface.coords(element, y, edges=True, ordered=True))
@@ -309,17 +312,34 @@ class QuadMeshPlot(ColorbarPlot):
                     'bottom': y0, 'top': y1}
 
             if 'hover' in self.handles and not self.static_source:
-                hover_dims = element.dimensions()[3:]
-                hover_data = [element.dimension_values(hover_dim, flat=False)
-                              for hover_dim in hover_dims]
-                for hdim, hdat in zip(hover_dims, hover_data):
-                    data[dimension_sanitizer(hdim.name)] = (hdat.flatten()
-                        if self.invert_axes else hdat.T.flatten())
-                data[x] = element.dimension_values(x)
-                data[y] = element.dimension_values(y)
+                hover_data = self._collect_hover_data(element)
+                hover_data[x] = element.dimension_values(x)
+                hover_data[y] = element.dimension_values(y)
+
+        data.update(hover_data)
 
         return data, mapping, style
 
+    def _collect_hover_data(self, element, mask=(), irregular=False):
+        """
+        Returns a dict mapping hover dimension names to flattened arrays.
+
+        Note that `Quad` glyphs are used when given 1-D coords but `Patches` are
+        used for "irregular" 2-D coords, and Bokeh inserts data into these glyphs
+        in the opposite order such that the relationship b/w the `invert_axes`
+        parameter and the need to transpose the arrays before flattening is
+        reversed.
+        """
+        transpose = self.invert_axes if irregular else not self.invert_axes
+
+        hover_dims = element.dimensions()[3:]
+        hover_vals = [element.dimension_values(hover_dim, flat=False)
+                      for hover_dim in hover_dims]
+        hover_data = {}
+        for hdim, hvals in zip(hover_dims, hover_vals):
+            hdat = hvals.T.flatten() if transpose else hvals.flatten()
+            hover_data[dimension_sanitizer(hdim.name)] = hdat[mask]
+        return hover_data
 
     def _init_glyph(self, plot, mapping, properties):
         """

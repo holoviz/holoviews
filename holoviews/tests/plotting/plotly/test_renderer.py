@@ -1,33 +1,23 @@
-# -*- coding: utf-8 -*-
 """
 Test cases for rendering exporters
 """
 from collections import OrderedDict
-from unittest import SkipTest
 
+import panel as pn
 import param
 
 from holoviews import (DynamicMap, HoloMap, Store, Curve)
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.plotly import PlotlyRenderer
+from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
+from panel.widgets import DiscreteSlider, Player, FloatSlider
 from pyviz_comms import CommManager
-
-try:
-    import panel as pn
-
-    from holoviews.plotting.plotly import PlotlyRenderer
-    from holoviews.plotting.renderer import Renderer
-    from panel.widgets import DiscreteSlider, Player, FloatSlider
-except:
-    pn, PlotlyRenderer = None, None
 
 
 class PlotlyRendererTest(ComparisonTestCase):
 
     def setUp(self):
-        if 'plotly' not in Store.renderers or None in (pn, PlotlyRenderer):
-            raise SkipTest("Plotly and Panel required to test rendering.")
-
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
         self.renderer = PlotlyRenderer.instance()
@@ -117,7 +107,7 @@ class PlotlyRendererTest(ComparisonTestCase):
         self.assertEqual(y[2], 3.1)
 
     def test_render_dynamicmap_with_stream(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
@@ -130,7 +120,7 @@ class PlotlyRendererTest(ComparisonTestCase):
         self.assertEqual(y[2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)

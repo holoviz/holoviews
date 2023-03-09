@@ -1,8 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for dim transforms
 """
 import pickle
+import warnings
+
+import holoviews as hv
 
 from collections import OrderedDict
 from unittest import skipIf
@@ -14,12 +16,12 @@ import param
 try:
     import dask.dataframe as dd
     import dask.array as da
-except:
+except ImportError:
     da, dd = None, None
 
 try:
     import xarray as xr
-except:
+except ImportError:
     xr = None
 
 xr_skip = skipIf(xr is None, "xarray not available")
@@ -462,7 +464,13 @@ class TestDimTransforms(ComparisonTestCase):
 
     def test_pandas_chained_methods(self):
         expr = dim('int').df.rolling(1).mean()
-        self.assert_apply(expr, self.linear_ints.rolling(1).mean())
+
+        with warnings.catch_warnings():
+            # The kwargs is {'axis': None} and is already handled by the code.
+            # This context manager can be removed, when it raises an TypeError instead of warning.
+            warnings.simplefilter("ignore", "Passing additional kwargs to Rolling.mean")
+            self.assert_apply(expr, self.linear_ints.rolling(1).mean())
+
 
     @xr_skip
     def test_xarray_namespace_method_repr(self):
@@ -514,3 +522,32 @@ class TestDimTransforms(ComparisonTestCase):
         expr = (((dim('float')-2)*3)**2)
         expr2 = pickle.loads(pickle.dumps(expr))
         self.assertEqual(expr, expr2)
+
+
+def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
+    """Ensure 'spatial_select' expression works when index not zero-based.
+    Use 'spatial_select' defined by four nodes to select index 104, 105.
+    Apply expression to dataset.transform to generate new 'flag' column where True
+    for the two indexes."""
+    df = pd.DataFrame({"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=list(range(101, 107)))
+    geometry = np.array(
+        [
+            [3.0, 1.7],
+            [0.3, 1.7],
+            [0.3, 2.7],
+            [3.0, 2.7]
+        ]
+    )
+    spatial_expr = hv.dim('a', hv.element.selection.spatial_select, hv.dim('b'), geometry=geometry)
+    dataset = hv.Dataset(df)
+    df_out = dataset.transform(**{'flag': spatial_expr}).dframe()
+    expected_series = pd.Series(
+        {
+            101: False,
+            102: False,
+            103: False,
+            104: True,
+            105: True,
+            106: False}
+        )
+    pd.testing.assert_series_equal(df_out['flag'], expected_series, check_names=False)

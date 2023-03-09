@@ -34,7 +34,7 @@ class PathPlot(ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
-        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+        if 'array' not in plot_kwargs and 'cmap' in plot_kwargs:
             del plot_kwargs['cmap']
         collection = self._collection(*plot_args, **plot_kwargs)
         ax.add_collection(collection)

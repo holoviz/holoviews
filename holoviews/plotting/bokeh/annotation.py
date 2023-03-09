@@ -1,9 +1,5 @@
 from collections import defaultdict
-
-try:
-    from html import escape
-except:
-    from cgi import escape
+from html import escape
 
 import param
 import numpy as np
@@ -11,16 +7,7 @@ import numpy as np
 from bokeh.models import BoxAnnotation, Span, Arrow, Slope
 from panel.models import HTML
 
-try:
-    from bokeh.models.arrow_heads import TeeHead, NormalHead
-    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
-                 '-': None}
-except:
-    from bokeh.models.arrow_heads import OpenHead, NormalHead
-    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
-                 '-': None}
+from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer
@@ -31,6 +18,10 @@ from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
 from .plot import BokehPlot
 from .util import date_to_integer
+
+arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
+arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
+                '-': None}
 
 
 class TextPlot(ElementPlot, AnnotationPlot):
@@ -289,7 +280,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
-    style_opts = (['arrow_%s' % p for p in line_properties+fill_properties+['size']] +
+    style_opts = ([f'arrow_{p}' for p in line_properties+fill_properties+['size']] +
                   text_properties)
 
     _style_groups = {'arrow': 'arrow', 'text': 'text'}
@@ -420,9 +411,6 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
           width and height, while maintaining the original or provided
           aspect ratio.
     """)
-
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
 
     hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a plot. The

@@ -3,11 +3,10 @@ Public API for all plots supported by HoloViews, regardless of
 plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
-import threading
 import uuid
 import warnings
 
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, OrderedDict
 from functools import partial
 from itertools import groupby, product
 
@@ -15,16 +14,11 @@ import numpy as np
 import param
 
 from panel.config import config
+from panel.io.document import unlocked
 from panel.io.notebook import push
 from panel.io.state import state
-try:
-    from panel.io.document import unlocked
-except Exception:
-    from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
-
 from ..selection import NoOpSelectionDisplay
-from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
@@ -33,7 +27,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import LooseVersion, stream_parameters, isfinite
+from ..core.util import stream_parameters, isfinite
 from ..element import Table, Graph
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
@@ -114,18 +108,11 @@ class Plot(param.Parameterized):
             self.root is self.handles.get('plot') and
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
-            from .bokeh.util import bokeh_version
-            if self._document and bokeh_version >= LooseVersion('2.4.0'):
+            if self._document:
                 if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
                     self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
                 else:
                     self._document.callbacks._session_destroyed_callbacks.pop(self._session_destroy, None)
-
-            elif self._document:
-                if isinstance(self._document._session_destroyed_callbacks, set):
-                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
-                else:
-                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
 
         self._document = doc
         if self.subplots:
@@ -151,7 +138,7 @@ class Plot(param.Parameterized):
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
-                if not plot.root:
+                if plot is None or not plot.root:
                     continue
                 for cb in getattr(plot, 'callbacks', []):
                     if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):
@@ -215,18 +202,13 @@ class Plot(param.Parameterized):
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
         """
-        if self.renderer.mode == 'server':
-            from bokeh.io import curdoc
-            thread = threading.current_thread()
-            thread_id = thread.ident if thread else None
-            if (curdoc() is not self.document or (state._thread_id is not None and
-                thread_id != state._thread_id)):
-                # If we do not have the Document lock, schedule refresh as callback
-                self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
-                                     for s in getattr(p, 'streams', []) if s._triggering]
-                if self.document and self.document.session_context:
-                    self.document.add_next_tick_callback(self.refresh)
-                    return
+        if self.renderer.mode == 'server' and not state._unblocked(self.document):
+            # If we do not have the Document lock, schedule refresh as callback
+            self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
+                                 for s in getattr(p, 'streams', []) if s._triggering]
+            if self.document and self.document.session_context:
+                self.document.add_next_tick_callback(self.refresh)
+                return
 
         # Ensure that server based tick callbacks maintain stream triggering state
         for s in self._triggering:
@@ -294,7 +276,7 @@ class Plot(param.Parameterized):
 
 
 
-class PlotSelector(object):
+class PlotSelector:
     """
     Proxy that allows dynamic selection of a plotting class based on a
     function of the plotted object. Behaves like a Plot class and
@@ -346,7 +328,7 @@ class PlotSelector(object):
     def __setattr__(self, label, value):
         try:
             return super().__setattr__(label, value)
-        except:
+        except Exception:
             raise Exception("Please set class parameters directly on classes %s"
                             % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
 
@@ -396,8 +378,6 @@ class DimensionedPlot(Plot):
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
 
-    title_format = param.String(default=None, doc="Alias for title.")
-
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
         of plotting. Allows selecting normalization at different levels
@@ -436,7 +416,7 @@ class DimensionedPlot(Plot):
         Get the state of the Plot for a given frame number.
         """
         if isinstance(frame, int) and frame > len(self):
-            self.param.warning("Showing last frame available: %d" % len(self))
+            self.param.warning(f"Showing last frame available: {len(self)}")
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
         if not isinstance(frame, tuple):
             frame = self.keys[frame]
@@ -504,22 +484,10 @@ class DimensionedPlot(Plot):
         return util.bytes_to_unicode(separator.join(g for g in groups if g))
 
     def _format_title(self, key, dimensions=True, separator='\n'):
-        if self.title_format:
-            self.param.warning('title_format is deprecated. Please use title instead')
-
         label, group, type_name, dim_title = self._format_title_components(
             key, dimensions=True, separator='\n'
         )
-
-        custom_title = (self.title != self.param['title'].default)
-        if custom_title and self.title_format:
-            self.param.warning('Both title and title_format set. Using title')
-        title_str = (
-            self.title if custom_title or self.title_format is None
-            else self.title_format
-        )
-
-        title = util.bytes_to_unicode(title_str).format(
+        title = util.bytes_to_unicode(self.title).format(
             label=util.bytes_to_unicode(label),
             group=util.bytes_to_unicode(group),
             type=type_name,
@@ -737,11 +705,11 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
-                if dtype is not None and dtype.kind == 'uif' and robust:
+                if dtype is not None and dtype.kind in 'uif' and robust:
                     percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
                         dim(el_dim, np.nanpercentile, percentile).apply(el),
-                        dim(el_dim, np.nanpercentile, percentile).apply(el)
+                        dim(el_dim, np.nanpercentile, 100 - percentile).apply(el)
                     )
 
                 if (any(isinstance(r, str) for r in data_range) or
@@ -783,7 +751,7 @@ class DimensionedPlot(Plot):
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 drange = (np.nanmin(values), np.nanmax(values))
-                        except:
+                        except Exception:
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {
@@ -977,7 +945,7 @@ class DimensionedPlot(Plot):
         return len(self.keys)
 
 
-class CallbackPlot(object):
+class CallbackPlot:
 
     backend = None
 
@@ -1065,9 +1033,6 @@ class GenericElementPlot(DimensionedPlot):
 
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
-
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
 
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -1169,6 +1134,29 @@ class GenericElementPlot(DimensionedPlot):
     _propagate_options = []
     v17_option_propagation = True
 
+    _deprecations = {
+        'color_index': (
+            "The `color_index` parameter is deprecated in favor of color "
+            "style mapping, e.g. `color=dim('color')` or `line_color=dim('color')`"
+        ),
+        'size_index': (
+            "The `size_index` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=dim('size')**2`."
+        ),
+        'scaling_method': (
+            "The `scaling_method` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=dim('size')**2` for area scaling."
+        ),
+        'scaling_factor': (
+            "The `scaling_factor` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=dim('size')*10`."
+        ),
+        'size_fn': (
+            "The `size_fn` parameter is deprecated in favor of size "
+            "style mapping, e.g. `size=abs(dim('size'))`."
+        ),
+    }
+
     _selection_display = NoOpSelectionDisplay()
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
@@ -1210,8 +1198,12 @@ class GenericElementPlot(DimensionedPlot):
             plot_opts.update(**{k: v[0] for k, v in inherited.items()
                                 if k not in plot_opts})
 
+        applied_params = dict(params, **plot_opts)
+        for p, pval in applied_params.items():
+            if p in self.param and p in self._deprecations and pval is not None:
+                self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions,
-                         dynamic=dynamic, **dict(params, **plot_opts))
+                         dynamic=dynamic, **applied_params)
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
 
         # Attach streams if not overlaid and not a batched ElementPlot
@@ -1227,6 +1219,7 @@ class GenericElementPlot(DimensionedPlot):
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
             self.ordering = []
+
 
     def get_zorder(self, overlay, key, el):
         """
@@ -1254,7 +1247,7 @@ class GenericElementPlot(DimensionedPlot):
         frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, '_force', False)
 
-        if not key in self.keys and len(key) == self.hmap.ndims and self.dynamic:
+        if key not in self.keys and len(key) == self.hmap.ndims and self.dynamic:
             self.keys.append(key)
         self.current_frame = frame
         self.current_key = key
@@ -1264,21 +1257,12 @@ class GenericElementPlot(DimensionedPlot):
         """
         Executes finalize hooks
         """
-        if self.hooks and self.finalize_hooks:
-            self.param.warning(
-                "Supply either hooks or finalize_hooks not both, "
-                "using hooks and ignoring finalize_hooks.")
-        elif self.finalize_hooks:
-            self.param.warning(
-                "The finalize_hooks option is deprecated, use the "
-                "hooks option instead.")
-        hooks = self.hooks or self.finalize_hooks
-        for hook in hooks:
+        for hook in self.hooks:
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook %r could not be "
-                                   "applied:\n\n %s" % (hook, e))
+                self.param.warning("Plotting hook {!r} could not be "
+                                   "applied:\n\n {}".format(hook, e))
 
     def get_aspect(self, xspan, yspan):
         """
@@ -1661,8 +1645,8 @@ class GenericOverlayPlot(GenericElementPlot):
         plottype = registry.get(vtype, None)
         if plottype is None:
             self.param.warning(
-                "No plotting class for %s type and %s backend "
-                "found. " % (vtype.__name__, self.renderer.backend))
+                "No plotting class for {} type and {} backend "
+                "found. ".format(vtype.__name__, self.renderer.backend))
             return None
 
         # Get zorder and style counter
@@ -1741,6 +1725,9 @@ class GenericOverlayPlot(GenericElementPlot):
             subplot = self._create_subplot(k, vmap, [], ranges)
             if subplot is None:
                 continue
+            subplot.document = self.document
+            if self.comm:
+                subplot.comm = self.comm
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
@@ -1876,7 +1863,7 @@ class GenericCompositePlot(DimensionedPlot):
                          dimensions=dimensions, **params)
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
-        self.streams = list(set([s for streams in nested_streams for s in streams]))
+        self.streams = list({s for streams in nested_streams for s in streams})
         self._link_dimensioned_streams()
 
     def _link_dimensioned_streams(self):

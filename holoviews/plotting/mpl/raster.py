@@ -2,16 +2,17 @@ import sys
 
 import param
 import numpy as np
+from packaging.version import Version
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator
+from ...core.util import isfinite, match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
 from ..util import categorical_legend
 from .chart import PointPlot
 from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
-from .util import LooseVersion, get_raster_array, mpl_version
+from .util import get_raster_array, mpl_version
 
 
 class RasterBasePlot(ElementPlot):
@@ -58,7 +59,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
                   'filterrad', 'clims', 'norm']
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -116,12 +117,15 @@ class RGBPlot(RasterBasePlot, LegendPlot):
             data = data[::-1, ::-1]
             data = data.transpose([1, 0, 2])
             l, b, r, t = b, l, t, r
-        style['extent'] = [l, r, b, t]
+        if all(isfinite(e) for e in (l, b, r, t)):
+            style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
+        if data.shape[:2] == (0, 0):
+            data = np.zeros((1, 1, 4), dtype='uint8')
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        handles = super(RGBPlot, self).init_artists(ax, plot_args, plot_kwargs)
+        handles = super().init_artists(ax, plot_args, plot_kwargs)
         if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
             return handles
         try:
@@ -188,7 +192,7 @@ class QuadMeshPlot(ColorbarPlot):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
-        if colorbar and mpl_version < LooseVersion('3.1'):
+        if colorbar and mpl_version < Version('3.1'):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
                 # Compatibility with mpl < 3
@@ -224,13 +228,13 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     data_aspect = param.Parameter(precedence=-1)
     default_span = param.Parameter(precedence=-1)
     hooks = param.Parameter(precedence=-1)
-    finalize_hooks = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
     invert_zaxis = param.Parameter(precedence=-1)
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
+    legend_labels = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
     legend_opts = param.Parameter(precedence=-1)
     legend_limit = param.Parameter(precedence=-1)

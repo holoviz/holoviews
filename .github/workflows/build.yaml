@@ -26,12 +26,9 @@ jobs:
       MPLBACKEND: "Agg"
       CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
@@ -40,10 +37,9 @@ jobs:
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
         id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: conda setup
         run: |
-          conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
       - name: conda build
@@ -70,12 +66,9 @@ jobs:
       PPP: ${{ secrets.PPP }}
       PYPI: "https://upload.pypi.org/legacy/"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
@@ -84,32 +77,25 @@ jobs:
         run: git fetch --prune --tags --unshallow -f
       - name: conda setup
         run: |
-          conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
       - name: env setup
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit develop_install $CHANS_DEV -o unit_tests
-          # See https://github.com/holoviz/holoviews/issues/5167
-          conda install $CHANS_DEV "nbconvert<6"
+          doit develop_install $CHANS_DEV
           pip uninstall -y holoviews
           doit pip_on_conda
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: pip build
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit ecosystem=pip package_build --test-group=flakes
+          doit ecosystem=pip package_build --test-group=simple
       - name: pip upload
         if: github.event_name == 'push'
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit ecosystem=pip package_upload -u $PPU -p $PPP -r $PYPI

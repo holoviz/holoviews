@@ -36,9 +36,9 @@ class Link(param.Parameterized):
 
     def __init__(self, source, target=None, **params):
         if source is None:
-            raise ValueError('%s must define a source' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a source')
         if self._requires_target and target is None:
-            raise ValueError('%s must define a target.' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a target.')
 
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
@@ -96,6 +96,9 @@ class RangeToolLink(Link):
     a subset of a larger dataset in more detail. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
+
+    Example of how to use RangeToolLink can be found here:
+    https://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
     """
 
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""

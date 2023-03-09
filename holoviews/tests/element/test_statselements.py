@@ -1,16 +1,14 @@
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import numpy as np
 import holoviews as hv
+import pandas as pd
 
 from holoviews.core.dimension import Dimension
 from holoviews.core.options import Compositor, Store
-from holoviews.core.util import pd
 from holoviews.element import (Distribution, Bivariate, Points, Image,
                                Curve, Area, Contours, Polygons)
 from holoviews.element.comparison import ComparisonTestCase
-
-pd_skip = skipIf(pd is None, 'Pandas not available')
 
 
 class StatisticalElementTest(ComparisonTestCase):
@@ -20,13 +18,11 @@ class StatisticalElementTest(ComparisonTestCase):
         self.assertEqual(dist.kdims, [Dimension('Value')])
         self.assertEqual(dist.vdims, [Dimension('Density')])
 
-    @pd_skip
     def test_distribution_dframe_constructor(self):
         dist = Distribution(pd.DataFrame({'Value': [0, 1, 2]}))
         self.assertEqual(dist.kdims, [Dimension('Value')])
         self.assertEqual(dist.vdims, [Dimension('Density')])
 
-    @pd_skip
     def test_distribution_series_constructor(self):
         dist = Distribution(pd.Series([0, 1, 2], name='Value'))
         self.assertEqual(dist.kdims, [Dimension('Value')])
@@ -47,7 +43,6 @@ class StatisticalElementTest(ComparisonTestCase):
         self.assertEqual(dist.kdims, [Dimension('x'), Dimension('y')])
         self.assertEqual(dist.vdims, [Dimension('Density')])
 
-    @pd_skip
     def test_bivariate_dframe_constructor(self):
         dist = Bivariate(pd.DataFrame({'x': [0, 1, 2], 'y': [0, 1, 2]}, columns=['x', 'y']))
         self.assertEqual(dist.kdims, [Dimension('x'), Dimension('y')])
@@ -117,11 +112,7 @@ class StatisticalCompositorTest(ComparisonTestCase):
     def setUp(self):
         try:
             import scipy # noqa
-        except:
-            raise SkipTest('SciPy not available')
-        try:
-            import matplotlib # noqa
-        except:
+        except ImportError:
             raise SkipTest('SciPy not available')
         self.renderer = hv.renderer('matplotlib')
         np.random.seed(42)

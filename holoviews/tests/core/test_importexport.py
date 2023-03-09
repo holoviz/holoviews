@@ -186,4 +186,3 @@ class TestPicklerAdvanced(ComparisonTestCase):
         loaded = Unpickler.load('test_pickler_save_load_single_layout.hvz',
                                 entries=['Image.I(L)'])
         self.assertEqual(single_layout, loaded)
-

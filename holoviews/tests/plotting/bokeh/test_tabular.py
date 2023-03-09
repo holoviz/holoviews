@@ -1,30 +1,24 @@
 from datetime import datetime as dt
-from unittest import SkipTest
 
+from bokeh.models.widgets import (
+        NumberEditor, NumberFormatter, DateFormatter,
+    DateEditor, StringFormatter, StringEditor, IntEditor
+)
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Table
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.bokeh.callbacks import CDSCallback
+from holoviews.plotting.bokeh.renderer import BokehRenderer
 from holoviews.streams import CDSStream, Stream
 
-try:
-    from bokeh.models.widgets import (
-         NumberEditor, NumberFormatter, DateFormatter,
-        DateEditor, StringFormatter, StringEditor, IntEditor
-    )
-    from holoviews.plotting.bokeh.callbacks import CDSCallback
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
-    bokeh_renderer = BokehRenderer.instance(mode='server')
-except:
-    bokeh_renderer = None
+bokeh_renderer = BokehRenderer.instance(mode='server')
 
 
 class TestBokehTablePlot(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
 
     def tearDown(self):

@@ -4,11 +4,12 @@ Unit test of the streams system
 from collections import defaultdict
 from unittest import SkipTest
 
+import pandas as pd
 import param
 from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import LooseVersion, pd
+from holoviews.core.util import Version
 from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
@@ -94,7 +95,7 @@ class TestStreamsDefine(ComparisonTestCase):
 
     def test_XY_subscriber_triggered(self):
 
-        class Inner(object):
+        class Inner:
             def __init__(self): self.state=None
             def __call__(self, x,y): self.state=(x,y)
 
@@ -119,7 +120,7 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(self.ExplicitTest.param['test'].doc, 'Test docstring')
 
 
-class _TestSubscriber(object):
+class _TestSubscriber:
 
     def __init__(self, cb=None):
         self.call_count = 0
@@ -273,7 +274,7 @@ class TestParamsStream(LoggingComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'%s action' % id(inner), '_memoize_key'})
+                             {f'{id(inner)} action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -289,7 +290,7 @@ class TestParamsStream(LoggingComparisonTestCase):
             values.append(kwargs)
             self.assertEqual(
                 set(stream.hashkey),
-                {'%s action' % id(inner), '%s x' % id(inner), '_memoize_key'})
+                {f'{id(inner)} action', f'{id(inner)} x', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -329,7 +330,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if LooseVersion(param.__version__) < LooseVersion('1.8.0'):
+        if Version(param.__version__) < Version('1.8.0'):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):
@@ -423,11 +424,8 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(dmap[()], Points([10]))
 
     def test_panel_param_steams_dict(self):
-        try:
-            import panel
-        except:
-            raise SkipTest('Panel required for widget support in streams dict')
-        widget = panel.widgets.FloatSlider(value=1)
+        import panel as pn
+        widget = pn.widgets.FloatSlider(value=1)
 
         def test(x):
             return Points([x])
@@ -530,7 +528,7 @@ class TestParamMethodStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'%s action' % id(inner), '_memoize_key'})
+                             {f'{id(inner)} action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -550,7 +548,7 @@ class TestParamMethodStream(ComparisonTestCase):
             values.append(kwargs)
             self.assertEqual(
                 set(stream.hashkey),
-                {'%s action' % id(inner), '%s x' % id(inner), '_memoize_key'})
+                {f'{id(inner)} action', f'{id(inner)} x', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         stream.add_subscriber(lambda **kwargs: dmap[()])
@@ -783,24 +781,26 @@ class TestPlotSizeTransform(ComparisonTestCase):
 class TestPipeStream(ComparisonTestCase):
 
     def test_pipe_send(self):
-        test = None
         def subscriber(data):
-            global test
-            test = data
+            subscriber.test = data
+        subscriber.test = None
+
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
         pipe.send('Test')
         self.assertEqual(pipe.data, 'Test')
+        self.assertEqual(subscriber.test, 'Test')
 
     def test_pipe_event(self):
-        test = None
         def subscriber(data):
-            global test
-            test = data
+            subscriber.test = data
+        subscriber.test = None
+
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
         pipe.event(data='Test')
         self.assertEqual(pipe.data, 'Test')
+        self.assertEqual(subscriber.test, 'Test')
 
     def test_pipe_update(self):
         pipe = Pipe()
@@ -898,11 +898,6 @@ class TestBufferDictionaryStream(ComparisonTestCase):
 
 
 class TestBufferDataFrameStream(ComparisonTestCase):
-
-    def setUp(self):
-        if pd is None:
-            raise SkipTest('Pandas not available')
-        super().setUp()
 
     def test_init_buffer_dframe(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
@@ -1127,8 +1122,9 @@ class TestExprSelectionStream(ComparisonTestCase):
     def setUp(self):
         extension("bokeh")
 
-    def test_selection_expr_stream_scatter_points(self):
-        for element_type in [Scatter, Points]:
+    def test_selection_expr_stream_2D_elements(self):
+        element_type_2D = [Points]
+        for element_type in element_type_2D:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10]))
             expr_stream = SelectionExpr(element)
@@ -1154,8 +1150,36 @@ class TestExprSelectionStream(ComparisonTestCase):
                 {'x': (1, 3), 'y': (1, 4)}
             )
 
-    def test_selection_expr_stream_invert_axes(self):
-        for element_type in [Scatter, Points]:
+    def test_selection_expr_stream_1D_elements(self):
+        element_type_1D = [Scatter]
+        for element_type in element_type_1D:
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10]))
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream.input_streams), 1)
+            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x')>=1)&(dim('x')<=3))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 3)}
+            )
+
+
+    def test_selection_expr_stream_invert_axes_2D_elements(self):
+        element_type_2D = [Points]
+        for element_type in element_type_2D:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
             expr_stream = SelectionExpr(element)
@@ -1181,8 +1205,35 @@ class TestExprSelectionStream(ComparisonTestCase):
                 {'y': (1, 3), 'x': (1, 4)}
             )
 
-    def test_selection_expr_stream_invert_xaxis_yaxis(self):
-        for element_type in [Scatter, Points]:
+    def test_selection_expr_stream_invert_axes_1D_elements(self):
+        element_type_1D = [Scatter]
+        for element_type in element_type_1D:
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream.input_streams), 1)
+            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x')>=1)&(dim('x')<=4))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 4)}
+            )
+
+    def test_selection_expr_stream_invert_xaxis_yaxis_2D_elements(self):
+        element_type_2D = [Points]
+        for element_type in element_type_2D:
 
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(
@@ -1210,6 +1261,36 @@ class TestExprSelectionStream(ComparisonTestCase):
             self.assertEqual(
                 expr_stream.bbox,
                 {'x': (1, 3), 'y': (1, 4)}
+            )
+
+    def test_selection_expr_stream_invert_xaxis_yaxis_1D_elements(self):
+        element_type_1D = [Scatter]
+        for element_type in element_type_1D:
+
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10])).opts(
+                invert_xaxis=True,
+                invert_yaxis=True,
+            )
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream.input_streams), 1)
+            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x')>=1)&(dim('x')<=3))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 3)}
             )
 
     def test_selection_expr_stream_hist(self):
@@ -1311,9 +1392,9 @@ class TestExprSelectionStream(ComparisonTestCase):
     def test_selection_expr_stream_polygon_index_cols(self):
         # Create SelectionExpr on element
         try: import shapely # noqa
-        except:
+        except ImportError:
             try: import spatialpandas # noqa
-            except: raise SkipTest('Shapely required for polygon selection')
+            except ImportError: raise SkipTest('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],
@@ -1365,8 +1446,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 3)
 
-    def test_selection_expr_stream_dynamic_map(self):
-        for element_type in [Scatter, Points]:
+    def test_selection_expr_stream_dynamic_map_2D_elements(self):
+        element_type_2D = [Points]
+        for element_type in element_type_2D: # Scatter,
             # Create SelectionExpr on element
             dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
             expr_stream = SelectionExpr(dmap)
@@ -1388,4 +1470,30 @@ class TestExprSelectionStream(ComparisonTestCase):
             self.assertEqual(
                 expr_stream.bbox,
                 {'x': (1, 3), 'y': (1, 4)}
+            )
+
+    def test_selection_expr_stream_dynamic_map_1D_elements(self):
+        element_type_1D = [Scatter]
+        for element_type in element_type_1D:
+            # Create SelectionExpr on element
+            dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
+            expr_stream = SelectionExpr(dmap)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream.input_streams), 1)
+            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x')>=1)&(dim('x')<=3))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 3)}
             )

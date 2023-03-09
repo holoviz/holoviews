@@ -33,3 +33,4 @@ holoviews/.version
 .doit.db
 .vscode/settings.json
 holoviews/.vscode/settings.json
+.venv

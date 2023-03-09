@@ -1,15 +1,21 @@
 import numpy as np
-
 import PIL.Image
-
-try:
-    import plotly.graph_objs as go
-except:
-    go = None
-
 from holoviews.element import RGB, Tiles
 
+import plotly.graph_objs as go
+
 from .test_plot import TestPlotlyPlot, plotly_renderer
+
+try:
+    from PIL.Image import Transpose
+    FLIP_LEFT_RIGHT = Transpose.FLIP_LEFT_RIGHT
+    FLIP_TOP_BOTTOM = Transpose.FLIP_TOP_BOTTOM
+    ROTATE_90 = Transpose.ROTATE_90
+    ROTATE_270 = Transpose.ROTATE_270
+except ImportError:
+    # Gives following deprecation warning:
+    # deprecated and will be removed in Pillow 10 (2023-07-01)
+    from PIL.Image import FLIP_LEFT_RIGHT, FLIP_TOP_BOTTOM, ROTATE_90, ROTATE_270
 
 
 class TestRGBPlot(TestPlotlyPlot):
@@ -86,7 +92,7 @@ class TestRGBPlot(TestPlotlyPlot):
         pil_img = self.rgb_element_to_pil_img(rgb.data)
 
         # Flip left-to-right since x-axis is inverted
-        pil_img = pil_img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        pil_img = pil_img.transpose(FLIP_LEFT_RIGHT)
 
         expected_source = go.layout.Image(source=pil_img).source
 
@@ -126,9 +132,7 @@ class TestRGBPlot(TestPlotlyPlot):
         pil_img = self.rgb_element_to_pil_img(rgb.data)
 
         # Flip left-to-right and top-to-bottom since both x-axis and y-axis are inverted
-        pil_img = (pil_img
-                   .transpose(PIL.Image.FLIP_LEFT_RIGHT)
-                   .transpose(PIL.Image.FLIP_TOP_BOTTOM))
+        pil_img = pil_img.transpose(FLIP_LEFT_RIGHT).transpose(FLIP_TOP_BOTTOM)
 
         expected_source = go.layout.Image(source=pil_img).source
 
@@ -168,9 +172,7 @@ class TestRGBPlot(TestPlotlyPlot):
         pil_img = self.rgb_element_to_pil_img(rgb.data)
 
         # Flip left-to-right and top-to-bottom since both x-axis and y-axis are inverted
-        pil_img = (pil_img
-                   .transpose(PIL.Image.ROTATE_90)
-                   .transpose(PIL.Image.FLIP_LEFT_RIGHT))
+        pil_img = pil_img.transpose(ROTATE_90).transpose(FLIP_LEFT_RIGHT)
 
         expected_source = go.layout.Image(source=pil_img).source
 
@@ -210,9 +212,7 @@ class TestRGBPlot(TestPlotlyPlot):
         pil_img = self.rgb_element_to_pil_img(rgb.data)
 
         # Flip left-to-right and top-to-bottom since both x-axis and y-axis are inverted
-        pil_img = (pil_img
-                   .transpose(PIL.Image.ROTATE_270)
-                   .transpose(PIL.Image.FLIP_LEFT_RIGHT))
+        pil_img = pil_img.transpose(ROTATE_270).transpose(FLIP_LEFT_RIGHT)
 
         expected_source = go.layout.Image(source=pil_img).source
 

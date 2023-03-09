@@ -1,7 +1,5 @@
 from weakref import WeakValueDictionary
 
-from param.parameterized import add_metaclass
-
 from ...streams import (
     Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY,
     SelectionXY
@@ -38,8 +36,7 @@ class PlotlyCallbackMetaClass(type):
         return inst
 
 
-@add_metaclass(PlotlyCallbackMetaClass)
-class PlotlyCallback(object):
+class PlotlyCallback(metaclass=PlotlyCallbackMetaClass):
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -123,7 +120,7 @@ class BoundsCallback(PlotlyCallback):
             elif cls.boundsy:
                 stream_data = dict(boundsy=None)
             else:
-                stream_data = dict()
+                stream_data = {}
 
             event_data[trace_uid] = stream_data
 
@@ -159,7 +156,7 @@ class BoundsCallback(PlotlyCallback):
                 elif cls.boundsy:
                     stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    stream_data = dict()
+                    stream_data = {}
 
                 event_data[trace_uid] = stream_data
 
@@ -188,7 +185,7 @@ class BoundsCallback(PlotlyCallback):
                 elif cls.boundsy:
                     stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    stream_data = dict()
+                    stream_data = {}
 
                 event_data[trace_uid] = stream_data
 
@@ -235,8 +232,8 @@ class RangeCallback(PlotlyCallback):
 
             xaxis = trace.get('xaxis', 'x').replace('x', 'xaxis')
             yaxis = trace.get('yaxis', 'y').replace('y', 'yaxis')
-            xprop = '{xaxis}.range'.format(xaxis=xaxis)
-            yprop = '{yaxis}.range'.format(yaxis=yaxis)
+            xprop = f'{xaxis}.range'
+            yprop = f'{yaxis}.range'
 
             if not property_value:
                 x_range = None
@@ -332,4 +329,3 @@ callbacks[BoundsY] = BoundsYCallback
 callbacks[RangeXY] = RangeXYCallback
 callbacks[RangeX] = RangeXCallback
 callbacks[RangeY] = RangeYCallback
-

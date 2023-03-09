@@ -118,7 +118,7 @@ class TestTextPlot(TestBokehPlot):
         self.assertEqual(glyph.angle, np.pi/2.)
 
     def test_text_plot_rotation_style(self):
-        text = Text(0, 0, 'Test').options(angle=90)
+        text = Text(0, 0, 'Test').opts(angle=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.angle, np.pi/2.)
@@ -177,7 +177,7 @@ class TestLabelsPlot(TestBokehPlot):
             self.assertEqual(col, data[c])
 
     def test_labels_plot_rotation_style(self):
-        text = Labels([(0, 0, 'Test')]).options(angle=90)
+        text = Labels([(0, 0, 'Test')]).opts(angle=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.angle, np.pi/2.)

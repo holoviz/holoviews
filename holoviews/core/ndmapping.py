@@ -7,6 +7,7 @@ also enables slicing over multiple dimension ranges.
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
+import pandas as pd
 
 import param
 
@@ -17,7 +18,7 @@ from .util import (
     process_ellipses, get_ndmapping_label
 )
 
-class item_check(object):
+class item_check:
     """
     Context manager to allow creating NdMapping types without
     performing the usual item_checks, providing significant
@@ -37,7 +38,7 @@ class item_check(object):
         MultiDimensionalMapping._check_items = self._enabled
 
 
-class sorted_context(object):
+class sorted_context:
     """
     Context manager to temporarily disable sorting on NdMapping
     types. Retains the current sort order, which can be useful as
@@ -139,10 +140,11 @@ class MultiDimensionalMapping(Dimensioned):
                 data_type = tuple(dt.__name__ for dt in self.data_type)
             else:
                 data_type = self.data_type.__name__
-            raise TypeError('{slf} does not accept {data} type, data elements have '
-                            'to be a {restr}.'.format(slf=type(self).__name__,
-                                                      data=type(data).__name__,
-                                                      restr=data_type))
+
+            slf = type(self).__name__
+            data = type(data).__name__
+            raise TypeError(f'{slf} does not accept {data} type, data elements have '
+                            f'to be a {data_type}.')
         elif not len(dim_vals) == self.ndims:
             raise KeyError('The data contains keys of length %d, but the kdims '
                            'only declare %d dimensions. Ensure that the number '
@@ -168,8 +170,8 @@ class MultiDimensionalMapping(Dimensioned):
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
-                raise KeyError('%s dimension value %s not in'
-                               ' specified dimension values.' % (dim, repr(val)))
+                raise KeyError('{} dimension value {} not in'
+                               ' specified dimension values.'.format(dim, repr(val)))
 
         # Updates nested data structures rather than simply overriding them.
         if (update and (dim_vals in self.data)
@@ -323,7 +325,7 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = asdim(dimension)
 
         if dimension in self.dimensions():
-            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+            raise Exception(f'{dimension.name} dimension already defined')
 
         if vdim and self._deep_indexable:
             raise Exception('Cannot add value dimension to object that is deep indexable')
@@ -401,7 +403,7 @@ class MultiDimensionalMapping(Dimensioned):
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
         else:
-            return super(MultiDimensionalMapping, self).dimension_values(dimension, expanded, flat)
+            return super().dimension_values(dimension, expanded, flat)
 
 
     def reindex(self, kdims=[], force=False):
@@ -433,7 +435,7 @@ class MultiDimensionalMapping(Dimensioned):
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set([d.name for d in self.kdims]).difference(kdims)
+        reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
 
@@ -481,12 +483,12 @@ class MultiDimensionalMapping(Dimensioned):
             dimensions = getattr(self, group)
             if dimensions:
                 group = aliases[group].split('_')[0]
-                info_str += '%s Dimensions: \n' % group.capitalize()
+                info_str += f'{group.capitalize()} Dimensions: \n'
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
-                info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
+                info_str += f'\t {d.pprint_label}: {dmin}...{dmax} \n'
         return info_str
 
 
@@ -881,7 +883,6 @@ class UniformNdMapping(NdMapping):
         Returns:
             DataFrame of columns corresponding to each dimension
         """
-        import pandas as pd
         if dimensions is None:
             outer_dimensions = self.kdims
             inner_dimensions = None

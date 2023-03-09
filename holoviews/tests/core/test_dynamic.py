@@ -1,9 +1,8 @@
 import uuid
 import time
-import sys
 from collections import deque
-from unittest import SkipTest
 
+import pytest
 import param
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
@@ -58,10 +57,8 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
 
     def test_simple_constructor_streams_dict_panel_widget(self):
-        if 'panel' not in sys.modules:
-            raise SkipTest('Panel not available')
-        import panel
-        DynamicMap(lambda x: x, streams=dict(x=panel.widgets.FloatSlider()))
+        import panel as pn
+        DynamicMap(lambda x: x, streams=dict(x=pn.widgets.FloatSlider()))
 
     def test_simple_constructor_streams_dict_parameter(self):
         test = ExampleParameterized()
@@ -969,7 +966,7 @@ class DynamicStreamReset(ComparisonTestCase):
 class TestPeriodicStreamUpdate(ComparisonTestCase):
 
     def test_periodic_counter_blocking(self):
-        class Counter(object):
+        class Counter:
             def __init__(self):
                 self.count = 0
             def __call__(self):
@@ -993,6 +990,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
         self.assertEqual(xval.x, 100)
 
+    @pytest.mark.flaky(max_runs=3)
     def test_periodic_param_fn_non_blocking(self):
         def callback(x): return Curve([1,2,3])
         xval = Stream.define('x',x=0)()

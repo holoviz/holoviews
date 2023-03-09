@@ -1,29 +1,20 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests of the helper functions in utils
 """
-from unittest import SkipTest
+from collections import OrderedDict
 
 from holoviews import notebook_extension
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import Store
 from holoviews.util import output, opts, OutputSettings, Options
-from holoviews.core import OrderedDict
 
 from holoviews.core.options import OptionTree
 from pyviz_comms import CommManager
 
-try:
-    from holoviews.plotting import mpl
-except:
-    mpl = None
+from holoviews.plotting import mpl
+from holoviews.plotting import bokeh
 
-try:
-    from holoviews.plotting import bokeh
-except:
-    bokeh = None
-
-BACKENDS = ['matplotlib'] + (['bokeh'] if bokeh else [])
+BACKENDS = ['matplotlib', 'bokeh']
 
 from ..utils import LoggingComparisonTestCase
 
@@ -34,16 +25,14 @@ class TestOutputUtil(ComparisonTestCase):
         notebook_extension(*BACKENDS)
         Store.current_backend = 'matplotlib'
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
-        if bokeh:
-            Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
+        Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
 
         super().setUp()
 
     def tearDown(self):
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
-        if bokeh:
-            Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
+        Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
@@ -60,15 +49,11 @@ class TestOutputUtil(ComparisonTestCase):
         self.assertEqual(OutputSettings.options.get('fig', None), 'png')
 
     def test_output_util_backend_string(self):
-        if bokeh is None:
-            raise SkipTest('Bokeh needed to test backend switch')
         self.assertEqual(OutputSettings.options.get('backend', None), None)
         output("backend='bokeh'")
         self.assertEqual(OutputSettings.options.get('backend', None), 'bokeh')
 
     def test_output_util_backend_kwargs(self):
-        if bokeh is None:
-            raise SkipTest('Bokeh needed to test backend switch')
         self.assertEqual(OutputSettings.options.get('backend', None), None)
         output(backend='bokeh')
         self.assertEqual(OutputSettings.options.get('backend', None), 'bokeh')

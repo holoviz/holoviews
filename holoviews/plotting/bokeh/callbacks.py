@@ -1,9 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import asyncio
+import base64
 import time
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 
@@ -14,7 +13,6 @@ from bokeh.models import (
 )
 from panel.io.state import state
 
-from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
     datetime_types, dimension_sanitizer, dt64_to_dt
@@ -27,10 +25,10 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from .util import convert_timestamp
+from .util import bokeh3, convert_timestamp
 
 
-class Callback(object):
+class Callback:
     """
     Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback
@@ -103,6 +101,9 @@ class Callback(object):
     _callbacks = {}
     _transforms = []
 
+    # Asyncio background task
+    _background_task = set()
+
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
@@ -137,7 +138,7 @@ class Callback(object):
         if self.handle_ids:
             handles = self._init_plot_handles()
             for handle_name in self.models:
-                if not (handle_name in handles):
+                if handle_name not in handles:
                     continue
                 handle = handles[handle_name]
                 cb_hash = (id(handle), id(type(self)))
@@ -233,7 +234,7 @@ class Callback(object):
         be the same as the model.
         """
         if not cb_obj:
-            raise Exception('Bokeh plot attribute %s could not be found' % spec)
+            raise Exception(f'Bokeh plot attribute {spec} could not be found')
         if model is None:
             model = cb_obj
         spec = spec.split('.')
@@ -273,7 +274,9 @@ class Callback(object):
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            asyncio.create_task(self.process_on_change())
+            task = asyncio.create_task(self.process_on_change())
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
 
     async def on_event(self, event):
         """
@@ -284,7 +287,9 @@ class Callback(object):
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            asyncio.create_task(self.process_on_event())
+            task = asyncio.create_task(self.process_on_event())
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
 
     async def process_on_event(self, timeout=None):
         """
@@ -310,7 +315,9 @@ class Callback(object):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        asyncio.create_task(self.process_on_event())
+        task = asyncio.create_task(self.process_on_event())
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
 
     async def process_on_change(self):
         # Give on_change time to process new events
@@ -343,7 +350,9 @@ class Callback(object):
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             self._prev_msg = msg
-        asyncio.create_task(self.process_on_change())
+        task = asyncio.create_task(self.process_on_change())
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
 
     def set_callback(self, handle):
         """
@@ -594,6 +603,23 @@ class RangeXYCallback(Callback):
         'y1': 'cb_obj.y1'
     }
 
+    _js_on_event = """
+    if (this._updating)
+        return
+    const plot = this.origin
+    const plots = plot.x_range.plots.concat(plot.y_range.plots)
+    for (const p of plots) {
+      const event = new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end)
+      event._updating = true
+      p.trigger_event(event)
+    }
+    """
+
+    def set_callback(self, handle):
+        super().set_callback(handle)
+        if not bokeh3:
+            handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
+
     def _process_msg(self, msg):
         data = {}
         if 'x0' in msg and 'x1' in msg:
@@ -737,7 +763,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, xdim)
                     try:
                         xfactors = list(np.array(xfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['x_selection'] = xfactors
         else:
@@ -752,7 +778,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, ydim)
                     try:
                         yfactors = list(np.array(yfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['y_selection'] = yfactors
         else:
@@ -911,6 +937,19 @@ class CDSCallback(Callback):
                 values = new_values
             elif any(isinstance(v, (int, float)) for v in values):
                 values = [np.nan if v is None else v for v in values]
+            elif (
+                isinstance(values, list)
+                and len(values) == 4
+                and values[2] in ("big", "little")
+                and isinstance(values[3], list)
+            ):
+                # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+                # This could be fixed in Bokeh 3.0, but has not been tested.
+                # Example:
+                # ['pm9vF9dSY8EAAADgPFNjwQAAAMAmU2PBAAAAAMtSY8E=','float64', 'little', [4]]
+                buffer = base64.decodebytes(values[0].encode())
+                dtype = np.dtype(values[1]).newbyteorder(values[2])
+                values = np.frombuffer(buffer, dtype)
             msg['data'][col] = values
         return self._transform(msg)
 

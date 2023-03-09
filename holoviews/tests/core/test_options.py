@@ -1,8 +1,6 @@
 import os
 import pickle
 
-from unittest import SkipTest
-
 import numpy as np
 import pytest
 
@@ -12,27 +10,15 @@ from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting              # noqa Register backends
+from holoviews import plotting
 
 Options.skip_invalid = False
 
-try:
-    # Needed a backend to register backend and options
-    from holoviews.plotting import mpl # noqa
-except:
-    pass
+# Needed a backend to register backend and options
+from holoviews.plotting import mpl # noqa
+from holoviews.plotting import bokeh # noqa
+from holoviews.plotting import plotly # noqa
 
-try:
-    # Needed to register backend  and options
-    from holoviews.plotting import bokeh # noqa
-except:
-    pass
-
-try:
-    # Needed to register backend  and options
-    from holoviews.plotting import plotly # noqa
-except:
-    pass
 
 class TestOptions(ComparisonTestCase):
 
@@ -207,8 +193,6 @@ class TestCycle(ComparisonTestCase):
 class TestOptionTree(ComparisonTestCase):
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest('Matplotlib backend not available.')
         super().setUp()
         self.original_option_groups = Options._option_groups[:]
         Options._option_groups = ['group1', 'group2']
@@ -244,9 +228,6 @@ class TestOptionTree(ComparisonTestCase):
         self.assertEqual(options.MyType['group2'].options, {'kw2':'value2'})
 
     def test_optiontree_inheritance(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
-
         options = OptionTree(groups=['group1', 'group2'])
 
         opts1 = Options(kw1='value1')
@@ -267,9 +248,6 @@ class TestOptionTree(ComparisonTestCase):
         """
         Tests for ordering problems manifested in issue #93
         """
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
-
         options = OptionTree(groups=['group1', 'group2'])
 
         opts3 = Options(kw3='value3')
@@ -293,8 +271,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
     """
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest('Matplotlib backend not available.')
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         options = Store.options()
@@ -345,9 +321,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         Test order of specification starting with general and moving
         to specific
         """
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
-
         options = self.initialize_option_tree()
 
         obj = Image(np.random.rand(10,10), group='SomeGroup')
@@ -372,9 +345,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         Test order of specification starting with general and moving
         to specific
         """
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
-
         options = self.initialize_option_tree()
 
         obj = Image(np.random.rand(10,10), group='SomeGroup', label='SomeLabel')
@@ -398,9 +368,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         Test order of specification starting with a specific option and
         then specifying a general one
         """
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
-
         options = self.initialize_option_tree()
         options.Image.SomeGroup = Options('style', alpha=0.2)
 
@@ -424,9 +391,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         Test order of specification starting with general and moving
         to specific
         """
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
-
         options = self.initialize_option_tree()
         options.Image.SomeGroup.SomeLabel = Options('style', alpha=0.2)
         obj = Image(np.random.rand(10,10), group='SomeGroup', label='SomeLabel')
@@ -467,8 +431,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         Checks customs inheritance backs off to default tree correctly
         simulating the %%opts cell magic.
         """
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("Custom magic inheritance test requires matplotlib")
         options = self.initialize_option_tree()
         options.Image.A.B = Options('style', alpha=0.2)
 
@@ -497,8 +459,6 @@ class TestStoreInheritance(ComparisonTestCase):
     """
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest('Matplotlib backend not available.')
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -569,9 +529,6 @@ class TestStoreInheritance(ComparisonTestCase):
         self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
     def test_style_transfer(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("test_style_transfer requires matplotlib")
-
         hist = self.hist.opts(style={'style1':'style_child'})
         hist2 = self.hist.opts()
         opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
@@ -585,8 +542,6 @@ class TestStoreInheritance(ComparisonTestCase):
 class TestOptionsMethod(ComparisonTestCase):
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest('Matplotlib backend not available.')
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -638,8 +593,6 @@ class TestOptionsMethod(ComparisonTestCase):
 class TestOptsMethod(ComparisonTestCase):
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest('Matplotlib backend not available.')
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -826,11 +779,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
     """
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("Cross background tests assumes matplotlib is available")
-        if 'bokeh' not in Store.renderers:
-            raise SkipTest("Cross background tests assumes bokeh is available.")
-
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -867,7 +815,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
 
-        super(TestCrossBackendOptions, self).tearDown()
+        super().tearDown()
 
 
     def test_mpl_bokeh_mpl(self):
@@ -973,20 +921,9 @@ class TestLookupOptions(ComparisonTestCase):
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
-        try:
-            import holoviews.plotting.matplotlib # noqa
-        except:
-            pass
-
-        try:
-            import holoviews.plotting.bokeh # noqa
-        except:
-            pass
-
-        try:
-            import holoviews.plotting.plotly # noqa
-        except:
-            pass
+        import holoviews.plotting.mpl
+        import holoviews.plotting.bokeh
+        import holoviews.plotting.plotly # noqa
 
         backends = Store.loaded_backends()
 
@@ -1030,11 +967,6 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
     """
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers:
-            raise SkipTest("Cross background tests assumes matplotlib is available")
-        if 'bokeh' not in Store.renderers:
-            raise SkipTest("Cross background tests assumes bokeh is available.")
-
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -1217,7 +1149,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         for f in self.cleanup:
             try:
                 os.remove(f)
-            except:
+            except Exception:
                 pass
 
     def test_raw_pickle(self):

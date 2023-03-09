@@ -34,7 +34,7 @@ class TestQuadMeshPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['z'], np.array([[np.NaN, 1, 2], [2, 3, 4]]))
 
     def test_quadmesh_state_inverted(self):
-        img = QuadMesh(([1, 2, 4], [0, 1], np.array([[0, 1, 2], [2, 3, 4]]))).options(
+        img = QuadMesh(([1, 2, 4], [0, 1], np.array([[0, 1, 2], [2, 3, 4]]))).opts(
             invert_axes=True)
         state = self._get_plot_state(img)
         self.assertEqual(state['data'][0]['x'], np.array([-0.5, .5, 1.5]))
@@ -48,6 +48,6 @@ class TestQuadMeshPlot(TestPlotlyPlot):
     def test_visible(self):
         element = QuadMesh(
             ([1, 2, 4], [0, 1], np.array([[0, 1, 2], [2, 3, 4]]))
-        ).options(visible=False)
+        ).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)

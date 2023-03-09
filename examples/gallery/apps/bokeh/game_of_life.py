@@ -91,6 +91,6 @@ panel = pn.pane.HoloViews(plot, center=True, widget_location='right')
 
 def advance():
     counter.event(counter=counter.counter+1)
-panel.add_periodic_callback(advance, 50)
+pn.state.add_periodic_callback(advance, period=50, start=False)
 
 panel.servable('Game of Life')

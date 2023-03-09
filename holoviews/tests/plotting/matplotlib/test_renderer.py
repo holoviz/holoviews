@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test cases for rendering exporters
 """
@@ -9,21 +8,17 @@ from unittest import SkipTest
 
 import numpy as np
 import param
+import panel as pn
+from matplotlib import style
 
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable, Store,
+from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
                        GridSpace, Table, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream
+from holoviews.plotting.mpl import MPLRenderer, CurvePlot
+from holoviews.plotting.renderer import Renderer
+from panel.widgets import DiscreteSlider, Player, FloatSlider
 from pyviz_comms import CommManager
-
-try:
-    import panel as pn
-
-    from holoviews.plotting.mpl import MPLRenderer, CurvePlot
-    from holoviews.plotting.renderer import Renderer
-    from panel.widgets import DiscreteSlider, Player, FloatSlider
-except:
-    pn = None
 
 
 class MPLRendererTest(ComparisonTestCase):
@@ -33,9 +28,6 @@ class MPLRendererTest(ComparisonTestCase):
     """
 
     def setUp(self):
-        if 'matplotlib' not in Store.renderers and pn is not None:
-            raise SkipTest("Matplotlib and Panel required to test rendering.")
-
         self.basename = 'no-file'
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
@@ -62,12 +54,14 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (288, 288))
 
     def test_get_size_row_plot(self):
-        plot = self.renderer.get_plot(self.image1+self.image2)
+        with style.context("default"):
+            plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (576, 257))
 
     def test_get_size_column_plot(self):
-        plot = self.renderer.get_plot((self.image1+self.image2).cols(1))
+        with style.context("default"):
+            plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (288, 509))
 
@@ -91,7 +85,7 @@ class MPLRendererTest(ComparisonTestCase):
         devnull = subprocess.DEVNULL
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
-        except:
+        except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
         data, metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
@@ -168,7 +162,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual(y[2], 3.1)
 
     def test_render_dynamicmap_with_stream(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
@@ -182,7 +176,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual(y[2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
-        stream = Stream.define(str('Custom'), y=2)()
+        stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import param
@@ -22,6 +20,7 @@ from .styles import (
     base_properties, line_properties, fill_properties, text_properties,
     rgba_tuple
 )
+from .util import bokeh3
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
@@ -189,12 +188,15 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if nodes.dtype.kind not in 'uif':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
-            layout = {str(node_indices[k]): (y, x) if self.invert_axes else (x, y)
+            layout = {node_indices[k]: (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(nodes, node_positions)}
         else:
             index = nodes.astype(np.int32)
-            layout = {str(k): (y, x) if self.invert_axes else (x, y)
+            layout = {k: (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(index, node_positions)}
+        if not bokeh3:
+            layout = {str(k): v for k, v in layout.items()}
+
         point_data = {'index': index}
 
         # Handle node colors
@@ -373,6 +375,11 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             if self.handles['hover'].renderers == 'auto':
                 self.handles['hover'].renderers = []
             self.handles['hover'].renderers.append(renderer)
+        if self.colorbar:
+            for k, v in list(self.handles.items()):
+                if not k.endswith('color_mapper'):
+                    continue
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
 
 
 

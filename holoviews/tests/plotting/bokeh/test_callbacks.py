@@ -4,12 +4,12 @@ from collections import deque, namedtuple
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 import pytest
 import pyviz_comms as comms
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.core.util import pd
 from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (
@@ -17,20 +17,17 @@ from holoviews.streams import (
     PlotReset, Selection1D, RangeXY, PlotSize, CDSStream, SingleTap
 )
 
-try:
-    from bokeh.events import Tap
-    from bokeh.io.doc import set_curdoc
-    from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
-    from holoviews.plotting.bokeh.callbacks import (
-        Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-        BoxEditCallback, PointerXCallback, TapCallback
-    )
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
-    bokeh_server_renderer = BokehRenderer.instance(mode='server')
-    bokeh_renderer = BokehRenderer.instance()
-except:
-    bokeh_renderer = None
-    bokeh_server_renderer = None
+from bokeh.events import Tap
+from bokeh.io.doc import set_curdoc
+from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
+from holoviews.plotting.bokeh.callbacks import (
+    Callback, CDSCallback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
+    BoxEditCallback, PointerXCallback, TapCallback
+)
+from holoviews.plotting.bokeh.renderer import BokehRenderer
+
+bokeh_server_renderer = BokehRenderer.instance(mode='server')
+bokeh_renderer = BokehRenderer.instance()
 
 
 class CallbackTestCase(ComparisonTestCase):
@@ -151,7 +148,7 @@ class TestResetCallback(CallbackTestCase):
 class TestPointerCallbacks(CallbackTestCase):
 
     def test_pointer_x_datetime_out_of_bounds(self):
-        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)]).opts(padding=0)
         PointerX(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
@@ -290,6 +287,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
+    @pytest.mark.flaky(max_runs=3)
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
@@ -331,7 +329,7 @@ class TestEditToolCallbacks(CallbackTestCase):
     def test_point_draw_shared_datasource_callback(self):
         points = Points([1, 2, 3])
         table = Table(points.data, ['x', 'y'])
-        layout = (points + table).options(shared_datasource=True, clone=False)
+        layout = (points + table).opts(shared_datasource=True, clone=False)
         PointDraw(source=points)
         self.assertIs(points.data, table.data)
         plot = bokeh_renderer.get_plot(layout)
@@ -438,3 +436,14 @@ class TestServerCallbacks(CallbackTestCase):
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
+
+
+def test_msg_with_base64_array():
+    # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+    data_before = ["AAAAAAAAJEAAAAAAAAA0QAAAAAAAAD5AAAAAAAAAREA=", "float64", "little", [4]]
+    msg_before = {"data": {"x": data_before}}
+    msg_after = CDSCallback(None, None, None)._process_msg(msg_before)
+    data_after = msg_after["data"]["x"]
+
+    data_expected = np.array([10.0, 20.0, 30.0, 40.0])
+    assert np.equal(data_expected, data_after).all()

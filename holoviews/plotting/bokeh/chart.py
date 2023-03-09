@@ -24,7 +24,7 @@ from .styles import (
     expand_batched_style, base_properties, line_properties, fill_properties,
     mpl_to_bokeh, rgb2hex
 )
-from .util import LooseVersion, bokeh_version, categorize_array
+from .util import categorize_array
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -256,12 +256,12 @@ class VectorFieldPlot(ColorbarPlot):
                     magnitudes = magnitudes / max_magnitude
             if self.rescale_lengths:
                 base_dist = get_min_distance(element)
-                magnitudes *= base_dist
+                magnitudes = magnitudes * base_dist
         else:
             magnitudes = np.ones(len(element))
             if self.rescale_lengths:
                 base_dist = get_min_distance(element)
-                magnitudes *= base_dist
+                magnitudes = magnitudes * base_dist
 
         return magnitudes
 
@@ -502,7 +502,7 @@ class SideHistogramPlot(HistogramPlot):
         Returns a Bokeh glyph object.
         """
         ret = super()._init_glyph(plot, mapping, properties)
-        if not 'field' in mapping.get('fill_color', {}):
+        if "field" not in mapping.get("fill_color", {}):
             return ret
         dim = mapping['fill_color']['field']
         sources = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
@@ -573,8 +573,8 @@ class ErrorPlot(ColorbarPlot):
             if prop not in properties:
                 continue
             pval = properties.pop(prop)
-            line_prop = 'line_%s' % prop
-            fill_prop = 'fill_%s' % prop
+            line_prop = f'line_{prop}'
+            fill_prop = f'fill_{prop}'
             if line_prop not in properties:
                 properties[line_prop] = pval
             if fill_prop not in properties and fill_prop in self.style_opts:
@@ -859,7 +859,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Enable legend if colormapper is categorical
         cmapper = cmapping['color']['transform']
-        legend_prop = 'legend_field' if bokeh_version >= LooseVersion('1.3.5') else 'legend'
+        legend_prop = 'legend_field'
         if ('color' in cmapping and self.show_legend and
             isinstance(cmapper, CategoricalColorMapper)):
             mapping[legend_prop] = cdim.name

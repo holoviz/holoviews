@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from nbsite.shared_conf import *
-
-# Declare information specific to this project.
-project = u'HoloViews'
-authors = u'HoloViz developers'
-copyright = u'2022 ' + authors
-description = 'Stop plotting your data - annotate your data and let it visualize itself.'
-
 import param
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
+
+from nbsite.shared_conf import *
+
+# Declare information specific to this project.
+project = 'HoloViews'
+authors = 'HoloViz developers'
+copyright = '2005 ' + authors
+description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
 import holoviews
 version = release = base_version(holoviews.__version__)
@@ -47,6 +47,7 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
+    "navbar_end": ["navbar-icon-links"],
     'google_analytics_id': 'UA-61554933-1',
 }
 
@@ -94,6 +95,7 @@ html_context.update({
     "last_release": f"v{'.'.join(holoviews.__version__.split('.')[:3])}",
     'github_user': 'holoviz',
     'github_repo': 'holoviews',
+    "default_mode": "light"
 })
 
 # Override the Sphinx default title that appends `documentation`
