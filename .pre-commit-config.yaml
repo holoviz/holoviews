@@ -1,6 +1,7 @@
 # This is the configuration for pre-commit, a local framework for managing pre-commit hooks
 #   Check out the docs at: https://pre-commit.com/
 
+exclude: (\.min\.js$|\.svg$)
 default_stages: [commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -25,3 +26,9 @@ repos:
     rev: v0.1.6
     hooks:
       - id: clean-notebook
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.4
+    hooks:
+    - id: codespell
+      additional_dependencies:
+        - tomli
