@@ -832,7 +832,7 @@ class DynamicMap(HoloMap):
     def unbounded(self):
         """
         Returns a list of key dimensions that are unbounded, excluding
-        stream parameters. If any of theses key dimensions are
+        stream parameters. If any of these key dimensions are
         unbounded, the DynamicMap as a whole is also unbounded.
         """
         unbounded_dims = []
