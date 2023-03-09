@@ -45,8 +45,7 @@ class TestCurvePlot(TestBokehPlot):
 
     def test_cyclic_palette_curves(self):
         palette = Palette('Set1')
-        opts = dict(color=palette)
-        hmap = HoloMap({i: NdOverlay({j: Curve(np.random.rand(3)).opts(style=opts)
+        hmap = HoloMap({i: NdOverlay({j: Curve(np.random.rand(3)).opts(color=palette)
                                       for j in range(3)})
                         for i in range(3)})
         colors = palette[3].values
@@ -106,7 +105,7 @@ class TestCurvePlot(TestBokehPlot):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
-        obj = obj.opts(plot=opts)
+        obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')], 'nearest')
 
     def test_curve_categorical_xaxis(self):

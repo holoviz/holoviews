@@ -161,7 +161,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
-        points = Points(data, vdims=['z']).opts(plot=dict(size_index=2))
+        points = Points(data, vdims=['z']).opts(size_index=2)
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
