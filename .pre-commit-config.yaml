@@ -1,7 +1,7 @@
 # This is the configuration for pre-commit, a local framework for managing pre-commit hooks
 #   Check out the docs at: https://pre-commit.com/
 
-exclude: (\.min\.js$|\.svg$)
+exclude: (\.min\.js$|\.svg$|\.html$)
 default_stages: [commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
