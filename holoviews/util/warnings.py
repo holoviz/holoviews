@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import inspect
 import os
 import warnings
@@ -17,16 +15,14 @@ __all__ = (
 )
 
 
-def warn(
-    message: str, category: type[Warning] | None = None, stacklevel: int | None = None
-) -> None:
+def warn(message, category=None, stacklevel=None):
     if stacklevel is None:
         stacklevel = find_stack_level()
 
     warnings.warn(message, category, stacklevel=stacklevel)
 
 
-def find_stack_level() -> int:
+def find_stack_level():
     """
     Find the first place in the stack that is not inside Holoviews and Param.
     Inspired by: pandas.util._exceptions.find_stack_level
@@ -53,13 +49,7 @@ def find_stack_level() -> int:
     return stacklevel
 
 
-def deprecated(
-    remove_version: Version | str,
-    old: str,
-    new: str | None = None,
-    extra: str | None = None,
-) -> None:
-
+def deprecated(remove_version, old, new=None, extra=None):
     import holoviews as hv
 
     current_version = Version(hv.__version__)
