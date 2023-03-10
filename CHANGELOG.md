@@ -1,3 +1,14 @@
+Version 1.16.0
+==============
+** 2023 **
+
+
+Removals:
+- Raise DataError for non-string column names in DataFrame ([#5653](https://github.com/holoviz/holoviews/pull/5653))
+- Remove deprecated tilesources ([#5653](https://github.com/holoviz/holoviews/pull/5653))
+- Removed support for apply_groups for old option groups signature ([#5497](https://github.com/holoviz/holoviews/pull/5497))
+
+
 Version 1.15.4
 ==============
 **January 16, 2023**
