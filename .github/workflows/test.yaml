@@ -72,11 +72,12 @@ jobs:
           conda-mamba: mamba
         id: install
       - name: Pandas 2.0 install
-        if: steps.install.outputs.cache-hit != 'true' && ${{ matrix.pandas-version }} == '2'
+        if: steps.install.outputs.cache-hit != 'true' && matrix.pandas-version == '2'
         run: |
           conda activate test-environment
-          conda uninstall pandas --force --offline -y
+          conda uninstall pandas dask dask-core --force --offline -y
           mamba install pandas -c conda-forge/label/pandas_rc -y
+          mamba install dask-core -y
       - name: bokeh sampledata
         run: |
           conda activate test-environment
