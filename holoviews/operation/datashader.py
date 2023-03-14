@@ -781,7 +781,7 @@ class spikes_aggregate(LineAggregationOperation):
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
-            df[x.name] = cast_array_to_int64(df[x.name])
+            df[x.name] = cast_array_to_int64(df[x.name].astype('datetime64[ns]'))
 
         params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
