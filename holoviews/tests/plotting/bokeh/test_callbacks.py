@@ -407,7 +407,6 @@ class TestServerCallbacks(CallbackTestCase):
                                     'value': points.columns()})
 
     def test_rangexy_datetime(self):
-        # Raises a warning because makeTimeDataFrame isn't part of the public API.
         curve = Curve(pd._testing.makeTimeDataFrame(), 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
