@@ -877,7 +877,7 @@ class Compositor(param.Parameterized):
        The overlay pattern to be processed. An overlay pattern is a
        sequence of elements specified by dotted paths separated by * .
 
-       For instance the following pattern specifies three overlayed
+       For instance the following pattern specifies three overlaid
        matrices with values of 'RedChannel', 'GreenChannel' and
        'BlueChannel' respectively:
 

@@ -254,7 +254,7 @@ class Polygons(Contours):
     for each coordinate array to be split into a multi-geometry
     through NaN-separators. Each sub-geometry separated by the NaNs
     therefore has an unambiguous mapping to a list of holes. If a
-    (multi-)polygon has no holes, the 'holes' key may be ommitted.
+    (multi-)polygon has no holes, the 'holes' key may be omitted.
 
     Any value dimensions stored on a Polygons geometry must be scalar,
     just like the Contours element. Since not all formats allow

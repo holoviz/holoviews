@@ -700,7 +700,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
 
-        # Check if elements should be overlayed in geographic coordinates using mapbox
+        # Check if elements should be overlaid in geographic coordinates using mapbox
         #
         # Pass this through to generate_plot to build geo version of plot
         for _, el in items:

@@ -226,7 +226,7 @@ class VSpan(Annotation):
 
 
 class HSpan(Annotation):
-    """Horziontal span annotation at the given position."""
+    """Horizontal span annotation at the given position."""
 
     group = param.String(default='HSpan', constant=True)
 

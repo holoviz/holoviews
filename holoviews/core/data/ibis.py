@@ -280,7 +280,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
-        # aggregate the necesary dimensions
+        # aggregate the necessary dimensions
         index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in dataset.kdims if kdim not in index_dims]
 

@@ -844,7 +844,7 @@ class TestBufferArrayStream(ComparisonTestCase):
 
     def test_buffer_array_send_verify_shape_fail(self):
         buff = Buffer(np.array([[0, 1]]))
-        error = "Streamed array data expeced to have 2 columns, got 3."
+        error = "Streamed array data expected to have 2 columns, got 3."
         with self.assertRaisesRegex(ValueError, error):
             buff.send(np.array([[1, 2, 3]]))
 
