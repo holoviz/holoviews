@@ -37,10 +37,16 @@ jobs:
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
         bokeh-version: ['2', '3']
+        pandas-version: ['1']
         exclude:
             # Bokeh 3 does not support Python 3.7
           - bokeh-version: '3'
             python-version: '3.7'
+        include:
+          - pandas-version: '2'
+            bokeh-version: '3'
+            python-version: '3.10'
+            os: 'ubuntu-latest'
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
       run:
@@ -56,7 +62,7 @@ jobs:
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
-          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
+          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}_pandas${{ matrix.pandas-version }}
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
@@ -65,6 +71,12 @@ jobs:
           conda-update: true
           conda-mamba: mamba
         id: install
+      - name: Pandas 2.0 install
+        if: steps.install.outputs.cache-hit != 'true'
+        run: |
+          conda activate test-environment
+          conda uninstall pandas --force --offline -y
+          mamba install pandas -c conda-forge/label/pandas_rc -y
       - name: bokeh sampledata
         run: |
           conda activate test-environment
