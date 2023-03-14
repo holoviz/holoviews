@@ -27,7 +27,7 @@ jobs:
       - name: pre-commit
         uses: pre-commit/action@v3.0.0
   test_suite:
-    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, ${{ matrix.os }}
+    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, Pandas ${{ matrix.pandas-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -52,7 +52,7 @@ jobs:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }} tests"
+      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }} - Pandas ${{ matrix.pandas-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
@@ -72,7 +72,7 @@ jobs:
           conda-mamba: mamba
         id: install
       - name: Pandas 2.0 install
-        if: steps.install.outputs.cache-hit != 'true'
+        if: steps.install.outputs.cache-hit != 'true' && ${{ matrix.pandas-version }} == '2'
         run: |
           conda activate test-environment
           conda uninstall pandas --force --offline -y
