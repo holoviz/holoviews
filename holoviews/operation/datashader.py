@@ -781,7 +781,7 @@ class spikes_aggregate(LineAggregationOperation):
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
-            df[x.name] = cast_array_to_int64(df[x.name].astype('datetime64[us]'))
+            df[x.name] = cast_array_to_int64(df[x.name])
 
         params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
@@ -820,13 +820,13 @@ class geom_aggregate(AggregationOperation):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
-        df = element.interface.as_dframe(element)
+        df = element.interface.as_dframe(element).copy()
         if xtype == 'datetime':
-            df[x0d.name] = cast_array_to_int64(df[x0d.name].astype('datetime64[us]'))
-            df[x1d.name] = cast_array_to_int64(df[x1d.name].astype('datetime64[us]'))
+            df[x0d.name] = cast_array_to_int64(df[x0d.name].astype('datetime64[ns]'))
+            df[x1d.name] = cast_array_to_int64(df[x1d.name].astype('datetime64[ns]'))
         if ytype == 'datetime':
-            df[y0d.name] = cast_array_to_int64(df[y0d.name].astype('datetime64[us]'))
-            df[y1d.name] = cast_array_to_int64(df[y1d.name].astype('datetime64[us]'))
+            df[y0d.name] = cast_array_to_int64(df[y0d.name].astype('datetime64[ns]'))
+            df[y1d.name] = cast_array_to_int64(df[y1d.name].astype('datetime64[ns]'))
 
         if isinstance(agg_fn, ds.count_cat) and df[agg_fn.column].dtype.name != 'category':
             df[agg_fn.column] = df[agg_fn.column].astype('category')
