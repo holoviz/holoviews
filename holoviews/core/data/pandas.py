@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
-from ...util._exception import deprecation_warning
 from .interface import Interface, DataError
 from ..dimension import dimension_name, Dimension
 from ..element import Element
@@ -60,9 +59,8 @@ class PandasInterface(Interface):
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
             if any(not isinstance(d, (str, Dimension)) for d in kdims+vdims):
-                deprecation_warning(
-                    "Having a non-string as a column name in a DataFrame is deprecated "
-                    "and will not be supported in Holoviews version 1.16."
+                raise DataError(
+                    "Having a non-string as a column name in a DataFrame is not supported."
                 )
 
             # Handle reset of index if kdims reference index by name
@@ -74,9 +72,6 @@ class PandasInterface(Interface):
                        for name in index_names):
                     data = data.reset_index()
                     break
-            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
-                raise DataError("pandas DataFrame column names used as dimensions "
-                                "must be strings not integers.", cls)
 
             if kdims:
                 kdim = dimension_name(kdims[0])
