@@ -27,7 +27,7 @@ from .ibis import IbisInterface               # noqa (API import)
 from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
-from .pandas import PandasInterface           # noqa (API import)
+from .pandas import PandasApi, PandasInterface        # noqa (API import)
 from .spatialpandas import SpatialPandasInterface     # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
@@ -124,12 +124,7 @@ class DataConversion:
             else:
                 selected = self._element
         else:
-            df_interfaces = tuple(
-                v
-                for k, v in Interface.interfaces.items()
-                if k.lower() in ('dataframe', 'geodataframe')
-            )
-            if issubclass(self._element.interface, df_interfaces):
+            if issubclass(self._element.interface, PandasApi):
                 ds_dims = self._element.dimensions()
                 ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
                             for d in groupby+kdims]

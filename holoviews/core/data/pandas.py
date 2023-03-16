@@ -14,7 +14,20 @@ from .. import util
 from .util import finite_range
 
 
-class PandasInterface(Interface):
+class PandasApi:
+    """
+    This class is used to describe the interface as having a pandas-like API.
+
+    The reason to have this class is that it is not always
+    possible to directly inherit from the PandasInterface.
+
+    This class should not have any logic as it should be used like:
+        if issubclass(interface, PandasApi):
+            ...
+    """
+
+
+class PandasInterface(Interface, PandasApi):
 
     types = (pd.DataFrame,)
 
