@@ -54,7 +54,7 @@ class TriSurface(Element3D, Points):
     group = param.String(default='TriSurface', constant=True)
 
     kdims = param.List(default=[
-        Dimension('x'), Dimension('y'), Dimension('z')], doc="""
+        Dimension('x'), Dimension('y'), Dimension('z')], bounds=(3, 3), doc="""
         The key dimensions of a TriSurface represent the 3D coordinates
         of each point.""")
 
