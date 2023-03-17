@@ -118,7 +118,7 @@ class Scatter3D(Element3D, Points):
 
     kdims = param.List(default=[Dimension('x'),
                                 Dimension('y'),
-                                Dimension('z')])
+                                Dimension('z')], bounds=(3, 3))
 
     vdims = param.List(default=[], doc="""
         Scatter3D can have optional value dimensions,
