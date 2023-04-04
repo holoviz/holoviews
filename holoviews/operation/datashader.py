@@ -820,7 +820,9 @@ class geom_aggregate(AggregationOperation):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
-        df = element.interface.as_dframe(element).copy()
+        df = element.interface.as_dframe(element)
+        if xtype == 'datetime' or ytype == 'datetime':
+            df = df.copy()
         if xtype == 'datetime':
             df[x0d.name] = cast_array_to_int64(df[x0d.name].astype('datetime64[ns]'))
             df[x1d.name] = cast_array_to_int64(df[x1d.name].astype('datetime64[ns]'))
