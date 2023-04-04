@@ -776,7 +776,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         appropriate embedded layout_types. The first element of the
         returned tuple is a dictionary of all the LayoutPlots indexed
         by row and column. The second dictionary in the tuple supplies
-        the grid indicies needed to instantiate the axes for each
+        the grid indices needed to instantiate the axes for each
         LayoutPlot.
         """
         layout_items = layout.grid_items()

@@ -1,7 +1,7 @@
 """
 Supplies Layer and related classes that allow overlaying of Views,
 including Overlay. A Layer is the final extension of View base class
-that allows Views to be overlayed on top of each other.
+that allows Views to be overlaid on top of each other.
 
 Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.

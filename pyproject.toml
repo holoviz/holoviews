@@ -65,3 +65,8 @@ unfixable = [
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = ["RUF001", "RUF002", "RUF003"]  # Ambiguous unicode character
+
+[tool.codespell]
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"
+skip = "doc/generate_modules.py"
+write-changes = true

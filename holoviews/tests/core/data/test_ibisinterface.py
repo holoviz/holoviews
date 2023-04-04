@@ -66,7 +66,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
         )
 
-        # Create table with aliased dimenion names
+        # Create table with aliased dimension names
         self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
         self.alias_vdims = [("weight", "Weight"), ("height", "Height")]
         alias_df = pd.DataFrame(

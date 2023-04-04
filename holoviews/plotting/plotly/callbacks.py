@@ -29,7 +29,7 @@ class PlotlyCallbackMetaClass(type):
 
         # Store weak reference to the callback instance in the _instances
         # WeakValueDictionary. This will allow instances to be garbage collected and
-        # the references will be automatically removed from the colleciton when this
+        # the references will be automatically removed from the collection when this
         # happens.
         cls.instances[inst.plot.trace_uid] = inst
 

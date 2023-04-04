@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 An example of a simple player widget animating an Image demonstrating
-how to connnect a simple HoloViews plot with custom widgets and
+how to connect a simple HoloViews plot with custom widgets and
 combine them into a bokeh layout.
 
 The app can be served using:

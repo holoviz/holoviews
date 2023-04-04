@@ -105,7 +105,7 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
         self.log_handler.assertContains('WARNING', substr)
 
     def test_callable_lambda_extras_kwargs(self):
-        substr = "['x'] overriden by keywords"
+        substr = "['x'] overridden by keywords"
         self.assertEqual(Callable(lambda x,y: x+y)(3,5,x=10), 15)
         self.log_handler.assertEndsWith('WARNING', substr)
 

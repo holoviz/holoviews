@@ -167,7 +167,7 @@ class SankeyPlot(GraphPlot):
 
         is_outer_inner = self.label_position in ['outer', 'inner']
 
-        # initalize label x-locations
+        # initialize label x-locations
         if self.label_position in ['right', 'outer']:
             xs = np.array([node['x1'] for node in nodes]) + offset
         else: # ['left', 'inner']

@@ -83,7 +83,7 @@ class ErrorBars(Selection1DExpr, Chart):
     location along the x-axis and the first value dimension
     corresponds to the location along the y-axis and one or two
     extra value dimensions corresponding to the symmetric or
-    asymetric errors either along x-axis or y-axis. If two value
+    asymmetric errors either along x-axis or y-axis. If two value
     dimensions are given, then the last value dimension will be
     taken as symmetric errors. If three value dimensions are given
     then the last two value dimensions will be taken as negative and
@@ -105,7 +105,7 @@ class ErrorBars(Selection1DExpr, Chart):
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
-        Range of the y-dimension includes the symmetric or assymetric
+        Range of the y-dimension includes the symmetric or asymmetric
         error.
 
         Args:
@@ -142,7 +142,7 @@ class Spread(ErrorBars):
     confidence band in a 1D coordinate system. The key dimension(s)
     corresponds to the location along the x-axis and the value
     dimensions define the location along the y-axis as well as the
-    symmetric or assymetric spread.
+    symmetric or asymmetric spread.
     """
 
     group = param.String(default='Spread', constant=True)

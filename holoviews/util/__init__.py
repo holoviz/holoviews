@@ -827,7 +827,7 @@ def render(obj, backend=None, **kwargs):
 
     Returns
     -------
-    renderered:
+    rendered:
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
