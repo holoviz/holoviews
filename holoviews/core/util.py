@@ -2108,7 +2108,7 @@ def dt_to_int(value, time_unit='us'):
         try:
             value = np.datetime64(value, 'ns')
             tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns'))
-            return value.tolist()/tscale
+            return int(value.tolist() / tscale)
         except Exception:
             # If it can't handle ns precision fall back to datetime
             value = value.tolist()
