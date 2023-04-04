@@ -41,15 +41,15 @@ jobs:
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
         bokeh-version: ['2', '3']
-        pandas-version: ['1']
+        pandas-version: ['2']
         exclude:
             # Bokeh 3 does not support Python 3.7
           - bokeh-version: '3'
             python-version: '3.7'
         include:
-          - pandas-version: '2'
+          - pandas-version: '1'
             bokeh-version: '3'
-            python-version: '3.10'
+            python-version: '3.8'
             os: 'ubuntu-latest'
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
@@ -75,13 +75,11 @@ jobs:
           conda-update: true
           conda-mamba: mamba
         id: install
-      - name: Pandas 2.0 install
-        if: steps.install.outputs.cache-hit != 'true' && matrix.pandas-version == '2'
+      - name: Pandas 1.5 install
+        if: steps.install.outputs.cache-hit != 'true' && matrix.pandas-version == '1'
         run: |
           conda activate test-environment
-          conda uninstall pandas dask dask-core --force --offline -y
-          mamba install pandas -c conda-forge/label/pandas_rc -y
-          mamba install dask-core -y
+          mamba install pandas=1.5 -y
       - name: bokeh sampledata
         run: |
           conda activate test-environment
