@@ -12,6 +12,11 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 from .util import finite_range
 
+if Version(pd.__version__) == Version("2.0.0"):
+    # https://github.com/pandas-dev/pandas/issues/52451
+    from pandas._libs import hashtable
+    pd.core.reshape.merge._factorizers[np.intc] = hashtable.Int32Factorizer
+
 
 class PandasAPI:
     """
