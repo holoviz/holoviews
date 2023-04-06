@@ -59,6 +59,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'scipy',
     'selenium',
     'numpy <1.24',  # Upper pin because of numba error
+    'pandas <2.0',  # xarray does not support pandas 2.0 yet: https://github.com/pydata/xarray/issues/7716
 ]
 
 # Packages not working on python 3.11 because of numba
