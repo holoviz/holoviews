@@ -50,6 +50,7 @@ jobs:
           - pandas-version: '2'
             bokeh-version: '3'
             python-version: '3.10'
+            os: 'ubuntu-latest'
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
       run:
