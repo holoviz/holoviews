@@ -77,14 +77,14 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         raise SkipTest("Temporarily skipped")
 
     @unittest.skipIf(
-        pandas_version >= Version("2.0rc0"),
+        pandas_version >= Version("2.0"),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht(self):
         super().test_dataset_aggregate_ht()
 
     @unittest.skipIf(
-        pandas_version >= Version("2.0rc0"),
+        pandas_version >= Version("2.0"),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht_alias(self):
