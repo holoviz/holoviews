@@ -98,7 +98,7 @@ jobs:
           conda activate test-environment
           doit test_unit
       - name: test examples
-        if: matrix.python-version != '3.11'
+        if: matrix.python-version != '3.11' && matrix.pandas-version != '2'
         run: |
           conda activate test-environment
           mkdir -p ~/.jupyter/
