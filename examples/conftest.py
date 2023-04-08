@@ -1,3 +1,5 @@
+import sys
+
 import pandas as pd
 from packaging.version import Version
 
@@ -8,7 +10,15 @@ collect_ignore_glob = [
 ]
 
 # Add sys.version for numba
-# if sys.version_info == (3, 11):
+if sys.version_info == (3, 11):
+    collect_ignore_glob += [
+        # numba not supported on Python 3.11
+        "15-Large_Data",
+        "16-Streaming_Data",
+        "17-Dashboards",
+        "Network_Graphs",
+        "Linked_Brushing",
+    ]
 
 if Version(pd.__version__) >= Version("2.0"):
     collect_ignore_glob += [
@@ -16,4 +26,5 @@ if Version(pd.__version__) >= Version("2.0"):
         "user_guide",
         # Pandas bug: https://github.com/pandas-dev/pandas/issues/52451
         "reference/elements/*/TriMesh.ipynb",
+        "point_draw_triangulate",
     ]
