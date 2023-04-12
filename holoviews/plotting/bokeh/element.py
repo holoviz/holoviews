@@ -561,7 +561,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.border is not None:
             for p in ['left', 'right', 'top', 'bottom']:
                 plot_props['min_border_'+p] = self.border
-        lod = dict(self.params["lod"].default, **self.lod) if "lod" in self.param else self.lod
+        lod = dict(self.param["lod"].default, **self.lod) if "lod" in self.param else self.lod
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
         return plot_props
