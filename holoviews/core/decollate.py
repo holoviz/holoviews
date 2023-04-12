@@ -42,7 +42,7 @@ def to_expr_extract_streams(
             not in a container
     Returns:
         HoloviewsExpr expression representing hvobj if hvobj is dynamic. Otherwise,
-        reutrn hvobj itself
+        return hvobj itself
     """
     if isinstance(hvobj, DynamicMap):
         args = []

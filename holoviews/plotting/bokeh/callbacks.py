@@ -102,7 +102,7 @@ class Callback:
     _transforms = []
 
     # Asyncio background task
-    _baskground_task = set()
+    _background_task = set()
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -275,8 +275,8 @@ class Callback:
             self._active = True
             self._set_busy(True)
             task = asyncio.create_task(self.process_on_change())
-            self.background_task.add(task)
-            task.add_done_callback(self._baskground_task.discard)
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
 
     async def on_event(self, event):
         """
@@ -288,8 +288,8 @@ class Callback:
             self._active = True
             self._set_busy(True)
             task = asyncio.create_task(self.process_on_event())
-            self.background_task.add(task)
-            task.add_done_callback(self._baskground_task.discard)
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
 
     async def process_on_event(self, timeout=None):
         """
@@ -316,8 +316,8 @@ class Callback:
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
         task = asyncio.create_task(self.process_on_event())
-        self.background_task.add(task)
-        task.add_done_callback(self._baskground_task.discard)
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
 
     async def process_on_change(self):
         # Give on_change time to process new events
@@ -351,8 +351,8 @@ class Callback:
             self.on_msg(msg)
             self._prev_msg = msg
         task = asyncio.create_task(self.process_on_change())
-        self.background_task.add(task)
-        task.add_done_callback(self._baskground_task.discard)
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
 
     def set_callback(self, handle):
         """

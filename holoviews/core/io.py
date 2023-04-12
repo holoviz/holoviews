@@ -100,7 +100,7 @@ class Exporter(param.ParameterizedFunction):
       high-dimensional key of values associated with dimension labels.
 
       The returned dictionary must have string keys and simple
-      literals that may be conviently used for dictionary-style
+      literals that may be conveniently used for dictionary-style
       indexing. Returns an empty dictionary by default.""")
 
     info_fn = param.Callable(lambda x: {'repr':repr(x)}, doc="""

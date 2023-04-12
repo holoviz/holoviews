@@ -54,7 +54,7 @@ class TriSurface(Element3D, Points):
     group = param.String(default='TriSurface', constant=True)
 
     kdims = param.List(default=[
-        Dimension('x'), Dimension('y'), Dimension('z')], doc="""
+        Dimension('x'), Dimension('y'), Dimension('z')], bounds=(3, 3), doc="""
         The key dimensions of a TriSurface represent the 3D coordinates
         of each point.""")
 
@@ -118,7 +118,7 @@ class Scatter3D(Element3D, Points):
 
     kdims = param.List(default=[Dimension('x'),
                                 Dimension('y'),
-                                Dimension('z')])
+                                Dimension('z')], bounds=(3, 3))
 
     vdims = param.List(default=[], doc="""
         Scatter3D can have optional value dimensions,
@@ -140,7 +140,7 @@ class Path3D(Element3D, Path):
 
     kdims = param.List(default=[Dimension('x'),
                                 Dimension('y'),
-                                Dimension('z')])
+                                Dimension('z')], bounds=(3, 3))
 
     vdims = param.List(default=[], doc="""
         Path3D can have optional value dimensions.""")

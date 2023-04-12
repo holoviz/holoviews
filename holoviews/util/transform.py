@@ -294,7 +294,7 @@ class dim:
         if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
             raise ValueError("Cannot call method on %r expression. "
-                             "Only methods accessed via namspaces, "
+                             "Only methods accessed via namespaces, "
                              "e.g. dim(...).df or dim(...).xr), "
                              "can be called. " % self)
         op = self.ops[-1]

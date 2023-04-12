@@ -84,7 +84,7 @@ class XArrayInterface(GridInterface):
             unit = coord.attrs.get('units') if dim.unit is None else dim.unit
             if isinstance(unit, tuple):
                 unit = unit[0]
-            if 'long_name' in coord.attrs:
+            if isinstance(coord.attrs.get("long_name"), str):
                 spec = (dim.name, coord.attrs['long_name'])
             else:
                 spec = (dim.name, dim.label)
@@ -104,7 +104,7 @@ class XArrayInterface(GridInterface):
                 vdim.unit = data.attrs.get('units')
                 vdim.nodata = data.attrs.get('NODATA')
                 label = data.attrs.get('long_name')
-                if 'long_name' in data.attrs:
+                if isinstance(label, str):
                     vdim.label = label
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]

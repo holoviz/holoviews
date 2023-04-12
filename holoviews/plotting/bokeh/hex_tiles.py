@@ -20,7 +20,7 @@ class hex_binning(Operation):
     Applies hex binning by computing aggregates on a hexagonal grid.
 
     Should not be user facing as the returned element is not directly
-    useable.
+    usable.
     """
 
     aggregator = param.ClassSelector(

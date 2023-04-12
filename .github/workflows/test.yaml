@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: '0 14 * * SUN'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre_commit:
     name: Run pre-commit hooks
@@ -41,9 +45,6 @@ jobs:
             # Bokeh 3 does not support Python 3.7
           - bokeh-version: '3'
             python-version: '3.7'
-            # Bokeh 3 cannot be installed together with Dask yet
-          - bokeh-version: '3'
-            python-version: '3.11'
     timeout-minutes: 120  # Because slow conda solve on Python 3.7
     defaults:
       run:
