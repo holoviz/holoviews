@@ -24,7 +24,12 @@ from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
-from pyviz_comms import CommManager, JupyterCommManager
+from pyviz_comms import CommManager
+try:
+    # Added in Panel 1.0 to support JS -> Python binary comms
+    from panel.io.notebook import JupyterCommManagerBinary as JupyterCommManager
+except ImportError:
+    from pyviz_comms import JupyterCommManager
 
 from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.data import disable_pipeline
