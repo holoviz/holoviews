@@ -169,7 +169,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 
         class InnerAction(Inner):
 
-            action = param.Action(lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger('action'))
 
         self.inner = Inner
         self.inner_action = InnerAction
@@ -335,7 +335,7 @@ class TestParamMethodStream(ComparisonTestCase):
 
         class Inner(param.Parameterized):
 
-            action = param.Action(lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger('action'))
             x = param.Number(default = 0)
             y = param.Number(default = 0)
             count = param.Integer(default=0)

@@ -597,7 +597,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        in order to make sure paths aren't confused with method
        names.""")
 
-    eliminations = param.List(['extended', 'accent', 'small', 'letter', 'sign', 'digit',
+    eliminations = param.List(default=['extended', 'accent', 'small', 'letter', 'sign', 'digit',
                                'latin', 'greek', 'arabic-indic', 'with', 'dollar'], doc="""
        Lowercase strings to be eliminated from the unicode names in
        order to shorten the sanitized name ( lowercase). Redundant
