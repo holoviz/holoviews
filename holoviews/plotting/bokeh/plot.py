@@ -31,7 +31,7 @@ from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
     bokeh3, filter_toolboxes, make_axis, update_shared_sources, empty_plot,
-    decode_bytes, theme_attr_json, cds_column_replace, get_default
+    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools
 )
 
 if bokeh3:
@@ -582,11 +582,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 passed_plots.append(None)
 
-        toolbar_location = None if bokeh3 else self.toolbar
-        plot = gridplot(plots[::-1], merge_tools=self.merge_tools,
+        plot = gridplot(plots[::-1],
+                        merge_tools=self.merge_tools,
                         sizing_mode=self.sizing_mode,
-                        toolbar_location=toolbar_location)
+                        toolbar_location=self.toolbar)
         plot = self._make_axes(plot)
+        if bokeh3 and hasattr(plot, "toolbar"):
+            plot.toolbar = merge_tools(plots)
 
         title = self._get_title_div(self.keys[-1])
         if title:
@@ -637,10 +639,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            if bokeh3:
-                plot = gridplot([r1, r2], toolbar_location=None)
-            else:
-                plot = gridplot([r1, r2])
+            plot = gridplot([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
@@ -917,15 +916,14 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
                     if nsubplots == 1:
                         grid = subplots[0]
-                    elif nsubplots == 2:
-                        grid = gridplot([subplots], merge_tools=self.merge_tools,
-                                        toolbar_location=self.toolbar,
-                                        sizing_mode=sizing_mode)
                     else:
-                        grid = [[subplots[2], None], subplots[:2]]
-                        grid = gridplot(children=grid, merge_tools=self.merge_tools,
+                        children = [subplots] if nsubplots == 2 else [[subplots[2], None], subplots[:2]]
+                        grid = gridplot(children,
+                                        merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
+                        if bokeh3:
+                            grid.toolbar = merge_tools(children)
                     tab_plots.append((title, grid))
                     continue
 
@@ -958,10 +956,14 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
-            layout_plot = gridplot(children=plot_grid,
-                                   toolbar_location=self.toolbar,
-                                   merge_tools=self.merge_tools,
-                                   sizing_mode=sizing_mode)
+            layout_plot = gridplot(
+                children=plot_grid,
+                toolbar_location=self.toolbar,
+                merge_tools=self.merge_tools,
+                sizing_mode=sizing_mode
+            )
+            if bokeh3:
+                layout_plot.toolbar = merge_tools(plot_grid)
 
         title = self._get_title_div(self.keys[-1])
         if title:
