@@ -248,7 +248,7 @@ class Dataset(Element, metaclass=PipelineMeta):
     function.
     """
 
-    datatype = param.List(datatypes, doc="""
+    datatype = param.List(default=datatypes, doc="""
         A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
