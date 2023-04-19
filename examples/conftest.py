@@ -28,4 +28,5 @@ if PD2 and sys.platform == "win32":
     collect_ignore_glob += [
         "gallery/demos/bokeh/point_draw_triangulate.ipynb",
         "reference/elements/*/TriMesh.ipynb",
+        "user_guide/15-Large_Data.ipynb",
     ]
