@@ -124,7 +124,9 @@ if '_pyodide' in sys.modules:
     from .pyodide import pyodide_extension, in_jupyterlite
     # The notebook_extension is needed inside jupyterlite,
     # so the override is only done if we are not inside jupyterlite.
-    if not in_jupyterlite():
+    if in_jupyterlite():
+        extension.inline = False
+    else:
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
 

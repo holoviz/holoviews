@@ -215,7 +215,7 @@ class Spikes(Selection1DExpr, Chart):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
 
-    vdims = param.List(default=[])
+    vdims = param.List(default=[], bounds=(0, None))
 
     _auto_indexable_1d = False
 

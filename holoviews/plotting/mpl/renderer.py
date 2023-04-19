@@ -49,7 +49,7 @@ class MPLRenderer(Renderer):
 
     backend = param.String('matplotlib', doc="The backend name.")
 
-    dpi=param.Integer(72, doc="""
+    dpi=param.Integer(default=72, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto',

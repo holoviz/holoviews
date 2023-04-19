@@ -118,7 +118,7 @@ class categorical_aggregate2d(Operation):
             kdims=['Country', 'Year'], vdims=['Population'])
     """
 
-    datatype = param.List(['xarray', 'grid'], doc="""
+    datatype = param.List(default=['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
     @classmethod
