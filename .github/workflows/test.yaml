@@ -41,21 +41,21 @@ jobs:
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
         bokeh-version: ['2', '3']
-        pandas-version: ['1']
+        pandas-version: ['2']
         exclude:
             # Bokeh 3 does not support Python 3.7
           - bokeh-version: '3'
             python-version: '3.7'
         include:
-          - pandas-version: '2'
+          - pandas-version: '1'
             bokeh-version: '3'
             python-version: '3.10'
             os: 'ubuntu-latest'
-          - pandas-version: '2'
+          - pandas-version: '1'
             bokeh-version: '3'
             python-version: '3.10'
             os: 'windows-latest'
-          - pandas-version: '2'
+          - pandas-version: '1'
             bokeh-version: '3'
             python-version: '3.10'
             os: 'macos-latest'
@@ -83,12 +83,12 @@ jobs:
           conda-update: true
           conda-mamba: mamba
         id: install
-      - name: Pandas 2 install
-        if: steps.install.outputs.cache-hit != 'true' && matrix.pandas-version == '2'
+      - name: Pandas 1 install
+        if: steps.install.outputs.cache-hit != 'true' && matrix.pandas-version == '1'
         run: |
           conda activate test-environment
-          conda uninstall pandas dask dask-core xarray --force --offline -y
-          mamba install pandas dask-core -y
+          conda uninstall pandas --force --offline -y
+          mamba install "pandas<2" -y
       - name: bokeh sampledata
         run: |
           conda activate test-environment
