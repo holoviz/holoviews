@@ -31,7 +31,7 @@ jobs:
       - name: pre-commit
         uses: pre-commit/action@v3.0.0
   test_suite:
-    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, Pandas ${{ matrix.pandas-version }}, ${{ matrix.os }}
+    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -50,7 +50,7 @@ jobs:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }}"
+      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
-          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}_pandas${{ matrix.pandas-version }}
+          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults

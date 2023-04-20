@@ -64,6 +64,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
 # Packages not working on python 3.11 because of numba
 if sys.version_info < (3, 11):
     extras_require['tests'] += [
+        'spatialpandas',
         'datashader >=0.11.1',
     ]
 
@@ -139,11 +140,6 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 extras_require['bokeh2'] = ["panel <1.0.0a1"]
 extras_require['bokeh3'] = ["panel >=1.0.0a1"]
-
-# Packages not working on python 3.11 because of numba and
-# not working on bokeh 3 because of dask
-if sys.version_info < (3, 11):
-    extras_require['bokeh2'].append("spatialpandas")
 
 extras_require["build"] = [
     "param >=1.7.0",
