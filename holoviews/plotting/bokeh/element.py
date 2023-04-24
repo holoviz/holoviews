@@ -569,7 +569,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
-        if plot is None:
+        if plot is None or self.toolbar == "disable":
             return
 
         if self.active_tools is None:
