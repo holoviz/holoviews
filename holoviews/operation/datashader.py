@@ -38,8 +38,7 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
-from .downsampling import ResamplingOperation2D
-from .resampling import LinkableOperation
+from .resampling import LinkableOperation, ResamplingOperation2D
 
 
 ds_version = Version(ds.__version__)
