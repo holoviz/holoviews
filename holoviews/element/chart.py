@@ -248,7 +248,7 @@ class Area(Curve):
             vdims = [[element.vdims[0], baseline_name] for element in areas]
             areas = NdOverlay({i: el for i, el in enumerate(areas)})
         else:
-            vdims = [areas.last.vdims[0], baseline_name]
+            vdims = [[areas.last.vdims[0], baseline_name]]
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
         baseline = None
