@@ -27,7 +27,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 
 select = [
     "E",
