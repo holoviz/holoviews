@@ -110,7 +110,7 @@ class ResamplingOperation2D(ResamplingOperation1D):
     @bothmethod
     def instance(self_or_cls,**params):
         filtered = {k:v for k,v in params.items() if k in self_or_cls.param}
-        inst = super(ResamplingOperation, self_or_cls).instance(**filtered)
+        inst = super().instance(**filtered)
         inst._precomputed = {}
         return inst
 
@@ -160,7 +160,9 @@ class ResamplingOperation2D(ResamplingOperation1D):
         (xstart, xend), (ystart, yend) = x_range, y_range
 
         xtype = 'numeric'
-        if isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
+        if isinstance(xstart, str) or isinstance(xend, str):
+            raise ValueError("Categorical data is not supported")
+        elif isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
             xstart, xend = dt_to_int(xstart, 'ns'), dt_to_int(xend, 'ns')
             xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
@@ -169,7 +171,9 @@ class ResamplingOperation2D(ResamplingOperation1D):
                 xtype = 'datetime'
 
         ytype = 'numeric'
-        if isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
+        if isinstance(ystart, str) or isinstance(yend, str):
+            raise ValueError("Categorical data is not supported")
+        elif isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
             ystart, yend = dt_to_int(ystart, 'ns'), dt_to_int(yend, 'ns')
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
@@ -202,9 +206,9 @@ class ResamplingOperation2D(ResamplingOperation1D):
     def _dt_transform(self, x_range, y_range, xs, ys, xtype, ytype):
         (xstart, xend), (ystart, yend) = x_range, y_range
         if xtype == 'datetime':
-            xstart, xend = (np.array([xstart, xend])/1e3).astype('datetime64[us]')
-            xs = (xs/1e3).astype('datetime64[us]')
+            xstart, xend = np.array([xstart, xend]).astype('datetime64[ns]')
+            xs = xs.astype('datetime64[ns]')
         if ytype == 'datetime':
-            ystart, yend = (np.array([ystart, yend])/1e3).astype('datetime64[us]')
-            ys = (ys/1e3).astype('datetime64[us]')
+            ystart, yend = np.array([ystart, yend]).astype('datetime64[ns]')
+            ys = ys.astype('datetime64[ns]')
         return ((xstart, xend), (ystart, yend)), (xs, ys)
