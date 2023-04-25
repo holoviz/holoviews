@@ -41,6 +41,14 @@ from ..streams import PointerXY
 from .resampling import LinkableOperation, ResamplingOperation2D
 
 
+def __getattr__(name):
+    if name == "ResamplingOperation":
+        from ..util.warnings import deprecated
+        deprecated("1.17", "ResamplingOperation", "ResamplingOperation2D")
+        return ResamplingOperation2D
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 ds_version = Version(ds.__version__)
 
 
