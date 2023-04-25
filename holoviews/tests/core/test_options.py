@@ -4,13 +4,12 @@ import pickle
 import numpy as np
 import pytest
 
-from holoviews import util
-from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts
+from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts, util
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting              # noqa Register backends
+from holoviews import plotting
 
 Options.skip_invalid = False
 
@@ -421,7 +420,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(obj_lookup.kwargs, expected_obj)
 
         # Customize this particular object
-        custom_obj = obj.opts(style=dict(clims=(0, 0.5)))
+        custom_obj = opts.apply_groups(obj, style=dict(clims=(0, 0.5)))
         expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
         custom_obj_lookup = Store.lookup_options('matplotlib', custom_obj, 'style')
         self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
@@ -498,7 +497,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_plot_inheritance_addition(self):
         "Adding an element"
-        hist2 = self.hist.opts(plot={'plot3':'plot3'})
+        hist2 = opts.apply_groups(self.hist, plot={'plot3':'plot3'})
         self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot1', plot2='plot2', plot3='plot3'))
         # Check style works as expected
@@ -506,7 +505,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_plot_inheritance_override(self):
         "Overriding an element"
-        hist2 = self.hist.opts(plot={'plot1':'plot_child'})
+        hist2 = opts.apply_groups(self.hist, plot={'plot1':'plot_child'})
         self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot_child', plot2='plot2'))
         # Check style works as expected
@@ -514,7 +513,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_style_inheritance_addition(self):
         "Adding an element"
-        hist2 = self.hist.opts(style={'style3':'style3'})
+        hist2 = opts.apply_groups(self.hist, style={'style3':'style3'})
         self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style1', style2='style2', style3='style3'))
         # Check plot options works as expected
@@ -522,20 +521,20 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_style_inheritance_override(self):
         "Overriding an element"
-        hist2 = self.hist.opts(style={'style1':'style_child'})
+        hist2 = opts.apply_groups(self.hist, style={'style1':'style_child'})
         self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style_child', style2='style2'))
         # Check plot options works as expected
         self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
     def test_style_transfer(self):
-        hist = self.hist.opts(style={'style1':'style_child'})
+        hist = opts.apply_groups(self.hist, style={'style1':'style_child'})
         hist2 = self.hist.opts()
-        opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
-        self.assertEqual(opts, {'style1': 'style1', 'style2': 'style2'})
+        opts_kwargs = Store.lookup_options('matplotlib', hist2, 'style').kwargs
+        self.assertEqual(opts_kwargs, {'style1': 'style1', 'style2': 'style2'})
         Store.transfer_options(hist, hist2, 'matplotlib')
-        opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
-        self.assertEqual(opts, {'style1': 'style_child', 'style2': 'style2'})
+        opts_kwargs = Store.lookup_options('matplotlib', hist2, 'style').kwargs
+        self.assertEqual(opts_kwargs, {'style1': 'style_child', 'style2': 'style2'})
 
 
 
@@ -607,30 +606,6 @@ class TestOptsMethod(ComparisonTestCase):
     def lookup_options(self, obj, group):
         return Store.lookup_options(self.backend, obj, group)
 
-    def test_old_opts_clone_disabled(self):
-        im = Image(np.random.rand(10,10))
-        styled_im = im.opts(style=dict(interpolation='nearest', cmap='jet'), clone=False)
-
-        self.assertEqual(self.lookup_options(im, 'plot').options, {})
-        self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
-
-        assert styled_im is im
-        self.assertEqual(self.lookup_options(im, 'style').options,
-                         {'cmap': 'jet', 'interpolation': 'nearest'})
-
-    def test_old_opts_clone_enabled(self):
-        im = Image(np.random.rand(10,10))
-        styled_im = im.opts(style=dict(interpolation='nearest', cmap='jet'), clone=True)
-
-        self.assertEqual(self.lookup_options(im, 'plot').options, {})
-        self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
-
-        assert styled_im is not im
-        im_lookup = self.lookup_options(im, 'style').options
-        self.assertEqual(im_lookup['cmap'] == 'jet', False)
-        styled_im_lookup =  self.lookup_options(styled_im, 'style').options
-        self.assertEqual(styled_im_lookup['cmap'] == 'jet', True)
-
     def test_simple_clone_disabled(self):
         im = Image(np.random.rand(10,10))
         styled_im = im.opts(interpolation='nearest', cmap='jet', clone=False)
@@ -667,14 +642,14 @@ class TestOptsMethod(ComparisonTestCase):
     def test_opts_method_dynamicmap_grouped(self):
         dmap = DynamicMap(lambda X: Curve([1, 2, X]),
                           kdims=['X']).redim.range(X=(0, 3))
-        retval = dmap.opts({'plot': dict(width=700)})
+        retval = dmap.opts(padding=1, clone=True)
         assert retval is not dmap
         self.assertEqual(self.lookup_options(retval[0], 'plot').options,
-                         {'width':700})
+                         {'padding':1})
 
     def test_opts_clear(self):
         im = Image(np.random.rand(10,10))
-        styled_im = im.opts(style=dict(cmap='jet', interpolation='nearest',
+        styled_im = opts.apply_groups(im, style=dict(cmap='jet', interpolation='nearest',
                                        option1='A', option2='B'), clone=False)
         self.assertEqual(self.lookup_options(im, 'style').options,
                          {'cmap': 'jet', 'interpolation': 'nearest',
@@ -688,7 +663,7 @@ class TestOptsMethod(ComparisonTestCase):
 
     def test_opts_clear_clone(self):
         im = Image(np.random.rand(10,10))
-        styled_im = im.opts(style=dict(cmap='jet', interpolation='nearest',
+        styled_im = opts.apply_groups(im, style=dict(cmap='jet', interpolation='nearest',
                                        option1='A', option2='B'), clone=False)
         self.assertEqual(self.lookup_options(im, 'style').options,
                          {'cmap': 'jet', 'interpolation': 'nearest',
@@ -815,7 +790,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
 
-        super(TestCrossBackendOptions, self).tearDown()
+        super().tearDown()
 
 
     def test_mpl_bokeh_mpl(self):
@@ -921,8 +896,8 @@ class TestLookupOptions(ComparisonTestCase):
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
-        import holoviews.plotting.mpl # noqa
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.mpl
+        import holoviews.plotting.bokeh
         import holoviews.plotting.plotly # noqa
 
         backends = Store.loaded_backends()
@@ -1053,10 +1028,8 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         overlay = img * curve
         Store.set_current_backend('matplotlib')
 
-        literal = {'Curve':
-                   {'style':dict(color='orange')},
-                   'Image':
-                   {'style':dict(cmap='jet'), 'output':dict(backend='bokeh')}
+        literal = {'Curve': dict(color='orange'),
+                   'Image': dict(cmap='jet', backend='bokeh'),
                    }
         styled = overlay.opts(literal)
         mpl_curve_lookup = Store.lookup_options('matplotlib', styled.Curve.I, 'style')
@@ -1073,31 +1046,6 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
 
 
     def test_mpl_bokeh_mpl_via_builders_opts_method_literal_explicit_backend(self):
-        img = Image(np.random.rand(10,10))
-        curve = Curve([1,2,3])
-        overlay = img * curve
-        Store.set_current_backend('matplotlib')
-
-        literal = {'Curve':
-                   {'style':dict(color='orange'), 'output':dict(backend='matplotlib')},
-                   'Image':
-                   {'style':dict(cmap='jet'), 'output':dict(backend='bokeh')}
-                   }
-        styled = overlay.opts(literal)
-        mpl_curve_lookup = Store.lookup_options('matplotlib', styled.Curve.I, 'style')
-        self.assertEqual(mpl_curve_lookup.kwargs['color'], 'orange')
-
-        mpl_img_lookup = Store.lookup_options('matplotlib', styled.Image.I, 'style')
-        self.assertNotEqual(mpl_img_lookup.kwargs['cmap'], 'jet')
-
-        bokeh_curve_lookup = Store.lookup_options('bokeh', styled.Curve.I, 'style')
-        self.assertNotEqual(bokeh_curve_lookup.kwargs['color'], 'orange')
-
-        bokeh_img_lookup = Store.lookup_options('bokeh', styled.Image.I, 'style')
-        self.assertEqual(bokeh_img_lookup.kwargs['cmap'], 'jet')
-
-
-    def test_mpl_bokeh_mpl_via_builders_opts_method_flat_literal_explicit_backend(self):
         img = Image(np.random.rand(10,10))
         curve = Curve([1,2,3])
         overlay = img * curve
@@ -1149,7 +1097,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         for f in self.cleanup:
             try:
                 os.remove(f)
-            except:
+            except Exception:
                 pass
 
     def test_raw_pickle(self):

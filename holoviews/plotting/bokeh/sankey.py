@@ -167,7 +167,7 @@ class SankeyPlot(GraphPlot):
 
         is_outer_inner = self.label_position in ['outer', 'inner']
 
-        # initalize label x-locations
+        # initialize label x-locations
         if self.label_position in ['right', 'outer']:
             xs = np.array([node['x1'] for node in nodes]) + offset
         else: # ['left', 'inner']
@@ -181,7 +181,7 @@ class SankeyPlot(GraphPlot):
             if self.show_values:
                 value = value_dim.pprint_value(node['value'], print_unit=True)
                 if label:
-                    label = '%s - %s' % (label, value)
+                    label = f'{label} - {value}'
                 else:
                     label = value
             if label:
@@ -220,7 +220,7 @@ class SankeyPlot(GraphPlot):
         if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
         lidx = element.nodes.get_dimension(self.label_index)
-        src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
+        src, tgt = (dimension_sanitizer(kd.name) for kd in element.kdims[:2])
         if src == 'start': src += '_values'
         if tgt == 'end':   tgt += '_values'
         lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))

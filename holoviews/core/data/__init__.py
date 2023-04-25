@@ -1,8 +1,3 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import types
 import copy
 
@@ -13,7 +8,7 @@ import numpy as np
 import param
 import pandas as pd # noqa
 
-from param.parameterized import add_metaclass, ParameterizedMetaclass
+from param.parameterized import ParameterizedMetaclass
 
 from ..accessors import Redim
 from ..dimension import (
@@ -23,16 +18,16 @@ from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
 
-from .array import ArrayInterface             # noqa (API import)
+from .array import ArrayInterface
 from .cudf import cuDFInterface               # noqa (API import)
 from .dask import DaskInterface               # noqa (API import)
 from .dictionary import DictInterface         # noqa (API import)
 from .grid import GridInterface               # noqa (API import)
 from .ibis import IbisInterface               # noqa (API import)
-from .interface import Interface, iloc, ndloc # noqa (API import)
+from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
-from .pandas import PandasInterface           # noqa (API import)
+from .pandas import PandasAPI, PandasInterface        # noqa (API import)
 from .spatialpandas import SpatialPandasInterface     # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
@@ -70,7 +65,7 @@ def concat(datasets, datatype=None):
     return Interface.concatenate(datasets, datatype)
 
 
-class DataConversion(object):
+class DataConversion:
     """
     DataConversion is a very simple container object which can be
     given an existing Dataset Element and provides methods to convert
@@ -129,7 +124,7 @@ class DataConversion(object):
             else:
                 selected = self._element
         else:
-            if pd and issubclass(self._element.interface, PandasInterface):
+            if issubclass(self._element.interface, PandasAPI):
                 ds_dims = self._element.dimensions()
                 ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
                             for d in groupby+kdims]
@@ -241,8 +236,7 @@ class PipelineMeta(ParameterizedMetaclass):
         return pipelined_fn
 
 
-@add_metaclass(PipelineMeta)
-class Dataset(Element):
+class Dataset(Element, metaclass=PipelineMeta):
     """
     Dataset provides a general baseclass for Element types that
     contain structured data and supports a range of data formats.
@@ -254,7 +248,7 @@ class Dataset(Element):
     function.
     """
 
-    datatype = param.List(datatypes, doc="""
+    datatype = param.List(default=datatypes, doc="""
         A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
@@ -283,20 +277,19 @@ class Dataset(Element):
         """
         if isinstance(data, DynamicMap):
             class_name = cls.__name__
-            repr_kdims = 'kdims=%r' % kdims if kdims else None
-            repr_vdims = 'vdims=%r' % vdims if vdims else None
-            repr_kwargs = (', '.join('%s=%r' % (k,v) for k,v in kwargs.items())
+            repr_kdims = f'kdims={kdims!r}' if kdims else None
+            repr_vdims = f'vdims={vdims!r}' if vdims else None
+            repr_kwargs = (', '.join(f'{k}={v!r}' for k,v in kwargs.items())
                            if kwargs else None)
             extras = ', '.join([el for el in [repr_kdims, repr_vdims, repr_kwargs]
                                if el is not None])
             extras = ', ' + extras if extras else ''
-            apply_args= 'hv.{class_name}{extras}'.format(class_name=class_name,
-                                                         extras=extras)
+            apply_args= f'hv.{class_name}{extras}'
             msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap. Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call .apply({apply_args}) on the supplied DynamicMap."
             cls.param.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
         else:
-            return super(Dataset, cls).__new__(cls)
+            return super().__new__(cls)
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
@@ -338,7 +331,7 @@ class Dataset(Element):
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
-        super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
+        super().__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
         # Handle _pipeline property
@@ -375,7 +368,7 @@ class Dataset(Element):
 
     def __getstate__(self):
         "Ensures pipelines are dropped"
-        obj_dict = super(Dataset, self).__getstate__()
+        obj_dict = super().__getstate__()
         if '_pipeline' in obj_dict:
             pipeline = obj_dict['_pipeline']
             obj_dict['_pipeline'] = pipeline.instance(operations=pipeline.operations[:1])
@@ -540,7 +533,7 @@ class Dataset(Element):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
-            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+            raise Exception(f'{dimension.name} dimension already defined')
 
         if vdim:
             dims = self.vdims[:]
@@ -660,12 +653,12 @@ argument to specify a selection specification""")
             # If no key dimensions are defined and interface is gridded
             # drop all scalar key dimensions
             key_dims = [d for d in self.kdims if (not vdims or d not in vdims)
-                        and not d in scalars]
+                        and d not in scalars]
         elif not isinstance(kdims, list):
             key_dims = [self.get_dimension(kdims, strict=True)]
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
-        dropped = [d for d in self.kdims if not d in key_dims and not d in scalars]
+        dropped = [d for d in self.kdims if d not in key_dims and d not in scalars]
 
         new_type = None
         if vdims is None:
@@ -716,7 +709,7 @@ argument to specify a selection specification""")
             value_select = slices[self.ndims]
         elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
                                                         (Dimension,str)):
-            raise IndexError("%r is not an available value dimension" % slices[self.ndims])
+            raise IndexError(f"{slices[self.ndims]!r} is not an available value dimension")
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
@@ -821,7 +814,7 @@ argument to specify a selection specification""")
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
-        lens = set(len(util.wrap_tuple(s)) for s in samples)
+        lens = {len(util.wrap_tuple(s)) for s in samples}
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
@@ -946,7 +939,7 @@ argument to specify a selection specification""")
             try:
                 # Should be checking the dimensions declared on the element are compatible
                 return self.clone(aggregated, kdims=kdims, vdims=vdims)
-            except:
+            except Exception:
                 datatype = self.param.objects('existing')['datatype'].default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
                                   new_type=new_type, datatype=datatype)
@@ -1070,11 +1063,9 @@ argument to specify a selection specification""")
         "Number of values in the Dataset."
         return self.interface.length(self)
 
-    def __nonzero__(self):
+    def __bool__(self):
         "Whether the Dataset contains any values"
         return self.interface.nonzero(self)
-
-    __bool__ = __nonzero__
 
     @property
     def shape(self):
@@ -1203,21 +1194,21 @@ argument to specify a selection specification""")
         elif self._in_method and 'dataset' not in overrides:
             overrides['dataset'] = self.dataset
 
-        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
+        return super().clone(data, shared_data, new_type, *args, **overrides)
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support
     @wraps(Dimensioned.options)
     def options(self, *args, **kwargs):
-        return super(Dataset, self).options(*args, **kwargs)
+        return super().options(*args, **kwargs)
 
     @wraps(LabelledData.map)
     def map(self, *args, **kwargs):
-        return super(Dataset, self).map(*args, **kwargs)
+        return super().map(*args, **kwargs)
 
     @wraps(LabelledData.relabel)
     def relabel(self, *args, **kwargs):
-        return super(Dataset, self).relabel(*args, **kwargs)
+        return super().relabel(*args, **kwargs)
 
     @property
     def iloc(self):

@@ -43,8 +43,7 @@ class Annotation(Element2D):
         elif len(key) == 0:
             return self.clone()
         if not all(isinstance(k, slice) for k in key):
-            raise KeyError("%s only support slice indexing" %
-                           self.__class__.__name__)
+            raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = tuple(key[:len(self.kdims)])
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
@@ -227,7 +226,7 @@ class VSpan(Annotation):
 
 
 class HSpan(Annotation):
-    """Horziontal span annotation at the given position."""
+    """Horizontal span annotation at the given position."""
 
     group = param.String(default='HSpan', constant=True)
 
@@ -464,5 +463,5 @@ class Labels(Dataset, Element2D):
 
     group = param.String(default='Labels', constant=True)
 
-    vdims = param.List([Dimension('Label')], bounds=(1, None), doc="""
+    vdims = param.List(default=[Dimension('Label')], bounds=(1, None), doc="""
         Defines the value dimension corresponding to the label text.""")

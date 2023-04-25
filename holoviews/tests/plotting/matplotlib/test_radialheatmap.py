@@ -7,7 +7,7 @@ from holoviews.element.raster import HeatMap
 
 try:
     from holoviews.plotting.mpl import RadialHeatMapPlot
-except:
+except ImportError:
     pass
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -19,8 +19,8 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         super().setUp()
 
         # set up dummy data for convenient tests
-        x = ["Seg {}".format(idx) for idx in range(2)]
-        y = ["Ann {}".format(idx) for idx in range(2)]
+        x = [f"Seg {idx}" for idx in range(2)]
+        y = [f"Ann {idx}" for idx in range(2)]
         self.z = list(range(4))
         self.x, self.y = zip(*product(x, y))
 
@@ -39,7 +39,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
                          radius_outer=0.2,
                          radial=True)
 
-        opts = dict(HeatMap=dict(plot=plot_opts))
+        opts = dict(HeatMap=plot_opts)
 
         # provide element and plot instances for tests
         self.element = HeatMap((self.x, self.y, self.z)).opts(opts)

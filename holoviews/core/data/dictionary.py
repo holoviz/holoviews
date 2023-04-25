@@ -1,15 +1,10 @@
 from collections import OrderedDict, defaultdict
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
 
 import numpy as np
 
 from .interface import Interface, DataError
 from ..dimension import dimension_name
 from ..element import Element
-from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import isscalar
 from .. import util
@@ -23,7 +18,7 @@ class DictInterface(Interface):
     are collections representing the values in that column.
     """
 
-    types = (dict, OrderedDict, cyODict)
+    types = (dict, OrderedDict)
 
     datatype = 'dictionary'
 
@@ -36,7 +31,6 @@ class DictInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        odict_types = (OrderedDict, cyODict)
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
@@ -115,7 +109,7 @@ class DictInterface(Interface):
 
         if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
             raise ValueError('DictInterface expects data to be of uniform shape.')
-        if isinstance(data, odict_types):
+        if isinstance(data, OrderedDict):
             data.update(unpacked)
         else:
             data = OrderedDict(unpacked)
@@ -308,9 +302,9 @@ class DictInterface(Interface):
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key)))
-            group_data = OrderedDict(((d.name, dataset.data[d.name] if isscalar(dataset.data[d.name])
+            group_data = OrderedDict((d.name, dataset.data[d.name] if isscalar(dataset.data[d.name])
                                        else dataset.data[d.name][mask])
-                                      for d in kdims+vdims))
+                                      for d in kdims+vdims)
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 

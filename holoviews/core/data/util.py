@@ -46,7 +46,7 @@ def dask_array_module():
     try:
         import dask.array as da
         return da
-    except:
+    except ImportError:
         return None
 
 def is_dask(array):

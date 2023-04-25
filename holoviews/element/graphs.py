@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import param
 import numpy as np
+import pandas as pd
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.accessors import Redim
@@ -10,7 +11,7 @@ from ..core.util import is_dataframe, max_range, search_indices
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
-from .util import (split_path, pd, circular_layout, connect_edges,
+from .util import (split_path, circular_layout,
                    connect_edges_pd, quadratic_bezier, connect_tri_edges_pd)
 
 
@@ -63,7 +64,6 @@ class layout_nodes(Operation):
             target = element.dimension_values(1, expanded=False)
             nodes = np.unique(np.concatenate([source, target]))
             if self.p.layout:
-                import pandas as pd
                 df = pd.DataFrame({'index': nodes})
                 nodes = self.p.layout(df, element.dframe(), **self.p.kwargs)
                 nodes = nodes[['x', 'y', 'index']]
@@ -173,39 +173,24 @@ class Graph(Dataset, Element2D):
                              "dimension to allow the Graph to merge "
                              "the data.")
 
-        if pd is None:
-            if node_info.kdims and len(node_info) != len(nodes):
-                raise ValueError("Graph cannot merge node data on index "
-                                 "dimension without pandas. Either ensure "
-                                 "the node data matches the order of nodes "
-                                 "as they appear in the edge data or install "
-                                 "pandas.")
-            dimensions = nodes.dimensions()
-            for d in node_info.vdims:
-                if d in dimensions:
-                    continue
-                nodes = nodes.add_dimension(d, len(nodes.vdims),
-                                            node_info.dimension_values(d),
-                                            vdim=True)
+        left_on = nodes.kdims[-1].name
+        node_info_df = node_info.dframe()
+        node_df = nodes.dframe()
+        if node_info.kdims:
+            idx = node_info.kdims[-1]
         else:
-            left_on = nodes.kdims[-1].name
-            node_info_df = node_info.dframe()
-            node_df = nodes.dframe()
-            if node_info.kdims:
-                idx = node_info.kdims[-1]
-            else:
-                idx = Dimension('index')
-                node_info_df = node_info_df.reset_index()
-            if 'index' in node_info_df.columns and not idx.name == 'index':
-                node_df = node_df.rename(columns={'index': '__index'})
-                left_on = '__index'
-            cols = [c for c in node_info_df.columns if c not in
-                    node_df.columns or c == idx.name]
-            node_info_df = node_info_df[cols]
-            node_df = pd.merge(node_df, node_info_df, left_on=left_on,
-                               right_on=idx.name, how='left')
-            nodes = nodes.clone(node_df, kdims=nodes.kdims[:2]+[idx],
-                                vdims=node_info.vdims)
+            idx = Dimension('index')
+            node_info_df = node_info_df.reset_index()
+        if 'index' in node_info_df.columns and not idx.name == 'index':
+            node_df = node_df.rename(columns={'index': '__index'})
+            left_on = '__index'
+        cols = [c for c in node_info_df.columns if c not in
+                node_df.columns or c == idx.name]
+        node_info_df = node_info_df[cols]
+        node_df = pd.merge(node_df, node_info_df, left_on=left_on,
+                            right_on=idx.name, how='left')
+        nodes = nodes.clone(node_df, kdims=nodes.kdims[:2]+[idx],
+                            vdims=node_info.vdims)
 
         self._nodes = nodes
 
@@ -216,7 +201,7 @@ class Graph(Dataset, Element2D):
         mismatch = []
         for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
             if kd1 != kd2:
-                mismatch.append('%s != %s' % (kd1, kd2))
+                mismatch.append(f'{kd1} != {kd2}')
         if mismatch:
             raise ValueError('Ensure that the first two key dimensions on '
                              'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
@@ -328,7 +313,7 @@ argument to specify a selection specification""")
                 edgepaths = self._split_edgepaths
                 paths = edgepaths.clone(edgepaths.interface.select_paths(edgepaths, mask))
                 if len(self._edgepaths.data) == 1:
-                    paths = paths.clone([paths.dframe() if pd else paths.array()])
+                    paths = paths.clone([paths.dframe()])
         else:
             data = self.data
             paths = self._edgepaths
@@ -386,10 +371,7 @@ argument to specify a selection specification""")
         """
         if self._edgepaths:
             return self._edgepaths
-        if pd is None:
-            paths = connect_edges(self)
-        else:
-            paths = connect_edges_pd(self)
+        paths = connect_edges_pd(self)
         return self.edge_type(paths, kdims=self.nodes.kdims[:2])
 
     @classmethod
@@ -560,7 +542,7 @@ class TriMesh(Graph):
         """
         try:
             from scipy.spatial import Delaunay
-        except:
+        except ImportError:
             raise ImportError("Generating triangles from points requires "
                               "SciPy to be installed.")
         if not isinstance(data, Points):
@@ -674,7 +656,7 @@ class layout_chords(Operation):
         areas_in_radians = (weights_of_areas / weights_of_areas.sum()) * (2 * np.pi)
 
         # We add a zero in the begging for the cumulative sum
-        points = np.zeros((areas_in_radians.shape[0] + 1))
+        points = np.zeros(areas_in_radians.shape[0] + 1)
         points[1:] = areas_in_radians
         points = points.cumsum()
 
@@ -785,8 +767,7 @@ class Chord(Graph):
             self._angles = chord._angles
         else:
             if not isinstance(nodes, Nodes):
-                raise TypeError("Expected Nodes object in data, found %s."
-                                % type(nodes))
+                raise TypeError(f"Expected Nodes object in data, found {type(nodes)}.")
             self._nodes = nodes
             if not isinstance(edgepaths, EdgePaths):
                 raise TypeError("Expected EdgePaths object in data, found %s."

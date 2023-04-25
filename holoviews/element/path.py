@@ -92,8 +92,7 @@ class Path(SelectionPolyExpr, Geometry):
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
         if not all(isinstance(k, slice) for k in key):
-            raise KeyError("%s only support slice indexing" %
-                             self.__class__.__name__)
+            raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = key
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
@@ -173,7 +172,7 @@ class Path(SelectionPolyExpr, Geometry):
             elif datatype is None:
                 obj = self.clone([self.data])
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
 
@@ -255,7 +254,7 @@ class Polygons(Contours):
     for each coordinate array to be split into a multi-geometry
     through NaN-separators. Each sub-geometry separated by the NaNs
     therefore has an unambiguous mapping to a list of holes. If a
-    (multi-)polygon has no holes, the 'holes' key may be ommitted.
+    (multi-)polygon has no holes, the 'holes' key may be omitted.
 
     Any value dimensions stored on a Polygons geometry must be scalar,
     just like the Contours element. Since not all formats allow

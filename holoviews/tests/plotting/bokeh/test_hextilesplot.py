@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core import Dimension
 from holoviews.element import HexTiles
 from holoviews.plotting.bokeh.hex_tiles import hex_binning
+from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -97,16 +98,16 @@ class TestHexTilesPlot(TestBokehPlot):
         hextiles = HexTiles(np.random.randn(1000, 2)).opts(line_width='Count')
         plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
 
     def test_hex_tile_alpha_op(self):
         hextiles = HexTiles(np.random.randn(1000, 2)).opts(alpha='Count')
         plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
+        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'alpha'})
 
     def test_hex_tile_scale_op(self):
         hextiles = HexTiles(np.random.randn(1000, 2)).opts(scale='Count')
         plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.scale, {'field': 'scale'})
+        self.assertEqual(property_to_dict(glyph.scale), {'field': 'scale'})

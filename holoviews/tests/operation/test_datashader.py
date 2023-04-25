@@ -14,28 +14,29 @@ from holoviews import (
 from holoviews.streams import Tap
 from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
+from packaging.version import Version
 
 try:
     import datashader as ds
     import dask.dataframe as dd
     import xarray as xr
     from holoviews.operation.datashader import (
-        LooseVersion, aggregate, regrid, ds_version, stack, directly_connect_edges,
+        aggregate, regrid, ds_version, stack, directly_connect_edges,
         shade, spread, rasterize, datashade, AggregationOperation,
         inspect, inspect_points, inspect_polygons
     )
-except:
+except ImportError:
     raise SkipTest('Datashader not available')
 
 try:
     import cudf
     import cupy
-except:
+except ImportError:
     cudf = None
 
 try:
     import spatialpandas
-except:
+except ImportError:
     spatialpandas = None
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
@@ -721,7 +722,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
 class DatashaderCatAggregateTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version < LooseVersion('0.11.0'):
+        if ds_version < Version('0.11.0'):
             raise SkipTest('Regridding operations require datashader>=0.11.0')
 
     def test_aggregate_points_categorical(self):
@@ -807,7 +808,7 @@ class DatashaderRegridTests(ComparisonTestCase):
     """
 
     def setUp(self):
-        if ds_version <= LooseVersion('0.5.0'):
+        if ds_version <= Version('0.5.0'):
             raise SkipTest('Regridding operations require datashader>=0.6.0')
 
     def test_regrid_mean(self):
@@ -885,7 +886,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
     """
 
     def setUp(self):
-        if ds_version <= LooseVersion('0.6.4'):
+        if ds_version <= Version('0.6.4'):
             raise SkipTest('Regridding operations require datashader>=0.7.0')
 
         self.simplexes = [(0, 1, 2), (3, 2, 1)]
@@ -1164,7 +1165,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
         self.assertEqual(spreaded, RGB(arr))
 
     def test_spread_img_1px(self):
-        if ds_version < LooseVersion('0.12.0'):
+        if ds_version < Version('0.12.0'):
             raise SkipTest('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
@@ -1211,7 +1212,7 @@ class DatashaderStackTests(ComparisonTestCase):
 class GraphBundlingTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version <= LooseVersion('0.7.0'):
+        if ds_version <= Version('0.7.0'):
             raise SkipTest('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)
@@ -1232,7 +1233,7 @@ class InspectorTests(ComparisonTestCase):
         if spatialpandas is None:
             return
 
-        xs1 = [1, 2, 3]; xs2 = [6, 7, 3];ys1 = [2, 0, 7]; ys2 = [7, 5, 2]
+        xs1, xs2, ys1, ys2 = [1, 2, 3], [6, 7, 3], [2, 0, 7], [7, 5, 2]
         holes = [ [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],]
         polydata = [{'x': xs1, 'y': ys1, 'holes': holes, 'z': 1},
                     {'x': xs2, 'y': ys2, 'holes': [[]], 'z': 2}]

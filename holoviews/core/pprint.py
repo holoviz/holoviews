@@ -76,7 +76,7 @@ class ParamFilter(param.ParameterizedFunction):
         return inner_filter
 
 
-class InfoPrinter(object):
+class InfoPrinter:
     """
     Class for printing other information related to an object that is
     of use to the user.
@@ -96,7 +96,7 @@ class InfoPrinter(object):
         if cls.ppager is None: return ''
         if pattern is not None:
             obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-            if len(obj.param.params()) <= 1:
+            if len(list(obj.param)) <= 1:
                 return None
         param_info = cls.ppager.get_param_info(obj)
         param_list = cls.ppager.param_docstrings(param_info)
@@ -117,16 +117,16 @@ class InfoPrinter(object):
         """
         heading_color = cls.headings[level] if ansi else '%s'
         if char is None:
-            return heading_color % '%s\n' % heading_text
+            return heading_color % f'{heading_text}\n'
         else:
             heading_ul = char*len(heading_text)
-            return heading_color % '%s\n%s\n%s' % (heading_ul, heading_text, heading_ul)
+            return heading_color % f'{heading_ul}\n{heading_text}\n{heading_ul}'
 
 
     @classmethod
     def highlight(cls, pattern, string):
         if pattern is None: return string
-        return re.sub(pattern, '\033[43;1;30m\g<0>\x1b[0m',
+        return re.sub(pattern, '\033[43;1;30m\\g<0>\x1b[0m',
                       string, flags=re.IGNORECASE)
 
 
@@ -152,7 +152,7 @@ class InfoPrinter(object):
         if visualization is False or plot_class is None:
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-                if len(obj.param.params()) <= 1:
+                if len(list(obj.param)) <= 1:
                     return ('No %r parameters found matching specified pattern %r'
                             % (name, pattern))
             info = param.ipython.ParamPager()(obj)
@@ -160,9 +160,7 @@ class InfoPrinter(object):
                 info = ansi_escape.sub('', info)
             return cls.highlight(pattern, info)
 
-        heading = name if isclass else '{name}: {group} {label}'.format(name=name,
-                                                                        group=obj.group,
-                                                                        label=obj.label)
+        heading = name if isclass else f'{name}: {obj.group} {obj.label}'
         prefix = heading
         lines = [prefix, cls.object_info(obj, name, backend=backend, ansi=ansi)]
 
@@ -177,9 +175,7 @@ class InfoPrinter(object):
         objtype=obj.__class__.__name__
         group = group_sanitizer(obj.group)
         label = ('.' + label_sanitizer(obj.label) if obj.label else '')
-        target = '{objtype}.{group}{label}'.format(objtype=objtype,
-                                                   group=group,
-                                                   label=label)
+        target = f'{objtype}.{group}{label}'
         return (None, target) if hasattr(obj, 'values') else (target, None)
 
 
@@ -189,25 +185,25 @@ class InfoPrinter(object):
 
         targets = obj.traverse(cls.get_target)
         elements, containers = zip(*targets)
-        element_set = set(el for el in elements if el is not None)
-        container_set = set(c for c in containers if c is not None)
+        element_set = {el for el in elements if el is not None}
+        container_set = {c for c in containers if c is not None}
 
         element_info = None
         if len(element_set) == 1:
-            element_info = 'Element: %s'  % list(element_set)[0]
+            element_info = f'Element: {list(element_set)[0]}'
         elif len(element_set) > 1:
             element_info = 'Elements:\n   %s'  % '\n   '.join(sorted(element_set))
 
         container_info = None
         if len(container_set) == 1:
-            container_info = 'Container: %s'  % list(container_set)[0]
+            container_info = f'Container: {list(container_set)[0]}'
         elif len(container_set) > 1:
             container_info = 'Containers:\n   %s'  % '\n   '.join(sorted(container_set))
         heading = cls.heading('Target Specifications', ansi=ansi, char="-")
 
         target_header = '\nTargets in this object available for customization:\n'
         if element_info and container_info:
-            target_info = '%s\n\n%s' % (element_info, container_info)
+            target_info = f'{element_info}\n\n{container_info}'
         else:
             target_info = element_info if element_info else container_info
 
@@ -237,9 +233,9 @@ class InfoPrinter(object):
     def options_info(cls, plot_class, ansi=False, pattern=None):
         if plot_class.style_opts:
             backend_name = plot_class.backend
-            style_info = ("\n(Consult %s's documentation for more information.)" % backend_name)
-            style_keywords = '\t%s' % ', '.join(plot_class.style_opts)
-            style_msg = '%s\n%s' % (style_keywords, style_info)
+            style_info = f"\n(Consult {backend_name}'s documentation for more information.)"
+            style_keywords = f"\t{', '.join(plot_class.style_opts)}"
+            style_msg = f'{style_keywords}\n{style_info}'
         else:
             style_msg = '\t<No style options available>'
 
@@ -254,7 +250,7 @@ class InfoPrinter(object):
             lines+= ['No %r parameters found matching specified pattern %r.'
                      % (plot_class.__name__, pattern)]
         else:
-            lines+= ['No %r parameters found.' % plot_class.__name__]
+            lines+= [f'No {plot_class.__name__!r} parameters found.']
 
         return '\n'.join(lines)
 
@@ -355,9 +351,9 @@ class PrettyPrinter(param.Parameterized):
         """
         info = cls_or_slf.component_type(node)
         if len(node.kdims) >= 1:
-            info += cls_or_slf.tab + '[%s]' % ','.join(d.name for d in node.kdims)
+            info += cls_or_slf.tab + f"[{','.join(d.name for d in node.kdims)}]"
         if value_dims and len(node.vdims) >= 1:
-            info += cls_or_slf.tab + '(%s)' % ','.join(d.name for d in node.vdims)
+            info += cls_or_slf.tab + f"({','.join(d.name for d in node.vdims)})"
         return level, [(level, info)]
 
     @bothmethod
@@ -394,7 +390,7 @@ class PrettyPrinter(param.Parameterized):
 
     @bothmethod
     def ndmapping_info(cls_or_slf, node, siblings, level, value_dims):
-        key_dim_info = '[%s]' % ','.join(d.name for d in node.kdims)
+        key_dim_info = f"[{','.join(d.name for d in node.kdims)}]"
         first_line = cls_or_slf.component_type(node) + cls_or_slf.tab + key_dim_info
         lines = [(level, first_line)]
 

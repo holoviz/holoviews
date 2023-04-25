@@ -16,10 +16,6 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
                         Tiles, Segments, Slope, Rectangles)
 from ...core.options import Options, Cycle, Palette
-try:
-    from ...interface import DFrame
-except:
-    DFrame = None
 
 from .annotation import (
     TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
@@ -87,7 +83,6 @@ associations = {Overlay: OverlayPlot,
                 # Paths
                 Path: PathPlot,
                 Contours: ContourPlot,
-                Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
@@ -129,9 +124,6 @@ associations = {Overlay: OverlayPlot,
                 Violin: ViolinPlot,
                 HexTiles: HexTilesPlot}
 
-
-if DFrame is not None:
-    associations[DFrame] = TablePlot
 
 Store.register(associations, 'bokeh')
 

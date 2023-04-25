@@ -9,7 +9,7 @@ import param
 from panel.widgets import IntSlider
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import LooseVersion
+from holoviews.core.util import Version
 from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
@@ -23,7 +23,7 @@ def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
                       isinstance(v, type) and issubclass(v, Stream)]
     for stream_cls in all_stream_cls:
-        for name, p in stream_cls.param.params().items():
+        for name, p in stream_cls.param.objects().items():
             if name == 'name': continue
             if p.constant != True:
                 raise TypeError('Parameter %s of stream %s not declared constant'
@@ -34,7 +34,7 @@ def test_all_linked_stream_parameters_owners():
     "Test to ensure operations can accept parameters in streams dictionary"
     stream_classes = param.concrete_descendents(LinkedStream)
     for stream_class in stream_classes.values():
-        for name, p in stream_class.param.params().items():
+        for name, p in stream_class.param.objects().items():
             if name != 'name' and (p.owner != stream_class):
                 msg = ("Linked stream %r has parameter %r which is "
                        "inherited from %s. Parameter needs to be redeclared "
@@ -95,7 +95,7 @@ class TestStreamsDefine(ComparisonTestCase):
 
     def test_XY_subscriber_triggered(self):
 
-        class Inner(object):
+        class Inner:
             def __init__(self): self.state=None
             def __call__(self, x,y): self.state=(x,y)
 
@@ -120,7 +120,7 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(self.ExplicitTest.param['test'].doc, 'Test docstring')
 
 
-class _TestSubscriber(object):
+class _TestSubscriber:
 
     def __init__(self, cb=None):
         self.call_count = 0
@@ -169,7 +169,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 
         class InnerAction(Inner):
 
-            action = param.Action(lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger('action'))
 
         self.inner = Inner
         self.inner_action = InnerAction
@@ -274,7 +274,7 @@ class TestParamsStream(LoggingComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'%s action' % id(inner), '_memoize_key'})
+                             {f'{id(inner)} action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -290,7 +290,7 @@ class TestParamsStream(LoggingComparisonTestCase):
             values.append(kwargs)
             self.assertEqual(
                 set(stream.hashkey),
-                {'%s action' % id(inner), '%s x' % id(inner), '_memoize_key'})
+                {f'{id(inner)} action', f'{id(inner)} x', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -330,12 +330,12 @@ class TestParamsStream(LoggingComparisonTestCase):
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if LooseVersion(param.__version__) < LooseVersion('1.8.0'):
+        if Version(param.__version__) < Version('1.8.0'):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):
 
-            action = param.Action(lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger('action'))
             x = param.Number(default = 0)
             y = param.Number(default = 0)
             count = param.Integer(default=0)
@@ -424,11 +424,8 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(dmap[()], Points([10]))
 
     def test_panel_param_steams_dict(self):
-        try:
-            import panel
-        except:
-            raise SkipTest('Panel required for widget support in streams dict')
-        widget = panel.widgets.FloatSlider(value=1)
+        import panel as pn
+        widget = pn.widgets.FloatSlider(value=1)
 
         def test(x):
             return Points([x])
@@ -531,7 +528,7 @@ class TestParamMethodStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'%s action' % id(inner), '_memoize_key'})
+                             {f'{id(inner)} action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -551,7 +548,7 @@ class TestParamMethodStream(ComparisonTestCase):
             values.append(kwargs)
             self.assertEqual(
                 set(stream.hashkey),
-                {'%s action' % id(inner), '%s x' % id(inner), '_memoize_key'})
+                {f'{id(inner)} action', f'{id(inner)} x', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         stream.add_subscriber(lambda **kwargs: dmap[()])
@@ -784,24 +781,26 @@ class TestPlotSizeTransform(ComparisonTestCase):
 class TestPipeStream(ComparisonTestCase):
 
     def test_pipe_send(self):
-        test = None
         def subscriber(data):
-            global test
-            test = data
+            subscriber.test = data
+        subscriber.test = None
+
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
         pipe.send('Test')
         self.assertEqual(pipe.data, 'Test')
+        self.assertEqual(subscriber.test, 'Test')
 
     def test_pipe_event(self):
-        test = None
         def subscriber(data):
-            global test
-            test = data
+            subscriber.test = data
+        subscriber.test = None
+
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
         pipe.event(data='Test')
         self.assertEqual(pipe.data, 'Test')
+        self.assertEqual(subscriber.test, 'Test')
 
     def test_pipe_update(self):
         pipe = Pipe()
@@ -845,7 +844,7 @@ class TestBufferArrayStream(ComparisonTestCase):
 
     def test_buffer_array_send_verify_shape_fail(self):
         buff = Buffer(np.array([[0, 1]]))
-        error = "Streamed array data expeced to have 2 columns, got 3."
+        error = "Streamed array data expected to have 2 columns, got 3."
         with self.assertRaisesRegex(ValueError, error):
             buff.send(np.array([[1, 2, 3]]))
 
@@ -1170,7 +1169,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3)))
+                repr((dim('x')>=1)&(dim('x')<=3))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1225,7 +1224,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=4)))
+                repr((dim('x')>=1)&(dim('x')<=4))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1287,7 +1286,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3)))
+                repr((dim('x')>=1)&(dim('x')<=3))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1393,9 +1392,9 @@ class TestExprSelectionStream(ComparisonTestCase):
     def test_selection_expr_stream_polygon_index_cols(self):
         # Create SelectionExpr on element
         try: import shapely # noqa
-        except:
+        except ImportError:
             try: import spatialpandas # noqa
-            except: raise SkipTest('Shapely required for polygon selection')
+            except ImportError: raise SkipTest('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],
@@ -1492,7 +1491,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3)))
+                repr((dim('x')>=1)&(dim('x')<=3))
             )
             self.assertEqual(
                 expr_stream.bbox,

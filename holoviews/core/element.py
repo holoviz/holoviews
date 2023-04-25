@@ -2,6 +2,7 @@ from itertools import groupby
 import numpy as np
 
 import param
+import pandas as pd
 
 from .dimension import Dimensioned, ViewableElement, asdim
 from .layout import Composable, Layout, NdLayout
@@ -77,7 +78,7 @@ class Element(ViewableElement, Composable, Overlayable):
             raise NotImplementedError("%s currently does not support getitem" %
                                       type(self).__name__)
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Indicates whether the element is empty.
 
         Subclasses may override this to signal that the Element
@@ -92,8 +93,6 @@ class Element(ViewableElement, Composable, Overlayable):
     def __iter__(self):
         "Disable iterator interface."
         raise NotImplementedError('Iteration on Elements is not supported.')
-
-    __bool__ = __nonzero__
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.
@@ -208,7 +207,6 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             DataFrame of columns corresponding to each dimension
         """
-        import pandas as pd
         if dimensions is None:
             dimensions = [d.name for d in self.dimensions()]
         else:
@@ -472,5 +470,5 @@ class Collator(NdMapping):
         return new_item
 
 
-__all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+__all__ = list({_k for _k, _v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)})

@@ -3,7 +3,7 @@ import sys
 
 try:
     from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
-except:
+except ImportError:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
@@ -51,14 +51,14 @@ class OutputMagic(Magics):
         """
         current, count = '', 0
         for k,v in Store.output_settings.options.items():
-            keyword = '%s=%r' % (k,v)
+            keyword = f'{k}={v!r}'
             if len(current) + len(keyword) > 80:
                 print(('%output' if count==0 else '      ')  + current)
                 count += 1
                 current = keyword
             else:
                 current += ' '+ keyword
-        else:
+        else:  # noqa: PLW0120
             print(('%output' if count==0 else '      ')  + current)
 
     @classmethod
@@ -93,7 +93,7 @@ class OutputMagic(Magics):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
 
         def warnfn(msg):
-            display(HTML("<b>Warning:</b> %s" % msg))
+            display(HTML(f"<b>Warning:</b> {msg}"))
 
 
         if line:
@@ -151,7 +151,7 @@ class CompositorMagic(Magics):
 
 
 
-class OptsCompleter(object):
+class OptsCompleter:
     """
     Implements the TAB-completion for the %%opts magic.
     """
@@ -332,7 +332,7 @@ class OptsMagic(Magics):
         for backend in Store.loaded_backends():
             available_elements |= set(Store.options(backend).children)
 
-        spec_elements = set(k.split('.')[0] for k in spec.keys())
+        spec_elements = {k.split('.')[0] for k in spec.keys()}
         unknown_elements = spec_elements - available_elements
         if unknown_elements:
             msg = ("<b>WARNING:</b> Unknown elements {unknown} not registered "
@@ -402,7 +402,7 @@ class TimerMagic(Magics):
         elif line.strip() == 'start':
             TimerMagic.start_time = time.time()
             timestamp = time.strftime("%Y/%m/%d %H:%M:%S")
-            print("Timer start: %s" % timestamp)
+            print(f"Timer start: {timestamp}")
             return
         elif self.start_time is None:
             print("Please start timer with %timer start. For more information consult %timer?")

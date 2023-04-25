@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 try:
     import ibis
     from ibis import sqlite
-except:
+except ImportError:
     raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
 
 import numpy as np
@@ -66,7 +66,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
         )
 
-        # Create table with aliased dimenion names
+        # Create table with aliased dimension names
         self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
         self.alias_vdims = [("weight", "Weight"), ("height", "Height")]
         alias_df = pd.DataFrame(

@@ -16,8 +16,8 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
     def setUp(self):
         super().setUp()
         # set up dummy data for convenient tests
-        x = ["Seg {}".format(idx) for idx in range(2)]
-        y = ["Ann {}".format(idx) for idx in range(2)]
+        x = [f"Seg {idx}" for idx in range(2)]
+        y = [f"Ann {idx}" for idx in range(2)]
         self.z = list(range(4))
         self.x, self.y = zip(*product(x, y))
 
@@ -34,7 +34,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
                          radius_outer=0.2,
                          radial=True)
 
-        opts = dict(HeatMap=dict(plot=plot_opts))
+        opts = dict(HeatMap=plot_opts)
 
         # provide element and plot instances for tests
         self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
@@ -155,7 +155,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         glyphs = self.plot._style_groups.keys()
         glyphs_mapped = self.plot.get_default_mapping(None, None).keys()
-        glyphs_plain = set([x[:-2] for x in glyphs_mapped])
+        glyphs_plain = {x[:-2] for x in glyphs_mapped}
 
         self.assertTrue(all([x in glyphs_plain for x in glyphs]))
 
@@ -259,7 +259,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         for check in [data, mapping]:
             glyphs_mapped = check.keys()
-            glyphs_plain = set([x[:-2] for x in glyphs_mapped])
+            glyphs_plain = {x[:-2] for x in glyphs_mapped}
             self.assertTrue(all([x in glyphs_plain for x in glyphs]))
 
     def test_plot_data_source(self):

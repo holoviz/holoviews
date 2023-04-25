@@ -1,5 +1,6 @@
-import sys, warnings, operator
-import builtins as builtins   # noqa (compatibility)
+import sys
+import warnings
+import operator
 import hashlib
 import json
 import time
@@ -13,9 +14,9 @@ import unicodedata
 import datetime as dt
 
 from collections.abc import Iterable # noqa
-from collections import defaultdict, OrderedDict, namedtuple # noqa (compatibility)
+from collections import defaultdict, OrderedDict, namedtuple
 from contextlib import contextmanager
-from packaging.version import Version as LooseVersion
+from packaging.version import Version
 from functools import partial
 from threading import Thread, Event
 from types import FunctionType
@@ -32,8 +33,8 @@ cmp = lambda a, b: (a>b)-(a<b)
 
 get_keywords = operator.attrgetter('varkw')
 generator_types = (zip, range, types.GeneratorType)
-numpy_version = LooseVersion(np.__version__)
-param_version = LooseVersion(param.__version__)
+numpy_version = Version(np.__version__)
+param_version = Version(param.__version__)
 
 datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time)
 timedelta_types = (np.timedelta64, dt.timedelta,)
@@ -50,15 +51,15 @@ _NP_SAMPLE_SIZE = 1_000_000
 _PANDAS_ROWS_LARGE = 1_000_000
 _PANDAS_SAMPLE_SIZE = 1_000_000
 
-pandas_version = LooseVersion(pd.__version__)
+pandas_version = Version(pd.__version__)
 try:
-    if pandas_version >= LooseVersion('1.3.0'):
+    if pandas_version >= Version('1.3.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
         from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
-    elif pandas_version >= LooseVersion('0.24.0'):
+    elif pandas_version >= Version('0.24.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
         from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-    elif pandas_version > LooseVersion('0.20.0'):
+    elif pandas_version > Version('0.20.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
         from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
     else:
@@ -69,10 +70,10 @@ try:
     datetime_types = datetime_types + pandas_datetime_types
     timedelta_types = timedelta_types + pandas_timedelta_types
     arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-    if pandas_version > LooseVersion('0.23.0'):
+    if pandas_version > Version('0.23.0'):
         from pandas.core.dtypes.generic import ABCExtensionArray
         arraylike_types = arraylike_types + (ABCExtensionArray,)
-    if pandas_version > LooseVersion('1.0'):
+    if pandas_version > Version('1.0'):
         from pandas.core.arrays.masked import BaseMaskedArray
         masked_types = (BaseMaskedArray,)
 except Exception as e:
@@ -83,9 +84,9 @@ try:
     import cftime
     cftime_types = (cftime.datetime,)
     datetime_types += cftime_types
-except:
+except ImportError:
     cftime_types = ()
-_STANDARD_CALENDARS = set(['standard', 'gregorian', 'proleptic_gregorian'])
+_STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
 
 
 class VersionError(Exception):
@@ -134,10 +135,6 @@ class Config(param.ParameterizedFunction):
     default_heatmap_cmap = param.String(default='kbc_r', doc="""
        Global default colormap for HeatMap elements. Prior to HoloViews
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
-
-    raise_deprecated_tilesource_exception = param.Boolean(default=False,
-       doc=""" Whether deprecated tile sources should raise a
-       deprecation exception instead of issuing warnings.""")
 
     def __call__(self, **params):
         self.param.set_param(**params)
@@ -188,7 +185,7 @@ class HashableJSON(json.JSONEncoder):
                 obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
-        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
+        if isinstance(obj, (pd.Series, pd.DataFrame)):
             if len(obj) > _PANDAS_ROWS_LARGE:
                 obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
             try:
@@ -216,7 +213,7 @@ class HashableJSON(json.JSONEncoder):
             return repr(obj)
         try:
             return hash(obj)
-        except:
+        except Exception:
             return id(obj)
 
 
@@ -305,7 +302,7 @@ class periodic(Thread):
 
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
-        elif not type(count) is type(None):
+        elif count is not None:
             raise ValueError('Count value must be a positive integer or None')
 
         if block is False and count is None and timeout is None:
@@ -338,9 +335,7 @@ class periodic(Thread):
         self._completed.set()
 
     def __repr__(self):
-        return 'periodic(%s, %s, %s)' % (self.period,
-                                         self.count,
-                                         callable_name(self.callback))
+        return f'periodic({self.period}, {self.count}, {callable_name(self.callback)})'
     def __str__(self):
         return repr(self)
 
@@ -458,14 +453,13 @@ def validate_dynamic_argspec(callback, kdims, streams):
         unassigned_streams = set(stream_params) - set(argspec.args)
         if unassigned_streams:
             unassigned = ','.join(unassigned_streams)
-            raise KeyError('Callable {name!r} missing keywords to '
-                           'accept stream parameters: {unassigned}'.format(name=name,
-                                                                    unassigned=unassigned))
+            raise KeyError(f'Callable {name!r} missing keywords to '
+                           f'accept stream parameters: {unassigned}')
 
 
     if len(posargs) > len(kdims) + len(stream_params):
-        raise KeyError('Callable {name!r} accepts more positional arguments than '
-                       'there are kdims and stream parameters'.format(name=name))
+        raise KeyError(f'Callable {name!r} accepts more positional arguments than '
+                       'there are kdims and stream parameters')
     if kdims == []:                  # Can be no posargs, stream kwargs already validated
         return []
     if set(kdims) == set(posargs):   # Posargs match exactly, can all be passed as kwargs
@@ -473,16 +467,14 @@ def validate_dynamic_argspec(callback, kdims, streams):
     elif len(posargs) == len(kdims): # Posargs match kdims length, supplying names
         if argspec.args[:len(kdims)] != posargs:
             raise KeyError('Unmatched positional kdim arguments only allowed at '
-                           'the start of the signature of {name!r}'.format(name=name))
+                           f'the start of the signature of {name!r}')
 
         return posargs
     elif argspec.varargs:            # Posargs missing, passed to Callable directly
         return None
     elif set(posargs) - set(kdims):
-        raise KeyError('Callable {name!r} accepts more positional arguments {posargs} '
-                       'than there are key dimensions {kdims}'.format(name=name,
-                                                                      posargs=posargs,
-                                                                      kdims=kdims))
+        raise KeyError(f'Callable {name!r} accepts more positional arguments {posargs} '
+                       f'than there are key dimensions {kdims}')
     elif set(kdims).issubset(set(kwargs)): # Key dims can be supplied by keyword
         return kdims
     elif set(kdims).issubset(set(posargs+kwargs)):
@@ -490,10 +482,9 @@ def validate_dynamic_argspec(callback, kdims, streams):
     elif argspec.keywords:
         return kdims
     else:
-        raise KeyError('Callback {name!r} signature over {names} does not accommodate '
-                       'required kdims {kdims}'.format(name=name,
-                                                       names=list(set(posargs+kwargs)),
-                                                       kdims=kdims))
+        names = list(set(posargs+kwargs))
+        raise KeyError(f'Callback {name!r} signature over {names} does not accommodate '
+                       f'required kdims {kdims}')
 
 
 def callable_name(callable_obj):
@@ -606,7 +597,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        in order to make sure paths aren't confused with method
        names.""")
 
-    eliminations = param.List(['extended', 'accent', 'small', 'letter', 'sign', 'digit',
+    eliminations = param.List(default=['extended', 'accent', 'small', 'letter', 'sign', 'digit',
                                'latin', 'greek', 'arabic-indic', 'with', 'dollar'], doc="""
        Lowercase strings to be eliminated from the unicode names in
        order to shorten the sanitized name ( lowercase). Redundant
@@ -677,7 +668,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
                     else disable_leading_underscore)
        if disabled_ and name.startswith('_'):
           return False
-       isrepr = any(('_repr_%s_' % el) == name for el in disabled_reprs)
+       isrepr = any(f'_repr_{el}_' == name for el in disabled_reprs)
        return (name not in self_or_cls.disallowed) and not isrepr
 
     @param.parameterized.bothmethod
@@ -732,7 +723,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
            return self._lookup_table[name]
         name = bytes_to_unicode(name)
         if not self.allowable(name):
-            raise AttributeError("String %r is in the disallowed list of attribute names: %r" % (name, self.disallowed))
+            raise AttributeError(f"String {name!r} is in the disallowed list of attribute names: {self.disallowed!r}")
 
         if self.capitalize and name and name[0] in string.ascii_lowercase:
             name = name[0].upper()+name[1:]
@@ -809,7 +800,7 @@ def isnumeric(val):
     try:
         float(val)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -827,7 +818,7 @@ def asarray(arraylike, strict=True):
     elif hasattr(arraylike, '__array__'):
         return np.asarray(arraylike)
     elif strict:
-        raise ValueError('Could not convert %s type to array' % type(arraylike))
+        raise ValueError(f'Could not convert {type(arraylike)} type to array')
     return arraylike
 
 
@@ -839,13 +830,13 @@ def isnat(val):
     """
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
-        if numpy_version >= LooseVersion('1.13'):
+        if numpy_version >= Version('1.13'):
             return np.isnat(val)
         else:
             return val.view('i8') == nat_as_integer
-    elif pd and val is pd.NaT:
+    elif val is pd.NaT:
         return True
-    elif pd and isinstance(val, pandas_datetime_types+pandas_timedelta_types):
+    elif isinstance(val, pandas_datetime_types+pandas_timedelta_types):
         return pd.isna(val)
     else:
         return False
@@ -875,9 +866,9 @@ def isfinite(val):
         elif val.dtype.kind == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
         elif val.dtype.kind in 'US':
-            return ~pd.isna(val) if pd else np.ones_like(val, dtype=bool)
+            return ~pd.isna(val)
         finite = np.isfinite(val)
-        if pd and pandas_version >= LooseVersion('1.0.0'):
+        if pandas_version >= Version('1.0.0'):
             finite &= ~pd.isna(val)
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
@@ -885,7 +876,7 @@ def isfinite(val):
     elif isinstance(val, (str, bytes)):
         return True
     finite = np.isfinite(val)
-    if pd and pandas_version >= LooseVersion('1.0.0'):
+    if pandas_version >= Version('1.0.0'):
         if finite is pd.NA:
             return False
         return finite & (~pd.isna(val))
@@ -913,7 +904,7 @@ def find_minmax(lims, olims):
     try:
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
-    except:
+    except Exception:
         limits = (np.NaN, np.NaN)
     return limits
 
@@ -934,11 +925,11 @@ def find_range(values, soft_range=[]):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             return np.nanmin(values), np.nanmax(values)
-    except:
+    except Exception:
         try:
             values = sorted(values)
             return (values[0], values[-1])
-        except:
+        except Exception:
             return (None, None)
 
 
@@ -959,7 +950,7 @@ def max_range(ranges, combined=True):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
+            if any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
@@ -989,7 +980,7 @@ def max_range(ranges, combined=True):
                 return (np.nanmin(arr), np.nanmax(arr))
             else:
                 return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
-    except:
+    except Exception:
         return (np.NaN, np.NaN)
 
 
@@ -1105,8 +1096,8 @@ def int_to_alpha(n, upper=True):
 
 
 def int_to_roman(input):
-   if type(input) != type(1):
-      raise TypeError("expected integer, got %s" % type(input))
+   if not isinstance(input, int):
+      raise TypeError(f"expected integer, got {type(input)}")
    if not 0 < input < 4000:
       raise ValueError("Argument must be between 1 and 3999")
    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
@@ -1157,22 +1148,18 @@ def unique_array(arr):
     """
     if not len(arr):
         return np.asarray(arr)
-    elif pd:
-        if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
-            # Avoid expensive unpacking if not potentially datetime
-            return pd.unique(arr)
 
-        values = []
-        for v in arr:
-            if (isinstance(v, datetime_types) and
-                not isinstance(v, cftime_types)):
-                v = pd.Timestamp(v).to_datetime64()
-            values.append(v)
-        return pd.unique(values)
-    else:
-        arr = np.asarray(arr)
-        _, uniq_inds = np.unique(arr, return_index=True)
-        return arr[np.sort(uniq_inds)]
+    if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
+        # Avoid expensive unpacking if not potentially datetime
+        return pd.unique(arr)
+
+    values = []
+    for v in arr:
+        if (isinstance(v, datetime_types) and
+            not isinstance(v, cftime_types)):
+            v = pd.Timestamp(v).to_datetime64()
+        values.append(v)
+    return pd.unique(values)
 
 
 def match_spec(element, specification):
@@ -1412,7 +1399,7 @@ def layer_sort(hmap):
    orderings = {}
    for o in hmap:
       okeys = [get_overlay_spec(o, k, v) for k, v in o.data.items()]
-      if len(okeys) == 1 and not okeys[0] in orderings:
+      if len(okeys) == 1 and okeys[0] not in orderings:
          orderings[okeys[0]] = []
       else:
          orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys)})
@@ -1436,7 +1423,7 @@ def group_select(selects, length=None, depth=None):
     Given a list of key tuples to select, groups them into sensible
     chunks to avoid duplicating indexing operations.
     """
-    if length == None and depth == None:
+    if length is None and depth is None:
         length = depth = len(selects[0])
     getter = operator.itemgetter(depth-length)
     if length > 1:
@@ -1482,7 +1469,7 @@ def is_dataframe(data):
     dd = None
     if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
         import dask.dataframe as dd
-    return((pd is not None and isinstance(data, pd.DataFrame)) or
+    return((isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
 
 
@@ -1493,7 +1480,7 @@ def is_series(data):
     dd = None
     if 'dask.dataframe' in sys.modules:
         import dask.dataframe as dd
-    return((pd is not None and isinstance(data, pd.Series)) or
+    return (isinstance(data, pd.Series) or
           (dd is not None and isinstance(data, dd.Series)))
 
 
@@ -1579,14 +1566,11 @@ def resolve_dependent_value(value):
         )
 
     if 'panel' in sys.modules:
-        from panel.widgets import RangeSlider, Widget
+        from panel.depends import param_value_if_widget
+        from panel.widgets import RangeSlider
         range_widget = isinstance(value, RangeSlider)
-        try:
-            from panel.depends import param_value_if_widget
-            value = param_value_if_widget(value)
-        except Exception:
-            if isinstance(value, Widget):
-                value = value.param.value
+        value = param_value_if_widget(value)
+
     if is_param_method(value, has_deps=True):
         value = value()
     elif isinstance(value, param.Parameter) and isinstance(value.owner, param.Parameterized):
@@ -1872,12 +1856,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):
-        try:
-            import pandas # noqa (optional import)
-            groupby = self.groupby_pandas
-        except:
-            groupby = self.groupby_python
-        return groupby(ndmapping, dimensions, container_type,
+        return self.groupby_pandas(ndmapping, dimensions, container_type,
                        group_type, sort=sort, **kwargs)
 
     @param.parameterized.bothmethod
@@ -1961,7 +1940,7 @@ def arglexsort(arrays):
     dtypes = ','.join(array.dtype.str for array in arrays)
     recarray = np.empty(len(arrays[0]), dtype=dtypes)
     for i, array in enumerate(arrays):
-        recarray['f%s' % i] = array
+        recarray[f'f{i}'] = array
     return recarray.argsort()
 
 
@@ -1973,7 +1952,7 @@ def dimensioned_streams(dmap):
     dimensioned = []
     for stream in dmap.streams:
         stream_params = stream_parameters([stream])
-        if set([str(k) for k in dmap.kdims]) & set(stream_params):
+        if {str(k) for k in dmap.kdims} & set(stream_params):
             dimensioned.append(stream)
     return dimensioned
 
@@ -2011,7 +1990,7 @@ def is_nan(x):
     """
     try:
         return np.isnan(x)
-    except:
+    except Exception:
         return False
 
 
@@ -2029,7 +2008,7 @@ def bound_range(vals, density, time_unit='us'):
         invert = True
     if not density:
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
+            warnings.filterwarnings('ignore', r'invalid value encountered in (double_scalars|scalar divide)')
             full_precision_density = compute_density(low, high, len(vals)-1)
             with np.errstate(over='ignore'):
                 density = round(full_precision_density, sys.float_info.dig)
@@ -2077,7 +2056,7 @@ def date_range(start, end, length, time_unit='us'):
     of samples.
     """
     step = (1./compute_density(start, end, length, time_unit))
-    if pd and isinstance(start, pd.Timestamp):
+    if isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
     step = np.timedelta64(int(round(step)), time_unit)
     return start+step/2.+np.arange(length)*step
@@ -2087,8 +2066,6 @@ def parse_datetime(date):
     """
     Parses dates specified as string or integer or pandas Timestamp
     """
-    if pd is None:
-        raise ImportError('Parsing dates from strings requires pandas')
     return pd.to_datetime(date).to_datetime64()
 
 
@@ -2112,15 +2089,14 @@ def dt_to_int(value, time_unit='us'):
     """
     Converts a datetime type to an integer with the supplied time unit.
     """
-    if pd:
-        if isinstance(value, pd.Period):
-            value = value.to_timestamp()
-        if isinstance(value, pd.Timestamp):
-            try:
-                value = value.to_datetime64()
-            except Exception:
-                value = np.datetime64(value.to_pydatetime())
-    elif isinstance(value, cftime_types):
+    if isinstance(value, pd.Period):
+        value = value.to_timestamp()
+    if isinstance(value, pd.Timestamp):
+        try:
+            value = value.to_datetime64()
+        except Exception:
+            value = np.datetime64(value.to_pydatetime())
+    if isinstance(value, cftime_types):
         return cftime_to_timestamp(value, time_unit)
 
     # date class is a parent for datetime class
@@ -2132,7 +2108,7 @@ def dt_to_int(value, time_unit='us'):
         try:
             value = np.datetime64(value, 'ns')
             tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns'))
-            return value.tolist()/tscale
+            return int(value.tolist() / tscale)
         except Exception:
             # If it can't handle ns precision fall back to datetime
             value = value.tolist()
@@ -2142,16 +2118,11 @@ def dt_to_int(value, time_unit='us'):
     else:
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
 
-    try:
-        # Handle python3
-        if value.tzinfo is None:
-            _epoch = dt.datetime(1970, 1, 1)
-        else:
-            _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
-        return int((value - _epoch).total_seconds() * tscale)
-    except Exception:
-        # Handle python2
-        return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
+    if value.tzinfo is None:
+        _epoch = dt.datetime(1970, 1, 1)
+    else:
+        _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+    return int((value - _epoch).total_seconds() * tscale)
 
 
 def cftime_to_timestamp(date, time_unit='us'):
@@ -2212,7 +2183,7 @@ def mimebundle_to_html(bundle):
     html = data.get('text/html', '')
     if 'application/javascript' in data:
         js = data['application/javascript']
-        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+        html += f'\n<script type="application/javascript">{js}</script>'
     return html
 
 

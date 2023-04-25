@@ -137,7 +137,7 @@ class _base_link_selections(param.ParameterizedFunction):
         self.param.set_param(**kwargs)
 
         if Store.current_backend not in Store.renderers:
-            raise RuntimeError("Cannot peform link_selections operation "
+            raise RuntimeError("Cannot perform link_selections operation "
                                "since the selected backend %r is not "
                                "loaded. Load the plotting extension with "
                                "hv.extension or import the plotting "
@@ -181,7 +181,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 # This is a DynamicMap that we don't know how to recurse into.
                 self.param.warning(
                     "linked selection: Encountered DynamicMap that we don't know "
-                    "how to recurse into:\n{!r}".format(hvobj)
+                    f"how to recurse into:\n{hvobj!r}"
                 )
                 return hvobj
         elif isinstance(hvobj, Element):
@@ -250,7 +250,7 @@ class link_selections(_base_link_selections):
     """
 
     cross_filter_mode = param.Selector(
-        ['overwrite', 'intersect'], default='intersect', doc="""
+        objects=['overwrite', 'intersect'], default='intersect', doc="""
         Determines how to combine selections across different
         elements.""")
 
@@ -268,7 +268,7 @@ class link_selections(_base_link_selections):
         each element.""")
 
     selection_mode = param.Selector(
-        ['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
+        objects=['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
         Determines how to combine successive selections on the same
         element.""")
 
@@ -464,7 +464,7 @@ class link_selections(_base_link_selections):
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
 
 
-class SelectionDisplay(object):
+class SelectionDisplay:
     """
     Base class for selection display classes.  Selection display classes are
     responsible for transforming an element (or DynamicMap that produces an

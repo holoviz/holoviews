@@ -6,7 +6,7 @@ of this Plot baseclass.
 import uuid
 import warnings
 
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, OrderedDict
 from functools import partial
 from itertools import groupby, product
 
@@ -14,16 +14,11 @@ import numpy as np
 import param
 
 from panel.config import config
+from panel.io.document import unlocked
 from panel.io.notebook import push
 from panel.io.state import state
-try:
-    from panel.io.document import unlocked
-except Exception:
-    from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
-
 from ..selection import NoOpSelectionDisplay
-from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
@@ -32,7 +27,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import LooseVersion, stream_parameters, isfinite
+from ..core.util import stream_parameters, isfinite
 from ..element import Table, Graph
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
@@ -113,18 +108,11 @@ class Plot(param.Parameterized):
             self.root is self.handles.get('plot') and
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
-            from .bokeh.util import bokeh_version
-            if self._document and bokeh_version >= LooseVersion('2.4.0'):
+            if self._document:
                 if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
                     self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
                 else:
                     self._document.callbacks._session_destroyed_callbacks.pop(self._session_destroy, None)
-
-            elif self._document:
-                if isinstance(self._document._session_destroyed_callbacks, set):
-                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
-                else:
-                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
 
         self._document = doc
         if self.subplots:
@@ -150,7 +138,7 @@ class Plot(param.Parameterized):
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
-                if not plot.root:
+                if plot is None or not plot.root:
                     continue
                 for cb in getattr(plot, 'callbacks', []):
                     if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):
@@ -288,7 +276,7 @@ class Plot(param.Parameterized):
 
 
 
-class PlotSelector(object):
+class PlotSelector:
     """
     Proxy that allows dynamic selection of a plotting class based on a
     function of the plotted object. Behaves like a Plot class and
@@ -312,7 +300,7 @@ class PlotSelector(object):
         return getattr(plt_class, 'selection_display', None)
 
     def _define_interface(self, plots, allow_mismatch):
-        parameters = [{k:v.precedence for k,v in plot.param.params().items()
+        parameters = [{k:v.precedence for k,v in plot.param.objects().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
@@ -340,7 +328,7 @@ class PlotSelector(object):
     def __setattr__(self, label, value):
         try:
             return super().__setattr__(label, value)
-        except:
+        except Exception:
             raise Exception("Please set class parameters directly on classes %s"
                             % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
 
@@ -428,7 +416,7 @@ class DimensionedPlot(Plot):
         Get the state of the Plot for a given frame number.
         """
         if isinstance(frame, int) and frame > len(self):
-            self.param.warning("Showing last frame available: %d" % len(self))
+            self.param.warning(f"Showing last frame available: {len(self)}")
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
         if not isinstance(frame, tuple):
             frame = self.keys[frame]
@@ -717,11 +705,11 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
-                if dtype is not None and dtype.kind == 'uif' and robust:
+                if dtype is not None and dtype.kind in 'uif' and robust:
                     percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
                         dim(el_dim, np.nanpercentile, percentile).apply(el),
-                        dim(el_dim, np.nanpercentile, percentile).apply(el)
+                        dim(el_dim, np.nanpercentile, 100 - percentile).apply(el)
                     )
 
                 if (any(isinstance(r, str) for r in data_range) or
@@ -763,7 +751,7 @@ class DimensionedPlot(Plot):
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 drange = (np.nanmin(values), np.nanmax(values))
-                        except:
+                        except Exception:
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {
@@ -957,7 +945,7 @@ class DimensionedPlot(Plot):
         return len(self.keys)
 
 
-class CallbackPlot(object):
+class CallbackPlot:
 
     backend = None
 
@@ -1259,7 +1247,7 @@ class GenericElementPlot(DimensionedPlot):
         frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, '_force', False)
 
-        if not key in self.keys and len(key) == self.hmap.ndims and self.dynamic:
+        if key not in self.keys and len(key) == self.hmap.ndims and self.dynamic:
             self.keys.append(key)
         self.current_frame = frame
         self.current_key = key
@@ -1273,8 +1261,8 @@ class GenericElementPlot(DimensionedPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook %r could not be "
-                                   "applied:\n\n %s" % (hook, e))
+                self.param.warning("Plotting hook {!r} could not be "
+                                   "applied:\n\n {}".format(hook, e))
 
     def get_aspect(self, xspan, yspan):
         """
@@ -1657,8 +1645,8 @@ class GenericOverlayPlot(GenericElementPlot):
         plottype = registry.get(vtype, None)
         if plottype is None:
             self.param.warning(
-                "No plotting class for %s type and %s backend "
-                "found. " % (vtype.__name__, self.renderer.backend))
+                "No plotting class for {} type and {} backend "
+                "found. ".format(vtype.__name__, self.renderer.backend))
             return None
 
         # Get zorder and style counter
@@ -1737,6 +1725,9 @@ class GenericOverlayPlot(GenericElementPlot):
             subplot = self._create_subplot(k, vmap, [], ranges)
             if subplot is None:
                 continue
+            subplot.document = self.document
+            if self.comm:
+                subplot.comm = self.comm
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
@@ -1872,7 +1863,7 @@ class GenericCompositePlot(DimensionedPlot):
                          dimensions=dimensions, **params)
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
-        self.streams = list(set([s for streams in nested_streams for s in streams]))
+        self.streams = list({s for streams in nested_streams for s in streams})
         self._link_dimensioned_streams()
 
     def _link_dimensioned_streams(self):

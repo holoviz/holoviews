@@ -7,8 +7,7 @@ from holoviews.element import Points
 from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
 
-from matplotlib import pyplot
-
+import matplotlib.pyplot as plt
 
 class TestPointPlot(TestMPLPlot):
 
@@ -46,9 +45,9 @@ class TestPointPlot(TestMPLPlot):
 
     def test_points_rcparams_do_not_persist(self):
         opts = dict(fig_rcparams={'text.usetex': True})
-        points = Points(([0, 1], [0, 3])).opts(plot=opts)
+        points = Points(([0, 1], [0, 3])).opts(**opts)
         mpl_renderer.get_plot(points)
-        self.assertFalse(pyplot.rcParams['text.usetex'])
+        self.assertFalse(plt.rcParams['text.usetex'])
 
     def test_points_rcparams_used(self):
         opts = dict(fig_rcparams={'grid.color': 'red'})

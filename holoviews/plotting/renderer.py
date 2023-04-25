@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
@@ -6,21 +5,18 @@ regardless of plotting package or backend.
 import base64
 import os
 
-from io import BytesIO
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO, StringIO
 from contextlib import contextmanager
 from functools import partial
 
 import param
-import panel
+import panel as pn
 
 from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.embed import file_html
 from bokeh.resources import CDN, INLINE
+from packaging.version import Version
 from panel import config
 from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
@@ -28,20 +24,25 @@ from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
-from pyviz_comms import CommManager, JupyterCommManager
+from pyviz_comms import CommManager
+try:
+    # Added in Panel 1.0 to support JS -> Python binary comms
+    from panel.io.notebook import JupyterCommManagerBinary as JupyterCommManager
+except ImportError:
+    from pyviz_comms import JupyterCommManager
 
 from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unbound_dimensions, LooseVersion
+from ..core.util import unbound_dimensions
 from ..streams import Stream
 from . import Plot
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
 
-panel_version = LooseVersion(panel.__version__)
+panel_version = Version(pn.__version__)
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -110,14 +111,14 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g. 'matplotlib' or 'cairo'.""")
 
-    dpi = param.Integer(None, doc="""
+    dpi = param.Integer(default=None, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps = param.Number(20, doc="""
+    fps = param.Number(default=20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
@@ -131,7 +132,7 @@ class Renderer(Exporter):
         mode a bokeh Document will be returned which can be served as a
         bokeh server app. By default renders all output is rendered to HTML.""")
 
-    size = param.Integer(100, doc="""
+    size = param.Integer(default=100, doc="""
         The rendered size as a percentage size""")
 
     widget_location = param.ObjectSelector(default=None, allow_None=True, objects=[
@@ -147,10 +148,10 @@ class Renderer(Exporter):
     css = param.Dict(default={}, doc="""
         Dictionary of CSS attributes and values to apply to HTML output.""")
 
-    info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+    info_fn = param.Callable(default=None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
 
-    key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+    key_fn = param.Callable(default=None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
     post_render_hooks = param.Dict(default={'svg':[], 'png':[]}, doc="""
@@ -206,7 +207,7 @@ class Renderer(Exporter):
         Given a HoloViews Viewable return a corresponding plot instance.
         """
         if isinstance(obj, DynamicMap) and obj.unbounded:
-            dims = ', '.join('%r' % dim for dim in obj.unbounded)
+            dims = ', '.join(f'{dim!r}' for dim in obj.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -324,8 +325,8 @@ class Renderer(Exporter):
             try:
                 data = hook(data, obj)
             except Exception as e:
-                self.param.warning("The post_render_hook %r could not "
-                                   "be applied:\n\n %s" % (hook, e))
+                self.param.warning("The post_render_hook {!r} could not "
+                                   "be applied:\n\n {}".format(hook, e))
         return data
 
     def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):
@@ -358,7 +359,7 @@ class Renderer(Exporter):
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):
-            css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
+            css = '; '.join(f"{k}: {v}" for k, v in css.items())
         else:
             raise ValueError("CSS must be supplied as Python dictionary")
 
@@ -538,11 +539,12 @@ class Renderer(Exporter):
             element_type = obj
         else:
             element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+            if element_type is None:
+                raise SkipRendering(f"{type(obj).__name__} was empty, could not determine plotting class.")
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise SkipRendering("No plotting class for {0} "
-                                "found".format(element_type.__name__))
+            raise SkipRendering(f"No plotting class for {element_type.__name__} found.")
         return plotclass
 
     @classmethod
@@ -603,7 +605,7 @@ class Renderer(Exporter):
             basename.write(encoded)
             basename.seek(0)
         else:
-            filename ='%s.%s' % (basename, info['file-ext'])
+            filename =f"{basename}.{info['file-ext']}"
             with open(filename, 'wb') as f:
                 f.write(encoded)
 
@@ -649,7 +651,7 @@ class Renderer(Exporter):
         with param.logging_level('ERROR'):
             try:
                 ip = get_ipython() # noqa
-            except:
+            except Exception:
                 ip = None
             if not ip or not hasattr(ip, 'kernel'):
                 return

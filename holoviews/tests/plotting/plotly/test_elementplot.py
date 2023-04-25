@@ -1,6 +1,7 @@
 from collections import deque
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Scatter3D, Path3D
@@ -223,3 +224,28 @@ class TestOverlayPlot(TestPlotlyPlot):
         scatter = Path3D([]) * Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel='Z-Axis')
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
+
+class TestColorbarPlot(TestPlotlyPlot):
+    def test_base(self):
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df)
+        state = self._get_plot_state(scatter)
+        assert "colorbar" not in state["data"][0]["marker"]
+
+    def test_colorbar(self):
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df).opts(color="T", colorbar=True)
+        state = self._get_plot_state(scatter)
+        assert "colorbar" in state["data"][0]["marker"]
+        assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "T"
+
+    def test_colorbar_opts_title(self):
+        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+        scatter = Scatter3D(data=df).opts(
+            color="T",
+            colorbar=True,
+            colorbar_opts={"title": "some-title"}
+        )
+        state = self._get_plot_state(scatter)
+        assert "colorbar" in state["data"][0]["marker"]
+        assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "some-title"

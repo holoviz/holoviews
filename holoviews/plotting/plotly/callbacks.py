@@ -1,7 +1,5 @@
 from weakref import WeakValueDictionary
 
-from param.parameterized import add_metaclass
-
 from ...streams import (
     Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY,
     SelectionXY
@@ -31,15 +29,14 @@ class PlotlyCallbackMetaClass(type):
 
         # Store weak reference to the callback instance in the _instances
         # WeakValueDictionary. This will allow instances to be garbage collected and
-        # the references will be automatically removed from the colleciton when this
+        # the references will be automatically removed from the collection when this
         # happens.
         cls.instances[inst.plot.trace_uid] = inst
 
         return inst
 
 
-@add_metaclass(PlotlyCallbackMetaClass)
-class PlotlyCallback(object):
+class PlotlyCallback(metaclass=PlotlyCallbackMetaClass):
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -235,8 +232,8 @@ class RangeCallback(PlotlyCallback):
 
             xaxis = trace.get('xaxis', 'x').replace('x', 'xaxis')
             yaxis = trace.get('yaxis', 'y').replace('y', 'yaxis')
-            xprop = '{xaxis}.range'.format(xaxis=xaxis)
-            yprop = '{yaxis}.range'.format(yaxis=yaxis)
+            xprop = f'{xaxis}.range'
+            yprop = f'{yaxis}.range'
 
             if not property_value:
                 x_range = None

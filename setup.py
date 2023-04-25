@@ -11,7 +11,7 @@ import pyct.build
 
 setup_args = {}
 install_requires = [
-    "param >=1.9.3,<2.0",
+    "param >=1.12.0,<3.0",
     "numpy >=1.0",
     "pyviz_comms >=0.7.4",
     "panel >=0.13.1",
@@ -22,8 +22,8 @@ install_requires = [
 
 extras_require = {}
 
-extras_require['flakes'] = [
-    'flake8',
+extras_require['lint'] = [
+    'ruff',
     'pre-commit',
 ]
 
@@ -31,6 +31,8 @@ extras_require['flakes'] = [
 extras_require['tests_core'] = [
     'pytest',
     'pytest-cov',
+    'pytest-xdist',
+    'flaky',
     'matplotlib >=3',
     'nbconvert',
     'bokeh',
@@ -56,9 +58,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy',
     'selenium',
+    'numpy <1.24',  # Upper pin because of numba error
 ]
 
-# Packages not working on python 3.11 becauase of numba
+# Packages not working on python 3.11 because of numba
 if sys.version_info < (3, 11):
     extras_require['tests'] += [
         'spatialpandas',
@@ -69,9 +72,7 @@ extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
 ]
 
-extras_require['tests_nb'] = [
-    'nbsmoke >=0.2.0',
-]
+extras_require['tests_nb'] = ['nbval']
 
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
@@ -98,11 +99,18 @@ extras_require["examples"] = extras_require["recommended"] + [
     "shapely",
     "scikit-image",
     "pyarrow",
+    "pooch",
+    "numpy <1.24",  # Upper pin because of numba error
 ]
 
 if sys.version_info < (3, 11):
     extras_require["examples"] += [
         "datashader >=0.11.1",
+    ]
+
+if sys.version_info < (3, 8):
+    extras_require["tests"] += [
+        "fsspec == 2023.1",
     ]
 
 
@@ -114,10 +122,10 @@ extras_require["extras"] = extras_require["examples"] + [
 ]
 
 # Not used in tox.ini or elsewhere, kept for backwards compatibility.
-extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['flakes']
+extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.7.1',
+    'nbsite ==0.8.0rc2',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
@@ -125,9 +133,13 @@ extras_require['doc'] = extras_require['examples'] + [
     'pydata-sphinx-theme ==0.9.0',
     'sphinx-copybutton',
     'pooch',
+    'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
+
+extras_require['bokeh2'] = ["panel <1.0.0a1"]
+extras_require['bokeh3'] = ["panel >=1.0.0a1"]
 
 extras_require["build"] = [
     "param >=1.7.0",
@@ -154,7 +166,7 @@ def get_setup_version(reponame):
         print(
             "WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0."
         )
-        return json.load(open(version_file_path, "r"))["version_string"]
+        return json.load(open(version_file_path))["version_string"]
 
 
 setup_args.update(

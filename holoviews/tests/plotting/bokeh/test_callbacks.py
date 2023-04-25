@@ -21,7 +21,7 @@ from bokeh.events import Tap
 from bokeh.io.doc import set_curdoc
 from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
 from holoviews.plotting.bokeh.callbacks import (
-    Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
+    Callback, CDSCallback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
     BoxEditCallback, PointerXCallback, TapCallback
 )
 from holoviews.plotting.bokeh.renderer import BokehRenderer
@@ -148,7 +148,7 @@ class TestResetCallback(CallbackTestCase):
 class TestPointerCallbacks(CallbackTestCase):
 
     def test_pointer_x_datetime_out_of_bounds(self):
-        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)]).opts(padding=0)
         PointerX(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
@@ -256,10 +256,10 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
-        self.assertEqual(source.data['x'], [0])
-        self.assertEqual(source.data['y'], [0])
-        self.assertEqual(source.data['width'], [1])
-        self.assertEqual(source.data['height'], [1])
+        self.assertEqual(source.data['left'], [-0.5])
+        self.assertEqual(source.data['bottom'], [-0.5])
+        self.assertEqual(source.data['right'], [0.5])
+        self.assertEqual(source.data['top'], [0.5])
         data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
         callback.on_msg({'data': data})
         element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
@@ -287,6 +287,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
+    @pytest.mark.flaky(max_runs=3)
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
@@ -405,10 +406,8 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(resolved, {'id': cds.ref['id'],
                                     'value': points.columns()})
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_rangexy_datetime(self):
-        # Raises a warning because makeTimeDataFrame isn't part of the public API.
-        curve = Curve(pd.util.testing.makeTimeDataFrame(), 'index', 'C')
+        curve = Curve(pd._testing.makeTimeDataFrame(), 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]
@@ -435,3 +434,14 @@ class TestServerCallbacks(CallbackTestCase):
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
+
+
+def test_msg_with_base64_array():
+    # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+    data_before = ["AAAAAAAAJEAAAAAAAAA0QAAAAAAAAD5AAAAAAAAAREA=", "float64", "little", [4]]
+    msg_before = {"data": {"x": data_before}}
+    msg_after = CDSCallback(None, None, None)._process_msg(msg_before)
+    data_after = msg_after["data"]["x"]
+
+    data_expected = np.array([10.0, 20.0, 30.0, 40.0])
+    assert np.equal(data_expected, data_after).all()

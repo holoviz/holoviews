@@ -1,8 +1,10 @@
+from collections import OrderedDict
+
 import numpy as np
 
 import param
 
-from ..core import OrderedDict, Element, Dataset, Tabular
+from ..core import Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
 from .selection import SelectionIndexExpr
 
@@ -23,7 +25,7 @@ class ItemTable(Element):
        ItemTables hold an index Dimension for each value they contain, i.e.
        they are equivalent to the keys.""")
 
-    vdims = param.List(default=[Dimension('Default')], bounds=(00, None), doc="""
+    vdims = param.List(default=[Dimension('Default')], bounds=(0, None), doc="""
        ItemTables should have only index Dimensions.""")
 
     group = param.String(default="ItemTable", constant=True)
@@ -47,7 +49,7 @@ class ItemTable(Element):
             data = OrderedDict(data)
         else:
             data = OrderedDict(list(data)) # Python 3
-        if not 'vdims' in params:
+        if "vdims" not in params:
             params['vdims'] = list(data.keys())
         str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
         super().__init__(str_keys, **params)
@@ -59,7 +61,7 @@ class ItemTable(Element):
         if heading == ():
             return self
         if heading not in self.vdims:
-            raise KeyError("%r not in available headings." % heading)
+            raise KeyError(f"{heading!r} not in available headings.")
         return np.array(self.data.get(heading, np.NaN))
 
     def dimension_values(self, dimension, expanded=True, flat=True):

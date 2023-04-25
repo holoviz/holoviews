@@ -9,8 +9,7 @@ from bokeh.core.properties import (
 )
 
 try:
-    from matplotlib import colors
-    import matplotlib.cm as cm
+    from matplotlib import colors, cm
 except ImportError:
     cm, colors = None, None
 

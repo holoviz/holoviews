@@ -3,10 +3,10 @@ import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
-from holoviews.core.util import LooseVersion
 from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
 from holoviews.util.transform import dim
 from matplotlib.collections import LineCollection, PolyCollection
+from packaging.version import Version
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -202,7 +202,7 @@ class TestMplGraphPlot(TestMPLPlot):
         nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
         graph = Graph((edges, nodes)).opts(node_alpha='alpha')
 
-        if LooseVersion(mpl.__version__) < LooseVersion("3.4.0"):
+        if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
             with self.assertRaises(Exception):
                 mpl_renderer.get_plot(graph)
@@ -316,7 +316,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
                          [p.array() for p in self.trimesh._split_edgepaths.split()])
 
     def test_plot_simple_trimesh_filled(self):
-        plot = mpl_renderer.get_plot(self.trimesh.opts(plot=dict(filled=True)))
+        plot = mpl_renderer.get_plot(self.trimesh.opts(filled=True))
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
         self.assertIsInstance(edges, PolyCollection)
@@ -395,7 +395,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
         trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).opts(node_alpha='alpha')
 
-        if LooseVersion(mpl.__version__) < LooseVersion("3.4.0"):
+        if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
             with self.assertRaises(Exception):
                 mpl_renderer.get_plot(trimesh)
@@ -479,13 +479,13 @@ class TestMplChordPlot(TestMPLPlot):
         return Chord((edges, nodes), vdims='weight')
 
     def test_chord_nodes_label_text(self):
-        g = self.chord.opts(plot=dict(label_index='Label'))
+        g = self.chord.opts(label_index='Label')
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
 
     def test_chord_nodes_labels_mapping(self):
-        g = self.chord.opts(plot=dict(labels='Label'))
+        g = self.chord.opts(labels='Label')
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
@@ -512,8 +512,7 @@ class TestMplChordPlot(TestMPLPlot):
         self.assertEqual(arcs.get_clim(), (0, 2))
 
     def test_chord_edges_categorically_colormapped(self):
-        g = self.chord.opts(plot=dict(edge_color_index='start'),
-                            style=dict(edge_cmap=['#FFFFFF', '#000000']))
+        g = self.chord.opts(edge_color_index='start', edge_cmap=['#FFFFFF', '#000000'])
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
         colors = np.array([[ 1., 1., 1., 1. ],
