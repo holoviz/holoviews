@@ -3,7 +3,7 @@ import param
 
 from param.parameterized import bothmethod
 
-from ..core import Dataset, Element, Operation
+from ..core import Dataset, Operation
 from ..core.util import datetime_types, dt_to_int, isfinite, max_range
 from ..element import Image
 from ..streams import RangeX, RangeXY, PlotSize

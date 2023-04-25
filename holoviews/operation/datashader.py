@@ -1,5 +1,6 @@
 import warnings
 
+from collections import OrderedDict
 from collections.abc import Callable
 from functools import partial
 
@@ -23,20 +24,23 @@ except ImportError:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (
-    CompositeOverlay, Dimension, Element, Operation, OrderedDict, Overlay, Store
+    CompositeOverlay, Dimension, Element, Operation, Overlay, NdOverlay, Store
 )
 from ..core.data import (
     Dataset, PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 )
 from ..core.util import (
     Iterable, cast_array_to_int64, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range
+    datetime_types, dt_to_int, get_param_values
 )
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
+from .downsampling import ResamplingOperation2D
+from .resampling import LinkableOperation
+
 
 ds_version = Version(ds.__version__)
 

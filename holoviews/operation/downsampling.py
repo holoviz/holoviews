@@ -3,7 +3,7 @@ Implements downsampling algorithms for large 1D datasets.
 
 The algorithms implemented in this module have been adapted from
 https://github.com/predict-idlab/plotly-resampler and are reproduced
-along with the original license: 
+along with the original license:
 
 MIT License
 
@@ -34,6 +34,7 @@ import numpy as np
 import param
 
 from .resampling import ResamplingOperation1D
+
 
 def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
     """Vectorized triangular area argmax computation.
@@ -134,7 +135,7 @@ def _nth_point(x, y, n_out):
     Returns:
         np.array: The indexes of the selected datapoints.
     """
-    n_samples = len(s)
+    n_samples = len(x)
     return np.arange(0, n_samples, max(1, math.ceil(n_samples / n_out)))
 
 
@@ -142,6 +143,7 @@ _ALGORITHMS = {
     'lttb': _lttb,
     'nth': _nth_point
 }
+
 
 class downsample1d(ResamplingOperation1D):
     """
