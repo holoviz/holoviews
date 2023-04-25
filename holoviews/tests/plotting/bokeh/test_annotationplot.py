@@ -49,6 +49,7 @@ class TestHVSpanPlot(TestBokehPlot):
         self.assertEqual(span.right, 1.5)
         self.assertEqual(span.bottom, None)
         self.assertEqual(span.top, None)
+        self.assertEqual(span.visible, True)
 
     def test_hspan_plot(self):
         hspan = HSpan(1.1, 1.5)
@@ -58,6 +59,13 @@ class TestHVSpanPlot(TestBokehPlot):
         self.assertEqual(span.right, None)
         self.assertEqual(span.bottom, 1.1)
         self.assertEqual(span.top, 1.5)
+        self.assertEqual(span.visible, True)
+
+    def test_hspan_empty(self):
+        vline = HSpan(None)
+        plot = bokeh_renderer.get_plot(vline)
+        span = plot.handles['glyph']
+        self.assertEqual(span.visible, False)
 
     def test_vspan_invert_axes(self):
         vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
@@ -67,6 +75,7 @@ class TestHVSpanPlot(TestBokehPlot):
         self.assertEqual(span.right, None)
         self.assertEqual(span.bottom, 1.1)
         self.assertEqual(span.top, 1.5)
+        self.assertEqual(span.visible, True)
 
     def test_vspan_plot(self):
         vspan = VSpan(1.1, 1.5)
@@ -76,7 +85,13 @@ class TestHVSpanPlot(TestBokehPlot):
         self.assertEqual(span.right, 1.5)
         self.assertEqual(span.bottom, None)
         self.assertEqual(span.top, None)
+        self.assertEqual(span.visible, True)
 
+    def test_vspan_empty(self):
+        vline = VSpan(None)
+        plot = bokeh_renderer.get_plot(vline)
+        span = plot.handles['glyph']
+        self.assertEqual(span.visible, False)
 
 
 class TestSlopePlot(TestBokehPlot):

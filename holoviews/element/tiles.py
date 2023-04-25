@@ -3,7 +3,6 @@ from types import FunctionType
 import param
 import numpy as np
 
-from ..core import util
 from ..core.dimension import Dimension
 from ..core.element import Element2D
 from ..util.transform import lon_lat_to_easting_northing, easting_northing_to_lon_lat
@@ -127,27 +126,10 @@ _ATTRIBUTIONS = {
     )
 }
 
-def deprecation_warning(name, url, reason):
-    def deprecated_tilesource_warning():
-        """
-        NOTE: The function name `deprecated_tilesource_warning' used to filter deprecated tile_sources
-        """
-        if util.config.raise_deprecated_tilesource_exception:
-            raise DeprecationWarning(f'{name} tile source is deprecated: {reason}')
-        param.main.param.warning(f'{name} tile source is deprecated and is likely to be unusable: {reason}')
-        return Tiles(url, name=name)
-    return deprecated_tilesource_warning
-
 
 # CartoDB basemaps
 CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark_all/{Z}/{X}/{Y}.png', name="CartoDark")
 CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
-CartoMidnight = deprecation_warning('CartoMidnight',
-                                    'https://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png',
-                                    'no longer publicly available.')
-CartoEco = deprecation_warning('CartoEco',
-                               'https://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png',
-                               'no longer publicly available.')
 
 
 # Stamen basemaps
@@ -171,25 +153,12 @@ EsriReference = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/servi
 ESRI = EsriImagery # For backwards compatibility with gv 1.5
 
 
-def wikimedia_replacement():
-    if util.config.raise_deprecated_tilesource_exception:
-        raise DeprecationWarning('Wikipedia tile source no longer available outside '
-                                 'wikimedia domain as of April 2021.')
-
-    param.main.param.warning('Wikipedia tile source no longer available outside '
-                             'wikimedia domain as of April 2021; switching '
-                             'to OpenStreetMap (OSM) tile source. '
-                             'See release notes for HoloViews'
-                             ' 1.14.4 for more details')
-    return Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
-
 # Miscellaneous
 OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
 OpenTopoMap = lambda: Tiles('https://a.tile.opentopomap.org/{Z}/{X}/{Y}.png', name="OpenTopoMap")
-Wikipedia = wikimedia_replacement
 
 _all_tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in
                 ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat',
                  'deprecation_warning', 'wikimedia_replacement']}
 
-tile_sources = {k: v for k, v in _all_tile_sources.items() if v.__name__ != 'deprecated_tilesource_warning'}
+tile_sources = {k: v for k, v in _all_tile_sources.items()}

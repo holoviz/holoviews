@@ -161,7 +161,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # First figure is the scatter trace
         self.assertEqual(fig1["data"][0]["type"], "scatter")
 
-        # Second figure holds reset bounds elemnt
+        # Second figure holds reset bounds element
         self.assertEqual(len(fig2["data"]), 0)
         self.assertEqual(len(fig2["layout"]["shapes"]), 1)
         self.assertEqual(
@@ -348,7 +348,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
             "streams": {id(selection1d): selection1d.contents}
         })
 
-        # Update store, then mimick a selection on scatter figure
+        # Update store, then mimic a selection on scatter figure
         # store_value = new_store
         with patch.object(
                 CallbackContext, "triggered",

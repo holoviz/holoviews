@@ -749,13 +749,6 @@ class Comparison(ComparisonInterface):
     def compare_cycles(cls, cycle1, cycle2, msg=None):
         cls.assertEqual(cycle1.values, cycle2.values)
 
-    @classmethod
-    def compare_channelopts(cls, opt1, opt2, msg=None):
-        cls.assertEqual(opt1.mode, opt2.mode)
-        cls.assertEqual(opt1.pattern, opt2.pattern)
-        cls.assertEqual(opt1.patter, opt2.pattern)
-
-
 
 class ComparisonTestCase(Comparison, TestCase):
     """

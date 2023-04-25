@@ -222,11 +222,11 @@ class ResamplingOperation(LinkableOperation):
     def _dt_transform(self, x_range, y_range, xs, ys, xtype, ytype):
         (xstart, xend), (ystart, yend) = x_range, y_range
         if xtype == 'datetime':
-            xstart, xend = (np.array([xstart, xend])/1e3).astype('datetime64[us]')
-            xs = (xs/1e3).astype('datetime64[us]')
+            xstart, xend = np.array([xstart, xend]).astype('datetime64[ns]')
+            xs = xs.astype('datetime64[ns]')
         if ytype == 'datetime':
-            ystart, yend = (np.array([ystart, yend])/1e3).astype('datetime64[us]')
-            ys = (ys/1e3).astype('datetime64[us]')
+            ystart, yend = np.array([ystart, yend]).astype('datetime64[ns]')
+            ys = ys.astype('datetime64[ns]')
         return ((xstart, xend), (ystart, yend)), (xs, ys)
 
 
@@ -528,9 +528,9 @@ class aggregate(LineAggregationOperation):
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
-            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+            agg[x.name] = agg[x.name].astype('datetime64[ns]')
         if ytype == 'datetime':
-            agg[y.name] = (agg[y.name]/1e3).astype('datetime64[us]')
+            agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
@@ -700,7 +700,7 @@ class area_aggregate(AggregationOperation):
 
         agg = cvs.area(df, x.name, y.name, agg_fn, axis=0, y_stack=ystack)
         if xtype == "datetime":
-            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+            agg[x.name] = agg[x.name].astype('datetime64[ns]')
 
         return self.p.element_type(agg, **params)
 
@@ -781,7 +781,7 @@ class spikes_aggregate(LineAggregationOperation):
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
-            df[x.name] = cast_array_to_int64(df[x.name].astype('datetime64[us]'))
+            df[x.name] = cast_array_to_int64(df[x.name].astype('datetime64[ns]'))
 
         params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
@@ -797,7 +797,7 @@ class spikes_aggregate(LineAggregationOperation):
 
         agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, **agg_kwargs).rename(rename_dict)
         if xtype == "datetime":
-            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+            agg[x.name] = agg[x.name].astype('datetime64[ns]')
 
         return self.p.element_type(agg, **params)
 
@@ -821,12 +821,14 @@ class geom_aggregate(AggregationOperation):
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
         df = element.interface.as_dframe(element)
+        if xtype == 'datetime' or ytype == 'datetime':
+            df = df.copy()
         if xtype == 'datetime':
-            df[x0d.name] = cast_array_to_int64(df[x0d.name].astype('datetime64[us]'))
-            df[x1d.name] = cast_array_to_int64(df[x1d.name].astype('datetime64[us]'))
+            df[x0d.name] = cast_array_to_int64(df[x0d.name].astype('datetime64[ns]'))
+            df[x1d.name] = cast_array_to_int64(df[x1d.name].astype('datetime64[ns]'))
         if ytype == 'datetime':
-            df[y0d.name] = cast_array_to_int64(df[y0d.name].astype('datetime64[us]'))
-            df[y1d.name] = cast_array_to_int64(df[y1d.name].astype('datetime64[us]'))
+            df[y0d.name] = cast_array_to_int64(df[y0d.name].astype('datetime64[ns]'))
+            df[y1d.name] = cast_array_to_int64(df[y1d.name].astype('datetime64[ns]'))
 
         if isinstance(agg_fn, ds.count_cat) and df[agg_fn.column].dtype.name != 'category':
             df[agg_fn.column] = df[agg_fn.column].astype('category')
@@ -843,9 +845,9 @@ class geom_aggregate(AggregationOperation):
 
         xdim, ydim = list(agg.dims)[:2][::-1]
         if xtype == "datetime":
-            agg[xdim] = (agg[xdim]/1e3).astype('datetime64[us]')
+            agg[xdim] = agg[xdim].astype('datetime64[ns]')
         if ytype == "datetime":
-            agg[ydim] = (agg[ydim]/1e3).astype('datetime64[us]')
+            agg[ydim] = agg[ydim].astype('datetime64[ns]')
 
         params['kdims'] = [xdim, ydim]
 
@@ -1017,9 +1019,9 @@ class regrid(AggregationOperation):
 
             # Convert datetime coordinates
             if xtype == "datetime":
-                rarray[x.name] = (rarray[x.name]/1e3).astype('datetime64[us]')
+                rarray[x.name] = rarray[x.name].astype('datetime64[ns]')
             if ytype == "datetime":
-                rarray[y.name] = (rarray[y.name]/1e3).astype('datetime64[us]')
+                rarray[y.name] = rarray[y.name].astype('datetime64[ns]')
             regridded[vd] = rarray
         regridded = xr.Dataset(regridded)
 
@@ -1197,9 +1199,9 @@ class quadmesh_rasterize(trimesh_rasterize):
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         if xtype == 'datetime':
-            data[x.name] = data[x.name].astype('datetime64[us]').astype('int64')
+            data[x.name] = data[x.name].astype('datetime64[ns]').astype('int64')
         if ytype == 'datetime':
-            data[y.name] = data[y.name].astype('datetime64[us]').astype('int64')
+            data[y.name] = data[y.name].astype('datetime64[ns]').astype('int64')
 
         # Compute bounds (converting datetimes)
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(
@@ -1218,9 +1220,9 @@ class quadmesh_rasterize(trimesh_rasterize):
         agg = cvs.quadmesh(data[vdim], x.name, y.name, agg_fn)
         xdim, ydim = list(agg.dims)[:2][::-1]
         if xtype == "datetime":
-            agg[xdim] = (agg[xdim]/1e3).astype('datetime64[us]')
+            agg[xdim] = agg[xdim].astype('datetime64[ns]')
         if ytype == "datetime":
-            agg[ydim] = (agg[ydim]/1e3).astype('datetime64[us]')
+            agg[ydim] = agg[ydim].astype('datetime64[ns]')
 
         return Image(agg, **params)
 

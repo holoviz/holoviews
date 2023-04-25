@@ -136,10 +136,6 @@ class Config(param.ParameterizedFunction):
        Global default colormap for HeatMap elements. Prior to HoloViews
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
-    raise_deprecated_tilesource_exception = param.Boolean(default=False,
-       doc=""" Whether deprecated tile sources should raise a
-       deprecation exception instead of issuing warnings.""")
-
     def __call__(self, **params):
         self.param.set_param(**params)
         return self
@@ -601,7 +597,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        in order to make sure paths aren't confused with method
        names.""")
 
-    eliminations = param.List(['extended', 'accent', 'small', 'letter', 'sign', 'digit',
+    eliminations = param.List(default=['extended', 'accent', 'small', 'letter', 'sign', 'digit',
                                'latin', 'greek', 'arabic-indic', 'with', 'dollar'], doc="""
        Lowercase strings to be eliminated from the unicode names in
        order to shorten the sanitized name ( lowercase). Redundant
@@ -2112,7 +2108,7 @@ def dt_to_int(value, time_unit='us'):
         try:
             value = np.datetime64(value, 'ns')
             tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns'))
-            return value.tolist()/tscale
+            return int(value.tolist() / tscale)
         except Exception:
             # If it can't handle ns precision fall back to datetime
             value = value.tolist()

@@ -23,7 +23,7 @@ def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
                       isinstance(v, type) and issubclass(v, Stream)]
     for stream_cls in all_stream_cls:
-        for name, p in stream_cls.param.params().items():
+        for name, p in stream_cls.param.objects().items():
             if name == 'name': continue
             if p.constant != True:
                 raise TypeError('Parameter %s of stream %s not declared constant'
@@ -34,7 +34,7 @@ def test_all_linked_stream_parameters_owners():
     "Test to ensure operations can accept parameters in streams dictionary"
     stream_classes = param.concrete_descendents(LinkedStream)
     for stream_class in stream_classes.values():
-        for name, p in stream_class.param.params().items():
+        for name, p in stream_class.param.objects().items():
             if name != 'name' and (p.owner != stream_class):
                 msg = ("Linked stream %r has parameter %r which is "
                        "inherited from %s. Parameter needs to be redeclared "
@@ -169,7 +169,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 
         class InnerAction(Inner):
 
-            action = param.Action(lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger('action'))
 
         self.inner = Inner
         self.inner_action = InnerAction
@@ -335,7 +335,7 @@ class TestParamMethodStream(ComparisonTestCase):
 
         class Inner(param.Parameterized):
 
-            action = param.Action(lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger('action'))
             x = param.Number(default = 0)
             y = param.Number(default = 0)
             count = param.Integer(default=0)
@@ -844,7 +844,7 @@ class TestBufferArrayStream(ComparisonTestCase):
 
     def test_buffer_array_send_verify_shape_fail(self):
         buff = Buffer(np.array([[0, 1]]))
-        error = "Streamed array data expeced to have 2 columns, got 3."
+        error = "Streamed array data expected to have 2 columns, got 3."
         with self.assertRaisesRegex(ValueError, error):
             buff.send(np.array([[1, 2, 3]]))
 

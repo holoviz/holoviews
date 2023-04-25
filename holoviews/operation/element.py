@@ -46,7 +46,7 @@ class operation(Operation):
     data between Rasters in an Overlay.
     """
 
-    output_type = param.Parameter(None, doc="""
+    output_type = param.Parameter(default=None, doc="""
        The output element type which may be None to disable type
        checking.
 
@@ -78,7 +78,7 @@ class factory(Operation):
     created from overlays of Image elements.
     """
 
-    output_type = param.Parameter(RGB, doc="""
+    output_type = param.Parameter(default=RGB, doc="""
         The output type of the factor operation.
 
         By default, if three overlaid Images elements are supplied,
@@ -203,7 +203,7 @@ class chain(Operation):
     single argument.
     """
 
-    output_type = param.Parameter(Image, doc="""
+    output_type = param.Parameter(default=Image, doc="""
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 

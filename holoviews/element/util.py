@@ -118,7 +118,7 @@ class categorical_aggregate2d(Operation):
             kdims=['Country', 'Year'], vdims=['Population'])
     """
 
-    datatype = param.List(['xarray', 'grid'], doc="""
+    datatype = param.List(default=['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
     @classmethod
@@ -294,7 +294,7 @@ def connect_tri_edges_pd(trimesh):
     edges = edges.drop("color", errors="ignore", axis=1).reset_index()
     nodes = trimesh.nodes.dframe().copy()
     nodes.index.name = 'node_index'
-    nodes = nodes.drop("color", errors="ignore", axis=1)
+    nodes = nodes.drop(["color", "z"], errors="ignore", axis=1)
     v1, v2, v3 = trimesh.kdims
     x, y, idx = trimesh.nodes.kdims[:3]
 

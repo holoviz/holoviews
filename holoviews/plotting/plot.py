@@ -300,7 +300,7 @@ class PlotSelector:
         return getattr(plt_class, 'selection_display', None)
 
     def _define_interface(self, plots, allow_mismatch):
-        parameters = [{k:v.precedence for k,v in plot.param.params().items()
+        parameters = [{k:v.precedence for k,v in plot.param.objects().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]

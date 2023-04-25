@@ -53,7 +53,7 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_opts_style_dynamic(self):
 
         self.cell("dmap = DynamicMap(lambda X: Curve(np.random.rand(5,2), name='dmap'), kdims=['x'])"
-                  ".redim.range(x=(0, 10)).opts(style={'Curve': dict(linewidth=2, color='black')})")
+                  ".redim.range(x=(0, 10)).opts({'Curve': dict(linewidth=2, color='black')})")
 
         self.assertEqual(self.get_object('dmap').id, None)
         self.cell_magic('opts', " Curve (linewidth=3 alpha=0.5)", 'dmap')
@@ -95,7 +95,7 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_opts_plot_dynamic(self):
 
         self.cell("dmap = DynamicMap(lambda X: Image(np.random.rand(5,5), name='dmap'), kdims=['x'])"
-                  ".redim.range(x=(0, 10)).opts(plot={'Image': dict(xaxis='top', xticks=3)})")
+                  ".redim.range(x=(0, 10)).opts({'Image': dict(xaxis='top', xticks=3)})")
 
         self.assertEqual(self.get_object('dmap').id, None)
         self.cell_magic('opts', " Image [xaxis=None yaxis='right']", 'dmap')

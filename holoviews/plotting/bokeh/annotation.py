@@ -200,6 +200,10 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         mapping[kwd_dim2] = locs[1]
         return (data, mapping, style)
 
+    def _update_glyph(self, renderer, properties, mapping, glyph, source, data):
+        glyph.visible = any(v is not None for v in mapping.values())
+        return super()._update_glyph(renderer, properties, mapping, glyph, source, data)
+
     def _init_glyph(self, plot, mapping, properties):
         """
         Returns a Bokeh glyph object.

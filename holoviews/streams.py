@@ -577,7 +577,7 @@ class Buffer(Pipe):
             if x.ndim != 2:
                 raise ValueError('Streamed array data must be two-dimensional')
             elif x.shape[1] != self.data.shape[1]:
-                raise ValueError("Streamed array data expeced to have %d columns, "
+                raise ValueError("Streamed array data expected to have %d columns, "
                                  "got %d." % (self.data.shape[1], x.shape[1]))
         elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
             raise IndexError("Input expected to have columns %s, got %s" %
@@ -677,7 +677,7 @@ class Params(Stream):
                                         constant=True, allow_None=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
-    parameters = param.List([], constant=True, doc="""
+    parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
@@ -822,7 +822,7 @@ class ParamMethod(Params):
                                         constant=True, allow_None=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
-    parameters = param.List([], constant=True, doc="""
+    parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
@@ -1425,9 +1425,9 @@ class PlotSize(LinkedStream):
     Returns the dimensions of a plot once it has been displayed.
     """
 
-    width = param.Integer(None, constant=True, doc="The width of the plot in pixels")
+    width = param.Integer(default=None, constant=True, doc="The width of the plot in pixels")
 
-    height = param.Integer(None, constant=True, doc="The height of the plot in pixels")
+    height = param.Integer(default=None, constant=True, doc="The height of the plot in pixels")
 
     scale = param.Number(default=1.0, constant=True, doc="""
        Scale factor to scale width and height values reported by the stream""")

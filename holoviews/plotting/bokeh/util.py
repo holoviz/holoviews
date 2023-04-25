@@ -41,8 +41,9 @@ bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
 
 if bokeh3:
+    from bokeh.layouts import group_tools
     from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models import Toolbar, Tabs, GridPlot
+    from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
     from bokeh.plotting import figure
     class WidgetBox: pass  # Does not exist in Bokeh 3
 
@@ -374,6 +375,39 @@ def compute_layout_properties(
     return aspect_info, dimension_info
 
 
+def merge_tools(plot_grid, disambiguation_properties=None):
+    """
+    Merges tools defined on a grid of plots into a single toolbar.
+    All tools of the same type are merged unless they define one
+    of the disambiguation properties. By default `name`, `icon`, `tags`
+    and `description` can be used to prevent tools from being merged.
+    """
+    tools = []
+    for row in plot_grid:
+        for item in row:
+            if isinstance(item, LayoutDOM):
+                for p in item.select(dict(type=Plot)):
+                    tools.extend(p.toolbar.tools)
+            if isinstance(item, GridPlot):
+                item.toolbar_location = None
+
+    def merge(tool, group):
+        if issubclass(tool, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
+            return tool()
+        else:
+            return None
+
+    if not disambiguation_properties:
+        disambiguation_properties = {'name', 'icon', 'tags', 'description'}
+
+    ignore = set()
+    for tool in tools:
+        for p in tool.properties_with_values():
+            if p not in disambiguation_properties:
+                ignore.add(p)
+
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
+
 @contextmanager
 def silence_warnings(*warnings):
     """
@@ -575,6 +609,8 @@ def filter_toolboxes(plots):
     """
     if isinstance(plots, list):
         plots = [filter_toolboxes(plot) for plot in plots]
+    elif hasattr(plots, 'toolbar'):
+        plots.toolbar_location = None
     elif hasattr(plots, 'children'):
         plots.children = [filter_toolboxes(child) for child in plots.children
                           if not isinstance(child, Toolbar)]

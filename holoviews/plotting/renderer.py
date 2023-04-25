@@ -24,7 +24,12 @@ from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
-from pyviz_comms import CommManager, JupyterCommManager
+from pyviz_comms import CommManager
+try:
+    # Added in Panel 1.0 to support JS -> Python binary comms
+    from panel.io.notebook import JupyterCommManagerBinary as JupyterCommManager
+except ImportError:
+    from pyviz_comms import JupyterCommManager
 
 from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.data import disable_pipeline
@@ -106,14 +111,14 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g. 'matplotlib' or 'cairo'.""")
 
-    dpi = param.Integer(None, doc="""
+    dpi = param.Integer(default=None, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps = param.Number(20, doc="""
+    fps = param.Number(default=20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
@@ -127,7 +132,7 @@ class Renderer(Exporter):
         mode a bokeh Document will be returned which can be served as a
         bokeh server app. By default renders all output is rendered to HTML.""")
 
-    size = param.Integer(100, doc="""
+    size = param.Integer(default=100, doc="""
         The rendered size as a percentage size""")
 
     widget_location = param.ObjectSelector(default=None, allow_None=True, objects=[
@@ -143,10 +148,10 @@ class Renderer(Exporter):
     css = param.Dict(default={}, doc="""
         Dictionary of CSS attributes and values to apply to HTML output.""")
 
-    info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+    info_fn = param.Callable(default=None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
 
-    key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+    key_fn = param.Callable(default=None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
     post_render_hooks = param.Dict(default={'svg':[], 'png':[]}, doc="""

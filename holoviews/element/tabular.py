@@ -25,7 +25,7 @@ class ItemTable(Element):
        ItemTables hold an index Dimension for each value they contain, i.e.
        they are equivalent to the keys.""")
 
-    vdims = param.List(default=[Dimension('Default')], bounds=(00, None), doc="""
+    vdims = param.List(default=[Dimension('Default')], bounds=(0, None), doc="""
        ItemTables should have only index Dimensions.""")
 
     group = param.String(default="ItemTable", constant=True)

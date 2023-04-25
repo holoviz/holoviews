@@ -137,7 +137,7 @@ class _base_link_selections(param.ParameterizedFunction):
         self.param.set_param(**kwargs)
 
         if Store.current_backend not in Store.renderers:
-            raise RuntimeError("Cannot peform link_selections operation "
+            raise RuntimeError("Cannot perform link_selections operation "
                                "since the selected backend %r is not "
                                "loaded. Load the plotting extension with "
                                "hv.extension or import the plotting "
@@ -250,7 +250,7 @@ class link_selections(_base_link_selections):
     """
 
     cross_filter_mode = param.Selector(
-        ['overwrite', 'intersect'], default='intersect', doc="""
+        objects=['overwrite', 'intersect'], default='intersect', doc="""
         Determines how to combine selections across different
         elements.""")
 
@@ -268,7 +268,7 @@ class link_selections(_base_link_selections):
         each element.""")
 
     selection_mode = param.Selector(
-        ['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
+        objects=['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
         Determines how to combine successive selections on the same
         element.""")
 

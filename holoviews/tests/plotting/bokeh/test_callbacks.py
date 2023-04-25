@@ -256,10 +256,10 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
-        self.assertEqual(source.data['x'], [0])
-        self.assertEqual(source.data['y'], [0])
-        self.assertEqual(source.data['width'], [1])
-        self.assertEqual(source.data['height'], [1])
+        self.assertEqual(source.data['left'], [-0.5])
+        self.assertEqual(source.data['bottom'], [-0.5])
+        self.assertEqual(source.data['right'], [0.5])
+        self.assertEqual(source.data['top'], [0.5])
         data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
         callback.on_msg({'data': data})
         element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
@@ -406,10 +406,8 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(resolved, {'id': cds.ref['id'],
                                     'value': points.columns()})
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_rangexy_datetime(self):
-        # Raises a warning because makeTimeDataFrame isn't part of the public API.
-        curve = Curve(pd.util.testing.makeTimeDataFrame(), 'index', 'C')
+        curve = Curve(pd._testing.makeTimeDataFrame(), 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]

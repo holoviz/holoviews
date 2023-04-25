@@ -24,8 +24,6 @@ filterwarnings = [
     "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype",  # https://github.com/scikit-image/scikit-image/pull/6637
     # 2023-01: Sqlalchemy 2.0 warning:
     "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy",  # https://github.com/ibis-project/ibis/issues/5048
-    # 2023-03: https://github.com/tornadoweb/tornado/issues/3216
-    "ignore: make_current is deprecated:DeprecationWarning",
     # 2023-03: Already handling the nested sequence
     "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
 ]
@@ -69,3 +67,8 @@ unfixable = [
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = ["RUF001", "RUF002", "RUF003"]  # Ambiguous unicode character
+
+[tool.codespell]
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"
+skip = "doc/generate_modules.py"
+write-changes = true

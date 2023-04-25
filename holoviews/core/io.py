@@ -100,10 +100,10 @@ class Exporter(param.ParameterizedFunction):
       high-dimensional key of values associated with dimension labels.
 
       The returned dictionary must have string keys and simple
-      literals that may be conviently used for dictionary-style
+      literals that may be conveniently used for dictionary-style
       indexing. Returns an empty dictionary by default.""")
 
-    info_fn = param.Callable(lambda x: {'repr':repr(x)}, doc="""
+    info_fn = param.Callable(default=lambda x: {'repr':repr(x)}, doc="""
       Function that generates additional metadata information from the
       HoloViews object being saved.
 
@@ -229,7 +229,7 @@ class Importer(param.ParameterizedFunction):
 class Serializer(Exporter):
     "A generic exporter that supports any arbitrary serializer"
 
-    serializer=param.Callable(Store.dumps, doc="""
+    serializer=param.Callable(default=Store.dumps, doc="""
        The serializer function, set to Store.dumps by default. The
        serializer should take an object and output a serialization as
        a string or byte stream.
@@ -265,7 +265,7 @@ class Serializer(Exporter):
 class Deserializer(Importer):
     "A generic importer that supports any arbitrary de-serializer."
 
-    deserializer=param.Callable(Store.load, doc="""
+    deserializer=param.Callable(default=Store.load, doc="""
        The deserializer function, set to Store.load by default. The
        deserializer should take a file-like object that can be read
        from until the first object has been deserialized. If the file
@@ -567,7 +567,7 @@ class FileArchive(Archive):
         The root directory in which the output directory is
         located. May be an absolute or relative path.""")
 
-    archive_format = param.ObjectSelector('zip', objects=['zip', 'tar'], doc="""
+    archive_format = param.ObjectSelector(default='zip', objects=['zip', 'tar'], doc="""
         The archive format to use if there are multiple files and pack
         is set to True. Supported formats include 'zip' and 'tar'.""")
 

@@ -226,7 +226,7 @@ class VSpan(Annotation):
 
 
 class HSpan(Annotation):
-    """Horziontal span annotation at the given position."""
+    """Horizontal span annotation at the given position."""
 
     group = param.String(default='HSpan', constant=True)
 
@@ -463,5 +463,5 @@ class Labels(Dataset, Element2D):
 
     group = param.String(default='Labels', constant=True)
 
-    vdims = param.List([Dimension('Label')], bounds=(1, None), doc="""
+    vdims = param.List(default=[Dimension('Label')], bounds=(1, None), doc="""
         Defines the value dimension corresponding to the label text.""")

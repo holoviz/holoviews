@@ -561,7 +561,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.border is not None:
             for p in ['left', 'right', 'top', 'bottom']:
                 plot_props['min_border_'+p] = self.border
-        lod = dict(self.param.defaults().get('lod', {}), **self.lod)
+        lod = dict(self.param["lod"].default, **self.lod) if "lod" in self.param else self.lod
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
         return plot_props
@@ -569,7 +569,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
-        if plot is None:
+        if plot is None or self.toolbar == "disable":
             return
 
         if self.active_tools is None:
@@ -2174,8 +2174,8 @@ class ColorbarPlot(ElementPlot):
 
 class LegendPlot(ElementPlot):
 
-    legend_cols = param.Integer(default=False, doc="""
-        Whether to lay out the legend as columns.""")
+    legend_cols = param.Integer(default=0, bounds=(0, None), doc="""
+        Number of columns for legend.""")
 
     legend_labels = param.Dict(default=None, doc="""
         Label overrides.""")
@@ -2218,12 +2218,16 @@ class LegendPlot(ElementPlot):
             or not self.show_legend):
             legend.items[:] = []
         else:
-            plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+            if bokeh3 and self.legend_cols:
+                plot.legend.nrows = self.legend_cols
+            else:
+                plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+
             pos = self.legend_position
             if pos in self.legend_specs:
                 plot.legend[:] = []
                 legend.location = self.legend_offset
-                if pos in ['top', 'bottom']:
+                if pos in ['top', 'bottom'] and not self.legend_cols:
                     plot.legend.orientation = 'horizontal'
                 plot.add_layout(legend, self.legend_specs[pos])
             else:
@@ -2311,10 +2315,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             options[k] = v
 
         pos = self.legend_position
-        orientation = 'horizontal' if self.legend_cols else 'vertical'
-        if pos in ['top', 'bottom']:
-            orientation = 'horizontal'
-        options['orientation'] = orientation
+        if not bokeh3:
+            options['orientation'] = 'horizontal' if self.legend_cols else 'vertical'
+        if pos in ['top', 'bottom'] and not self.legend_cols:
+            options['orientation'] = 'horizontal'
 
         if overlay is not None and overlay.kdims:
             title = ', '.join([d.label for d in overlay.kdims])
@@ -2322,6 +2326,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         options.update(self._fontsize('legend', 'label_text_font_size'))
         options.update(self._fontsize('legend_title', 'title_text_font_size'))
+        if bokeh3 and self.legend_cols:
+            options.update({"ncols": self.legend_cols})
         legend.update(**options)
 
         if pos in self.legend_specs:
