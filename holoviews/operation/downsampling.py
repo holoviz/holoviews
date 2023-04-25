@@ -72,7 +72,7 @@ def _lttb_inner(x, y, n_out, sampled_x, offset):
             _argmax_area(
                 x[a],
                 y[a],
-                np.mean(x[o1:o2]),
+                x[o1:o2].mean(),
                 y[o1:o2].mean(),
                 x[o0:o1],
                 y[o0:o1],
