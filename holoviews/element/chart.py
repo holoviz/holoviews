@@ -246,9 +246,9 @@ class Area(Curve):
         is_overlay = isinstance(areas, Overlay)
         if is_overlay:
             areas = NdOverlay({i: el for i, el in enumerate(areas)})
-        vdims = [[element.vdims[0], baseline_name] for element in areas]
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
+        vdims = [[el.vdims[0], baseline_name] for el in areas]
         baseline = None
         stacked = areas.clone(shared_data=False)
         for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims):
