@@ -235,8 +235,8 @@ class notebook_extension(extension):
 
         unmatched_args = set(args) - set(resources)
         if unmatched_args:
-            display(HTML('<b>Warning:</b> Unrecognized resources %s'
-                         % ', '.join(unmatched_args)))
+            display(HTML("<b>Warning:</b> Unrecognized resources '%s'"
+                         % "', '".join(unmatched_args)))
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
