@@ -2204,6 +2204,8 @@ def closest_match(match, specs, depth=0):
     Recursively iterates over type, group, label and overlay key,
     finding the closest matching spec.
     """
+    if len(match) == 0:
+        return None
     new_specs = []
     match_lengths = []
     for i, spec in specs:
