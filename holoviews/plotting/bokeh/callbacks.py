@@ -1167,20 +1167,20 @@ class BoxEditCallback(GlyphDrawCallback):
         data = cds.data
         element = self.plot.current_frame
 
-        xs, ys, widths, heights = [], [], [], []
+        l, b, r, t =  [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
-            xs.append((x0+x1)/2.)
-            ys.append((y0+y1)/2.)
-            widths.append(x1-x0)
-            heights.append(y1-y0)
-        data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
+            l.append(x0)
+            b.append(y0)
+            r.append(x1)
+            t.append(y1)
+        data = {'left': l, 'bottom': b, 'right': r, 'top': t}
         data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
         cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
+        r1 = plot.state.rect('left', 'bottom', 'right', 'top', source=cds, **style)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         data = self._process_msg({'data': data})['data']
