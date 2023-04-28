@@ -99,7 +99,7 @@ class notebook_extension(extension):
         using the matplotlib backend) may be used. This may be useful to
         export figures to other formats such as PDF with nbconvert.""")
 
-    allow_jedi_completion = param.Boolean(default=False, doc="""
+    allow_jedi_completion = param.Boolean(default=True, doc="""
        Whether to allow jedi tab-completion to be enabled in IPython.
        Disabled by default because many HoloViews features rely on
        tab-completion machinery not supported when using jedi.""")
