@@ -8,7 +8,7 @@ import numpy as np
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
-    PolyDrawTool, BoxEditTool, PolyEditTool, FreehandDrawTool,
+    PolyDrawTool, PolyEditTool, FreehandDrawTool,
     PointDrawTool
 )
 from panel.io.state import state
@@ -1205,8 +1205,9 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        box_tool = BoxEditTool(renderers=[renderer], **kwargs)
-        self.plot.state.tools.append(box_tool)
+        # BoxEditTool does not support Quad type only Rect
+        # box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+        # self.plot.state.tools.append(box_tool)
         self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 
