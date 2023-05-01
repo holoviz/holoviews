@@ -1215,19 +1215,12 @@ class BoxEditCallback(GlyphDrawCallback):
         data = super()._process_msg(msg)
         if 'data' not in data:
             return {}
-        data = data['data']
-        x0s, x1s, y0s, y1s = [], [], [], []
-        for (x, y, w, h) in zip(data['x'], data['y'], data['width'], data['height']):
-            x0s.append(x-w/2.)
-            x1s.append(x+w/2.)
-            y0s.append(y-h/2.)
-            y1s.append(y+h/2.)
-        values = {}
-        for col in data:
-            if col in ('x', 'y', 'width', 'height'):
-                continue
-            values[col] = data[col]
-        msg = {'data': dict(values, x0=x0s, x1=x1s, y0=y0s, y1=y1s)}
+        values = dict(data['data'])
+        values['x0'] = values.pop("left")
+        values['y0'] = values.pop("bottom")
+        values['x1'] = values.pop("right")
+        values['y1'] = values.pop("top")
+        msg = {'data': values}
         self._update_cds_vdims(msg['data'])
         return self._transform(msg)
 
