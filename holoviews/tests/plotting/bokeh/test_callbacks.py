@@ -260,7 +260,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertEqual(source.data['bottom'], [-0.5])
         self.assertEqual(source.data['right'], [0.5])
         self.assertEqual(source.data['top'], [0.5])
-        data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
+        data = {'left': [-0.25, 0], 'bottom': [-1, 0.75], 'right': [0.25, 2], 'top': [1, 1.25]}
         callback.on_msg({'data': data})
         element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
         self.assertEqual(box_edit.element, element)
@@ -272,11 +272,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
-        self.assertEqual(source.data['x'], [0])
-        self.assertEqual(source.data['y'], [0])
-        self.assertEqual(source.data['width'], [1])
-        self.assertEqual(source.data['height'], [1])
-        data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
+        self.assertEqual(source.data['left'], [-0.5])
+        self.assertEqual(source.data['bottom'], [-0.5])
+        self.assertEqual(source.data['right'], [0.5])
+        self.assertEqual(source.data['top'], [0.5])
+        data = {'left': [-0.25, 0], 'bottom': [-1, 0.75], 'right': [0.25, 2], 'top': [1, 1.25]}
         callback.on_msg({'data': data})
         element = Polygons([Box(0, 0, (0.5, 2)), Box(1, 1, (2, 0.5))])
         self.assertEqual(box_edit.element, element)
