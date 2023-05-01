@@ -642,7 +642,7 @@ class Renderer(Exporter):
         return options
 
     @classmethod
-    def load_nb(cls, inline=True, reloading=same_cell_execution):
+    def load_nb(cls, inline=True, reloading=False):
         """
         Loads any resources required for display of plots
         in the Jupyter notebook
