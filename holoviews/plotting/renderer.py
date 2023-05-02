@@ -648,7 +648,7 @@ class Renderer(Exporter):
         in the Jupyter notebook
         """
         if panel_version > Version('1.0.0rc1'):
-            load_notebook(inline, reloading=reloading):
+            load_notebook(inline, reloading=reloading)
         elif reloading:
             return
         else:
