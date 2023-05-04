@@ -119,6 +119,12 @@ def _lttb(x, y, n_out):
     sampled_x[0] = 0
     sampled_x[-1] = x.shape[0] - 1
 
+    # View it as int64 to take the mean of it
+    if x.dtype.kind == 'M':
+        x = x.view('int64')
+    if y.dtype.kind == 'M':
+        y = y.view('int64')
+
     _lttb_inner(x, y, n_out, sampled_x, offset)
 
     return sampled_x
