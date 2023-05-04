@@ -1,4 +1,6 @@
-from holoviews.element import Area
+from holoviews.element import Area, Overlay
+import pandas as pd
+import numpy as np
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -96,3 +98,11 @@ class TestAreaPlot(LoggingComparisonTestCase, TestMPLPlot):
         self.assertEqual(y_range[0], 0.03348369522101712)
         self.assertEqual(y_range[1], 3.3483695221017129)
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
+
+    def test_area_stack_vdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y_1': [1, 2, 3], 'y_2': [6, 4, 2], 'y_3': [8, 1, 2]})
+        overlay = Overlay([Area(df, kdims='x', vdims=col, label=col) for col in ['y_1', 'y_2', 'y_3']])
+        plot = Area.stack(overlay)
+        baselines = [np.array([0, 0, 0]), np.array([1., 2., 3.]), np.array([7., 6., 5.])]
+        for n, baseline in zip(plot.data, baselines):
+            self.assertEqual(plot.data[n].data.Baseline.to_numpy(), baseline)

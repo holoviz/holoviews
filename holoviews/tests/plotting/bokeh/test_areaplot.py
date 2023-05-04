@@ -1,8 +1,8 @@
 import datetime as dt
-
+import pandas as pd
 import numpy as np
 
-from holoviews.element import Area
+from holoviews.element import Area, Overlay
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -152,3 +152,11 @@ class TestAreaPlot(LoggingComparisonTestCase, TestBokehPlot):
         overlay = Area.stack(python * pypy * jython)
         labels = [n[1] for n in overlay.data]
         self.assertEqual(labels, ['Python', 'Pypy', 'Jython'])
+
+    def test_area_stack_vdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y_1': [1, 2, 3], 'y_2': [6, 4, 2], 'y_3': [8, 1, 2]})
+        overlay = Overlay([Area(df, kdims='x', vdims=col, label=col) for col in ['y_1', 'y_2', 'y_3']])
+        plot = Area.stack(overlay)
+        baselines = [np.array([0, 0, 0]), np.array([1., 2., 3.]), np.array([7., 6., 5.])]
+        for n, baseline in zip(plot.data, baselines):
+            self.assertEqual(plot.data[n].data.Baseline.to_numpy(), baseline)
