@@ -41,8 +41,6 @@ extras_require['tests_core'] = [
     'dash >=1.16',
     'codecov',
     'ipython >=5.4.0',
-    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
-    'ipykernel <6.18.0',
 ]
 
 # Optional tests dependencies, i.e. one should be able
@@ -106,11 +104,6 @@ extras_require["examples"] = extras_require["recommended"] + [
 if sys.version_info < (3, 11):
     extras_require["examples"] += [
         "datashader >=0.11.1",
-    ]
-
-if sys.version_info < (3, 8):
-    extras_require["tests"] += [
-        "fsspec == 2023.1",
     ]
 
 

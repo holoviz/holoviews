@@ -24,6 +24,8 @@ filterwarnings = [
     "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype",  # https://github.com/scikit-image/scikit-image/pull/6637
     # 2023-01: Sqlalchemy 2.0 warning:
     "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy",  # https://github.com/ibis-project/ibis/issues/5048
+    # 2023-03: Already handling the nested sequence
+    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
 ]
 
 [tool.ruff]
