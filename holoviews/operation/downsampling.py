@@ -61,7 +61,7 @@ def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
         x_bucket * (prev_y - avg_next_y)
         + y_bucket * (avg_next_x - prev_x)
         + (prev_x * avg_next_y - avg_next_x * prev_y)
-    ).argmax().astype(np.uint64)
+    ).argmax()
 
 
 def _lttb_inner(x, y, n_out, sampled_x, offset):
@@ -112,18 +112,18 @@ def _lttb(x, y, n_out):
     # Note this 'astype' cast must take place after array creation (and not with the
     # aranage() its dtype argument) or it will cast the `block_size` step to an int
     # before the arange array creation
-    offset = np.arange(start=1, stop=y.shape[0], step=block_size).astype(np.uint64)
+    offset = np.arange(start=1, stop=y.shape[0], step=block_size).astype(np.int64)
 
     # Construct the output array
-    sampled_x = np.empty(n_out, dtype=np.uint64)
+    sampled_x = np.empty(n_out, dtype=np.int64)
     sampled_x[0] = 0
     sampled_x[-1] = x.shape[0] - 1
 
     # View it as int64 to take the mean of it
     if x.dtype.kind == 'M':
-        x = x.view('int64')
+        x = x.view(np.int64)
     if y.dtype.kind == 'M':
-        y = y.view('int64')
+        y = y.view(np.int64)
 
     _lttb_inner(x, y, n_out, sampled_x, offset)
 
