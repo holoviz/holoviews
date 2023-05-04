@@ -47,6 +47,15 @@ class ResamplingOperation1D(LinkableOperation):
     width = param.Integer(default=400, doc="""
        The width of the output image in pixels.""")
 
+    height = param.Integer(default=400, doc="""
+       The height of the output image in pixels.""")
+
+    pixel_ratio = param.Number(default=1, bounds=(1,None), doc="""
+       Pixel ratio applied to the height and width. Useful for higher
+       resolution screens where the PlotSize stream reports 'nominal'
+       dimensions in pixels that do not match the physical pixels. For
+       instance, setting pixel_ratio=2 can give better results on Retina
+       displays.""")
 
 class ResamplingOperation2D(ResamplingOperation1D):
     """
@@ -65,16 +74,6 @@ class ResamplingOperation2D(ResamplingOperation1D):
        just as large as it needs to be to contain the data, which will
        be faster and use less memory if the resulting aggregate is
        being overlaid on a much larger background.""")
-
-    height = param.Integer(default=400, doc="""
-       The height of the output image in pixels.""")
-
-    pixel_ratio = param.Number(default=1, bounds=(1,None), doc="""
-       Pixel ratio applied to the height and width. Useful for higher
-       resolution screens where the PlotSize stream reports 'nominal'
-       dimensions in pixels that do not match the physical pixels. For
-       instance, setting pixel_ratio=2 can give better results on Retina
-       displays.""")
 
     y_range = param.Tuple(default=None, length=2, doc="""
        The y-axis range as a tuple of min and max y value. Auto-ranges
