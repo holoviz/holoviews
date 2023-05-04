@@ -642,12 +642,17 @@ class Renderer(Exporter):
         return options
 
     @classmethod
-    def load_nb(cls, inline=True):
+    def load_nb(cls, inline=True, reloading=False):
         """
         Loads any resources required for display of plots
         in the Jupyter notebook
         """
-        load_notebook(inline)
+        if panel_version > Version('1.0.0rc1'):
+            load_notebook(inline, reloading=reloading)
+        elif reloading:
+            return
+        else:
+            load_notebook(inline)
         with param.logging_level('ERROR'):
             try:
                 ip = get_ipython() # noqa
