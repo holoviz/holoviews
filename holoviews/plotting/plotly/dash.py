@@ -21,10 +21,10 @@ from holoviews.plotting.plotly.callbacks import (
 
 # Dash imports
 try:
+    from dash import dcc, html
+except ImportError:
     import dash_core_components as dcc
     import dash_html_components as html
-except ImportError:
-    from dash import dcc, html
 from dash import callback_context
 from dash.dependencies import Output, Input, State
 
