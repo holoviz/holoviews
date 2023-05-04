@@ -99,7 +99,7 @@ class notebook_extension(extension):
         using the matplotlib backend) may be used. This may be useful to
         export figures to other formats such as PDF with nbconvert.""")
 
-    allow_jedi_completion = param.Boolean(default=False, doc="""
+    allow_jedi_completion = param.Boolean(default=True, doc="""
        Whether to allow jedi tab-completion to be enabled in IPython.
        Disabled by default because many HoloViews features rely on
        tab-completion machinery not supported when using jedi.""")
@@ -183,8 +183,7 @@ class notebook_extension(extension):
         same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
-        if not same_cell_execution:
-            Renderer.load_nb(inline=p.inline)
+        Renderer.load_nb(inline=p.inline, reloading=same_cell_execution)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
@@ -235,8 +234,8 @@ class notebook_extension(extension):
 
         unmatched_args = set(args) - set(resources)
         if unmatched_args:
-            display(HTML('<b>Warning:</b> Unrecognized resources %s'
-                         % ', '.join(unmatched_args)))
+            display(HTML("<b>Warning:</b> Unrecognized resources '%s'"
+                         % "', '".join(unmatched_args)))
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
