@@ -570,7 +570,7 @@ class Renderer(Exporter):
             raise Exception('Renderer does not support saving metadata to file.')
 
         if kwargs:
-            param.main.warning("Supplying plot, style or norm options "
+            param.main.param.warning("Supplying plot, style or norm options "
                                "as keyword arguments to the Renderer.save "
                                "method is deprecated and will error in "
                                "the next minor release.")
