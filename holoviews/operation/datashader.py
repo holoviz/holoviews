@@ -38,23 +38,23 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
-from .resampling import LinkableOperation, ResamplingOperation2D
+from .resample import LinkableOperation, ResampleOperation2D
 
 
 def __getattr__(name):
     if name == "ResamplingOperation":
         from ..util.warnings import deprecated
-        deprecated("1.17", "ResamplingOperation", "ResamplingOperation2D")
-        return ResamplingOperation2D
+        deprecated("1.17", "ResamplingOperation", "ResampleOperation2D")
+        return ResampleOperation2D
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 ds_version = Version(ds.__version__)
 
 
-class AggregationOperation(ResamplingOperation2D):
+class AggregationOperation(ResampleOperation2D):
     """
-    AggregationOperation extends the ResamplingOperation2D defining an
+    AggregationOperation extends the ResampleOperation2D defining an
     aggregator parameter used to define a datashader Reduction.
     """
 

@@ -25,7 +25,7 @@ class LinkableOperation(Operation):
     _allow_extra_keywords=True
 
 
-class ResamplingOperation1D(LinkableOperation):
+class ResampleOperation1D(LinkableOperation):
     """
     Abstract baseclass for resampling operations
     """
@@ -57,7 +57,7 @@ class ResamplingOperation1D(LinkableOperation):
        instance, setting pixel_ratio=2 can give better results on Retina
        displays.""")
 
-class ResamplingOperation2D(ResamplingOperation1D):
+class ResampleOperation2D(ResampleOperation1D):
     """
     Abstract baseclass for resampling operations
     """

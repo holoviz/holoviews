@@ -33,7 +33,7 @@ import math
 import numpy as np
 import param
 
-from .resampling import ResamplingOperation1D
+from .resample import ResampleOperation1D
 
 
 def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
@@ -151,7 +151,7 @@ _ALGORITHMS = {
 }
 
 
-class downsample1d(ResamplingOperation1D):
+class downsample1d(ResampleOperation1D):
     """
     Implements downsampling of a regularly sampled 1D dataset.
 
