@@ -34,6 +34,7 @@ import numpy as np
 import param
 
 from .resample import ResampleOperation1D
+from ..element.chart import Area
 
 
 def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
@@ -172,5 +173,9 @@ class downsample1d(ResampleOperation1D):
         if ys.dtype == np.bool_:
             ys = ys.astype(np.int8)
         downsample = _ALGORITHMS[self.p.algorithm]
+        if self.p.algorithm == "lttb" and isinstance(element, Area):
+            raise NotImplementedError(
+                "LTTB algorithm is not implemented for hv.Area"
+            )
         samples = downsample(xs, ys, self.p.width)
         return element.iloc[samples]
