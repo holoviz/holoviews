@@ -137,7 +137,7 @@ class Config(param.ParameterizedFunction):
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
     def __call__(self, **params):
-        self.param.set_param(**params)
+        self.param.update(**params)
         return self
 
 config = Config()

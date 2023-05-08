@@ -173,7 +173,7 @@ class apply_when(param.ParameterizedFunction):
             streams = params.pop('streams')
         else:
             streams = [RangeXY()]
-        self.param.set_param(**params)
+        self.param.update(**params)
         if not self.predicate:
             raise ValueError(
                 'Must provide a predicate function to determine when '

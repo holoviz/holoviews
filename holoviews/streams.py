@@ -419,7 +419,7 @@ class Stream(param.Parameterized):
         constant.
         """
         with util.disable_constant(self):
-            self.param.set_param(**kwargs)
+            self.param.update(**kwargs)
 
     def event(self, **kwargs):
         """
@@ -793,12 +793,12 @@ class Params(Stream):
                 if isinstance(owner, Stream):
                     owner.update(**updates)
                 else:
-                    owner.param.set_param(**updates)
+                    owner.param.update(**updates)
         elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
             return
         else:
-            self.parameterized.param.set_param(**kwargs)
+            self.parameterized.param.update(**kwargs)
 
     @property
     def contents(self):

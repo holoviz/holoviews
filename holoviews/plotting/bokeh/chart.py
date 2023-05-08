@@ -142,7 +142,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         has_angles = False
         for (key, el), zorder in zip(element.data.items(), zorders):
             el_opts = self.lookup_options(el, 'plot').options
-            self.param.set_param(**{k: v for k, v in el_opts.items()
+            self.param.update(**{k: v for k, v in el_opts.items()
                                     if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
@@ -379,7 +379,7 @@ class CurvePlot(ElementPlot):
         zorders = self._updated_zorders(overlay)
         for (key, el), zorder in zip(overlay.data.items(), zorders):
             el_opts = self.lookup_options(el, 'plot').options
-            self.param.set_param(**{k: v for k, v in el_opts.items()
+            self.param.update(**{k: v for k, v in el_opts.items()
                                     if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]

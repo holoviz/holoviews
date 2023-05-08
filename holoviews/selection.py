@@ -134,7 +134,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
-        self.param.set_param(**kwargs)
+        self.param.update(**kwargs)
 
         if Store.current_backend not in Store.renderers:
             raise RuntimeError("Cannot perform link_selections operation "
