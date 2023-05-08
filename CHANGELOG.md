@@ -6,6 +6,9 @@ This release includes many new features, improvements, and bug fixes. Among the 
 
 We would like to thank the many users who contributed to this release by filing bug reports, providing new features, and bug fixes. We want to give a special shout-out to existing contributors @ianthomas23, @jlstevens, @jordansamuels, @maximlt, @philippjfr, @TheoMathurin, @Yura52, and @Hoxbro, as well as new contributors @GeoVizNow, @JRRudy1, @keewis, @michaelaye, and @wendrul.
 
+This minor version will be the last to support Python 3.7. The next minor version will require Python 3.8 or higher.
+In the next release, `holoviews.annotate` will start giving a deprecation warning about its future move to the new package [HoloNote](https://github.com/holoviz/holonote).
+
 
 New features:
 
@@ -22,9 +25,7 @@ Enhancements:
 - Add `muted` support to `PointPlot` like `hv.Scatter` ([#5705](https://github.com/holoviz/holoviews/pull/5705))
 - Automatic detect `comms` without calling `pn.extension()` ([#5645](https://github.com/holoviz/holoviews/pull/5645))
 - Add support for extra `Hovertool` variables in a Bokeh's `quadmesh` with 2D coordinates (with tests) ([#5638](https://github.com/holoviz/holoviews/pull/5638))
-- Change `hv.Rectangles` to internally use Bokeh `Quad` not `Rect` to support logarithmic axis in WebGL
-([#5664](https://github.com/holoviz/holoviews/pull/5664))
-- Make a note about BoxEditTool not supported XXXX.
+- Change `hv.Rectangles` to internally use Bokeh `Quad` and not `Rect` to support logarithmic axis in WebGL ([#5664](https://github.com/holoviz/holoviews/pull/5664), [#5702](https://github.com/holoviz/holoviews/pull/5702))
 
 
 Bug fixes:
@@ -34,8 +35,8 @@ Bug fixes:
 - Fix `active_tools` to only be set for enabled tools ([#5616](https://github.com/holoviz/holoviews/pull/5616))
 - Fix legend display when using categorical `datashade` on GPU ([#5631](https://github.com/holoviz/holoviews/pull/5631))
 - Adding `GeoDataFrame` to `DataConversion` ([#5325](https://github.com/holoviz/holoviews/pull/5325))
-- Don't emit warnings when toolbar is disabled ([#5691](https://github.com/holoviz/holoviews/pull/5691))
-- Don't try to find closest match if input is empty ([#5700](https://github.com/holoviz/holoviews/pull/5700))
+- Don't emit warnings when the toolbar is disabled ([#5691](https://github.com/holoviz/holoviews/pull/5691))
+- Don't try to find the closest match if the input is empty ([#5700](https://github.com/holoviz/holoviews/pull/5700))
 - Only use `long_name` if it is a string ([#5646](https://github.com/holoviz/holoviews/pull/5646))
 - Use Matplotlib's public API to list the colormaps ([#5598](https://github.com/holoviz/holoviews/pull/5598))
 
@@ -60,6 +61,10 @@ Maintenance:
 
 - Use `clean-notebook`, `codespell`, and `ruff` in `pre-commit` ([#5594](https://github.com/holoviz/holoviews/pull/5594), [#5627](https://github.com/holoviz/holoviews/pull/5627), [#5653](https://github.com/holoviz/holoviews/pull/5653))
 - General mainteance ([#5607](https://github.com/holoviz/holoviews/pull/5607), [#5611](https://github.com/holoviz/holoviews/pull/5611), [#5612](https://github.com/holoviz/holoviews/pull/5612), [#5649](https://github.com/holoviz/holoviews/pull/5649))
+
+
+Known issues:
+- `BoxEditTool` is not yet supported with the new internals of `hv.Rectangle`.
 
 
 Removals:
