@@ -10,11 +10,11 @@ Version 1.16.0
 **May 8, 2023**
 
 This release includes many new features, improvements, and bug fixes.
-Among the highlights are support for Bokeh 3 and Panel 1, both of which
-come with a wide range of new features and enhancements. Time series
-support has also been improved, with auto-ranging along one axis, a new
-downsample algorithm, and having WebGL enabled by default. In addition,
-the release includes various other enhancements and bug fixes.
+Among the highlights are support for Bokeh 3.1 and Panel 1.0, both of
+which come with a wide range of new features and enhancements. Time
+series support has also been improved, with auto-ranging along one axis,
+a new downsample algorithm, and having WebGL enabled by default. In
+addition, the release includes various other enhancements and bug fixes.
 
 We would like to thank the many users who contributed to this release by
 filing bug reports, providing new features, and bug fixes. We want to
@@ -31,7 +31,7 @@ future move to the new package
 
 New features:
 
--  Support for Bokeh 3.0 and Panel 1.0
+-  Support for Bokeh 3.1 and Panel 1.0
    (`#5388 <https://github.com/holoviz/holoviews/pull/5388>`__,
    `#5620 <https://github.com/holoviz/holoviews/pull/5620>`__,
    `#5640 <https://github.com/holoviz/holoviews/pull/5640>`__,
@@ -42,7 +42,7 @@ New features:
 -  Implement auto-ranging support along one axis
    (`#5554 <https://github.com/holoviz/holoviews/pull/5554>`__,
    `#5609 <https://github.com/holoviz/holoviews/pull/5609>`__)
--  Add Largest Triangle Three Buckets as a downsample algorithm
+-  Add Largest Triangle Three Buckets (LTTB) as a downsample algorithm
    (`#5552 <https://github.com/holoviz/holoviews/pull/5552>`__)
 -  Enable WebGL by default
    (`#5708 <https://github.com/holoviz/holoviews/pull/5708>`__)
@@ -51,7 +51,7 @@ Enhancements:
 
 -  Improve ``legend_cols`` support for Bokeh 3
    (`#5669 <https://github.com/holoviz/holoviews/pull/5669>`__)
--  Add convenience function to ``opts``
+-  Add convenience ``getter`` interface to ``opts``
    (`#5606 <https://github.com/holoviz/holoviews/pull/5606>`__)
 -  Ensure ``.stack`` works on areas with different ``vdims``
    (`#5693 <https://github.com/holoviz/holoviews/pull/5693>`__)
@@ -108,11 +108,11 @@ Compatibility:
 
 Documentation:
 
--  Replace “three” with “four” for consistency
+-  Fix an incorrect number stated regarding available axis types
    (`#5623 <https://github.com/holoviz/holoviews/pull/5623>`__)
 -  Fix ``BoundsY`` example
    (`#5629 <https://github.com/holoviz/holoviews/pull/5629>`__)
--  Fix formatting on faq
+-  Fix formatting on FAQ
    (`#5630 <https://github.com/holoviz/holoviews/pull/5630>`__)
 -  Fix anchor links
    (`#5677 <https://github.com/holoviz/holoviews/pull/5677>`__)
@@ -123,7 +123,7 @@ Maintenance:
    (`#5594 <https://github.com/holoviz/holoviews/pull/5594>`__,
    `#5627 <https://github.com/holoviz/holoviews/pull/5627>`__,
    `#5653 <https://github.com/holoviz/holoviews/pull/5653>`__)
--  General mainteance
+-  General maintenance
    (`#5607 <https://github.com/holoviz/holoviews/pull/5607>`__,
    `#5611 <https://github.com/holoviz/holoviews/pull/5611>`__,
    `#5612 <https://github.com/holoviz/holoviews/pull/5612>`__,

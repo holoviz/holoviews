@@ -2,7 +2,7 @@ Version 1.16.0
 ==============
 **May 8, 2023**
 
-This release includes many new features, improvements, and bug fixes. Among the highlights are support for Bokeh 3 and Panel 1, both of which come with a wide range of new features and enhancements. Time series support has also been improved, with auto-ranging along one axis, a new downsample algorithm, and having WebGL enabled by default. In addition, the release includes various other enhancements and bug fixes.
+This release includes many new features, improvements, and bug fixes. Among the highlights are support for Bokeh 3.1 and Panel 1.0, both of which come with a wide range of new features and enhancements. Time series support has also been improved, with auto-ranging along one axis, a new downsample algorithm, and having WebGL enabled by default. In addition, the release includes various other enhancements and bug fixes.
 
 We would like to thank the many users who contributed to this release by filing bug reports, providing new features, and bug fixes. We want to give a special shout-out to existing contributors @ianthomas23, @jlstevens, @jordansamuels, @maximlt, @philippjfr, @TheoMathurin, @Yura52, and @Hoxbro, as well as new contributors @GeoVizNow, @JRRudy1, @keewis, @michaelaye, and @wendrul.
 
@@ -12,15 +12,15 @@ In the next release, `holoviews.annotate` will start giving a deprecation warnin
 
 New features:
 
-- Support for Bokeh 3.0 and Panel 1.0 ([#5388](https://github.com/holoviz/holoviews/pull/5388), [#5620](https://github.com/holoviz/holoviews/pull/5620), [#5640](https://github.com/holoviz/holoviews/pull/5640), [#5679](https://github.com/holoviz/holoviews/pull/5679), [#5683](https://github.com/holoviz/holoviews/pull/5683), [#5692](https://github.com/holoviz/holoviews/pull/5692), [#5703](https://github.com/holoviz/holoviews/pull/5703))
+- Support for Bokeh 3.1 and Panel 1.0 ([#5388](https://github.com/holoviz/holoviews/pull/5388), [#5620](https://github.com/holoviz/holoviews/pull/5620), [#5640](https://github.com/holoviz/holoviews/pull/5640), [#5679](https://github.com/holoviz/holoviews/pull/5679), [#5683](https://github.com/holoviz/holoviews/pull/5683), [#5692](https://github.com/holoviz/holoviews/pull/5692), [#5703](https://github.com/holoviz/holoviews/pull/5703))
 - Implement auto-ranging support along one axis ([#5554](https://github.com/holoviz/holoviews/pull/5554), [#5609](https://github.com/holoviz/holoviews/pull/5609))
-- Add Largest Triangle Three Buckets as a downsample algorithm ([#5552](https://github.com/holoviz/holoviews/pull/5552))
+- Add Largest Triangle Three Buckets (LTTB) as a downsample algorithm ([#5552](https://github.com/holoviz/holoviews/pull/5552))
 - Enable WebGL by default ([#5708](https://github.com/holoviz/holoviews/pull/5708))
 
 Enhancements:
 
 - Improve `legend_cols` support for Bokeh 3 ([#5669](https://github.com/holoviz/holoviews/pull/5669))
-- Add convenience function to `opts` ([#5606](https://github.com/holoviz/holoviews/pull/5606))
+- Add convenience `getter` interface to `opts` ([#5606](https://github.com/holoviz/holoviews/pull/5606))
 - Ensure `.stack` works on areas with different `vdims` ([#5693](https://github.com/holoviz/holoviews/pull/5693))
 - Add `muted` support to `PointPlot` like `hv.Scatter` ([#5705](https://github.com/holoviz/holoviews/pull/5705))
 - Automatic detect `comms` without calling `pn.extension()` ([#5645](https://github.com/holoviz/holoviews/pull/5645))
@@ -51,16 +51,16 @@ Compatibility:
 
 Documentation:
 
-- Replace "three" with "four" for consistency ([#5623](https://github.com/holoviz/holoviews/pull/5623))
+- Fix an incorrect number stated regarding available axis types ([#5623](https://github.com/holoviz/holoviews/pull/5623))
 - Fix `BoundsY` example ([#5629](https://github.com/holoviz/holoviews/pull/5629))
-- Fix formatting on faq ([#5630](https://github.com/holoviz/holoviews/pull/5630))
+- Fix formatting on FAQ ([#5630](https://github.com/holoviz/holoviews/pull/5630))
 - Fix anchor links ([#5677](https://github.com/holoviz/holoviews/pull/5677))
 
 
 Maintenance:
 
 - Use `clean-notebook`, `codespell`, and `ruff` in `pre-commit` ([#5594](https://github.com/holoviz/holoviews/pull/5594), [#5627](https://github.com/holoviz/holoviews/pull/5627), [#5653](https://github.com/holoviz/holoviews/pull/5653))
-- General mainteance ([#5607](https://github.com/holoviz/holoviews/pull/5607), [#5611](https://github.com/holoviz/holoviews/pull/5611), [#5612](https://github.com/holoviz/holoviews/pull/5612), [#5649](https://github.com/holoviz/holoviews/pull/5649))
+- General maintenance ([#5607](https://github.com/holoviz/holoviews/pull/5607), [#5611](https://github.com/holoviz/holoviews/pull/5611), [#5612](https://github.com/holoviz/holoviews/pull/5612), [#5649](https://github.com/holoviz/holoviews/pull/5649))
 
 
 Known issues:
