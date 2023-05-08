@@ -1,6 +1,146 @@
 Releases
 ========
 
+Version 1.16
+~~~~~~~~~~~~
+
+Version 1.16.0
+**************
+
+**May 8, 2023**
+
+This release includes many new features, improvements, and bug fixes.
+Among the highlights are support for Bokeh 3 and Panel 1, both of which
+come with a wide range of new features and enhancements. Time series
+support has also been improved, with auto-ranging along one axis, a new
+downsample algorithm, and having WebGL enabled by default. In addition,
+the release includes various other enhancements and bug fixes.
+
+We would like to thank the many users who contributed to this release by
+filing bug reports, providing new features, and bug fixes. We want to
+give a special shout-out to existing contributors @ianthomas23,
+@jlstevens, @jordansamuels, @maximlt, @philippjfr, @TheoMathurin,
+@Yura52, and @Hoxbro, as well as new contributors @GeoVizNow, @JRRudy1,
+@keewis, @michaelaye, and @wendrul.
+
+This minor version will be the last to support Python 3.7. The next
+minor version will require Python 3.8 or higher. In the next release,
+``holoviews.annotate`` will start giving a deprecation warning about its
+future move to the new package
+`HoloNote <https://github.com/holoviz/holonote>`__.
+
+New features:
+
+-  Support for Bokeh 3.0 and Panel 1.0
+   (`#5388 <https://github.com/holoviz/holoviews/pull/5388>`__,
+   `#5620 <https://github.com/holoviz/holoviews/pull/5620>`__,
+   `#5640 <https://github.com/holoviz/holoviews/pull/5640>`__,
+   `#5679 <https://github.com/holoviz/holoviews/pull/5679>`__,
+   `#5683 <https://github.com/holoviz/holoviews/pull/5683>`__,
+   `#5692 <https://github.com/holoviz/holoviews/pull/5692>`__,
+   `#5703 <https://github.com/holoviz/holoviews/pull/5703>`__)
+-  Implement auto-ranging support along one axis
+   (`#5554 <https://github.com/holoviz/holoviews/pull/5554>`__,
+   `#5609 <https://github.com/holoviz/holoviews/pull/5609>`__)
+-  Add Largest Triangle Three Buckets as a downsample algorithm
+   (`#5552 <https://github.com/holoviz/holoviews/pull/5552>`__)
+-  Enable WebGL by default
+   (`#5708 <https://github.com/holoviz/holoviews/pull/5708>`__)
+
+Enhancements:
+
+-  Improve ``legend_cols`` support for Bokeh 3
+   (`#5669 <https://github.com/holoviz/holoviews/pull/5669>`__)
+-  Add convenience function to ``opts``
+   (`#5606 <https://github.com/holoviz/holoviews/pull/5606>`__)
+-  Ensure ``.stack`` works on areas with different ``vdims``
+   (`#5693 <https://github.com/holoviz/holoviews/pull/5693>`__)
+-  Add ``muted`` support to ``PointPlot`` like ``hv.Scatter``
+   (`#5705 <https://github.com/holoviz/holoviews/pull/5705>`__)
+-  Automatic detect ``comms`` without calling ``pn.extension()``
+   (`#5645 <https://github.com/holoviz/holoviews/pull/5645>`__)
+-  Add support for extra ``Hovertool`` variables in a Bokeh’s
+   ``quadmesh`` with 2D coordinates (with tests)
+   (`#5638 <https://github.com/holoviz/holoviews/pull/5638>`__)
+-  Change ``hv.Rectangles`` to internally use Bokeh ``Quad`` and not
+   ``Rect`` to support logarithmic axis in WebGL
+   (`#5664 <https://github.com/holoviz/holoviews/pull/5664>`__,
+   `#5702 <https://github.com/holoviz/holoviews/pull/5702>`__)
+
+Bug fixes:
+
+-  Ensure ``spatial_select`` in non-zero indexed DataFrame is applied
+   right (`#5625 <https://github.com/holoviz/holoviews/pull/5625>`__)
+-  Fix error handling for plotting class lookups on empty
+   ``DynamicMap``/``HoloMap``
+   (`#5604 <https://github.com/holoviz/holoviews/pull/5604>`__)
+-  Fix ``active_tools`` to only be set for enabled tools
+   (`#5616 <https://github.com/holoviz/holoviews/pull/5616>`__)
+-  Fix legend display when using categorical ``datashade`` on GPU
+   (`#5631 <https://github.com/holoviz/holoviews/pull/5631>`__)
+-  Adding ``GeoDataFrame`` to ``DataConversion``
+   (`#5325 <https://github.com/holoviz/holoviews/pull/5325>`__)
+-  Don’t emit warnings when the toolbar is disabled
+   (`#5691 <https://github.com/holoviz/holoviews/pull/5691>`__)
+-  Don’t try to find the closest match if the input is empty
+   (`#5700 <https://github.com/holoviz/holoviews/pull/5700>`__)
+-  Only use ``long_name`` if it is a string
+   (`#5646 <https://github.com/holoviz/holoviews/pull/5646>`__)
+-  Use Matplotlib’s public API to list the colormaps
+   (`#5598 <https://github.com/holoviz/holoviews/pull/5598>`__)
+
+Compatibility:
+
+-  Add Param 2.0 support
+   (`#5667 <https://github.com/holoviz/holoviews/pull/5667>`__,
+   `#5641 <https://github.com/holoviz/holoviews/pull/5641>`__,
+   `#5680 <https://github.com/holoviz/holoviews/pull/5680>`__,
+   `#5704 <https://github.com/holoviz/holoviews/pull/5704>`__)
+-  Add Pandas 2.0 support
+   (`#5662 <https://github.com/holoviz/holoviews/pull/5662>`__)
+-  Update ``types.functiontype`` to ``collections.abc.callable``
+   (`#5636 <https://github.com/holoviz/holoviews/pull/5636>`__)
+-  Improve error message for categorical data when used with
+   ``datashade``
+   (`#5643 <https://github.com/holoviz/holoviews/pull/5643>`__)
+-  Don’t disable Jedi completion by default
+   (`#5701 <https://github.com/holoviz/holoviews/pull/5701>`__)
+
+Documentation:
+
+-  Replace “three” with “four” for consistency
+   (`#5623 <https://github.com/holoviz/holoviews/pull/5623>`__)
+-  Fix ``BoundsY`` example
+   (`#5629 <https://github.com/holoviz/holoviews/pull/5629>`__)
+-  Fix formatting on faq
+   (`#5630 <https://github.com/holoviz/holoviews/pull/5630>`__)
+-  Fix anchor links
+   (`#5677 <https://github.com/holoviz/holoviews/pull/5677>`__)
+
+Maintenance:
+
+-  Use ``clean-notebook``, ``codespell``, and ``ruff`` in ``pre-commit``
+   (`#5594 <https://github.com/holoviz/holoviews/pull/5594>`__,
+   `#5627 <https://github.com/holoviz/holoviews/pull/5627>`__,
+   `#5653 <https://github.com/holoviz/holoviews/pull/5653>`__)
+-  General mainteance
+   (`#5607 <https://github.com/holoviz/holoviews/pull/5607>`__,
+   `#5611 <https://github.com/holoviz/holoviews/pull/5611>`__,
+   `#5612 <https://github.com/holoviz/holoviews/pull/5612>`__,
+   `#5649 <https://github.com/holoviz/holoviews/pull/5649>`__)
+
+Known issues: - ``BoxEditTool`` is not yet supported with the new
+internals of ``hv.Rectangle``.
+
+Removals:
+
+-  Raise ``DataError`` for non-string column names in DataFrame
+   (`#5654 <https://github.com/holoviz/holoviews/pull/5654>`__)
+-  Remove deprecated tile sources
+   (`#5654 <https://github.com/holoviz/holoviews/pull/5654>`__)
+-  Removed support for ``apply_groups`` for old option groups signature
+   (`#5497 <https://github.com/holoviz/holoviews/pull/5497>`__)
+
 Version 1.15
 ~~~~~~~~~~~~
 
