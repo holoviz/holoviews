@@ -427,4 +427,4 @@ class OutputSettings(KeywordSettings):
             options['widget_mode'] = options['widgets']
         renderer = Store.renderers[backend]
         render_options = {k: options[k] for k in cls.render_params if k in options}
-        renderer.param.set_param(**render_options)
+        renderer.param.update(**render_options)

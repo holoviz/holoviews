@@ -466,7 +466,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self.current_frame = element
 
         if element is not None:
-            self.param.set_param(**self.lookup_options(element, 'plot').options)
+            self.param.update(**self.lookup_options(element, 'plot').options)
         axis = self.handles['axis']
 
         axes_visible = element is not None or self.overlaid
@@ -1204,7 +1204,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items()
                             if k not in plot_opts})
-        self.param.set_param(**plot_opts)
+        self.param.update(**plot_opts)
 
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)

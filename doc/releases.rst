@@ -7,7 +7,7 @@ Version 1.16
 Version 1.16.0
 **************
 
-**May 8, 2023**
+**May 9, 2023**
 
 This release includes many new features, improvements, and bug fixes.
 Among the highlights are support for Bokeh 3.1 and Panel 1.0, both of

@@ -1215,7 +1215,7 @@ class GenericElementPlot(DimensionedPlot):
             self.ordering = util.layer_sort(self.hmap)
             overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
             opts = {k: v for k, v in overlay_opts if k in self.param}
-            self.param.set_param(**opts)
+            self.param.update(**opts)
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
             self.ordering = []
