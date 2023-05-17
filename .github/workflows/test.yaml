@@ -39,7 +39,7 @@ jobs:
       matrix:
         os: ['windows-latest']
         python-version: ['3.8', '3.11']
-        bokeh-version: ['3']
+        bokeh-version: ['2', '3']
         # os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # python-version: ['3.7', '3.8', '3.11']
         # bokeh-version: ['2', '3']
