@@ -63,7 +63,7 @@ jobs:
           name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests -o bokeh${{ matrix.bokeh-version }}"
           cache: true
           conda-update: true
