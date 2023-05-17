@@ -82,7 +82,6 @@ __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:
                                         reponame="holoviews"))
 
 from . import util                                       # noqa (API import)
-# from .annotators import annotate
 from .core import archive, config                        # noqa (API import)
 from .core.boundingregion import BoundingBox             # noqa (API import)
 from .core.dimension import OrderedDict, Dimension       # noqa (API import)
@@ -171,6 +170,14 @@ def help(obj, visualization=True, ansi=True, backend=None,
     else:
         import pydoc
         pydoc.help(obj)
+
+
+def __getattr__(name):
+    if name == "annotate":
+        # Lazy loading Panel
+        from .annotators import annotate
+        return annotate
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 del os, rcfile, warnings
