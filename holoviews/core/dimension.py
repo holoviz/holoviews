@@ -377,7 +377,7 @@ class Dimension(param.Parameterized):
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
-        changed = dict(self.param.get_param_values(onlychanged=True))
+        changed = self.param.values(onlychanged=True)
         if len({changed.get(k, k) for k in ['name','label']}) == 1:
             return f'Dimension({repr(self.name)})'
 
