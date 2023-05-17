@@ -82,7 +82,7 @@ __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:
                                         reponame="holoviews"))
 
 from . import util                                       # noqa (API import)
-from .annotators import annotate                         # noqa (API import)
+# from .annotators import annotate
 from .core import archive, config                        # noqa (API import)
 from .core.boundingregion import BoundingBox             # noqa (API import)
 from .core.dimension import OrderedDict, Dimension       # noqa (API import)

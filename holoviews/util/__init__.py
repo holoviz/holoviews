@@ -9,7 +9,6 @@ from types import FunctionType
 from pathlib import Path
 
 import param
-import panel as pn
 from pyviz_comms import extension as _pyviz_extension
 
 from ..core import (
@@ -718,6 +717,8 @@ class extension(_pyviz_extension):
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
         Store.set_current_backend(selected_backend)
+
+        import panel as pn
 
         if pn.config.comms == "default":
             try:
