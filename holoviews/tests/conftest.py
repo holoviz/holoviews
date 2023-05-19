@@ -15,3 +15,10 @@ def server_cleanup():
         state._indicators.clear()
         state._locations.clear()
         state.cache.clear()
+
+
+try:
+    from dask.context import config
+    config.set(scheduler='synchronous')
+except ImportError:
+    pass

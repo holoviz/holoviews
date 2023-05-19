@@ -21,3 +21,10 @@ if PD2 and sys.platform == "win32":
         "reference/elements/*/TriMesh.ipynb",
         "user_guide/15-Large_Data.ipynb",
     ]
+
+
+try:
+    from dask.context import config
+    config.set(scheduler='synchronous')
+except ImportError:
+    pass
