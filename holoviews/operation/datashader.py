@@ -1,7 +1,7 @@
 import warnings
 
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from functools import partial
 
 import param
@@ -30,7 +30,7 @@ from ..core.data import (
     Dataset, PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 )
 from ..core.util import (
-    Iterable, cast_array_to_int64, cftime_types, cftime_to_timestamp,
+    cast_array_to_int64, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values
 )
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
