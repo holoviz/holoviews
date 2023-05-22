@@ -50,7 +50,7 @@ class ParamFilter(param.ParameterizedFunction):
         if isinstance(obj,type):
             return class_proxy
         else:
-            instance_params = obj.param.get_param_values()
+            instance_params = obj.param.values().items()
             obj_proxy = class_proxy()
             filtered = {k:v for k,v in instance_params
                         if (k in obj_proxy.param)

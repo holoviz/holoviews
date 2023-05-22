@@ -40,14 +40,14 @@ class LinkCallback:
         self.target_plot = target_plot
         self.validate()
 
-        references = {k: v for k, v in link.param.get_param_values()
+        references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
         for sh in self.source_handles+[self.source_model]:
             key = '_'.join(['source', sh])
             references[key] = source_plot.handles[sh]
 
-        for p, value in link.param.get_param_values():
+        for p, value in link.param.values().items():
             if p in ('name', 'source', 'target'):
                 continue
             references[p] = value

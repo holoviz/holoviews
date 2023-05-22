@@ -306,7 +306,7 @@ class aggregate(LineAggregationOperation):
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width):
             params = dict(
-                {p: v for p, v in self.param.get_param_values() if p != 'name'},
+                {p: v for p, v in self.param.values().items() if p != 'name'},
                 dynamic=False, **{p: v for p, v in self.p.items()
                                   if p not in ('name', 'dynamic')})
             return overlay_aggregate(element, **params)
@@ -407,7 +407,7 @@ class overlay_aggregate(aggregate):
         info = self._get_sampling(element, x, y, ndims)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), _ = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
-        agg_params = dict({k: v for k, v in dict(self.param.get_param_values(),
+        agg_params = dict({k: v for k, v in dict(self.param.values(),
                                                  **self.p).items()
                            if k in aggregate.param},
                           x_range=(x0, x1), y_range=(y0, y1))
@@ -1380,7 +1380,7 @@ class rasterize(AggregationOperation):
         all_allowed_kws = set()
         all_supplied_kws = set()
         for predicate, transform in self._transforms:
-            merged_param_values = dict(self.param.get_param_values(), **self.p)
+            merged_param_values = dict(self.param.values(), **self.p)
 
             # If aggregator or interpolation are 'default', pop parameter so
             # datashader can choose the default aggregator itself

@@ -1666,7 +1666,7 @@ class GenericOverlayPlot(GenericElementPlot):
                                    'during plotting' % obj.last)
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
-            param_vals = dict(self.param.get_param_values())
+            param_vals = self.param.values()
             propagate = {opt: param_vals[opt] for opt in self._propagate_options
                          if opt in param_vals}
             opts['batched'] = self.batched

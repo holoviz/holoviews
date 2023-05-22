@@ -113,7 +113,7 @@ class Raster(Element2D):
             X, Y = samples
             samples = zip(X, Y)
 
-        params = dict(self.param.get_param_values(onlychanged=True),
+        params = dict(self.param.values(onlychanged=True),
                       vdims=self.vdims)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
@@ -173,7 +173,7 @@ class Raster(Element2D):
             if oidx and hasattr(self, 'bounds'):
                 reduced = reduced[::-1]
             data = zip(x_vals, reduced)
-            params = dict(dict(self.param.get_param_values(onlychanged=True)),
+            params = dict(dict(self.param.values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
             params.pop('extents', None)
