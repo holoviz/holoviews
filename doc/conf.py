@@ -19,7 +19,7 @@ version = release = base_version(holoviews.__version__)
 holoviews.extension.inline = False
 
 html_theme = 'pydata_sphinx_theme'
-html_logo = '_static/logo_horizontal_theme.png'
+html_logo = '_static/logo_horizontal.png'
 html_favicon = '_static/favicon.ico'
 
 html_static_path += ['_static']
