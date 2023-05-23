@@ -118,21 +118,19 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite ==0.8.0rc2',
+    'nbsite >=0.8.0rc39',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
     'bokeh >2.2',
-    'pydata-sphinx-theme ==0.9.0',
-    'sphinx-copybutton',
     'pooch',
     'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
-extras_require['bokeh2'] = ["panel <1.0.0a1"]
-extras_require['bokeh3'] = ["panel >=1.0.0a1"]
+extras_require['bokeh2'] = ["panel <1.0.0"]
+extras_require['bokeh3'] = ["panel >=1.0.0"]
 
 extras_require["build"] = [
     "param >=1.7.0",
