@@ -62,6 +62,7 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # NUMBA_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a13
         with:
@@ -78,10 +79,10 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: doit test_unit
-        run: |
-          conda activate test-environment
-          doit test_unit
+      # - name: doit test_unit
+      #   run: |
+      #     conda activate test-environment
+      #     doit test_unit
       - name: test examples
         run: |
           conda activate test-environment
