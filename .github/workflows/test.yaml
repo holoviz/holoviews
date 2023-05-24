@@ -61,6 +61,7 @@ jobs:
       PYTHONIOENCODING: "utf-8"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: 1
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a13
         with:
