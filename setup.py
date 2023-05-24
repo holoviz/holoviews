@@ -58,7 +58,6 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',
-    'nomkl',
 ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
