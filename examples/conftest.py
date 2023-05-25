@@ -5,8 +5,8 @@ from packaging.version import Version
 
 PD2 = Version(pd.__version__) >= Version("2.0")
 
-# Having "OMP_NUM_THREADS"=1, set as an environment variable, cab be needed on Windows
-# to avoid a crashing when running tests with pytest-xdist on Windows.
+# Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
+# to avoid crashing when running tests with pytest-xdist on Windows.
 # This is set in the .github/workflows/test.yaml file.
 # https://github.com/holoviz/holoviews/pull/5720
 
