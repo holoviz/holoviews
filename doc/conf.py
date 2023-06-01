@@ -47,8 +47,7 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
-    "navbar_end": ["navbar-icon-links"],
-    'google_analytics_id': 'UA-61554933-1',
+    "analytics": {"google_analytics_id": 'G-91EZMMHSF7'}
 }
 
 nbbuild_cell_timeout = 360
