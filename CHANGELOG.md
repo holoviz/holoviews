@@ -2,22 +2,22 @@ Version 1.16.1
 ==============
 **June 2, 2023**
 
-This release contains a small number of enhancements and important bug fixes. Many thanks to @philippjfr
-and @Hoxbro.
+This release contains a small number of important bug fixes and enhancements. Many thanks to @philippjfr and @Hoxbro.
 
-This release includes a breaking change as notebooks will no longer be inlining as default. This change will reduce the size of the notebook files and, more importantly, address an upstream issue where running `hv.extension` would give an error when used in a notebook.
+This release includes a breaking change as notebooks will no longer be inlining as default. This change will reduce the size of the notebook files and, more importantly, address an upstream issue in Jupyter where running `hv.extension` would give an error when used in a notebook.
 
+
+Critical bug fixes and compatibility:
+
+- Add `enable_mathjax` and set it and inline to `False` ([#5733](https://github.com/holoviz/holoviews/pull/5733))
+- Update to support Datashader on Python 3.11 ([#5720](https://github.com/holoviz/holoviews/pull/5720))
 
 Enhancements:
 
 - Add `show_versions` helper function ([#5725](https://github.com/holoviz/holoviews/pull/5725))
 - Ignore known model warning in VS Code ([#5734](https://github.com/holoviz/holoviews/pull/5734))
-- Add work-around for plots where the objects in figure would overlap ([#5733](https://github.com/holoviz/holoviews/pull/5733))
+- Add workaround for plots where the objects in a figure would overlap ([#5733](https://github.com/holoviz/holoviews/pull/5733))
 
-Compatibility:
-
-- Add `enable_mathjax` and set it and inline to `False` ([#5733](https://github.com/holoviz/holoviews/pull/5733))
-- Update to support Datashader on Python 3.11 ([#5720](https://github.com/holoviz/holoviews/pull/5720))
 
 Documentation:
 
