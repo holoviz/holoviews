@@ -116,14 +116,14 @@ After you have successfully installed and configured HoloViews, please see `Gett
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
 
-.. |CondaPkg| image:: https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg
+.. |CondaPkg| image:: https://img.shields.io/conda/v/anaconda/holoviews.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff
 .. _CondaPkg: https://anaconda.org/pyviz/holoviews
 
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/holoviz/holoviews/blob/main/LICENSE.txt
 
 .. |Coverage| image:: https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg
-.. _Coveralls: https://codecov.io/gh/holoviz/holoviews
+.. _Coverage: https://codecov.io/gh/holoviz/holoviews
 
 .. toctree::
    :titlesonly:
