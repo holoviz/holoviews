@@ -9,7 +9,7 @@ This release includes a breaking change as notebooks will no longer be inlining 
 
 Critical bug fixes and compatibility:
 
-- Add `enable_mathjax` and set it and inline to `False` ([#5733](https://github.com/holoviz/holoviews/pull/5733))
+- Add `enable_mathjax` and set it and inline to `False` ([#5729](https://github.com/holoviz/holoviews/pull/5729))
 - Update to support Datashader on Python 3.11 ([#5720](https://github.com/holoviz/holoviews/pull/5720))
 
 Enhancements:
