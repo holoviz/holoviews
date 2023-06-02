@@ -58,7 +58,6 @@ nbbuild_cell_timeout = 360
 
 extensions += [
     'nbsite.gallery',
-    'sphinx.ext.napoleon',
     'sphinx_copybutton',
 ]
 
