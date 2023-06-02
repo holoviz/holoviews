@@ -74,7 +74,7 @@ Installation
 |CondaPkg|_ |PyPI|_ |License|_ |Coverage|_
 
 
-HoloViews works with `Python 2.7 and Python 3 <https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest>`_ on Linux, Windows, or Mac, and works seamlessly with `Jupyter Notebook and JupyterLab <https://jupyter.org>`_.
+HoloViews works with Python 3 on Linux, Windows, or Mac, and works seamlessly with `Jupyter Notebook and JupyterLab <https://jupyter.org>`_.
 
 The recommended way to install HoloViews is using the `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`_ command provided by `Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_::
 
