@@ -16,7 +16,7 @@ Enhancements:
 
 Compatibility:
 
-- Add `enable_mathJax` and set it and inline to `False` ([#5733](https://github.com/holoviz/holoviews/pull/5733))
+- Add `enable_mathjax` and set it and inline to `False` ([#5733](https://github.com/holoviz/holoviews/pull/5733))
 - Update to support Datashader on Python 3.11 ([#5720](https://github.com/holoviz/holoviews/pull/5720))
 
 Documentation:
