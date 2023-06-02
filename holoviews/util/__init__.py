@@ -729,12 +729,18 @@ class extension(_pyviz_extension):
 
             if "VSCODE_PID" in os.environ:
                 pn.config.comms = "vscode"
+                self._ignore_bokeh_warnings()
                 return
 
     @classmethod
     def register_backend_callback(cls, backend, callback):
         """Registers a hook which is run when a backend is loaded"""
         cls._backend_hooks[backend].append(callback)
+
+    def _ignore_bokeh_warnings(self):
+        import warnings
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
 
 
 def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
