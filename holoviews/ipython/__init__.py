@@ -108,7 +108,7 @@ class notebook_extension(extension):
        Whether to monkey patch IPython to use the correct tab-completion
        behavior. """)
 
-    enable_mathjax = param.Boolean(default=True, doc="""
+    enable_mathjax = param.Boolean(default=False, doc="""
         Whether to load bokeh-mathjax bundle in the notebook.""")
 
     _loaded = False
