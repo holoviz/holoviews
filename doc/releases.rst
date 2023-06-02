@@ -4,6 +4,42 @@ Releases
 Version 1.16
 ~~~~~~~~~~~~
 
+Version 1.16.1
+**************
+
+**June 2, 2023**
+
+This release contains a small number of important bug fixes and
+enhancements. Many thanks to @philippjfr and @Hoxbro.
+
+This release includes a breaking change as notebooks will no longer be
+inlining as default. This change will reduce the size of the notebook
+files and, more importantly, address an upstream issue in Jupyter where
+running ``hv.extension`` would give an error when used in a notebook.
+
+Critical bug fixes and compatibility:
+
+-  Add ``enable_mathjax`` and set it and inline to ``False``
+   (`#5733 <https://github.com/holoviz/holoviews/pull/5733>`__)
+-  Update to support Datashader on Python 3.11
+   (`#5720 <https://github.com/holoviz/holoviews/pull/5720>`__)
+
+Enhancements:
+
+-  Add ``show_versions`` helper function
+   (`#5725 <https://github.com/holoviz/holoviews/pull/5725>`__)
+-  Ignore known model warning in VS Code
+   (`#5734 <https://github.com/holoviz/holoviews/pull/5734>`__)
+-  Add workaround for plots where the objects in a figure would overlap
+   (`#5733 <https://github.com/holoviz/holoviews/pull/5733>`__)
+
+Documentation:
+
+-  Upgrade to latest ``nbsite`` and ``pydata-sphinx-theme``
+   (`#5724 <https://github.com/holoviz/holoviews/pull/5724>`__,
+   `#5735 <https://github.com/holoviz/holoviews/pull/5735>`__)
+
+
 Version 1.16.0
 **************
 
