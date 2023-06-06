@@ -93,7 +93,6 @@ extras_require["examples"] = extras_require["recommended"] + [
     "pyarrow",
     "pooch",
     "datashader >=0.11.1",
-    "libxml2 ==2.10.4",
 ]
 
 
