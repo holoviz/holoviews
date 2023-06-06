@@ -65,6 +65,7 @@ jobs:
       VECLIB_MAXIMUM_THREADS: 1
       NUMEXPR_NUM_THREADS: 1
       NUMBA_NUM_THREADS: 1
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a13
         with:
