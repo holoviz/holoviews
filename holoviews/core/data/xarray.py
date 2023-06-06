@@ -93,19 +93,19 @@ class XArrayInterface(GridInterface):
 
         packed = False
         if isinstance(data, xr.DataArray):
-            data, vdims = cls._pre_dataarray(eltype, data, kdims, vdims, kdim_param, vdim_param)
+            data, kdims, vdims, packed = cls._pre_dataarray(eltype, data, kdims, vdims, kdim_param, vdim_param, packed)
 
         if not isinstance(data, (xr.Dataset, xr.DataArray)):
-            data, kdims, vdims, packed = cls._not_xarray_data(data, kdims, vdims, kdim_param, vdim_param)
+            data, kdims, vdims, packed = cls._not_xarray_data(data, kdims, vdims, kdim_param, vdim_param, packed)
         else:
-            data, kdims, vdims = cls._xarray_data(data, kdims, vdims, retrieve_unit_and_label, packed)
+            data, kdims, vdims, packed = cls._xarray_data(data, kdims, vdims, retrieve_unit_and_label, packed)
 
         cls._validate_kdims(data, kdims)
         cls._validate_vdims(eltype, data, kdims, vdims, packed)
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
     @classmethod
-    def _pre_dataarray(cls, eltype, data, kdims, vdims, kdim_param, vdim_param):
+    def _pre_dataarray(cls, eltype, data, kdims, vdims, kdim_param, vdim_param, packed):
         kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
         vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
         if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
@@ -136,10 +136,10 @@ class XArrayInterface(GridInterface):
         if not packed:
             vdims = [vdim]
             data = data.to_dataset(name=vdim.name)
-        return data,vdims
+        return data,kdims,vdims, packed
 
     @classmethod
-    def _pre_notxarray(cls, data, kdims, vdims, kdim_param, vdim_param):
+    def _not_xarray_data(cls, data, kdims, vdims, kdim_param, vdim_param, packed):
         import xarray as xr
 
         if kdims is None:
@@ -215,7 +215,7 @@ class XArrayInterface(GridInterface):
                         kdims.append(c)
         kdims = [retrieve_unit_and_label(kd) for kd in kdims]
         vdims = [retrieve_unit_and_label(vd) for vd in vdims]
-        return data,kdims,vdims
+        return data,kdims,vdims,packed
 
     @classmethod
     def _validate_kdims(cls, data, kdims):
