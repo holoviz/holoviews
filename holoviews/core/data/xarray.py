@@ -223,9 +223,13 @@ class XArrayInterface(GridInterface):
 
         not_found = []
         for d in kdims:
-            if not any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
+            if any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
                        for k, v in data.coords.items()):
-                not_found.append(d)
+                continue
+            if any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
+                       for k, v in data.data_vars.items()):
+                continue
+            not_found.append(d)
         if not isinstance(data, (xr.Dataset, xr.DataArray)):
             raise TypeError('Data must be be an xarray Dataset type.')
         elif not_found:
@@ -380,6 +384,11 @@ class XArrayInterface(GridInterface):
         else:
             return container_type(data)
 
+    @classmethod
+    def irregular(cls, dataset, dim):
+        if set(dataset.vdims) - set(dataset.kdims):
+            return dataset.data[dimension_name(dim)].ndim > 1
+        return True
 
     @classmethod
     def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
