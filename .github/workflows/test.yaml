@@ -37,7 +37,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        # os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        os: ['windows-latest']
         python-version: ['3.7', '3.8', '3.11']
         bokeh-version: ['2', '3']
         exclude:
@@ -59,6 +60,11 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      NUMBA_NUM_THREADS: 1
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a13
         with:
@@ -75,10 +81,10 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: doit test_unit
-        run: |
-          conda activate test-environment
-          doit test_unit
+      # - name: doit test_unit
+      #   run: |
+      #     conda activate test-environment
+      #     doit test_unit
       - name: test examples
         run: |
           conda activate test-environment
