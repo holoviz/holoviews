@@ -502,6 +502,23 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         return self.sheet2matrixidx(*coord)
 
 
+class ImageStack(Image):
+    """
+    Supports the same constructor RGB and HSV elements, but without the
+    limit of 3/4 channels (one of more channels).
+
+    If only one channel it should behave the same as an Image.
+
+    Type of data inputs:
+    - 3D ndarray (x,y,level) (automatic named vdims level_x)
+    - A list of 2D ndarrays  (automatic named vdims level_x)
+    - A dict of 2D ndarrays (key=level: value=2D ndarray)
+    - xarray with all the whistles
+    - overlay/ndoverlay of Images
+    """
+    pass
+
+
 class RGB(Image):
     """
     RGB represents a regularly spaced 2D grid of an underlying

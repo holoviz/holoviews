@@ -15,6 +15,10 @@ from .styles import base_properties, fill_properties, line_properties, mpl_to_bo
 from .util import bokeh3, colormesh
 
 
+class ImageStackPlot:
+    pass
+
+
 class RasterPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
