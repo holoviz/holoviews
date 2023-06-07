@@ -93,7 +93,7 @@ class XArrayInterface(GridInterface):
 
         packed = False
         if isinstance(data, xr.DataArray):
-            data, kdims, vdims, packed = cls._pre_dataarray(eltype, data, kdims, vdims, kdim_param, vdim_param, packed)
+            data, kdims, vdims, packed = cls._prepare_dataarray(eltype, data, kdims, vdims, kdim_param, vdim_param, packed)
 
         if not isinstance(data, (xr.Dataset, xr.DataArray)):
             data, kdims, vdims, packed = cls._not_xarray_data(data, kdims, vdims, kdim_param, vdim_param, packed)
@@ -105,7 +105,7 @@ class XArrayInterface(GridInterface):
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
     @classmethod
-    def _pre_dataarray(cls, eltype, data, kdims, vdims, kdim_param, vdim_param, packed):
+    def _prepare_dataarray(cls, eltype, data, kdims, vdims, kdim_param, vdim_param, packed):
         kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
         vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
         if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
