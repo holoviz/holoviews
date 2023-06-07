@@ -186,11 +186,11 @@ class XArrayInterface(GridInterface):
             data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
         else:
             arrays = {}
-            for vdim in vdims:
-                arr = data[vdim.name]
+            for dim in kdims + vdims:
+                arr = data[dim.name]
                 if not isinstance(arr, xr.DataArray):
                     arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
-                arrays[vdim.name] = arr
+                arrays[dim.name] = arr
             data = xr.Dataset(arrays)
         return data,kdims,vdims,packed
 
@@ -198,8 +198,6 @@ class XArrayInterface(GridInterface):
     def _xarray_data(cls, data, kdims, vdims, retrieve_unit_and_label, packed):
         if not data.coords:
             data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
-        if vdims is None:
-            vdims = list(data.data_vars)
         if kdims is None:
             xrdims = list(data.dims)
             xrcoords = list(data.coords)
@@ -213,6 +211,8 @@ class XArrayInterface(GridInterface):
                 for c in data.coords:
                     if c not in kdims and set(data[c].dims) == set(virtual_dims):
                         kdims.append(c)
+        if vdims is None:
+            vdims = [v for v in data.data_vars if v not in kdims]
         kdims = [retrieve_unit_and_label(kd) for kd in kdims]
         vdims = [retrieve_unit_and_label(vd) for vd in vdims]
         return data,kdims,vdims,packed
@@ -254,7 +254,7 @@ class XArrayInterface(GridInterface):
                     continue
                 elif all(d in kdims for d in da[c].dims):
                     continue # Skip if coord is alias for another dimension
-                elif any(all(d in da[kd.name].dims for d in da[c].dims) for kd in kdims):
+                elif any(all(d in da[kd.name].dims for d in da[c] if kdims[0].name in da) for kd in kdims):
                     # Skip if all the dims on the coord are present on another coord
                     continue
                 undeclared.append(c)
@@ -385,19 +385,13 @@ class XArrayInterface(GridInterface):
             return container_type(data)
 
     @classmethod
-    def irregular(cls, dataset, dim):
-        if set(dataset.vdims) - set(dataset.kdims):
-            return dataset.data[dimension_name(dim)].ndim > 1
-        return True
-
-    @classmethod
     def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
         import xarray as xr
         dim = dataset.get_dimension(dimension)
         dim = dimension if dim is None else dim.name
         irregular = cls.irregular(dataset, dim)
         if irregular or expanded:
-            if irregular:
+            if irregular or not dataset.vdims:
                 data = dataset.data[dim]
             else:
                 data = util.expand_grid_coords(dataset, dim)
