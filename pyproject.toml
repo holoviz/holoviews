@@ -36,6 +36,7 @@ select = [
     "F",
     "FLY",
     "ICN",
+    "NPY",
     "PLC",
     "PLE",
     "PLR",
@@ -69,7 +70,10 @@ unfixable = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
-"holoviews/tests/*" = ["RUF001", "RUF002", "RUF003"]  # Ambiguous unicode character
+"holoviews/tests/*" = [
+    "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
+    "NPY002",  # Replace legacy `np.random.rand` call with Generator
+]
 
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"
