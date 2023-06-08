@@ -547,6 +547,3 @@ annotate._annotator_types.update([
     (Curve, CurveAnnotator),
     (Rectangles, RectangleAnnotator),
 ])
-
-# Alias: remove before 1.13.0 release
-BoxAnnotator = RectangleAnnotator

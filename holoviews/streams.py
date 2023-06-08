@@ -358,7 +358,7 @@ class Stream(param.Parameterized):
         same name. Returns a new clone of the stream instance with the
         specified name mapping.
         """
-        params = {k: v for k, v in self.param.get_param_values() if k != 'name'}
+        params = {k: v for k, v in self.param.values().items() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=(self._source() if self._source else None),
                               linked=self.linked, **params)
@@ -399,7 +399,7 @@ class Stream(param.Parameterized):
 
     @property
     def contents(self):
-        filtered = {k: v for k, v in self.param.get_param_values() if k != 'name'}
+        filtered = {k: v for k, v in self.param.values().items() if k != 'name'}
         return {self._rename.get(k, k): v for (k, v) in filtered.items()
                 if self._rename.get(k, True) is not None}
 
@@ -447,7 +447,7 @@ class Stream(param.Parameterized):
     def __repr__(self):
         cls_name = self.__class__.__name__
         kwargs = ','.join(f'{k}={v!r}'
-                          for (k, v) in self.param.get_param_values() if k != 'name')
+                          for (k, v) in self.param.values().items() if k != 'name')
         if not self._rename:
             return f'{cls_name}({kwargs})'
         else:

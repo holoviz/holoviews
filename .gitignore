@@ -34,3 +34,5 @@ holoviews/.version
 .vscode/settings.json
 holoviews/.vscode/settings.json
 .venv
+
+examples/getting_started/*.html
