@@ -1112,11 +1112,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                                   for k, dim in zip(key, dimensions)])
                 if handle:
                     legend_data.append((handle, label))
-            else:
-                if isinstance(subplot, OverlayPlot):
-                    legend_data += subplot.handles.get('legend_data', {}).items()
-                elif element.label and handle:
-                    legend_data.append((handle, labels.get(element.label, element.label)))
+            elif isinstance(subplot, OverlayPlot):
+                legend_data += subplot.handles.get('legend_data', {}).items()
+            elif element.label and handle:
+                legend_data.append((handle, labels.get(element.label, element.label)))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
         used_labels = []

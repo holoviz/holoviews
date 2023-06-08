@@ -146,9 +146,8 @@ def compute_overlayable_zorders(obj, path=[]):
                         zorder_map[k] += v + [obj]
                 else:
                     zorder_map[0] += [obj, el]
-        else:
-            if obj not in zorder_map[0]:
-                zorder_map[0].append(obj)
+        elif obj not in zorder_map[0]:
+            zorder_map[0].append(obj)
         return zorder_map
 
     isoverlay = isinstance(obj.last, CompositeOverlay)

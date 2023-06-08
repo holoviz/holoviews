@@ -485,10 +485,9 @@ class SideHistogramPlot(HistogramPlot):
                 if dimension.applies(element):
                     dim_name = dimension.dimension.name
                     cvals = [] if self.static_source else dimension.apply(element)
-            else:
-                if dimension in element.dimensions():
-                    dim_name = dimension.name
-                    cvals = [] if self.static_source else element.dimension_values(dimension)
+            elif dimension in element.dimensions():
+                dim_name = dimension.name
+                cvals = [] if self.static_source else element.dimension_values(dimension)
             if cvals is not None:
                 data[dim_name] = cvals
                 mapping['fill_color'] = {'field': dim_name,

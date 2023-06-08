@@ -262,13 +262,12 @@ def compute_layout_properties(
                     sizing_mode = 'scale_height'
                 else:
                     sizing_mode = 'scale_both'
+            elif responsive == 'width':
+                sizing_mode = 'stretch_both'
+            elif responsive == 'height':
+                sizing_mode = 'stretch_height'
             else:
-                if responsive == 'width':
-                    sizing_mode = 'stretch_both'
-                elif responsive == 'height':
-                    sizing_mode = 'stretch_height'
-                else:
-                    sizing_mode = 'stretch_both'
+                sizing_mode = 'stretch_both'
 
 
     if fixed_aspect:

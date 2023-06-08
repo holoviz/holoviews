@@ -419,11 +419,10 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             if issubclass(self.type, (NdOverlay, Overlay)):
                 layout.main_layer = kwargs['index']
             return layout
+        elif len(histmaps) > 1:
+            return Layout(histmaps)
         else:
-            if len(histmaps) > 1:
-                return Layout(histmaps)
-            else:
-                return histmaps[0]
+            return histmaps[0]
 
 
 class Callable(param.Parameterized):

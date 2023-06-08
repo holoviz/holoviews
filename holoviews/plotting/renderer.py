@@ -350,12 +350,11 @@ class Renderer(Exporter):
             return file_html(doc, resources)
         elif fmt in ['html', 'json']:
             return figdata
-        else:
-            if fmt == 'svg':
-                figdata = figdata.encode("utf-8")
-            elif fmt == 'pdf' and 'height' not in css:
-                _, h = self.get_size(plot)
-                css['height'] = '%dpx' % (h*self.dpi*1.15)
+        elif fmt == 'svg':
+            figdata = figdata.encode("utf-8")
+        elif fmt == 'pdf' and 'height' not in css:
+            _, h = self.get_size(plot)
+            css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):
             css = '; '.join(f"{k}: {v}" for k, v in css.items())

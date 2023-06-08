@@ -1163,13 +1163,12 @@ class SelectionExprSequence(Derived):
                     combined_selection_expr = ~selection_expr
                 else:
                     combined_selection_expr = selection_expr
-            else:
-                if mode == "intersect":
-                    combined_selection_expr &= selection_expr
-                elif mode == "union":
-                    combined_selection_expr |= selection_expr
-                else:  # inverse
-                    combined_selection_expr &= ~selection_expr
+            elif mode == "intersect":
+                combined_selection_expr &= selection_expr
+            elif mode == "union":
+                combined_selection_expr |= selection_expr
+            else:  # inverse
+                combined_selection_expr &= ~selection_expr
 
             # Update region
             if isinstance(source, DynamicMap):

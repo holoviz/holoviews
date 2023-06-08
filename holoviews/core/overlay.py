@@ -41,12 +41,11 @@ class Overlayable:
             if isinstance(self, Overlay):
                 if not isinstance(other, ViewableElement):
                     return NotImplemented
-            else:
-                if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
-                    items = [(k, self * v) for (k, v) in other.items()]
-                    return other.clone(items)
-                elif isinstance(other, (AdjointLayout, ViewableTree)) and not isinstance(other, Overlay):
-                    return NotImplemented
+            elif isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
+                items = [(k, self * v) for (k, v) in other.items()]
+                return other.clone(items)
+            elif isinstance(other, (AdjointLayout, ViewableTree)) and not isinstance(other, Overlay):
+                return NotImplemented
 
             try:
                 return Overlay([self, other])

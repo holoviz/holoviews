@@ -116,12 +116,11 @@ class LinkCallback:
                                          src._plot_id == source._plot_id)]
                 if links:
                     return (plot, links)
-            else:
-                if ((link.target is source) or
-                    (link.target is not None and
-                     link.target._plot_id is not None and
-                     link.target._plot_id == source._plot_id)):
-                    return (plot, [link])
+            elif ((link.target is source) or
+                (link.target is not None and
+                    link.target._plot_id is not None and
+                    link.target._plot_id == source._plot_id)):
+                return (plot, [link])
 
     def validate(self):
         """

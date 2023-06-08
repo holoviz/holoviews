@@ -342,10 +342,9 @@ class MultiDimensionalMapping(Dimensioned):
 
         if isinstance(dim_val, str) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
-        else:
-            if not len(dim_val) == len(self):
-                raise ValueError("Added dimension values must be same length"
-                                 "as existing keys.")
+        elif not len(dim_val) == len(self):
+            raise ValueError("Added dimension values must be same length"
+                                "as existing keys.")
 
         items = OrderedDict()
         for dval, (key, val) in zip(dim_val, self.data.items()):
@@ -942,12 +941,11 @@ class UniformNdMapping(NdMapping):
         "Label inherited from items"
         if self._label:
             return self._label
+        elif len(self):
+            label = get_ndmapping_label(self, 'label')
+            return '' if label is None else label
         else:
-            if len(self):
-                label = get_ndmapping_label(self, 'label')
-                return '' if label is None else label
-            else:
-                return ''
+            return ''
 
 
     @label.setter

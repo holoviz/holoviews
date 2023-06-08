@@ -24,14 +24,13 @@ def _maybe_map(numpy_fn):
                                       index=s.index))
             else:
                 return map_fn(lambda s: numpy_fn(s, *args, **kwargs))
+        elif series_like:
+            return type(values)(
+                numpy_fn(values, *args, **kwargs),
+                index=values.index,
+            )
         else:
-            if series_like:
-                return type(values)(
-                    numpy_fn(values, *args, **kwargs),
-                    index=values.index,
-                )
-            else:
-                return numpy_fn(values, *args, **kwargs)
+            return numpy_fn(values, *args, **kwargs)
     return fn
 
 
