@@ -926,8 +926,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         elif provider == 'colorcet' or (provider is None and cmap in cet_cmaps):
             palette = colorcet_cmap_to_palette(cmap, ncolors, categorical)
         else:
-            raise ValueError("Supplied cmap %s not found among %s colormaps." %
-                             (cmap,providers_checked))
+            raise ValueError(f"Supplied cmap {cmap} not found among {providers_checked} colormaps.")
     else:
         try:
             # Try processing as matplotlib colormap
@@ -935,8 +934,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         except Exception:
             palette = None
     if not isinstance(palette, list):
-        raise TypeError("cmap argument %s expects a list, Cycle or valid %s colormap or palette."
-                        % (cmap,providers_checked))
+        raise TypeError(f"cmap argument {cmap} expects a list, Cycle or valid {providers_checked} colormap or palette.")
     if ncolors and len(palette) != ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return palette

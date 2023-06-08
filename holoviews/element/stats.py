@@ -128,10 +128,9 @@ class StatisticsElement(Dataset, Element2D):
             dimensions = self.kdims
         vdims = [d for d in dimensions if d in self.vdims]
         if vdims:
-            raise ValueError('%s element does not hold data for value '
-                             'dimensions. Could not return data for %s '
-                             'dimension(s).' %
-                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+            raise ValueError('{} element does not hold data for value '
+                             'dimensions. Could not return data for {} '
+                             'dimension(s).'.format(type(self).__name__, ', '.join([d.name for d in vdims])))
         return super().dframe(dimensions, False)
 
     def columns(self, dimensions=None):
@@ -152,10 +151,9 @@ class StatisticsElement(Dataset, Element2D):
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         vdims = [d for d in dimensions if d in self.vdims]
         if vdims:
-            raise ValueError('%s element does not hold data for value '
-                             'dimensions. Could not return data for %s '
-                             'dimension(s).' %
-                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+            raise ValueError('{} element does not hold data for value '
+                             'dimensions. Could not return data for {} '
+                             'dimension(s).'.format(type(self).__name__, ', '.join([d.name for d in vdims])))
         return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 

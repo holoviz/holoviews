@@ -109,8 +109,7 @@ class DataConversion:
             min_d, max_d = element_params[dim_type].bounds
             if ((min_d is not None and len(dims) < min_d) or
                 (max_d is not None and len(dims) > max_d)):
-                raise ValueError("%s %s must be between length %s and %s." %
-                                 (type_name, dim_type, min_d, max_d))
+                raise ValueError(f"{type_name} {dim_type} must be between length {min_d} and {max_d}.")
 
         if groupby is None:
             groupby = [d for d in self._element.kdims if d not in kdims+vdims]

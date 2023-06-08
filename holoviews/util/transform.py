@@ -655,9 +655,8 @@ class dim:
             if method is None:
                 mtype = 'attribute' if accessor else 'method'
                 raise AttributeError(
-                    "%r could not be applied to '%r', '%s' %s "
-                    "does not exist on %s type."
-                    % (self, dataset, fn, mtype, type(data).__name__)
+                    "{!r} could not be applied to '{!r}', '{}' {} "
+                    "does not exist on {} type.".format(self, dataset, fn, mtype, type(data).__name__)
                 )
             if accessor:
                 data = method
@@ -728,15 +727,13 @@ class dim:
                            "present on the supplied object.".format(self, dataset))
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
-                raise ValueError("The expression %r assumes a %s-like "
-                                 "API but the dataset contains %s data "
-                                 "and cannot be coerced." %
-                                 (self, self.namespace, dataset.interface.datatype))
+                raise ValueError("The expression {!r} assumes a {}-like "
+                                 "API but the dataset contains {} data "
+                                 "and cannot be coerced.".format(self, self.namespace, dataset.interface.datatype))
             else:
-                raise ValueError("The expression %r assumes a %s-like "
-                                 "API but the dataset contains %s data "
-                                 "and coercion is disabled." %
-                                 (self, self.namespace, dataset.interface.datatype))
+                raise ValueError("The expression {!r} assumes a {}-like "
+                                 "API but the dataset contains {} data "
+                                 "and coercion is disabled.".format(self, self.namespace, dataset.interface.datatype))
 
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
@@ -796,7 +793,7 @@ class dim:
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
+            kwargs = '%s' % ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:

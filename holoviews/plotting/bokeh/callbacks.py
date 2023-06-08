@@ -381,8 +381,8 @@ class Callback:
             if handle_name not in handles:
                 warn_args = (handle_name, type(self.plot).__name__,
                              type(self).__name__)
-                print('%s handle not found on %s, cannot '
-                      'attach %s callback' % warn_args)
+                print('{} handle not found on {}, cannot '
+                      'attach {} callback'.format(*warn_args))
                 continue
             cb_handles.append(handles[handle_name])
 

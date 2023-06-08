@@ -89,8 +89,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         if sizes is None:
             eltype = type(element).__name__
             self.param.warning(
-                '%s dimension is not numeric, cannot use to scale %s size.'
-                % (sdim.pprint_label, eltype))
+                f'{sdim.pprint_label} dimension is not numeric, cannot use to scale {eltype} size.')
         else:
             data[map_key] = np.sqrt(sizes)
             mapping['size'] = map_key

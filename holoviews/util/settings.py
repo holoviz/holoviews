@@ -41,26 +41,23 @@ class KeywordSettings:
                         raise ValueError(f"Value {value!r} not a dict type")
                     disallowed = set(value.keys()) - set(allowed.keys())
                     if disallowed:
-                        raise ValueError("Keywords %r for %r option not one of %s"
-                                         % (disallowed, keyword, allowed))
+                        raise ValueError(f"Keywords {disallowed!r} for {keyword!r} option not one of {allowed}")
                     wrong_type = {k: v for k, v in value.items()
                                   if not isinstance(v, allowed[k])}
                     if wrong_type:
                         errors = []
                         for k,v in wrong_type.items():
-                            errors.append("Value %r for %r option's %r attribute not of type %r" %
-                                          (v, keyword, k, allowed[k]))
+                            errors.append(f"Value {v!r} for {keyword!r} option's {k!r} attribute not of type {allowed[k]!r}")
                         raise ValueError('\n'.join(errors))
                 elif isinstance(allowed, list) and value not in allowed:
                     if keyword in cls.custom_exceptions:
                         cls.custom_exceptions[keyword](value, keyword, allowed)
                     else:
-                        raise ValueError("Value %r for key %r not one of %s"
-                                         % (value, keyword, allowed))
+                        raise ValueError(f"Value {value!r} for key {keyword!r} not one of {allowed}")
                 elif isinstance(allowed, tuple):
                     if not (allowed[0] <= value <= allowed[1]):
                         info = (keyword,value)+allowed
-                        raise ValueError("Value %r for key %r not between %s and %s" % info)
+                        raise ValueError("Value {!r} for key {!r} not between {} and {}".format(*info))
                 options[keyword] = value
         return cls._validate(options, items, warnfn)
 

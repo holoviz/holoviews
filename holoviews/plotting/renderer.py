@@ -311,8 +311,7 @@ class Renderer(Exporter):
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
-            raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
-                            % (fmt, self.mode, fig_formats + holomap_formats))
+            raise Exception(f"Format {fmt!r} not supported by mode {self.mode!r}. Allowed formats: {fig_formats + holomap_formats!r}")
         self.last_plot = plot
         return plot, fmt
 
