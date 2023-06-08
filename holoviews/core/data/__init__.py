@@ -905,7 +905,7 @@ argument to specify a selection specification""")
         if not self:
             if spreadfn:
                 spread_name = spreadfn.__name__
-                vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
+                vdims = [d for vd in self.vdims for d in [vd, vd.clone(f'{vd.name}_{spread_name}')]]
             else:
                 vdims = self.vdims
             if not kdims and len(vdims) == 1:
@@ -924,7 +924,7 @@ argument to specify a selection specification""")
             error = self.clone(error, kdims=kdims, new_type=Dataset)
             combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
             for i, d in enumerate(vdims):
-                dim = d.clone('_'.join([d.name, spread_name]))
+                dim = d.clone(f'{d.name}_{spread_name}')
                 dvals = error.dimension_values(d, flat=False)
                 idx = vdims.index(d)
                 combined = combined.add_dimension(dim, idx+1, dvals, True)

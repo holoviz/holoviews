@@ -209,7 +209,7 @@ class InfoPrinter:
         target_footer = ("\nTo see the options info for one of these target specifications,"
                          "\nwhich are of the form {type}[.{group}[.{label}]], do holoviews.help({type}).")
 
-        return '\n'.join([heading, target_header, target_info, target_footer])
+        return f'{heading}\n{target_header}\n{target_info}\n{target_footer}'
 
 
     @classmethod

@@ -329,7 +329,7 @@ def undisplayable_info(obj, html=False):
         remedy = f"Please call the {collate} method on the appropriate elements."
 
     if not html:
-        return '\n'.join([error, remedy, info])
+        return f'{error}\n{remedy}\n{info}'
     else:
         return "<center>{msg}</center>".format(msg=('<br>'.join(
             ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))

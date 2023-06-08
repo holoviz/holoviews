@@ -588,7 +588,7 @@ class Renderer(Exporter):
                 if title is None:
                     title = os.path.basename(basename)
                 if fmt in MIME_TYPES:
-                    basename = '.'.join([basename, fmt])
+                    basename = f"{basename}.{fmt}"
             plot.layout.save(basename, embed=True, resources=resources, title=title)
             return
 

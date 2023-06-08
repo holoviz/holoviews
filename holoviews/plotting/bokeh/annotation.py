@@ -349,7 +349,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
                 for t in ('line', 'fill'):
                     if v is None:
                         continue
-                    key = '_'.join([t, p])
+                    key = f'{t}_{p}'
                     if key not in properties:
                         properties[key] = v
             start = arrow_start(**properties) if arrow_start else None

@@ -359,7 +359,7 @@ class ViolinPlot(BoxWhiskerPlot):
                    for glyph in ('violin_', 'box_')] +
                   [glyph+p for p in base_properties+line_properties
                    for glyph in ('stats_', 'outline_')] +
-                  ['_'.join([glyph, p]) for p in ('color', 'alpha')
+                  [f'{glyph}_{p}' for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
                   ['cmap', 'box_cmap', 'violin_cmap'])
 
