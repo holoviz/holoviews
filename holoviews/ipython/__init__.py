@@ -2,15 +2,22 @@ import os
 from unittest import SkipTest
 
 import param
-
 import holoviews as hv
 
+from IPython.core.completer import IPCompleter
+from IPython.display import HTML, publish_display_data
+from param import ipython as param_ext
+
 from ..core.dimension import LabelledData
-from ..core.options import Store
 from ..core.tree import AttrTree
+from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
-from ..plotting.renderer import Renderer
 from ..util import extension
+from ..plotting.renderer import Renderer
+from .magics import load_magics
+from .display_hooks import display
+from .display_hooks import pprint_display, png_display, svg_display
+
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
@@ -115,14 +122,6 @@ class notebook_extension(extension):
         except Exception:
             return
 
-        # Lazy imports
-        from IPython.core.completer import IPCompleter
-        from IPython.display import HTML
-        from param import ipython as param_ext
-        from .display_hooks import display, png_display, pprint_display, svg_display
-        from .magics import load_magics
-
-
         # Notebook archive relies on display hooks being set to work.
         try:
             import nbformat  # noqa: F401
@@ -222,10 +221,6 @@ class notebook_extension(extension):
         Finds the list of resources from the keyword parameters and pops
         them out of the params dictionary.
         """
-        # Lazy imports
-        from IPython.display import HTML
-        from .display_hooks import display
-
         resources = []
         disabled = []
         for resource in ['holoviews'] + list(Store.renderers.keys()):
@@ -255,9 +250,7 @@ class notebook_extension(extension):
         """
         Allow to display Holoviews' logo and the plotting extensions' logo.
         """
-        # Lazy imports
         import jinja2
-        from IPython.display import publish_display_data
 
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
