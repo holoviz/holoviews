@@ -234,15 +234,15 @@ class Dimension(param.Parameterized):
 
         all_params = {}
         if isinstance(spec, Dimension):
-            all_params.update(spec.param.get_param_values())
+            all_params.update(spec.param.values())
         elif isinstance(spec, str):
             if (spec, params.get('unit', None)) in self.presets.keys():
                 preset = self.presets[(str(spec), str(params['unit']))]
-                all_params.update(preset.param.get_param_values())
+                all_params.update(preset.param.values())
             elif spec in self.presets:
-                all_params.update(self.presets[spec].param.get_param_values())
+                all_params.update(self.presets[spec].param.values())
             elif (spec,) in self.presets:
-                all_params.update(self.presets[(spec,)].param.get_param_values())
+                all_params.update(self.presets[(spec,)].param.values())
             all_params['name'] = spec
             all_params['label'] = spec
         elif isinstance(spec, tuple):
@@ -318,7 +318,7 @@ class Dimension(param.Parameterized):
         Returns:
             Cloned Dimension object
         """
-        settings = dict(self.param.get_param_values(), **overrides)
+        settings = dict(self.param.values(), **overrides)
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
@@ -377,7 +377,7 @@ class Dimension(param.Parameterized):
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
-        changed = dict(self.param.get_param_values(onlychanged=True))
+        changed = self.param.values(onlychanged=True)
         if len({changed.get(k, k) for k in ['name','label']}) == 1:
             return f'Dimension({repr(self.name)})'
 
@@ -543,7 +543,7 @@ class LabelledData(param.Parameterized):
         Returns:
             Cloned object
         """
-        params = dict(self.param.get_param_values())
+        params = self.param.values()
         if new_type is None:
             clone_type = self.__class__
         else:

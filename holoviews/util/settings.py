@@ -284,7 +284,7 @@ class OutputSettings(KeywordSettings):
         if prev_backend in Store.renderers:
             prev_renderer = Store.renderers[prev_backend]
             prev_backend_spec = prev_backend+':'+prev_renderer.mode
-            prev_params = {k: v for k, v in prev_renderer.param.get_param_values()
+            prev_params = {k: v for k, v in prev_renderer.param.values().items()
                            if k in cls.render_params}
         else:
             prev_renderer = None
@@ -310,7 +310,7 @@ class OutputSettings(KeywordSettings):
                 backend_spec = prev_backend_spec
             backend = backend_spec.split(':')[0]
             renderer = Store.renderers[backend]
-            render_params = {k: v for k, v in renderer.param.get_param_values()
+            render_params = {k: v for k, v in renderer.param.values().items()
                              if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options

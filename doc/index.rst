@@ -74,7 +74,7 @@ Installation
 |CondaPkg|_ |PyPI|_ |License|_ |Coverage|_
 
 
-HoloViews works with `Python 2.7 and Python 3 <https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest>`_ on Linux, Windows, or Mac, and works seamlessly with `Jupyter Notebook and JupyterLab <https://jupyter.org>`_.
+HoloViews works with Python 3 on Linux, Windows, or Mac, and works seamlessly with `Jupyter Notebook and JupyterLab <https://jupyter.org>`_.
 
 The recommended way to install HoloViews is using the `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`_ command provided by `Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_::
 
@@ -116,14 +116,14 @@ After you have successfully installed and configured HoloViews, please see `Gett
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
 
-.. |CondaPkg| image:: https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg
+.. |CondaPkg| image:: https://img.shields.io/conda/v/anaconda/holoviews.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff
 .. _CondaPkg: https://anaconda.org/pyviz/holoviews
 
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/holoviz/holoviews/blob/main/LICENSE.txt
 
 .. |Coverage| image:: https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg
-.. _Coveralls: https://codecov.io/gh/holoviz/holoviews
+.. _Coverage: https://codecov.io/gh/holoviz/holoviews
 
 .. toctree::
    :titlesonly:

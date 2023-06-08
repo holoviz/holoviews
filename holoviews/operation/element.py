@@ -211,7 +211,7 @@ class chain(Operation):
         The group assigned to the result after having applied the chain.
         Defaults to the group produced by the last operation in the chain""")
 
-    operations = param.List(default=[], class_=Operation, doc="""
+    operations = param.List(default=[], item_type=Operation, doc="""
        A list of Operations (or Operation instances)
        that are applied on the input from left to right.""")
 

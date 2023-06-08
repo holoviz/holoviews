@@ -53,7 +53,10 @@ class ComparisonInterface:
         """
         Classmethod equivalent to unittest.TestCase method (longMessage = False.)
         """
-        if not first==second:
+        check = first==second
+        if not isinstance(check, bool) and hasattr(check, "all"):
+            check = check.all()
+        if not check:
             standardMsg = f'{safe_repr(first)} != {safe_repr(second)}'
             raise cls.failureException(msg or standardMsg)
 
@@ -295,8 +298,8 @@ class Comparison(ComparisonInterface):
                                        % (dim1.label, dim2.label))
 
         # 'Deep' equality of dimension metadata (all parameters)
-        dim1_params = dict(dim1.param.get_param_values())
-        dim2_params = dict(dim2.param.get_param_values())
+        dim1_params = dim1.param.values()
+        dim2_params = dim2.param.values()
 
         if set(dim1_params.keys()) != set(dim2_params.keys()):
             raise cls.failureException("Dimension parameter sets mismatched: %s != %s"

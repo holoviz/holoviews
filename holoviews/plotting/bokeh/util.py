@@ -99,7 +99,7 @@ def convert_timestamp(timestamp):
     """
     Converts bokehJS timestamp to datetime64.
     """
-    datetime = dt.datetime.utcfromtimestamp(timestamp/1000.)
+    datetime = dt.datetime.fromtimestamp(timestamp/1000, tz=dt.timezone.utc)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
@@ -1042,3 +1042,22 @@ def property_to_dict(x):
         pass
 
     return x
+
+
+def dtype_fix_hook(plot, element):
+    # Work-around for problems seen in:
+    # https://github.com/holoviz/holoviews/issues/5722
+    # https://github.com/holoviz/holoviews/issues/5726
+    # Should be fixed in Bokeh 3.2
+
+    if not bokeh3:
+        return
+    try:
+        renderers = plot.handles["plot"].renderers
+        for renderer in renderers:
+            data = renderer.data_source.data
+            for k, v in data.items():
+                if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    data[k] = v.tolist()
+    except Exception:
+        pass

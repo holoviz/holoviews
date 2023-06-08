@@ -5,75 +5,10 @@
     --pst-color-surface: rgb(250, 250, 250);
 }
 
-.nav-link {
-    white-space: nowrap;
-}
-
-.showcase-table {
-    border-spacing: 15px
-}
-
-.showcase-table td {
-    border: 0px;
-    vertical-align: top;
-}
-
-.pl-md-5, .px-md-5 {
-    padding-left: 1rem !important;
-}
-
-.pt-md-5, .py-md-5 {
-    padding-top: 1rem !important;
-}
-
-.cell_output {
-    padding-left: 0;
-}
-
-@media (min-width: 1200px) {
-    .container, .container-lg, .container-md, .container-sm, .container-xl {
-	max-width: 1604px;
-    }
-}
-
-#scroller-right {
-    max-width: 14%;
-}
-
-@media (max-width: 1400px) {
-    #scroller-right {
-	position: relative;
-	right: unset;
-	top: unset;
-	max-width: 100%;
-	transform: unset;
-    }
-}
-
-button.toggle-button {
-    display: none;
-}
-
-.toggle-hidden:not(.admonition) {
-    height: 0;
-}
-
-.tag_hide-input {
-    margin-bottom: 0 !important;
-}
-
-.toggle-hidden + .cell_output {
-    margin-top: 0 !important;
-}
-
 #binder-link {
     display: inline-block;
     font-size: 0.9rem;
     padding-left: 1.5rem;
     padding-top: 1rem;
     padding-bottom: 1rem;
-}
-
-ul.current.nav.bd-sidenav {
-    padding: 0;
 }
