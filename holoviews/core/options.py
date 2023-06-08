@@ -477,7 +477,7 @@ class Options:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
             StoreOptions.record_skipped_option(error)
         if invalid_kws and self.warn_on_skip:
-            self.param.warning(f"Invalid options {invalid_kws!r}, valid options are: {str(allowed_keywords)}")
+            self.param.warning(f"Invalid options {invalid_kws!r}, valid options are: {allowed_keywords!s}")
 
         self.kwargs = OrderedDict([(k,kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
         self._options = []

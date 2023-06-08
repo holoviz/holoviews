@@ -47,16 +47,18 @@ select = [
 ignore = [
     "E402",     # Module level import not at top of file
     "E501",     # Line too long
+    "E701",     # Multiple statements on one line
     "E712",     # Comparison to true should be is
     "E731",     # Do not assign a lambda expression, use a def
     "E741",     # Ambiguous variable name
     "F405",     # From star imports
-    "PLR2004",  # Magic value used in comparison
-    "RUF005",   # Consider {expr} instead of concatenation
-    "PLR091",   # Too many arguments/branches/statements
+    "PLC1901",  # empty string is falsey
     "PLE0604",  # Invalid object in `__all__`, must contain only strings
-    "PLE0605",  # Invalid format for __all__
-    "E701",     # Multiple statements on one line
+    "PLE0605",  # Invalid format for `__all__`
+    "PLR091",   # Too many arguments/branches/statements
+    "PLR2004",  # Magic value used in comparison
+    "PLW2901",  # `for` loop variable is overwritten
+    "RUF005",   # Consider {expr} instead of concatenation
 ]
 
 fix = true
