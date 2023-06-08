@@ -309,7 +309,7 @@ class Comparison(ComparisonInterface):
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
                 msg = f'Dimension parameter {k!r} mismatched: '
-                raise cls.failureException(f"{msg}{str(e)}")
+                raise cls.failureException(f"{msg}{e!s}")
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):

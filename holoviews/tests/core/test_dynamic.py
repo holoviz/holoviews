@@ -903,18 +903,18 @@ class DynamicStreamReset(ComparisonTestCase):
     def test_dynamic_stream_transients(self):
         # Ensure Stream reset option resets streams to default value
         # when not triggering
-        global xresets, yresets
-        xresets, yresets = 0, 0
         def history_callback(x, y, history=deque(maxlen=10)):
-            global xresets, yresets
             if x is None:
-                xresets += 1
+                history_callback.xresets += 1
             else:
                 history.append(x)
             if y is None:
-                yresets += 1
+                history_callback.yresets += 1
 
             return Curve(list(history))
+
+        history_callback.xresets = 0
+        history_callback.yresets = 0
 
         x = PointerX(transient=True)
         y = PointerY(transient=True)
@@ -929,8 +929,8 @@ class DynamicStreamReset(ComparisonTestCase):
             x.event(x=i)
             y.event(y=i)
 
-        self.assertEqual(xresets, 2)
-        self.assertEqual(yresets, 2)
+        self.assertEqual(history_callback.xresets, 2)
+        self.assertEqual(history_callback.yresets, 2)
 
     def test_dynamic_callable_stream_hashkey(self):
         # Enable transient stream meaning memoization only happens when

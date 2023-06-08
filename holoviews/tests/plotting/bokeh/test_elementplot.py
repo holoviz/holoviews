@@ -281,13 +281,15 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.yaxis[0].axis_label, '')
 
     def test_static_source_optimization(self):
-        global data
         data = np.ones((5, 5))
         img = Image(data)
+
         def get_img(test):
-            global data
-            data *= test
+            get_img.data *= test
             return img
+
+        get_img.data = data
+
         stream = Stream.define('Test', test=1)()
         dmap = DynamicMap(get_img, streams=[stream])
         plot = bokeh_renderer.get_plot(dmap, doc=Document())
