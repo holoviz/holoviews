@@ -53,7 +53,10 @@ class ComparisonInterface:
         """
         Classmethod equivalent to unittest.TestCase method (longMessage = False.)
         """
-        if not first==second:
+        check = first==second
+        if not isinstance(check, bool) and hasattr(check, "all"):
+            check = check.all()
+        if not check:
             standardMsg = f'{safe_repr(first)} != {safe_repr(second)}'
             raise cls.failureException(msg or standardMsg)
 

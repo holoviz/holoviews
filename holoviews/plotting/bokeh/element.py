@@ -50,7 +50,7 @@ from .util import (
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
-    prop_is_none, remove_legend, property_to_dict
+    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook
 )
 
 if bokeh3:
@@ -1672,6 +1672,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
+
+
+    def _execute_hooks(self, element):
+        dtype_fix_hook(self, element)
+        super()._execute_hooks(element)
 
 
     def model_changed(self, model):

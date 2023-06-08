@@ -642,12 +642,14 @@ class Renderer(Exporter):
         return options
 
     @classmethod
-    def load_nb(cls, inline=True, reloading=False):
+    def load_nb(cls, inline=False, reloading=False, enable_mathjax=False):
         """
         Loads any resources required for display of plots
         in the Jupyter notebook
         """
-        if panel_version > Version('1.0.0rc1'):
+        if panel_version >= Version('1.0.2'):
+            load_notebook(inline, reloading=reloading, enable_mathjax=enable_mathjax)
+        elif panel_version >= Version('1.0.0'):
             load_notebook(inline, reloading=reloading)
         elif reloading:
             return
