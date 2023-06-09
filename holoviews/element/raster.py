@@ -516,7 +516,12 @@ class ImageStack(Image):
     - xarray with all the whistles
     - overlay/ndoverlay of Images
     """
-    pass
+
+    _ndim = 3
+    # _vdim_reductions = {1: Image}
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        super().__init__(data, kdims, vdims, **params)
 
 
 class RGB(Image):
