@@ -230,47 +230,33 @@ class ImageStackPlot(RasterPlot):
 
     _plot_methods = dict(single='image_stack')
 
-    # def __init__(self, hmap, **params):
-        # super().__init__(hmap, **params)
-        # self._legend_plot = None
+    cnorm = param.ObjectSelector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
 
-    # def _init_glyphs(self, plot, element, ranges, source):
-    #     return super()._init_glyphs(plot, element, ranges, source)
+    start_alpha = param.Integer(default=0, bounds=(0, 255))
 
-    # def __get_colormapper(self):
-    #     from bokeh.models import (
-    #         # ColorBar,
-    #         EqHistColorMapper,
-    #         # HoverTool,
-    #         WeightedStackColorMapper,
-    #     )
-    #     from bokeh.palettes import varying_alpha_palette
+    end_alpha = param.Integer(default=255, bounds=(0, 255))
 
-    #     color_mapper = WeightedStackColorMapper(
-    #         palette=colors, nan_color=(0, 0, 0, 0), alpha_mapper=alpha_mapper
-    #     )
-    #     return color_mapper
-    #     # super()._init_glyphs(plot, element, ranges, source)
+    num_colors = param.Integer(default=10)
 
-    # def _get_cmapper_opts(self, low, high, factors, colors):
-
-    def _get_colormapper(self, eldim, element, ranges, style, factors=None, colors=None,
-                         group=None, name='color_mapper'):
-        from bokeh.models import EqHistColorMapper, WeightedStackColorMapper
+    def _get_cmapper_opts(self, low, high, factors, colors):
+        from bokeh.models import WeightedStackColorMapper
         from bokeh.palettes import varying_alpha_palette
-        colors = ["red", "green", "blue"]
-        min_alpha = 40
 
-        alpha_mapper = EqHistColorMapper(
-            palette=varying_alpha_palette(color="#000", n=10, start_alpha=min_alpha)
+        AlphaMapper, _ = super()._get_cmapper_opts(low, high, factors, colors)
+        palette = varying_alpha_palette(
+            color="#000",
+            n=self.num_colors,
+            start_alpha=self.start_alpha,
+            end_alpha=self.end_alpha,
         )
-        opts = dict(palette=colors, nan_color=(0, 0, 0, 0), alpha_mapper=alpha_mapper)
-        # _, opts = super()._get_cmapper_opts(low, high, factors, colors)
+        alpha_mapper = AlphaMapper(palette=palette)
+        opts = {"alpha_mapper": alpha_mapper}
 
-        cmapper = WeightedStackColorMapper(**opts)
-        self.handles[name] = cmapper
+        if "NaN" in colors:
+            opts["nan_color"] = colors["NaN"]
 
-        return cmapper
+        return WeightedStackColorMapper, opts
 
 
     def get_data(self, element, ranges, style):
@@ -283,37 +269,10 @@ class ImageStackPlot(RasterPlot):
         x, y, z = element.dimensions()[:3]
 
         cmapper = self._get_colormapper(z, element, ranges, style)
-        # cmapper = {'field': z.name, 'transform': cmapper}
-
-        # irregular = (element.interface.irregular(element, x) or
-        #              element.interface.irregular(element, y))
-        # if irregular:
         mapping["color_mapper"] = cmapper
 
 
         img = element.data
-        # img = np.dstack([element.dimension_values(d, flat=False)
-        #                  for d in element.vdims])
-        # if img.ndim == 3:
-        #     if img.dtype.kind == 'f':
-        #         img = img*255
-        #     if img.size and (img.min() < 0 or img.max() > 255):
-        #         self.param.warning('Clipping input data to the valid '
-        #                            'range for RGB data ([0..1] for '
-        #                            'floats or [0..255] for integers).')
-        #         img = np.clip(img, 0, 255)
-
-        #     if img.dtype.name != 'uint8':
-        #         img = img.astype(np.uint8)
-        #     if img.shape[2] == 3: # alpha channel not included
-        #         alpha = np.full(img.shape[:2], 255, dtype='uint8')
-        #         img = np.dstack([img, alpha])
-        #     N, M, _ = img.shape
-        #     #convert image NxM dtype=uint32
-        #     if not img.flags['C_CONTIGUOUS']:
-        #         img = img.copy()
-        #     img = img.view(dtype=np.uint32).reshape((N, M))
-
         # # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
         # if self.invert_axes:
