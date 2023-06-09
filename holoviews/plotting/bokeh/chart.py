@@ -89,8 +89,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         if sizes is None:
             eltype = type(element).__name__
             self.param.warning(
-                '%s dimension is not numeric, cannot use to scale %s size.'
-                % (sdim.pprint_label, eltype))
+                f'{sdim.pprint_label} dimension is not numeric, cannot use to scale {eltype} size.')
         else:
             data[map_key] = np.sqrt(sizes)
             mapping['size'] = map_key
@@ -486,10 +485,9 @@ class SideHistogramPlot(HistogramPlot):
                 if dimension.applies(element):
                     dim_name = dimension.dimension.name
                     cvals = [] if self.static_source else dimension.apply(element)
-            else:
-                if dimension in element.dimensions():
-                    dim_name = dimension.name
-                    cvals = [] if self.static_source else element.dimension_values(dimension)
+            elif dimension in element.dimensions():
+                dim_name = dimension.name
+                cvals = [] if self.static_source else element.dimension_values(dimension)
             if cvals is not None:
                 data[dim_name] = cvals
                 mapping['fill_color'] = {'field': dim_name,

@@ -93,10 +93,9 @@ def to_expr_extract_streams(
                 expand_kwargs = False
                 if "kwargs" in hvobj.callback.operation_kwargs:
                     kwargs.append(hvobj.callback.operation_kwargs["kwargs"])
-            else:
+            elif hvobj.callback.operation_kwargs:
                 # Preserve custom operation kwargs
-                if hvobj.callback.operation_kwargs:
-                    kwargs.append(hvobj.callback.operation_kwargs)
+                kwargs.append(hvobj.callback.operation_kwargs)
         else:
             fn = hvobj.callback.callable
             args.extend(kdim_args)

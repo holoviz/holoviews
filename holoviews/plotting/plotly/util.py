@@ -587,15 +587,14 @@ def merge_layout(obj, subobj):
 
             # append
             obj[prop].extend(val)
-        else:
+        elif prop == "style" and val == "white-bg" and obj.get("style", None):
             # Handle special cases
-            if prop == "style" and val == "white-bg" and obj.get("style", None):
-                # Don't let layout.mapbox.style of "white-bg" override other
-                # background
-                pass
-            elif val is not None:
-                # init/overwrite
-                obj[prop] = copy.deepcopy(val)
+            # Don't let layout.mapbox.style of "white-bg" override other
+            # background
+            pass
+        elif val is not None:
+            # init/overwrite
+            obj[prop] = copy.deepcopy(val)
 
 
 def _compute_subplot_domains(widths, spacing):

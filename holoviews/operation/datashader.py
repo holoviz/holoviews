@@ -89,9 +89,8 @@ class AggregationOperation(ResampleOperation2D):
         if isinstance(agg, str):
             if agg not in cls._agg_methods:
                 agg_methods = sorted(cls._agg_methods)
-                raise ValueError("Aggregation method '%r' is not known; "
-                                 "aggregator must be one of: %r" %
-                                 (agg, agg_methods))
+                raise ValueError("Aggregation method '{!r}' is not known; "
+                                 "aggregator must be one of: {!r}".format(agg, agg_methods))
             if agg == 'count_cat':
                 agg = cls._agg_methods[agg]('__temp__')
             else:

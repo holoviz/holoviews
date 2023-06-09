@@ -109,8 +109,7 @@ class DataConversion:
             min_d, max_d = element_params[dim_type].bounds
             if ((min_d is not None and len(dims) < min_d) or
                 (max_d is not None and len(dims) > max_d)):
-                raise ValueError("%s %s must be between length %s and %s." %
-                                 (type_name, dim_type, min_d, max_d))
+                raise ValueError(f"{type_name} {dim_type} must be between length {min_d} and {max_d}.")
 
         if groupby is None:
             groupby = [d for d in self._element.kdims if d not in kdims+vdims]
@@ -123,16 +122,15 @@ class DataConversion:
                 selected = self._element.reindex(groupby+kdims, vdims)
             else:
                 selected = self._element
+        elif issubclass(self._element.interface, PandasAPI):
+            ds_dims = self._element.dimensions()
+            ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
+                        for d in groupby+kdims]
+            ds_vdims = [self._element.get_dimension(d) if d in ds_dims else d
+                        for d in vdims]
+            selected = self._element.clone(kdims=ds_kdims, vdims=ds_vdims)
         else:
-            if issubclass(self._element.interface, PandasAPI):
-                ds_dims = self._element.dimensions()
-                ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
-                            for d in groupby+kdims]
-                ds_vdims = [self._element.get_dimension(d) if d in ds_dims else d
-                            for d in vdims]
-                selected = self._element.clone(kdims=ds_kdims, vdims=ds_vdims)
-            else:
-                selected = self._element.reindex(groupby+kdims, vdims)
+            selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
                   'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
                   'label': selected.label}
@@ -907,7 +905,7 @@ argument to specify a selection specification""")
         if not self:
             if spreadfn:
                 spread_name = spreadfn.__name__
-                vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
+                vdims = [d for vd in self.vdims for d in [vd, vd.clone(f'{vd.name}_{spread_name}')]]
             else:
                 vdims = self.vdims
             if not kdims and len(vdims) == 1:
@@ -926,7 +924,7 @@ argument to specify a selection specification""")
             error = self.clone(error, kdims=kdims, new_type=Dataset)
             combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
             for i, d in enumerate(vdims):
-                dim = d.clone('_'.join([d.name, spread_name]))
+                dim = d.clone(f'{d.name}_{spread_name}')
                 dvals = error.dimension_values(d, flat=False)
                 idx = vdims.index(d)
                 combined = combined.add_dimension(dim, idx+1, dvals, True)

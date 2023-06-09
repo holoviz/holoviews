@@ -259,7 +259,6 @@ class SankeyPlot(GraphPlot):
         if self.inspection_policy == 'edges':
             if not isinstance(renderer.glyph, Patches):
                 return
-        else:
-            if isinstance(renderer.glyph, Patches):
-                return
+        elif isinstance(renderer.glyph, Patches):
+            return
         super()._postprocess_hover(renderer, source)

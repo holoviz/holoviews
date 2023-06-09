@@ -862,7 +862,7 @@ class FileArchive(Archive):
 
     def listing(self):
         "Return a list of filename entries currently in the archive"
-        return ['.'.join([f,ext]) if ext else f for (f,ext) in self._files.keys()]
+        return [f'{f}.{ext}' if ext else f for (f,ext) in self._files.keys()]
 
     def clear(self):
         "Clears the file archive"

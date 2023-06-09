@@ -99,8 +99,7 @@ class ProgressBar(ProgressIndicator):
                          if percentage<100.0 else self.width)
         blank_count = self.width - char_count
         prefix = '\n' if len(self.current_progress) > 1 else ''
-        self.out =  prefix + ("%s[%s%s] %0.1f%%" %
-                              (self.label+':\n' if self.label else '',
+        self.out =  prefix + ("{}[{}{}] {:0.1f}%".format(self.label+':\n' if self.label else '',
                                self.fill_char * char_count,
                                ' '*len(self.fill_char) * blank_count,
                                percentage))

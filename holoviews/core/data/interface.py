@@ -15,7 +15,7 @@ class DataError(ValueError):
 
     def __init__(self, msg, interface=None):
         if interface is not None:
-            msg = '\n\n'.join([msg, interface.error()])
+            msg = f"{msg}\n\n{interface.error()}"
         super().__init__(msg)
 
 
@@ -263,7 +263,7 @@ class Interface(param.Parameterized):
             if priority_errors:
                 intfc, e, _ = priority_errors[0]
                 priority_error = f"{intfc.__name__} raised following error:\n\n {e}"
-                error = ' '.join([error, priority_error])
+                error = f"{error} {priority_error}"
                 raise DataError(error, intfc).with_traceback(sys.exc_info()[2])
             raise DataError(error)
 

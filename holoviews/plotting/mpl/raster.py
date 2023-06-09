@@ -41,11 +41,10 @@ class RasterBasePlot(ElementPlot):
         extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
+        elif isinstance(element, Image):
+            return element.bounds.lbrt()
         else:
-            if isinstance(element, Image):
-                return element.bounds.lbrt()
-            else:
-                return element.extents
+            return element.extents
 
     def _compute_ticks(self, element, ranges):
         return None, None

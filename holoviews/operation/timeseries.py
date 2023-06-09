@@ -53,14 +53,13 @@ class rolling(Operation,RollingBase):
         if self.p.window_type is None:
             kwargs = {'raw': True} if pandas_version >= Version('0.23.0') else {}
             rolled = df.apply(self.p.function, **kwargs)
+        elif self.p.function is np.mean:
+            rolled = df.mean()
+        elif self.p.function is np.sum:
+            rolled = df.sum()
         else:
-            if self.p.function is np.mean:
-                rolled = df.mean()
-            elif self.p.function is np.sum:
-                rolled = df.sum()
-            else:
-                raise ValueError("Rolling window function only supports "
-                                 "mean and sum when custom window_type is supplied")
+            raise ValueError("Rolling window function only supports "
+                            "mean and sum when custom window_type is supplied")
         return element.clone(rolled.reset_index())
 
     def _process(self, element, key=None):

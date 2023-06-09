@@ -262,13 +262,12 @@ def compute_layout_properties(
                     sizing_mode = 'scale_height'
                 else:
                     sizing_mode = 'scale_both'
+            elif responsive == 'width':
+                sizing_mode = 'stretch_both'
+            elif responsive == 'height':
+                sizing_mode = 'stretch_height'
             else:
-                if responsive == 'width':
-                    sizing_mode = 'stretch_both'
-                elif responsive == 'height':
-                    sizing_mode = 'stretch_height'
-                else:
-                    sizing_mode = 'stretch_both'
+                sizing_mode = 'stretch_both'
 
 
     if fixed_aspect:
@@ -639,7 +638,7 @@ def py2js_tickformatter(formatter, msg=''):
     args = inspect.getfullargspec(formatter).args
     arg_define = f'var {args[0]} = tick;' if args else ''
     return_js = 'return formatter();\n'
-    jsfunc = '\n'.join([arg_define, jscode, return_js])
+    jsfunc = f"{arg_define}\n{jscode}\n{return_js}"
     match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
     return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
