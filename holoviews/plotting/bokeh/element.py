@@ -578,6 +578,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             active_tools = self.active_tools
 
+        if active_tools == []:
+            # Removes Bokeh default behavior of having Pan enabled by default
+            plot.toolbar.active_drag = None
+
         for tool in active_tools:
             if isinstance(tool, str):
                 tool_type = TOOL_TYPES.get(tool, type(None))
