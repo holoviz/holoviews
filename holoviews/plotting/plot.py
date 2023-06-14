@@ -1262,7 +1262,7 @@ class GenericElementPlot(DimensionedPlot):
             dimension in ds if isinstance(ds, list) else dimension == ds
             for ds in dims
         )
-    
+
     def _get_frame(self, key):
         if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
             self.current_key = key

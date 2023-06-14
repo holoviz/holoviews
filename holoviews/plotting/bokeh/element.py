@@ -569,11 +569,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             fig = figure(title=title, **properties)
 
         multi_ax = 'x' if self.invert_axes else 'y'
-        for dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
-            axis_type, axis_label, _ = axis_specs[multi_ax][dim]
+        for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
+            axis_type, axis_label, _ = axis_specs[multi_ax][axis_dim]
             ax_cls, ax_kwargs = _get_axis_class(axis_type, range_obj, dim=1)
-            ax_kwargs[f'{multi_ax}_range_name'] = dim
-            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), yaxes[dim])
+            ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
+            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), yaxes[axis_dim])
         return fig
 
     def _plot_properties(self, key, element):
@@ -894,9 +894,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # ALERT: extra ranges need shared, logx, and stream handling
         streaming, log, shared = False, False, False
         multi_dim = 'x' if self.invert_axes else 'y'
-        for dim, extra_y_range in self.handles[f'extra_{multi_dim}_ranges'].items():
-            _, b, _, t = self.get_extents(element, ranges, dimension=dim)
-            factors = self._get_dimension_factors(element, ranges, dim)
+        for axis_dim, extra_y_range in self.handles[f'extra_{multi_dim}_ranges'].items():
+            _, b, _, t = self.get_extents(element, ranges, dimension=axis_dim)
+            factors = self._get_dimension_factors(element, ranges, axis_dim)
             self._update_range(
                 extra_y_range, b, t, factors, self.invert_yaxis,
                 shared, log, streaming
