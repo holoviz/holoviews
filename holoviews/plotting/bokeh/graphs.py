@@ -10,7 +10,6 @@ from bokeh.models import (
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
 from ...core.util import dimension_sanitizer, unique_array
-from ...element import Graph
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import process_cmap, get_directed_graph_paths

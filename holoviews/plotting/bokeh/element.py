@@ -1,6 +1,5 @@
 import warnings
 
-from collections import defaultdict
 from itertools import chain
 from types import FunctionType
 
@@ -79,9 +78,9 @@ def get_scale(range_input, axis_type):
         raise ValueError(f"Unable to determine proper scale for: '{range_input}'")
 
 from bokeh.core.property.datetime import Datetime
-from bokeh.models import CategoricalAxis, LinearAxis, LogAxis
-    
-def _get_axis_class(axis_type, range_input, dim):
+from bokeh.models import LinearAxis, LogAxis, MercatorAxis
+
+def _get_axis_class(axis_type, range_input, dim): # Copied from bokeh
     if axis_type is None:
         return None, {}
     elif axis_type == "linear":
@@ -436,7 +435,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 dims = dims[:2][::-1]
             axis_label = ylabel if pos else xlabel
 
-        # ALERT: Cannot just traverse all subplots 
+        # ALERT: Cannot just traverse all subplots
         categorical = any(self.traverse(lambda x: x._categorical))
         if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
             categorical = True
@@ -519,13 +518,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
-            for (dim, (axis_type, axis_label, axis_range)) in axis_spec.items():
+            for (axis_dim, (axis_type, axis_label, axis_range)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
                     properties[f'extra_{axis}_scales'] = extra_scales = properties.get(f'extra_{axis}_scales', {})
-                    extra_ranges[dim] = axis_range
-                    extra_scales[dim] = scale
+                    extra_ranges[axis_dim] = axis_range
+                    extra_scales[axis_dim] = scale
                 else:
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
