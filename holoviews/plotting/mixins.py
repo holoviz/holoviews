@@ -238,7 +238,7 @@ class BarsMixin:
 
 
 class MultiDistributionMixin:
-    
+
     def _get_axis_dims(self, element):
         return element.kdims, element.vdims[0]
 
