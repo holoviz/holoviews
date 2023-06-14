@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..core import util, Dataset, Dimension
-from ..element import Bars
+from ..element import Bars, Graph
 from ..element.util import categorical_aggregate2d
 from .util import get_axis_padding
 
