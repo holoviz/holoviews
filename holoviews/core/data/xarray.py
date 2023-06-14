@@ -186,7 +186,7 @@ class XArrayInterface(GridInterface):
             data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
         else:
             arrays = {}
-            for dim in kdims + vdims:
+            for dim in vdims:
                 arr = data[dim.name]
                 if not isinstance(arr, xr.DataArray):
                     arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
@@ -391,7 +391,7 @@ class XArrayInterface(GridInterface):
         dim = dimension if dim is None else dim.name
         irregular = cls.irregular(dataset, dim)
         if irregular or expanded:
-            if irregular or not dataset.vdims:
+            if irregular or (dataset.vdims is not None and not len(dataset.vdims)):
                 data = dataset.data[dim]
             else:
                 data = util.expand_grid_coords(dataset, dim)
