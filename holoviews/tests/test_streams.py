@@ -26,8 +26,7 @@ def test_all_stream_parameters_constant():
         for name, p in stream_cls.param.objects().items():
             if name == 'name': continue
             if p.constant != True:
-                raise TypeError('Parameter %s of stream %s not declared constant'
-                                % (name, stream_cls.__name__))
+                raise TypeError(f'Parameter {name} of stream {stream_cls.__name__} not declared constant')
 
 
 def test_all_linked_stream_parameters_owners():

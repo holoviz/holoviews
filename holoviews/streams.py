@@ -358,7 +358,7 @@ class Stream(param.Parameterized):
         same name. Returns a new clone of the stream instance with the
         specified name mapping.
         """
-        params = {k: v for k, v in self.param.get_param_values() if k != 'name'}
+        params = {k: v for k, v in self.param.values().items() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=(self._source() if self._source else None),
                               linked=self.linked, **params)
@@ -399,7 +399,7 @@ class Stream(param.Parameterized):
 
     @property
     def contents(self):
-        filtered = {k: v for k, v in self.param.get_param_values() if k != 'name'}
+        filtered = {k: v for k, v in self.param.values().items() if k != 'name'}
         return {self._rename.get(k, k): v for (k, v) in filtered.items()
                 if self._rename.get(k, True) is not None}
 
@@ -447,7 +447,7 @@ class Stream(param.Parameterized):
     def __repr__(self):
         cls_name = self.__class__.__name__
         kwargs = ','.join(f'{k}={v!r}'
-                          for (k, v) in self.param.get_param_values() if k != 'name')
+                          for (k, v) in self.param.values().items() if k != 'name')
         if not self._rename:
             return f'{cls_name}({kwargs})'
         else:
@@ -571,8 +571,7 @@ class Buffer(Pipe):
     def verify(self, x):
         """ Verify consistency of dataframes that pass through this stream """
         if type(x) != type(self.data):  # noqa: E721
-            raise TypeError("Input expected to be of type %s, got %s." %
-                            (type(self.data).__name__, type(x).__name__))
+            raise TypeError(f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}.")
         elif isinstance(x, np.ndarray):
             if x.ndim != 2:
                 raise ValueError('Streamed array data must be two-dimensional')
@@ -580,12 +579,10 @@ class Buffer(Pipe):
                 raise ValueError("Streamed array data expected to have %d columns, "
                                  "got %d." % (self.data.shape[1], x.shape[1]))
         elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
-            raise IndexError("Input expected to have columns %s, got %s" %
-                             (list(self.data.columns), list(x.columns)))
+            raise IndexError(f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}")
         elif isinstance(x, dict):
             if any(c not in x for c in self.data):
-                raise IndexError("Input expected to have columns %s, got %s" %
-                                 (sorted(self.data.keys()), sorted(x.keys())))
+                raise IndexError(f"Input expected to have columns {sorted(self.data.keys())}, got {sorted(x.keys())}")
             elif len({len(v) for v in x.values()}) > 1:
                 raise ValueError("Input columns expected to have the "
                                  "same number of rows.")
@@ -1166,13 +1163,12 @@ class SelectionExprSequence(Derived):
                     combined_selection_expr = ~selection_expr
                 else:
                     combined_selection_expr = selection_expr
-            else:
-                if mode == "intersect":
-                    combined_selection_expr &= selection_expr
-                elif mode == "union":
-                    combined_selection_expr |= selection_expr
-                else:  # inverse
-                    combined_selection_expr &= ~selection_expr
+            elif mode == "intersect":
+                combined_selection_expr &= selection_expr
+            elif mode == "union":
+                combined_selection_expr |= selection_expr
+            else:  # inverse
+                combined_selection_expr &= ~selection_expr
 
             # Update region
             if isinstance(source, DynamicMap):

@@ -311,8 +311,7 @@ class Renderer(Exporter):
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
-            raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
-                            % (fmt, self.mode, fig_formats + holomap_formats))
+            raise Exception(f"Format {fmt!r} not supported by mode {self.mode!r}. Allowed formats: {fig_formats + holomap_formats!r}")
         self.last_plot = plot
         return plot, fmt
 
@@ -351,12 +350,11 @@ class Renderer(Exporter):
             return file_html(doc, resources)
         elif fmt in ['html', 'json']:
             return figdata
-        else:
-            if fmt == 'svg':
-                figdata = figdata.encode("utf-8")
-            elif fmt == 'pdf' and 'height' not in css:
-                _, h = self.get_size(plot)
-                css['height'] = '%dpx' % (h*self.dpi*1.15)
+        elif fmt == 'svg':
+            figdata = figdata.encode("utf-8")
+        elif fmt == 'pdf' and 'height' not in css:
+            _, h = self.get_size(plot)
+            css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):
             css = '; '.join(f"{k}: {v}" for k, v in css.items())
@@ -590,7 +588,7 @@ class Renderer(Exporter):
                 if title is None:
                     title = os.path.basename(basename)
                 if fmt in MIME_TYPES:
-                    basename = '.'.join([basename, fmt])
+                    basename = f"{basename}.{fmt}"
             plot.layout.save(basename, embed=True, resources=resources, title=title)
             return
 

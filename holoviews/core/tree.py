@@ -270,8 +270,7 @@ class AttrTree:
             self.__dict__[sanitized] = child_tree
             return child_tree
         else:
-            raise AttributeError('%r object has no attribute %s.' %
-                                 (type(self).__name__, identifier))
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {identifier}.')
 
 
     def __iter__(self):

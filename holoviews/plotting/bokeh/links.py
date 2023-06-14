@@ -40,21 +40,21 @@ class LinkCallback:
         self.target_plot = target_plot
         self.validate()
 
-        references = {k: v for k, v in link.param.get_param_values()
+        references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
         for sh in self.source_handles+[self.source_model]:
-            key = '_'.join(['source', sh])
+            key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
-        for p, value in link.param.get_param_values():
+        for p, value in link.param.values().items():
             if p in ('name', 'source', 'target'):
                 continue
             references[p] = value
 
         if target_plot is not None:
             for sh in self.target_handles+[self.target_model]:
-                key = '_'.join(['target', sh])
+                key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
         if self.source_model in source_plot.handles:
@@ -116,12 +116,11 @@ class LinkCallback:
                                          src._plot_id == source._plot_id)]
                 if links:
                     return (plot, links)
-            else:
-                if ((link.target is source) or
-                    (link.target is not None and
-                     link.target._plot_id is not None and
-                     link.target._plot_id == source._plot_id)):
-                    return (plot, [link])
+            elif ((link.target is source) or
+                (link.target is not None and
+                    link.target._plot_id is not None and
+                    link.target._plot_id == source._plot_id)):
+                return (plot, [link])
 
     def validate(self):
         """

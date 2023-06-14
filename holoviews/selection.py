@@ -513,8 +513,7 @@ class SelectionDisplay:
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s on '%r'."
-                                    % (key_error, element))
+                                    "display selection for all elements: {} on '{!r}'.".format(key_error, element))
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
                                     "display selection for all elements: %s." % e)

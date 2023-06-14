@@ -151,8 +151,7 @@ class NotebookArchive(FileArchive):
         # When clear == True, it clears the archive, in order to start a new auto capture in a clean archive
         if clear:
             FileArchive.clear(self)
-        print("Automatic capture is now %s.%s"
-              % ('enabled' if enabled else 'disabled',
+        print("Automatic capture is now {}.{}".format('enabled' if enabled else 'disabled',
                  tstamp if enabled else ''))
 
     def export(self, timestamp=None):

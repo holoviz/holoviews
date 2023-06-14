@@ -41,11 +41,10 @@ class RasterBasePlot(ElementPlot):
         extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
+        elif isinstance(element, Image):
+            return element.bounds.lbrt()
         else:
-            if isinstance(element, Image):
-                return element.bounds.lbrt()
-            else:
-                return element.extents
+            return element.extents
 
     def _compute_ticks(self, element, ranges):
         return None, None
@@ -134,7 +133,7 @@ class RGBPlot(RasterBasePlot, LegendPlot):
             return handles
         if legend is None:
             return handles
-        legend_params = {k: v for k, v in self.param.get_param_values() if k.startswith('legend')}
+        legend_params = {k: v for k, v in self.param.values().items() if k.startswith('legend')}
         self._legend_plot = PointPlot(legend, axis=ax, fig=self.state,
                                       keys=self.keys, dimensions=self.dimensions,
                                       overlaid=1, **legend_params)

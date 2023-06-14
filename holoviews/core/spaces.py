@@ -419,11 +419,10 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             if issubclass(self.type, (NdOverlay, Overlay)):
                 layout.main_layer = kwargs['index']
             return layout
+        elif len(histmaps) > 1:
+            return Layout(histmaps)
         else:
-            if len(histmaps) > 1:
-                return Layout(histmaps)
-            else:
-                return histmaps[0]
+            return histmaps[0]
 
 
 class Callable(param.Parameterized):
@@ -524,7 +523,7 @@ class Callable(param.Parameterized):
         Returns:
             Cloned Callable object
         """
-        old = {k: v for k, v in self.param.get_param_values()
+        old = {k: v for k, v in self.param.values().items()
                if k not in ['callable', 'name']}
         params = dict(old, **overrides)
         callable = self.callable if callable is None else callable

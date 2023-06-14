@@ -277,8 +277,7 @@ class Comparison(ComparisonInterface):
                     v2 = dt_to_int(v2)
                 cls.assert_array_almost_equal_fn(v1, v2)
         except AssertionError:
-            raise cls.failureException("BoundingBoxes are mismatched: %s != %s."
-                                       % (el1.bounds.lbrt(), el2.bounds.lbrt()))
+            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.")
 
 
     #=======================================#
@@ -291,19 +290,16 @@ class Comparison(ComparisonInterface):
 
         # 'Weak' equality semantics
         if dim1.name != dim2.name:
-            raise cls.failureException("Dimension names mismatched: %s != %s"
-                                       % (dim1.name, dim2.name))
+            raise cls.failureException(f"Dimension names mismatched: {dim1.name} != {dim2.name}")
         if dim1.label != dim2.label:
-            raise cls.failureException("Dimension labels mismatched: %s != %s"
-                                       % (dim1.label, dim2.label))
+            raise cls.failureException(f"Dimension labels mismatched: {dim1.label} != {dim2.label}")
 
         # 'Deep' equality of dimension metadata (all parameters)
-        dim1_params = dict(dim1.param.get_param_values())
-        dim2_params = dict(dim2.param.get_param_values())
+        dim1_params = dim1.param.values()
+        dim2_params = dim2.param.values()
 
         if set(dim1_params.keys()) != set(dim2_params.keys()):
-            raise cls.failureException("Dimension parameter sets mismatched: %s != %s"
-                                       % (set(dim1_params.keys()), set(dim2_params.keys())))
+            raise cls.failureException(f"Dimension parameter sets mismatched: {set(dim1_params.keys())} != {set(dim2_params.keys())}")
 
         for k in dim1_params.keys():
             if (dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
@@ -313,7 +309,7 @@ class Comparison(ComparisonInterface):
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
                 msg = f'Dimension parameter {k!r} mismatched: '
-                raise cls.failureException(f"{msg}{str(e)}")
+                raise cls.failureException(f"{msg}{e!s}")
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -529,12 +525,10 @@ class Comparison(ComparisonInterface):
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
                 cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                     + " First has type %s, and second has type %s."
-                                     % (d1, d2))
+                                     + f" First has type {d1}, and second has type {d2}.")
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
-                    cls.failureException("%s along dimension %s not equal." %
-                                         (msg, dim.pprint_label))
+                    cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
             else:
                 cls.compare_arrays(d1, d2, msg)
 

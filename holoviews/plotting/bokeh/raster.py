@@ -161,7 +161,7 @@ class RGBPlot(LegendPlot):
             return
         if legend is None:
             return
-        legend_params = {k: v for k, v in self.param.get_param_values()
+        legend_params = {k: v for k, v in self.param.values().items()
                          if k.startswith('legend')}
         self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)

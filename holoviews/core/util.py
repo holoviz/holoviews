@@ -13,7 +13,6 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections.abc import Iterable # noqa
 from collections import defaultdict, OrderedDict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
@@ -1723,9 +1722,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_ke
         clashes = sorted(clashes)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
-            raise Exception('The supplied stream objects %s and %s '
-                            'clash on the following parameters: %r'
-                            % (clashing, clash_streams[-1], clashes))
+            raise Exception('The supplied stream objects {} and {} '
+                            'clash on the following parameters: {!r}'.format(clashing, clash_streams[-1], clashes))
     return [name for group in param_groups.values() for name in group
             if name not in exclude]
 

@@ -234,15 +234,15 @@ class Dimension(param.Parameterized):
 
         all_params = {}
         if isinstance(spec, Dimension):
-            all_params.update(spec.param.get_param_values())
+            all_params.update(spec.param.values())
         elif isinstance(spec, str):
             if (spec, params.get('unit', None)) in self.presets.keys():
                 preset = self.presets[(str(spec), str(params['unit']))]
-                all_params.update(preset.param.get_param_values())
+                all_params.update(preset.param.values())
             elif spec in self.presets:
-                all_params.update(self.presets[spec].param.get_param_values())
+                all_params.update(self.presets[spec].param.values())
             elif (spec,) in self.presets:
-                all_params.update(self.presets[(spec,)].param.get_param_values())
+                all_params.update(self.presets[(spec,)].param.values())
             all_params['name'] = spec
             all_params['label'] = spec
         elif isinstance(spec, tuple):
@@ -288,13 +288,11 @@ class Dimension(param.Parameterized):
         super().__init__(**all_params)
         if self.default is not None:
             if self.values and self.default not in values:
-                raise ValueError('%r default %s not found in declared values: %s' %
-                                 (self, self.default, self.values))
+                raise ValueError(f'{self!r} default {self.default} not found in declared values: {self.values}')
             elif (self.range != (None, None) and
                   ((self.range[0] is not None and self.default < self.range[0]) or
                    (self.range[0] is not None and self.default > self.range[1]))):
-                raise ValueError('%r default %s not in declared range: %s' %
-                                 (self, self.default, self.range))
+                raise ValueError(f'{self!r} default {self.default} not in declared range: {self.range}')
 
     @property
     def spec(self):
@@ -318,7 +316,7 @@ class Dimension(param.Parameterized):
         Returns:
             Cloned Dimension object
         """
-        settings = dict(self.param.get_param_values(), **overrides)
+        settings = dict(self.param.values(), **overrides)
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
@@ -377,9 +375,9 @@ class Dimension(param.Parameterized):
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
-        changed = dict(self.param.get_param_values(onlychanged=True))
+        changed = self.param.values(onlychanged=True)
         if len({changed.get(k, k) for k in ['name','label']}) == 1:
-            return f'Dimension({repr(self.name)})'
+            return f'Dimension({self.name!r})'
 
         params = self.param.objects('existing')
         ordering = sorted(
@@ -387,7 +385,7 @@ class Dimension(param.Parameterized):
                 -float('inf') if params[k].precedence is None
                 else params[k].precedence))
         kws = ", ".join(f'{k}={changed[k]!r}' for k in ordering if k != 'name')
-        return f'Dimension({repr(self.name)}, {kws})'
+        return f'Dimension({self.name!r}, {kws})'
 
 
     def pprint_value(self, value, print_unit=False):
@@ -543,7 +541,7 @@ class LabelledData(param.Parameterized):
         Returns:
             Cloned object
         """
-        params = dict(self.param.get_param_values())
+        params = self.param.values()
         if new_type is None:
             clone_type = self.__class__
         else:
@@ -1157,8 +1155,7 @@ class Dimensioned(LabelledData):
         if val:
             return np.array([val])
         else:
-            raise Exception("Dimension %s not found in %s." %
-                            (dimension, self.__class__.__name__))
+            raise Exception(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
 
     def range(self, dimension, data_range=True, dimension_range=True):

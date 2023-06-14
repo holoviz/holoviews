@@ -89,8 +89,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         if sizes is None:
             eltype = type(element).__name__
             self.param.warning(
-                '%s dimension is not numeric, cannot use to scale %s size.'
-                % (sdim.pprint_label, eltype))
+                f'{sdim.pprint_label} dimension is not numeric, cannot use to scale {eltype} size.')
         else:
             data[map_key] = np.sqrt(sizes)
             mapping['size'] = map_key
@@ -486,10 +485,9 @@ class SideHistogramPlot(HistogramPlot):
                 if dimension.applies(element):
                     dim_name = dimension.dimension.name
                     cvals = [] if self.static_source else dimension.apply(element)
-            else:
-                if dimension in element.dimensions():
-                    dim_name = dimension.name
-                    cvals = [] if self.static_source else element.dimension_values(dimension)
+            elif dimension in element.dimensions():
+                dim_name = dimension.name
+                cvals = [] if self.static_source else element.dimension_values(dimension)
             if cvals is not None:
                 data[dim_name] = cvals
                 mapping['fill_color'] = {'field': dim_name,
@@ -799,7 +797,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):
             props['separator_line_width'] = 0
             props['major_tick_line_alpha'] = 0
-            props['major_label_text_font_size'] = '0pt'
+            # The major_label_text_* is a workaround for 0pt font size not working in Safari.
+            # See: https://github.com/holoviz/holoviews/issues/5672
+            props['major_label_text_font_size'] = '1px'
+            props['major_label_text_alpha'] = 0
+            props['major_label_text_line_height'] = 0
+
             props['group_text_color'] = 'black'
             props['group_text_font_style'] = "normal"
             if axis == 'x':

@@ -1,3 +1,24 @@
+Version 1.16.2
+==============
+**June 8, 2023**
+
+This release includes a breaking change as notebooks will no longer be inlining as default. This change will reduce the size of the notebook files and, more importantly, address an upstream issue in Jupyter where running `hv.extension` would give an error when used in a notebook.
+
+Critical bug fixes and compatibility:
+
+- Correctly set `inline=False` when running `hv.extension` in a Jupyter Notebook ([#5748](https://github.com/holoviz/holoviews/pull/5748))
+- Adding more Param 2 support ([#5717](https://github.com/holoviz/holoviews/pull/5717))
+
+Enhancements:
+
+- Speed up import time of Holoviews ([#5719](https://github.com/holoviz/holoviews/pull/5719))
+
+Maintenance:
+
+- Fix failing tests ([#5742](https://github.com/holoviz/holoviews/pull/5742))
+- Misc. mainteance ([#5717](https://github.com/holoviz/holoviews/pull/5717))
+
+
 Version 1.16.1
 ==============
 **June 2, 2023**
