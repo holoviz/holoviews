@@ -407,6 +407,37 @@ def merge_tools(plot_grid, disambiguation_properties=None):
 
     return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
 
+
+def sync_legends(plot_grid):
+    """This syncs the legends of all plots in a grid based on their name.
+
+    Parameters
+    ----------
+    plot_grid : bokeh.models.plots.GridPlot
+        Gridplot to sync legends of.
+    """
+    policy = "muted"
+
+    items = defaultdict(lambda: [])
+
+    # Collect all glyph with names
+    for fig, *_ in plot_grid.children:
+        for r in fig.renderers:
+            if r.name:
+                items[r.name].append(r)
+
+    # Link all glyphs with the same name
+    for item in items.values():
+        for src in item:
+            for dst in item:
+                src.js_on_change(
+                    policy,
+                    CustomJS(
+                        code=f"dst.{policy} = src.{policy}", args=dict(src=src, dst=dst)
+                    ),
+                )
+
+
 @contextmanager
 def silence_warnings(*warnings):
     """

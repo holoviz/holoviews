@@ -30,8 +30,8 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
-    bokeh3, filter_toolboxes, make_axis, update_shared_sources, empty_plot,
-    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools
+    bokeh3, filter_toolboxes, make_axis, sync_legends, update_shared_sources, empty_plot,
+    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools,
 )
 
 if bokeh3:
@@ -682,6 +682,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     merge_tools = param.Boolean(default=True, doc="""
         Whether to merge all the tools into a single toolbar""")
 
+    sync_legends = param.Boolean(default=True, doc="""
+        Whether to sync the legend when muted/unmuted based on the name""")
+
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
@@ -962,6 +965,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 merge_tools=self.merge_tools,
                 sizing_mode=sizing_mode
             )
+            if self.sync_legends:
+                sync_legends(layout_plot)
             if bokeh3:
                 layout_plot.toolbar = merge_tools(plot_grid)
 
