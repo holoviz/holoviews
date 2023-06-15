@@ -457,6 +457,8 @@ def one_legend(plot_grid, legend_no=0, legend_position="top_right"):
         else:
             plot.opts(show_legend=False)
 
+    return plot
+
 
 @contextmanager
 def silence_warnings(*warnings):
