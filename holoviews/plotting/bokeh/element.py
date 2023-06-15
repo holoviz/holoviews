@@ -31,7 +31,7 @@ from bokeh.models.tools import Tool
 from packaging.version import Version
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
-from ...core.options import abbreviated_exception, SkipRendering
+from ...core.options import abbreviated_exception, Keywords, SkipRendering
 from ...core import util
 from ...element import (
     Annotation, Contours, Graph, Path, Tiles, VectorField
@@ -829,12 +829,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             if model is None:
                 continue
-            if attr_accessor not in model.properties():
+        
+            valid_options = model.properties()
+            if attr_accessor not in valid_options:
+                kws = Keywords(values=valid_options)
+                matches = sorted(kws.fuzzy_match(attr_accessor))
                 self.param.warning("Could not find '%s' property on %s "
                                    "model. Ensure the custom option spec "
                                    "'%s' you provided references a "
-                                   "valid attribute on the specified model." %
-                                   (attr_accessor, type(model).__name__, opt))
+                                   "valid attribute on the specified model. "
+                                   "Similar options include %s" %
+                                   (attr_accessor, type(model).__name__, opt, matches))
                 continue
             setattr(model, attr_accessor, value)
 
