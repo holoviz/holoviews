@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -20,7 +18,7 @@ class PathPlot(ColorbarPlot):
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""")
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -29,8 +27,21 @@ class PathPlot(ColorbarPlot):
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
 
+    _collection = LineCollection
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        if 'c' in plot_kwargs:
+            plot_kwargs['array'] = plot_kwargs.pop('c')
+        if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
+            plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if 'array' not in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
+        collection = self._collection(*plot_args, **plot_kwargs)
+        ax.add_collection(collection)
+        return {'artist': collection}
+
     def get_data(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index or style.get('color'))
+        cdim = element.get_dimension(self.color_index)
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
@@ -71,16 +82,7 @@ class PathPlot(ColorbarPlot):
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
             style['array'] = np.array(cvals)
-        if 'c' in style:
-            style['array'] = style.pop('c')
-        if 'vmin' in style:
-            style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
         return (paths,), style, {'dimensions': dims}
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        line_segments = LineCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(line_segments)
-        return {'artist': line_segments}
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
@@ -88,6 +90,9 @@ class PathPlot(ColorbarPlot):
         artist.set_paths(data[0])
         if 'array' in style:
             artist.set_array(style['array'])
+        if 'vmin' in style and 'vmax' in style:
+            artist.set_clim((style['vmin'], style['vmax']))
+        if 'clim' in style:
             artist.set_clim(style['clim'])
         if 'norm' in style:
             artist.set_norm(style['norm'])
@@ -103,14 +108,9 @@ class PathPlot(ColorbarPlot):
 
 class ContourPlot(PathPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=0, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        line_segments = LineCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(line_segments)
-        return {'artist': line_segments}
 
     def get_data(self, element, ranges, style):
         if isinstance(element, Polygons):
@@ -137,9 +137,7 @@ class ContourPlot(PathPlot):
             style[color_prop] = style.pop('color')
 
         # Process deprecated color_index
-        if None not in [element.level, self.color_index]:
-            cdim = element.vdims[0]
-        elif 'array' not in style:
+        if 'array' not in style:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
         else:
@@ -148,21 +146,17 @@ class ContourPlot(PathPlot):
         if cdim is None:
             return (paths,), style, {}
 
-        if element.level is not None:
-            array = np.full(len(paths), element.level)
-        else:
-            array = element.dimension_values(cdim, expanded=False)
-            if len(paths) != len(array):
-                # If there are multi-geometries the list of scalar values
-                # will not match the list of paths and has to be expanded
-                array = np.array([v for v, sps in zip(array, subpaths)
-                                  for _ in range(len(sps))])
+        array = element.dimension_values(cdim, expanded=False)
+        if len(paths) != len(array):
+            # If there are multi-geometries the list of scalar values
+            # will not match the list of paths and has to be expanded
+            array = np.array([v for v, sps in zip(array, subpaths)
+                              for _ in range(len(sps))])
 
         if array.dtype.kind not in 'uif':
             array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
-        style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
 
 
@@ -182,7 +176,4 @@ class PolygonPlot(ContourPlot):
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle',
                   'color']
 
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        polys = PatchCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(polys)
-        return {'artist': polys}
+    _collection = PatchCollection

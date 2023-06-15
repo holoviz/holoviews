@@ -1,5 +1,1162 @@
+Version 1.16.2
+==============
+**June 8, 2023**
+
+This release includes a breaking change as notebooks will no longer be inlining as default. This change will reduce the size of the notebook files and, more importantly, address an upstream issue in Jupyter where running `hv.extension` would give an error when used in a notebook.
+
+Critical bug fixes and compatibility:
+
+- Correctly set `inline=False` when running `hv.extension` in a Jupyter Notebook ([#5748](https://github.com/holoviz/holoviews/pull/5748))
+- Adding more Param 2 support ([#5717](https://github.com/holoviz/holoviews/pull/5717))
+
+Enhancements:
+
+- Speed up import time of Holoviews ([#5719](https://github.com/holoviz/holoviews/pull/5719))
+
+Maintenance:
+
+- Fix failing tests ([#5742](https://github.com/holoviz/holoviews/pull/5742))
+- Misc. mainteance ([#5717](https://github.com/holoviz/holoviews/pull/5717))
+
+
+Version 1.16.1
+==============
+**June 2, 2023**
+
+This release contains a small number of important bug fixes and enhancements. Many thanks to @philippjfr and @Hoxbro.
+
+This release includes a breaking change as notebooks will no longer be inlining as default. This change will reduce the size of the notebook files and, more importantly, address an upstream issue in Jupyter where running `hv.extension` would give an error when used in a notebook.
+
+
+Critical bug fixes and compatibility:
+
+- Add `enable_mathjax` and set it and inline to `False` ([#5729](https://github.com/holoviz/holoviews/pull/5729))
+- Update to support Datashader on Python 3.11 ([#5720](https://github.com/holoviz/holoviews/pull/5720))
+
+Enhancements:
+
+- Add `show_versions` helper function ([#5725](https://github.com/holoviz/holoviews/pull/5725))
+- Ignore known model warning in VS Code ([#5734](https://github.com/holoviz/holoviews/pull/5734))
+- Add workaround for plots where the objects in a figure would overlap ([#5733](https://github.com/holoviz/holoviews/pull/5733))
+
+
+Documentation:
+
+- Upgrade to latest `nbsite` and `pydata-sphinx-theme` ([#5724](https://github.com/holoviz/holoviews/pull/5724), [#5735](https://github.com/holoviz/holoviews/pull/5735))
+
+
+Version 1.16.0
+==============
+**May 9, 2023**
+
+This release includes many new features, improvements, and bug fixes. Among the highlights are support for Bokeh 3.1 and Panel 1.0, both of which come with a wide range of new features and enhancements. Time series support has also been improved, with auto-ranging along one axis, a new downsample algorithm, and having WebGL enabled by default. In addition, the release includes various other enhancements and bug fixes.
+
+We would like to thank the many users who contributed to this release by filing bug reports, providing new features, and bug fixes. We want to give a special shout-out to existing contributors @ianthomas23, @jlstevens, @jordansamuels, @maximlt, @philippjfr, @TheoMathurin, @Yura52, and @Hoxbro, as well as new contributors @GeoVizNow, @JRRudy1, @keewis, @michaelaye, and @wendrul.
+
+This minor version will be the last to support Python 3.7. The next minor version will require Python 3.8 or higher.
+In the next release, `holoviews.annotate` will start giving a deprecation warning about its future move to the new package [HoloNote](https://github.com/holoviz/holonote).
+
+
+New features:
+
+- Support for Bokeh 3.1 and Panel 1.0 ([#5388](https://github.com/holoviz/holoviews/pull/5388), [#5620](https://github.com/holoviz/holoviews/pull/5620), [#5640](https://github.com/holoviz/holoviews/pull/5640), [#5679](https://github.com/holoviz/holoviews/pull/5679), [#5683](https://github.com/holoviz/holoviews/pull/5683), [#5692](https://github.com/holoviz/holoviews/pull/5692), [#5703](https://github.com/holoviz/holoviews/pull/5703))
+- Implement auto-ranging support along one axis ([#5554](https://github.com/holoviz/holoviews/pull/5554), [#5609](https://github.com/holoviz/holoviews/pull/5609))
+- Add Largest Triangle Three Buckets (LTTB) as a downsample algorithm ([#5552](https://github.com/holoviz/holoviews/pull/5552))
+- Enable WebGL by default ([#5708](https://github.com/holoviz/holoviews/pull/5708))
+
+Enhancements:
+
+- Improve `legend_cols` support for Bokeh 3 ([#5669](https://github.com/holoviz/holoviews/pull/5669))
+- Add convenience `getter` interface to `opts` ([#5606](https://github.com/holoviz/holoviews/pull/5606))
+- Ensure `.stack` works on areas with different `vdims` ([#5693](https://github.com/holoviz/holoviews/pull/5693))
+- Add `muted` support to `PointPlot` like `hv.Scatter` ([#5705](https://github.com/holoviz/holoviews/pull/5705))
+- Automatic detect `comms` without calling `pn.extension()` ([#5645](https://github.com/holoviz/holoviews/pull/5645))
+- Add support for extra `Hovertool` variables in a Bokeh's `quadmesh` with 2D coordinates (with tests) ([#5638](https://github.com/holoviz/holoviews/pull/5638))
+- Change `hv.Rectangles` to internally use Bokeh `Quad` and not `Rect` to support logarithmic axis in WebGL ([#5664](https://github.com/holoviz/holoviews/pull/5664), [#5702](https://github.com/holoviz/holoviews/pull/5702))
+
+
+Bug fixes:
+
+- Ensure `spatial_select` in non-zero indexed DataFrame is applied right ([#5625](https://github.com/holoviz/holoviews/pull/5625))
+- Fix error handling for plotting class lookups on empty `DynamicMap`/`HoloMap` ([#5604](https://github.com/holoviz/holoviews/pull/5604))
+- Fix `active_tools` to only be set for enabled tools ([#5616](https://github.com/holoviz/holoviews/pull/5616))
+- Fix legend display when using categorical `datashade` on GPU ([#5631](https://github.com/holoviz/holoviews/pull/5631))
+- Adding `GeoDataFrame` to `DataConversion` ([#5325](https://github.com/holoviz/holoviews/pull/5325))
+- Don't emit warnings when the toolbar is disabled ([#5691](https://github.com/holoviz/holoviews/pull/5691))
+- Don't try to find the closest match if the input is empty ([#5700](https://github.com/holoviz/holoviews/pull/5700))
+- Only use `long_name` if it is a string ([#5646](https://github.com/holoviz/holoviews/pull/5646))
+- Use Matplotlib's public API to list the colormaps ([#5598](https://github.com/holoviz/holoviews/pull/5598))
+
+Compatibility:
+
+- Add Param 2.0 support ([#5667](https://github.com/holoviz/holoviews/pull/5667), [#5641](https://github.com/holoviz/holoviews/pull/5641), [#5680](https://github.com/holoviz/holoviews/pull/5680), [#5704](https://github.com/holoviz/holoviews/pull/5704))
+- Add Pandas 2.0 support ([#5662](https://github.com/holoviz/holoviews/pull/5662))
+- Update `types.functiontype` to `collections.abc.callable` ([#5636](https://github.com/holoviz/holoviews/pull/5636))
+- Improve error message for categorical data when used with `datashade` ([#5643](https://github.com/holoviz/holoviews/pull/5643))
+- Don't disable Jedi completion by default ([#5701](https://github.com/holoviz/holoviews/pull/5701))
+
+
+Documentation:
+
+- Fix an incorrect number stated regarding available axis types ([#5623](https://github.com/holoviz/holoviews/pull/5623))
+- Fix `BoundsY` example ([#5629](https://github.com/holoviz/holoviews/pull/5629))
+- Fix formatting on FAQ ([#5630](https://github.com/holoviz/holoviews/pull/5630))
+- Fix anchor links ([#5677](https://github.com/holoviz/holoviews/pull/5677))
+
+
+Maintenance:
+
+- Use `clean-notebook`, `codespell`, and `ruff` in `pre-commit` ([#5594](https://github.com/holoviz/holoviews/pull/5594), [#5627](https://github.com/holoviz/holoviews/pull/5627), [#5653](https://github.com/holoviz/holoviews/pull/5653))
+- General maintenance ([#5607](https://github.com/holoviz/holoviews/pull/5607), [#5611](https://github.com/holoviz/holoviews/pull/5611), [#5612](https://github.com/holoviz/holoviews/pull/5612), [#5649](https://github.com/holoviz/holoviews/pull/5649))
+
+
+Known issues:
+- `BoxEditTool` is not yet supported with the new internals of `hv.Rectangle`.
+
+
+Removals:
+
+- Raise `DataError` for non-string column names in DataFrame ([#5654](https://github.com/holoviz/holoviews/pull/5654))
+- Remove deprecated tile sources ([#5654](https://github.com/holoviz/holoviews/pull/5654))
+- Removed support for `apply_groups` for old option groups signature ([#5497](https://github.com/holoviz/holoviews/pull/5497))
+
+
+Version 1.15.4
+==============
+**January 16, 2023**
+
+This release contains a small number of enhancements and important bug fixes.
+Many thanks to our new contributors @mmorys, @jj-github-jj, and @sandhujasmine, but also our returning contributors @droumis, @jlstevens, @MarcSkovMadsen, @maximlt, @philippjfr, @stanwest, and @Hoxbro.
+
+
+Enhancements:
+
+- Make lasso select mask values using a Dask-compatible method ([#5568](https://github.com/holoviz/holoviews/pull/5568))
+- Make plotly legend group unique ([#5570](https://github.com/holoviz/holoviews/pull/5570))
+- Set pan and wheel_zoom as the default Bokeh active tools ([#5480](https://github.com/holoviz/holoviews/pull/5480))
+- Enable rendering colorbars on bokeh `GraphPlot`s ([#5585](https://github.com/holoviz/holoviews/pull/5585))
+- Add Plotly `Scatter3d` documentation and fix colorbar title ([#5418](https://github.com/holoviz/holoviews/pull/5418))
+
+Bug fixes:
+
+- Only trigger range-update once in callbacks ([#5558](https://github.com/holoviz/holoviews/pull/5558))
+- Ensure dynamically created subplots can be updated ([#5555](https://github.com/holoviz/holoviews/pull/5555))
+- Fix start of stack-level in deprecations ([#5569](https://github.com/holoviz/holoviews/pull/5569))
+- When sorting colormap records, replace None with an empty string ([#5539](https://github.com/holoviz/holoviews/pull/5539))
+- Fix annotator in Geoviews by adding deserialization of non-deserialized base64 data ([#5587](https://github.com/holoviz/holoviews/pull/5587))
+- Fix `hv.Empty` not working in `AdjointLayout` plot ([#5584](https://github.com/holoviz/holoviews/pull/5584))
+- Check for categorical data to histogram ([#5540](https://github.com/holoviz/holoviews/pull/5540))
+- Fix `clim_percentile` ([#5495](https://github.com/holoviz/holoviews/pull/5495))
+
+Compatibility:
+
+- Compatibility with Shapely 2.0 ([#5561](https://github.com/holoviz/holoviews/pull/5561))
+- Compatibility with Numpy 1.24 ([#5581](https://github.com/holoviz/holoviews/pull/5581))
+- Compatibility with Ibis 4.0 ([#5588](https://github.com/holoviz/holoviews/pull/5588))
+
+Documentation:
+
+- Installation instructions update ([#5562](https://github.com/holoviz/holoviews/pull/5562))
+- Use OSM for reference tile source in notebook documentation ([#5536](https://github.com/holoviz/holoviews/pull/5536))
+- Enhance Tiles example notebook ([#5563](https://github.com/holoviz/holoviews/pull/5563))
+
+Maintenance:
+
+- Various fixes and general maintenance of the CI ([#5384](https://github.com/holoviz/holoviews/pull/5384), [#5573](https://github.com/holoviz/holoviews/pull/5573), [#5576](https://github.com/holoviz/holoviews/pull/5576), [#5582](https://github.com/holoviz/holoviews/pull/5582))
+- Updated codebase to modern Python conventions ([#5509](https://github.com/holoviz/holoviews/pull/5509), [#5577](https://github.com/holoviz/holoviews/pull/5577))
+- Renamed `master` branch to `main` ([#5579](https://github.com/holoviz/holoviews/pull/5579))
+- Update binder link and dependency pinning ([#5583](https://github.com/holoviz/holoviews/pull/5583))
+- Update copyright to only contain start year ([#5580](https://github.com/holoviz/holoviews/pull/5580))
+
+
+Version 1.15.3
+==============
+**December 6, 2022**
+
+This release contains a small number of important bug fixes and
+adds support for Python 3.11. Many thanks to our maintainers
+@Hoxbro, @maximlt and @jlstevens.
+
+Bug Fixes:
+
+  - Fix for empty opts warning and incorrect clearing semantics
+    ([#5496](https://github.com/holoviz/holoviews/pull/5496))
+  - Fix potential race condition in the Options system
+    ([#5535](https://github.com/holoviz/holoviews/pull/5535))
+
+Enhancements:
+
+  - Add support to Python 3.11
+    ([#5513](https://github.com/holoviz/holoviews/pull/5513))
+  - Cleanup the top `__init__` module
+    ([#5516](https://github.com/holoviz/holoviews/pull/5516))
+
+Documentation:
+
+  - Fixes to release notes and CHANGELOG
+    ([#5506](https://github.com/holoviz/holoviews/pull/5506))
+
+Version 1.15.2
+==============
+**November 3, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to @stanwest for his contribution and thank you to our maintainers
+@Hoxbro, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+- Fix support for jupyterlite
+  ([#5502](https://github.com/holoviz/holoviews/pull/5502))
+- Improve error message for `hv.opts` without a plotting backend
+  ([#5494](https://github.com/holoviz/holoviews/pull/5494))
+- Fix warnings exposed in CI logs
+  ([#5470](https://github.com/holoviz/holoviews/pull/5470))
+- Thanks to @maximlt for various CI fixes
+  ([#5484](https://github.com/holoviz/holoviews/pull/5484),
+  [#5498](https://github.com/holoviz/holoviews/pull/5498),
+  [#5485](https://github.com/holoviz/holoviews/pull/5485))
+
+Enhancement:
+
+- Allow Dimension objects to accept a dictionary specification
+  ([#5333](https://github.com/holoviz/holoviews/pull/5333))
+- Refactor to remove iterrows for loop from `connect_edges_pd`
+  ([#5473](https://github.com/holoviz/holoviews/pull/5473))
+
+Deprecations:
+
+Promoted `DeprecationWarning` to `FutureWarning` when using pandas
+`DataFrame`s with non-string column names. This will not change any
+functionality but will start warning users about functionality that will
+be deprecated in future.
+
+- Upgrade warning for invalid dataframe column names
+  ([#5472](https://github.com/holoviz/holoviews/pull/5472))
+
+Version 1.15.1
+==============
+**October 4, 2022**
+
+This release contains a small number of important bug fixes. Many thanks
+to all our new contributors @MarcSkovMadsen, @j-svensmark, @ceball,
+@droumis, @ddrinka, @Jhsmit and @stanwest as well as a special thanks to
+@Hoxbro for his many bug fixes. An additional thank you goes out to
+@maximlt, @philippjfr, @jbednar and @jlstevens.
+
+Enhancements:
+
+- Sort output of `decimate` operation so that it can be used with connected Elements
+  (Curve, Area, etc.) ([#5452](https://github.com/holoviz/holoviews/pull/5452))
+- Ensure HoloViews is importable from a pyodide webworker
+  ([#5410](https://github.com/holoviz/holoviews/pull/5410))
+- Add support for stepwise Area plots
+  ([#5390](https://github.com/holoviz/holoviews/pull/5390))
+- Better error message for `hv.Cycle` when incompatible backend activated
+  ([#5379](https://github.com/holoviz/holoviews/pull/5379))
+- Improvements to VSCode notebook support
+  ([#5398](https://github.com/holoviz/holoviews/pull/5398))
+- Protect matplotlib tests from global styles
+  ([#5311](https://github.com/holoviz/holoviews/pull/5311))
+- Faster hashing for arrays and pandas objects
+  ([#5455](https://github.com/holoviz/holoviews/pull/5455))
+- Add pre-commit hooks to CI actions and fixes to pytest configuration
+  ([#5385](https://github.com/holoviz/holoviews/pull/5385),
+   [#5440](https://github.com/holoviz/holoviews/pull/5440))
+
+Bug Fixes:
+
+- Allow import of numpy 1.12
+  ([#5367](https://github.com/holoviz/holoviews/pull/5367))
+- Fixes handling of iterables in Overlays
+  ([#5320](https://github.com/holoviz/holoviews/pull/5320))
+- Always return a string when using `hv.Dimension.pprint_value`
+  ([#5383](https://github.com/holoviz/holoviews/pull/5383))
+- Support widgets in slices for `loc` and `iloc`
+  ([#5352](https://github.com/holoviz/holoviews/pull/5352))
+- Take account of labeled dimension in Bokeh plotting classes
+  ([#5404](https://github.com/holoviz/holoviews/pull/5404))
+- Fix handling of pandas `Period` ranges
+  ([#5393](https://github.com/holoviz/holoviews/pull/5393))
+- Fixed declaration of `Scatter` to `Selection1DExpr`
+  ([#5413](https://github.com/holoviz/holoviews/pull/5413))
+- Ensure rangesupdate event fires on all plots with linked axes
+  ([#5465](https://github.com/holoviz/holoviews/pull/5465))
+- Fixed fallback to shapely spatial select
+  ([#5468](https://github.com/holoviz/holoviews/pull/5468))
+- Many thanks to @Hoxbro for many miscellaneous plotting fixes,
+  including fixes to plotting of `BoxWhisker`, `VectorField` elements
+  ([#5397](https://github.com/holoviz/holoviews/pull/5397),
+   [#5450](https://github.com/holoviz/holoviews/pull/5450),
+   [#5400](https://github.com/holoviz/holoviews/pull/5400),
+   [#5409](https://github.com/holoviz/holoviews/pull/5409),
+   [#5460](https://github.com/holoviz/holoviews/pull/5460)))
+- Fixes to documentation building GitHub Action
+  ([#5320](https://github.com/holoviz/holoviews/pull/5456),
+  ([#5320](https://github.com/holoviz/holoviews/pull/5467)))
+
+Documentation:
+
+- Introduced module documentation
+  ([#5362](https://github.com/holoviz/holoviews/pull/5362))
+- Remove Python 2 references from README
+  ([#5365](https://github.com/holoviz/holoviews/pull/5365))
+- Update call to panel add_periodic_callback in Bokeh gallery example
+  ([#5436](https://github.com/holoviz/holoviews/pull/5436))
+- Added reference to example in `RangeToolLink`
+  ([#5435](https://github.com/holoviz/holoviews/pull/5435))
+
+API:
+
+In future, HoloViews will not allow non-string values for pandas
+DataFrame column names. This deprecation cycle starts by
+issuing a `DeprecationWarning` that should not be visible to users.
+
+- Issue DeprecationWarning for invalid DataFrame column types
+  ([#5457](https://github.com/holoviz/holoviews/pull/5457))
+
+Version 1.15.0
+==============
+**July 6, 2022**
+
+This is a major release with a large number of new features and bug
+fixes, as well as updates to Python and Panel compatibility.
+
+Many thanks to the numerous users who filed bug reports, tested
+development versions, and contributed a number of new features and bug
+fixes, including special thanks to @ablythed @ahuang11
+@douglas-raillard-arm @FloLangenfeld @HoxBro @ianthomas23 @jenssss
+@pepijndevos @peterroelants @stas-sl @Yura52 for their contributions. In
+addition, thanks to the maintainers @jbednar, @maximlt, @jlstevens and
+@philippjfr for contributing to this release.
+
+Compatibility:
+
+- Python 2 support has finally been dropped with 1.14.9 as the last
+  release supporting Python 2
+- HoloViews now requires panel >0.13.1
+  ([#4329](https://github.com/holoviz/holoviews/pull/4329))
+- Colormaps for the output of the datashade operation have changed to
+  address
+  [holoviz/datashader#357](https://github.com/holoviz/datashader/issues/357);
+  see `rescale_discrete_levels` below. To revert to the old colorbar
+  behavior, set `ColorbarPlot.rescale_discrete_levels = False` in the
+  `bokeh` or `mpl` plotting modules as appropriate.
+- Updated Sankey algorithm means that some users may need to update the
+  `node_padding` parameter for plots generated with earlier releases.
+
+Major features:
+
+After a long period of hotfix releases for the 1.14.9 series, many new
+features on the main branch have been released. Features relating to
+datashader support, linked selection and improvements to the Bokeh
+plotting backend are called out in their own sections.
+
+- Support constructor interface from a spatialpandas GeometryArray
+  ([#5281](https://github.com/holoviz/holoviews/pull/5281))
+- Allow plotting anonymous pandas.Series
+  ([#5015](https://github.com/holoviz/holoviews/pull/5015))
+- Add support for rendering in pyodide/pyscript
+  ([#5338](https://github.com/holoviz/holoviews/pull/5338),
+  [#5321](https://github.com/holoviz/holoviews/pull/5321),
+  [#5275](https://github.com/holoviz/holoviews/pull/5275))
+
+Datashader features:
+
+The following new features have been added to the datashader support in
+HoloViews, mainly focused on Datashader's new support for antialiasing
+lines as well as the new `rescale_discrete_levels` colormapping option.
+
+
+- Add automatic categorical legend for datashaded plots
+  ([#4806](https://github.com/holoviz/holoviews/pull/4806))
+- Implement `line_width` support when rasterizing spatialpandas paths
+  ([#5280](https://github.com/holoviz/holoviews/pull/5280))
+- Expose `rescale_discrete_levels` in the Bokeh backend
+  ([#5312](https://github.com/holoviz/holoviews/pull/5312))
+- Set `rescale_discrete_levels=True` by default
+  ([#5268](https://github.com/holoviz/holoviews/pull/5268))
+
+New linked selection features:
+
+- Implement `linked_selection.filter` method
+  ([#4999](https://github.com/holoviz/holoviews/pull/4999))
+- Allow passing custom `selection_expr` to linked selections filter
+  ([#5012](https://github.com/holoviz/holoviews/pull/5012))
+- Fix `AdjointLayout` in `link_selections`
+  ([#5030](https://github.com/holoviz/holoviews/pull/5030))
+
+New features for the Bokeh plotting backend:
+
+- Add `legend_labels` option to allow overriding legend labels
+  ([#5342](https://github.com/holoviz/holoviews/pull/5342))
+- Updated sankey algorithm to `d3-sankey-v0.12.3`
+ ([#4707](https://github.com/holoviz/holoviews/pull/4707))
+
+Other enhancements:
+
+- Optimize and clean up options system
+ ([#4954](https://github.com/holoviz/holoviews/pull/4954))
+- Optimize lasso selection by applying box-select first
+ ([#5061](https://github.com/holoviz/holoviews/pull/5061))
+ https://github.com/holoviz/holoviews/pull/5061
+- Support ibis-framework version 3
+ ([#5292](https://github.com/holoviz/holoviews/pull/5292))
+- Add `OpenTopoMap` as a tile source
+ ([#5052](https://github.com/holoviz/holoviews/pull/5052))
+- Show all histograms of an `Overlay`
+([#5031](https://github.com/holoviz/holoviews/pull/5031))
+
+Bug fixes:
+
+- Fix batch watching and linking of parameters in Params stream
+ ([#4960](https://github.com/holoviz/holoviews/pull/4960),
+  [#4956](https://github.com/holoviz/holoviews/pull/4956))
+- Ensure `Plot.refresh` is dispatched immediately if possible
+ ([#5348](https://github.com/holoviz/holoviews/pull/5348))
+- Fix datashader empty overlay aggregation
+ ([#5334](https://github.com/holoviz/holoviews/pull/5334))
+- Fixed missing handling of nodata for count aggregator with column
+ ([#4951](https://github.com/holoviz/holoviews/pull/4951))
+- Handle `pd.NA` as missing data in dtype=object column
+ ([#5323](https://github.com/holoviz/holoviews/pull/5323))
+- Forward `DynamicMap.hist` dimension parameter to histogram creation
+ ([#5037](https://github.com/holoviz/holoviews/pull/5037))
+- Remove numpy pin from examples
+ ([#5285](https://github.com/holoviz/holoviews/pull/5285))
+- Fix vmin/vmax deprecation on matplotlib HeatMapPlot
+ ([#5300](https://github.com/holoviz/holoviews/pull/5300))
+- Don't skip each renderer's `load_nb call` when multiple extension
+ calls are made in a single cell
+ ([#5302](https://github.com/holoviz/holoviews/pull/5302))
+- Set plotly range correctly for log axis
+ ([#5272](https://github.com/holoviz/holoviews/pull/5272))
+- Sanitize uses of `contextlib.contextmanager`
+ ([#5018](https://github.com/holoviz/holoviews/pull/5018))
+- Ensure `overlay_aggregate` is not applied for anti-aliased lines
+ ([#5266](https://github.com/holoviz/holoviews/pull/5266))
+- Switch to using bokeh `rangesupdate` event for `Range` streams
+ ([#5265](https://github.com/holoviz/holoviews/pull/5265))
+- Fixes for bokeh `Callbacks`
+ ([#5040](https://github.com/holoviz/holoviews/pull/5040))
+- Fix for attribute error in matplotlib `CompositePlot`
+ ([#4969](https://github.com/holoviz/holoviews/pull/4969))
+- Silenced inappropriate deprecation warnings and updated deprecation
+  settings in options system
+ ([#5345](https://github.com/holoviz/holoviews/pull/5345),
+  [#5346](https://github.com/holoviz/holoviews/pull/5346))
+
+Documentation:
+
+The following improvements to the documentation have been made:
+
+- Fix `hv.help` when pattern is set
+ ([#5330](https://github.com/holoviz/holoviews/pull/5330))
+- Added release dates to changelog and releases
+ ([#5027](https://github.com/holoviz/holoviews/pull/5027),
+  [#5035](https://github.com/holoviz/holoviews/pull/5035))
+- Removed unneeded list from dynamic map example
+ ([#4953](https://github.com/holoviz/holoviews/pull/4953))
+- Added FAQ about sharing only a single axis
+ ([#5278](https://github.com/holoviz/holoviews/pull/5278))
+- Miscellaneous fixes to Heatmap reference notebook and Continuous
+  Coordinates user guide
+ ([#5262](https://github.com/holoviz/holoviews/pull/5262))
+- Added example of multiple RGB images as glyphs
+ ([#5172](https://github.com/holoviz/holoviews/pull/5172))
+- Trim trailing whitespaces
+ ([#5019](https://github.com/holoviz/holoviews/pull/5019))
+- Update outdated IOAM references
+ ([#4985](https://github.com/holoviz/holoviews/pull/4985))
+
+Testing infrastructure:
+
+Many thanks to @maximlt for his work maintaining and fixing the testing
+infrastructure across too many PRs to list here.
+
+- Switch to pytest
+ ([#4949](https://github.com/holoviz/holoviews/pull/4949))
+- Test suite clean up and fix for the pip build
+ ([#5326](https://github.com/holoviz/holoviews/pull/5326))
+- Test updates following release of datashader 0.14.1
+ ([#5344](https://github.com/holoviz/holoviews/pull/5344))
+
+
+Version 1.14.9
+==============
+**May 6, 2022**
+
+This release contains a small number of important bug fixes as well as
+support for the newly added antialiasing option for line rendering in
+datashader. Many thanks to @andriyot, @Hoxbro, @pepijndevos, @stas-sl,
+@TheoMathurin, @maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Enhancements:
+
+- Improvements to extension loading, improving visual appearance in
+  JupyterLab when no logo is used and a check to avoid loading
+  unnecessary JavaScript.
+  ([#5216](https://github.com/holoviz/holoviews/pull/5216),
+   [#5249](https://github.com/holoviz/holoviews/pull/5249))
+- Add support for setting antialiased line_width on datashader line
+  aggregation as well as pixel_ratio setting
+  ([#5264](https://github.com/holoviz/holoviews/pull/5264),
+  [#5288](https://github.com/holoviz/holoviews/pull/5288))
+- Added options to customize hover line_(width|join|cap|dash) properties
+  ([#5211](https://github.com/holoviz/holoviews/pull/5211))
+- Restored Python 2 compatibility that lapsed due to lack of CI testing
+  since 1.14.3. This is expected to be the last release with Python 2 support.
+  ([#5298](https://github.com/holoviz/holoviews/pull/5298))
+
+Bug fixes:
+
+- Fix to respect series order in stacked area plot
+  ([#5236](https://github.com/holoviz/holoviews/pull/5236))
+- Support buffer streams of unspecified length (#5247)
+  ([#5247](https://github.com/holoviz/holoviews/pull/5247))
+- Fixed log axis lower bound when data minimum is <= 0
+  ([#5246](https://github.com/holoviz/holoviews/pull/5246))
+- Declared GitHub project URL in setup.py
+  ([#5227](https://github.com/holoviz/holoviews/pull/5227))
+- Fixed streaming Psutil example application
+  ([#5243](https://github.com/holoviz/holoviews/pull/5243))
+- Respecting Renderer's center property for HoloViews pane
+  ([#5197](https://github.com/holoviz/holoviews/pull/5197))
+
+Documentation:
+
+- Updated Large data guide to reflect changes in Datashader and
+  antialiasing support
+  ([#5267](https://github.com/holoviz/holoviews/pull/5267),
+  [#5290](https://github.com/holoviz/holoviews/pull/5290))
+
+
+Version 1.14.8
+==============
+**February 15, 2022**
+
+This release contains a small number of important bug fixes as well as
+fixes required for Python 3.9 and 3.10 support. Many thanks to @Hoxbro,
+@maximlt, @jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+- Fixed xarray validation for aliased coordinate
+  ([#5169](https://github.com/holoviz/holoviews/pull/5169))
+- Fixed xaxis/yaxis options with Matplotlib
+  ([#5200](https://github.com/holoviz/holoviews/pull/5200))
+- Fixed nested widgets by handling list or tuple values in
+  `resolve_dependent_value` utility
+  ([#5184](https://github.com/holoviz/holoviews/pull/5184))
+- Fixed issue handling multiple widgets without names
+  ([#5185](https://github.com/holoviz/holoviews/pull/5185))
+- Fix overlay of two-level categorical plots and HLine
+  ([#5203](https://github.com/holoviz/holoviews/pull/5203))
+- Added support for Ibis > 2.0
+  ([#5204](https://github.com/holoviz/holoviews/pull/5204))
+- Allow lower dimensional views on arbitrary dimensioned elements
+  ([#5208](https://github.com/holoviz/holoviews/pull/5208))
+- Fix escaping of HTML on Div element
+  ([#5209](https://github.com/holoviz/holoviews/pull/5209))
+- Miscellaneous fixes to unit tests, including cudf test fixes as well
+  as addition of Python 3.9 and 3.10 to the test matrix
+  ([#5166](https://github.com/holoviz/holoviews/pull/5166),
+  [#5199](https://github.com/holoviz/holoviews/pull/5199),
+  [#5201](https://github.com/holoviz/holoviews/pull/5201),
+  [#5206](https://github.com/holoviz/holoviews/pull/5206))
+
+Version 1.14.7
+==============
+**December 16, 2021**
+
+This release contains a small number of important bug fixes. Many thanks
+to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt,
+@jlstevens, @jbednar, and @philippjfr.
+
+Bug fixes:
+
+- Support xyzservices.TileProvider as hv.Tiles input
+  ([#5062](https://github.com/holoviz/holoviews/pull/5062))
+- Allow reversed layout/overlay binary operators for `+` and `*` to be used with custom objects
+  ([#5073](https://github.com/holoviz/holoviews/pull/5073))
+- Fix internal numpy.round usage
+  ([#5095](https://github.com/holoviz/holoviews/pull/5095))
+- Remove dependency on recent Panel release by importing bokeh version from util module
+  ([#5103](https://github.com/holoviz/holoviews/pull/5103))
+- Add missing bounds for the cache_size Parameter
+  ([#5105](https://github.com/holoviz/holoviews/pull/5105))
+- Add current_key property to DynamicMap
+  ([#5106](https://github.com/holoviz/holoviews/pull/5106))
+- Pin freetype on Windows to avoid matplotlib error
+  ([#5109](https://github.com/holoviz/holoviews/pull/5109))
+- Handle the empty string as a group name
+  ([#5131](https://github.com/holoviz/holoviews/pull/5131))
+- Do not merge partially overlapping Stream callbacks
+  ([#5133](https://github.com/holoviz/holoviews/pull/5133))
+- Fix Violin matplotlib rendering with non-finite values
+  ([#5135](https://github.com/holoviz/holoviews/pull/5135))
+- Fix matplotlib colorbar labeling for dim expressions
+  ([#5137](https://github.com/holoviz/holoviews/pull/5137))
+- Fix datetime clipping on RangeXY stream
+  ([#5138](https://github.com/holoviz/holoviews/pull/5138))
+- Ensure FreehandDraw renders when styles are set
+  ([#5139](https://github.com/holoviz/holoviews/pull/5139))
+- Validate dimensionality of xarray interface data
+  ([#5140](https://github.com/holoviz/holoviews/pull/5140))
+- Preserve cols when overlaying on layout
+  ([#5141](https://github.com/holoviz/holoviews/pull/5141))
+- Fix Bars legend error when overlaid with annotation
+  ([#5142](https://github.com/holoviz/holoviews/pull/5142))
+- Fix plotly Bar plots containing NaNs
+  ([#5143](https://github.com/holoviz/holoviews/pull/5143))
+- Do not raise deprecated .opts warning for empty groups
+  ([#5144](https://github.com/holoviz/holoviews/pull/5144))
+- Handle unsigned integer dtype in datashader aggregate operation
+  ([#5149](https://github.com/holoviz/holoviews/pull/5149))
+- Delay projection comparison to optimize geoviews
+  ([#5152](https://github.com/holoviz/holoviews/pull/5152))
+- Utility to convert datetime64 to int64 and test suite maintenance
+  ([#5157](https://github.com/holoviz/holoviews/pull/5157))
+- Fix for Contours consistent of empty and nonempty paths
+  ([#5162](https://github.com/holoviz/holoviews/pull/5162))
+- Fixed docs:
+    * Fix `fig_bounds` description in Plotting_with_Matplotlib.ipynb
+      ([#4983](https://github.com/holoviz/holoviews/pull/4983))
+    * Fix broken link in Gridded user guide
+      ([#5098](https://github.com/holoviz/holoviews/pull/5098))
+- Improved docs:
+    * Switch to the Pydata Sphinx theme
+      ([#5163](https://github.com/holoviz/holoviews/pull/5163))
+
+Version 1.14.6
+==============
+**September 16, 2021**
+
+This is a hotfix release with a number of important bug fixes. Most
+importantly, this version supports the recent bokeh 2.4.0
+release. Many thanks to @geronimos, @peterroelants,
+@douglas-raillard-arm, @philippjfr and @jlstevens for contributing the
+fixes in this release.
+
+Bug fixes:
+
+- Compatibility for bokeh 2.4 and fixes to processing of falsey
+  properties and visible style property
+  ([#5059](https://github.com/holoviz/holoviews/pull/5059),
+  [#5063](https://github.com/holoviz/holoviews/pull/5063))
+- Stricter validation of data.interface before calling subclass
+  ([#5050](https://github.com/holoviz/holoviews/pull/5050))
+- Fix to prevent options being ignored in some cases
+  ([#5016](https://github.com/holoviz/holoviews/pull/5016))
+- Improvements to linked selections including support for linked
+  selection lasso for cudf and improved warnings
+  ([#5044](https://github.com/holoviz/holoviews/pull/5044),
+   [#5051](https://github.com/holoviz/holoviews/pull/5051))
+- Respect apply_ranges at range computation level
+  ([#5081](https://github.com/holoviz/holoviews/pull/5081))
+- Keep ordering of kdim when stacking Areas
+  ([#4971](https://github.com/holoviz/holoviews/pull/4971))
+- Apply hover postprocessor on updates
+  ([#5039](https://github.com/holoviz/holoviews/pull/5039))
+
+Version 1.14.5
+==============
+**July 16, 2021**
+
+This is a hotfix release with a number of important bug fixes. Most
+importantly, this version supports for the recent pandas 1.3.0
+release. Many thanks to @kgullikson88, @philippjfr and @jlstevens for
+contributing the fixes in this release.
+
+Bug fixes:
+
+- Support for pandas>=1.3
+  ([#5013](https://github.com/holoviz/holoviews/pull/5013))
+- Various bug fixes relating to dim transforms including the use of
+  parameters in slices and the use of getattribute
+  ([#4993](https://github.com/holoviz/holoviews/pull/4993),
+  [#5001](https://github.com/holoviz/holoviews/pull/5001),
+  [#5005](https://github.com/holoviz/holoviews/pull/5005))
+
+
+Version 1.14.4
+==============
+**May 18, 2021**
+
+This release primarily focuses on a number of bug fixes. Many thanks to
+@Hoxbro, @nitrocalcite, @brl0, @hyamanieu, @rafiyr, @jbednar, @jlstevens
+and @philippjfr for contributing.
+
+Enhancements:
+
+- Re-enable `SaveTool` for plots with `Tiles`
+  ([#4922](https://github.com/holoviz/holoviews/pull/4922))
+- Enable dask `TriMesh` rasterization using datashader
+  ([#4935](https://github.com/holoviz/holoviews/pull/4935))
+- Use dataframe index for `TriMesh` node indices
+  ([#4936](https://github.com/holoviz/holoviews/pull/4936))
+
+Bug fixes:
+
+- Fix hover for stacked `Bars`
+  ([#4892](https://github.com/holoviz/holoviews/pull/4892))
+- Check before dereferencing Bokeh colormappers
+  ([#4902](https://github.com/holoviz/holoviews/pull/4902))
+- Fix multiple parameterized inputs to `dim`
+  ([#4903](https://github.com/holoviz/holoviews/pull/4903))
+- Fix floating point error when generating bokeh Palettes
+  ([#4911](https://github.com/holoviz/holoviews/pull/4911))
+- Fix bug using dimensions with label on `Bars`
+  ([#4929](https://github.com/holoviz/holoviews/pull/4929))
+- Do not reverse colormaps with '_r' suffix a second time
+  ([#4931](https://github.com/holoviz/holoviews/pull/4931))
+- Fix remapping of `Params` stream parameter names
+  ([#4932](https://github.com/holoviz/holoviews/pull/4932))
+- Ensure `Area.stack` keeps labels
+  ([#4937](https://github.com/holoviz/holoviews/pull/4937))
+
+Documentation:
+
+- Updated Dashboards user guide to show `pn.bind` first
+  ([#4907](https://github.com/holoviz/holoviews/pull/4907))
+- Updated docs to correctly declare Scatter kdims
+  ([#4914](https://github.com/holoviz/holoviews/pull/4914))
+
+Compatibility:
+
+Unfortunately a number of tile sources are no longer publicly
+available. Attempting to use these tile sources will now issue warnings
+unless `hv.config.raise_deprecated_tilesource_exception` is set to
+`True` in which case exceptions will be raised instead.
+
+- The `Wikipedia` tile source is no longer available as it is no longer
+  being served outside the wikimedia domain. As one of the most
+  frequently used tile sources, HoloViews now issues a warning and
+  switches to the OpenStreetMap (OSM) tile source instead.
+- The `CartoMidnight` and `CartoEco` tile sources are no longer publicly
+  available. Attempting to use these tile sources will result in a
+  deprecation warning.
+
+Version 1.14.3
+==============
+**April 8, 2021**
+
+This release contains a small number of bug fixes, enhancements and
+compatibility for the latest release of matplotlib. Many thanks to
+@stonebig, @Hoxbro, @jlstevens, @jbednar and @philippjfr.
+
+Enhancements:
+
+- Allow applying linked selections to chained `DynamicMap`
+  ([#4870](https://github.com/holoviz/holoviews/pull/4870))
+- Issuing improved error message when `__radd__` called with an
+  integer ([#4868](https://github.com/holoviz/holoviews/pull/4868))
+- Implement `MultiInterface.assign`
+  ([#4880](https://github.com/holoviz/holoviews/pull/4880))
+- Handle tuple unit on xarray attribute
+  ([#4881](https://github.com/holoviz/holoviews/pull/4881))
+- Support selection masks and expressions on gridded data
+  ([#4882](https://github.com/holoviz/holoviews/pull/4882))
+
+Bug fixes:
+
+- Handle empty renderers when merging `HoverTool.renderers`
+  ([#4856](https://github.com/holoviz/holoviews/pull/4856))
+
+Compatibility:
+
+- Support matplotlib versions >=3.4
+  ([#4878](https://github.com/holoviz/holoviews/pull/4878))
+
+Version 1.14.2
+==============
+**March 2, 2021**
+
+This release adds support for Bokeh 2.3, introduces a number of minor
+enhancements, miscellaneous documentation improvements and a good number
+of bug fixes.
+
+Many thanks to the many contributors to this release, whether directly
+by submitting PRs or by reporting issues and making
+suggestions. Specifically, we would like to thank @philippjfr for the
+Bokeh 2.3 compatibility updates, @kcpevey, @timgates42, and @scottstanie
+for documentation improvements as well as @Hoxbro and @LunarLanding for
+various bug fixes. In addition, thanks to the maintainers @jbednar,
+@jlstevens and @philippjfr for contributing to this release.
+
+Enhancements:
+
+- Bokeh 2.3 compatibility
+  ([#4805](https://github.com/holoviz/holoviews/pull/4805),
+  [#4809](https://github.com/holoviz/holoviews/pull/4809))
+- Supporting dictionary streams parameter in DynamicMaps and operations
+  ([#4787](https://github.com/holoviz/holoviews/pull/4787),
+   [#4818](https://github.com/holoviz/holoviews/pull/4818),
+   [#4822](https://github.com/holoviz/holoviews/pull/4822))
+- Support spatialpandas DaskGeoDataFrame
+  ([#4792](https://github.com/holoviz/holoviews/pull/4792))
+- Disable zoom on axis for geographic plots
+  ([#4812](https://github.com/holoviz/holoviews/pull/4812)
+- Add support for non-aligned data in Area stack classmethod
+  ([#4836](https://github.com/holoviz/holoviews/pull/4836))
+- Handle arrays and datetime ticks
+  ([#4831](https://github.com/holoviz/holoviews/pull/4831))
+- Support single-value numpy array as input to HLine and VLine
+  ([#4798](https://github.com/holoviz/holoviews/pull/4798))
+
+Bug fixes:
+
+- Ensure link_inputs parameter on operations is passed to apply
+  ([#4795](https://github.com/holoviz/holoviews/pull/4795))
+- Fix for muted option on overlaid Bokeh plots
+  ([#4830](https://github.com/holoviz/holoviews/pull/4830))
+- Check for nested dim dependencies
+  ([#4785](https://github.com/holoviz/holoviews/pull/4785))
+- Fixed np.nanmax call when computing ranges
+  ([#4847](https://github.com/holoviz/holoviews/pull/4847))
+- Fix for Dimension pickling
+  ([#4843](https://github.com/holoviz/holoviews/pull/4843))
+- Fixes for dask backed elements in plotting
+  ([#4813](https://github.com/holoviz/holoviews/pull/4813))
+- Handle isfinite for NumPy and Pandas masked arrays
+  ([#4817](https://github.com/holoviz/holoviews/pull/4817))
+- Fix plotting Graph on top of Tiles/Annotation
+  ([#4828](https://github.com/holoviz/holoviews/pull/4828))
+- Miscellaneous fixes for the Bokeh plotting extension
+  ([#4814](https://github.com/holoviz/holoviews/pull/4814),
+  [#4839](https://github.com/holoviz/holoviews/pull/4839))
+- Miscellaneous fixes for index based linked selections
+  ([#4776](https://github.com/holoviz/holoviews/pull/4776))
+
+Documentation:
+
+- Expanded on Tap Stream example in Reference Gallery
+  [#4782](https://github.com/holoviz/holoviews/pull/4782)
+- Miscellaneous typo and broken link fixes
+  ([#4783](https://github.com/holoviz/holoviews/pull/4783),
+  [#4827](https://github.com/holoviz/holoviews/pull/4827),
+  [#4844](https://github.com/holoviz/holoviews/pull/4844),
+  [#4811](https://github.com/holoviz/holoviews/pull/4811))
+
+Version 1.14.1
+==============
+**December 28, 2020**
+
+This release contains a small number of bug fixes addressing
+regressions. Many thanks to the contributors to this release including
+@csachs, @GilShoshan94 and the maintainers @jlstevens, @jbednar and
+@philippjfr.
+
+Bug fixes:
+
+- Fix issues with linked selections on tables
+  ([#4758](https://github.com/holoviz/holoviews/pull/4758))
+- Fix Heatmap alpha dimension transform
+  ([#4757](https://github.com/holoviz/holoviews/pull/4757))
+- Do not drop tools in linked selections
+  ([#4756](https://github.com/holoviz/holoviews/pull/4756))
+- Fixed access to possibly non-existent key
+  ([#4742](https://github.com/holoviz/holoviews/pull/4742))
+
+Documentation:
+
+- Warn about disabled interactive features on website
+  ([#4762](https://github.com/holoviz/holoviews/pull/4762))
+
+Version 1.14.0
+==============
+**December 1, 2020**
+
+This release brings a number of major features including a new
+IbisInterface, new Plotly Dash support and greatly improved Plotly
+support, and greatly improved interaction and integration with
+Datashader. Many thanks to the many contributors to this release,
+whether directly by submitting PRs or by reporting issues and making
+suggestions. Specifically, we would like to thank @philippjfr,
+@jonmmease, and @tonyfast for their work on the IbisInterface and
+@jonmmease for improving Plotly support, as well as @kcpevey, @Hoxbro,
+@marckassay, @mcepl, and @ceball for various other enhancements,
+improvements to documentation and testing infrastructure.  In
+addition, thanks to the maintainers @jbednar, @jlstevens and
+@philippjfr for contributing to this release. This version includes a
+large number of new features, enhancements, and bug fixes.
+
+It is important to note that version 1.14 will be the last HoloViews
+release supporting Python 2.
+
+Major features:
+
+- New Plotly Dash support
+  ([#4605](https://github.com/holoviz/holoviews/pull/4605))
+- New Plotly support for Tiles element
+  ([#4686](https://github.com/holoviz/holoviews/pull/4686))
+- New IbisInterface
+  ([#4517](https://github.com/holoviz/holoviews/pull/4517))
+- Greatly improved Datashader `rasterize()`
+  ([#4567](https://github.com/holoviz/holoviews/pull/4567)).
+  Previously, many of the features of Datashader were available only
+  through `datashade`, which rendered data all the way to RGB pixels
+  and thus prevented many client-side Bokeh features like hover,
+  colorbars, dynamic colormaps, etc. `rasterize` now supports all
+  these Bokeh features along with nearly all the Datashader features
+  previously only available through `datashade`, including (now
+  client-side) histogram equalization with `cnorm='eq_hist'` and easy
+  control of transparency via a new `Dimension.nodata` parameter. See
+  the [Large Data User
+  Guide](https://holoviews.org/user_guide/Large_Data.html) for more
+  information.
+
+Enhancements:
+
+- Implemented datashader aggregation of Rectangles
+  ([#4701](https://github.com/holoviz/holoviews/pull/4701))
+- New support for robust color limits (`clim_percentile`)
+  ([#4712](https://github.com/holoviz/holoviews/pull/4712))
+- Support for dynamic overlays in link_selections
+  ([#4683](https://github.com/holoviz/holoviews/pull/4683))
+- Allow clashing Param stream contents
+  ([#4677](https://github.com/holoviz/holoviews/pull/4677))
+- Ensured pandas does not convert times to UTC
+  ([#4711](https://github.com/holoviz/holoviews/pull/4711))
+- Removed all use of cyordereddict
+  ([#4620](https://github.com/holoviz/holoviews/pull/4620))
+- Testing infrastructure moved to GH Actions
+  ([#4592](https://github.com/holoviz/holoviews/pull/4592))
+
+Bug fixes:
+
+- Ensure RangeXY returns x/y ranges in correct order (#4665)
+  ([#4665](https://github.com/holoviz/holoviews/pull/4665))
+- Fix datashader instability with Plotly by disabling padding for RGB elements
+  ([#4705](https://github.com/holoviz/holoviews/pull/4705))
+- Various Dask and cuDF histogram fixes
+  ([#4691](https://github.com/holoviz/holoviews/pull/4691))
+- Fix handling of custom matplotlib and bokeh colormaps
+  ([#4693](https://github.com/holoviz/holoviews/pull/4693))
+- Fix cuDF values implementation
+  ([#4687](https://github.com/holoviz/holoviews/pull/4687))
+- Fixed range calculation on HexTiles
+  ([#4689](https://github.com/holoviz/holoviews/pull/4689))
+- Use PIL for RGB.load_image
+  ([#4639](https://github.com/holoviz/holoviews/pull/4639))
+
+Documentation:
+
+- Clarified data types accepted by Points
+  ([#4430](https://github.com/holoviz/holoviews/pull/4430))
+- Updated Introduction notebook
+  ([#4682](https://github.com/holoviz/holoviews/pull/4682))
+- Fixed releases urls
+  ([#4672](https://github.com/holoviz/holoviews/pull/4672))
+
+Compatibility:
+
+- Warning when there are multiple kdims on Chart elements
+  ([#4710](https://github.com/holoviz/holoviews/pull/4710))
+- Set histogram `normed` option to False by default
+  ([#4258](https://github.com/holoviz/holoviews/pull/4258))
+- The default colormap in holoviews is now 'kbc_r' instead of
+  'fire'; see issue
+  [#3500](https://github.com/holoviz/holoviews/issues/3500) for details.
+  This change was made mainly because the highest value of the fire colormap
+  is white, which meant data was often not visible against a white
+  background. To restore the old behavior you can set
+  `hv.config.default_cmap='fire'`, which you can do via the extension e.g.
+  `hv.extension('bokeh', config=dict(default_cmap='fire'))`. There is
+  also `hv.config.default_gridded_cmap` which you can set to 'fire' if
+  you wish to use the old colormap for the `Raster`, `Image` and
+  `QuadMesh` element types. The default `HeatMap` colormap has also been
+  set to 'kbc_r' for consistency and can be set back to the old value of
+  'RdYlBu_r' via `hv.config.default_heatmap_cmap`.
+
+Version 1.13.5
+==============
+**October 23, 2020**
+
+This version contains numerous bug fixes and a number of enhancements.
+Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
+@jonmmease, @kcpevey and @philippjfr.
+
+Enhancements:
+
+- Refactor of link selections streams
+  ([#4572](https://github.com/holoviz/holoviews/pull/4572))
+- Add ability to listen to dataset linked_selection
+  ([#4547](https://github.com/holoviz/holoviews/pull/4547))
+- Added `selected` parameter to Bokeh PathPlot
+  ([#4641](https://github.com/holoviz/holoviews/pull/4641))
+
+Bug fixes:
+
+- Improvements to iteration over Series in CuDF data backend
+  ([#4624](https://github.com/holoviz/holoviews/pull/4624))
+- Added .values_host calls needed for iteration in CuDF backend
+  ([#4646](https://github.com/holoviz/holoviews/pull/4646))
+- Fixed bug resetting ranges
+  ([#4654](https://github.com/holoviz/holoviews/pull/4654))
+- Fix bug matching elements to subplots in `DynamicMap` (#4649)
+  ([#4649](https://github.com/holoviz/holoviews/pull/4649))
+- Ensure consistent split `Violin` color assignment
+  ([#4650](https://github.com/holoviz/holoviews/pull/4650))
+- Ensure `PolyDrawCallback` always has vdim data
+  ([#4644](https://github.com/holoviz/holoviews/pull/4644))
+- Set default align in bokeh correctly
+  ([#4637](https://github.com/holoviz/holoviews/pull/4637))
+- Fixed deserialization of polygon/multi_line CDS data in bokeh backend
+  ([#4631](https://github.com/holoviz/holoviews/pull/4631))
+
+Documentation:
+
+- Improved `Bars` reference example, demonstrating the dataframe constructor
+  ([#4656](https://github.com/holoviz/holoviews/pull/4656))
+- Various documentation fixes
+  ([#4628](https://github.com/holoviz/holoviews/pull/4628))
+
+Version 1.13.4
+==============
+**September 8, 2020**
+
+This version fixes a large number of bugs particularly relating to
+linked selections. Additionally it introduces some enhancements laying
+the groundwork for future functionality. Many thanks for contribution
+by @ruoyu0088, @hamogu, @Dr-Irv, @jonmmease, @justinbois, @ahuang11,
+and the core maintainer @philippjfr.
+
+Bug fixes:
+
+- Fix the `.info` property to return the info
+  ([#4513](https://github.com/holoviz/holoviews/pull/4513))
+- Set `toolbar=True` the default in `save()`
+  ([#4518](https://github.com/holoviz/holoviews/pull/4518))
+- Fix bug when the default value is 0
+  ([#4537](https://github.com/holoviz/holoviews/pull/4537))
+- Ensure operations do not recursively accumulate pipelines
+  ([#4544](https://github.com/holoviz/holoviews/pull/4544))
+- Fixed whiskers for `BoxWhisker` so that they never point inwards
+  ([#4548](https://github.com/holoviz/holoviews/pull/4548))
+- Fix issues with boomeranging events when aspect is set
+  ([#4569](https://github.com/holoviz/holoviews/pull/4569))
+- Fix aspect if width/height has been constrained
+  ([#4579](https://github.com/holoviz/holoviews/pull/4579))
+- Fixed categorical handling in Geom plot types
+  ([#4575](https://github.com/holoviz/holoviews/pull/4575))
+- Do not attempt linking axes on annotations
+  ([#4584](https://github.com/holoviz/holoviews/pull/4584))
+- Reset `RangeXY` when `framewise` is set
+  ([#4585](https://github.com/holoviz/holoviews/pull/4585))
+- Add automatic collate for `Overlay` of `AdjointLayout`s
+  ([#4586](https://github.com/holoviz/holoviews/pull/4586))
+- Fixed color-ranging after box select on side histogram
+  ([#4587](https://github.com/holoviz/holoviews/pull/4587))
+- Use HTTPS throughout on homepage
+  ([#4588](https://github.com/holoviz/holoviews/pull/4588))
+
+Compatibility:
+
+- Compatibility with bokeh 2.2 for CDSCallback
+  ([#4568](https://github.com/holoviz/holoviews/pull/4568))
+- Handle `rcParam` deprecations in matplotlib 3.3
+  ([#4583](https://github.com/holoviz/holoviews/pull/4583))
+
+Enhancements:
+
+- Allow toggling the `selection_mode` on `link_selections` from the
+  context menu in the bokeh toolbar
+  ([#4604](https://github.com/holoviz/holoviews/pull/4604))
+- Optimize options machinery
+  ([#4545](https://github.com/holoviz/holoviews/pull/4545))
+- Add new `Derived` stream class
+  ([#4532](https://github.com/holoviz/holoviews/pull/4532))
+- Set Panel state to busy during callbacks
+  ([#4546](https://github.com/holoviz/holoviews/pull/4546))
+- Support positional stream args in `DynamicMap` callback
+  ([#4534](https://github.com/holoviz/holoviews/pull/4534))
+- `legend_opts` implemented
+  ([#4558](https://github.com/holoviz/holoviews/pull/4558))
+- Add `History` stream
+  ([#4554](https://github.com/holoviz/holoviews/pull/4554))
+- Updated spreading operation to support aggregate arrays
+  ([#4562](https://github.com/holoviz/holoviews/pull/4562))
+- Add ability to supply `dim` transforms for all dimensions
+  ([#4578](https://github.com/holoviz/holoviews/pull/4578))
+- Add 'vline' and 'hline' Hover mode
+  ([#4527](https://github.com/holoviz/holoviews/pull/4527))
+- Allow rendering to pgf in matplotlib
+  ([#4577](https://github.com/holoviz/holoviews/pull/4577))
+
+Version 1.13.3
+==============
+**June 23, 2020**
+
+This version introduces a number of enhancements of existing
+functionality, particularly for features introduced in 1.13.0,
+e.g. cuDF support and linked selections. In addition it introduces a
+number of important bug fixes. Many thanks for contribution by
+@kebowen730, @maximlt, @pretros1999, @alexbraditsas, @lelatbones,
+@flothesof, @ruoyu0088, @cool-PR and the core maintainers @jbednar and
+@philippjfr.
+
+Enhancements:
+
+- Expose `center` as an output rendering option
+  ([#4365](https://github.com/holoviz/holoviews/pull/4365))
+- Configurable throttling schemes for linked streams on the server
+  ([#4372](https://github.com/holoviz/holoviews/pull/4372))
+- Add support for lasso tool in linked selections
+  ([#4362](https://github.com/holoviz/holoviews/pull/4362))
+- Add support for NdOverlay in linked selections
+  ([#4481](https://github.com/holoviz/holoviews/pull/4481))
+- Add support for unwatching on `Params` stream
+  ([#4417](https://github.com/holoviz/holoviews/pull/4417))
+- Optimizations for the cuDF interface
+  ([#4436](https://github.com/holoviz/holoviews/pull/4436))
+- Add support for `by` aggregator in datashader operations
+  ([#4438](https://github.com/holoviz/holoviews/pull/4438))
+- Add support for cupy and dask histogram and box-whisker calculations
+  ([#4447](https://github.com/holoviz/holoviews/pull/4447))
+- Allow rendering HoloViews output as an ipywidget
+  ([#4404](https://github.com/holoviz/holoviews/pull/4404))
+- Allow `DynamicMap` callback to accept key dimension values as
+  variable kwargs
+  ([#4462](https://github.com/holoviz/holoviews/pull/4462))
+- Delete toolbar by default when rendering bokeh plot to PNG
+  ([#4422](https://github.com/holoviz/holoviews/pull/4422))
+- Ensure `Bounds` and `Lasso` events only trigger on mouseup
+  ([#4478](https://github.com/holoviz/holoviews/pull/4478))
+
+Bug fixes:
+
+- Eliminate circular references to allow immediate garbage collection
+  ([#4368](https://github.com/holoviz/holoviews/pull/4368),
+  [#4377](https://github.com/holoviz/holoviews/pull/4377))
+- Allow bytes as categories
+  ([#4392](https://github.com/holoviz/holoviews/pull/4392))
+- Fix handling of zero as log colormapper lower bound
+  ([#4383](https://github.com/holoviz/holoviews/pull/4383))
+- Do not compute data ranges if Dimension.values is supplied
+  ([#4416](https://github.com/holoviz/holoviews/pull/4416))
+- Fix RangeXY updates when zooming on only one axis
+  ([#4413](https://github.com/holoviz/holoviews/pull/4413))
+- Ensure that ranges do not bounce when data_aspect is set
+  ([#4431](https://github.com/holoviz/holoviews/pull/4431))
+- Fix bug specifying a rotation for Box element
+  ([#4460](https://github.com/holoviz/holoviews/pull/4460))
+- Fix handling of datetimes in bokeh RectanglesPlot
+  ([#4461](https://github.com/holoviz/holoviews/pull/4461))
+- Fix bug normalizing ranges across multiple plots when framewise=True
+  ([#4450](https://github.com/holoviz/holoviews/pull/4450))
+- Fix bug coloring adjoined histograms
+  ([#4458](https://github.com/holoviz/holoviews/pull/4458))
+- Fix issues with ranges bouncing when PlotSize stream is attached
+  ([#4480](https://github.com/holoviz/holoviews/pull/4480))
+- Fix bug with hv.extension(inline=False)
+  ([#4491](https://github.com/holoviz/holoviews/pull/4491))
+- Handle missing categories on split Violin plot
+  ([#4482](https://github.com/holoviz/holoviews/pull/4482))
+
 Version 1.13.2
 ==============
+**April 2, 2020**
 
 This is a minor patch release fixing a number of regressions
 introduced as part of the 1.13.x releases. Many thanks to the
@@ -17,7 +1174,7 @@ Bug fixes:
   ([#4337](https://github.com/holoviz/holoviews/pull/4337))
 - Fix color and alpha option on bokeh Arrow plot
   ([#4338](https://github.com/holoviz/holoviews/pull/4338))
-- Fix undefined JS varaibles in various bokeh links
+- Fix undefined JS variables in various bokeh links
   ([#4341](https://github.com/holoviz/holoviews/pull/4341))
 - Fix matplotlib >=3.2.1 deprecation warnings
   ([#4335](https://github.com/holoviz/holoviews/pull/4335))
@@ -26,6 +1183,7 @@ Bug fixes:
 
 Version 1.13.1
 ==============
+**March 25, 2020**
 
 This is a minor patch release to fix issues compatibility with the
 about to be released Bokeh 2.0.1 release. Additionally this release
@@ -71,6 +1229,7 @@ Documentation:
 
 Version 1.13.0
 ==============
+**March 20, 2020**
 
 This release is packed full of features and includes a general
 refactoring of how HoloViews renders widgets now built on top of the
@@ -222,6 +1381,7 @@ Migration notes:
 
 Version 1.12.7
 ==============
+**November 22, 2019**
 
 This a very minor hotfix release fixing an important bug related to
 axiswise normalization between plots. Many thanks to @srp3003 and
@@ -241,6 +1401,7 @@ Bug fixes:
 
 Version 1.12.6
 ==============
+**October 8, 2019**
 
 This is a minor release containing a large number of bug fixes thanks
 to the contributions from @joelostblom, @ahuang11, @chbrandt,
@@ -306,6 +1467,7 @@ Compatibility:
 
 Version 1.12.5
 ==============
+**August 14, 2019**
 
 This is a very minor bug fix release ensuring compatibility with recent
 releases of dask.
@@ -320,6 +1482,7 @@ Compatibility:
 
 Version 1.12.4
 ==============
+**August 4, 2019**
 
 This is a minor release with a number of bug and compatibility fixes
 as well as a number of enhancements.
@@ -388,6 +1551,7 @@ Backwards incompatible changes:
 
 Version 1.12.3
 ==============
+**May 20, 2019**
 
 This is a minor release primarily focused on a number of important bug
 fixes. Thanks to our users for reporting issues, and special thanks to
@@ -422,12 +1586,13 @@ Bug fixes:
 
 Version 1.12.2
 ==============
+**May 1, 2019**
 
 This is a minor release with a number of important bug fixes and a
 small number of enhancements. Many thanks to our users for reporting
 these issues, and special thanks to our internal developers
 @philippjfr, @jlstevens and @jonmease and external contributors
-incluing @ahuang11 and @arabidopsis for their contributions to the
+including @ahuang11 and @arabidopsis for their contributions to the
 code and the documentation.
 
 Enhancements:
@@ -468,6 +1633,7 @@ Backward compatibility:
 
 Version 1.12.1
 ==============
+**April 10, 2019**
 
 This is a minor release that pins to the newly released Bokeh 1.1 and
 adds support for parameter instances as streams:
@@ -479,6 +1645,7 @@ Enhancements:
 
 Version 1.12.0
 ==============
+**April 2, 2019**
 
 This release provides a number of exciting new features as well as a set
 of important bug fixes. Many thanks to our users for reporting these
@@ -531,6 +1698,7 @@ Bug fixes:
 
 Version 1.11.3
 ==============
+**February 25, 2019**
 
 This is the last micro-release in the 1.11 series providing a number
 of important fixes. Many thanks to our users for reporting these
@@ -575,6 +1743,7 @@ Enhancements:
 
 Version 1.11.2
 ==============
+**January 28, 2019**
 
 This is a minor bug fix release with a number of small but important
 bug fixes. Special thanks to @darynwhite for his contributions.
@@ -600,6 +1769,7 @@ Enhancements:
 
 Version 1.11.1
 ==============
+**January 17, 2019**
 
 This is a minor bug fix release with a number of important bug fixes,
 enhancements and updates to the documentation. Special thanks to
@@ -642,6 +1812,7 @@ Documentation:
 
 Version 1.11.0
 ==============
+**December 24, 2018**
 
 This is a major release containing a large number of features and API
 improvements. Specifically this release was devoted to improving the
@@ -744,6 +1915,8 @@ Deprecations:
 
 Version 1.10.8
 ==============
+**October 29, 2018**
+
 
 This a likely the last hotfix release in the 1.10.x series containing
 fixes for compatibility with bokeh 1.0 and matplotlib 3.0. It also
@@ -818,6 +1991,7 @@ Documentation:
 
 Version 1.10.7
 ==============
+**July 8, 2018**
 
 This a very minor hotfix release mostly containing fixes for datashader
 aggregation of empty datasets:
@@ -837,6 +2011,7 @@ Fixes:
 
 Version 1.10.6
 ==============
+**June 29, 2018**
 
 This another minor bug fix release in the 1.10 series and likely the
 last one before the upcoming 1.11 release. In addition to some important
@@ -869,6 +2044,7 @@ Fixes:
 
 Version 1.10.5
 ==============
+**June 5, 2018**
 
 This is a minor bug fix release containing a mixture of small
 enhancements, a number of important fixes and improved compatibility
@@ -914,6 +2090,7 @@ Compatibility:
 
 Version 1.10.4
 ==============
+**May 14, 2018**
 
 This is a minor bug fix release including a number of crucial fixes
 for issues reported by our users.
@@ -934,6 +2111,7 @@ Fixes:
 
 Version 1.10.3
 ==============
+**May 8, 2018**
 
 This is a minor bug fix release including a number of crucial fixes
 for issues reported by our users.
@@ -968,6 +2146,7 @@ API:
 
 Version 1.10.2
 ==============
+**April 30, 2018**
 
 This is a minor bug fix release with a number of small fixes for
 features and regressions introduced in 1.10:
@@ -1001,6 +2180,7 @@ Deprecations:
 
 Version 1.10.1
 ==============
+**April 20, 2018**
 
 This is a minor bug fix release with a number of fixes for regressions
 and minor bugs introduced in the 1.10.0 release:
@@ -1019,6 +2199,7 @@ Fixes:
 
 Version 1.10.0
 ==============
+**April 17, 2018**
 
 This is a major release with a large number of new features and bug
 fixes, as well as a small number of API changes. Many thanks to the
@@ -1160,6 +2341,7 @@ Changes affecting backwards compatibility:
 
 Version 1.9.5
 =============
+**March 2, 2018**
 
 This release includes a very small number of minor bugfixes and a new
 feature to simplify setting options in python:
@@ -1181,6 +2363,7 @@ Fixes:
 
 Version 1.9.4
 =============
+**February 16, 2018**
 
 This release contains a small number of important bug fixes:
 
@@ -1196,6 +2379,7 @@ This release contains a small number of important bug fixes:
 
 Version 1.9.3
 =============
+**February 11, 2018**
 
 This release contains a number of important bug fixes and minor
 enhancements.
@@ -1252,6 +2436,7 @@ API Changes:
 
 Version 1.9.2
 =============
+**December 11, 2017**
 
 This release is a minor bug fix release patching various issues
 which were found in the 1.9.1 release.
@@ -1286,6 +2471,7 @@ Fixes:
 
 Version 1.9.1
 =============
+**November 13, 2017**
 
 This release is a minor bug fix release patching various issues
 which were found in the 1.9.0 release.
@@ -1311,13 +2497,14 @@ Fixes:
 
 Version 1.9.0
 =============
+**November 3, 2017**
 
 This release includes a large number of long awaited features,
 improvements and bug fixes, including streaming and graph support,
 binary transfer of Bokeh data, fast Image/RGB regridding, first-class
 statistics elements and a complete overhaul of the geometry elements.
 
-Particular thanks to all users and contributers who have reported
+Particular thanks to all users and contributors who have reported
 issues and submitted pull requests.
 
 Features:
@@ -1397,8 +2584,9 @@ Changes affecting backwards compatibility:
 
 Version 1.8.4
 =============
+**September 13, 2017**
 
-This bugfix release includes a number of critical fixes for compatiblity
+This bugfix release includes a number of critical fixes for compatibility
 with Bokeh 0.12.9 along with various other bug fixes. Many thanks to our
 users for various detailed bug reports, feedback and contributions.
 
@@ -1423,6 +2611,7 @@ Fixes:
 
 Version 1.8.3
 =============
+**August 21, 2017**
 
 This bugfix release fixes a number of minor issues identified since the
 last release:
@@ -1450,6 +2639,7 @@ Fixes:
 
 Version 1.8.2
 =============
+**August 4, 2017**
 
 This bugfix release addresses a number of minor issues identified since
 the 1.8.1 release:
@@ -1476,6 +2666,7 @@ Fixes:
 
 Version 1.8.1
 =============
+**July 7, 2017**
 
 This bugfix release addresses a number of minor issues identified since
 the 1.8 release:
@@ -1516,6 +2707,7 @@ Fixes:
 
 Version 1.8.0
 =============
+**June 29, 2017**
 
 This release includes a complete and long awaited overhaul of the
 HoloViews documentation and website, with a new gallery, getting-started
@@ -1636,6 +2828,7 @@ Changes affecting backwards compatibility:
 
 Version 1.7.0
 =============
+**April 25, 2017**
 
 This version is a major new release incorporating seven months of work
 involving several hundred PRs and over 1700 commits. Highlights include
@@ -2010,6 +3203,7 @@ Changes affecting backwards compatibility:
 
 Version 1.6.2
 =============
+**August 23, 2016**
 
 Bug fix release with various fixes for gridded data backends and
 optimizations for Bokeh.
@@ -2044,6 +3238,7 @@ LayoutPlot.vspace = 0.3
 
 Version 1.6.1
 =============
+**July 27, 2016**
 
 Bug fix release following the 1.6 major release with major bug fixes for
 the grid data interfaces and improvements to the options system.
@@ -2063,6 +3258,7 @@ the grid data interfaces and improvements to the options system.
 
 Version 1.6
 ===========
+**July 14, 2016**
 
 A major release with an optional new data interface based on xarray,
 support for batching Bokeh plots for huge increases in performance,
@@ -2094,6 +3290,7 @@ Features and improvements:
 
 Version 1.5
 ===========
+**May 12, 2016**
 
 A major release with a large number of new features including new data
 interfaces for grid based data, major improvements for DynamicMaps and a
@@ -2148,6 +3345,7 @@ Backwards compatibility:
 
 Version 1.4.3
 =============
+**February 11, 2016**
 
 A minor bugfix release to patch a number of small but important issues.
 
@@ -2187,6 +3385,7 @@ Backwards compatibility:
 
 Version 1.4.2
 =============
+**February 7, 2016**
 
 Over the past month since the 1.4.1 release, we have improved our
 infrastructure for building documentation, updated the main website and
@@ -2232,6 +3431,7 @@ Fixes and improvements:
 
 Version 1.4.1
 =============
+**December 22, 2015**
 
 Over the past two weeks since the 1.4 release, we have implemented
 several important bug fixes and have made several usability
@@ -2279,6 +3479,7 @@ Notable bug fixes:
 
 Version 1.4.0
 =============
+**December 4, 2015**
 
 Over the past few months we have added several major new features and
 with the help of our users have been able to address a number of bugs
@@ -2352,6 +3553,7 @@ API Changes:
 
 Version 1.3.2
 =============
+**July 6, 2015**
 
 Minor bugfix release to address a small number of issues:
 
@@ -2369,6 +3571,7 @@ Bug fixes:
 
 Version 1.3.1
 =============
+**July 1, 2015**
 
 Minor bugfix release to address a number of issues that weren't caught
 in time for the 1.3.0 release with the addition of a small number of
@@ -2391,6 +3594,7 @@ Bug fixes:
 
 Version 1.3.0
 =============
+**June 27, 2015**
 
 Since the last release we closed over 34 issues and have made 380
 commits mostly focused on fixing bugs, cleaning up the API and working
@@ -2455,6 +3659,7 @@ API Changes
 
 Version 1.2.0
 =============
+**May 27, 2015**
 
 Since the last release we closed over 20 issues and have made 334
 commits, adding a ton of functionality and fixing a large range of bugs
@@ -2515,6 +3720,7 @@ Important bug fixes:
 
 Version 1.1.0
 =============
+**April 15, 2015**
 
 Highlights:
 
@@ -2541,6 +3747,7 @@ made.
 
 Version 1.0.1
 =============
+**March 26, 2015**
 
 Minor release addressing bugs and issues with 1.0.0.
 
@@ -2562,5 +3769,6 @@ Highlights:
 
 Version 1.0.0
 =============
+**March 16, 2015**
 
 First public release available on GitHub and PyPI.

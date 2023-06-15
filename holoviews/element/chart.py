@@ -2,10 +2,10 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import Dimension, Dataset, Element2D
-from ..core.data import GridInterface
+from ..core import Dimension, Dataset, Element2D, NdOverlay, Overlay
+from ..core.dimension import process_dimensions
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
-from .selection import Selection1DExpr, Selection2DExpr
+from .selection import Selection1DExpr
 
 
 class Chart(Dataset, Element2D):
@@ -41,13 +41,20 @@ class Chart(Dataset, Element2D):
     # Enables adding index if 1D array like data is supplied
     _auto_indexable_1d = True
 
+    _max_kdim_count = 1 # Remove once kdims has bounds=(1,1) instead of warning
     __abstract = True
 
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        params.update(process_dimensions(kdims, vdims))
+        if len(params.get('kdims', [])) == self._max_kdim_count + 1:
+            self.param.warning('Chart elements should only be supplied a single kdim')
+        super().__init__(data, **params)
+
     def __getitem__(self, index):
-        return super(Chart, self).__getitem__(index)
+        return super().__getitem__(index)
 
 
-class Scatter(Selection2DExpr, Chart):
+class Scatter(Selection1DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
@@ -76,7 +83,7 @@ class ErrorBars(Selection1DExpr, Chart):
     location along the x-axis and the first value dimension
     corresponds to the location along the y-axis and one or two
     extra value dimensions corresponding to the symmetric or
-    asymetric errors either along x-axis or y-axis. If two value
+    asymmetric errors either along x-axis or y-axis. If two value
     dimensions are given, then the last value dimension will be
     taken as symmetric errors. If three value dimensions are given
     then the last two value dimensions will be taken as negative and
@@ -98,7 +105,7 @@ class ErrorBars(Selection1DExpr, Chart):
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
-        Range of the y-dimension includes the symmetric or assymetric
+        Range of the y-dimension includes the symmetric or asymmetric
         error.
 
         Args:
@@ -126,8 +133,7 @@ class ErrorBars(Selection1DExpr, Chart):
             if not dimension_range:
                 return (lower, upper)
             return util.dimension_range(lower, upper, dim.range, dim.soft_range)
-        return super(ErrorBars, self).range(dim, data_range)
-
+        return super().range(dim, data_range)
 
 
 class Spread(ErrorBars):
@@ -136,14 +142,13 @@ class Spread(ErrorBars):
     confidence band in a 1D coordinate system. The key dimension(s)
     corresponds to the location along the x-axis and the value
     dimensions define the location along the y-axis as well as the
-    symmetric or assymetric spread.
+    symmetric or asymmetric spread.
     """
 
     group = param.String(default='Spread', constant=True)
 
 
-
-class Bars(Chart):
+class Bars(Selection1DExpr, Chart):
     """
     Bars is a Chart element representing categorical observations
     using the height of rectangular bars. The key dimensions represent
@@ -156,6 +161,7 @@ class Bars(Chart):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,3))
 
+    _max_kdim_count = 3
 
 
 class Histogram(Selection1DExpr, Chart):
@@ -179,39 +185,14 @@ class Histogram(Selection1DExpr, Chart):
 
     _binned = True
 
-    def __init__(self, data, edges=None, **params):
+    def __init__(self, data, **params):
         if data is None:
             data = []
-        if edges is not None:
-            self.param.warning(
-                "Histogram edges should be supplied as a tuple "
-                "along with the values, passing the edges will "
-                "be deprecated in holoviews 2.0.")
-            data = (edges, data)
-        elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
+        if (isinstance(data, tuple) and len(data) == 2 and
+            len(data[0])+1 == len(data[1])):
             data = data[::-1]
 
-        super(Histogram, self).__init__(data, **params)
-    def __setstate__(self, state):
-        """
-        Ensures old-style Histogram types without an interface can be unpickled.
-
-        Note: Deprecate as part of 2.0
-        """
-        if 'interface' not in state:
-            self.interface = GridInterface
-            x, y = state['_kdims_param_value'][0], state['_vdims_param_value'][0]
-            state['data'] = {x.name: state['data'][1], y.name: state['data'][0]}
-        super(Dataset, self).__setstate__(state)
-
-
-    @property
-    def values(self):
-        "Property to access the Histogram values provided for backward compatibility"
-        self.param.warning('Histogram.values is deprecated in favor of '
-                           'common dimension_values method.')
-        return self.dimension_values(1)
-
+        super().__init__(data, **params)
 
     @property
     def edges(self):
@@ -234,10 +215,9 @@ class Spikes(Selection1DExpr, Chart):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
 
-    vdims = param.List(default=[])
+    vdims = param.List(default=[], bounds=(0, None))
 
     _auto_indexable_1d = False
-
 
 
 class Area(Curve):
@@ -255,7 +235,7 @@ class Area(Curve):
     group = param.String(default='Area', constant=True)
 
     @classmethod
-    def stack(cls, areas):
+    def stack(cls, areas, baseline_name='Baseline'):
         """
         Stacks an (Nd)Overlay of Area or Curve Elements by offsetting
         their baselines. To stack a HoloMap or DynamicMap use the map
@@ -263,12 +243,22 @@ class Area(Curve):
         """
         if not len(areas):
             return areas
-        baseline = np.zeros(len(areas.values()[0]))
+        is_overlay = isinstance(areas, Overlay)
+        if is_overlay:
+            areas = NdOverlay({i: el for i, el in enumerate(areas)})
+        df = areas.dframe(multi_index=True)
+        levels = list(range(areas.ndims))
+        vdims = [[el.vdims[0], baseline_name] for el in areas]
+        baseline = None
         stacked = areas.clone(shared_data=False)
-        vdims = [areas.values()[0].vdims[0], 'Baseline']
-        for k, area in areas.items():
-            x, y = (area.dimension_values(i) for i in range(2))
-            stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims,
-                                    new_type=Area)
-            baseline = baseline + y
-        return stacked
+        for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims):
+            vdim = element_vdims[0]
+            sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
+            if baseline is None:
+                sdf[baseline_name] = 0
+            else:
+                sdf[vdim.name] = sdf[vdim.name] + baseline
+                sdf[baseline_name] = baseline
+            baseline = sdf[vdim.name]
+            stacked[key] = areas[key].clone(sdf, vdims=element_vdims)
+        return Overlay(stacked.values()) if is_overlay else stacked

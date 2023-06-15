@@ -1,13 +1,16 @@
-from __future__ import absolute_import, division, unicode_literals
+import sys
 
 import param
 import numpy as np
+from packaging.version import Version
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator
+from ...core.util import isfinite, match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
-from .element import ElementPlot, ColorbarPlot, OverlayPlot
+from ..util import categorical_legend
+from .chart import PointPlot
+from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import get_raster_array, mpl_version
 
@@ -18,6 +21,11 @@ class RasterBasePlot(ElementPlot):
         Raster elements respect the aspect ratio of the
         Images by default but may be set to an explicit
         aspect ratio or to 'square'.""")
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -30,14 +38,13 @@ class RasterBasePlot(ElementPlot):
     _plot_methods = dict(single='imshow')
 
     def get_extents(self, element, ranges, range_type='combined'):
-        extents = super(RasterBasePlot, self).get_extents(element, ranges, range_type)
+        extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
+        elif isinstance(element, Image):
+            return element.bounds.lbrt()
         else:
-            if isinstance(element, Image):
-                return element.bounds.lbrt()
-            else:
-                return element.extents
+            return element.extents
 
     def _compute_ticks(self, element, ranges):
         return None, None
@@ -51,7 +58,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
                   'filterrad', 'clims', 'norm']
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -97,8 +104,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         return axis_kwargs
 
 
-
-class RGBPlot(RasterBasePlot):
+class RGBPlot(RasterBasePlot, LegendPlot):
 
     style_opts = ['alpha', 'interpolation', 'visible', 'filterrad']
 
@@ -110,9 +116,29 @@ class RGBPlot(RasterBasePlot):
             data = data[::-1, ::-1]
             data = data.transpose([1, 0, 2])
             l, b, r, t = b, l, t, r
-        style['extent'] = [l, r, b, t]
+        if all(isfinite(e) for e in (l, b, r, t)):
+            style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
+        if data.shape[:2] == (0, 0):
+            data = np.zeros((1, 1, 4), dtype='uint8')
         return [data], style, {'xticks': xticks, 'yticks': yticks}
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        handles = super().init_artists(ax, plot_args, plot_kwargs)
+        if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
+            return handles
+        try:
+            legend = categorical_legend(self.current_frame, backend=self.backend)
+        except Exception:
+            return handles
+        if legend is None:
+            return handles
+        legend_params = {k: v for k, v in self.param.values().items() if k.startswith('legend')}
+        self._legend_plot = PointPlot(legend, axis=ax, fig=self.state,
+                                      keys=self.keys, dimensions=self.dimensions,
+                                      overlaid=1, **legend_params)
+        self._legend_plot.initialize_plot()
+        return handles
 
     def update_handles(self, key, axis, element, ranges, style):
         im = self.handles['artist']
@@ -123,10 +149,14 @@ class RGBPlot(RasterBasePlot):
         return axis_kwargs
 
 
-
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -141,6 +171,7 @@ class QuadMeshPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
+
         expanded = element.interface.irregular(element, element.kdims[0])
         edges = style.get('shading') != 'gouraud'
         coords = [element.interface.coords(element, d, ordered=True,
@@ -156,12 +187,11 @@ class QuadMeshPlot(ColorbarPlot):
         self._norm_kwargs(element, ranges, style, vdim)
         return tuple(cmesh_data), style, {}
 
-
     def init_artists(self, ax, plot_args, plot_kwargs):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
-        if colorbar and mpl_version < '3.1':
+        if colorbar and mpl_version < Version('3.1'):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
                 # Compatibility with mpl < 3
@@ -172,7 +202,6 @@ class QuadMeshPlot(ColorbarPlot):
             colorbar.update_normal(artist)
 
         return {'artist': artist, 'locs': locs}
-
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
@@ -198,14 +227,15 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     data_aspect = param.Parameter(precedence=-1)
     default_span = param.Parameter(precedence=-1)
     hooks = param.Parameter(precedence=-1)
-    finalize_hooks = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
     invert_zaxis = param.Parameter(precedence=-1)
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
+    legend_labels = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
+    legend_opts = param.Parameter(precedence=-1)
     legend_limit = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)
     logy = param.Parameter(precedence=-1)
@@ -230,8 +260,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
                  layout_num=1, **params):
-        top_level = keys is None
-        if top_level:
+        self.top_level = keys is None
+        if self.top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
         MPLPlot.__init__(self, dimensions=dimensions, keys=keys, **params)
 
@@ -248,7 +278,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             ykeys = [None]
         self._xkeys = list(dict.fromkeys(xkeys))
         self._ykeys = list(dict.fromkeys(ykeys))
-        
+
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
         self.fig_inches = self._get_size()

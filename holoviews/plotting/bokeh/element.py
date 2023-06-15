@@ -1,22 +1,24 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import warnings
 
 from ast import literal_eval
+from itertools import chain
 from types import FunctionType
 
 import param
 import numpy as np
 import bokeh
 import bokeh.plotting
-
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
-from bokeh.models import Renderer, Title, Legend, ColorBar, tools
+from bokeh.models import (
+    BinnedTicker, ColorBar, ColorMapper, CustomJS, EqHistColorMapper,
+    GlyphRenderer, Legend, Renderer, Title, tools,
+)
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, MercatorTickFormatter
+    TickFormatter, MercatorTickFormatter
 )
+from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
@@ -25,17 +27,19 @@ from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
 from bokeh.models.tools import Tool
-from bokeh.models.widgets import Panel, Tabs
+
+from packaging.version import Version
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph, VectorField, Path, Contours, Tiles
-from ...streams import Stream, Buffer, RangeXY, PlotSize
+from ...element import (
+    Annotation, Contours, Graph, Path, Tiles, VectorField
+)
+from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
-from .callbacks import PlotSizeCallback
+from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import BokehPlot
 from .styles import (
     base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
@@ -43,34 +47,42 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
+    TOOL_TYPES, bokeh_version, bokeh3, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type, remove_legend
+    compute_layout_properties, wrap_formatter, match_ax_type,
+    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook
 )
 
-if bokeh_version >= '2.0.1':
-    try:
-        TOOLS_MAP = Tool._known_aliases
-    except Exception:
-        TOOLS_MAP = TOOL_TYPES
-elif bokeh_version >= '2.0.0':
-    from bokeh.plotting._tools import TOOLS_MAP
+if bokeh3:
+    from bokeh.models.formatters import CustomJSTickFormatter
+    from bokeh.models.layouts import TabPanel
 else:
-    from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
+    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+    from bokeh.models.layouts import Panel as TabPanel
 
+try:
+    TOOLS_MAP = Tool._known_aliases
+except Exception:
+    TOOLS_MAP = TOOL_TYPES
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    active_tools = param.List(default=[], doc="""
+    active_tools = param.List(default=None, doc="""
         Allows specifying which tools are active by default. Note
         that only one tool per gesture type can be active, e.g.
         both 'pan' and 'box_zoom' are drag tools, so if both are
-        listed only the last one will be active.""")
+        listed only the last one will be active. As a default 'pan'
+        and 'wheel_zoom' will be used if the tools are enabled.""")
 
-    align = param.ObjectSelector(default=None, objects=['start', 'center', 'end'], doc="""
+    align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
+
+    autorange = param.ObjectSelector(default=None, objects=['x', 'y'], doc="""
+        Whether to auto-range along either the x- or y-axis, i.e.
+        when panning or zooming along the orthogonal axis it will
+        ensure all the data along the selected axis remains visible.""")
 
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
@@ -184,11 +196,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         'left', 'right', None.""")
 
     xformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     yformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     _categorical = False
@@ -206,10 +218,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
@@ -218,7 +230,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
+        self._js_on_data_callbacks = []
 
+        # Flag to check whether plot has been updated
+        self._updated = False
 
     def _hover_opts(self, element):
         if self.batched:
@@ -227,7 +242,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
-
 
     def _init_tools(self, element, callbacks=[]):
         """
@@ -242,7 +256,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         cb_tools, tool_names = [], []
         hover = False
         for cb in callbacks:
-            for handle in cb.models+cb.extra_models:
+            for handle in cb.models:
                 if handle and handle in TOOLS_MAP:
                     tool_names.append(handle)
                     if handle == 'hover':
@@ -259,6 +273,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             t for t in cb_tools + self.default_tools + self.tools
             if t not in tool_names]
 
+        tool_list = [
+            tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tl, **hover_opts)
+            if tl in ['vline', 'hline'] else tl for tl in tool_list
+        ]
+
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
@@ -274,6 +293,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
+
+        box_tools = [t for t in copied_tools if isinstance(t, tools.BoxSelectTool)]
+        if box_tools:
+            self.handles['box_select'] = box_tools[0]
+        lasso_tools = [t for t in copied_tools if isinstance(t, tools.LassoSelectTool)]
+        if lasso_tools:
+            self.handles['lasso_select'] = lasso_tools[0]
+
+        # Link the selection properties between tools
+        if box_tools and lasso_tools:
+            box_tools[0].js_link('mode', lasso_tools[0], 'mode')
+            lasso_tools[0].js_link('mode', box_tools[0], 'mode')
+
         return copied_tools
 
     def _update_hover(self, element):
@@ -308,7 +340,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
-
     def _merge_ranges(self, plots, xspecs, yspecs, xtype, ytype):
         """
         Given a list of other plots return axes that are shared
@@ -331,7 +362,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
 
-
     def _get_axis_dims(self, element):
         """Returns the dimensions corresponding to each axis.
 
@@ -345,11 +375,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             return dims + [None]
 
-
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element
-        el = element.traverse(lambda x: x, [Element])
+        el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
+        if isinstance(el, Graph):
+            el = el.nodes
 
         dims = self._get_axis_dims(el)
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
@@ -380,12 +411,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if xdims is not None and any(xdim.name in ranges and 'factors' in ranges[xdim.name] for xdim in xdims):
             categorical_x = True
         else:
-            categorical_x = any(isinstance(x, (util.basestring, bytes)) for x in (l, r))
+            categorical_x = any(isinstance(x, (str, bytes)) for x in (l, r))
 
         if ydims is not None and any(ydim.name in ranges and 'factors' in ranges[ydim.name] for ydim in ydims):
             categorical_y = True
         else:
-            categorical_y = any(isinstance(y, (util.basestring, bytes)) for y in (b, t))
+            categorical_y = any(isinstance(y, (str, bytes)) for y in (b, t))
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
@@ -396,10 +427,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 x_axis_type = 'auto'
                 categorical_x = True
             else:
-                if isinstance(el, Graph):
-                    xtype = el.nodes.get_dimension_type(xdims[0])
-                else:
-                    xtype = el.get_dimension_type(xdims[0])
+                xtype = el.get_dimension_type(xdims[0])
                 if ((xtype is np.object_ and issubclass(type(l), util.datetime_types)) or
                     xtype in util.datetime_types):
                     x_axis_type = 'datetime'
@@ -492,13 +520,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties.update(**self._plot_properties(key, element))
 
+        if bokeh3:
+            figure = bokeh.plotting.figure
+        else:
+            figure = bokeh.plotting.Figure
+
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
-            return bokeh.plotting.Figure(x_axis_type=x_axis_type,
-                                         y_axis_type=y_axis_type, title=title,
-                                         **properties)
+            return figure(x_axis_type=x_axis_type,
+                          y_axis_type=y_axis_type, title=title,
+                          **properties)
 
 
     def _plot_properties(self, key, element):
@@ -519,20 +552,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if aspect_props['aspect_ratio'] is None:
                 aspect_props['aspect_ratio'] = self.state.aspect_ratio
 
-        if self.dynamic and aspect_props['match_aspect']:
-            # Sync the plot size on dynamic plots to support accurate
-            # scaling of dimension ranges
-            plot_size = [s for s in self.streams if isinstance(s, PlotSize)]
-            callbacks = [c for c in self.callbacks if isinstance(c, PlotSizeCallback)]
-            if plot_size:
-                stream = plot_size[0]
-            elif callbacks:
-                stream = callbacks[0].streams[0]
-            else:
-                stream = PlotSize()
-                self.callbacks.append(PlotSizeCallback(self, [stream], None))
-            stream.add_subscriber(self._update_size)
-
         plot_props = {
             'align':         self.align,
             'margin':        self.margin,
@@ -550,26 +569,37 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.border is not None:
             for p in ['left', 'right', 'top', 'bottom']:
                 plot_props['min_border_'+p] = self.border
-        lod = dict(self.param.defaults().get('lod', {}), **self.lod)
+        lod = dict(self.param["lod"].default, **self.lod) if "lod" in self.param else self.lod
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
         return plot_props
 
-    def _update_size(self, width, height, scale):
-        self.state.frame_width = width
-        self.state.frame_height = height
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
-        for tool in self.active_tools:
-            if isinstance(tool, util.basestring):
-                tool_type = TOOL_TYPES[tool]
+        if plot is None or self.toolbar == "disable":
+            return
+
+        if self.active_tools is None:
+            enabled_tools = set(self.default_tools + self.tools)
+            active_tools =  {'pan', 'wheel_zoom'} & enabled_tools
+        else:
+            active_tools = self.active_tools
+
+        if active_tools == []:
+            # Removes Bokeh default behavior of having Pan enabled by default
+            plot.toolbar.active_drag = None
+
+        for tool in active_tools:
+            if isinstance(tool, str):
+                tool_type = TOOL_TYPES.get(tool, type(None))
                 matching = [t for t in plot.toolbar.tools
                             if isinstance(t, tool_type)]
                 if not matching:
-                    self.param.warning('Tool of type %r could not be found '
-                                       'and could not be activated by default.'
-                                       % tool)
+                    self.param.warning(
+                        f'Tool of type {tool!r} could not be found '
+                        'and could not be activated by default.'
+                    )
                     continue
                 tool = matching[0]
             if isinstance(tool, tools.Drag):
@@ -578,7 +608,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plot.toolbar.active_scroll = tool
             if isinstance(tool, tools.Tap):
                 plot.toolbar.active_tap = tool
-            if isinstance(tool, tools.Inspection):
+            if isinstance(tool, tools.InspectTool):
                 plot.toolbar.active_inspect.append(tool)
 
 
@@ -592,14 +622,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
         if title_font != '12pt':
-            opts['text_font_size'] = value(title_font)
+            opts['text_font_size'] = title_font
         return opts
 
 
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
-        elif isinstance(self.xaxis, util.basestring) and 'top' in self.xaxis:
+        elif isinstance(self.xaxis, str) and 'top' in self.xaxis:
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
@@ -608,7 +638,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif isinstance(self.yaxis, util.basestring) and'right' in self.yaxis:
+        elif isinstance(self.yaxis, str) and'right' in self.yaxis:
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right
@@ -627,21 +657,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare', 'bare'])):
-            axis_props['axis_label_text_font_size'] = value('0pt')
-            axis_props['major_label_text_font_size'] = value('0pt')
+            zero_pt = '0pt'
+            axis_props['axis_label_text_font_size'] = zero_pt
+            axis_props['major_label_text_font_size'] = zero_pt
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
         else:
-            labelsize = self._fontsize('%slabel' % axis).get('fontsize')
+            labelsize = self._fontsize(f'{axis}label').get('fontsize')
             if labelsize:
                 axis_props['axis_label_text_font_size'] = labelsize
-            ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
+            ticksize = self._fontsize(f'{axis}ticks', common=False).get('fontsize')
             if ticksize:
-                axis_props['major_label_text_font_size'] = value(ticksize)
+                axis_props['major_label_text_font_size'] = ticksize
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)
             ticker = self.xticks if axis == 'x' else self.yticks
+            if isinstance(ticker, np.ndarray):
+                ticker = list(ticker)
             if isinstance(ticker, Ticker):
                 axis_props['ticker'] = ticker
             elif isinstance(ticker, int):
@@ -653,19 +686,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     # because in JS the lookup fails otherwise
                     ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
                              for t in ticks]
-                    labels = [l if isinstance(l, util.basestring) else str(l)
+                    labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
-                    axis_props['ticker'] = FixedTicker(ticks=ticks)
-                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
                 else:
-                    axis_props['ticker'] = FixedTicker(ticks=ticker)
-
+                    ticks, labels = ticker, None
+                if ticks and util.isdatetime(ticks[0]):
+                    ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
+                axis_props['ticker'] = FixedTicker(ticks=ticks)
+                if labels is not None:
+                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)
             if formatter is not None:
                 axis_props['formatter'] = formatter
-        elif FuncTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
+        elif CustomJSTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
             formatter = None
             if dimension.value_format:
                 formatter = dimension.value_format
@@ -676,7 +711,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                        'converted to tick formatter. ' % dimension.name)
                 jsfunc = py2js_tickformatter(formatter, msg)
                 if jsfunc:
-                    formatter = FuncTickFormatter(code=jsfunc)
+                    formatter = CustomJSTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
 
         if axis == 'x':
@@ -684,13 +719,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif axis == 'y':
             axis_obj = plot.yaxis[0]
 
-        if self.geographic and self.projection == 'mercator':
+        if (self.geographic and isinstance(self.projection, str)
+            and self.projection == 'mercator'):
             dimension = 'lon' if axis == 'x' else 'lat'
             axis_props['ticker'] = MercatorTicker(dimension=dimension)
             axis_props['formatter'] = MercatorTickFormatter(dimension=dimension)
             box_zoom = self.state.select(type=tools.BoxZoomTool)
             if box_zoom:
                 box_zoom[0].match_aspect = True
+            wheel_zoom = self.state.select(type=tools.WheelZoomTool)
+            if wheel_zoom:
+                wheel_zoom[0].zoom_on_axis = False
         elif isinstance(axis_obj, CategoricalAxis):
             for key in list(axis_props):
                 if key.startswith('major_label'):
@@ -701,7 +740,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # major ticks are actually minor ticks in a categorical
             # so if user inputs minor ticks sizes, then use that;
             # else keep major (group) == minor (subgroup)
-            msize = self._fontsize('minor_{0}ticks'.format(axis),
+            msize = self._fontsize(f'minor_{axis}ticks',
                 common=False).get('fontsize')
             if msize is not None:
                 axis_props['major_label_text_font_size'] = msize
@@ -849,11 +888,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options.get('width'))
         fixed_height = (self.frame_height or options.get('height'))
+        constrained_width = options.get('min_width') or options.get('max_width')
+        constrained_height = options.get('min_height') or options.get('max_height')
 
         data_aspect = (self.aspect == 'equal' or self.data_aspect)
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+        range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
 
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
@@ -865,7 +907,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
 
-            if self.drawn or (fixed_width and fixed_height):
+            if self.drawn or (fixed_width and fixed_height) or (constrained_width or constrained_height):
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
@@ -876,14 +918,31 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     frame_aspect = plot.frame_height/plot.frame_width
 
-                range_stream = [s for s in self.streams if isinstance(s, RangeXY)]
-                if range_stream and range_stream[0]._triggering:
+                if self.drawn:
+                    current_l, current_r = plot.x_range.start, plot.x_range.end
+                    current_b, current_t = plot.y_range.start, plot.y_range.end
+                    current_xspan, current_yspan = (current_r-current_l), (current_t-current_b)
+                else:
+                    current_l, current_r, current_b, current_t = l, r, b, t
+                    current_xspan, current_yspan = xspan, yspan
+
+                if any(rs._triggering for rs in range_streams):
                     # If the event was triggered by a RangeXY stream
                     # event we want to get the latest range span
                     # values so we do not accidentally trigger a
                     # loop of events
-                    xspan = (plot.x_range.end-plot.x_range.start)
-                    yspan = (plot.y_range.end-plot.y_range.start)
+                    l, r, b, t = current_l, current_r, current_b, current_t
+                    xspan, yspan = current_xspan, current_yspan
+
+                size_streams = [s for s in self.streams if isinstance(s, PlotSize)]
+                if any(ss._triggering for ss in size_streams) and self._updated:
+                    # Do not trigger on frame size changes, except for
+                    # the initial one which can be important if width
+                    # and/or height constraints have forced different
+                    # aspect. After initial event we skip because size
+                    # changes can trigger event loops if the tick
+                    # labels change the canvas size
+                    return
 
                 desired_xspan = yspan*(ratio/frame_aspect)
                 desired_yspan = xspan/(ratio/frame_aspect)
@@ -892,18 +951,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     not (util.isfinite(xspan) and util.isfinite(yspan))):
                     pass
                 elif desired_yspan >= yspan:
+                    desired_yspan = current_xspan/(ratio/frame_aspect)
                     ypad = (desired_yspan-yspan)/2.
                     b, t = b-ypad, t+ypad
                     yupdate = True
                 else:
+                    desired_xspan = current_yspan*(ratio/frame_aspect)
                     xpad = (desired_xspan-xspan)/2.
                     l, r = l-xpad, r+xpad
                     xupdate = True
             elif not (fixed_height and fixed_width):
                 # Set initial aspect
                 aspect = self.get_aspect(xspan, yspan)
-                width = plot.frame_width or plot.plot_width or 300
-                height = plot.frame_height or plot.plot_height or 300
+                width = plot.frame_width or plot.width or 300
+                height = plot.frame_height or plot.height or 300
 
                 if not (fixed_width or fixed_height) and not self.responsive:
                     fixed_height = True
@@ -911,11 +972,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if fixed_height:
                     plot.frame_height = height
                     plot.frame_width = int(height/aspect)
-                    plot.plot_width, plot.plot_height = None, None
+                    plot.width, plot.height = None, None
                 elif fixed_width:
                     plot.frame_width = width
                     plot.frame_height = int(width*aspect)
-                    plot.plot_width, plot.plot_height = None, None
+                    plot.width, plot.height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
 
@@ -925,6 +986,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 box_zoom.match_aspect = True
             if scroll_zoom:
                 scroll_zoom.zoom_on_axis = False
+        elif any(rs._triggering for rs in range_streams):
+            xupdate, yupdate = False, False
 
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
@@ -953,7 +1016,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 low, high = util.max_range([(low, high), shared])
             if invert: low, high = high, low
             if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
-                low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
+                low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
                 self.param.warning(
                     "Logarithmic axis range encountered value less "
                     "than or equal to zero, please supply explicit "
@@ -976,6 +1039,115 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if invert: factors = factors[::-1]
             axis_range.factors = factors
 
+    def _setup_autorange(self):
+        """
+        Sets up a callback which will iterate over available data
+        renderers and auto-range along one axis.
+        """
+        if not isinstance(self, OverlayPlot) and not self.apply_ranges:
+            return
+
+        if self.autorange is None:
+            return
+        dim = self.autorange
+        if dim == 'x':
+            didx = 0
+            odim = 'y'
+            invert = self.invert_xaxis
+        else:
+            didx = 1
+            odim = 'x'
+            invert = self.invert_yaxis
+        if not self.padding:
+            p0, p1 = 0, 0
+        elif isinstance(self.padding, tuple):
+            pad = self.padding[didx]
+            if isinstance(pad, tuple):
+                p0, p1 = pad
+            else:
+                p0, p1 = pad, pad
+        else:
+            p0, p1 = self.padding, self.padding
+
+        if dim == 'x':
+            lower, upper = self.xlim
+            lower = None if (lower is None) or np.isnan(lower) else lower
+            upper = None if (upper is None) or np.isnan(upper) else upper
+
+        else:
+            lower, upper = self.ylim
+            lower = None if (lower is None) or np.isnan(lower) else lower
+            upper = None if (upper is None) or np.isnan(upper) else upper
+
+        # Clean this up in bokeh 3.0 using View.find_one API
+        callback = CustomJS(code=f"""
+        const cb = function() {{
+          const ref = plot.id
+
+          const find = (view) => {{
+            let iterable = view.child_views === undefined ? []  : view.child_views
+            for (const sv of iterable) {{
+              if (sv.model.id == ref)
+                return sv
+              const obj = find(sv)
+              if (obj !== null)
+                return obj
+            }}
+            return null
+          }}
+          let plot_view = null;
+          for (const root of plot.document.roots()) {{
+            const root_view = window.Bokeh.index[root.id]
+            if (root_view === undefined)
+              return
+            plot_view = find(root_view)
+            if (plot_view != null)
+              break
+          }}
+          if (plot_view == null)
+            return
+          let [vmin, vmax] = [Infinity, -Infinity]
+          for (const dr of plot.data_renderers) {{
+            const renderer = plot_view.renderer_view(dr)
+            const glyph_view = renderer.glyph_view
+
+            if (!renderer.glyph.model.tags.includes('no_apply_ranges')) {{
+              const index = glyph_view.index.index
+              for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
+                const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
+                if ({odim}0 > plot.{odim}_range.start && {odim}1 < plot.{odim}_range.end) {{
+                  vmin = Math.min(vmin, {dim}0)
+                  vmax = Math.max(vmax, {dim}1)
+                }}
+              }}
+            }}
+          }}
+
+          vmin = {"vmin" if lower is None else lower}
+          vmax = {"vmax" if upper is None else upper}
+
+          const invert = {str(invert).lower()}
+          const span = vmax-vmin
+          const lower = vmin-(span*{p0})
+          const upper = vmax+(span*{p1})
+          const [start, end] = invert ? [upper, lower] : [lower, upper]
+          const start_finite = window.Number.isFinite(start)
+          const end_finite = window.Number.isFinite(end)
+
+          if (start == end) {{
+            return
+          }}
+
+          if (start_finite && end_finite)  {{
+            plot.{dim}_range.setv({{start, end}})
+          }}
+        }}
+        // The plot changes will not propagate to the glyph until
+        // after the data change event has occurred.
+        setTimeout(cb, 0);
+        """, args={'plot': self.state})
+        self.state.js_on_event('rangesupdate', callback)
+        self._js_on_data_callbacks.append(callback)
 
     def _categorize_data(self, data, cols, dims):
         """
@@ -987,7 +1159,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_axes:
             cols = cols[::-1]
             dims = dims[:2][::-1]
-        ranges = [self.handles['%s_range' % ax] for ax in 'xy']
+        ranges = [self.handles[f'{ax}_range'] for ax in 'xy']
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
@@ -1057,24 +1229,33 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a Bokeh glyph object.
         """
+        mapping['tags'] = ['apply_ranges' if self.apply_ranges else 'no_apply_ranges']
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         if isinstance(plot_method, tuple):
             # Handle alternative plot method for flipped axes
             plot_method = plot_method[int(self.invert_axes)]
+        if 'legend_field' in properties and 'legend_label' in properties:
+            del properties['legend_label']
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
+
+
+    def _element_transform(self, transform, element, ranges):
+        return transform.apply(element, ranges=ranges, flat=True)
 
 
     def _apply_transforms(self, element, data, ranges, style, group=None):
         new_style = dict(style)
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if validate(k, v) == True:
                     continue
-                elif v in element or (isinstance(element, Graph) and v in element.nodes):
-                    v = dim(v)
+                elif v in element:
+                    v = dim(element.get_dimension(v))
+                elif isinstance(element, Graph) and v in element.nodes:
+                    v = dim(element.nodes.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
                     v = dim([d for d in self.overlay_dims if d==v][0])
 
@@ -1083,22 +1264,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
                 self.param.warning(
-                    'Specified %s dim transform %r could not be applied, '
-                    'as not all dimensions could be resolved.' % (k, v))
+                    'Specified {} dim transform {!r} could not be applied, '
+                    'as not all dimensions could be resolved.'.format(k, v))
                 continue
 
             if v.dimension in self.overlay_dims:
                 ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
-            elif isinstance(element, Path) and not isinstance(element, Contours):
-                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
-                                      for el in element.split()])
             else:
-                val = v.apply(element, ranges=ranges, flat=True)
+                val = self._element_transform(v, element, ranges)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
-                ((not 'color' in k or validate('color', val)) or k in self._nonvectorized_styles)):
+                (('color' not in k or validate('color', val)) or k in self._nonvectorized_styles)):
                 val = val[0]
 
             if not util.isscalar(val):
@@ -1136,8 +1314,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMmb'
+            colormap = style.get(prefix+'cmap')
             if ('color' in k and isinstance(val, util.arraylike_types) and
-                (numeric or not validate('color', val))):
+                (numeric or not validate('color', val) or isinstance(colormap, dict))):
                 kwargs = {}
                 if val.dtype.kind not in 'ifMu':
                     range_key = dim_range_key(v)
@@ -1151,19 +1330,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
+                field = k
                 categorical = isinstance(cmapper, CategoricalColorMapper)
-                if categorical and val.dtype.kind in 'ifMub':
-                    if v.dimension in element:
-                        formatter = element.get_dimension(v.dimension).pprint_value
-                    else:
-                        formatter = str
-                    field = k + '_str__'
-                    data[k+'_str__'] = [formatter(d) for d in val]
-                else:
-                    field = k
-                if categorical and getattr(self, 'show_legend', False):
-                    legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-                    new_style[legend_prop] = field
+
+                if categorical:
+                    if val.dtype.kind in 'ifMub':
+                        field = k + '_str__'
+                        if v.dimension in element:
+                            formatter = element.get_dimension(v.dimension).pprint_value
+                        else:
+                            formatter = str
+                        data[field] = [formatter(d) for d in val]
+                    if getattr(self, 'show_legend', False):
+                        legend_labels = getattr(self, 'legend_labels', False)
+                        if legend_labels:
+                            label_field = f'_{field}_labels'
+                            data[label_field] = [legend_labels.get(v, v) for v in val]
+                            new_style['legend_field'] = label_field
+                        else:
+                            new_style['legend_field'] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
@@ -1214,8 +1399,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 legend = element.label
             if legend and self.overlaid:
-                legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
-                properties[legend_prop] = legend
+                properties['legend_label'] = legend
         return properties
 
 
@@ -1224,9 +1408,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for gtype in ((glyph_type, '') if glyph_type else ('',)):
             for prop in ('color', 'alpha'):
                 glyph_prop = properties.get(gtype+prop)
-                if glyph_prop and ('line_'+prop not in glyph_props or gtype):
+                if glyph_prop is not None and ('line_'+prop not in glyph_props or gtype):
                     glyph_props['line_'+prop] = glyph_prop
-                if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
+                if glyph_prop is not None and ('fill_'+prop not in glyph_props or gtype):
                     glyph_props['fill_'+prop] = glyph_prop
 
             props = {k[len(gtype):]: v for k, v in glyph_props.items()
@@ -1242,7 +1426,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        legend_props = ('legend_field', 'legend_label') if bokeh_version >= '1.3.5' else ('legend',)
+        legend_props = ('legend_field', 'legend_label')
         for lp in legend_props:
             legend = merged.pop(lp, None)
             if legend is not None:
@@ -1252,6 +1436,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
+                if glyph == 'auto':
+                    base_glyph = renderer.glyph
+                    props = base_glyph.properties_with_values()
+                    glyph = type(base_glyph)(**{k: v for k, v in props.items()
+                                                if not prop_is_none(v)})
+                    setattr(renderer, glyph_type+'glyph', glyph)
             if not glyph or (not renderer and glyph_type):
                 continue
             filtered = self._filter_properties(merged, glyph_type, allowed_properties)
@@ -1259,8 +1449,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # Ensure that data is populated before updating glyph
             dataspecs = glyph.dataspecs()
             for spec in dataspecs:
-                new_spec = filtered.get(spec)
-                old_spec = getattr(glyph, spec)
+                new_spec = property_to_dict(filtered.get(spec))
+                old_spec = property_to_dict(getattr(glyph, spec))
                 new_field = new_spec.get('field') if isinstance(new_spec, dict) else new_spec
                 old_field = old_spec.get('field') if isinstance(old_spec, dict) else old_spec
                 if (data is None) or (new_field not in data or new_field in source.data or new_field == old_field):
@@ -1281,10 +1471,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                event = ModelChangedEvent(self.document, source, 'data',
-                                          source.data, empty_data, empty_data,
-                                          setter='empty')
-                self.document._held_events.append(event)
+                if bokeh3:
+                    event = ModelChangedEvent(
+                        document=self.document,
+                        model=source,
+                        attr='data',
+                        new=empty_data,
+                        setter='empty'
+                    )
+                else:
+                    event = ModelChangedEvent(
+                        self.document, source, 'data', source.data, empty_data, empty_data, setter='empty'
+                    )
+                self.document.callbacks._held_events.append(event)
 
         if legend is not None:
             for leg in self.state.legend:
@@ -1316,18 +1515,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
-        if not isinstance(hover.tooltips, util.basestring) and 'hv_created' in hover.tags:
+        if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
                 key = '@{%s}' % k
-                if key in hover.formatters:
-                    continue
                 if ((isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
                     (len(values) and isinstance(values[0], util.datetime_types))):
                     hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
                     hover.formatters[key] = "datetime"
+
         if hover.renderers == 'auto':
             hover.renderers = []
-        hover.renderers.append(renderer)
+        if renderer not in hover.renderers:
+            hover.renderers.append(renderer)
 
     def _init_glyphs(self, plot, element, ranges, source):
         style_element = element.last if self.batched else element
@@ -1351,6 +1550,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['selected'] = source.selected
 
         properties = self._glyph_properties(plot, style_element, source, ranges, style)
+        if 'legend_label' in properties and 'legend_field' in mapping:
+            mapping.pop('legend_field')
+
         with abbreviated_exception():
             renderer, glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph'] = glyph
@@ -1391,6 +1593,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
 
+        if self.autorange:
+            self._setup_autorange()
         self._init_glyphs(plot, element, ranges, source)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
@@ -1399,19 +1603,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for cb in self.callbacks:
             cb.initialize()
 
+        if self.top_level:
+            self.init_links()
+
         if not self.overlaid:
             self._set_active_tools(plot)
             self._process_legend()
+            self._setup_data_callbacks(plot)
         self._execute_hooks(element)
 
         self.drawn = True
 
-        trigger = self._trigger
-        self._trigger = []
-        Stream.trigger(trigger)
-
         return plot
 
+    def _setup_data_callbacks(self, plot):
+        if not self._js_on_data_callbacks:
+            return
+        for renderer in plot.select({'type': GlyphRenderer}):
+            cds = renderer.data_source
+            for cb in self._js_on_data_callbacks:
+                if cb not in cds.js_property_callbacks.get('change:data', []):
+                    cds.js_on_change('data', cb)
 
     def _update_glyphs(self, element, ranges, style):
         plot = self.handles['plot']
@@ -1446,18 +1658,41 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
+            if 'visible' in style and hasattr(renderer, 'visible'):
+                renderer.visible = style['visible']
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping, glyph, source, data)
         elif not self.static_source:
             self._update_datasource(source, data)
 
 
+    def _reset_ranges(self):
+        """
+        Resets RangeXY streams if norm option is set to framewise
+        """
+        # Skipping conditional to temporarily revert fix (see https://github.com/holoviz/holoviews/issues/4396)
+        # This fix caused PlotSize change events to rerender
+        # rasterized/datashaded with the full extents which was wrong
+        if self.overlaid or True:
+            return
+        for el, callbacks in self.traverse(lambda x: (x.current_frame, x.callbacks)):
+            if el is None:
+                continue
+            for callback in callbacks:
+                norm = self.lookup_options(el, 'norm').options
+                if norm.get('framewise'):
+                    for s in callback.streams:
+                        if isinstance(s, RangeXY) and not s._triggering:
+                            s.reset()
+
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
+        self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
@@ -1489,7 +1724,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ranges = self.compute_ranges(self.hmap, key, ranges)
         else:
             self.ranges.update(ranges)
-        self.param.set_param(**self.lookup_options(style_element, 'plot').options)
+        self.param.update(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
         plot = self.handles['plot']
@@ -1497,12 +1732,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
             self._set_active_tools(plot)
+            self._setup_data_callbacks(plot)
+            self._updated = True
 
         if 'hover' in self.handles:
             self._update_hover(element)
+            if 'cds' in self.handles:
+                cds = self.handles['cds']
+                self._postprocess_hover(renderer, cds)
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
+
+
+    def _execute_hooks(self, element):
+        dtype_fix_hook(self, element)
+        super()._execute_hooks(element)
 
 
     def model_changed(self, model):
@@ -1590,7 +1835,7 @@ class CompositeElementPlot(ElementPlot):
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
-                self._draw_colorbar(plot, v, k[:-12])
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
 
 
     def _process_properties(self, key, properties, mapping):
@@ -1684,21 +1929,33 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
-    color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
+    color_levels = param.ClassSelector(default=None, class_=(int, list, range), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
+    cformatter = param.ClassSelector(
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the colorbar axis.""")
+
     clabel = param.String(default=None, doc="""
-        An explicit override of the color bar label, if set takes precedence
+        An explicit override of the color bar label. If set, takes precedence
         over the title key in colorbar_opts.""")
 
     clim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
+        If specified, takes precedence over data and dimension ranges.""")
+
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     cformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
+
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
@@ -1723,8 +1980,16 @@ class ColorbarPlot(ElementPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
-    logz  = param.Boolean(default=False, doc="""
+    logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
+
+    rescale_discrete_levels = param.Boolean(default=True, doc="""
+        If ``cnorm='eq_hist`` and there are only a few discrete values,
+        then ``rescale_discrete_levels=True`` decreases the lower
+        limit of the autoranged span so that the values are rendering
+        towards the (more visible) top of the palette, thus
+        avoiding washout of the lower values.  Has no effect if
+        ``cnorm!=`eq_hist``.""")
 
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
@@ -1739,7 +2004,9 @@ class ColorbarPlot(ElementPlot):
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
-        if LogColorMapper and isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
+        if isinstance(color_mapper, EqHistColorMapper):
+            ticker = BinnedTicker(mapper=color_mapper)
+        elif isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
             ticker = LogTicker()
         else:
             ticker = BasicTicker()
@@ -1786,12 +2053,21 @@ class ColorbarPlot(ElementPlot):
 
         # Attempt to find matching colormapper on the adjoined plot
         if self.adjoined:
-            cmapper_name = dim_name+name
-            cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
-                                                         x.handles.get(name, x.handles.get(cmapper_name))))
-            cmappers = [cmap for cdim, cmap in cmappers if cdim == eldim]
+            cmappers = self.adjoined.traverse(
+                lambda x: (x.handles.get('color_dim'),
+                           x.handles.get(name),
+                           [v for v in x.handles.values()
+                            if isinstance(v, ColorMapper)])
+                )
+            cmappers = [(cmap, mappers) for cdim, cmap, mappers in cmappers
+                        if cdim == eldim]
             if cmappers:
-                cmapper = cmappers[0]
+                cmapper, mappers  = cmappers[0]
+                if not cmapper:
+                    if mappers and mappers[0]:
+                        cmapper = mappers[0]
+                    else:
+                        return None
                 self.handles['color_mapper'] = cmapper
                 return cmapper
             else:
@@ -1803,7 +2079,10 @@ class ColorbarPlot(ElementPlot):
             if all(util.isfinite(cl) for cl in self.clim):
                 low, high = self.clim
             elif dim_name in ranges:
-                low, high = ranges[dim_name]['combined']
+                if self.clim_percentile and 'robust' in ranges[dim_name]:
+                    low, high = ranges[dim_name]['robust']
+                else:
+                    low, high = ranges[dim_name]['combined']
                 dlow, dhigh = ranges[dim_name]['data']
                 if (util.is_int(low, int_like=True) and
                     util.is_int(high, int_like=True) and
@@ -1826,8 +2105,7 @@ class ColorbarPlot(ElementPlot):
         cmap = colors or style.get(prefix+'cmap', style.get('cmap', 'viridis'))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
-            if factors is None:
-                factors = list(cmap)
+            factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
             if isinstance(eldim, dim):
                 if eldim.dimension in element:
@@ -1873,7 +2151,7 @@ class ColorbarPlot(ElementPlot):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         color = style.get(name, None)
-        if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for '%s' option and "
                 "declare a color_index; ignoring the color_index."
@@ -1906,8 +2184,7 @@ class ColorbarPlot(ElementPlot):
 
         data[field] = cdata
         if factors is not None and self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-            mapping[legend_prop] = field
+            mapping['legend_field'] = field
         mapping[name] = {'field': field, 'transform': mapper}
 
         return data, mapping
@@ -1915,8 +2192,10 @@ class ColorbarPlot(ElementPlot):
 
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
-            colormapper = LinearColorMapper
-            if self.logz:
+            opts = {}
+            if self.cnorm == 'linear':
+                colormapper = LinearColorMapper
+            if self.cnorm == 'log' or self.logz:
                 colormapper = LogColorMapper
                 if util.is_int(low) and util.is_int(high) and low == 0:
                     low = 1
@@ -1926,10 +2205,14 @@ class ColorbarPlot(ElementPlot):
                 elif util.is_number(low) and low <= 0:
                     self.param.warning(
                         "Log color mapper lower bound <= 0 and will not "
-                        "render corrrectly. Ensure you set a positive "
+                        "render correctly. Ensure you set a positive "
                         "lower bound on the color dimension or using "
                         "the `clim` option."
                     )
+            elif self.cnorm == 'eq_hist':
+                colormapper = EqHistColorMapper
+                if bokeh_version > Version('2.4.2'):
+                    opts['rescale_discrete_levels'] = self.rescale_discrete_levels
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
@@ -1937,7 +2220,6 @@ class ColorbarPlot(ElementPlot):
                 offset = self.default_span / 2
                 low -= offset
                 high += offset
-            opts = {}
             if util.isfinite(low):
                 opts['low'] = low
             if util.isfinite(high):
@@ -1957,16 +2239,29 @@ class ColorbarPlot(ElementPlot):
         """
         Returns a Bokeh glyph object and optionally creates a colorbar.
         """
-        ret = super(ColorbarPlot, self)._init_glyph(plot, mapping, properties)
+        ret = super()._init_glyph(plot, mapping, properties)
         if self.colorbar:
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
-                self._draw_colorbar(plot, v, k[:-12])
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
         return ret
 
 
 class LegendPlot(ElementPlot):
+
+    legend_cols = param.Integer(default=0, bounds=(0, None), doc="""
+        Number of columns for legend.""")
+
+    legend_labels = param.Dict(default=None, doc="""
+        Label overrides.""")
+
+    legend_muted = param.Boolean(default=False, doc="""
+        Controls whether the legend entries are muted by default.""")
+
+    legend_offset = param.NumericTuple(default=(0, 0), doc="""
+        If legend is placed outside the axis, this determines the
+        (width, height) offset in pixels from the original position.""")
 
     legend_position = param.ObjectSelector(objects=["top_right",
                                                     "top_left",
@@ -1980,18 +2275,12 @@ class LegendPlot(ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
-    legend_muted = param.Boolean(default=False, doc="""
-        Controls whether the legend entries are muted by default.""")
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
 
-    legend_offset = param.NumericTuple(default=(0, 0), doc="""
-        If legend is placed outside the axis, this determines the
-        (width, height) offset in pixels from the original position.""")
-
-    legend_cols = param.Integer(default=False, doc="""
-       Whether to lay out the legend as columns.""")
-
-    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
-                    'bottom': 'below'}
+    legend_specs = {
+        'right': 'right', 'left': 'left', 'top': 'above', 'bottom': 'below'
+    }
 
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
@@ -2005,26 +2294,31 @@ class LegendPlot(ElementPlot):
             or not self.show_legend):
             legend.items[:] = []
         else:
-            plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+            if bokeh3 and self.legend_cols:
+                plot.legend.nrows = self.legend_cols
+            else:
+                plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+
             pos = self.legend_position
             if pos in self.legend_specs:
                 plot.legend[:] = []
                 legend.location = self.legend_offset
-                if pos in ['top', 'bottom']:
+                if pos in ['top', 'bottom'] and not self.legend_cols:
                     plot.legend.orientation = 'horizontal'
                 plot.add_layout(legend, self.legend_specs[pos])
             else:
                 legend.location = pos
 
-            # Apply muting
+            # Apply muting and misc legend opts
             for leg in plot.legend:
+                leg.update(**self.legend_opts)
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
 
 
 
-class AnnotationPlot(object):
+class AnnotationPlot:
     """
     Mix-in plotting subclass for AnnotationPlots which do not have a legend.
     """
@@ -2075,10 +2369,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                            if isinstance(p, LegendPlot) and
                            not isinstance(p, OverlayPlot))
         non_annotation = [p for p in subplots if not
-                          (isinstance(p, OverlayPlot) or isinstance(p, AnnotationPlot))]
+                          isinstance(p, (AnnotationPlot, OverlayPlot))]
         if (not self.show_legend or len(plot.legend) == 0 or
             (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
-            return super(OverlayPlot, self)._process_legend()
+            return super()._process_legend()
         elif not plot.legend:
             return
 
@@ -2097,10 +2391,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             options[k] = v
 
         pos = self.legend_position
-        orientation = 'horizontal' if self.legend_cols else 'vertical'
-        if pos in ['top', 'bottom']:
-            orientation = 'horizontal'
-        options['orientation'] = orientation
+        if not bokeh3:
+            options['orientation'] = 'horizontal' if self.legend_cols else 'vertical'
+        if pos in ['top', 'bottom'] and not self.legend_cols:
+            options['orientation'] = 'horizontal'
 
         if overlay is not None and overlay.kdims:
             title = ', '.join([d.label for d in overlay.kdims])
@@ -2108,6 +2402,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         options.update(self._fontsize('legend', 'label_text_font_size'))
         options.update(self._fontsize('legend_title', 'title_text_font_size'))
+        if bokeh3 and self.legend_cols:
+            options.update({"ncols": self.legend_cols})
         legend.update(**options)
 
         if pos in self.legend_specs:
@@ -2118,12 +2414,17 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if 'legend_items' not in self.handles:
             self.handles['legend_items'] = []
         legend_items = self.handles['legend_items']
-        legend_labels = {tuple(sorted(i.label.items())) if isinstance(i.label, dict) else i.label: i
-                         for i in legend_items}
+        legend_labels = {
+            tuple(sorted(property_to_dict(i.label).items()))
+            if isinstance(property_to_dict(i.label), dict) else i.label: i
+            for i in legend_items
+        }
         for item in legend.items:
-            label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
-            if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
+            item_label = property_to_dict(item.label)
+            label = tuple(sorted(item_label.items())) if isinstance(item_label, dict) else item_label
+            if not label or (isinstance(item_label, dict) and not item_label.get('value', True)):
                 continue
+
             if label in legend_labels:
                 prev_item = legend_labels[label]
                 prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
@@ -2138,8 +2439,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         renderers = []
         for item in legend_items:
             item.renderers[:] = [r for r in item.renderers if r not in renderers]
-            if item in filtered or not item.renderers or not any(r.visible for r in item.renderers):
+            if (item in filtered or not item.renderers or
+                not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
+            item_label = property_to_dict(item.label)
+            if isinstance(item_label, dict) and 'value' in item_label and self.legend_labels:
+                label = item_label['value']
+                item.label = {'value': self.legend_labels.get(label, label)}
             renderers += item.renderers
             filtered.append(item)
         legend.items[:] = list(util.unique_iterator(filtered))
@@ -2165,11 +2471,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
 
-        # Apply muting
+        # Apply muting and misc legend opts
         for leg in plot.legend:
+            leg.update(**self.legend_opts)
             for item in leg.items:
                 for r in item.renderers:
-                    r.muted = self.legend_muted
+                    r.muted = self.legend_muted or r.muted
 
 
     def _init_tools(self, element, callbacks=[]):
@@ -2183,7 +2490,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if el is not None:
                 el_tools = subplot._init_tools(el, self.callbacks)
                 for tool in el_tools:
-                    if isinstance(tool, util.basestring):
+                    if isinstance(tool, str):
                         tool_type = TOOL_TYPES.get(tool)
                     else:
                         tool_type = type(tool)
@@ -2210,7 +2517,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['hover'] = subplot.handles['hover']
         elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
             hover = subplot.handles['hover']
-            if hover.tooltips and not isinstance(hover.tooltips, util.basestring):
+            if hover.tooltips and not isinstance(hover.tooltips, str):
                 tooltips = tuple((name, spec.replace('{%F %T}', '')) for name, spec in hover.tooltips)
             else:
                 tooltips = ()
@@ -2218,33 +2525,31 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if tool:
                 tool_renderers = [] if tool.renderers == 'auto' else tool.renderers
                 hover_renderers = [] if hover.renderers == 'auto' else hover.renderers
-                renderers = tool_renderers + hover_renderers
+                renderers = [r for r in tool_renderers + hover_renderers if r is not None]
                 tool.renderers = list(util.unique_iterator(renderers))
                 if 'hover' not in self.handles:
                     self.handles['hover'] = tool
-
 
     def _get_factors(self, overlay, ranges):
         xfactors, yfactors = [], []
         for k, sp in self.subplots.items():
             el = overlay.data.get(k)
             if el is not None:
-                xfs, yfs = sp._get_factors(el, ranges)
-                xfactors.append(xfs)
-                yfactors.append(yfs)
-        if xfactors:
-            xfactors = np.concatenate(xfactors)
-        if yfactors:
-            yfactors = np.concatenate(yfactors)
-        return util.unique_array(xfactors), util.unique_array(yfactors)
-
+                elranges = util.match_spec(el, ranges)
+                xfs, yfs = sp._get_factors(el, elranges)
+                if len(xfs):
+                    xfactors.append(xfs)
+                if len(yfs):
+                    yfactors.append(yfs)
+        xfactors = list(util.unique_iterator(chain(*xfactors)))
+        yfactors = list(util.unique_iterator(chain(*yfactors)))
+        return xfactors, yfactors
 
     def _get_axis_dims(self, element):
         subplots = list(self.subplots.values())
         if subplots:
             return subplots[0]._get_axis_dims(element)
-        return super(OverlayPlot, self)._get_axis_dims(element)
-
+        return super()._get_axis_dims(element)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = util.wrap_tuple(self.hmap.last_key)
@@ -2281,7 +2586,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 title = subplot._format_title(key, dimensions=False)
                 if not title:
                     title = get_tab_title(key, frame, self.hmap.last)
-                panels.append(Panel(child=child, title=title))
+                panels.append(TabPanel(child=child, title=title))
             self._merge_tools(subplot)
 
         if self.tabs:
@@ -2297,13 +2602,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         self.drawn = True
         self.handles['plots'] = plots
 
-        self._update_callbacks(self.handles['plot'])
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
             self.handles['xaxis'] = plot.xaxis[0]
             self.handles['yaxis'] = plot.yaxis[0]
             self.handles['x_range'] = plot.x_range
             self.handles['y_range'] = plot.y_range
+
         for cb in self.callbacks:
             cb.initialize()
 
@@ -2321,7 +2626,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         key tuple (where integers represent frames). Returns this
         state.
         """
+        self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
@@ -2343,14 +2650,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                                                self._propagate_options,
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-            self.param.set_param(**plot_opts)
+            self.param.update(**plot_opts)
 
             if not self.overlaid and not self.tabs and not self.batched:
                 self._update_ranges(element, ranges)
 
         # Determine which stream (if any) triggered the update
         triggering = [stream for stream in self.streams if stream._triggering]
-
         for k, subplot in self.subplots.items():
             el = None
 
@@ -2361,7 +2667,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                 # If not batched get the Element matching the subplot
                 elif element is not None:
-                    idx, spec, exact = dynamic_update(self, subplot, k, element, items)
+                    idx, spec, exact = self._match_subplot(k, subplot, items, element)
                     if idx is not None:
                         _, el = items.pop(idx)
                         if not exact:
@@ -2370,7 +2676,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
                 if (triggering and all(s not in triggering for s in subplot.streams) and
-                    not subplot in self.dynamic_subplots):
+                    subplot not in self.dynamic_subplots):
                     continue
             subplot.update_frame(key, ranges, element=el)
 
@@ -2386,6 +2692,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             plot = self.handles['plot']
             self._update_plot(key, plot, element)
             self._set_active_tools(plot)
+            self._setup_data_callbacks(plot)
 
+        self._updated = True
         self._process_legend(element)
         self._execute_hooks(element)

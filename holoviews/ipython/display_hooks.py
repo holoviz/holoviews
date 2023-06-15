@@ -4,18 +4,19 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import sys, traceback
+import sys
+import traceback
 
 import IPython
 from IPython import get_ipython
 from IPython.display import HTML
 
-import holoviews
+import holoviews as hv
 from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
 from ..core import (
     ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
-    Layout, CompositeOverlay, DynamicMap, Dimensioned
+    Layout, CompositeOverlay, DynamicMap, Dimensioned, Empty
 )
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
@@ -36,10 +37,10 @@ ABBREVIATE_TRACEBACKS = True
 
 def max_frame_warning(max_frames):
     sys.stderr.write(
-        "Animation longer than the max_frames limit {max_frames};\n"
+        f"Animation longer than the max_frames limit {max_frames};\n"
         "skipping rendering to avoid unexpected lengthy computations.\n"
         "If desired, the limit can be increased using:\n"
-        "hv.output(max_frames=<insert number>)".format(max_frames=max_frames)
+        "hv.output(max_frames=<insert number>)"
     )
 
 def process_object(obj):
@@ -117,16 +118,11 @@ def dynamic_optstate(element, state=None):
 @contextmanager
 def option_state(element):
     optstate = dynamic_optstate(element)
-    raised_exception = False
     try:
         yield
     except Exception:
-        raised_exception = True
+        dynamic_optstate(element, state=optstate)
         raise
-    finally:
-        if raised_exception:
-            dynamic_optstate(element, state=optstate)
-
 
 
 def display_hook(fn):
@@ -137,7 +133,7 @@ def display_hook(fn):
     """
     @wraps(fn)
     def wrapped(element):
-        global FULL_TRACEBACK
+        global FULL_TRACEBACK  # noqa: PLW0603
         if Store.current_backend is None:
             return {}, {}
 
@@ -154,8 +150,8 @@ def display_hook(fn):
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                if type(holoviews.archive) is not FileArchive and 'text/html' in mime_data:
-                    holoviews.archive.add(element, html=mime_data['text/html'])
+                if type(hv.archive) is not FileArchive and 'text/html' in mime_data:
+                    hv.archive.add(element, html=mime_data['text/html'])
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
@@ -183,7 +179,7 @@ def element_display(element, max_frames):
     info = process_object(element)
     if info:
         display(HTML(info))
-        return
+        return None
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
@@ -209,7 +205,7 @@ def map_display(vmap, max_frames):
 @display_hook
 def layout_display(layout, max_frames):
     if isinstance(layout, AdjointLayout):
-        layout = Layout(layout).opts(layout.opts.get('plot')) 
+        layout = Layout(layout).opts(layout.opts.get('plot'))
     if not isinstance(layout, (Layout, NdLayout)): return None
 
     nframes = len(unique_dimkeys(layout)[1])
@@ -258,6 +254,8 @@ def display(obj, raw_output=False, **kwargs):
             output = map_display(obj)
     elif isinstance(obj, Plot):
         output = render(obj)
+    elif isinstance(obj, Empty):
+        output = ({}, {})
     else:
         output = obj
         raw = kwargs.pop('raw', False)
@@ -276,7 +274,7 @@ def pprint_display(obj):
         return None
 
     # If pretty printing is off, return None (fallback to next display format)
-    ip = get_ipython()  #  # noqa (in IPython namespace)
+    ip = get_ipython()
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
     return display(obj, raw_output=True)

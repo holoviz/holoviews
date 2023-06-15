@@ -1,13 +1,12 @@
-import os, sys, inspect, shutil
+import os
+import sys
+import inspect
+import shutil
 
 from collections import defaultdict
+from inspect import Parameter, Signature
 from types import FunctionType
-
-
-try:
-    from pathlib import Path
-except:
-    Path = None
+from pathlib import Path
 
 import param
 from pyviz_comms import extension as _pyviz_extension
@@ -16,14 +15,14 @@ from ..core import (
     Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
     StoreOptions, Store
 )
-from ..core.options import options_policy, Keywords, Options
+from ..core.options import Keywords, Options, options_policy
 from ..core.operation import Operation
 from ..core.overlay import Overlay
-from ..core.util import basestring, merge_options_to_dict, OrderedDict
+from ..core.util import merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
 from ..core import util
 from ..operation.element import function
-from ..streams import Stream, Params
+from ..streams import Stream, Params, streams_list_from_dict
 from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
@@ -40,7 +39,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         example_dir = os.path.join(filepath, '../examples')
     if os.path.exists(path):
         if not force:
-            print('%s directory already exists, either delete it or set the force flag' % path)
+            print(f'{path} directory already exists, either delete it or set the force flag')
             return
         shutil.rmtree(path)
     ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
@@ -48,11 +47,27 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
     if os.path.isdir(tree_root):
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
-        print('Cannot find %s' % tree_root)
+        print(f'Cannot find {tree_root}')
 
 
+class OptsMeta(param.parameterized.ParameterizedMetaclass):
+    """
+    Improve error message when running something
+    like: 'hv.opts.Curve()' without a plotting backend.
+    """
 
-class opts(param.ParameterizedFunction):
+    def __getattr__(self, attr):
+        try:
+            return super().__getattr__(attr)
+        except AttributeError:
+            msg = (
+                f"No entry for {attr!r} registered; this name may not refer to a valid object "
+                "or you may need to run 'hv.extension' to select a plotting backend."
+            )
+            raise AttributeError(msg) from None
+
+
+class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     """
     Utility function to set options at the global level or to provide an
     Options object that can be used with the .options method of an
@@ -84,7 +99,7 @@ class opts(param.ParameterizedFunction):
     __original_docstring__ = None
 
     # Keywords not to be tab-completed (helps with deprecation)
-    _no_completion = ['title_format', 'color_index', 'size_index', 'finalize_hooks',
+    _no_completion = ['title_format', 'color_index', 'size_index',
                       'scaling_factor', 'scaling_method', 'size_fn', 'normalize_lengths',
                       'group_index', 'category_index', 'stack_index', 'color_by']
 
@@ -94,7 +109,7 @@ class opts(param.ParameterizedFunction):
        strict, invalid keywords prevent the options being applied.""")
 
     def __init__(self, *args, **kwargs): # Needed for opts specific __signature__
-        super(opts, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **params):
         if not params and not args:
@@ -102,28 +117,12 @@ class opts(param.ParameterizedFunction):
         elif params and not args:
             return Options(**params)
 
-        if len(args) == 1:
-            msg = ("Positional argument signature of opts is deprecated, "
-                   "use opts.defaults instead.\nFor instance, instead of "
-                   "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
-            self.param.warning(msg)
-            self._linemagic(args[0])
-        elif len(args) == 2:
-            msg = ("Double positional argument signature of opts is deprecated, "
-                   "use the .options method instead.\nFor instance, instead of "
-                   "opts('Points (size=5)', points) use points.opts(opts.Points(size=5))")
-
-            self.param.warning(msg)
-
-            self._cellmagic(args[0], args[1])
-
-
     @classmethod
     def _group_kwargs_to_options(cls, obj, kwargs):
         "Format option group kwargs into canonical options format"
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
-            raise Exception("Keyword options %s must be one of  %s" % (groups,
+            raise Exception("Keyword options {} must be one of  {}".format(groups,
                             ','.join(repr(g) for g in groups)))
         elif not all(isinstance(v, dict) for v in kwargs.values()):
             raise Exception("The %s options must be specified using dictionary groups" %
@@ -137,11 +136,11 @@ class opts(param.ParameterizedFunction):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('%s.%s.%s' % (
+                identifier = ('{}.{}.{}'.format(
                     obj.__class__.__name__, sanitized_group,
                     util.label_sanitizer(obj.label)))
             elif  sanitized_group != obj.__class__.__name__:
-                identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
+                identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
                 identifier = obj.__class__.__name__
 
@@ -179,7 +178,7 @@ class opts(param.ParameterizedFunction):
         for spec, groups in options.items():
             if 'output' not in groups.keys() or len(groups['output'])==0:
                 dfltdict[backend or Store.current_backend][spec.strip()] = groups
-            elif set(groups['output'].keys()) - set(['backend']):
+            elif set(groups['output'].keys()) - {'backend'}:
                 dfltdict[groups['output']['backend']][spec.strip()] = groups
             elif ['backend'] == list(groups['output'].keys()):
                 filtered = {k:v for k,v in groups.items() if k != 'output'}
@@ -195,8 +194,8 @@ class opts(param.ParameterizedFunction):
 
         Applies options on an object or nested group of objects,
         returning a new object with the options applied. This method
-        accepts the separate option namespaces explicitly (i.e 'plot',
-        'style' and 'norm').
+        accepts the separate option namespaces explicitly (i.e. 'plot',
+        'style', and 'norm').
 
         If the options are to be set directly on the object a
         simple format may be used, e.g.:
@@ -229,14 +228,13 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from ..util.parser import OptsSpec
             try:
                 options = OptsSpec.parse(options)
             except SyntaxError:
                 options = OptsSpec.parse(
-                    '{clsname} {options}'.format(clsname=obj.__class__.__name__,
-                                                 options=options))
+                    f'{obj.__class__.__name__} {options}')
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
@@ -246,10 +244,10 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
-            except:  ns = globals()
+            except Exception:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
         errmsg = StoreOptions.validation_error_message(options, backends=backends)
@@ -261,24 +259,12 @@ class opts(param.ParameterizedFunction):
         return options, False
 
     @classmethod
-    def _cellmagic(cls, options, obj, strict=False):
-        "Deprecated, not expected to be used by any current code"
-        options, failure = cls._process_magic(options, strict)
-        if failure: return obj
-        if not isinstance(obj, Dimensioned):
-            return obj
-        else:
-            return StoreOptions.set_options(obj, options)
-
-    @classmethod
     def _linemagic(cls, options, strict=False, backend=None):
-        "Deprecated, not expected to be used by any current code"
         backends = None if backend is None else [backend]
         options, failure = cls._process_magic(options, strict, backends=backends)
         if failure: return
         with options_policy(skip_invalid=True, warn_on_skip=False):
             StoreOptions.apply_customizations(options, Store.options(backend=backend))
-
 
     @classmethod
     def defaults(cls, *options, **kwargs):
@@ -295,7 +281,6 @@ class opts(param.ParameterizedFunction):
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
         cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
-
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
@@ -353,7 +338,7 @@ class opts(param.ParameterizedFunction):
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
-            raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
+            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.')
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)
@@ -361,21 +346,21 @@ class opts(param.ParameterizedFunction):
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
-                raise ValueError('%s type not found, could not apply options.'
-                                 % objtype)
+                raise ValueError(f'{objtype} type not found, could not apply options.')
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
             for opt, value in options.items():
-                found = False
-                valid_options = []
                 for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
-                        found = True
                         break
-                    valid_options += group_opts.allowed_keywords
-                if found: continue
-                cls._options_error(opt, objtype, backend, valid_options)
+                else:
+                    valid_options = sorted({
+                        keyword
+                        for group_opts in obj_options.groups.values()
+                        for keyword in group_opts.allowed_keywords
+                    })
+                    cls._options_error(opt, objtype, backend, valid_options)
         return expanded
 
 
@@ -391,15 +376,13 @@ class opts(param.ParameterizedFunction):
         matches = sorted(kws.fuzzy_match(opt))
         if backend is not None:
             if matches:
-                raise ValueError('Unexpected option %r for %s type '
-                                 'when using the %r extension. Similar '
-                                 'options are: %s.' %
-                                 (opt, objtype, backend, matches))
+                raise ValueError('Unexpected option {!r} for {} type '
+                                 'when using the {!r} extension. Similar '
+                                 'options are: {}.'.format(opt, objtype, backend, matches))
             else:
-                raise ValueError('Unexpected option %r for %s type '
-                                 'when using the %r extension. No '
-                                 'similar options founds.' %
-                                 (opt, objtype, backend))
+                raise ValueError('Unexpected option {!r} for {} type '
+                                 'when using the {!r} extension. No '
+                                 'similar options found.'.format(opt, objtype, backend))
 
         # Check option is invalid for all backends
         found = []
@@ -412,20 +395,19 @@ class opts(param.ParameterizedFunction):
                     found.append(lb)
         if found:
             param.main.param.warning(
-                'Option %r for %s type not valid for selected '
-                'backend (%r). Option only applies to following '
-                'backends: %r' % (opt, objtype, current_backend, found))
+                'Option {!r} for {} type not valid for selected '
+                'backend ({!r}). Option only applies to following '
+                'backends: {!r}'.format(opt, objtype, current_backend, found))
             return
 
         if matches:
-            raise ValueError('Unexpected option %r for %s type '
+            raise ValueError('Unexpected option {!r} for {} type '
                              'across all extensions. Similar options '
-                             'for current extension (%r) are: %s.' %
-                             (opt, objtype, current_backend, matches))
+                             'for current extension ({!r}) are: {}.'.format(opt, objtype, current_backend, matches))
         else:
-            raise ValueError('Unexpected option %r for %s type '
+            raise ValueError('Unexpected option {!r} for {} type '
                              'across all extensions. No similar options '
-                             'found.' % (opt, objtype))
+                             'found.'.format(opt, objtype))
 
     @classmethod
     def _builder_reprs(cls, options, namespace=None, ns=None):
@@ -436,19 +418,19 @@ class opts(param.ParameterizedFunction):
         namespace is typically given as 'hv' if fully qualified
         namespaces are desired.
         """
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from .parser import OptsSpec
             if ns is None:
                 try:     ns = get_ipython().user_ns  # noqa
-                except:  ns = globals()
+                except Exception:  ns = globals()
             options = options.replace('%%opts','').replace('%opts','')
             options = OptsSpec.parse_options(options, ns=ns)
 
 
         reprs = []
-        ns = '{namespace}.'.format(namespace=namespace) if namespace else ''
+        ns = f'{namespace}.' if namespace else ''
         for option in options:
-            kws = ', '.join('%s=%r' % (k,option.kwargs[k]) for k in sorted(option.kwargs))
+            kws = ', '.join(f'{k}={option.kwargs[k]!r}' for k in sorted(option.kwargs))
             if '.' in option.key:
                 element = option.key.split('.')[0]
                 spec = repr('.'.join(option.key.split('.')[1:])) + ', '
@@ -463,8 +445,8 @@ class opts(param.ParameterizedFunction):
     @classmethod
     def _create_builder(cls, element, completions):
         def builder(cls, spec=None, **kws):
-            spec = element if spec is None else '%s.%s' % (element, spec)
-            prefix = 'In opts.{element}(...), '.format(element=element)
+            spec = element if spec is None else f'{element}.{spec}'
+            prefix = f'In opts.{element}(...), '
             backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
@@ -481,12 +463,11 @@ class opts(param.ParameterizedFunction):
                         return Options(spec, **kws)
                     mismatched[loaded_backend] = list(keys - valid)
 
-                invalid =  keys - all_valid_kws # Keys not found for any backend
+                invalid = keys - all_valid_kws # Keys not found for any backend
                 if mismatched and not invalid:  # Keys found across multiple backends
-                    msg = ('{prefix} keywords supplied are mixed across backends. '
+                    msg = ('{prefix}keywords supplied are mixed across backends. '
                            'Keyword(s) {info}')
-                    info = ', '.join('%s are invalid for %s'
-                                     % (', '.join(repr(el) for el in v), k)
+                    info = ', '.join('{} are invalid for {}'.format(', '.join(repr(el) for el in v), k)
                                      for k,v in mismatched.items())
                     raise ValueError(msg.format(info=info, prefix=prefix))
                 allowed_kws = completions
@@ -506,15 +487,10 @@ class opts(param.ParameterizedFunction):
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
         sorted_kw_set = sorted(set(filtered_keywords))
-        if sys.version_info.major == 2:
-            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
-            builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
-        else:
-            from inspect import Parameter, Signature
-            signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
-                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
-                                     for kw in sorted_kw_set])
-            builder.__signature__ = signature
+        signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+                              + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                 for kw in sorted_kw_set])
+        builder.__signature__ = signature
         return classmethod(builder)
 
     @classmethod
@@ -540,7 +516,6 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _update_backend(cls, backend):
-
         if cls.__original_docstring__ is None:
             cls.__original_docstring__ = cls.__doc__
 
@@ -554,17 +529,11 @@ class opts(param.ParameterizedFunction):
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
         sorted_kw_set = sorted(set(filtered_keywords))
-        if sys.version_info.major == 2:
-            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
-            old_doc = cls.__original_docstring__.replace(
-                'params(strict=Boolean, name=String)','')
-            cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
-        else:
-            from inspect import Parameter, Signature
-            signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
-                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
-                                     for kw in sorted_kw_set])
-            cls.__init__.__signature__ = signature
+        from inspect import Parameter, Signature
+        signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
+                              + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                 for kw in sorted_kw_set])
+        cls.__init__.__signature__ = signature
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -616,8 +585,8 @@ class output(param.ParameterizedFunction):
         if ':' in pairs['backend']:
             pairs['backend'] = pairs['backend'].split(':')[0]
 
-        keywords = ', '.join('%s=%r' % (k,pairs[k]) for k in sorted(pairs.keys()))
-        print('output({kws})'.format(kws=keywords))
+        keywords = ', '.join(f'{k}={pairs[k]!r}' for k in sorted(pairs.keys()))
+        print(f'output({keywords})')
 
 
     def __call__(self, *args, **options):
@@ -625,7 +594,7 @@ class output(param.ParameterizedFunction):
         line, obj = None,None
         if len(args) > 2:
             raise TypeError('The opts utility accepts one or two positional arguments.')
-        if len(args) == 1 and not isinstance(args[0], basestring):
+        if len(args) == 1 and not isinstance(args[0], str):
             obj = args[0]
         elif len(args) == 1:
             line = args[0]
@@ -637,15 +606,12 @@ class output(param.ParameterizedFunction):
                 options = Store.output_settings.extract_keywords(line, {})
             for k in options.keys():
                 if k not in Store.output_settings.allowed:
-                    raise KeyError('Invalid keyword: %s' % k)
-            if 'filename' in options:
-                self.param.warning('The filename argument of output is deprecated. '
-                                   'Use hv.save instead.')
+                    raise KeyError(f'Invalid keyword: {k}')
 
             def display_fn(obj, renderer):
                 try:
                     from IPython.display import display
-                except:
+                except ImportError:
                     return
                 display(obj)
 
@@ -656,11 +622,8 @@ class output(param.ParameterizedFunction):
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
-if sys.version_info.major == 2:
-    output.__doc__ = Store.output_settings._generate_docstring(signature=True)
-else:
-    output.__doc__ = Store.output_settings._generate_docstring(signature=False)
-    output.__init__.__signature__ = Store.output_settings._generate_signature()
+output.__doc__ = Store.output_settings._generate_docstring(signature=False)
+output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):
@@ -669,8 +632,9 @@ def renderer(name):
     """
     try:
         if name not in Store.renderers:
-            if Store.current_backend:
-                prev_backend = Store.current_backend
+            prev_backend = Store.current_backend
+            if Store.current_backend not in Store.renderers:
+                prev_backend = None
             extension(name)
             if prev_backend:
                 Store.set_current_backend(prev_backend)
@@ -696,10 +660,12 @@ class extension(_pyviz_extension):
     # Hooks run when a backend is loaded
     _backend_hooks = defaultdict(list)
 
+    _loaded = False
+
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
-        util.config.param.set_param(**config)
+        util.config.param.update(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
         for p, val in sorted(params.items()):
@@ -714,24 +680,21 @@ class extension(_pyviz_extension):
         for backend, imp in imports:
             try:
                 __import__(backend)
-            except:
-                self.param.warning("%s could not be imported, ensure %s is installed."
-                             % (backend, backend))
+            except ImportError:
+                self.param.warning(f"{backend} could not be imported, ensure {backend} is installed.")
             try:
-                __import__('holoviews.plotting.%s' % imp)
+                __import__(f'holoviews.plotting.{imp}')
                 if selected_backend is None:
                     selected_backend = backend
             except util.VersionError as e:
                 self.param.warning(
-                    "HoloViews %s extension could not be loaded. "
-                    "The installed %s version %s is less than "
-                    "the required version %s." %
-                    (backend, backend, e.version, e.min_version))
+                    "HoloViews {} extension could not be loaded. "
+                    "The installed {} version {} is less than "
+                    "the required version {}.".format(backend, backend, e.version, e.min_version))
             except Exception as e:
                 self.param.warning(
-                    "Holoviews %s extension could not be imported, "
-                    "it raised the following exception: %s('%s')" %
-                    (backend, type(e).__name__, e))
+                    "Holoviews {} extension could not be imported, "
+                    "it raised the following exception: {}('{}')".format(backend, type(e).__name__, e))
             finally:
                 Store.output_settings.allowed['backend'] = list_backends()
                 Store.output_settings.allowed['fig'] = list_formats('fig', backend)
@@ -740,21 +703,40 @@ class extension(_pyviz_extension):
                 try:
                     hook()
                 except Exception as e:
-                    self.param.warning('%s backend hook %s failed with '
-                                       'following exception: %s' %
-                                       (backend, hook, e))
+                    self.param.warning('{} backend hook {} failed with '
+                                       'following exception: {}'.format(backend, hook, e))
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
         Store.set_current_backend(selected_backend)
+
+        import panel as pn
+
+        if pn.config.comms == "default":
+            try:
+                import google.colab  # noqa
+                pn.config.comms = "colab"
+                return
+            except ImportError:
+                pass
+
+            if "VSCODE_PID" in os.environ:
+                pn.config.comms = "vscode"
+                self._ignore_bokeh_warnings()
+                return
 
     @classmethod
     def register_backend_callback(cls, backend, callback):
         """Registers a hook which is run when a backend is loaded"""
         cls._backend_hooks[backend].append(callback)
 
+    def _ignore_bokeh_warnings(self):
+        import warnings
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
 
-def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, **kwargs):
+
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
     """
     Saves the supplied object to file.
 
@@ -782,19 +764,32 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         Bokeh resources used to load bokehJS components. Defaults to
         CDN, to embed resources inline for offline usage use 'inline'
         or bokeh.resources.INLINE.
+    toolbar: bool or None
+        Whether to include toolbars in the exported plot. If None,
+        display the toolbar unless fmt is `png` and backend is `bokeh`.
+        If `True`, always include the toolbar.  If `False`, do not include the
+        toolbar.
+    title: string
+        Custom title for exported HTML file
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
-    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
-        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
+    if (
+        not toolbar
+        and backend == "bokeh"
+        and (fmt == "png" or (isinstance(filename, str) and filename.endswith("png")))
+    ):
+        obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
+    elif toolbar is not None and not toolbar:
+        obj = obj.opts(toolbar=None)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
-    if Path is not None and isinstance(filename, Path):
+    if isinstance(filename, Path):
         filename = str(filename.absolute())
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         supported = [mfmt for tformats in renderer_obj.mode_formats.values()
                      for mfmt in tformats]
         formats = filename.split('.')
@@ -802,10 +797,11 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
             fmt = formats[-1]
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
-    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources)
+    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources,
+                             title=title)
 
 
-def render(obj, backend=None, toolbar=None, **kwargs):
+def render(obj, backend=None, **kwargs):
     """
     Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
@@ -830,19 +826,18 @@ def render(obj, backend=None, toolbar=None, **kwargs):
 
     Returns
     -------
-    renderered:
+    rendered:
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
-    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
-        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
-    plot = renderer_obj.get_plot(obj)
-    if backend == 'matplotlib' and len(plot) > 1:
-        return plot.anim(fps=renderer_obj.fps)
+    if backend == 'matplotlib':
+        plot = renderer_obj.get_plot(obj)
+        if len(plot) > 1:
+            return plot.anim(fps=renderer_obj.fps)
     return renderer_obj.get_plot_state(obj)
 
 
@@ -889,7 +884,7 @@ class Dynamic(param.ParameterizedFunction):
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
         List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
@@ -916,9 +911,32 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        if isinstance(self.p.streams, dict):
+            streams = defaultdict(dict)
+            stream_specs, params = [], {}
+            for name, p in self.p.streams.items():
+                if not isinstance(p, param.Parameter):
+                    raise ValueError("Stream dictionary must map operation keywords "
+                                     "to parameter names. Cannot handle %r type."
+                                     % type(p))
+                if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
+                    if p.name != name:
+                        streams[p.owner][p.name] = name
+                    else:
+                        streams[p.owner] = {}
+                else:
+                    params[name] = p
+            stream_specs = streams_list_from_dict(params)
+            # Note that the correct stream instance will only be created
+            # correctly of the parameter's .owner points to the correct
+            # class (i.e the parameter isn't defined on a superclass)
+            stream_specs += [stream(rename=rename) for stream, rename in streams.items()]
+        else:
+            stream_specs = self.p.streams
+
         streams = []
         op = self.p.operation
-        for stream in self.p.streams:
+        for stream in stream_specs:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
@@ -927,9 +945,10 @@ class Dynamic(param.ParameterizedFunction):
             if isinstance(op, Operation):
                 updates = {k: op.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in op.p}
-                if updates:
+                if not isinstance(stream, Params):
                     reverse = {v: k for k, v in stream._rename.items()}
-                    stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
+                    updates = {reverse.get(k, k): v for k, v in updates.items()}
+                stream.update(**updates)
             streams.append(stream)
 
         params = {}
@@ -969,7 +988,7 @@ class Dynamic(param.ParameterizedFunction):
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
-            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+            raise TypeError(msg.format(objs = ', '.join(f'{el!r}' for el in invalid)))
         return valid
 
     def _process(self, element, key=None, kwargs={}):

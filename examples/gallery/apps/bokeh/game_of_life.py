@@ -1,11 +1,12 @@
 import numpy as np
 import holoviews as hv
+import panel as pn
 
 from holoviews import opts
-from holoviews.streams import Tap, Counter
+from holoviews.streams import Tap, Counter, DoubleTap
 from scipy.signal import convolve2d
 
-renderer = hv.renderer('bokeh')
+hv.extension('bokeh')
 
 diehard = [[0, 0, 0, 0, 0, 0, 1, 0],
            [1, 1, 0, 0, 0, 0, 0, 0],
@@ -66,14 +67,30 @@ def update(pattern, counter, x, y):
         img.data = step(img.data)
     return hv.Image(img)
 
+# Set up plot which advances on counter and adds pattern on tap
 title = 'Game of Life - Tap to place pattern, Doubletap to clear'
-img_opts = opts.Image(cmap='gray', toolbar=None, height=400, width=800,
-                      title=title, xaxis=None, yaxis=None)
 img = hv.Image(np.zeros((100, 200), dtype=np.uint8))
-counter, tap = Counter(transient=True), Tap(transient=True)
+counter, tap = Counter(transient=True), Tap(transient=True),
 pattern_dim = hv.Dimension('Pattern', values=sorted(shapes.keys()))
 dmap = hv.DynamicMap(update, kdims=[pattern_dim], streams=[counter, tap])
 
-doc = renderer.server_doc(dmap.redim.range(z=(0, 1)).opts(img_opts))
-dmap.periodic(0.05, None)
-doc.title = 'Game of Life'
+plot = dmap.opts(
+    opts.Image(cmap='gray', clim=(0, 1), toolbar=None, responsive=True,
+               min_height=800, title=title, xaxis=None, yaxis=None)
+)
+
+# Add callback to clear on double tap
+def reset_data(x, y):
+    img.data[:] = 0
+
+reset = DoubleTap(transient=True, source=plot)
+reset.add_subscriber(reset_data)
+
+# Set up Panel app and periodic callback
+panel = pn.pane.HoloViews(plot, center=True, widget_location='right')
+
+def advance():
+    counter.event(counter=counter.counter+1)
+pn.state.add_periodic_callback(advance, period=50, start=False)
+
+panel.servable('Game of Life')

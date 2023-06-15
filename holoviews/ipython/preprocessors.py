@@ -58,7 +58,7 @@ def filter_magic(source, magic, strip=True):
     Given the source of a cell, filter out the given magic and collect
     the lines using the magic into a list.
 
-    If strip is True, the IPython syntax part of the magic (e.g %magic
+    If strip is True, the IPython syntax part of the magic (e.g. %magic
     or %%magic) is stripped from the returned lines.
     """
     filtered, magic_lines=[],[]
@@ -111,7 +111,7 @@ class OptsMagicProcessor(Preprocessor):
                                         template='hv.util.opts({line!r})')
             source, opts_lines = filter_magic(source, '%%opts')
             if opts_lines:
-                # Escape braces e.g normalization options as they pass through format
+                # Escape braces (e.g. normalization options) as they pass through format
                 template = 'hv.util.opts({options!r}, {{expr}})'.format(
                     options=' '.join(opts_lines).replace('{','{{').replace('}','}}'))
                 source = wrap_cell_expression(source, template)
@@ -133,8 +133,7 @@ class OutputMagicProcessor(Preprocessor):
                                         template='hv.util.output({line!r})')
             source, output_lines = filter_magic(source, '%%output')
             if output_lines:
-                template = 'hv.util.output({options!r}, {{expr}})'.format(
-                    options=output_lines[-1])
+                template = f'hv.util.output({output_lines[-1]!r}, {{expr}})'
                 source = wrap_cell_expression(source, template)
 
             cell['source'] = source

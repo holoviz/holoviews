@@ -1,24 +1,16 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
+from html import escape
 
 import param
 import numpy as np
-from bokeh.models import BoxAnnotation, Span, Arrow, Div as BkDiv, Slope
 
-try:
-    from bokeh.models.arrow_heads import TeeHead, NormalHead
-    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
-                 '-': None}
-except:
-    from bokeh.models.arrow_heads import OpenHead, NormalHead
-    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
-                 '-': None}
+from bokeh.models import BoxAnnotation, Span, Arrow, Slope
+from panel.models import HTML
+
+from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
-from ...core.util import datetime_types, dimension_sanitizer, basestring
+from ...core.util import datetime_types, dimension_sanitizer
 from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
@@ -27,11 +19,17 @@ from .styles import base_properties, fill_properties, line_properties, text_prop
 from .plot import BokehPlot
 from .util import date_to_integer
 
+arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
+arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
+                '-': None}
+
 
 class TextPlot(ElementPlot, AnnotationPlot):
 
     style_opts = text_properties+['color', 'angle', 'visible']
     _plot_methods = dict(single='text', batched='text')
+
+    selection_display = None
 
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y', text='text')
@@ -85,7 +83,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
@@ -141,6 +139,8 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='Span')
 
+    selection_display = None
+
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
         dim = 'width' if isinstance(element, HLine) else 'height'
@@ -170,7 +170,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         if self.invert_axes:
             dim = 'x' if dim == 'y' else 'x'
         ranges[dim]['soft'] = loc, loc
-        return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
 
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
@@ -182,6 +182,8 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
 
     _allow_implicit_categories = False
     _plot_methods = dict(single='BoxAnnotation')
+
+    selection_display = None
 
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -198,6 +200,10 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         mapping[kwd_dim2] = locs[1]
         return (data, mapping, style)
 
+    def _update_glyph(self, renderer, properties, mapping, glyph, source, data):
+        glyph.visible = any(v is not None for v in mapping.values())
+        return super()._update_glyph(renderer, properties, mapping, glyph, source, data)
+
     def _init_glyph(self, plot, mapping, properties):
         """
         Returns a Bokeh glyph object.
@@ -212,6 +218,8 @@ class SlopePlot(ElementPlot, AnnotationPlot):
     style_opts = line_properties + ['level']
 
     _plot_methods = dict(single='Slope')
+
+    selection_display = None
 
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -247,6 +255,8 @@ class SplinePlot(ElementPlot, AnnotationPlot):
     style_opts = line_properties + ['visible']
     _plot_methods = dict(single='bezier')
 
+    selection_display = None
+
     def get_data(self, element, ranges, style):
         if self.invert_axes:
             data_attrs = ['y0', 'x0', 'cy0', 'cx0', 'cy1', 'cx1', 'y1', 'x1']
@@ -274,12 +284,14 @@ class SplinePlot(ElementPlot, AnnotationPlot):
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
-    style_opts = (['arrow_%s' % p for p in line_properties+fill_properties+['size']] +
+    style_opts = ([f'arrow_{p}' for p in line_properties+fill_properties+['size']] +
                   text_properties)
 
     _style_groups = {'arrow': 'arrow', 'text': 'text'}
 
     _draw_order = ['arrow_1', 'text_1']
+
+    selection_display = None
 
     def get_data(self, element, ranges, style):
         plot = self.state
@@ -337,7 +349,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
                 for t in ('line', 'fill'):
                     if v is None:
                         continue
-                    key = '_'.join([t, p])
+                    key = f'{t}_{p}'
                     if key not in properties:
                         properties[key] = v
             start = arrow_start(**properties) if arrow_start else None
@@ -349,7 +361,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         else:
             properties = {p if p == 'source' else 'text_'+p: v
                           for p, v in properties.items()}
-            renderer, glyph = super(ArrowPlot, self)._init_glyph(
+            renderer, glyph = super()._init_glyph(
                 plot, mapping, properties, key)
         plot.renderers.append(renderer)
         return renderer, glyph
@@ -365,8 +377,44 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
 
     width = param.Number(default=300)
 
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
+
+        How the component should size itself.
+
+        * "fixed" :
+          Component is not responsive. It will retain its original
+          width and height regardless of any subsequent browser window
+          resize events.
+        * "stretch_width"
+          Component will responsively resize to stretch to the
+          available width, without maintaining any aspect ratio. The
+          height of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_height"
+          Component will responsively resize to stretch to the
+          available height, without maintaining any aspect ratio. The
+          width of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_both"
+          Component is completely responsive, independently in width
+          and height, and will occupy all the available horizontal and
+          vertical space, even if this changes the aspect ratio of the
+          component.
+        * "scale_width"
+          Component will responsively resize to stretch to the
+          available width, while maintaining the original or provided
+          aspect ratio.
+        * "scale_height"
+          Component will responsively resize to stretch to the
+          available height, while maintaining the original or provided
+          aspect ratio.
+        * "scale_both"
+          Component will responsively resize to both the available
+          width and height, while maintaining the original or provided
+          aspect ratio.
+    """)
 
     hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a plot. The
@@ -375,15 +423,16 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
 
     _stream_data = False
 
+    selection_display = None
+
     def __init__(self, element, plot=None, **params):
-        super(DivPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.callbacks = []
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
 
     def get_data(self, element, ranges, style):
         return element.data, {}, style
-
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -396,12 +445,12 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         self.current_key = key
 
         data, _, _ = self.get_data(element, ranges, {})
-        div = BkDiv(text=data, width=self.width, height=self.height)
+        div = HTML(text=escape(data), width=self.width, height=self.height,
+                   sizing_mode=self.sizing_mode)
         self.handles['plot'] = div
         self._execute_hooks(element)
         self.drawn = True
         return div
-
 
     def update_frame(self, key, ranges=None, plot=None):
         """
@@ -410,4 +459,4 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         """
         element = self._get_frame(key)
         text, _, _ = self.get_data(element, ranges, {})
-        self.handles['plot'].text = text
+        self.state.update(text=text, sizing_mode=self.sizing_mode)

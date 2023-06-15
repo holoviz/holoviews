@@ -87,4 +87,4 @@ HoloViews subpackages
 .. _plotting.plotly: holoviews.plotting.plotly.html
 .. _selection: holoviews.selection.html
 .. _streams: holoviews.streams.html
-.. _util: holoviews.util
+.. _util: holoviews.util.html

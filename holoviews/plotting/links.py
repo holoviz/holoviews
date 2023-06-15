@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import weakref
 
 from collections import defaultdict
@@ -38,14 +36,14 @@ class Link(param.Parameterized):
 
     def __init__(self, source, target=None, **params):
         if source is None:
-            raise ValueError('%s must define a source' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a source')
         if self._requires_target and target is None:
-            raise ValueError('%s must define a target.' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a target.')
 
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
         self._target = None if target is None else weakref.ref(target)
-        super(Link, self).__init__(**params)
+        super().__init__(**params)
         self.link()
 
     @classmethod
@@ -71,10 +69,10 @@ class Link(param.Parameterized):
         if self.source in self.registry:
             links = self.registry[self.source]
             params = {
-                k: v for k, v in self.param.get_param_values() if k != 'name'}
+                k: v for k, v in self.param.values().items() if k != 'name'}
             for link in links:
                 link_params = {
-                    k: v for k, v in link.param.get_param_values() if k != 'name'}
+                    k: v for k, v in link.param.values().items() if k != 'name'}
                 if (type(link) is type(self) and link.source is self.source
                     and link.target is self.target and params == link_params):
                     return
@@ -98,6 +96,9 @@ class RangeToolLink(Link):
     a subset of a larger dataset in more detail. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
+
+    Example of how to use RangeToolLink can be found here:
+    https://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
     """
 
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
@@ -138,7 +139,7 @@ class VertexTableLink(Link):
         if 'vertex_columns' not in params:
             dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
             params['vertex_columns'] = dimensions
-        super(VertexTableLink, self).__init__(source, target, **params)
+        super().__init__(source, target, **params)
 
 
 class RectanglesTableLink(Link):

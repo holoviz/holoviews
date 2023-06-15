@@ -19,6 +19,7 @@ considered different.
 """
 from functools import partial
 import numpy as np
+import pandas as pd
 from unittest.util import safe_repr
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
@@ -28,10 +29,11 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
-from ..core.util import pd, datetime_types, dt_to_int
+from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
+                         is_float)
 
 
-class ComparisonInterface(object):
+class ComparisonInterface:
     """
     This class is designed to allow equality testing to work
     seamlessly with unittest.TestCase as a mix-in by implementing a
@@ -51,8 +53,11 @@ class ComparisonInterface(object):
         """
         Classmethod equivalent to unittest.TestCase method (longMessage = False.)
         """
-        if not first==second:
-            standardMsg = '%s != %s' % (safe_repr(first), safe_repr(second))
+        check = first==second
+        if not isinstance(check, bool) and hasattr(check, "all"):
+            check = check.all()
+        if not check:
+            standardMsg = f'{safe_repr(first)} != {safe_repr(second)}'
             raise cls.failureException(msg or standardMsg)
 
 
@@ -62,14 +67,11 @@ class ComparisonInterface(object):
         Classmethod equivalent to unittest.TestCase method
         """
         asserter = None
-        if type(first) is type(second):
+        if type(first) is type(second) or (is_float(first) and is_float(second)):
             asserter = cls.equality_type_funcs.get(type(first))
 
-            try:              basestring = basestring # Python 2
-            except NameError: basestring = str        # Python 3
-
             if asserter is not None:
-                if isinstance(asserter, basestring):
+                if isinstance(asserter, str):
                     asserter = getattr(cls, asserter)
 
         if asserter is None:
@@ -101,7 +103,6 @@ class Comparison(ComparisonInterface):
 
         # Float comparisons
         cls.equality_type_funcs[float] =        cls.compare_floats
-        cls.equality_type_funcs[np.float] =     cls.compare_floats
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
@@ -118,8 +119,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
 
         # Pandas dataframe comparison
-        if pd:
-            cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
+        cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
@@ -171,7 +171,6 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[TriSurface] =   cls.compare_trisurface
-        cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
         cls.equality_type_funcs[Spikes] =       cls.compare_spikes
@@ -216,10 +215,9 @@ class Comparison(ComparisonInterface):
         keys2 = set(d2.keys())
         symmetric_diff = keys ^ keys2
         if symmetric_diff:
-            msg = ("Dictionaries have different sets of keys: %r\n\n"
-                   % symmetric_diff)
-            msg += "Dictionary 1: %s\n" % d1
-            msg += "Dictionary 2: %s" % d2
+            msg = f"Dictionaries have different sets of keys: {symmetric_diff!r}\n\n"
+            msg += f"Dictionary 1: {d1}\n"
+            msg += f"Dictionary 2: {d2}"
             raise cls.failureException(msg)
         for k in keys:
             cls.assertEqual(d1[k], d2[k])
@@ -232,7 +230,7 @@ class Comparison(ComparisonInterface):
             for v1, v2 in zip(l1, l2):
                 cls.assertEqual(v1, v2)
         except AssertionError:
-            raise AssertionError(msg or '%s != %s' % (repr(l1), repr(l2)))
+            raise AssertionError(msg or f'{l1!r} != {l2!r}')
 
 
     @classmethod
@@ -242,7 +240,7 @@ class Comparison(ComparisonInterface):
             for i1, i2 in zip(t1, t2):
                 cls.assertEqual(i1, i2)
         except AssertionError:
-            raise AssertionError(msg or '%s != %s' % (repr(t1), repr(t2)))
+            raise AssertionError(msg or f'{t1!r} != {t2!r}')
 
 
     #=====================#
@@ -257,11 +255,11 @@ class Comparison(ComparisonInterface):
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
             if arr1.dtype.kind == 'M':
-                arr1 = arr1.astype('datetime64[ns]').astype('int64')
+                arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
             if arr2.dtype.kind == 'M':
-                arr2 = arr2.astype('datetime64[ns]').astype('int64')
+                arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
-        except:
+        except Exception:
             try:
                 cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:
@@ -279,8 +277,7 @@ class Comparison(ComparisonInterface):
                     v2 = dt_to_int(v2)
                 cls.assert_array_almost_equal_fn(v1, v2)
         except AssertionError:
-            raise cls.failureException("BoundingBoxes are mismatched: %s != %s."
-                                       % (el1.bounds.lbrt(), el2.bounds.lbrt()))
+            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.")
 
 
     #=======================================#
@@ -293,23 +290,16 @@ class Comparison(ComparisonInterface):
 
         # 'Weak' equality semantics
         if dim1.name != dim2.name:
-            raise cls.failureException("Dimension names mismatched: %s != %s"
-                                       % (dim1.name, dim2.name))
+            raise cls.failureException(f"Dimension names mismatched: {dim1.name} != {dim2.name}")
         if dim1.label != dim2.label:
-            raise cls.failureException("Dimension labels mismatched: %s != %s"
-                                       % (dim1.label, dim2.label))
+            raise cls.failureException(f"Dimension labels mismatched: {dim1.label} != {dim2.label}")
 
         # 'Deep' equality of dimension metadata (all parameters)
-        dim1_params = dict(dim1.param.get_param_values())
-        dim2_params = dict(dim2.param.get_param_values())
-
-        # Special handling of deprecated 'initial' values argument
-        dim1_params['values'] = [] if dim1.values=='initial' else dim1.values
-        dim2_params['values'] = [] if dim2.values=='initial' else dim2.values
+        dim1_params = dim1.param.values()
+        dim2_params = dim2.param.values()
 
         if set(dim1_params.keys()) != set(dim2_params.keys()):
-            raise cls.failureException("Dimension parameter sets mismatched: %s != %s"
-                                       % (set(dim1_params.keys()), set(dim2_params.keys())))
+            raise cls.failureException(f"Dimension parameter sets mismatched: {set(dim1_params.keys())} != {set(dim2_params.keys())}")
 
         for k in dim1_params.keys():
             if (dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
@@ -318,8 +308,8 @@ class Comparison(ComparisonInterface):
             try:  # This is needed as two lists are not compared by contents using ==
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
-                msg = 'Dimension parameter %r mismatched: ' % k
-                raise cls.failureException("%s%s" % (msg, str(e)))
+                msg = f'Dimension parameter {k!r} mismatched: '
+                raise cls.failureException(f"{msg}{e!s}")
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -329,7 +319,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
         if len(dlist1) != len(dlist2):
-            raise cls.failureException('%s mismatched' % msg)
+            raise cls.failureException(f'{msg} mismatched')
         for d1, d2 in zip(dlist1, dlist2):
             cls.assertEqual(d1, d2)
 
@@ -354,9 +344,9 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_trees(cls, el1, el2, msg='Trees'):
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%s have mismatched path counts." % msg)
+            raise cls.failureException(f"{msg} have mismatched path counts.")
         if el1.keys() != el2.keys():
-            raise cls.failureException("%s have mismatched paths." % msg)
+            raise cls.failureException(f"{msg} have mismatched paths.")
         for element1, element2 in zip(el1.values(),  el2.values()):
             cls.assertEqual(element1, element2)
 
@@ -384,14 +374,14 @@ class Comparison(ComparisonInterface):
     def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
         cls.compare_dimensioned(el1, el2)
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%s have different numbers of keys." % msg)
+            raise cls.failureException(f"{msg} have different numbers of keys.")
 
         if set(el1.keys()) != set(el2.keys()):
             diff1 = [el for el in el1.keys() if el not in el2.keys()]
             diff2 = [el for el in el2.keys() if el not in el1.keys()]
-            raise cls.failureException("%s have different sets of keys. " % msg
-                                       + "In first, not second %s. " % diff1
-                                       + "In second, not first: %s." % diff2)
+            raise cls.failureException(f"{msg} have different sets of keys. "
+                                       + f"In first, not second {diff1}. "
+                                       + f"In second, not first: {diff2}.")
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1, element2)
@@ -490,9 +480,9 @@ class Comparison(ComparisonInterface):
         paths1 = el1.split()
         paths2 = el2.split()
         if len(paths1) != len(paths2):
-            raise cls.failureException("%s objects do not have a matching number of paths." % msg)
+            raise cls.failureException(f"{msg} objects do not have a matching number of paths.")
         for p1, p2 in zip(paths1, paths2):
-            cls.compare_dataset(p1, p2, '%s data' % msg)
+            cls.compare_dataset(p1, p2, f'{msg} data')
 
     @classmethod
     def compare_contours(cls, el1, el2, msg='Contours'):
@@ -534,13 +524,11 @@ class Comparison(ComparisonInterface):
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
-                cls.failureException("%s %s columns have different type." % (msg, dim.pprint_label)
-                                     + " First has type %s, and second has type %s."
-                                     % (d1, d2))
+                cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
+                                     + f" First has type {d1}, and second has type {d2}.")
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
-                    cls.failureException("%s along dimension %s not equal." %
-                                         (msg, dim.pprint_label))
+                    cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
             else:
                 cls.compare_arrays(d1, d2, msg)
 
@@ -610,7 +598,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_boxes(cls, el1, el2, msg='Rectangles'):
         cls.compare_dataset(el1, el2, msg)
-        
+
     #=========#
     # Graphs  #
     #=========#
@@ -700,7 +688,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_dataframe(cls, df1, df2, msg='DFrame'):
-        from pandas.util.testing import assert_frame_equal
+        from pandas.testing import assert_frame_equal
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:
@@ -730,13 +718,13 @@ class Comparison(ComparisonInterface):
     def _compare_grids(cls, el1, el2, name):
 
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%ss have different numbers of items." % name)
+            raise cls.failureException(f"{name}s have different numbers of items.")
 
         if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException("%ss have different keys." % name)
+            raise cls.failureException(f"{name}s have different keys.")
 
         if len(el1) != len(el2):
-            raise cls.failureException("%ss have different depths." % name)
+            raise cls.failureException(f"{name}s have different depths.")
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1, element2)
@@ -757,13 +745,6 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_cycles(cls, cycle1, cycle2, msg=None):
         cls.assertEqual(cycle1.values, cycle2.values)
-
-    @classmethod
-    def compare_channelopts(cls, opt1, opt2, msg=None):
-        cls.assertEqual(opt1.mode, opt2.mode)
-        cls.assertEqual(opt1.pattern, opt2.pattern)
-        cls.assertEqual(opt1.patter, opt2.pattern)
-
 
 
 class ComparisonTestCase(Comparison, TestCase):

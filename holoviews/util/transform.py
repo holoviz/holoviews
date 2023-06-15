@@ -1,16 +1,15 @@
-from __future__ import division
-
 import operator
 import sys
 
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import pandas as pd
 import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import basestring, pd, resolve_dependent_value, unique_iterator
+from ..core.util import flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -25,14 +24,13 @@ def _maybe_map(numpy_fn):
                                       index=s.index))
             else:
                 return map_fn(lambda s: numpy_fn(s, *args, **kwargs))
+        elif series_like:
+            return type(values)(
+                numpy_fn(values, *args, **kwargs),
+                index=values.index,
+            )
         else:
-            if series_like:
-                return type(values)(
-                    numpy_fn(values, *args, **kwargs),
-                    index=values.index,
-                )
-            else:
-                return numpy_fn(values, *args, **kwargs)
+            return numpy_fn(values, *args, **kwargs)
     return fn
 
 
@@ -71,7 +69,7 @@ def lognorm(values, min=None, max=None):
     return (np.log(values) - min) / (max-min)
 
 
-class iloc(object):
+class iloc:
     """Implements integer array indexing for dim expressions.
     """
 
@@ -86,7 +84,28 @@ class iloc(object):
         return dim(self.expr, self)
 
     def __call__(self, values):
-        return values[self.index]
+        if isinstance(values, (pd.Series, pd.DataFrame)):
+            return values.iloc[resolve_dependent_value(self.index)]
+        else:
+            return values[resolve_dependent_value(self.index)]
+
+
+class loc:
+    """Implements loc for dim expressions.
+    """
+
+    __name__ = 'loc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values.loc[resolve_dependent_value(self.index)]
 
 
 @_maybe_map
@@ -153,8 +172,19 @@ def categorize(values, categories, default=None):
     return result
 
 
+if hasattr(np, 'isin'):
+    isin = _maybe_map(np.isin)
+else:
+    # for 1.4 <= numpy < 1.13; in1d() available since 1.4
+    def _isin(element, test_elements, assume_unique=False, invert=False):
+        # from 1.13's numpy.lib.arraysetops
+        element = np.asarray(element)
+        return np.in1d(element, test_elements, assume_unique=assume_unique,
+                invert=invert).reshape(element.shape)
+    isin = _maybe_map(_isin)
+    del _isin
+
 digitize = _maybe_map(np.digitize)
-isin = _maybe_map(np.isin)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
@@ -165,11 +195,11 @@ python_isin = _maybe_map(_python_isin)
 
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc
+    MethodType, np.ufunc, iloc, loc
 )
 
 
-class dim(object):
+class dim:
     """
     dim transform objects are a way to express deferred transforms on
     Datasets. dim transforms support all mathematical and bitwise
@@ -198,6 +228,7 @@ class dim(object):
         astype: 'astype',
         round_: 'round',
         iloc: 'iloc',
+        loc: 'loc',
     }
 
     _numpy_funcs = {
@@ -219,13 +250,18 @@ class dim(object):
     _accessor = None
 
     def __init__(self, obj, *args, **kwargs):
+        from panel.widgets import Widget
         ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
-        if isinstance(obj, basestring):
+        if isinstance(obj, str):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
             self.dimension = obj
+        elif isinstance(obj, param.Parameter):
+            self.dimension = obj
+        elif isinstance(obj, Widget):
+            self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
             ops = obj.ops
@@ -234,7 +270,7 @@ class dim(object):
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types+(basestring,)) or
+            if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
@@ -242,16 +278,22 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
     @property
     def _current_accessor(self):
         if self.ops and self.ops[-1]['kwargs'].get('accessor'):
             return self.ops[-1]['fn']
 
     def __call__(self, *args, **kwargs):
-        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
             raise ValueError("Cannot call method on %r expression. "
-                             "Only methods accessed via namspaces, "
+                             "Only methods accessed via namespaces, "
                              "e.g. dim(...).df or dim(...).xr), "
                              "can be called. " % self)
         op = self.ops[-1]
@@ -261,11 +303,25 @@ class dim(object):
             new_op = dict(op, args=args, kwargs=kwargs)
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
-    def __getattr__(self, attr):
-        if attr in dir(self):
+    def __getattribute__(self, attr):
+        self_dict = super().__getattribute__('__dict__')
+        if '_ns' not in self_dict: # Not yet initialized
+            return super().__getattribute__(attr)
+        ns = self_dict['_ns']
+        ops = super().__getattribute__('ops')
+        if ops and ops[-1]['kwargs'].get('accessor'):
+            try:
+                ns = getattr(ns, ops[-1]['fn'])
+            except Exception:
+                # If the namespace doesn't know the method we are
+                # calling then we are using custom API of the dim
+                # transform itself, so set namespace to None
+                ns = None
+        extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
+        if attr in extras and attr not in super().__dir__():
             return type(self)(self, attr, accessor=True)
-        raise AttributeError("%r object has no attribute %r" %
-                             (type(self).__name__, attr))
+        else:
+            return super().__getattribute__(attr)
 
     def __dir__(self):
         ns = self._ns
@@ -273,7 +329,7 @@ class dim(object):
             ns = getattr(ns, self._current_accessor)
         extras = {attr for attr in dir(ns) if not attr.startswith('_')}
         try:
-            return sorted(set(super(dim, self).__dir__()) | extras)
+            return sorted(set(super().__dir__()) | extras)
         except Exception:
             return sorted(set(dir(type(self))) | set(self.__dict__) | extras)
 
@@ -304,21 +360,46 @@ class dim(object):
 
     @property
     def params(self):
+        if 'panel' in sys.modules:
+            from panel.widgets.base import Widget
+        else:
+            Widget = None
+
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
+            if hasattr(op['fn'], 'index'):
+                # Special case for loc and iloc to check for parameters
+                op_args += [op['fn'].index]
+            op_args = flatten(op_args)
             for op_arg in op_args:
-                if 'panel' in sys.modules:
-                    from panel.widgets.base import Widget
-                    if isinstance(op_arg, Widget):
-                        op_arg = op_arg.param.value
+                if Widget and isinstance(op_arg, Widget):
+                    op_arg = op_arg.param.value
+                if isinstance(op_arg, dim):
+                    params.update(op_arg.params)
+                elif isinstance(op_arg, slice):
+                    (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
+
+                    if Widget and isinstance(start, Widget):
+                        start = start.param.value
+                    if Widget and isinstance(stop, Widget):
+                        stop = stop.param.value
+                    if Widget and isinstance(step, Widget):
+                        step = step.param.value
+
+                    if isinstance(start, param.Parameter):
+                        params[start.name+str(id(start))] = start
+                    if isinstance(stop, param.Parameter):
+                        params[stop.name+str(id(stop))] = stop
+                    if isinstance(step, param.Parameter):
+                        params[step.name+str(id(step))] = step
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
-                    params[op_arg.name+str(id(op))] = op_arg
+                    params[op_arg.name+str(id(op_arg))] = op_arg
+
         return params
 
     # Namespace properties
-
     @property
     def df(self):
         return self.clone(dim_type=df_dim)
@@ -330,6 +411,9 @@ class dim(object):
     @property
     def xr(self):
         return self.clone(dim_type=xr_dim)
+
+    def __getitem__(self, *index):
+        return type(self)(self, operator.getitem, *index)
 
     # Builtin functions
     def __abs__(self):            return type(self)(self, abs)
@@ -391,7 +475,9 @@ class dim(object):
     def any(self, *args, **kwargs):      return type(self)(self, np.any, *args, **kwargs)
     def all(self, *args, **kwargs):      return type(self)(self, np.all, *args, **kwargs)
     def cumprod(self, *args, **kwargs):  return type(self)(self, np.cumprod,  *args, **kwargs)
-    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args, **kwargs)
+    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args,
+                                                           axis=kwargs.pop('axis',0),
+                                                           **kwargs)
     def max(self, *args, **kwargs):      return type(self)(self, np.max, *args, **kwargs)
     def mean(self, *args, **kwargs):     return type(self)(self, np.mean, *args, **kwargs)
     def min(self, *args, **kwargs):      return type(self)(self, np.min, *args, **kwargs)
@@ -474,7 +560,7 @@ class dim(object):
         """
         args = list(args) # make mutable
         for k, arg in enumerate(args):
-            if isinstance(arg, basestring):
+            if isinstance(arg, str):
                 args[k] = cls(arg)
         return cls(args[0], func, *args[1:], **kwargs)
 
@@ -493,8 +579,12 @@ class dim(object):
         """
         from ..element import Graph
 
-        if isinstance(self.dimension, dim):
+        if isinstance(self.dimension, param.Parameter):
+            applies = True
+        elif isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
+        elif self.dimension.name == '*':
+            applies = True
         else:
             lookup = self.dimension if strict else self.dimension.name
             applies = dataset.get_dimension(lookup) is not None
@@ -528,7 +618,7 @@ class dim(object):
                 kwargs['axis'] = None
             fn = fn_name
 
-        if isinstance(fn, basestring):
+        if isinstance(fn, str):
             accessor = kwargs.pop('accessor', None)
             fn_args = []
         else:
@@ -559,14 +649,13 @@ class dim(object):
         if (((fn is norm) or (fn is lognorm)) and drange != {} and
             not ('min' in kwargs and 'max' in kwargs)):
             data = fn(data, *drange)
-        elif isinstance(fn, basestring):
+        elif isinstance(fn, str):
             method = getattr(data, fn, None)
             if method is None:
                 mtype = 'attribute' if accessor else 'method'
                 raise AttributeError(
-                    "%r could not be applied to '%r', '%s' %s "
-                    "does not exist on %s type."
-                    % (self, dataset, fn, mtype, type(data).__name__)
+                    "{!r} could not be applied to '{!r}', '{}' {} "
+                    "does not exist on {} type.".format(self, dataset, fn, mtype, type(data).__name__)
                 )
             if accessor:
                 data = method
@@ -631,21 +720,19 @@ class dim(object):
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
 
         if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
-            raise KeyError("One or more dimensions in the expression %r "
-                           "could not resolve on '%s'. Ensure all "
+            raise KeyError("One or more dimensions in the expression {!r} "
+                           "could not resolve on '{}'. Ensure all "
                            "dimensions referenced by the expression are "
-                           "present on the supplied object." % (self, dataset))
+                           "present on the supplied object.".format(self, dataset))
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
-                raise ValueError("The expression %r assumes a %s-like "
-                                 "API but the dataset contains %s data "
-                                 "and cannot be coerced." %
-                                 (self, self.namespace, dataset.interface.datatype))
+                raise ValueError("The expression {!r} assumes a {}-like "
+                                 "API but the dataset contains {} data "
+                                 "and cannot be coerced.".format(self, self.namespace, dataset.interface.datatype))
             else:
-                raise ValueError("The expression %r assumes a %s-like "
-                                 "API but the dataset contains %s data "
-                                 "and coercion is disabled." %
-                                 (self, self.namespace, dataset.interface.datatype))
+                raise ValueError("The expression {!r} assumes a {}-like "
+                                 "API but the dataset contains {} data "
+                                 "and coercion is disabled.".format(self, self.namespace, dataset.interface.datatype))
 
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
@@ -660,18 +747,25 @@ class dim(object):
             compute_for_compute = compute
             keep_index_for_compute = keep_index
 
-        lookup = dimension if strict else dimension.name
-        eldim = dataset.get_dimension(lookup)
-        data = dataset.interface.values(
-            dataset, lookup, expanded=expanded, flat=flat,
-            compute=compute_for_compute, keep_index=keep_index_for_compute
-        )
+        if dimension.name == '*':
+            data = dataset.data
+            eldim = None
+        elif isinstance(dimension, param.Parameter):
+            data = getattr(dimension.owner, dimension.name)
+            eldim = None
+        else:
+            lookup = dimension if strict else dimension.name
+            eldim = dataset.get_dimension(lookup).name
+            data = dataset.interface.values(
+                dataset, lookup, expanded=expanded, flat=flat,
+                compute=compute_for_compute, keep_index=keep_index_for_compute
+            )
         for op in self.ops:
             fn, fn_name, args, kwargs, accessor = self._resolve_op(
                 op, dataset, data, flat, expanded, ranges, all_values,
                 keep_index_for_compute, compute_for_compute, strict
             )
-            drange = ranges.get(eldim.name, {})
+            drange = ranges.get(eldim, {})
             drange = drange.get('combined', drange)
             data = self._apply_fn(dataset, data, fn, fn_name, args,
                                   kwargs, accessor, drange)
@@ -682,7 +776,7 @@ class dim(object):
         return data
 
     def __repr__(self):
-        op_repr = "'%s'" % self.dimension
+        op_repr = f"'{self.dimension}'"
         accessor = False
         for i, o in enumerate(self.ops):
             if i == 0:
@@ -698,7 +792,7 @@ class dim(object):
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
+            kwargs = '%s' % ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
@@ -711,14 +805,14 @@ class dim(object):
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
             else:
-                if isinstance(fn, basestring):
+                if isinstance(fn, str):
                     fn_name = fn
                 else:
                     fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
-                elif isinstance(fn, basestring):
+                elif isinstance(fn, str):
                     if accessor:
                         sep = '' if op_repr.endswith(')') or prev_accessor else ')'
                         format_string = prev+sep+'.{fn}'
@@ -728,7 +822,9 @@ class dim(object):
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
-                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
+                    format_string = prev+f').iloc[{fn.index!r}]'
+                elif isinstance(fn, loc):
+                    format_string = prev+f').loc[{fn.index!r}]'
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+').{fn}('
@@ -756,7 +852,7 @@ class dim(object):
                     format_string += '{kwargs}'
 
             # Insert accessor
-            if i == 0 and self._accessor:
+            if i == 0 and self._accessor and ')' in format_string:
                 idx = format_string.index(')')
                 format_string = ''.join([
                     format_string[:idx], ').', self._accessor,
@@ -768,7 +864,7 @@ class dim(object):
             if op_repr.count('(') - op_repr.count(')') > 0:
                 op_repr += ')'
         if not self.ops:
-            op_repr = 'dim({repr})'.format(repr=op_repr)
+            op_repr = f'dim({op_repr})'
         if op_repr.count('(') - op_repr.count(')') > 0:
             op_repr += ')'
         return op_repr
@@ -786,7 +882,7 @@ class df_dim(dim):
     _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
-        super(df_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = pd.Series
 
     def interface_applies(self, dataset, coerce):
@@ -810,6 +906,9 @@ class df_dim(dim):
                      if dataset.interface.multi == intfc.multi]
         return dataset.clone(datatype=datatypes)
 
+    @property
+    def loc(self):
+        return loc(self)
 
 
 class xr_dim(dim):
@@ -829,7 +928,7 @@ class xr_dim(dim):
         except ImportError:
             raise ImportError("XArray could not be imported, dim().xr "
                               "requires the xarray to be available.")
-        super(xr_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 
     def interface_applies(self, dataset, coerce):
@@ -847,3 +946,74 @@ class xr_dim(dim):
         if self.interface_applies(dataset, coerce=False):
             return dataset
         return dataset.clone(datatype=['xarray'])
+
+
+def lon_lat_to_easting_northing(longitude, latitude):
+    """
+    Projects the given longitude, latitude values into Web Mercator
+    (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+    Longitude and latitude can be provided as scalars, Pandas columns,
+    or Numpy arrays, and will be returned in the same form.  Lists
+    or tuples will be converted to Numpy arrays.
+
+    Args:
+        longitude
+        latitude
+
+    Returns:
+        (easting, northing)
+
+    Examples:
+       easting, northing = lon_lat_to_easting_northing(-74,40.71)
+
+       easting, northing = lon_lat_to_easting_northing(
+           np.array([-74]),np.array([40.71])
+       )
+
+       df=pandas.DataFrame(dict(longitude=np.array([-74]),latitude=np.array([40.71])))
+       df.loc[:, 'longitude'], df.loc[:, 'latitude'] = lon_lat_to_easting_northing(
+           df.longitude,df.latitude
+       )
+    """
+    if isinstance(longitude, (list, tuple)):
+        longitude = np.array(longitude)
+    if isinstance(latitude, (list, tuple)):
+        latitude = np.array(latitude)
+
+    origin_shift = np.pi * 6378137
+    easting = longitude * origin_shift / 180.0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        northing = np.log(
+            np.tan((90 + latitude) * np.pi / 360.0)
+        ) * origin_shift / np.pi
+    return easting, northing
+
+
+def easting_northing_to_lon_lat(easting, northing):
+    """
+    Projects the given easting, northing values into
+    longitude, latitude coordinates.
+
+    easting and northing values are assumed to be in Web Mercator
+    (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+    Args:
+        easting
+        northing
+
+    Returns:
+        (longitude, latitude)
+    """
+    if isinstance(easting, (list, tuple)):
+        easting = np.array(easting)
+    if isinstance(northing, (list, tuple)):
+        northing = np.array(northing)
+
+    origin_shift = np.pi * 6378137
+    longitude = easting * 180.0 / origin_shift
+    with np.errstate(divide='ignore'):
+        latitude = np.arctan(
+            np.exp(northing * np.pi / origin_shift)
+        ) * 360.0 / np.pi - 90
+    return longitude, latitude

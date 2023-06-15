@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from ...core.overlay import NdOverlay, Overlay
 
 from ...selection import OverlaySelectionDisplay
@@ -19,7 +17,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
         if 'selectedpoints' in allowed:
             shared_opts = dict(selectedpoints=False)
         else:
-            shared_opts = dict()
+            shared_opts = {}
 
         merged_opts = dict(shared_opts)
 

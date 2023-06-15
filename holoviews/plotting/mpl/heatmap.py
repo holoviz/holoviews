@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from itertools import product
 
 import numpy as np
@@ -187,6 +185,8 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
+        if 'vmin' in style:
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (xvals, yvals, data), style, {'xticks': xticks, 'yticks': yticks}
 
 
@@ -307,7 +307,7 @@ class RadialHeatMapPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         # dimension labels
         dim_labels = element.dimensions(label=True)[:3]
-        x, y, z = [dimension_sanitizer(d) for d in dim_labels]
+        x, y, z = (dimension_sanitizer(d) for d in dim_labels)
 
         if self.invert_axes: x, y = y, x
 
@@ -347,7 +347,7 @@ class RadialHeatMapPlot(ColorbarPlot):
             for i in range(len(xvals))[::-1]:
                 xbin = np.rad2deg(bins_segment[i:i+2])
                 width = ybin[1]-ybin[0]
-                wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width)
+                wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width=width)
                 patches.append(wedge)
 
         angles = self._get_markers(segment_ticks, self.xmarks)

@@ -1,40 +1,70 @@
 # -*- coding: utf-8 -*-
 
-from nbsite.shared_conf import *
-
-# Declare information specific to this project.
-project = u'HoloViews'
-authors = u'PyViz developers'
-copyright = u'2019 ' + authors
-description = 'Stop plotting your data - annotate your data and let it visualize itself.'
-
 import param
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
 
+from nbsite.shared_conf import *
+
+# Declare information specific to this project.
+project = 'HoloViews'
+authors = 'HoloViz developers'
+copyright = '2005 ' + authors
+description = 'Stop plotting your data - annotate your data and let it visualize itself.'
+
 import holoviews
-version = release = holoviews.__version__
+version = release = base_version(holoviews.__version__)
 
+holoviews.extension.inline = False
 
-html_theme = 'sphinx_holoviz_theme'
+html_theme = 'pydata_sphinx_theme'
+html_logo = '_static/logo_horizontal.png'
+html_favicon = '_static/favicon.ico'
+
 html_static_path += ['_static']
+
+html_css_files += [
+    'css/custom.css'
+]
+
 html_theme_options = {
-    'logo': 'logo.png',
-    'favicon': 'favicon.ico',
-    'custom_css': 'holoviews.css',
-    'include_logo_text': True,
-    'second_nav': True,
-    'footer': False
+    'github_url': 'https://github.com/holoviz/holoviews',
+    'icon_links': [
+        {
+            'name': 'Twitter',
+            'url': 'https://twitter.com/holoviews',
+            'icon': 'fa-brands fa-twitter-square',
+        },
+        {
+            'name': 'Discourse',
+            'url': 'https://discourse.holoviz.org/',
+            'icon': 'fa-brands fa-discourse',
+        },
+        {
+            "name": "Discord",
+            "url": "https://discord.gg/AXRHnJU6sP",
+            "icon": "fa-brands fa-discord",
+        },
+    ],
+    "footer_items": [
+        "copyright",
+        "last-updated",
+    ],
+    "analytics": {"google_analytics_id": 'G-91EZMMHSF7'}
 }
+
 nbbuild_cell_timeout = 360
 
-extensions += ['nbsite.gallery']
+extensions += [
+    'nbsite.gallery',
+    'sphinx_copybutton',
+]
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
     'galleries': {},
-    'github_org': 'pyviz',
+    'github_org': 'holoviz',
     'github_project': 'holoviews'
 }
 
@@ -59,45 +89,15 @@ if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
         ]
     }
 
-MAIN_SITE = '//holoviews.org'
-
 html_context.update({
-    'PROJECT': project,
-    'DESCRIPTION': description,
-    'AUTHOR': authors,
-    'VERSION': version,
-    'WEBSITE_URL': 'https://holoviews.org', # for canonical link
-    'GOOGLE_SEARCH_ID': '006807479272082416678:p6n_f0d8taw',
-    'GOOGLE_ANALYTICS_UA': 'UA-61554933-1',
-    # Links
-    'LINKS': (
-        ('Getting started', '/getting_started/index'),
-        ('User Guide', '/user_guide/index'),
-        ('Gallery', '/gallery/index'),
-        ('Reference Gallery', '/reference/index'),
-        ('API Docs', '/reference_manual/index'),
-        ('FAQ', '/FAQ'),
-        ('About', '/about')
-    ),
-    # About Links
-    'ABOUT': (
-        ('About', '/about.html')
-    ),
-    # Social links
-    'SOCIAL': (
-        ('Discourse', '//discourse.holoviz.org/c/holoviews'),
-        ('Twitter', '//twitter.com/holoviews'),
-        ('Github', '//github.com/pyviz/holoviews'),
-    ),
-    # Links for the docs sub navigation
-    'NAV': (
-        ('Getting started', 'getting_started/index'),
-        ('User Guide', 'user_guide/index'),
-        ('Gallery', 'gallery/index'),
-        ('Reference Gallery', 'reference/index'),
-        ('Releases', 'releases'),
-        ('API', 'reference_manual/index'),
-        ('FAQ', 'FAQ')
-    ),
-    'js_includes': html_context['js_includes']+['holoviews.js']
+    # Used to add binder links to the latest released tag.
+    "last_release": f"v{'.'.join(holoviews.__version__.split('.')[:3])}",
+    'github_user': 'holoviz',
+    'github_repo': 'holoviews',
+    "default_mode": "light"
 })
+
+# Override the Sphinx default title that appends `documentation`
+html_title = f'{project} v{version}'
+# Format of the last updated section in the footer
+html_last_updated_fmt = '%Y-%m-%d'

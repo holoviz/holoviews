@@ -1,16 +1,16 @@
 from ..core import HoloMap
 from ..core.data import Dataset, DataConversion
-from .annotation import * # noqa (API import)
-from .chart import * # noqa (API import)
-from .geom import * # noqa (API import)
-from .chart3d import * # noqa (API import)
-from .graphs import * # noqa (API import)
-from .path import * # noqa (API import)
-from .raster import * # noqa (API import)
-from .sankey import * # noqa (API import)
-from .stats import * # noqa (API import)
-from .tabular import * # noqa (API import)
-from .tiles import * # noqa (API import)
+from .annotation import *
+from .chart import *
+from .geom import *
+from .chart3d import *
+from .graphs import *
+from .path import *
+from .raster import *
+from .sankey import *
+from .stats import *
+from .tabular import *
+from .tiles import *
 
 
 class ElementConversion(DataConversion):
@@ -67,7 +67,7 @@ class ElementConversion(DataConversion):
 
     def raster(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Raster(heatmap.data, **dict(self._element.param.get_param_values(onlychanged=True)))
+        return Raster(heatmap.data, **self._element.param.values(onlychanged=True))
 
     def scatter(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Scatter, kdims, vdims, groupby, **kwargs)
@@ -83,7 +83,7 @@ class ElementConversion(DataConversion):
 
     def surface(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Surface(heatmap.data, **dict(self._table.param.get_param_values(onlychanged=True)))
+        return Surface(heatmap.data, **self._table.param.values(onlychanged=True))
 
     def trisurface(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(TriSurface, kdims, vdims, groupby, **kwargs)
@@ -114,8 +114,8 @@ Dataset._conversion_interface = ElementConversion
 
 
 def public(obj):
-    if not isinstance(obj, type) or getattr(obj, 'abstract', False) and not obj is Element:
+    if not isinstance(obj, type) or getattr(obj, 'abstract', False) and obj is not Element:
         return False
     return issubclass(obj, Element)
 
-__all__ = list(set([_k for _k, _v in locals().items() if public(_v)]))
+__all__ = list({_k for _k, _v in locals().items() if public(_v)})

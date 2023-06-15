@@ -1,12 +1,10 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
 from bokeh.models import Patches
 
 from ...core.data import Dataset
-from ...core.util import basestring, max_range, dimension_sanitizer
+from ...core.util import max_range, dimension_sanitizer
 from ...util.transform import dim
 from .graphs import GraphPlot
 
@@ -14,7 +12,7 @@ from .graphs import GraphPlot
 
 class SankeyPlot(GraphPlot):
 
-    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+    labels = param.ClassSelector(class_=(str, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
     label_position = param.ObjectSelector(default='right',
@@ -50,11 +48,11 @@ class SankeyPlot(GraphPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+    color_index = param.ClassSelector(default=2, class_=(str, int),
                                       allow_None=True, doc="""
         Index of the dimension from which the node labels will be drawn""")
 
-    label_index = param.ClassSelector(default=2, class_=(basestring, int),
+    label_index = param.ClassSelector(default=2, class_=(str, int),
                                       allow_None=True, doc="""
         Index of the dimension from which the node labels will be drawn""")
 
@@ -68,7 +66,7 @@ class SankeyPlot(GraphPlot):
     filled = True
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
         renderer = plot.renderers.pop(plot.renderers.index(self.handles['glyph_renderer']))
         plot.renderers = [renderer] + plot.renderers
         arc_renderer = self.handles['quad_1_glyph_renderer']
@@ -79,7 +77,7 @@ class SankeyPlot(GraphPlot):
         self._sync_nodes()
 
     def get_data(self, element, ranges, style):
-        data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)
+        data, mapping, style = super().get_data(element, ranges, style)
         self._compute_quads(element, data, mapping)
         style['nodes_line_color'] = 'black'
         self._compute_labels(element, data, mapping)
@@ -90,11 +88,11 @@ class SankeyPlot(GraphPlot):
         if key == 'quad_1':
             properties.pop('size', None)
             mapping.pop('size', None)
-        return super(SankeyPlot, self)._init_glyph(plot, mapping, properties, key)
+        return super()._init_glyph(plot, mapping, properties, key)
 
     def _update_glyphs(self, element, ranges, style):
         self._sync_nodes()
-        super(SankeyPlot, self)._update_glyphs(element, ranges, style)
+        super()._update_glyphs(element, ranges, style)
 
     def _sync_nodes(self):
         arc_renderer = self.handles['quad_1_glyph_renderer']
@@ -145,7 +143,7 @@ class SankeyPlot(GraphPlot):
                     "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
-        if isinstance(labels, basestring):
+        if isinstance(labels, str):
             labels = element.nodes.get_dimension(labels)
 
         if labels is None:
@@ -169,7 +167,7 @@ class SankeyPlot(GraphPlot):
 
         is_outer_inner = self.label_position in ['outer', 'inner']
 
-        # initalize label x-locations
+        # initialize label x-locations
         if self.label_position in ['right', 'outer']:
             xs = np.array([node['x1'] for node in nodes]) + offset
         else: # ['left', 'inner']
@@ -183,7 +181,7 @@ class SankeyPlot(GraphPlot):
             if self.show_values:
                 value = value_dim.pprint_value(node['value'], print_unit=True)
                 if label:
-                    label = '%s - %s' % (label, value)
+                    label = f'{label} - {value}'
                 else:
                     label = value
             if label:
@@ -222,7 +220,7 @@ class SankeyPlot(GraphPlot):
         if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
         lidx = element.nodes.get_dimension(self.label_index)
-        src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
+        src, tgt = (dimension_sanitizer(kd.name) for kd in element.kdims[:2])
         if src == 'start': src += '_values'
         if tgt == 'end':   tgt += '_values'
         lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))
@@ -261,7 +259,6 @@ class SankeyPlot(GraphPlot):
         if self.inspection_policy == 'edges':
             if not isinstance(renderer.glyph, Patches):
                 return
-        else:
-            if isinstance(renderer.glyph, Patches):
-                return
-        super(SankeyPlot, self)._postprocess_hover(renderer, source)
+        elif isinstance(renderer.glyph, Patches):
+            return
+        super()._postprocess_hover(renderer, source)

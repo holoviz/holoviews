@@ -1,16 +1,10 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
-
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
 
 from itertools import product
 
 import numpy as np
+import pandas as pd
 
 from .. import util
 from ..dimension import dimension_name
@@ -18,6 +12,7 @@ from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
 from .pandas import PandasInterface
+from .util import finite_range
 
 
 class cuDFInterface(PandasInterface):
@@ -54,7 +49,6 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import cudf
-        import pandas as pd
 
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
@@ -123,11 +117,14 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
+        if dimension.nodata is not None:
+            column = cls.replace_value(column, dimension.nodata)
         if column.dtype.kind == 'O':
             return np.NaN, np.NaN
         else:
-            return (column.min(), column.max())
+            return finite_range(column, column.min(), column.max())
 
 
     @classmethod
@@ -137,13 +134,15 @@ class cuDFInterface(PandasInterface):
         data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
-            return data.to_array() if compute else data.values
+            return data.values_host if compute else data.values
         elif keep_index:
             return data
         elif compute:
-            return data.to_array()
-        return data.values
-
+            return data.values_host
+        try:
+            return data.values
+        except Exception:
+            return data.values_host
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -163,7 +162,7 @@ class cuDFInterface(PandasInterface):
         group_kwargs['dataset'] = dataset.dataset
 
         # Find all the keys along supplied dimensions
-        keys = product(*(dataset.data[dimensions[0]].unique() for d in dimensions))
+        keys = product(*(dataset.data[dimensions[0]].unique().values_host for d in dimensions))
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
@@ -186,7 +185,7 @@ class cuDFInterface(PandasInterface):
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
@@ -194,11 +193,11 @@ class cuDFInterface(PandasInterface):
         for dim, sel in selection.items():
             if isinstance(sel, tuple):
                 sel = slice(*sel)
-            arr = cls.values(dataset, dim, compute=False)
-            if util.isdatetime(arr) and util.pd:
+            arr = cls.values(dataset, dim, keep_index=True)
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
 
             new_masks = []
@@ -233,7 +232,6 @@ class cuDFInterface(PandasInterface):
                 mask &= new_mask
         return mask
 
-
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
@@ -242,17 +240,15 @@ class cuDFInterface(PandasInterface):
 
         indexed = cls.indexed(dataset, selection)
         if selection_mask is not None:
-            df = df[selection_mask]
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
-
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
         import cudf
         return cudf.concat(dataframes, **kwargs)
-
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -260,7 +256,6 @@ class cuDFInterface(PandasInterface):
         if dimension.name not in data:
             data[dimension.name] = values
         return data
-
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
@@ -274,16 +269,22 @@ class cuDFInterface(PandasInterface):
             agg = agg_map.get(agg, agg)
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             df = getattr(grouped, agg)().reset_index()
         else:
             agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
             agg = agg_map.get(agg, agg)
             if not hasattr(reindexed, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
-            data = dict(((col, [v]) for col, v in zip(agg.index, agg.to_array())))
-            df = util.pd.DataFrame(data, columns=list(agg.index))
+            try:
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy())}
+            except Exception:
+                # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
+                # Consider using `to_numpy` instead.'
+                # Seen in cudf=21.12.01
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array())}
+            df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
         for vd in vdims:

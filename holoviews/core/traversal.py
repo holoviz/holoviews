@@ -10,11 +10,6 @@ from operator import itemgetter
 from .dimension import Dimension
 from .util import merge_dimensions
 
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 
 def create_ndkey(length, indexes, values):
     key = [None] * length

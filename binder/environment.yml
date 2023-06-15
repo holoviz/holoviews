@@ -4,25 +4,19 @@ channels:
   - conda-forge
 
 dependencies:
-  - pyviz::holoviews=1.13.2
-  # Install requires
-  - pyviz::param>=1.9.3,<2.0
-  - pyviz::pyviz_comms>=0.7.3
-  - pyviz::panel>=0.8.0
-  - numpy>=1.0
-  - pandas
-  # Notebook dependencies already installedc by binder
-  #
+  - python=3.9
+  - holoviews=1.15
+  # Notebook dependencies already installed by binder
   # Recommended installs
   - matplotlib>=2.2
-  - bokeh>=1.1.0
+  - bokeh>=2.4.0,<3.0
   # To run all the examples
-  - pyviz::spatialpandas
+  - spatialpandas
   - networkx
   - pillow
   - xarray>=0.10.4
   - plotly>=4.0
-  - pyviz::datashader
+  - datashader
   - selenium
   - phantomjs
   - ffmpeg
@@ -32,3 +26,4 @@ dependencies:
   - bzip2
   - dask
   - scipy
+  - ibis-sqlite

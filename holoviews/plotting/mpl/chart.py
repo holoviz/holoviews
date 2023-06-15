@@ -1,8 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 import matplotlib as mpl
+from packaging.version import Version
 
 from matplotlib import cm
 from matplotlib.collections import LineCollection
@@ -11,7 +10,7 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    match_spec, basestring, isfinite, dt_to_int, dt64_to_dt, search_indices,
+    match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
     unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
@@ -125,7 +124,7 @@ class ErrorPlot(ColorbarPlot):
     def init_artists(self, ax, plot_data, plot_kwargs):
         handles = ax.errorbar(*plot_data, **plot_kwargs)
         bottoms, tops = None, None
-        if mpl_version >= str('2.0'):
+        if mpl_version >= Version('2.0'):
             _, caps, verts = handles
             if caps:
                 bottoms, tops = caps
@@ -133,25 +132,25 @@ class ErrorPlot(ColorbarPlot):
             _, (bottoms, tops), verts = handles
         return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0], 'artist': verts[0]}
 
-
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
-        color = style.get('color')
+        color = style.pop('color', None)
         if isinstance(color, np.ndarray):
             style['ecolor'] = color
         if 'edgecolor' in style:
             style['ecolor'] = style.pop('edgecolor')
+        if 'linewidth' in style:
+            # Raise ValueError if a numpy array, so needs to be a list.
+            style["elinewidth"] = np.asarray(style.pop('linewidth')).tolist()
         c = style.get('c')
         if isinstance(c, np.ndarray):
             with abbreviated_exception():
                 raise ValueError('Mapping a continuous or categorical '
                                  'dimension to a color on a ErrorBarPlot '
-                                 'is not supported by the {backend} backend. '
+                                 f'is not supported by the {self.renderer.backend} backend. '
                                  'To map a dimension to a color supply '
-                                 'an explicit list of rgba colors.'.format(
-                                     backend=self.renderer.backend
-                                 )
+                                 'an explicit list of rgba colors.'
                 )
 
         style['fmt'] = 'none'
@@ -193,8 +192,8 @@ class ErrorPlot(ColorbarPlot):
             tops.set_ydata(tys)
         if 'ecolor' in style:
             verts.set_edgecolors(style['ecolor'])
-        if 'linewidth' in style:
-            verts.set_linewidths(style['linewidth'])
+        if 'elinewidth' in style:
+            verts.set_linewidths(style['elinewidth'])
 
         return axis_kwargs
 
@@ -209,7 +208,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
     style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle',
-                  'fill', 'capstyle', 'interpolate']
+                  'fill', 'capstyle', 'interpolate', 'step']
 
     _nonvectorized_styles = style_opts
 
@@ -254,7 +253,6 @@ class SideAreaPlot(AdjoinedPlot, AreaPlot):
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
 
-
 class SpreadPlot(AreaPlot):
     """
     SpreadPlot plots the Spread Element type.
@@ -266,7 +264,7 @@ class SpreadPlot(AreaPlot):
         Whether to show legend for the plot.""")
 
     def __init__(self, element, **params):
-        super(SpreadPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
@@ -280,7 +278,6 @@ class SpreadPlot(AreaPlot):
 
     def get_extents(self, element, ranges, range_type='combined'):
         return ChartPlot.get_extents(self, element, ranges, range_type)
-
 
 
 class HistogramPlot(ColorbarPlot):
@@ -300,7 +297,7 @@ class HistogramPlot(ColorbarPlot):
         self.center = False
         self.cyclic = False
 
-        super(HistogramPlot, self).__init__(histograms, **params)
+        super().__init__(histograms, **params)
 
         if self.invert_axes:
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
@@ -376,7 +373,6 @@ class HistogramPlot(ColorbarPlot):
         widths = np.diff(edges)
         return edges[:-1], hist_vals, widths, xlim+ylim, is_datetime
 
-
     def _compute_ticks(self, element, edges, widths, lims):
         """
         Compute the ticks either as cyclic values in degrees or as roughly
@@ -387,15 +383,14 @@ class HistogramPlot(ColorbarPlot):
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.xticks)
-            labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
+            labels = [f"{np.rad2deg(x):.0f}\N{DEGREE SIGN}" for x in xvals]
         elif self.xticks:
             dim = element.get_dimension(0)
-            inds = np.linspace(0, len(edges), self.xticks, dtype=np.int)
+            inds = np.linspace(0, len(edges), self.xticks, dtype=int)
             edges = list(edges) + [edges[-1] + widths[-1]]
             xvals = [edges[i] for i in inds]
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
-
 
     def get_extents(self, element, ranges, range_type='combined'):
         ydim = element.get_dimension(1)
@@ -403,8 +398,7 @@ class HistogramPlot(ColorbarPlot):
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.name]['soft'] = (s0, s1)
-        return super(HistogramPlot, self).get_extents(element, ranges, range_type)
-
+        return super().get_extents(element, ranges, range_type)
 
     def _process_axsettings(self, hist, lims, ticks):
         """
@@ -414,14 +408,12 @@ class HistogramPlot(ColorbarPlot):
         axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)]))
         return axis_settings
 
-
     def _update_plot(self, key, hist, bars, lims, ranges):
         """
         Process bars can be subclassed to manually adjust bars
         after being plotted.
         """
         return bars
-
 
     def _update_artists(self, key, hist, edges, hvals, widths, lims, ranges):
         """
@@ -450,7 +442,6 @@ class HistogramPlot(ColorbarPlot):
         return ax_settings
 
 
-
 class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
     bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
@@ -466,18 +457,16 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         """
         Subclassed to offset histogram by defined amount.
         """
-        edges, hvals, widths, lims, isdatetime = super(SideHistogramPlot, self)._process_hist(hist)
+        edges, hvals, widths, lims, isdatetime = super()._process_hist(hist)
         offset = self.offset * lims[3]
-        hvals *= 1-self.offset
+        hvals = hvals * (1-self.offset)
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims, isdatetime
 
-
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
-        super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
+        super()._update_artists(n, element, edges, hvals, widths, lims, ranges)
         self._update_plot(n, element, self.handles['artist'], lims, ranges)
-
 
     def _update_plot(self, key, element, bars, lims, ranges):
         """
@@ -508,7 +497,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
             cdim = None
 
         # Get colormapping options
-        if isinstance(range_item, (HeatMap, Raster)) or cdim:
+        if isinstance(range_item, (HeatMap, Raster)) or (cdim and cdim in element):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
@@ -522,10 +511,9 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         elif offset:
             self._update_separator(offset)
 
-        if cmap is not None:
+        if cmap is not None and main_range and (None not in main_range):
             self._colorize_bars(cmap, bars, element, main_range, dim)
         return bars
-
 
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
         """
@@ -539,7 +527,6 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         for c, bar in zip(colors, bars):
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
-
 
     def _update_separator(self, offset):
         """
@@ -557,7 +544,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(ChartPlot, ColorbarPlot):
+class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
@@ -568,11 +555,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
@@ -613,7 +600,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         cmap = style.get('cmap', None)
 
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -632,7 +619,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         ms = style.get('s', mpl.rcParams['lines.markersize'])
         sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
+        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 's' option and "
                 "declare a size_index; ignoring the size_index.")
@@ -644,8 +631,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if sizes is None:
                 eltype = type(element).__name__
                 self.param.warning(
-                    '%s dimension is not numeric, cannot use to '
-                    'scale %s size.' % (sdim.pprint_label, eltype))
+                    '{} dimension is not numeric, cannot use to '
+                    'scale {} size.'.format(sdim.pprint_label, eltype))
             else:
                 style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
@@ -704,7 +691,7 @@ class VectorFieldPlot(ColorbarPlot):
        they may be customized with the 'headlength' and
        'headaxislength' style options.""")
 
-    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+    magnitude = param.ClassSelector(class_=(str, dim), doc="""
         Dimension or dimension value transform that declares the magnitude
         of each vector. Magnitude is expected to be scaled between 0-1,
         by default the magnitudes are rescaled relative to the minimum
@@ -719,13 +706,13 @@ class VectorFieldPlot(ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of dimension value transform on color option,
         e.g. `color=dim('Magnitude')`.
         """)
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of the magnitude option, e.g.
         `magnitude=dim('Magnitude')`.
@@ -756,7 +743,7 @@ class VectorFieldPlot(ColorbarPlot):
                 "and declare a size_index; ignoring the size_index.")
         elif size_dim:
             mag_dim = size_dim
-        elif isinstance(mag_dim, basestring):
+        elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
         if mag_dim is not None:
             if isinstance(mag_dim, dim):
@@ -791,7 +778,7 @@ class VectorFieldPlot(ColorbarPlot):
         # Compute color
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -907,7 +894,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         return self._finalize_axis(key, ranges=ranges, element=element,
                                    dimensions=[xdims, vdim], **kwargs)
 
-
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
@@ -921,7 +907,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             xticks = ticks
         elif yticks:
             yticks = ticks
-        super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
+        super()._finalize_ticks(axis, element, xticks, yticks, zticks)
         if alignments:
             if xticks:
                 for t, y in zip(axis.get_xticklabels(), alignments):
@@ -929,7 +915,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             elif yticks:
                 for t, x in zip(axis.get_yticklabels(), alignments):
                     t.set_x(x)
-
 
     def _create_bars(self, axis, element, ranges, style):
         # Get values dimensions, and style information
@@ -1018,7 +1003,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if self.show_legend and any(len(l) for l in labels) and (sdim or not self.multi_level):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
-            axis.legend(title=title, **leg_spec)
+            legend_opts = self.legend_opts.copy()
+            legend_opts.update(**leg_spec)
+            axis.legend(title=title, **legend_opts)
 
         return bars, xticks, ax_dims
 
@@ -1032,7 +1019,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         'square' and 'equal' options.""")
 
     color_index = param.ClassSelector(default=None, allow_None=True,
-                                      class_=(basestring, int), doc="""
+                                      class_=(str, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -1050,6 +1037,8 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if "array" not in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}
@@ -1091,7 +1080,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")

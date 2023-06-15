@@ -5,22 +5,21 @@ OR
 holoviews Conversion_Example.ipynb
 """
 
-from __future__ import absolute_import, print_function
-
 import sys
 import os
 import argparse
 from argparse import RawTextHelpFormatter
 
 try:
-    import nbformat, nbconvert
-except:
+    import nbformat
+    import nbconvert
+except ImportError:
     print('nbformat, nbconvert and ipython need to be installed to use the holoviews command')
     sys.exit()
 try:
     from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from ..ipython.preprocessors import StripMagicsProcessor
-except:
+except ImportError:
     from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from holoviews.ipython.preprocessors import StripMagicsProcessor
 

@@ -1,8 +1,3 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import numpy as np
 
 from .interface import Interface, DataError
@@ -35,7 +30,7 @@ class ArrayInterface(Interface):
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
             dataset = [d if isinstance(d, np.ndarray) else np.asarray(data[d]) for d in dimensions]
-            if len(set(d.dtype.kind for d in dataset)) > 1:
+            if len({d.dtype.kind for d in dataset}) > 1:
                 raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             data = np.column_stack(dataset)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
@@ -45,7 +40,7 @@ class ArrayInterface(Interface):
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
-            if len(set(d.dtype.kind for d in data)) > 1:
+            if len({d.dtype.kind for d in data}) > 1:
                 raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             elif cls.expanded(data):
                 data = np.column_stack(data)
@@ -57,7 +52,7 @@ class ArrayInterface(Interface):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
                 data = np.array(data)
-            except:
+            except Exception:
                 data = None
 
         if kdims is None:
@@ -271,7 +266,7 @@ class ArrayInterface(Interface):
     def iloc(cls, dataset, index):
         rows, cols = index
         if np.isscalar(cols):
-            if isinstance(cols, util.basestring):
+            if isinstance(cols, str):
                 cols = dataset.get_dimension_index(cols)
             if np.isscalar(rows):
                 return dataset.data[rows, cols]

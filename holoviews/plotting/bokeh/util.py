@@ -1,14 +1,12 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import re
-import time
-import sys
 import calendar
 import datetime as dt
-from types import FunctionType
+import inspect
+import re
+import time
 
 from collections import defaultdict
 from contextlib import contextmanager
+from types import FunctionType
 
 import param
 import bokeh
@@ -16,40 +14,46 @@ import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.validation import silence
-from bokeh.layouts import WidgetBox, Row, Column
+from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
-    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    Model, FactorRange, Range1d, Plot, Spacer, CustomJS,
     GridBox, DatetimeAxis, CategoricalAxis
 )
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+    TickFormatter, PrintfTickFormatter
 )
-from bokeh.models.widgets import DataTable, Tabs, Div
-from bokeh.plotting import Figure
+from bokeh.models.widgets import DataTable, Div
 from bokeh.themes.theme import Theme
-
-try:
-    from bokeh.themes import built_in_themes
-except:
-    built_in_themes = {}
-
-try:
-    from bkcharts import Chart
-except:
-    Chart = type(None) # Create stub for isinstance check
+from bokeh.themes import built_in_themes
+from packaging.version import Version
 
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
-    LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types
+    arraylike_types, callable_name, cftime_types,
+    cftime_to_timestamp, isnumeric, pd, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
-bokeh_version = LooseVersion(bokeh.__version__)  # noqa
+bokeh_version = Version(bokeh.__version__)
+bokeh3 = bokeh_version >= Version("3.0")
 
+if bokeh3:
+    from bokeh.layouts import group_tools
+    from bokeh.models.formatters import CustomJSTickFormatter
+    from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
+    from bokeh.plotting import figure
+    class WidgetBox: pass  # Does not exist in Bokeh 3
+
+else:
+    from bokeh.layouts import WidgetBox
+    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+    from bokeh.models.widgets import Tabs
+    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
+    from bokeh.plotting import Figure as figure
+    class GridPlot: pass  # Does not exist in Bokeh 2
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -95,8 +99,17 @@ def convert_timestamp(timestamp):
     """
     Converts bokehJS timestamp to datetime64.
     """
-    datetime = dt.datetime.utcfromtimestamp(timestamp/1000.)
+    datetime = dt.datetime.fromtimestamp(timestamp/1000, tz=dt.timezone.utc)
     return np.datetime64(datetime.replace(tzinfo=None))
+
+
+def prop_is_none(value):
+    """
+    Checks if property value is None.
+    """
+    return (value is None or
+            (isinstance(value, dict) and 'value' in value
+             and value['value'] is None))
 
 
 def decode_bytes(array):
@@ -104,8 +117,7 @@ def decode_bytes(array):
     Decodes an array, list or tuple of bytestrings to avoid python 3
     bokeh serialization errors
     """
-    if (sys.version_info.major == 2 or not len(array) or
-        (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
+    if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -133,9 +145,9 @@ def layout_padding(plots, renderer):
         for c, p in enumerate(row):
             if p is None:
                 p = empty_plot(widths[c], heights[r])
-            elif hasattr(p, 'plot_width') and p.plot_width == 0 and p.plot_height == 0:
-                p.plot_width = widths[c]
-                p.plot_height = heights[r]
+            elif hasattr(p, 'width') and p.width == 0 and p.height == 0:
+                p.width = widths[c]
+                p.height = heights[r]
             expanded_plots[r].append(p)
     return expanded_plots
 
@@ -143,21 +155,21 @@ def layout_padding(plots, renderer):
 def compute_plot_size(plot):
     """
     Computes the size of bokeh models that make up a layout such as
-    figures, rows, columns, widgetboxes and Plot.
+    figures, rows, columns, and Plot.
     """
-    if isinstance(plot, GridBox):
+    if isinstance(plot, (GridBox, GridPlot)):
         ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
         cols = ndmapping.groupby('x')
         rows = ndmapping.groupby('y')
         width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
         height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
         return width, height
-    elif isinstance(plot, (Div, ToolbarBox)):
-        # Cannot compute size for Div or ToolbarBox
+    elif isinstance(plot, (Div, Toolbar)):
+        # Cannot compute size for Div or Toolbar
         return 0, 0
-    elif isinstance(plot, (Row, Column, WidgetBox, Tabs)):
+    elif isinstance(plot, (Row, Column, Tabs, WidgetBox)):
         if not plot.children: return 0, 0
-        if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
+        if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
         elif isinstance(plot, Tabs):
             w_agg, h_agg = (np.max, np.max)
@@ -165,13 +177,13 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
-    elif isinstance(plot, (Figure, Chart)):
-        if plot.plot_width:
-            width = plot.plot_width
+    elif isinstance(plot, figure):
+        if plot.width:
+            width = plot.width
         else:
             width = plot.frame_width + plot.min_border_right + plot.min_border_left
-        if plot.plot_height:
-            height = plot.plot_height
+        if plot.height:
+            height = plot.height
         else:
             height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
         return width, height
@@ -250,13 +262,12 @@ def compute_layout_properties(
                     sizing_mode = 'scale_height'
                 else:
                     sizing_mode = 'scale_both'
+            elif responsive == 'width':
+                sizing_mode = 'stretch_both'
+            elif responsive == 'height':
+                sizing_mode = 'stretch_height'
             else:
-                if responsive == 'width':
-                    sizing_mode = 'stretch_both'
-                elif responsive == 'height':
-                    sizing_mode = 'stretch_height'
-                else:
-                    sizing_mode = 'stretch_both'
+                sizing_mode = 'stretch_both'
 
 
     if fixed_aspect:
@@ -347,15 +358,54 @@ def compute_layout_properties(
                        'provide a numeric value, \'equal\' or '
                        '\'square\'.')
 
-    return ({'aspect_ratio': aspect_ratio,
-             'aspect_scale': aspect_scale,
-             'match_aspect': match_aspect,
-             'sizing_mode' : sizing_mode},
-            {'frame_width' : frame_width,
-             'frame_height': frame_height,
-             'plot_height' : height,
-             'plot_width'  : width})
+    aspect_info = {
+        'aspect_ratio': aspect_ratio,
+        'aspect_scale': aspect_scale,
+        'match_aspect': match_aspect,
+        'sizing_mode' : sizing_mode
+    }
+    dimension_info =  {
+        'frame_width' : frame_width,
+        'frame_height': frame_height,
+        'height' : height,
+        'width'  : width
+    }
 
+    return aspect_info, dimension_info
+
+
+def merge_tools(plot_grid, disambiguation_properties=None):
+    """
+    Merges tools defined on a grid of plots into a single toolbar.
+    All tools of the same type are merged unless they define one
+    of the disambiguation properties. By default `name`, `icon`, `tags`
+    and `description` can be used to prevent tools from being merged.
+    """
+    tools = []
+    for row in plot_grid:
+        for item in row:
+            if isinstance(item, LayoutDOM):
+                for p in item.select(dict(type=Plot)):
+                    tools.extend(p.toolbar.tools)
+            if isinstance(item, GridPlot):
+                item.toolbar_location = None
+
+    def merge(tool, group):
+        if issubclass(tool, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
+            return tool()
+        else:
+            return None
+
+    if not disambiguation_properties:
+        disambiguation_properties = {'name', 'icon', 'tags', 'description'}
+
+    ignore = set()
+    for tool in tools:
+        for p in tool.properties_with_values():
+            if p not in disambiguation_properties:
+                ignore.add(p)
+
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
 
 @contextmanager
 def silence_warnings(*warnings):
@@ -394,10 +444,10 @@ def font_size_to_pixels(size):
     """
     Convert a fontsize to a pixel value
     """
-    if size is None or not isinstance(size, basestring):
+    if size is None or not isinstance(size, str):
         return
     conversions = {'em': 16, 'pt': 16/12.}
-    val = re.findall('\d+', size)
+    val = re.findall(r'\d+', size)
     unit = re.findall('[a-z]+', size)
     if (val and not unit) or (val and unit[0] == 'px'):
         return int(val[0])
@@ -436,17 +486,17 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         height = int(axis_height + np.abs(np.sin(rotation)) *
                      ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
-                    x_range=ranges, y_range=ranges2, plot_height=height,
-                    plot_width=size)
+                    x_range=ranges, y_range=ranges2, height=height,
+                    width=size)
     else:
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
         width = int(axis_height + np.abs(np.cos(rotation)) *
                     ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
-                    y_range=ranges, plot_width=width, plot_height=size)
+                    y_range=ranges, height=size, width=width)
 
-    p = Figure(toolbar_location=None, tools=[], **opts)
+    p = figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
     p.grid.grid_line_alpha = 0
 
@@ -525,7 +575,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, (WidgetBox, Div)):
         width = model.width
     elif model:
-        width = model.plot_width
+        width = model.width
     else:
         width = 0
     return width
@@ -534,7 +584,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
 def pad_plots(plots):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
-    wraps any DataTable or Tabs in a WidgetBox with appropriate
+    wraps any DataTable or Tabs in a Column with appropriate
     padding. Required to avoid overlap in gridplot.
     """
     widths = []
@@ -544,7 +594,9 @@ def pad_plots(plots):
             width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
-    plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+
+    layout = Column if bokeh3 else WidgetBox
+    plots = [[layout(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
@@ -556,9 +608,11 @@ def filter_toolboxes(plots):
     """
     if isinstance(plots, list):
         plots = [filter_toolboxes(plot) for plot in plots]
+    elif hasattr(plots, 'toolbar'):
+        plots.toolbar_location = None
     elif hasattr(plots, 'children'):
         plots.children = [filter_toolboxes(child) for child in plots.children
-                          if not isinstance(child, ToolbarBox)]
+                          if not isinstance(child, Toolbar)]
     return plots
 
 
@@ -576,16 +630,16 @@ def py2js_tickformatter(formatter, msg=''):
     try:
         jscode = py2js(formatter, 'formatter')
     except Exception as e:
-        error = 'Pyscript raised an error: {0}'.format(e)
+        error = f'Pyscript raised an error: {e}'
         error = error.replace('%', '%%')
         param.main.param.warning(msg+error)
         return
 
-    args = _getargspec(formatter).args
-    arg_define = 'var %s = tick;' % args[0] if args else ''
+    args = inspect.getfullargspec(formatter).args
+    arg_define = f'var {args[0]} = tick;' if args else ''
     return_js = 'return formatter();\n'
-    jsfunc = '\n'.join([arg_define, jscode, return_js])
-    match = re.search('(formatter \= function flx_formatter \(.*\))', jsfunc)
+    jsfunc = f"{arg_define}\n{jscode}\n{return_js}"
+    match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
     return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
 
@@ -636,14 +690,14 @@ def filter_batched_data(data, mapping):
             if 'transform' in v:
                 continue
             v = v['field']
-        elif not isinstance(v, basestring):
+        elif not isinstance(v, str):
             continue
         values = data[v]
         try:
             if len(unique_array(values)) == 1:
                 mapping[k] = values[0]
                 del data[v]
-        except:
+        except Exception:
             pass
 
 def cds_column_replace(source, data):
@@ -664,15 +718,15 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    old_policy = document._hold
-    document._hold = policy
+    old_policy = document.callbacks.hold_value
+    document.callbacks._hold = policy
     try:
         yield
     finally:
         if server and not old_policy:
             document.unhold()
         else:
-            document._hold = old_policy
+            document.callbacks._hold = old_policy
 
 
 def recursive_model_update(model, props):
@@ -715,10 +769,12 @@ def update_shared_sources(f):
     def wrapper(self, *args, **kwargs):
         source_cols = self.handles.get('source_cols', {})
         shared_sources = self.handles.get('shared_sources', [])
+        doc = self.document
         for source in shared_sources:
             source.data.clear()
-            if self.document and self.document._held_events:
-                self.document._held_events = self.document._held_events[:-1]
+            if doc:
+                event_obj = doc.callbacks
+                event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)
 
@@ -741,7 +797,7 @@ def categorize_array(array, dim):
     return np.array([dim.pprint_value(x) for x in array])
 
 
-class periodic(object):
+class periodic:
     """
     Mocks the API of periodic Thread in hv.core.util, allowing a smooth
     API transition on bokeh server.
@@ -771,7 +827,7 @@ class periodic(object):
     def __call__(self, period, count, callback, timeout=None, block=False):
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
-        elif not type(count) is type(None):
+        elif type(count) is not type(None):
             raise ValueError('Count value must be a positive integer or None')
 
         self.callback = callback
@@ -802,9 +858,7 @@ class periodic(object):
         self._pcb = None
 
     def __repr__(self):
-        return 'periodic(%s, %s, %s)' % (self.period,
-                                         self.count,
-                                         callable_name(self.callback))
+        return f'periodic({self.period}, {self.count}, {callable_name(self.callback)})'
     def __str__(self):
         return repr(self)
 
@@ -833,10 +887,10 @@ def date_to_integer(date):
     Returns:
         Milliseconds since 1970-01-01 00:00:00
     """
-    if pd and isinstance(date, pd.Timestamp):
+    if isinstance(date, pd.Timestamp):
         try:
             date = date.to_datetime64()
-        except:
+        except Exception:
             date = date.to_datetime()
 
     if isinstance(date, np.datetime64):
@@ -960,13 +1014,49 @@ def wrap_formatter(formatter, axis):
     if isinstance(formatter, TickFormatter):
         pass
     elif isinstance(formatter, FunctionType):
-        msg = ('%sformatter could not be '
-               'converted to tick formatter. ' % axis)
+        msg = f'{axis}formatter could not be converted to tick formatter. '
         jsfunc = py2js_tickformatter(formatter, msg)
         if jsfunc:
-            formatter = FuncTickFormatter(code=jsfunc)
+            formatter = CustomJSTickFormatter(code=jsfunc)
         else:
             formatter = None
     else:
         formatter = PrintfTickFormatter(format=formatter)
     return formatter
+
+
+def property_to_dict(x):
+    """
+    Convert Bokeh's property Field and Value to a dictionary
+
+    Was added in bokeh 3.0
+    """
+
+    try:
+        from bokeh.core.property.vectorization import Field, Unspecified, Value
+
+        if isinstance(x, (Field, Value)):
+            x = {k: v for k, v in x.__dict__.items() if v != Unspecified}
+    except ImportError:
+        pass
+
+    return x
+
+
+def dtype_fix_hook(plot, element):
+    # Work-around for problems seen in:
+    # https://github.com/holoviz/holoviews/issues/5722
+    # https://github.com/holoviz/holoviews/issues/5726
+    # Should be fixed in Bokeh 3.2
+
+    if not bokeh3:
+        return
+    try:
+        renderers = plot.handles["plot"].renderers
+        for renderer in renderers:
+            data = renderer.data_source.data
+            for k, v in data.items():
+                if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    data[k] = v.tolist()
+    except Exception:
+        pass

@@ -59,8 +59,8 @@ class MultiInterface(Interface):
                                 if hasattr(Interface.interfaces.get(dt), 'has_holes')]
                 geom_type = d.get('geom_type')
                 if geom_type is not None and geom_type not in cls.geom_types:
-                    raise DataError("Geometry type '%s' not recognized, "
-                                    "must be one of %s." % (geom_type, cls.geom_types))
+                    raise DataError("Geometry type '{}' not recognized, "
+                                    "must be one of {}.".format(geom_type, cls.geom_types))
                 else:
                     datatype = [dt for dt in datatype
                                 if hasattr(Interface.interfaces.get(dt), 'geom_type')]
@@ -130,6 +130,16 @@ class MultiInterface(Interface):
         return Dataset(dataset.data[0], datatype=cls.subtypes,
                        kdims=dataset.kdims, vdims=vdims,
                        _validate_vdims=validate_vdims)
+
+    @classmethod
+    def assign(cls, dataset, new_data):
+        ds = cls._inner_dataset_template(dataset)
+        assigned = []
+        for i, d in enumerate(dataset.data):
+            ds.data = d
+            new = ds.interface.assign(ds, {k: v[i:i+1] for k, v in new_data.items()})
+            assigned.append(new)
+        return assigned
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -399,7 +409,7 @@ class MultiInterface(Interface):
                 gt = geom_type
 
             if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
-                not geom_type == 'Points'):
+                not geom_type == 'Points' and len(dvals)):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             if scalar and not expanded:
@@ -463,7 +473,7 @@ class MultiInterface(Interface):
                 if gt is not None:
                     obj['geom_type'] = gt
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
 
@@ -551,7 +561,8 @@ def ensure_ring(geom, values=None):
     """
     if values is None:
         values = geom
-    breaks = np.where(np.isnan(geom).sum(axis=1))[0]
+
+    breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
     starts = [0] + list(breaks+1)
     ends = list(breaks-1) + [len(geom)-1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts])

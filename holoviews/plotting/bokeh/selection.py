@@ -10,10 +10,11 @@ class TabularSelectionDisplay(SelectionDisplay):
     def _build_selection(self, el, exprs, **kwargs):
         opts = {}
         if exprs[1]:
-            opts['selected'] = np.where(exprs[1].apply(el.dataset, expanded=True, flat=True))[0]
+            mask = exprs[1].apply(el.dataset, expanded=True, flat=True)
+            opts['selected'] = list(np.where(mask)[0])
         return el.opts(clone=True, backend='bokeh', **opts)
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
         sel_streams = [selection_streams.exprs_stream]
         hvobj = hvobj.apply(self._build_selection, streams=sel_streams, per_element=True)
         for op in operations:
@@ -51,7 +52,9 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
                 merged_opts[opt] = opts[opt]
 
         filtered = {k: v for k, v in merged_opts.items() if k in allowed}
-        return element.opts(backend='bokeh', clone=True, tools=['box_select'],
+        plot_opts = Store.lookup_options('bokeh', element, 'plot').kwargs
+        tools = plot_opts.get('tools', []) + ['box_select']
+        return element.opts(backend='bokeh', clone=True, tools=tools,
                             **filtered)
 
     def _style_region_element(self, region_element, unselected_color):
@@ -99,5 +102,5 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         region = region_element.opts(el1_name, clone=True, **options)
         if el2_name and el2_name == 'Path':
-            region = region.opts(el2_name, backend='bokeh', color='black')
+            region = region.opts(el2_name, backend='bokeh', color='black', line_dash='dotted')
         return region

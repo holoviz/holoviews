@@ -8,6 +8,7 @@ from ..sheetcoords import Slice, SheetCoordinateSystem
 from .. import util
 from .grid import GridInterface
 from .interface import Interface, DataError
+from .util import finite_range
 
 
 class ImageInterface(GridInterface):
@@ -54,9 +55,9 @@ class ImageInterface(GridInterface):
             shape = data.shape[:2]
             error = DataError if len(shape) > 1 and not eltype._binned else ValueError
             if shape != expected and not (not expected and shape == (1,)):
-                raise error('Key dimension values and value array %s '
-                            'shapes do not match. Expected shape %s, '
-                            'actual shape: %s' % (vdims[0], expected, shape), cls)
+                raise error('Key dimension values and value array {} '
+                            'shapes do not match. Expected shape {}, '
+                            'actual shape: {}'.format(vdims[0], expected, shape), cls)
 
         if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')
@@ -135,6 +136,7 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def range(cls, obj, dim):
+        dim = obj.get_dimension(dim, strict=True)
         dim_idx = obj.get_dimension_index(dim)
         if dim_idx in [0, 1] and obj.bounds:
             l, b, r, t = obj.bounds.lbrt()
@@ -151,7 +153,9 @@ class ImageInterface(GridInterface):
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
             data = np.atleast_3d(obj.data)[:, :, dim_idx]
-            drange = (np.nanmin(data), np.nanmax(data))
+            if dim.nodata is not None:
+                data = cls.replace_value(data, dim.nodata)
+            drange = finite_range(data, np.nanmin(data), np.nanmax(data))
         else:
             drange = (None, None)
         return drange

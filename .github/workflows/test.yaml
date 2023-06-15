@@ -1,0 +1,97 @@
+name: tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 14 * * SUN'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre_commit:
+    name: Run pre-commit hooks
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "1"
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: pre-commit
+        uses: pre-commit/action@v3.0.0
+  test_suite:
+    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, ${{ matrix.os }}
+    needs: [pre_commit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: ['3.7', '3.8', '3.11']
+        bokeh-version: ['2', '3']
+        exclude:
+            # Bokeh 3 does not support Python 3.7
+          - bokeh-version: '3'
+            python-version: '3.7'
+          - bokeh-version: '2'
+            python-version: '3.8'
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }} tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      DISPLAY: ":99.0"
+      PYTHONIOENCODING: "utf-8"
+      MPLBACKEND: "Agg"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      NUMBA_NUM_THREADS: 1
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a13
+        with:
+          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
+          python-version: ${{ matrix.python-version }}
+          channel-priority: strict
+          channels: pyviz/label/dev,conda-forge,nodefaults
+          envs: "-o flakes -o tests -o examples_tests -o bokeh${{ matrix.bokeh-version }}"
+          cache: true
+          conda-update: true
+          conda-mamba: mamba
+        id: install
+      - name: bokeh sampledata
+        run: |
+          conda activate test-environment
+          bokeh sampledata
+      - name: doit test_unit
+        run: |
+          conda activate test-environment
+          doit test_unit
+      - name: test examples
+        run: |
+          conda activate test-environment
+          mkdir -p ~/.jupyter/
+          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
+          doit test_examples
+      - name: codecov
+        run: |
+          conda activate test-environment
+          codecov

@@ -13,16 +13,33 @@ from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from . import traversal
 
 
-class Composable(object):
+class Layoutable:
+    """
+    Layoutable provides a mix-in class to support the
+    add operation for creating a layout from the operands.
+    """
+    def __add__(x, y):
+        "Compose objects into a Layout"
+        if any(isinstance(arg, int) for arg in (x, y)):
+            raise TypeError(f"unsupported operand type(s) for +: {x.__class__.__name__} and {y.__class__.__name__}. "
+                            "If you are trying to use a reduction like `sum(elements)` "
+                            "to combine a list of elements, we recommend you use "
+                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
+                            "making an overlay from a list) instead.")
+        try:
+            return Layout([x, y])
+        except NotImplementedError:
+            return NotImplemented
+
+    def __radd__(self, other):
+        return self.__class__.__add__(other, self)
+
+
+class Composable(Layoutable):
     """
     Composable is a mix-in class to allow Dimensioned objects to be
     embedded within Layouts and GridSpaces.
     """
-
-    def __add__(self, obj):
-        "Compose objects into a Layout"
-        return Layout([self, obj])
-
 
     def __lshift__(self, other):
         "Compose objects into an AdjointLayout"
@@ -31,7 +48,7 @@ class Composable(object):
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data.values()+[self])
         else:
-            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
+            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
 
 
@@ -45,12 +62,12 @@ class Empty(Dimensioned, Composable):
 
     group = param.String(default='Empty')
 
-    def __init__(self):
-        super(Empty, self).__init__(None)
+    def __init__(self, **params):
+        super().__init__(None, **params)
 
 
 
-class AdjointLayout(Dimensioned):
+class AdjointLayout(Layoutable, Dimensioned):
     """
     An AdjointLayout provides a convenient container to lay out some
     marginal plots next to a primary plot. This is often useful to
@@ -91,7 +108,7 @@ class AdjointLayout(Dimensioned):
         else:
             data = OrderedDict()
 
-        super(AdjointLayout, self).__init__(data, **params)
+        super().__init__(data, **params)
 
 
     def __mul__(self, other, reverse=False):
@@ -180,7 +197,7 @@ class AdjointLayout(Dimensioned):
         Returns:
             Returns relabelled object
         """
-        return super(AdjointLayout, self).relabel(label=label, group=group, depth=depth)
+        return super().relabel(label=label, group=group, depth=depth)
 
 
     def get(self, key, default=None):
@@ -222,7 +239,7 @@ class AdjointLayout(Dimensioned):
 
     def __getitem__(self, key):
         "Index into the AdjointLayout by index or label"
-        if key is ():
+        if key == ():
             return self
 
         data_slice = None
@@ -245,7 +262,7 @@ class AdjointLayout(Dimensioned):
             return self if data_slice is None else self.clone([el[data_slice]
                                                                for el in self])
         else:
-            raise KeyError("Key {0} not found in AdjointLayout.".format(key))
+            raise KeyError(f"Key {key} not found in AdjointLayout.")
 
 
     def __setitem__(self, key, value):
@@ -255,7 +272,7 @@ class AdjointLayout(Dimensioned):
             else:
                 raise ValueError('AdjointLayout only accepts Element types.')
         else:
-            raise Exception('Position %s not valid in AdjointLayout.' % key)
+            raise Exception(f'Position {key} not valid in AdjointLayout.')
 
 
     def __lshift__(self, other):
@@ -304,19 +321,13 @@ class AdjointLayout(Dimensioned):
             yield self[i]
             i += 1
 
-
-    def __add__(self, obj):
-        "Composes plot into a Layout with another object."
-        return Layout([self, obj])
-
-
     def __len__(self):
         "Number of items in the AdjointLayout"
         return len(self.data)
 
 
 
-class NdLayout(UniformNdMapping):
+class NdLayout(Layoutable, UniformNdMapping):
     """
     NdLayout is a UniformNdMapping providing an n-dimensional
     data structure to display the contained Elements and containers
@@ -329,8 +340,8 @@ class NdLayout(UniformNdMapping):
     def __init__(self, initial_items=None, kdims=None, **params):
         self._max_cols = 4
         self._style = None
-        super(NdLayout, self).__init__(initial_items=initial_items, kdims=kdims,
-                                       **params)
+        super().__init__(initial_items=initial_items, kdims=kdims,
+                         **params)
 
 
     @property
@@ -373,12 +384,6 @@ class NdLayout(UniformNdMapping):
         self._max_cols = ncols
         return self
 
-
-    def __add__(self, obj):
-        "Composes the NdLayout with another object into a Layout"
-        return Layout([self, obj])
-
-
     @property
     def last(self):
         """
@@ -410,13 +415,13 @@ class NdLayout(UniformNdMapping):
         Returns:
             Cloned NdLayout object
         """
-        clone = super(NdLayout, self).clone(*args, **overrides)
+        clone = super().clone(*args, **overrides)
         clone._max_cols = self._max_cols
         clone.id = self.id
         return clone
 
 
-class Layout(ViewableTree):
+class Layout(Layoutable, ViewableTree):
     """
     A Layout is an ViewableTree with ViewableElement objects as leaf
     values. Unlike ViewableTree, a Layout supports a rich display,
@@ -434,7 +439,25 @@ class Layout(ViewableTree):
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_max_cols'] = 4
-        super(Layout, self).__init__(items, identifier, parent, **kwargs)
+        super().__init__(items, identifier, parent, **kwargs)
+
+    def decollate(self):
+        """Packs Layout of DynamicMaps into a single DynamicMap that returns a Layout
+
+        Decollation allows packing a Layout of DynamicMaps into a single DynamicMap
+        that returns a Layout of simple (non-dynamic) elements. All nested streams are
+        lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns a Layout
+        """
+        from .decollate import decollate
+        return decollate(self)
 
     @property
     def shape(self):
@@ -462,9 +485,9 @@ class Layout(ViewableTree):
             idx = row * self._max_cols + col
             keys = list(self.data.keys())
             if idx >= len(keys) or col >= self._max_cols:
-                raise KeyError('Index %s is outside available item range' % str(key))
+                raise KeyError(f'Index {key} is outside available item range')
             key = keys[idx]
-        return super(Layout, self).__getitem__(key)
+        return super().__getitem__(key)
 
 
     def clone(self, *args, **overrides):
@@ -480,7 +503,7 @@ class Layout(ViewableTree):
         Returns:
             Cloned Layout object
         """
-        clone = super(Layout, self).clone(*args, **overrides)
+        clone = super().clone(*args, **overrides)
         clone._max_cols = self._max_cols
         return clone
 
@@ -513,27 +536,24 @@ class Layout(ViewableTree):
         Returns:
             Returns relabelled object
         """
-        return super(Layout, self).relabel(label, group, depth)
+        return super().relabel(label, group, depth)
 
     def grid_items(self):
         return {tuple(np.unravel_index(idx, self.shape)): (path, item)
                 for idx, (path, item) in enumerate(self.items())}
 
-
-    def __add__(self, other):
-        "Composes the Layout with another object returning a merged Layout."
-        return Layout([self, other])
-
     def __mul__(self, other, reverse=False):
         from .spaces import HoloMap
         if not isinstance(other, (ViewableElement, HoloMap)):
             return NotImplemented
-        return Layout([other*v if reverse else v*other for v in self])
+        layout = Layout([other*v if reverse else v*other for v in self])
+        layout._max_cols = self._max_cols
+        return layout
 
     def __rmul__(self, other):
         return self.__mul__(other, reverse=True)
 
 
-__all__ = list(set([_k for _k, _v in locals().items()
+__all__ = list({_k for _k, _v in locals().items()
                     if isinstance(_v, type) and (issubclass(_v, Dimensioned)
-                                                 or issubclass(_v, Layout))]))
+                                                 or issubclass(_v, Layout))})

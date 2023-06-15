@@ -1,10 +1,4 @@
-from __future__ import absolute_import
-
 import sys
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
 
 import numpy as np
 import pandas as pd
@@ -71,17 +65,28 @@ class DaskInterface(PandasInterface):
         return data, dims, extra
 
     @classmethod
+    def compute(cls, dataset):
+        return dataset.clone(dataset.data.compute())
+
+    @classmethod
+    def persist(cls, dataset):
+        return dataset.clone(dataset.data.persist())
+
+    @classmethod
     def shape(cls, dataset):
         return (len(dataset.data), len(dataset.data.columns))
 
     @classmethod
     def range(cls, dataset, dimension):
         import dask.dataframe as dd
-        column = dataset.data[dataset.get_dimension(dimension).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             column = np.sort(column[column.notnull()].compute())
             return (column[0], column[-1]) if len(column) else (None, None)
         else:
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
             return dd.compute(column.min(), column.max())
 
     @classmethod
@@ -104,7 +109,7 @@ class DaskInterface(PandasInterface):
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists. or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
@@ -263,9 +268,11 @@ class DaskInterface(PandasInterface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not np.isscalar(values):
-                err = ('Dask dataframe does not support assigning '
-                       'non-scalar value.')
-                raise NotImplementedError(err)
+                if len(values):
+                    err = ('Dask dataframe does not support assigning '
+                           'non-scalar value.')
+                    raise NotImplementedError(err)
+                values = None
             data = data.assign(**{dimension.name: values})
         return data
 

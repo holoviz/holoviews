@@ -14,7 +14,7 @@ Features
 * All features `available in vanilla Python 2 or 3 <http://www.holoviews.org/Tutorials/Options.html>`_, with minimal dependencies.
 
 **Support for maintainable, reproducible research**
-  
+
 * Supports a truly reproducible workflow by minimizing the code needed for analysis and visualization.
 * Already used in a variety of research projects, from conception to final publication.
 * All HoloViews objects can be pickled and unpickled.

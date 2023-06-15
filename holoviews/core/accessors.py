@@ -1,17 +1,14 @@
 """
 Module for accessor objects for viewable HoloViews objects.
 """
-from __future__ import absolute_import, unicode_literals
-
 import copy
 import sys
 
 from collections import OrderedDict
+from functools import wraps
 from types import FunctionType
 
 import param
-
-from param.parameterized import add_metaclass
 
 from . import util
 from .pprint import PrettyPrinter
@@ -27,6 +24,7 @@ class AccessorPipelineMeta(type):
 
     @classmethod
     def pipelined(mcs, __call__):
+        @wraps(__call__)
         def pipelined_call(*args, **kwargs):
             from ..operation.element import method as method_op, factory
             from .data import Dataset, MultiDimensionalMapping
@@ -82,13 +80,10 @@ class AccessorPipelineMeta(type):
 
             return result
 
-        pipelined_call.__doc__ = __call__.__doc__
-
         return pipelined_call
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Apply(object):
+class Apply(metaclass=AccessorPipelineMeta):
     """
     Utility to apply a function or operation to all viewable elements
     inside the object.
@@ -157,7 +152,7 @@ class Apply(object):
                 dynamic, per_element, **kwargs
             )
 
-        if isinstance(apply_function, util.basestring):
+        if isinstance(apply_function, str):
             args = kwargs.pop('_method_args', ())
             method_name = apply_function
             def apply_function(object, **kwargs):
@@ -290,8 +285,7 @@ class Apply(object):
         return self.__call__('transform', **kwargs)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Redim(object):
+class Redim(metaclass=AccessorPipelineMeta):
     """
     Utility that supports re-dimensioning any HoloViews object via the
     redim method.
@@ -329,7 +323,7 @@ class Redim(object):
 
             if override is None:
                 replaced.append(d)
-            elif isinstance(override, (util.basestring, tuple)):
+            elif isinstance(override, (str, tuple)):
                 replaced.append(d.clone(override))
             elif isinstance(override, Dimension):
                 replaced.append(override)
@@ -474,6 +468,9 @@ class Redim(object):
     def type(self, specs=None, **values):
         return self._redim('type', specs, **values)
 
+    def nodata(self, specs=None, **values):
+        return self._redim('nodata', specs, **values)
+
     def step(self, specs=None, **values):
         return self._redim('step', specs, **values)
 
@@ -487,20 +484,20 @@ class Redim(object):
         return self._redim('values', specs, **ranges)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Opts(object):
+class Opts(metaclass=AccessorPipelineMeta):
 
     def __init__(self, obj, mode=None):
         self._mode = mode
         self._obj = obj
 
 
-    def get(self, group=None, backend=None):
+    def get(self, group=None, backend=None, defaults=True):
         """Returns the corresponding Options object.
 
         Args:
             group: The options group. Flattens across groups if None.
             backend: Current backend if None otherwise chosen backend.
+            defaults: Whether to include default option values
 
         Returns:
             Options object associated with the object containing the
@@ -511,7 +508,8 @@ class Opts(object):
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
         for group in groups:
-            optsobj = Store.lookup_options(backend, self._obj, group)
+            optsobj = Store.lookup_options(backend, self._obj, group,
+                                           defaults=defaults)
             keywords = dict(keywords, **optsobj.kwargs)
         return Options(**keywords)
 
@@ -556,14 +554,16 @@ class Opts(object):
         Returns:
             Returns the object or a clone with the options applied
         """
+        if not(args) and not(kwargs):
+            return self._obj
         if self._mode is None:
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-            if apply_groups and util.config.future_deprecations:
+            if apply_groups:
                 msg = ("Calling the .opts method with options broken down by options "
-                       "group (i.e. separate plot, style and norm groups) is deprecated. "
+                       "group (i.e. separate plot, style and norm groups) has been removed. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
-                param.main.warning(msg)
+                raise ValueError(msg)
 
         return self._dispatch_opts( *args, **kwargs)
 
@@ -595,8 +595,7 @@ class Opts(object):
         pprinter = PrettyPrinter(show_options=True, show_defaults=show_defaults)
         print(pprinter.pprint(self._obj))
 
-    def _holomap_opts(self, *args, **kwargs):
-        clone = kwargs.pop('clone', None)
+    def _holomap_opts(self, *args, clone=None, **kwargs):
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
         data = OrderedDict([(k, v.opts(*args, **kwargs))
                              for k, v in self._obj.data.items()])
@@ -649,3 +648,17 @@ class Opts(object):
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*new_args, **kwargs)
+
+    def __getitem__(self, item):
+        options = self.get().kwargs
+        if item in options:
+            return options[item]
+        else:
+            raise KeyError(
+                f"{item!r} is not in opts. Valid items is {', '.join(options)}."
+            )
+
+    def __repr__(self):
+        options = self.get().kwargs
+        kws = ', '.join(f"{k}={options[k]!r}" for k in sorted(options.keys()))
+        return f"Opts({kws})"

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import base64
 
 from io import BytesIO
@@ -36,10 +34,14 @@ def _PlotlyHoloviewsPane(fig_dict, **kwargs):
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
-        plotly_pane.param.watch(
-            lambda event, cls=callback_cls: cls.update_streams_from_property_update(event.new, event.obj.object),
-            callback_cls.callback_property,
-        )
+        for callback_prop in callback_cls.callback_properties:
+            plotly_pane.param.watch(
+                lambda event, cls=callback_cls, prop=callback_prop:
+                    cls.update_streams_from_property_update(
+                        prop, event.new, event.obj.object
+                    ),
+                callback_prop,
+            )
     return plotly_pane
 
 
@@ -73,7 +75,7 @@ class PlotlyRenderer(Renderer):
         Given a HoloViews Viewable return a corresponding figure dictionary.
         Allows cleaning the dictionary of any internal properties that were added
         """
-        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+        fig_dict = super().get_plot_state(obj, renderer, **kwargs)
         config = fig_dict.get('config', {})
 
         # Remove internal properties (e.g. '_id', '_dim')
@@ -87,7 +89,6 @@ class PlotlyRenderer(Renderer):
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
         return fig_dict
-
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         if fmt == 'gif':
@@ -130,7 +131,7 @@ class PlotlyRenderer(Renderer):
             if fmt == 'svg':
                 data = data.decode('utf-8')
         else:
-            raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
+            raise ValueError(f"Unsupported format: {fmt}")
 
         if as_script:
             b64 = base64.b64encode(data).decode("utf-8")
@@ -159,6 +160,8 @@ class PlotlyRenderer(Renderer):
         """
         import panel.models.plotly # noqa
         cls._loaded = True
+        if 'plotly' not in getattr(pn.extension, '_loaded_extensions', ['plotly']):
+            pn.extension._loaded_extensions.append('plotly')
 
 
 def _activate_plotly_backend(renderer):

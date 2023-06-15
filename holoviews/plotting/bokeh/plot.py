@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from itertools import groupby
 from collections import defaultdict
 
@@ -10,7 +8,7 @@ from bokeh.layouts import gridplot
 from bokeh.models import (
     ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
 )
-from bokeh.models.widgets import Panel, Tabs
+from bokeh.models.layouts import Tabs
 
 from ...selection import NoOpSelectionDisplay
 from ...core import (
@@ -19,7 +17,7 @@ from ...core import (
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    basestring, cftime_to_timestamp, cftime_types, get_method_owner,
+    cftime_to_timestamp, cftime_types, get_method_owner,
     is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
     _STANDARD_CALENDARS
 )
@@ -30,12 +28,16 @@ from ..plot import (
     CallbackPlot
 )
 from ..util import attach_streams, displayable, collate
-from .callbacks import LinkCallback
+from .links import LinkCallback
 from .util import (
-    TOOL_TYPES, filter_toolboxes, make_axis, update_shared_sources,
-    empty_plot, decode_bytes, theme_attr_json, cds_column_replace,
-    get_default
+    bokeh3, filter_toolboxes, make_axis, update_shared_sources, empty_plot,
+    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools
 )
+
+if bokeh3:
+    from bokeh.models.layouts import TabPanel
+else:
+    from bokeh.models.layouts import Panel as TabPanel
 
 
 class BokehPlot(DimensionedPlot, CallbackPlot):
@@ -168,25 +170,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             self._update_selected(source)
 
 
-    def _update_callbacks(self, plot):
-        """
-        Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing
-        subplots into a CompositePlot and sets the plot id to match
-        the root level bokeh model.
-        """
-        subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOL_TYPES[t]}))
-                        for t in self._merged_tools}
-        for subplot in subplots:
-            for cb in subplot.callbacks:
-                for c in cb.callbacks:
-                    for tool, objs in merged_tools.items():
-                        if tool in c.args and objs:
-                            c.args[tool] = objs[0]
-                    if self.top_level:
-                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
-
     @property
     def state(self):
         """
@@ -258,8 +241,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         Converts integer fontsizes to a string specifying
         fontsize in pt.
         """
-        size = super(BokehPlot, self)._fontsize(key, label, common)
-        return {k: v if isinstance(v, basestring) else '%spt' % v
+        size = super()._fontsize(key, label, common)
+        return {k: v if isinstance(v, str) else f'{v}pt'
                 for k, v in size.items()}
 
     def _get_title_div(self, key, default_fontsize='15pt', width=450):
@@ -288,6 +271,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
         if 'title' in self.handles:
             title_div = self.handles['title']
+        elif bokeh3:
+            title_div = Div(width=width, styles={"white-space": "nowrap"})  # so it won't wrap long titles easily
         else:
             title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
         title_div.text = title_tags
@@ -325,19 +310,14 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
-                    if hasattr(renderer, 'view'):
+                    if not bokeh3 and hasattr(renderer, 'view'):
                         renderer.view.update(source=new_source)
                     plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
         for plot in plots:
-            if plot.hooks and plot.finalize_hooks:
-                self.param.warning(
-                    "Supply either hooks or finalize_hooks not both; "
-                    "using hooks and ignoring finalize_hooks.")
-            hooks = plot.hooks or plot.finalize_hooks
-            for hook in hooks:
+            for hook in plot.hooks:
                 hook(plot, plot.current_frame)
             for callback in plot.callbacks:
                 callback.initialize(plot_id=self.id)
@@ -492,7 +472,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
@@ -602,10 +582,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 passed_plots.append(None)
 
-        plot = gridplot(plots[::-1], merge_tools=self.merge_tools,
+        plot = gridplot(plots[::-1],
+                        merge_tools=self.merge_tools,
                         sizing_mode=self.sizing_mode,
                         toolbar_location=self.toolbar)
         plot = self._make_axes(plot)
+        if bokeh3 and hasattr(plot, "toolbar"):
+            plot.toolbar = merge_tools(plots)
 
         title = self._get_title_div(self.keys[-1])
         if title:
@@ -615,7 +598,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -704,7 +686,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         Whether to display overlaid plots in separate panes""")
 
     def __init__(self, layout, keys=None, **params):
-        super(LayoutPlot, self).__init__(layout, keys=keys, **params)
+        super().__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
         if self.top_level:
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
@@ -748,7 +730,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             if empty or view.main is None:
                 continue
             elif not view.traverse(lambda x: x, [Element]):
-                self.param.warning('%s is empty, skipping subplot.' % view.main)
+                self.param.warning(f'{view.main} is empty, skipping subplot.')
                 continue
             else:
                 layout_count += 1
@@ -934,15 +916,14 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
                     if nsubplots == 1:
                         grid = subplots[0]
-                    elif nsubplots == 2:
-                        grid = gridplot([subplots], merge_tools=self.merge_tools,
-                                        toolbar_location=self.toolbar,
-                                        sizing_mode=sizing_mode)
                     else:
-                        grid = [[subplots[2], None], subplots[:2]]
-                        grid = gridplot(children=grid, merge_tools=self.merge_tools,
+                        children = [subplots] if nsubplots == 2 else [[subplots[2], None], subplots[:2]]
+                        grid = gridplot(children,
+                                        merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
+                        if bokeh3:
+                            grid.toolbar = merge_tools(children)
                     tab_plots.append((title, grid))
                     continue
 
@@ -971,14 +952,18 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         # Wrap in appropriate layout model
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
-            panels = [Panel(child=child, title=t) for t, child in tab_plots]
+            panels = [TabPanel(child=child, title=t) for t, child in tab_plots]
             layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
-            layout_plot = gridplot(children=plot_grid,
-                                   toolbar_location=self.toolbar,
-                                   merge_tools=self.merge_tools,
-                                   sizing_mode=sizing_mode)
+            layout_plot = gridplot(
+                children=plot_grid,
+                toolbar_location=self.toolbar,
+                merge_tools=self.merge_tools,
+                sizing_mode=sizing_mode
+            )
+            if bokeh3:
+                layout_plot.toolbar = merge_tools(plot_grid)
 
         title = self._get_title_div(self.keys[-1])
         if title:
@@ -988,7 +973,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -1029,8 +1013,7 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, plots=[]):
         """
@@ -1054,7 +1037,6 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
-
 
     def update_frame(self, key, ranges=None):
         plot = None

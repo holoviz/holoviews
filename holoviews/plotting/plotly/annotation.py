@@ -1,8 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from .chart import ScatterPlot
+from ...element import Tiles
 
 
 class LabelPlot(ScatterPlot):
@@ -17,12 +16,16 @@ class LabelPlot(ScatterPlot):
 
     _nonvectorized_styles = []
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'text'}
-
     _style_key = 'textfont'
 
-    def get_data(self, element, ranges, style):
-        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        if is_geo:
+            return {'type': 'scattermapbox', 'mode': 'text'}
+        else:
+            return {'type': 'scatter', 'mode': 'text'}
+
+    def get_data(self, element, ranges, style, is_geo=False, **kwargs):
         text_dim = element.vdims[0]
         xs = element.dimension_values(0)
         if self.xoffset:
@@ -31,4 +34,10 @@ class LabelPlot(ScatterPlot):
         if self.yoffset:
             ys = ys + self.yoffset
         text = [text_dim.pprint_value(v) for v in element.dimension_values(2)]
-        return [{x: xs, y: ys, 'text': text}]
+
+        if is_geo:
+            lon, lat = Tiles.easting_northing_to_lon_lat(xs, ys)
+            return [{"lon": lon, "lat": lat, 'text': text}]
+        else:
+            x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
+            return [{x: xs, y: ys, 'text': text}]

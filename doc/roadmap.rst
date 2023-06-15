@@ -1,9 +1,9 @@
 HoloViews Roadmap, as of 3/2019
 ===============================
 
-HoloViews is maintained by a core development team who coordinate contributions from many other different users/developers. The core-developer priorities depend on funding, usage in ongoing projects, and other factors. For 2019, the scheduled tasks are: 
+HoloViews is maintained by a core development team who coordinate contributions from many other different users/developers. The core-developer priorities depend on funding, usage in ongoing projects, and other factors. For 2019, the scheduled tasks are:
 
-1. **Ongoing maintenance, improved documentation and examples**: 
+1. **Ongoing maintenance, improved documentation and examples**:
    As always, there are various bugs and usability issues reported on the issue tracker, and we will address these as time permits.
 
 2. **More flexible and maintainable widgets and layouts using Panel** (`#805 <https://github.com/pyviz/holoviews/issues/805>`__):
@@ -46,8 +46,6 @@ Other things we'd like to see in HoloViews but have not currently scheduled for 
 5. **Better 3D support**:
    There is some improvement planned to 3D support in 2019, but there would still be a long way to go after that, and so anyone who routinely goes from 2D to 3D plotting and back could consider improving the 3D functionality available in HoloViews to make that simpler.
 
-If any of the functionality above is interesting to you (or you have ideas of your own!) and can offer help with implementation, please open an issue on this repository or on the specific subproject repository involved. And if you are lucky enough to be in a position to fund our developers to work on it, please contact ``jbednar@anaconda.com``. 
+If any of the functionality above is interesting to you (or you have ideas of your own!) and can offer help with implementation, please open an issue on this repository or on the specific subproject repository involved. And if you are lucky enough to be in a position to fund our developers to work on it, please contact ``jbednar@anaconda.com``.
 
-And please note that many of the features that you might think should be part of HoloViews may already be available or planned for one of the other `PyViz tools <http://pyviz.org>`__ that are designed to work well with HoloViews, so please also check out the   `PyViz Roadmap <http://http://pyviz.org/Roadmap.html>`__. 
-
-
+And please note that many of the features that you might think should be part of HoloViews may already be available or planned for one of the other `PyViz tools <http://pyviz.org>`__ that are designed to work well with HoloViews, so please also check out the   `PyViz Roadmap <http://http://pyviz.org/Roadmap.html>`__.

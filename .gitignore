@@ -19,12 +19,20 @@
 !/doc/Reference_Manual/index.rst
 .ipynb_checkpoints
 .coverage
+.pytest_cache
 
 /release
 /doc/Tutorials-WIP/*.ipynb
 .idea
+.vscode
 holoviews.rc
 /examples/assets/
 ghostdriver.log
 holoviews/.version
 .dir-locals.el
+.doit.db
+.vscode/settings.json
+holoviews/.vscode/settings.json
+.venv
+
+examples/getting_started/*.html

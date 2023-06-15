@@ -1,9 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 import param
 
 from ...core.options import SkipRendering
+from ...core.util import isfinite
 from ...element import Image, Raster
 from ..mixins import HeatMapMixin
 from .element import ColorbarPlot
@@ -11,21 +10,31 @@ from .element import ColorbarPlot
 
 class RasterPlot(ColorbarPlot):
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     style_opts = ['visible', 'cmap', 'alpha']
 
-    trace_kwargs = {'type': 'heatmap'}
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'heatmap'}
 
-    def graph_options(self, element, ranges, style):
-        opts = super(RasterPlot, self).graph_options(element, ranges, style)
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
-        opts['zmin'] = copts.pop('cmin')
-        opts['zmax'] = copts.pop('cmax')
+        cmin, cmax = copts.pop('cmin'), copts.pop('cmax')
+        if isfinite(cmin):
+            opts['zmin'] = cmin
+        if isfinite(cmax):
+            opts['zmax'] = cmax
         opts['zauto'] = copts.pop('cauto')
         return dict(opts, **copts)
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
@@ -34,18 +43,22 @@ class RasterPlot(ColorbarPlot):
         if type(element) is Raster:
             array=array.T[::-1,...]
         ny, nx = array.shape
-        dx, dy = float(r-l)/nx, float(t-b)/ny
+        if any(not isfinite(c) for c in (l, b, r, t)) or nx == 0 or ny == 0:
+            l, b, r, t, dx, dy = 0, 0, 0, 0, 0, 0
+        else:
+            dx, dy = float(r-l)/nx, float(t-b)/ny
         x0, y0 = l+dx/2., b+dy/2.
         if self.invert_axes:
             x0, y0, dx, dy = y0, x0, dy, dx
             array = array.T
+
         return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
 class HeatMapPlot(HeatMapMixin, RasterPlot):
 
-    def init_layout(self, key, element, ranges):
-        layout = super(HeatMapPlot, self).init_layout(key, element, ranges)
+    def init_layout(self, key, element, ranges, **kwargs):
+        layout = super().init_layout(key, element, ranges)
         gridded = element.gridded
         xdim, ydim = gridded.dimensions()[:2]
 
@@ -67,7 +80,7 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
             layout[yaxis]['ticktext'] = gridded.dimension_values(1, expanded=False)
         return layout
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         if not element._unique:
             self.param.warning('HeatMap element index is not unique,  ensure you '
                                'aggregate the data before displaying it, e.g. '
@@ -99,7 +112,12 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
 
 class QuadMeshPlot(RasterPlot):
 
-    def get_data(self, element, ranges, style):
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
+    def get_data(self, element, ranges, style, **kwargs):
         x, y, z = element.dimensions()[:3]
         irregular = element.interface.irregular(element, x)
         if irregular:
@@ -111,4 +129,5 @@ class QuadMeshPlot(RasterPlot):
         if self.invert_axes:
             y, x = 'x', 'y'
             zdata = zdata.T
+
         return [{x: xc, y: yc, 'z': zdata}]

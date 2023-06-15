@@ -1,13 +1,12 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 import param
-import matplotlib.cm as cm
+from matplotlib import cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
+from packaging.version import Version
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
-from ...core.util import basestring
+from ...util.transform import dim as dim_expr
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
@@ -66,7 +65,12 @@ class Plot3D(ColorbarPlot):
         self.handles['fig'].set_frameon(False)
         axis.grid(self.show_grid)
         axis.view_init(elev=self.elevation, azim=self.azimuth)
-        axis.dist = self.distance
+        try:
+            axis._dist = self.distance
+        except Exception:
+            # axis.dist is deprecated see here:
+            # https://github.com/matplotlib/matplotlib/pull/22084
+            axis.dist = self.distance
 
         if self.xaxis is None:
             axis.w_xaxis.line.set_lw(0.)
@@ -80,12 +84,11 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        if mpl_version <= '1.5.9':
+        if mpl_version <= Version('1.5.9'):
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
-        return super(Plot3D, self)._finalize_axis(key, **kwargs)
-
+        return super()._finalize_axis(key, **kwargs)
 
     def _draw_colorbar(self, element=None, dim=None, redraw=True):
         if element is None:
@@ -95,6 +98,8 @@ class Plot3D(ColorbarPlot):
         fig = self.handles['fig']
         ax = self.handles['axis']
         # Get colorbar label
+        if isinstance(dim, dim_expr):
+            dim = dim.dimension
         if dim is None:
             if hasattr(self, 'color_index'):
                 dim = element.get_dimension(self.color_index)
@@ -104,6 +109,7 @@ class Plot3D(ColorbarPlot):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
+        self.handles['cbar'] = cbar
         self.handles['cax'] = cbar.ax
         self._adjust_cbar(cbar, label, dim)
 
@@ -116,11 +122,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -243,5 +249,5 @@ class TriSurfacePlot(Plot3D):
     def get_data(self, element, ranges, style):
         dims = element.dimensions()
         self._norm_kwargs(element, ranges, style, dims[2])
-        x, y, z = [element.dimension_values(d) for d in dims]
+        x, y, z = (element.dimension_values(d) for d in dims)
         return (x, y, z), style, {}

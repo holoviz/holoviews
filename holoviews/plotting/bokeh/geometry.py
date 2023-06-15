@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 import param
 
@@ -52,7 +50,7 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
 
     _allow_implicit_categories = False
     _nonvectorized_styles = base_properties + ['cmap']
-    _plot_methods = dict(single='rect')
+    _plot_methods = dict(single='quad')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'
 
@@ -62,11 +60,11 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
         x0, x1 = np.min([x0, x1], axis=0), np.max([x0, x1], axis=0)
         y0, y1 = np.min([y0, y1], axis=0), np.max([y0, y1], axis=0)
         data = {
-            'x': x0+(x1-x0)/2.,
-            'y': x0+(x1-x0)/2.,
-            'width': x1-x0,
-            'height': y1-y0
+            'left': x0,
+            'right': x1,
+            'bottom': y0,
+            'top': y1
         }
-        mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
+        mapping = {'left': 'left', 'right': 'right', 'bottom': 'bottom', 'top': 'top'}
         self._get_hover_data(data, element)
         return data, mapping, style

@@ -12,7 +12,7 @@ from param.parameterized import get_occupied_slots
 from .util import datetime_types
 
 
-class BoundingRegion(object):
+class BoundingRegion:
     """
     Abstract bounding region class, for any portion of a 2D plane.
 
@@ -93,9 +93,9 @@ class BoundingBox(BoundingRegion):
         l, b, r, t = self._aarect.lbrt()
         if (not isinstance(r, datetime_types) and r == -l and
             not isinstance(b, datetime_types) and t == -b and r == t):
-            return 'BoundingBox(radius=%s)' % (r)
+            return f'BoundingBox(radius={r})'
         else:
-            return 'BoundingBox(points=((%s,%s),(%s,%s)))' % (l, b, r, t)
+            return f'BoundingBox(points=(({l},{b}),({r},{t})))'
 
 
     def __repr__(self):
@@ -106,7 +106,7 @@ class BoundingBox(BoundingRegion):
         # Generate import statement
         cls = self.__class__.__name__
         mod = self.__module__
-        imports.append("from %s import %s" % (mod, cls))
+        imports.append(f"from {mod} import {cls}")
         return self.__str__()
 
 
@@ -134,7 +134,7 @@ class BoundingBox(BoundingRegion):
         else:
             self._aarect = AARectangle((-0.5, -0.5), (0.5, 0.5))
 
-        super(BoundingBox, self).__init__(**args)
+        super().__init__(**args)
 
 
     def __contains__(self, other):
@@ -242,7 +242,7 @@ class BoundingEllipse(BoundingBox):
 # JABALERT: Should probably remove top, bottom, etc. accessor functions,
 # and use the slot itself instead.
 ###################################################
-class AARectangle(object):
+class AARectangle:
     """
     Axis-aligned rectangle class.
 
@@ -352,10 +352,7 @@ class BoundingRegionParameter(param.Parameter):
 
     def __init__(self, default=BoundingBox(radius=0.5), **params):
         self.set_hook = identity_hook
-        super(BoundingRegionParameter, self).__init__(default=default,
-                                                      instantiate=True,
-                                                      **params)
-
+        super().__init__(default=default, instantiate=True, **params)
 
     def __set__(self, obj, val):
         """
@@ -371,4 +368,4 @@ class BoundingRegionParameter(param.Parameter):
         if not isinstance(val, BoundingRegion):
             raise ValueError("Parameter must be a BoundingRegion.")
         else:
-            super(BoundingRegionParameter, self).__set__(obj, val)
+            super().__set__(obj, val)

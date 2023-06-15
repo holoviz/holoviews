@@ -1,10 +1,8 @@
-
-from collections import defaultdict
-from ..core import OrderedDict
+from collections import defaultdict, OrderedDict
 from ..core import Store
-from ..core.util import basestring
 
-class KeywordSettings(object):
+
+class KeywordSettings:
     """
     Base class for options settings used to specified collections of
     keyword options.
@@ -40,29 +38,26 @@ class KeywordSettings(object):
                 if isinstance(allowed, set):  pass
                 elif isinstance(allowed, dict):
                     if not isinstance(value, dict):
-                        raise ValueError("Value %r not a dict type" % value)
+                        raise ValueError(f"Value {value!r} not a dict type")
                     disallowed = set(value.keys()) - set(allowed.keys())
                     if disallowed:
-                        raise ValueError("Keywords %r for %r option not one of %s"
-                                         % (disallowed, keyword, allowed))
+                        raise ValueError(f"Keywords {disallowed!r} for {keyword!r} option not one of {allowed}")
                     wrong_type = {k: v for k, v in value.items()
                                   if not isinstance(v, allowed[k])}
                     if wrong_type:
                         errors = []
                         for k,v in wrong_type.items():
-                            errors.append("Value %r for %r option's %r attribute not of type %r" %
-                                          (v, keyword, k, allowed[k]))
+                            errors.append(f"Value {v!r} for {keyword!r} option's {k!r} attribute not of type {allowed[k]!r}")
                         raise ValueError('\n'.join(errors))
                 elif isinstance(allowed, list) and value not in allowed:
                     if keyword in cls.custom_exceptions:
                         cls.custom_exceptions[keyword](value, keyword, allowed)
                     else:
-                        raise ValueError("Value %r for key %r not one of %s"
-                                         % (value, keyword, allowed))
+                        raise ValueError(f"Value {value!r} for key {keyword!r} not one of {allowed}")
                 elif isinstance(allowed, tuple):
                     if not (allowed[0] <= value <= allowed[1]):
                         info = (keyword,value)+allowed
-                        raise ValueError("Value %r for key %r not between %s and %s" % info)
+                        raise ValueError("Value {!r} for key {!r} not between {} and {}".format(*info))
                 options[keyword] = value
         return cls._validate(options, items, warnfn)
 
@@ -84,7 +79,7 @@ class KeywordSettings(object):
             if chunk.strip() in cls.allowed:
                 key = chunk.strip()
             else:
-                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
+                raise SyntaxError(f"Invalid keyword: {chunk.strip()}")
             # The next chunk may end in a subsequent keyword
             value = unprocessed.pop().strip()
             if len(unprocessed) != 0:
@@ -95,12 +90,12 @@ class KeywordSettings(object):
                         unprocessed.append(option)
                         break
                 else:
-                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
-            keyword = '%s=%s' % (key, value)
+                    raise SyntaxError(f"Invalid keyword: {value.split()[-1]}")
+            keyword = f'{key}={value}'
             try:
-                items.update(eval('dict(%s)' % keyword))
-            except:
-                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
+                items.update(eval(f'dict({keyword})'))
+            except Exception:
+                raise SyntaxError(f"Could not evaluate keyword: {keyword}")
         return items
 
 
@@ -112,7 +107,7 @@ def list_backends():
         renderer = Store.renderers[backend]
         modes = [mode for mode in renderer.param.objects('existing')['mode'].objects
                  if mode  != 'default']
-        backends += ['%s:%s' % (backend, mode) for mode in modes]
+        backends += [f'{backend}:{mode}' for mode in modes]
     return backends
 
 
@@ -157,7 +152,7 @@ class OutputSettings(KeywordSettings):
                    'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
                    'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
                    'right_top', 'right_bottom'],
-               'css'           : {k: basestring
+               'css'           : {k: str
                                   for k in ['width', 'height', 'padding', 'margin',
                                             'max-width', 'min-width', 'max-height',
                                             'min-height', 'outline', 'float']}}
@@ -198,13 +193,13 @@ class OutputSettings(KeywordSettings):
     backend_list = [] # List of possible backends
 
     def missing_dependency_exception(value, keyword, allowed):
-        raise Exception("Format %r does not appear to be supported." % value)
+        raise Exception(f"Format {value!r} does not appear to be supported.")
 
     def missing_backend_exception(value, keyword, allowed):
         if value in OutputSettings.backend_list:
-            raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
+            raise ValueError(f"Backend {value!r} not available. Has it been loaded with the notebook_extension?")
         else:
-            raise ValueError("Backend %r does not exist" % value)
+            raise ValueError(f"Backend {value!r} does not exist")
 
     custom_exceptions = {'holomap':missing_dependency_exception,
                          'backend': missing_backend_exception}
@@ -231,7 +226,7 @@ class OutputSettings(KeywordSettings):
                 % cls.defaults['info'])
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
         widget_location = "widget_location : The position of the widgets relative to the plot"
-        
+
         descriptions = [backend, fig, holomap, widgets, fps, max_frames, size,
                         dpi, filename, info, css, widget_location]
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
@@ -257,10 +252,10 @@ class OutputSettings(KeywordSettings):
         if 'html' in Store.display_formats:
             pass
         elif 'fig' in items and items['fig'] not in Store.display_formats:
-            msg = ("Requesting output figure format %r " % items['fig']
-                   + "not in display formats %r" % Store.display_formats)
+            msg = (f"Requesting output figure format {items['fig']!r} "
+                   + f"not in display formats {Store.display_formats!r}")
             if warnfn is None:
-                print('Warning: {msg}'.format(msg=msg))
+                print(f'Warning: {msg}')
             else:
                 warnfn(msg)
 
@@ -286,7 +281,7 @@ class OutputSettings(KeywordSettings):
         if prev_backend in Store.renderers:
             prev_renderer = Store.renderers[prev_backend]
             prev_backend_spec = prev_backend+':'+prev_renderer.mode
-            prev_params = {k: v for k, v in prev_renderer.param.get_param_values()
+            prev_params = {k: v for k, v in prev_renderer.param.values().items()
                            if k in cls.render_params}
         else:
             prev_renderer = None
@@ -312,7 +307,7 @@ class OutputSettings(KeywordSettings):
                 backend_spec = prev_backend_spec
             backend = backend_spec.split(':')[0]
             renderer = Store.renderers[backend]
-            render_params = {k: v for k, v in renderer.param.get_param_values()
+            render_params = {k: v for k, v in renderer.param.values().items()
                              if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options
@@ -327,7 +322,7 @@ class OutputSettings(KeywordSettings):
                                  "has not been loaded, ensure you load it "
                                  "with hv.extension({ext}) before using "
                                  "hv.output.".format(ext=repr(backend)))
-            print('Error: %s' % str(e))
+            print(f'Error: {e}')
             if help_prompt:
                 print(help_prompt)
             return
@@ -429,4 +424,4 @@ class OutputSettings(KeywordSettings):
             options['widget_mode'] = options['widgets']
         renderer = Store.renderers[backend]
         render_options = {k: options[k] for k in cls.render_params if k in options}
-        renderer.param.set_param(**render_options)
+        renderer.param.update(**render_options)

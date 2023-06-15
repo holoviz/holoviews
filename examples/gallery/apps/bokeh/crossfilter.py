@@ -35,11 +35,11 @@ y = pnw.Select(name='Y-Axis', value='hp', options=quantileable)
 size = pnw.Select(name='Size', value='None', options=['None'] + quantileable)
 color = pnw.Select(name='Color', value='None', options=['None'] + quantileable)
 
-@pn.depends(x.param.value, y.param.value, color.param.value, size.param.value) 
+@pn.depends(x.param.value, y.param.value, color.param.value, size.param.value)
 def create_figure(x, y, color, size):
     opts = dict(cmap='rainbow', width=800, height=600, line_color='black')
     if color != 'None':
-        opts['color'] = color 
+        opts['color'] = color
     if size != 'None':
         opts['size'] = hv.dim(size).norm()*20
     return hv.Points(df, [x, y], label="%s vs %s" % (x.title(), y.title())).opts(**opts)

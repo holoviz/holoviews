@@ -9,13 +9,12 @@ from bokeh.core.properties import (
 )
 
 try:
-    from matplotlib import colors
-    import matplotlib.cm as cm
+    from matplotlib import colors, cm
 except ImportError:
     cm, colors = None, None
 
 from ...core.options import abbreviated_exception
-from ...core.util import basestring, arraylike_types
+from ...core.util import arraylike_types
 from ...util.transform import dim
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
 
@@ -27,11 +26,11 @@ base_properties = ['visible', 'muted']
 
 line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
                    'line_join', 'line_cap', 'line_dash']
-line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
+line_properties += [f'{prefix}_{prop}' for prop in line_properties
                     for prefix in property_prefixes]
 
 fill_properties = ['fill_color', 'fill_alpha']
-fill_properties += ['_'.join([prefix, prop]) for prop in fill_properties
+fill_properties += [f'{prefix}_{prop}' for prop in fill_properties
                     for prefix in property_prefixes]
 
 text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
@@ -100,7 +99,7 @@ validators = {
     'angle'     : angle.is_valid,
     'alpha'     : alpha.is_valid,
     'color'     : lambda x: (
-        color.is_valid(x) or (isinstance(x, basestring) and RGB_HEX_REGEX.match(x))
+        color.is_valid(x) or (isinstance(x, str) and RGB_HEX_REGEX.match(x))
     ),
     'font_size' : font_size.is_valid,
     'line_dash' : dash_pattern.is_valid,
@@ -122,10 +121,9 @@ def validate(style, value, scalar=False):
     ---------
     style: str
        The style to validate (e.g. 'color', 'size' or 'marker')
-    value: 
+    value:
        The style value to validate
     scalar: bool
-
 
     Returns
     -------

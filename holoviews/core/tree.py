@@ -1,13 +1,10 @@
-try:
-    from cyordereddict import OrderedDict
-except:
-    from collections import OrderedDict
+from collections import OrderedDict
 
 from . import util
 from .pprint import PrettyPrinter
 
 
-class AttrTree(object):
+class AttrTree:
     """
     An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined
@@ -69,6 +66,13 @@ class AttrTree(object):
         items = [] if not items else items
         for path, item in items:
             self.set_path(path, item)
+
+    @property
+    def root(self):
+        root = self
+        while root.parent is not None:
+            root = root.parent
+        return root
 
     @property
     def path(self):
@@ -223,10 +227,10 @@ class AttrTree(object):
         if util.tree_attribute(identifier) and self.fixed and shallow:
             raise AttributeError(self._fixed_error % identifier)
 
-        super(AttrTree, self).__setattr__(identifier, val)
+        super().__setattr__(identifier, val)
 
         if util.tree_attribute(identifier):
-            if not identifier in self.children:
+            if identifier not in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
 
@@ -237,12 +241,13 @@ class AttrTree(object):
         with the chosen attribute path.
         """
         try:
-            return super(AttrTree, self).__getattr__(identifier)
-        except AttributeError: pass
+            return super().__getattr__(identifier)
+        except AttributeError:
+            pass
 
         # Attributes starting with __ get name mangled
         if identifier.startswith('_' + type(self).__name__) or identifier.startswith('__'):
-            raise AttributeError('Attribute %s not found.' % identifier)
+            raise AttributeError(f'Attribute {identifier} not found.')
         elif self.fixed==True:
             raise AttributeError(self._fixed_error % identifier)
 
@@ -265,8 +270,7 @@ class AttrTree(object):
             self.__dict__[sanitized] = child_tree
             return child_tree
         else:
-            raise AttributeError('%r object has no attribute %s.' %
-                                 (type(self).__name__, identifier))
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {identifier}.')
 
 
     def __iter__(self):

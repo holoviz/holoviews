@@ -2,9 +2,8 @@ import os
 from unittest import SkipTest
 
 import param
-import holoviews
+import holoviews as hv
 
-from IPython import version_info
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
@@ -16,7 +15,7 @@ from ..element.comparison import ComparisonTestCase
 from ..util import extension
 from ..plotting.renderer import Renderer
 from .magics import load_magics
-from .display_hooks import display  # noqa (API import)
+from .display_hooks import display
 from .display_hooks import pprint_display, png_display, svg_display
 
 
@@ -37,7 +36,7 @@ class IPTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super(IPTestCase, self).setUp()
+        super().setUp()
         try:
             import IPython
             from IPython.display import HTML, SVG
@@ -55,7 +54,7 @@ class IPTestCase(ComparisonTestCase):
     def get_object(self, name):
         obj = self.ip._object_find(name).obj
         if obj is None:
-            raise self.failureException("Could not find object %s" % name)
+            raise self.failureException(f"Could not find object {name}")
         return obj
 
 
@@ -83,8 +82,8 @@ class notebook_extension(extension):
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
-    inline = param.Boolean(default=True, doc="""
-        Whether to inline JS and CSS resources. 
+    inline = param.Boolean(default=False, doc="""
+        Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
 
     width = param.Number(default=None, bounds=(0, 100), doc="""
@@ -96,11 +95,11 @@ class notebook_extension(extension):
         format will be displayed).
 
         Although the 'html' format is supported across backends, other
-        formats supported by the current backend (e.g 'png' and 'svg'
+        formats supported by the current backend (e.g. 'png' and 'svg'
         using the matplotlib backend) may be used. This may be useful to
-        export figures to other formats such as PDF with nbconvert. """)
+        export figures to other formats such as PDF with nbconvert.""")
 
-    allow_jedi_completion = param.Boolean(default=False, doc="""
+    allow_jedi_completion = param.Boolean(default=True, doc="""
        Whether to allow jedi tab-completion to be enabled in IPython.
        Disabled by default because many HoloViews features rely on
        tab-completion machinery not supported when using jedi.""")
@@ -109,26 +108,27 @@ class notebook_extension(extension):
        Whether to monkey patch IPython to use the correct tab-completion
        behavior. """)
 
+    enable_mathjax = param.Boolean(default=False, doc="""
+        Whether to load bokeh-mathjax bundle in the notebook.""")
+
     _loaded = False
 
     def __call__(self, *args, **params):
         comms = params.pop('comms', None)
-        super(notebook_extension, self).__call__(*args, **params)
+        super().__call__(*args, **params)
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except:
+        except Exception:
             return
 
         # Notebook archive relies on display hooks being set to work.
         try:
-            if version_info[0] >= 4:
-                import nbformat # noqa (ensures availability)
-            else:
-                from IPython import nbformat # noqa (ensures availability)
+            import nbformat  # noqa: F401
+
             try:
                 from .archive import notebook_archive
-                holoviews.archive = notebook_archive
+                hv.archive = notebook_archive
             except AttributeError as e:
                 if str(e) != "module 'tornado.web' has no attribute 'asynchronous'":
                     raise
@@ -139,7 +139,7 @@ class notebook_extension(extension):
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
             svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
-            holoviews.archive.exporters = [svg_exporter] + holoviews.archive.exporters
+            hv.archive.exporters = [svg_exporter] + hv.archive.exporters
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         if p.case_sensitive_completion:
@@ -155,7 +155,7 @@ class notebook_extension(extension):
             msg = ('Output magic unable to control displayed format '
                    'as IPython notebook uses fixed precedence '
                    'between %r' % p.display_formats)
-            display(HTML('<b>Warning</b>: %s' % msg))
+            display(HTML(f'<b>Warning</b>: {msg}'))
 
         loaded = notebook_extension._loaded
         if loaded == False:
@@ -171,7 +171,7 @@ class notebook_extension(extension):
         if p.width is not None:
             css += '<style>div.container { width: %s%% }</style>' % p.width
         if p.css:
-            css += '<style>%s</style>' % p.css
+            css += f'<style>{p.css}</style>'
 
         if css:
             display(HTML(css))
@@ -183,20 +183,22 @@ class notebook_extension(extension):
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
+        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
-        Renderer.load_nb()
+        Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=self.enable_mathjax)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
         # Create a message for the logo (if shown)
-        self.load_hvjs(logo=p.logo,
-                       bokeh_logo=  p.logo and ('bokeh' in resources),
-                       mpl_logo=    p.logo and (('matplotlib' in resources)
-                                                or resources==['holoviews']),
-                       plotly_logo= p.logo and ('plotly' in resources))
+        if not same_cell_execution and p.logo:
+            self.load_logo(logo=p.logo,
+                           bokeh_logo=  p.logo and ('bokeh' in resources),
+                           mpl_logo=    p.logo and (('matplotlib' in resources)
+                                                    or resources==['holoviews']),
+                           plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
@@ -206,11 +208,11 @@ class notebook_extension(extension):
         elif word.startswith('_'): prio1 = 1
         if word.endswith('='):     prio1 = -1
         if word.startswith('%%'):
-            if not "%" in word[2:]:
-                word = word[2:];   prio2 = 2
+            if '%' not in word[2:]:
+                word, prio2 = word[2:], 2
         elif word.startswith('%'):
-            if not "%" in word[1:]:
-                word = word[1:];   prio2 = 1
+            if '%' not in word[1:]:
+                word, prio2 = word[1:], 1
         return prio1, word, prio2
 
 
@@ -235,8 +237,8 @@ class notebook_extension(extension):
 
         unmatched_args = set(args) - set(resources)
         if unmatched_args:
-            display(HTML('<b>Warning:</b> Unrecognized resources %s'
-                         % ', '.join(unmatched_args)))
+            display(HTML("<b>Warning:</b> Unrecognized resources '%s'"
+                         % "', '".join(unmatched_args)))
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
@@ -244,10 +246,9 @@ class notebook_extension(extension):
         return resources
 
     @classmethod
-    def load_hvjs(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False,
-                  JS=True, message='HoloViewsJS successfully loaded.'):
+    def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
         """
-        Displays javascript and CSS to initialize HoloViews widgets.
+        Allow to display Holoviews' logo and the plotting extensions' logo.
         """
         import jinja2
 
@@ -257,8 +258,7 @@ class notebook_extension(extension):
         html = template.render({'logo':        logo,
                                 'bokeh_logo':  bokeh_logo,
                                 'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo,
-                                'message':     message})
+                                'plotly_logo': plotly_logo})
         publish_display_data(data={'text/html': html})
 
 

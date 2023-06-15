@@ -1,0 +1,14 @@
+:root[data-theme="light"] {
+    --pst-color-primary: rgb(47,47,47);
+    --pst-color-link: rgb(163,26,38);
+    --pst-color-link-hover: rgb(254,203,56);
+    --pst-color-surface: rgb(250, 250, 250);
+}
+
+#binder-link {
+    display: inline-block;
+    font-size: 0.9rem;
+    padding-left: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}

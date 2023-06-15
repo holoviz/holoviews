@@ -1,32 +1,32 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import plotly
 
 from param import concrete_descendents
+from packaging.version import Version
 
 from ...core import (
     Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
 )
 from ...core.options import Store, Cycle, Options
-from ...core.util import LooseVersion, VersionError
-from ...element import *              # noqa (Element import for registration)
+from ...core.util import VersionError
+from ...element import *
 
 from .element import ElementPlot
 from .renderer import PlotlyRenderer
 
-from .annotation import *            # noqa (API import)
-from .element import *               # noqa (API import)
-from .chart import *                 # noqa (API import)
-from .chart3d import *               # noqa (API import)
-from .raster import *                # noqa (API import)
-from .plot import *                  # noqa (API import)
-from .stats import *                 # noqa (API import)
-from .tabular import *               # noqa (API import)
-from .callbacks import *             # noqa (API import)
-from .shapes import *                # noqa (API import)
-from .images import *                # noqa (API import)
+from .annotation import *
+from .tiles import *
+from .element import *
+from .chart import *
+from .chart3d import *
+from .raster import *
+from .plot import *
+from .stats import *
+from .tabular import *
+from .callbacks import *
+from .shapes import *
+from .images import *
 
-if LooseVersion(plotly.__version__) < '4.0.0':
+if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
         "please upgrade from plotly %s to a more recent version."
@@ -64,7 +64,6 @@ Store.register({Points: ScatterPlot,
                 Surface: SurfacePlot,
                 Path3D: Path3DPlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 
                 # Tabular
                 Table: TablePlot,
@@ -72,6 +71,7 @@ Store.register({Points: ScatterPlot,
 
                 # Annotations
                 Labels: LabelPlot,
+                Tiles: TilePlot,
 
                 # Shapes
                 Box: PathShapePlot,
@@ -89,6 +89,7 @@ Store.register({Points: ScatterPlot,
                 Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 Layout: LayoutPlot,
+                AdjointLayout: AdjointLayoutPlot,
                 NdLayout: LayoutPlot,
                 GridSpace: GridPlot,
                 GridMatrix: GridPlot}, backend='plotly')
@@ -100,7 +101,8 @@ if config.no_padding:
     for plot in concrete_descendents(ElementPlot).values():
         plot.padding = 0
 
-dflt_cmap = 'fire'
+dflt_cmap = config.default_cmap
+dflt_shape_line_color = '#2a3f5f'  # Line color of default plotly template
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
@@ -109,18 +111,23 @@ Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.ErrorBars = Options('style', color='black')
-options.Scatter = Options('style', color=Cycle())
-options.Points = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
-options.TriSurface = Options('style', cmap='viridis')
+options.TriSurface = Options('style', cmap=dflt_cmap)
 options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='black')
 
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap)
-options.Raster = Options('style', cmap=dflt_cmap)
-options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdBu_r')
+options.Image = Options('style', cmap=config.default_gridded_cmap)
+options.Raster = Options('style', cmap=config.default_gridded_cmap)
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap)
+
+# Disable padding for image-like elements
+options.Image = Options("plot", padding=0)
+options.Raster = Options("plot", padding=0)
+options.RGB = Options("plot", padding=0)
 
 # 3D
 options.Scatter3D = Options('style', color=Cycle(), size=6)
@@ -128,3 +135,10 @@ options.Scatter3D = Options('style', color=Cycle(), size=6)
 # Annotations
 options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
+
+# Shapes
+options.Rectangles = Options('style', line_color=dflt_shape_line_color)
+options.Bounds = Options('style', line_color=dflt_shape_line_color)
+options.Path = Options('style', line_color=dflt_shape_line_color)
+options.Segments = Options('style', line_color=dflt_shape_line_color)
+options.Box = Options('style', line_color=dflt_shape_line_color)

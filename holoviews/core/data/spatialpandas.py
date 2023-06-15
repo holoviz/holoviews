@@ -1,14 +1,12 @@
-from __future__ import absolute_import, division
-
 import sys
-import warnings
 
 from collections import defaultdict
 
 import numpy as np
+import pandas as pd
 
 from ..dimension import dimension_name
-from ..util import isscalar, unique_iterator, pd, unique_array
+from ..util import isscalar, unique_iterator, unique_array
 from .interface import DataError, Interface
 from .multipath import MultiInterface, ensure_ring
 from .pandas import PandasInterface
@@ -16,11 +14,13 @@ from .pandas import PandasInterface
 
 class SpatialPandasInterface(MultiInterface):
 
-    types = ()
+    base_interface = PandasInterface
 
     datatype = 'spatialpandas'
 
     multi = True
+
+    types = ()
 
     @classmethod
     def loaded(cls):
@@ -30,20 +30,39 @@ class SpatialPandasInterface(MultiInterface):
     def applies(cls, obj):
         if not cls.loaded():
             return False
-        from spatialpandas import GeoDataFrame, GeoSeries
-        is_sdf = isinstance(obj, (GeoDataFrame, GeoSeries))
-        if 'geopandas' in sys.modules and not 'geoviews' in sys.modules:
+        is_sdf = isinstance(obj, cls.data_types())
+        if 'geopandas' in sys.modules and 'geoviews' not in sys.modules:
             import geopandas as gpd
             is_sdf |= isinstance(obj, (gpd.GeoDataFrame, gpd.GeoSeries))
         return is_sdf
 
     @classmethod
-    def geo_column(cls, data):
+    def data_types(cls):
+        from spatialpandas import GeoDataFrame, GeoSeries
+        return (GeoDataFrame, GeoSeries, cls.array_type())
+
+    @classmethod
+    def array_type(cls):
+        from spatialpandas.geometry import GeometryArray
+        return GeometryArray
+
+    @classmethod
+    def series_type(cls):
         from spatialpandas import GeoSeries
+        return GeoSeries
+
+    @classmethod
+    def frame_type(cls):
+        from spatialpandas import GeoDataFrame
+        return GeoDataFrame
+
+    @classmethod
+    def geo_column(cls, data):
         col = 'geometry'
-        if col in data and isinstance(data[col], GeoSeries):
+        stypes = cls.series_type()
+        if col in data and isinstance(data[col], stypes):
             return col
-        cols = [c for c in data.columns if isinstance(data[c], GeoSeries)]
+        cols = [c for c in data.columns if isinstance(data[c], stypes)]
         if not cols:
             raise ValueError('No geometry column found in spatialpandas.GeoDataFrame, '
                              'use the PandasInterface instead.')
@@ -51,8 +70,7 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        import pandas as pd
-        from spatialpandas import GeoDataFrame, GeoSeries
+        from spatialpandas import GeoDataFrame
 
         if kdims is None:
             kdims = eltype.kdims
@@ -60,7 +78,7 @@ class SpatialPandasInterface(MultiInterface):
         if vdims is None:
             vdims = eltype.vdims
 
-        if isinstance(data, GeoSeries):
+        if isinstance(data, cls.series_type()):
             data = data.to_frame()
 
         if 'geopandas' in sys.modules:
@@ -74,8 +92,10 @@ class SpatialPandasInterface(MultiInterface):
                 data = from_shapely(data)
             if isinstance(data, list):
                 data = from_multi(eltype, data, kdims, vdims)
-        elif not isinstance(data, GeoDataFrame):
-            raise ValueError("SpatialPandasInterface only support spatialpandas DataFrames.")
+        elif isinstance(data, cls.array_type()):
+            data = GeoDataFrame({'geometry': data})
+        elif not isinstance(data, cls.frame_type()):
+            raise ValueError(f"{cls.__name__} only support spatialpandas DataFrames.")
         elif 'geometry' not in data:
             cls.geo_column(data)
 
@@ -116,7 +136,7 @@ class SpatialPandasInterface(MultiInterface):
         dim = dataset.get_dimension(dimension, strict=True)
         if dim in cls.geom_dims(dataset):
             col = cls.geo_column(dataset.data)
-            return dataset.data[col].values.numpy_dtype
+            return dataset.data[col].dtype.subtype
         return dataset.data[dim.name].dtype
 
     @classmethod
@@ -157,43 +177,14 @@ class SpatialPandasInterface(MultiInterface):
         elif selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
-        df = df.iloc[selection_mask]
+        df = df[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        mask = np.ones(len(dataset.data), dtype=np.bool)
-        for dim, k in selection.items():
-            if isinstance(k, tuple):
-                k = slice(*k)
-            arr = dataset.data[dim].values
-            if isinstance(k, slice):
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'invalid value encountered')
-                    if k.start is not None:
-                        mask &= k.start <= arr
-                    if k.stop is not None:
-                        mask &= arr < k.stop
-            elif isinstance(k, (set, list)):
-                iter_slcs = []
-                for ik in k:
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings('ignore', r'invalid value encountered')
-                        iter_slcs.append(arr == ik)
-                mask &= np.logical_or.reduce(iter_slcs)
-            elif callable(k):
-                mask &= k(arr)
-            else:
-                index_mask = arr == k
-                if dataset.ndims == 1 and np.sum(index_mask) == 0:
-                    data_index = np.argmin(np.abs(arr - k))
-                    mask = np.zeros(len(dataset), dtype=np.bool)
-                    mask[data_index] = True
-                else:
-                    mask &= index_mask
-        return mask
+        return cls.base_interface.select_mask(dataset, selection)
 
     @classmethod
     def geom_dims(cls, dataset):
@@ -203,13 +194,7 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def dimension_type(cls, dataset, dim):
         dim = dataset.get_dimension(dim)
-        col = cls.geo_column(dataset.data)
-        if dim in cls.geom_dims(dataset) and len(dataset.data):
-            arr = geom_to_array(dataset.data[col].iloc[0])
-            ds = dataset.clone(arr, datatype=cls.subtypes, vdims=[])
-            return ds.interface.dimension_type(ds, dim)
-        else:
-            return cls.dtype(dataset, dim).type
+        return cls.dtype(dataset, dim).type
 
     @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
@@ -238,7 +223,7 @@ class SpatialPandasInterface(MultiInterface):
             else:
                 return (bounds[1], bounds[3])
         else:
-            return Interface.range(dataset, dim)
+            return cls.base_interface.range(dataset, dim)
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -246,7 +231,7 @@ class SpatialPandasInterface(MultiInterface):
         if any(d in geo_dims for d in dimensions):
             raise DataError("SpatialPandasInterface does not allow grouping "
                             "by geometry dimension.", cls)
-        return PandasInterface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
+        return cls.base_interface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
 
     @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
@@ -270,7 +255,7 @@ class SpatialPandasInterface(MultiInterface):
         if any(d in geo_dims for d in by):
             raise DataError("SpatialPandasInterface does not allow sorting "
                             "by geometry dimension.", cls)
-        return PandasInterface.sort(dataset, by, reverse)
+        return cls.base_interface.sort(dataset, by, reverse)
 
     @classmethod
     def length(cls, dataset):
@@ -279,7 +264,7 @@ class SpatialPandasInterface(MultiInterface):
         column = dataset.data[col_name]
         geom_type = cls.geom_type(dataset)
         if not isinstance(column.dtype, MultiPointDtype) and geom_type != 'Point':
-            return PandasInterface.length(dataset)
+            return cls.base_interface.length(dataset)
         length = 0
         for i, geom in enumerate(column):
             if isinstance(geom, Point):
@@ -290,11 +275,11 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def nonzero(cls, dataset):
-        return bool(cls.length(dataset))
+        return bool(len(dataset.data.head(1)))
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        return PandasInterface.redim(dataset, dimensions)
+        return cls.base_interface.redim(dataset, dimensions)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -386,13 +371,18 @@ class SpatialPandasInterface(MultiInterface):
         if isgeom and keep_index:
             return data[geom_col]
         elif not isgeom:
+            if is_points:
+                return data[dimension.name].values
             return get_value_array(data, dimension, expanded, keep_index, geom_col, is_points)
         elif not len(data):
             return np.array([])
 
         geom_type = cls.geom_type(dataset)
         index = geom_dims.index(dimension)
-        return geom_array_to_array(data[geom_col].values, index, expanded, geom_type)
+        geom_series = data[geom_col]
+        if compute and hasattr(geom_series, 'compute'):
+            geom_series = geom_series.compute()
+        return geom_array_to_array(geom_series.values, index, expanded, geom_type)
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
@@ -440,9 +430,21 @@ class SpatialPandasInterface(MultiInterface):
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
+
+    @classmethod
+    def dframe(cls, dataset, dimensions):
+        if dimensions:
+            return dataset.data[dimensions]
+        else:
+            return dataset.data.copy()
+
+    @classmethod
+    def as_dframe(cls, dataset):
+        return dataset.data
+
 
 
 
@@ -604,7 +606,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     all_scalar = True
     arrays, scalars = [], []
     for i, geom in enumerate(data[geom_col]):
-        length = geom_length(geom)
+        length = 1 if is_points else geom_length(geom)
         val = column.iloc[i]
         scalar = isscalar(val)
         if scalar:
@@ -802,7 +804,7 @@ def to_geom_dict(eltype, data, kdims, vdims, interface=None):
 
     xname, yname = (kd.name for kd in kdims[:2])
     if isinstance(data, dict):
-        data = {k: v if isscalar(v) else np.asarray(v) for k, v in data.items()}
+        data = {k: v if isscalar(v) else _asarray(v) for k, v in data.items()}
         return data
     new_el = Dataset(data, kdims, vdims)
     if new_el.interface is interface:
@@ -884,6 +886,24 @@ def from_shapely(data):
         new_data['geometry'] = GeoSeries(new_data['geometry'])
         data = GeoDataFrame(new_data)
     return data
+
+
+def _asarray(v):
+    """Convert input to array
+
+    First it tries with a normal `np.asarray(v)` if this does not work
+    it tries with `np.asarray(v, dtype=object)`.
+
+    The ValueError raised is because of an inhomogeneous shape of the input,
+    which raises an error in numpy v1.24 and above.
+
+    Reason why it is not located in holoviews.core.util is that there is a already a
+    function called `asarray`.
+    """
+    try:
+        return np.asarray(v)
+    except ValueError:
+        return np.asarray(v, dtype=object)
 
 
 Interface.register(SpatialPandasInterface)

@@ -2,31 +2,29 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
-from __future__ import division
-
-from distutils.version import LooseVersion
+import warnings
 
 import numpy as np
 import param
 
+from packaging.version import Version
 from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
-from ..core.data import ArrayInterface, DictInterface, default_datatype
-from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite, dt_to_int,
-                         isdatetime, is_dask_array, is_cupy_array)
+from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
+from ..core.data.util import dask_array_module
+from ..core.util import (
+    group_sanitizer, label_sanitizer, datetime_types, isfinite,
+    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)
 from ..streams import RangeXY
 
-column_interfaces = [ArrayInterface, DictInterface]
-if pd:
-    from ..core.data import PandasInterface
-    column_interfaces.append(PandasInterface)
+column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
 
 def identity(x,k): return x
@@ -48,12 +46,12 @@ class operation(Operation):
     data between Rasters in an Overlay.
     """
 
-    output_type = param.Parameter(None, doc="""
+    output_type = param.Parameter(default=None, doc="""
        The output element type which may be None to disable type
        checking.
 
        May be used to declare useful information to other code in
-       HoloViews e.g required for tab-completion support of operations
+       HoloViews, e.g. required for tab-completion support of operations
        registered with compositors.""")
 
     group = param.String(default='Operation', doc="""
@@ -80,7 +78,7 @@ class factory(Operation):
     created from overlays of Image elements.
     """
 
-    output_type = param.Parameter(RGB, doc="""
+    output_type = param.Parameter(default=RGB, doc="""
         The output type of the factor operation.
 
         By default, if three overlaid Images elements are supplied,
@@ -175,7 +173,7 @@ class apply_when(param.ParameterizedFunction):
             streams = params.pop('streams')
         else:
             streams = [RangeXY()]
-        self.param.set_param(**params)
+        self.param.update(**params)
         if not self.predicate:
             raise ValueError(
                 'Must provide a predicate function to determine when '
@@ -205,7 +203,7 @@ class chain(Operation):
     single argument.
     """
 
-    output_type = param.Parameter(Image, doc="""
+    output_type = param.Parameter(default=Image, doc="""
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 
@@ -213,7 +211,7 @@ class chain(Operation):
         The group assigned to the result after having applied the chain.
         Defaults to the group produced by the last operation in the chain""")
 
-    operations = param.List(default=[], class_=Operation, doc="""
+    operations = param.List(default=[], item_type=Operation, doc="""
        A list of Operations (or Operation instances)
        that are applied on the input from left to right.""")
 
@@ -228,6 +226,20 @@ class chain(Operation):
             return processed
         else:
             return processed.clone(group=self.p.group)
+
+    def find(self, operation, skip_nonlinked=True):
+        """
+        Returns the first found occurrence of an operation while
+        performing a backward traversal of the chain pipeline.
+        """
+        found = None
+        for op in self.operations[::-1]:
+            if isinstance(op, operation):
+                found = op
+                break
+            if not op.link_inputs and skip_nonlinked:
+                break
+        return found
 
 
 class transform(Operation):
@@ -657,7 +669,7 @@ class histogram(Operation):
     frequency_label = param.String(default=None, doc="""
       Format string defining the label of the frequency dimension of the Histogram.""")
 
-    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+    groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
     log = param.Boolean(default=False, doc="""
@@ -666,7 +678,7 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=True,
+    normed = param.ObjectSelector(default=False,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
       Controls normalization behavior.  If `True` or `'integral'`, then
@@ -716,25 +728,29 @@ class histogram(Operation):
         is_cupy = is_cupy_array(data)
         if is_cupy:
             import cupy
-            full_cupy_support = LooseVersion(cupy.__version__) > '8.0'
-            if not full_cupy_support and (normed or self.p.weight_dimension): 
+            full_cupy_support = Version(cupy.__version__) > Version('8.0')
+            if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False
-        if is_dask_array(data):
-            import dask.array as da
-            histogram = da.histogram
-        elif is_cupy:
-            import cupy
-            histogram = cupy.histogram
-            is_finite = cupy.isfinite
-        else:
-            histogram = np.histogram
+            else:
+                is_finite = cupy.isfinite
 
         # Mask data
-        mask = is_finite(data)
-        if self.p.nonzero:
-            mask = mask & (data > 0)
-        data = data[mask]
+        if is_ibis_expr(data):
+            mask = data.notnull()
+            if self.p.nonzero:
+                mask = mask & (data != 0)
+            data = data.to_projection()
+            data = data[mask]
+            no_data = not len(data.head(1).execute())
+            data = data[dim.name]
+        else:
+            mask = is_finite(data)
+            if self.p.nonzero:
+                mask = mask & (data != 0)
+            data = data[mask]
+            da = dask_array_module()
+            no_data = False if da and isinstance(data, da.Array) else not len(data)
 
         # Compute weights
         if self.p.weight_dimension:
@@ -742,8 +758,7 @@ class histogram(Operation):
                 weights = element.interface.values(element, self.p.weight_dimension, compute=False)
             else:
                 weights = element.dimension_values(self.p.weight_dimension)
-            if self.p.nonzero:
-                weights = weights[mask]
+            weights = weights[mask]
         else:
             weights = None
 
@@ -757,11 +772,22 @@ class histogram(Operation):
                 edges = edges.astype('datetime64[ns]').astype('int64')
         else:
             hist_range = self.p.bin_range or element.range(selected_dim)
+            # Suppress a warning emitted by Numpy when datetime or timedelta scalars
+            # are compared. See https://github.com/numpy/numpy/issues/10095 and
+            # https://github.com/numpy/numpy/issues/9210.
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    action='ignore', message='elementwise comparison failed',
+                    category=DeprecationWarning
+                )
+                null_hist_range = hist_range == (0, 0)
             # Avoids range issues including zero bin range and empty bins
-            if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
+            if null_hist_range or any(not isfinite(r) for r in hist_range):
                 hist_range = (0, 1)
             steps = self.p.num_bins + 1
             start, end = hist_range
+            if isinstance(start, str) or isinstance(end, str) or isinstance(steps, str):
+                raise ValueError("Categorical data found. Cannot create histogram from categorical data.")
             if is_datetime:
                 start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
             if self.p.log:
@@ -769,31 +795,35 @@ class histogram(Operation):
                 edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
             else:
                 edges = np.linspace(start, end, steps)
-
         if is_cupy:
             edges = cupy.asarray(edges)
 
-        if is_dask_array(data) or len(data):
-            if is_cupy and not full_cupy_support:
-               hist, _ = histogram(data, bins=edges)
-            elif normed:
-                # This covers True, 'height', 'integral'
-                hist, edges = histogram(data, density=True,
-                                        weights=weights, bins=edges)
-                if normed == 'height':
-                    hist /= hist.max()
-            else:
-                hist, edges = histogram(data, normed=normed, weights=weights, bins=edges)
-                if self.p.weight_dimension and self.p.mean_weighted:
-                    hist_mean, _ = histogram(data, density=False, bins=self.p.num_bins)
-                    hist /= hist_mean
-        else:
+        if not is_dask_array(data) and no_data:
             nbins = self.p.num_bins if self.p.bins is None else len(self.p.bins)-1
             hist = np.zeros(nbins)
-
-        if is_cupy_array(hist):
-            edges = cupy.asnumpy(edges) 
-            hist = cupy.asnumpy(hist)
+        elif hasattr(element, 'interface'):
+            density = True if normed else False
+            hist, edges = element.interface.histogram(
+                data, edges, density=density, weights=weights
+            )
+            if normed == 'height':
+                hist /= hist.max()
+            if self.p.weight_dimension and self.p.mean_weighted:
+                hist_mean, _ = element.interface.histogram(
+                    data, density=False, bins=edges
+                )
+                hist /= hist_mean
+        elif normed:
+            # This covers True, 'height', 'integral'
+            hist, edges = np.histogram(data, density=True,
+                                       weights=weights, bins=edges)
+            if normed == 'height':
+                hist /= hist.max()
+        else:
+            hist, edges = np.histogram(data, normed=normed, weights=weights, bins=edges)
+            if self.p.weight_dimension and self.p.mean_weighted:
+                hist_mean, _ = np.histogram(data, density=False, bins=self.p.num_bins)
+                hist /= hist_mean
 
         hist[np.isnan(hist)] = 0
         if is_datetime:
@@ -807,7 +837,7 @@ class histogram(Operation):
             params['vdims'] = [Dimension('Frequency', label=label)]
         else:
             label = 'Frequency' if normed else 'Count'
-            params['vdims'] = [Dimension('{0}_{1}'.format(dim.name, label.lower()),
+            params['vdims'] = [Dimension(f'{dim.name}_{label.lower()}',
                                          label=label)]
 
         if element.group != element.__class__.__name__:
@@ -848,7 +878,8 @@ class decimate(Operation):
     random_seed = param.Integer(default=42, doc="""
         Seed used to initialize randomization.""")
 
-    streams = param.List(default=[RangeXY], doc="""
+    streams = param.ClassSelector(default=[RangeXY], class_=(dict, list),
+                                   doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
@@ -878,7 +909,8 @@ class decimate(Operation):
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
-            return sliced.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
+            choice = prng.choice(len(sliced), self.p.max_samples, False)
+            return sliced.iloc[np.sort(choice)]
         return sliced
 
     def _process(self, element, key=None):
@@ -1018,8 +1050,8 @@ class gridmatrix(param.ParameterizedFunction):
        or any other function which returns a viewable element.""")
 
     overlay_dims = param.List(default=[], doc="""
-       If a HoloMap is supplied this will allow overlaying one or
-       more of it's key dimensions.""")
+       If a HoloMap is supplied, this will allow overlaying one or
+       more of its key dimensions.""")
 
     def __call__(self, data, **params):
         p = param.ParamOverrides(self, params)
@@ -1046,7 +1078,7 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, basestring, np.str_, np.object_)+datetime_types
+        types = (str, np.str_, np.object_)+datetime_types
         dims = [d for d in element.dimensions()
                 if _is_number(element.range(d)[0]) and
                 not issubclass(element.get_dimension_type(d), types)]

@@ -3,37 +3,57 @@ Defines mix-in classes to handle support for linked brushing on
 elements.
 """
 
-import numpy as np
+import sys
 
-from ..core import util, NdOverlay
+import numpy as np
+import pandas as pd
+
+from ..core import Dataset, NdOverlay, util
 from ..streams import SelectionXY, Selection1D, Lasso
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
 
 
-class SelectionIndexExpr(object):
+class SelectionIndexExpr:
 
     _selection_dims = None
 
     _selection_streams = (Selection1D,)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._index_skip = False
+
     def _empty_region(self):
         return None
+
+    def _get_index_selection(self, index, index_cols):
+        self._index_skip = True
+        if not index:
+            return None, None, None
+        ds = self.clone(kdims=index_cols, new_type=Dataset)
+        if len(index_cols) == 1:
+            index_dim = index_cols[0]
+            vals = dim(index_dim).apply(ds.iloc[index], expanded=False)
+            if vals.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in vals):
+                vals = [v for arr in vals for v in util.unique_iterator(arr)]
+            expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
+        else:
+            get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
+            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
+            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
+                ds.iloc[index], expanded=True, flat=True
+            )
+            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
+            expr = dim(contains, np.reshape, get_shape)
+        return expr, None, None
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         index = kwargs.get('index')
         index_cols = kwargs.get('index_cols')
         if index is None or index_cols is None:
-            expr = None
-        else:
-            get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
-            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
-            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                self.iloc[index], expanded=True, flat=True
-            )
-            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
-            expr = dim(contains, np.reshape, get_shape)
-        return expr, None, None
+            return None, None, None
+        return self._get_index_selection(index, index_cols)
 
     @staticmethod
     def _merge_regions(region1, region2, operation):
@@ -53,28 +73,72 @@ def spatial_select_gridded(xvals, yvals, geometry):
         xs, ys = xvals[0], yvals[:, 0]
         target = Image((xs, ys, np.empty(ys.shape+xs.shape)))
         poly = Polygons([geometry])
-        mask = rasterize(poly, target=target, dynamic=False, aggregator='any')
-        return mask.dimension_values(2, flat=False)
+        sel_mask = rasterize(poly, target=target, dynamic=False, aggregator='any')
+        return sel_mask.dimension_values(2, flat=False)
     else:
-        mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
-        return mask.reshape(xvals.shape)
+        sel_mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
+        return sel_mask.reshape(xvals.shape)
 
 def spatial_select_columnar(xvals, yvals, geometry):
+    if 'cudf' in sys.modules:
+        import cudf
+        if isinstance(xvals, cudf.Series):
+            xvals = xvals.values.astype('float')
+            yvals = yvals.values.astype('float')
+            try:
+                import cuspatial
+                result = cuspatial.point_in_polygon(
+                    xvals,
+                    yvals,
+                    cudf.Series([0], index=["selection"]),
+                    [0],
+                    geometry[:, 0],
+                    geometry[:, 1],
+                )
+                return result.values
+            except ImportError:
+                xvals = np.asarray(xvals)
+                yvals = np.asarray(yvals)
+    if 'dask' in sys.modules:
+        import dask.dataframe as dd
+        if isinstance(xvals, dd.Series):
+            try:
+                xvals.name = "xvals"
+                yvals.name = "yvals"
+                df = xvals.to_frame().join(yvals)
+                return df.map_partitions(
+                    lambda df, geometry: spatial_select_columnar(df.xvals, df.yvals, geometry),
+                    geometry,
+                    meta=pd.Series(dtype=bool)
+                )
+            except Exception:
+                xvals = np.asarray(xvals)
+                yvals = np.asarray(yvals)
+    x0, x1 = geometry[:, 0].min(), geometry[:, 0].max()
+    y0, y1 = geometry[:, 1].min(), geometry[:, 1].max()
+    sel_mask = (xvals>=x0) & (xvals<=x1) & (yvals>=y0) & (yvals<=y1)
+    masked_xvals = xvals[sel_mask]
+    masked_yvals = yvals[sel_mask]
     try:
         from spatialpandas.geometry import Polygon, PointArray
-        points = PointArray((xvals.astype('float'), yvals.astype('float')))
+        points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
         poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
-        return points.intersects(poly)
-    except Exception:
-        pass
-    try:
-        from shapely.geometry import Point, Polygon
-        points = (Point(x, y) for x, y in zip(xvals, yvals))
-        poly = Polygon(geometry)
-        return np.array([poly.contains(p) for p in points])
+        geom_mask = points.intersects(poly)
     except ImportError:
-        raise ImportError("Lasso selection on tabular data requires "
-                          "either spatialpandas or shapely to be available.")
+        try:
+            from shapely.geometry import Point, Polygon
+            points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
+            poly = Polygon(geometry)
+            geom_mask = np.array([poly.contains(p) for p in points])
+        except ImportError:
+            raise ImportError("Lasso selection on tabular data requires "
+                              "either spatialpandas or shapely to be available.")
+    if isinstance(xvals, pd.Series):
+        sel_mask[sel_mask.index[np.where(sel_mask)[0]]] = geom_mask
+    else:
+        sel_mask[np.where(sel_mask)[0]] = geom_mask
+    return sel_mask
+
 
 def spatial_select(xvals, yvals, geometry):
     if xvals.ndim > 1:
@@ -110,7 +174,7 @@ def spatial_bounds_select(xvals, yvals, bounds):
                      for xs, ys in zip(xvals, yvals)])
 
 
-class Selection2DExpr(object):
+class Selection2DExpr(SelectionIndexExpr):
     """
     Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
@@ -118,7 +182,7 @@ class Selection2DExpr(object):
 
     _selection_dims = 2
 
-    _selection_streams = (SelectionXY, Lasso)
+    _selection_streams = (SelectionXY, Lasso, Selection1D)
 
     def _empty_region(self):
         from .geom import Rectangles
@@ -147,13 +211,19 @@ class Selection2DExpr(object):
         return (x0, x1), xcats, (y0, y1), ycats
 
     def _get_index_expr(self, index_cols, sel):
-        get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
-        index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
-        vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-            sel, expanded=True, flat=True
-        )
-        contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
-        return dim(contains, np.reshape, get_shape)
+        if len(index_cols) == 1:
+            index_dim = index_cols[0]
+            vals = dim(index_dim).apply(sel, expanded=False, flat=True)
+            expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
+        else:
+            get_shape = dim(self.dataset.get_dimension(), np.shape)
+            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
+            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
+                sel, expanded=True, flat=True
+            )
+            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
+            expr = dim(contains, np.reshape, get_shape)
+        return expr
 
     def _get_bounds_selection(self, xdim, ydim, **kwargs):
         from .geom import Rectangles
@@ -203,17 +273,29 @@ class Selection2DExpr(object):
             xdim, ydim = ydim, xdim
         return (xdim, ydim)
 
+    def _skip(self, **kwargs):
+        skip = kwargs.get('index_cols') and self._index_skip
+        if skip:
+            self._index_skip = False
+        return skip
+
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from .geom import Rectangles
         from .path import Path
 
         if (kwargs.get('bounds') is None and kwargs.get('x_selection') is None
-            and kwargs.get('geometry') is None):
+            and kwargs.get('geometry') is None and not kwargs.get('index')):
             return None, None, Rectangles([]) * Path([])
 
-        dims = self._get_selection_dims()
+        index_cols = kwargs.get('index_cols')
 
-        if 'bounds' in kwargs:
+        dims = self._get_selection_dims()
+        if kwargs.get('index') is not None and index_cols is not None:
+            expr, _, _ = self._get_index_selection(kwargs['index'], index_cols)
+            return expr, None, self._empty_region()
+        elif self._skip(**kwargs):
+            return None
+        elif 'bounds' in kwargs:
             expr, bbox, region = self._get_bounds_selection(*dims, **kwargs)
             return expr, bbox, None if region is None else region * Path([])
         elif 'geometry' in kwargs:
@@ -282,20 +364,29 @@ class SelectionGeomExpr(Selection2DExpr):
 
 class SelectionPolyExpr(Selection2DExpr):
 
+    def _skip(self, **kwargs):
+        """
+        Do not skip geometry selections until polygons support returning
+        indexes on lasso based selections.
+        """
+        skip = kwargs.get('index_cols') and self._index_skip and 'geometry' not in kwargs
+        if skip:
+            self._index_skip = False
+        return skip
+
     def _get_bounds_selection(self, xdim, ydim, **kwargs):
         from .geom import Rectangles
         (x0, x1), _, (y0, y1), _ = self._get_selection(**kwargs)
 
         bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
         index_cols = kwargs.get('index_cols')
+        expr = dim.pipe(spatial_bounds_select, xdim, dim(ydim),
+                                  bounds=(x0, y0, x1, y1))
         if index_cols:
-            selection_expr = self._get_index_expr(index_cols, bbox)
-            region_element = None
-        else:
-            selection_expr = dim.pipe(spatial_bounds_select, xdim, dim(ydim),
-                                      bounds=(x0, y0, x1, y1))
-            region_element = Rectangles([(x0, y0, x1, y1)])
-        return selection_expr, bbox, region_element
+            selection = self[expr.apply(self, expanded=False)]
+            selection_expr = self._get_index_expr(index_cols, selection)
+            return selection_expr, bbox, None
+        return expr, bbox, Rectangles([(x0, y0, x1, y1)])
 
     def _get_lasso_selection(self, xdim, ydim, geometry, **kwargs):
         from .path import Path
@@ -318,6 +409,8 @@ class Selection1DExpr(Selection2DExpr):
     _selection_dims = 1
 
     _inverted_expr = False
+
+    _selection_streams = (SelectionXY,)
 
     def _empty_region(self):
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)

@@ -1,36 +1,13 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
 
-import six
 import param
 import numpy as np
 
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
-
-
-def get_array_types():
-    array_types = (np.ndarray,)
-    da = dask_array_module()
-    if da is not None:
-        array_types += (da.Array,)
-    return array_types
-
-def dask_array_module():
-    try:
-        import dask.array as da
-        return da
-    except:
-        return None
-
-def is_dask(array):
-    da = dask_array_module()
-    if da is None:
-        return False
-    return da and isinstance(array, da.Array)
+from .util import finite_range
 
 
 class DataError(ValueError):
@@ -38,11 +15,11 @@ class DataError(ValueError):
 
     def __init__(self, msg, interface=None):
         if interface is not None:
-            msg = '\n\n'.join([msg, interface.error()])
-        super(DataError, self).__init__(msg)
+            msg = f"{msg}\n\n{interface.error()}"
+        super().__init__(msg)
 
 
-class Accessor(object):
+class Accessor:
     def __init__(self, dataset):
         self.dataset = dataset
 
@@ -225,7 +202,7 @@ class Interface(param.Parameterized):
             vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
-        if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+        if hasattr(data, 'interface') and isinstance(data.interface, type) and issubclass(data.interface, Interface):
             if datatype is None:
                 datatype = [dt for dt in data.datatype if dt in eltype.datatype]
                 if not datatype:
@@ -246,7 +223,7 @@ class Interface(param.Parameterized):
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
-            elif 'dataframe' in datatype and util.pd:
+            elif 'dataframe' in datatype:
                 data = data.dframe()
             else:
                 data = tuple(data.columns().values())
@@ -285,10 +262,9 @@ class Interface(param.Parameterized):
                      "to support the supplied data format.")
             if priority_errors:
                 intfc, e, _ = priority_errors[0]
-                priority_error = ("%s raised following error:\n\n %s"
-                                  % (intfc.__name__, e))
-                error = ' '.join([error, priority_error])
-                raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
+                priority_error = f"{intfc.__name__} raised following error:\n\n {e}"
+                error = f"{error} {priority_error}"
+                raise DataError(error, intfc).with_traceback(sys.exc_info()[2])
             raise DataError(error)
 
         return data, interface, dims, extra_kws
@@ -304,11 +280,23 @@ class Interface(param.Parameterized):
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
+    @classmethod
+    def persist(cls, dataset):
+        """
+        Should return a persisted version of the Dataset.
+        """
+        return dataset
+
+    @classmethod
+    def compute(cls, dataset):
+        """
+        Should return a computed version of the Dataset.
+        """
+        return dataset
 
     @classmethod
     def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
-
 
     @classmethod
     def isscalar(cls, dataset, dim):
@@ -334,24 +322,34 @@ class Interface(param.Parameterized):
         else:
             return data.dtype
 
+    @classmethod
+    def replace_value(cls, data, nodata):
+        """
+        Replace `nodata` value in data with NaN
+        """
+        data = data.astype('float64')
+        mask = data != nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
 
     @classmethod
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
-        mask = np.ones(len(dataset), dtype=np.bool)
+        mask = np.ones(len(dataset), dtype=np.bool_)
         for dim, sel in selection.items():
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
             if isinstance(sel, slice):
                 with warnings.catch_warnings():
@@ -373,7 +371,7 @@ class Interface(param.Parameterized):
                 index_mask = arr == sel
                 if dataset.ndims == 1 and np.sum(index_mask) == 0:
                     data_index = np.argmin(np.abs(arr - sel))
-                    mask = np.zeros(len(dataset), dtype=np.bool)
+                    mask = np.zeros(len(dataset), dtype=np.bool_)
                     mask[data_index] = True
                 else:
                     mask &= index_mask
@@ -405,7 +403,7 @@ class Interface(param.Parameterized):
                 assert column.dtype.kind not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                    return (np.nanmin(column), np.nanmax(column))
+                    return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):
@@ -449,6 +447,22 @@ class Interface(param.Parameterized):
         data = list(zip(keys, datasets)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
+
+    @classmethod
+    def histogram(cls, array, bins, density=True, weights=None):
+        if util.is_dask_array(array):
+            import dask.array as da
+            histogram = da.histogram
+        elif util.is_cupy_array(array):
+            import cupy
+            histogram = cupy.histogram
+        else:
+            histogram = np.histogram
+        hist, edges = histogram(array, bins=bins, density=density, weights=weights)
+        if util.is_cupy_array(hist):
+            edges = cupy.asnumpy(edges)
+            hist = cupy.asnumpy(hist)
+        return hist, edges
 
     @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):
