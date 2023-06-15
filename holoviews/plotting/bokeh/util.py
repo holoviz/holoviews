@@ -437,6 +437,24 @@ def sync_legends(plot_grid):
                     ),
                 )
 
+def one_legend(plot_grid, legend_no=0, legend_position="top_right"):
+    """ Displays only one legend in a grid of plots.
+
+    Parameters
+    ----------
+    plot_grid : bokeh.models.plots.GridPlot
+        Gridplot where one legend is chosen.
+    legend_no : int
+        Figure in gridplot which shows the legend.
+    legend_position : str
+        Position of the legend.
+    """
+    for i, plot in enumerate(plot_grid):
+        if legend_no == i:
+            plot.opts(show_legend=True, legend_position=legend_position)
+        else:
+            plot.opts(show_legend=False)
+
 
 @contextmanager
 def silence_warnings(*warnings):
