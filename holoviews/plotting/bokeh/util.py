@@ -422,6 +422,8 @@ def sync_legends(plot_grid):
 
     # Collect all glyph with names
     for fig, *_ in plot_grid.children:
+        if not isinstance(fig, figure):
+            continue
         for r in fig.renderers:
             if r.name:
                 items[r.name].append(r)
