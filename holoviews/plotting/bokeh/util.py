@@ -420,7 +420,7 @@ def sync_legends(plot_layout):
     plot_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
     """
-    if not bokeh3:
+    if not bokeh3 or len(plot_layout.children) < 2:
         return
 
     # Collect all glyph with names
