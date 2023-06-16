@@ -36,6 +36,7 @@ from ...core.util import (
     cftime_to_timestamp, isnumeric, pd, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
+from ...util.warnings import warn
 from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
@@ -409,7 +410,7 @@ def merge_tools(plot_grid, disambiguation_properties=None):
     return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
 
 
-def sync_legends(plot_layout, click_policy="muted"):
+def sync_legends(plot_layout):
     """This syncs the legends of all plots in a grid based on their name.
 
     Only works for Bokeh 3 and above.
@@ -418,14 +419,13 @@ def sync_legends(plot_layout, click_policy="muted"):
     ----------
     plot_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
-    click_policy : str, optional
-        The click policy to use for syncing, can be either "muted" or "visible". Defaults to "muted".
     """
     if not bokeh3:
         return
 
     # Collect all glyph with names
     items = defaultdict(lambda: [])
+    click_policies = set()
     for fig in plot_layout.children:
         if isinstance(fig, tuple):  # GridPlot
             fig = fig[0]
@@ -434,13 +434,21 @@ def sync_legends(plot_layout, click_policy="muted"):
         for r in fig.renderers:
             if r.name:
                 items[r.name].append(r)
+        if fig.legend:
+            click_policies.add(fig.legend.click_policy)
+
+    if len(click_policies) > 1:
+        warn("Click policy of legends are not the same, no syncing will happen.")
+        return
 
     # Link all glyphs with the same name
-    code = f"dst.{click_policy} = src.{click_policy}"
+    mapping = {"mute": "muted", "hide": "visible"}
+    policy = mapping.get(next(iter(click_policies)))
+    code = f"dst.{policy} = src.{policy}"
     for item in items.values():
         for src, dst in permutations(item, 2):
             src.js_on_change(
-                click_policy,
+                policy,
                 CustomJS(code=code, args=dict(src=src, dst=dst)),
             )
 
