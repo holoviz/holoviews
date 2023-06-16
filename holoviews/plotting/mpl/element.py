@@ -193,9 +193,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if not subplots and not self.drawn:
             self._finalize_artist(element)
 
-        self._update_custom_opts()
         self._execute_hooks(element)
         return super()._finalize_axis(key)
+
+    def _execute_hooks(self, element):
+        super()._execute_hooks(element)
+        self._update_backend_opts()
 
     def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
         """
@@ -241,7 +244,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
-    def _update_custom_opts(self):
+    def _update_backend_opts(self):
         plot = self.handles["fig"]
 
         model_accessor_aliases = {
@@ -251,8 +254,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             "colorbar": "cbar",
         }
 
-        for opt, val in self.custom_opts.items():
-            parsed_opt = self._parse_custom_opt(
+        for opt, val in self.backend_opts.items():
+            parsed_opt = self._parse_backend_opt(
                 opt, plot, model_accessor_aliases)
             if parsed_opt is None:
                 continue
@@ -265,16 +268,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 getattr(model, attr_accessor)(val)
             except AttributeError as exc:
                 valid_options = [attr for attr in dir(model) if attr.startswith("set_")]
-                if attr_accessor not in valid_options:
-                    kws = Keywords(values=valid_options)
-                    matches = sorted(kws.fuzzy_match(attr_accessor))
-                    self.param.warning("Could not find '{}' method on {} "
-                                       "model. Ensure the custom option spec "
-                                       "'{}' you provided references a "
-                                       "valid method on the specified model. "
-                                       "Similar options include {}".format(attr_accessor, type(model).__name__, opt, matches))
-                else:
-                    self.param.warning(f"Could not set custom option '{opt}' due to error: {exc}")
+                kws = Keywords(values=valid_options)
+                matches = sorted(kws.fuzzy_match(attr_accessor))
+                self.param.warning("Encountered error: {}, or could not find '{}' method on {} "
+                                    "model. Ensure the custom option spec "
+                                    "'{}' you provided references a "
+                                    "valid method on the specified model. "
+                                    "Similar options include {}".format(exc, attr_accessor, type(model).__name__, opt, matches))
 
     def _finalize_artist(self, element):
         """

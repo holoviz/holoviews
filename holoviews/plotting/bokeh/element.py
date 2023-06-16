@@ -97,7 +97,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         ratio between the axis scales use the data_aspect option
         instead.""")
 
-    custom_opts = param.Dict(default={}, doc="""
+    backend_opts = param.Dict(default={}, doc="""
         A dictionary of custom options to apply to the plot or
         subcomponents of the plot. The keys in the dictionary mirror
         attribute access on the underlying models stored in the plot's
@@ -755,7 +755,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
         self._update_grid(plot)
-        self._update_custom_opts(plot)
 
 
     def _update_labels(self, key, plot, element):
@@ -780,7 +779,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.title = Title(**self._title_properties(key, plot, element))
 
 
-    def _update_custom_opts(self, plot):
+    def _update_backend_opts(self):
+        plot = self.handles["plot"]
         model_accessor_aliases = {
             "cbar": "colorbar",
             "p": "plot",
@@ -788,8 +788,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             "yaxes": "yaxis",
         }
 
-        for opt, val in self.custom_opts.items():
-            parsed_opt = self._parse_custom_opt(
+        for opt, val in self.backend_opts.items():
+            parsed_opt = self._parse_backend_opt(
                 opt, plot, model_accessor_aliases)
             if parsed_opt is None:
                 continue
@@ -1717,6 +1717,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _execute_hooks(self, element):
         dtype_fix_hook(self, element)
         super()._execute_hooks(element)
+        self._update_backend_opts()
 
 
     def model_changed(self, model):

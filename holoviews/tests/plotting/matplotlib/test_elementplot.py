@@ -192,10 +192,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
     # Custom opts tests
     #################################################################
 
-    def test_element_custom_opts(self):
+    def test_element_backend_opts(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
             colorbar=True,
-            custom_opts={
+            backend_opts={
                 "colorbar.set_label": "Testing",
                 "colorbar.set_ticks": [3.5, 5],
                 "colorbar.ticklabels": ["A", "B"],
@@ -208,10 +208,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
         self.assertEqual(ticklabels, ["A", "B"])
 
-    def test_element_custom_opts_alias(self):
+    def test_element_backend_opts_alias(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
             colorbar=True,
-            custom_opts={
+            backend_opts={
                 "cbar.set_label": "Testing",
                 "cbar.set_ticks": [3.5, 5],
                 "cbar.ticklabels": ["A", "B"],
@@ -224,18 +224,57 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
         self.assertEqual(ticklabels, ["A", "B"])
 
-    def test_element_custom_opts_two_accessors(self):
+    def test_element_backend_opts_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.frame_on": False,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertFalse(legend.get_frame_on())
+
+    def test_element_backend_opts_sequential_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_title().set_fontsize": 188,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertEqual(legend.get_title().get_fontsize(), 188)
+
+    def test_element_backend_opts_getitem(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_texts()[0].fontsize": 188,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertEqual(legend.get_texts()[0].get_fontsize(), 188)
+
+    def test_element_backend_opts_two_accessors(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, custom_opts={"colorbar": "Testing"},
+            colorbar=True, backend_opts={"colorbar": "Testing"},
         )
         mpl_renderer.get_plot(heat_map)
         self.log_handler.assertContains(
             "WARNING", "Custom option 'colorbar' expects at least two"
         )
 
-    def test_element_custom_opts_model_not_resolved(self):
+    def test_element_backend_opts_model_not_resolved(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, custom_opts={"cb.title": "Testing"},
+            colorbar=True, backend_opts={"cb.title": "Testing"},
         )
         mpl_renderer.get_plot(heat_map)
         self.log_handler.assertContains(

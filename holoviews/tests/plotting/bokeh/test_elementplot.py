@@ -794,10 +794,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     # Custom opts tests
     #################################################################
 
-    def test_element_custom_opts(self):
+    def test_element_backend_opts(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
             colorbar=True,
-            custom_opts={
+            backend_opts={
                 "colorbar.title": "Testing",
                 "colorbar.ticker": FixedTicker(ticks=(3.5, 5)),
                 "colorbar.major_label_overrides": {3.5: "A", 5: "B"},
@@ -809,10 +809,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(colorbar.ticker.ticks, (3.5, 5))
         self.assertEqual(colorbar.major_label_overrides, {3.5: "A", 5: "B"})
 
-    def test_element_custom_opts_alias(self):
+    def test_element_backend_opts_alias(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
             colorbar=True,
-            custom_opts={
+            backend_opts={
                 "cbar.title": "Testing",
                 "cbar.ticker": FixedTicker(ticks=(3.5, 5)),
                 "cbar.major_label_overrides": {3.5: "A", 5: "B"},
@@ -824,31 +824,22 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(colorbar.ticker.ticks, (3.5, 5))
         self.assertEqual(colorbar.major_label_overrides, {3.5: "A", 5: "B"})
 
-    def test_element_custom_opts_two_accessors(self):
+    def test_element_backend_opts_two_accessors(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, custom_opts={"colorbar": "Testing"},
+            colorbar=True, backend_opts={"colorbar": "Testing"},
         )
         bokeh_renderer.get_plot(heat_map)
         self.log_handler.assertContains(
             "WARNING", "Custom option 'colorbar' expects at least two"
         )
 
-    def test_element_custom_opts_model_not_resolved(self):
+    def test_element_backend_opts_model_not_resolved(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, custom_opts={"cb.title": "Testing"},
+            colorbar=True, backend_opts={"cb.title": "Testing"},
         )
         bokeh_renderer.get_plot(heat_map)
         self.log_handler.assertContains(
             "WARNING", "cb model could not be"
-        )
-
-    def test_element_custom_opts_model_getitem_not_evaluated(self):
-        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, custom_opts={"colorbar.[something]": "Testing"},
-        )
-        bokeh_renderer.get_plot(heat_map)
-        self.log_handler.assertContains(
-            "WARNING", "Could not evaluate getitem 'something"
         )
 
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):

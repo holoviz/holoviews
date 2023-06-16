@@ -60,7 +60,7 @@ class MPLPlot(DimensionedPlot):
 
     sideplots = {}
 
-    custom_opts = param.Dict(default={}, doc="""
+    backend_opts = param.Dict(default={}, doc="""
         A dictionary of custom options to apply to the plot or
         subcomponents of the plot. The keys in the dictionary mirror
         attribute access on the underlying models stored in the plot's

@@ -1501,7 +1501,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (label, group, type_name, dim_title)
 
-    def _parse_custom_opt(self, opt, plot, model_accessor_aliases):
+    def _parse_backend_opt(self, opt, plot, model_accessor_aliases):
         """
         Parses a custom option of the form 'model.accessor.option'
         and returns the corresponding model and accessor.
@@ -1532,12 +1532,14 @@ class GenericElementPlot(DimensionedPlot):
             return
 
         for acc in accessors[1:-1]:
-            print(acc)
+            
+            # the logic handles resolving something like:
+            # legend.get_texts()[0].set_fontsize
             if '[' in acc and acc.endswith(']'):
                 getitem_index = acc.index('[')
                 getitem_spec = acc[getitem_index+1:-1]
                 try:
-                    getitem_acc = literal_eval()
+                    getitem_acc = literal_eval(getitem_spec)
                 except Exception:
                     self.param.warning("Could not evaluate getitem "
                                         "'{}' in custom option spec "
@@ -1547,6 +1549,31 @@ class GenericElementPlot(DimensionedPlot):
                 acc = acc[:getitem_index]
             else:
                 getitem_acc = None
+
+            if "(" in acc and ")" in acc:
+                method_ini_index = acc.index("(")
+                method_end_index = acc.index(")")
+                method_spec = acc[method_ini_index + 1:method_end_index]
+                try:
+                    if method_spec:
+                        method_args = literal_eval(method_spec)
+                    else:
+                        method_args = ()
+                except Exception:
+                    self.param.warning("Could not evaluate method "
+                                        "arguments '{}' in custom option "
+                                        "spec '{}'.".format(method_spec, opt))
+                    model = None
+                    break
+                acc = acc[:method_ini_index]
+                model = getattr(model, acc)(*method_args)
+                if getitem_acc is not None:
+                    model = model.__getitem__(getitem_acc)
+                acc = acc[method_end_index:]
+
+            if acc == "" or model == None:
+                continue
+
             if not hasattr(model, acc):
                 self.param.warning("Could not resolve '{}' attribute "
                                     "on {} model. Ensure the custom "
@@ -1554,9 +1581,8 @@ class GenericElementPlot(DimensionedPlot):
                                     "a valid submodel.".format(acc, type(model).__name__))
                 model = None
                 break
+
             model = getattr(model, acc)
-            if getitem_acc:
-                model = model.__getitem__(getitem_acc)
 
         attr_accessor = accessors[-1]
         return model, attr_accessor
