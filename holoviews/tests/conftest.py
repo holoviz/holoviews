@@ -1,17 +1,4 @@
-import pytest
-
-from panel.io import state
+from panel.tests.conftest import server_cleanup, port, pytest_addoption, pytest_collection_modifyitems  # noqa
 
 
-@pytest.fixture(autouse=True)
-def server_cleanup():
-    """
-    Clean up after test fails
-    """
-    try:
-        yield
-    finally:
-        state.kill_all_servers()
-        state._indicators.clear()
-        state._locations.clear()
-        state.cache.clear()
+CUSTOM_MARKS = ('ui',)

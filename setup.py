@@ -65,6 +65,7 @@ extras_require['tests_gpu'] = extras_require['tests'] + [
 ]
 
 extras_require['tests_nb'] = ['nbval']
+extras_require['ui'] = ['playwright', 'pytest-playwright']
 
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
