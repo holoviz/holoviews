@@ -29,6 +29,7 @@ from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
 from packaging.version import Version
 
+from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
@@ -453,25 +454,31 @@ def sync_legends(plot_layout):
                 CustomJS(code=code, args=dict(src=src, dst=dst)),
             )
 
-def one_legend(plot_grid, legend_no=0, legend_position="top_right"):
+def one_legend(plot_layout, legend_no=0, legend_position="top_right"):
     """ Displays only one legend in a grid of plots.
 
     Parameters
     ----------
-    plot_grid : bokeh.models.plots.GridPlot
-        Gridplot where one legend is chosen.
+    plot_layout : hv.Layout
+        Holoviews layout where one legend is chosen.
     legend_no : int
         Figure in gridplot which shows the legend.
     legend_position : str
         Position of the legend.
     """
-    for i, plot in enumerate(plot_grid):
+    if not isinstance(plot_layout, Layout):
+        plot_layout = [plot_layout]
+
+    for i, plot in enumerate(plot_layout):
         if legend_no == i:
             plot.opts(show_legend=True, legend_position=legend_position)
         else:
             plot.opts(show_legend=False)
 
-    return plot_grid
+    if isinstance(plot_layout, list):
+        return plot_layout[0]
+
+    return plot_layout
 
 
 @contextmanager
