@@ -24,7 +24,7 @@ class TilePlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         if not isinstance(element.data, (str, dict)):
-            SkipRendering("WMTS element data must be a URL string or "
+            SkipRendering("WMTS element data must be a URL string, dictionary, or"
                           "xyzservices.TileProvider, bokeh cannot "
                           "render %r" % element.data)
         if element.data is None:

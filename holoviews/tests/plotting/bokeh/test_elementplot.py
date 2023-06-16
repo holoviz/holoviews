@@ -7,7 +7,7 @@ import numpy as np
 
 from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
 from holoviews.core.util import dt_to_int
-from holoviews.element import Curve, Image, Scatter, Labels
+from holoviews.element import Curve, Image, Scatter, Labels, HeatMap
 from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
 from holoviews.plotting.bokeh.util import bokeh3
@@ -20,7 +20,7 @@ import panel as pn
 
 from bokeh.document import Document
 from bokeh.models import tools
-from bokeh.models import (PrintfTickFormatter,
+from bokeh.models import (PrintfTickFormatter, FixedTicker,
                             NumeralTickFormatter, LogTicker,
                             LinearColorMapper, LogColorMapper, EqHistColorMapper)
 
@@ -790,7 +790,66 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.sizing_mode, 'fixed')
         self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
 
+    #################################################################
+    # Custom opts tests
+    #################################################################
 
+    def test_element_custom_opts(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            custom_opts={
+                "colorbar.title": "Testing",
+                "colorbar.ticker": FixedTicker(ticks=(3.5, 5)),
+                "colorbar.major_label_overrides": {3.5: "A", 5: "B"},
+            },
+        )
+        plot = bokeh_renderer.get_plot(heat_map)
+        colorbar = plot.handles['colorbar']
+        self.assertEqual(colorbar.title, "Testing")
+        self.assertEqual(colorbar.ticker.ticks, (3.5, 5))
+        self.assertEqual(colorbar.major_label_overrides, {3.5: "A", 5: "B"})
+
+    def test_element_custom_opts_alias(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            custom_opts={
+                "cbar.title": "Testing",
+                "cbar.ticker": FixedTicker(ticks=(3.5, 5)),
+                "cbar.major_label_overrides": {3.5: "A", 5: "B"},
+            },
+        )
+        plot = bokeh_renderer.get_plot(heat_map)
+        colorbar = plot.handles['colorbar']
+        self.assertEqual(colorbar.title, "Testing")
+        self.assertEqual(colorbar.ticker.ticks, (3.5, 5))
+        self.assertEqual(colorbar.major_label_overrides, {3.5: "A", 5: "B"})
+
+    def test_element_custom_opts_two_accessors(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, custom_opts={"colorbar": "Testing"},
+        )
+        bokeh_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "Custom option 'colorbar' expects at least two"
+        )
+
+    def test_element_custom_opts_model_not_resolved(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, custom_opts={"cb.title": "Testing"},
+        )
+        bokeh_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "cb model could not be"
+        )
+
+    def test_element_custom_opts_model_getitem_not_evaluated(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, custom_opts={"colorbar.[something]": "Testing"},
+        )
+        bokeh_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "Could not evaluate getitem 'something"
+        )
 
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
 

@@ -6,6 +6,7 @@ of this Plot baseclass.
 import uuid
 import warnings
 
+from ast import literal_eval
 from collections import Counter, defaultdict, OrderedDict
 from functools import partial
 from itertools import groupby, product
@@ -307,7 +308,7 @@ class PlotSelector:
         if not allow_mismatch and not all(pset == param_sets[0] for pset in param_sets):
             # Find the mismatching sets
             mismatching_sets = [pset for pset in param_sets if pset != param_sets[0]]
-            
+
             # Print the mismatching sets
             for mismatch_set in mismatching_sets:
                 print("Mismatching plot options:", mismatch_set)
@@ -1499,6 +1500,66 @@ class GenericElementPlot(DimensionedPlot):
             dim_title = ''
 
         return (label, group, type_name, dim_title)
+
+    def _parse_custom_opt(self, opt, plot, model_accessor_aliases):
+        """
+        Parses a custom option of the form 'model.accessor.option'
+        and returns the corresponding model and accessor.
+        """
+        accessors = opt.split('.')
+        if len(accessors) < 2:
+            self.param.warning("Custom option %r expects at least "
+                                "two accessors separated by '.'" % opt)
+            return
+
+        model_accessor = accessors[0]
+
+        # convert alias to handle key (figure -> fig)
+        model_accessor = model_accessor_aliases.get(model_accessor) or model_accessor
+
+        if model_accessor in self.handles:
+            model = self.handles[model_accessor]
+        elif hasattr(plot, model_accessor):
+            model = getattr(plot, model_accessor)
+        else:
+            self.param.warning("{} model could not be resolved on {} plot. "
+                                "Ensure the '{}' custom option spec "
+                                "references a valid model in the "
+                                "plot.handles {} or on the underlying "
+                                "figure object.".format(model_accessor,
+                                                    type(self).__name__,
+                                                    opt, list(self.handles.keys())))
+            return
+
+        for acc in accessors[1:-1]:
+            print(acc)
+            if '[' in acc and acc.endswith(']'):
+                getitem_index = acc.index('[')
+                getitem_spec = acc[getitem_index+1:-1]
+                try:
+                    getitem_acc = literal_eval()
+                except Exception:
+                    self.param.warning("Could not evaluate getitem "
+                                        "'{}' in custom option spec "
+                                        "'{}'.".format(getitem_spec, opt))
+                    model = None
+                    break
+                acc = acc[:getitem_index]
+            else:
+                getitem_acc = None
+            if not hasattr(model, acc):
+                self.param.warning("Could not resolve '{}' attribute "
+                                    "on {} model. Ensure the custom "
+                                    "option spec you provided references "
+                                    "a valid submodel.".format(acc, type(model).__name__))
+                model = None
+                break
+            model = getattr(model, acc)
+            if getitem_acc:
+                model = model.__getitem__(getitem_acc)
+
+        attr_accessor = accessors[-1]
+        return model, attr_accessor
 
     def update_frame(self, key, ranges=None):
         """

@@ -1,6 +1,5 @@
 import warnings
 
-from ast import literal_eval
 from itertools import chain
 from types import FunctionType
 
@@ -782,52 +781,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_custom_opts(self, plot):
+        model_accessor_aliases = {
+            "cbar": "colorbar",
+            "p": "plot",
+            "xaxes": "xaxis",
+            "yaxes": "yaxis",
+        }
+
         for opt, val in self.custom_opts.items():
-            accessors = opt.split('.')
-            model_accessor = accessors[0]
-            attr_accessor = accessors[-1]
-            if model_accessor in self.handles:
-                model = self.handles[model_accessor]
-            elif hasattr(plot, model_accessor):
-                model = getattr(plot, model_accessor)
-            else:
-                self.param.warning("{} model could be resolved on {} plot. "
-                                   "Ensure the '{}' custom option spec "
-                                   "references a valid model in the "
-                                   "plot.handles or on the underlying bokeh "
-                                   "figure object.".format(model_accessor,
-                                                       type(self).__name__,
-                                                       opt))
+            parsed_opt = self._parse_custom_opt(
+                opt, plot, model_accessor_aliases)
+            if parsed_opt is None:
                 continue
-
-            for acc in accessors[1:-1]:
-                if '[' in acc and acc.endswith(']'):
-                    getitem_index = acc.index('[')
-                    getitem_spec = acc[getitem_index+1:-1]
-                    try:
-                        getitem_acc = literal_eval()
-                    except Exception:
-                        self.param.warning("Could not evaluate getitem "
-                                           "'{}' in custom option spec "
-                                           "'{}'.".format(getitem_spec, opt))
-                        model = None
-                        break
-                    acc = acc[:getitem_index]
-                else:
-                    getitem_acc = None
-                if not hasattr(model, acc):
-                    self.param.warning("Could not resolve '{}' attribute "
-                                       "on {} model. Ensure the custom "
-                                       "option spec you provided references "
-                                       "a valid submodel.".format(acc, type(model).__name__))
-                    model = None
-                    break
-                model = getattr(model, acc)
-                if getitem_acc:
-                    model = model.__getitem__(getitem_acc)
-
-            if model is None:
-                continue
+            model, attr_accessor = parsed_opt
 
             valid_options = model.properties()
             if attr_accessor not in valid_options:

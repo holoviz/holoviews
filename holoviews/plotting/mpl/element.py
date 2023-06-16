@@ -2,14 +2,12 @@ import copy
 import math
 import warnings
 from types import FunctionType
-from ast import literal_eval
 
 import param
 import numpy as np
 import matplotlib.colors as mpl_colors
 
 from matplotlib import ticker
-from matplotlib.pyplot import getp
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
 from packaging.version import Version
@@ -245,67 +243,27 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     def _update_custom_opts(self):
         plot = self.handles["fig"]
+
+        model_accessor_aliases = {
+            "figure": "fig",
+            "axes": "axis",
+            "ax": "axis",
+            "colorbar": "cbar",
+        }
+
         for opt, val in self.custom_opts.items():
-            accessors = opt.split('.')
-
-            model_accessor = accessors[0]
-            if model_accessor == "figure":
-                model_accessor = "fig"
-            elif model_accessor in ["axes", "ax"]:
-                model_accessor = "axis"
-            elif model_accessor == "colorbar":
-                model_accessor = "cbar"
-
-            attr_accessor = accessors[-1]
-            if model_accessor in self.handles:
-                model = self.handles[model_accessor]
-            elif hasattr(plot, model_accessor):
-                model = getp(plot, model_accessor)
-            else:
-                self.param.warning("{} model could be resolved on {} plot. "
-                                   "Ensure the '{}' custom option spec "
-                                   "references a valid model in the "
-                                   "plot.handles or on the underlying matplotlib "
-                                   "figure object.".format(model_accessor,
-                                                       type(self).__name__,
-                                                       opt))
+            parsed_opt = self._parse_custom_opt(
+                opt, plot, model_accessor_aliases)
+            if parsed_opt is None:
                 continue
 
-            for acc in accessors[1:-1]:
-                if '[' in acc and acc.endswith(']'):
-                    getitem_index = acc.index('[')
-                    getitem_spec = acc[getitem_index+1:-1]
-                    try:
-                        getitem_acc = literal_eval()
-                    except Exception:
-                        self.param.warning("Could not evaluate getitem "
-                                           "'{}' in custom option spec "
-                                           "'{}'.".format(getitem_spec, opt))
-                        model = None
-                        break
-                    acc = acc[:getitem_index]
-                else:
-                    getitem_acc = None
-                if not hasattr(model, acc):
-                    self.param.warning("Could not resolve '{}' attribute "
-                                       "on {} model. Ensure the custom "
-                                       "option spec you provided references "
-                                       "a valid submodel.".format(acc, type(model).__name__))
-                    model = None
-                    break
-                model = getattr(model, acc)
-                if getitem_acc:
-                    model = model.__getitem__(getitem_acc)
-
-            if model is None:
-                continue
-
+            model, attr_accessor = parsed_opt
             if not attr_accessor.startswith("set_"):
                 attr_accessor = f"set_{attr_accessor}"
 
             try:
                 getattr(model, attr_accessor)(val)
-            except AttributeError:
+            except AttributeError as exc:
                 valid_options = [attr for attr in dir(model) if attr.startswith("set_")]
                 if attr_accessor not in valid_options:
                     kws = Keywords(values=valid_options)
@@ -315,8 +273,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                        "'{}' you provided references a "
                                        "valid method on the specified model. "
                                        "Similar options include {}".format(attr_accessor, type(model).__name__, opt, matches))
-                    continue
-
+                else:
+                    self.param.warning(f"Could not set custom option '{opt}' due to error: {exc}")
 
     def _finalize_artist(self, element):
         """

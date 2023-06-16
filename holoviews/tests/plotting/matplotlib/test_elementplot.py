@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import style
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Image, Curve, Scatter, Scatter3D
+from holoviews.element import Image, Curve, Scatter, Scatter3D, HeatMap
 from holoviews.streams import Stream
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -10,8 +10,10 @@ from .test_plot import TestMPLPlot, mpl_renderer
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 from matplotlib.projections import PolarAxes
 
+from ...utils import LoggingComparisonTestCase
 
-class TestElementPlot(TestMPLPlot):
+
+class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_stream_cleanup(self):
         stream = Stream.define('Test', test=1)()
@@ -185,6 +187,60 @@ class TestElementPlot(TestMPLPlot):
         ax = plot.handles['axis']
         self.assertIsInstance(ax, PolarAxes)
         self.assertEqual(ax.get_xlim(), (0, 2 * np.pi))
+
+    #################################################################
+    # Custom opts tests
+    #################################################################
+
+    def test_element_custom_opts(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            custom_opts={
+                "colorbar.set_label": "Testing",
+                "colorbar.set_ticks": [3.5, 5],
+                "colorbar.ticklabels": ["A", "B"],
+            },
+        )
+        plot = mpl_renderer.get_plot(heat_map)
+        colorbar = plot.handles['cbar']
+        self.assertEqual(colorbar.ax.yaxis.get_label().get_text(), "Testing")
+        self.assertEqual(colorbar.get_ticks(), (3.5, 5))
+        ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
+        self.assertEqual(ticklabels, ["A", "B"])
+
+    def test_element_custom_opts_alias(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            custom_opts={
+                "cbar.set_label": "Testing",
+                "cbar.set_ticks": [3.5, 5],
+                "cbar.ticklabels": ["A", "B"],
+            },
+        )
+        plot = mpl_renderer.get_plot(heat_map)
+        colorbar = plot.handles['cbar']
+        self.assertEqual(colorbar.ax.yaxis.get_label().get_text(), "Testing")
+        self.assertEqual(colorbar.get_ticks(), (3.5, 5))
+        ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
+        self.assertEqual(ticklabels, ["A", "B"])
+
+    def test_element_custom_opts_two_accessors(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, custom_opts={"colorbar": "Testing"},
+        )
+        mpl_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "Custom option 'colorbar' expects at least two"
+        )
+
+    def test_element_custom_opts_model_not_resolved(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, custom_opts={"cb.title": "Testing"},
+        )
+        mpl_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "cb model could not be"
+        )
 
 
 class TestColorbarPlot(TestMPLPlot):
