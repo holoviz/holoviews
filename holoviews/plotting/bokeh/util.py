@@ -461,8 +461,8 @@ def one_legend(plot_layout, legend_no=0, legend_position="top_right"):
 
     Parameters
     ----------
-    plot_layout : hv.Layout
-        Holoviews layout where one legend is chosen.
+    plot_layout : Holoviews element
+        Holoviews element where one legend is chosen.
     legend_no : int
         Figure in gridplot which shows the legend.
     legend_position : str
