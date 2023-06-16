@@ -305,6 +305,13 @@ class PlotSelector:
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
         if not allow_mismatch and not all(pset == param_sets[0] for pset in param_sets):
+            # Find the mismatching sets
+            mismatching_sets = [pset for pset in param_sets if pset != param_sets[0]]
+            
+            # Print the mismatching sets
+            for mismatch_set in mismatching_sets:
+                print("Mismatching plot options:", mismatch_set)
+
             raise Exception("All selectable plot classes must have identical plot options.")
         styles= [plot.style_opts for plot in plots]
 

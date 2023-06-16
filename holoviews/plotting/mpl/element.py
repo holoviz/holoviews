@@ -2,12 +2,14 @@ import copy
 import math
 import warnings
 from types import FunctionType
+from ast import literal_eval
 
 import param
 import numpy as np
 import matplotlib.colors as mpl_colors
 
 from matplotlib import ticker
+from matplotlib.pyplot import getp
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
 from packaging.version import Version
@@ -15,7 +17,7 @@ from packaging.version import Version
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
-from ...core.options import abbreviated_exception
+from ...core.options import abbreviated_exception, Keywords
 from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
@@ -193,6 +195,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if not subplots and not self.drawn:
             self._finalize_artist(element)
 
+        self._update_custom_opts()
         self._execute_hooks(element)
         return super()._finalize_axis(key)
 
@@ -239,6 +242,81 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         for ax, ax_obj in zip(axes_str, axes_list):
             tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
+
+    def _update_custom_opts(self):
+        plot = self.handles["fig"]
+        for opt, val in self.custom_opts.items():
+            accessors = opt.split('.')
+
+            model_accessor = accessors[0]
+            if model_accessor == "figure":
+                model_accessor = "fig"
+            elif model_accessor in ["axes", "ax"]:
+                model_accessor = "axis"
+            elif model_accessor == "colorbar":
+                model_accessor = "cbar"
+
+            attr_accessor = accessors[-1]
+            if model_accessor in self.handles:
+                model = self.handles[model_accessor]
+            elif hasattr(plot, model_accessor):
+                model = getp(plot, model_accessor)
+            else:
+                self.param.warning("{} model could be resolved on {} plot. "
+                                   "Ensure the '{}' custom option spec "
+                                   "references a valid model in the "
+                                   "plot.handles or on the underlying matplotlib "
+                                   "figure object.".format(model_accessor,
+                                                       type(self).__name__,
+                                                       opt))
+                continue
+
+            for acc in accessors[1:-1]:
+                if '[' in acc and acc.endswith(']'):
+                    getitem_index = acc.index('[')
+                    getitem_spec = acc[getitem_index+1:-1]
+                    try:
+                        getitem_acc = literal_eval()
+                    except Exception:
+                        self.param.warning("Could not evaluate getitem "
+                                           "'{}' in custom option spec "
+                                           "'{}'.".format(getitem_spec, opt))
+                        model = None
+                        break
+                    acc = acc[:getitem_index]
+                else:
+                    getitem_acc = None
+                if not hasattr(model, acc):
+                    self.param.warning("Could not resolve '{}' attribute "
+                                       "on {} model. Ensure the custom "
+                                       "option spec you provided references "
+                                       "a valid submodel.".format(acc, type(model).__name__))
+                    model = None
+                    break
+                model = getattr(model, acc)
+                if getitem_acc:
+                    model = model.__getitem__(getitem_acc)
+
+            if model is None:
+                continue
+
+            if not attr_accessor.startswith("set_"):
+                attr_accessor = f"set_{attr_accessor}"
+
+            try:
+                getattr(model, attr_accessor)(val)
+            except AttributeError:
+                valid_options = [attr for attr in dir(model) if attr.startswith("set_")]
+                if attr_accessor not in valid_options:
+                    kws = Keywords(values=valid_options)
+                    matches = sorted(kws.fuzzy_match(attr_accessor))
+                    self.param.warning("Could not find '{}' method on {} "
+                                       "model. Ensure the custom option spec "
+                                       "'{}' you provided references a "
+                                       "valid method on the specified model. "
+                                       "Similar options include {}".format(attr_accessor, type(model).__name__, opt, matches))
+                    continue
+
 
     def _finalize_artist(self, element):
         """

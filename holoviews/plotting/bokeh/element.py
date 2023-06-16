@@ -782,7 +782,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_custom_opts(self, plot):
-        for opt, value in self.custom_opts.items():
+        for opt, val in self.custom_opts.items():
             accessors = opt.split('.')
             model_accessor = accessors[0]
             attr_accessor = accessors[-1]
@@ -791,11 +791,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif hasattr(plot, model_accessor):
                 model = getattr(plot, model_accessor)
             else:
-                self.param.warning("%s model could be resolved on %s plot. "
-                                   "Ensure the '%s' custom option spec "
+                self.param.warning("{} model could be resolved on {} plot. "
+                                   "Ensure the '{}' custom option spec "
                                    "references a valid model in the "
                                    "plot.handles or on the underlying bokeh "
-                                   "figure object." % (model_accessor,
+                                   "figure object.".format(model_accessor,
                                                        type(self).__name__,
                                                        opt))
                 continue
@@ -808,19 +808,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         getitem_acc = literal_eval()
                     except Exception:
                         self.param.warning("Could not evaluate getitem "
-                                           "'%s' in custom option spec "
-                                           "'%s'." % (getitem_spec, opt))
+                                           "'{}' in custom option spec "
+                                           "'{}'.".format(getitem_spec, opt))
                         model = None
                         break
                     acc = acc[:getitem_index]
                 else:
                     getitem_acc = None
                 if not hasattr(model, acc):
-                    self.param.warning("Could not resolve '%s' attribute "
-                                       "on %s model. Ensure the custom "
+                    self.param.warning("Could not resolve '{}' attribute "
+                                       "on {} model. Ensure the custom "
                                        "option spec you provided references "
-                                       "a valid submodel." %
-                                       (acc, type(model).__name__))
+                                       "a valid submodel.".format(acc, type(model).__name__))
                     model = None
                     break
                 model = getattr(model, acc)
@@ -829,19 +828,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             if model is None:
                 continue
-        
+
             valid_options = model.properties()
             if attr_accessor not in valid_options:
                 kws = Keywords(values=valid_options)
                 matches = sorted(kws.fuzzy_match(attr_accessor))
-                self.param.warning("Could not find '%s' property on %s "
+                self.param.warning("Could not find '{}' property on {} "
                                    "model. Ensure the custom option spec "
-                                   "'%s' you provided references a "
+                                   "'{}' you provided references a "
                                    "valid attribute on the specified model. "
-                                   "Similar options include %s" %
-                                   (attr_accessor, type(model).__name__, opt, matches))
+                                   "Similar options include {}".format(attr_accessor, type(model).__name__, opt, matches))
                 continue
-            setattr(model, attr_accessor, value)
+            setattr(model, attr_accessor, val)
 
 
     def _update_grid(self, plot):
