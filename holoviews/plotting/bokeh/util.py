@@ -437,6 +437,7 @@ def sync_legends(plot_layout):
         if fig.legend:
             click_policies.add(fig.legend.click_policy)
 
+    click_policies.remove("none")  # If legend is not visible, click_policy is "none"
     if len(click_policies) > 1:
         warn("Click policy of legends are not the same, no syncing will happen.")
         return
