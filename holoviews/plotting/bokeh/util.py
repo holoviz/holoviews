@@ -409,22 +409,26 @@ def merge_tools(plot_grid, disambiguation_properties=None):
     return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
 
 
-def sync_legends(plot_grid):
+def sync_legends(plot_layout, click_policy="muted"):
     """This syncs the legends of all plots in a grid based on their name.
 
     Only works for Bokeh 3 and above.
 
     Parameters
     ----------
-    plot_grid : bokeh.models.plots.GridPlot
+    plot_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
+    click_policy : str, optional
+        The click policy to use for syncing, can be either "muted" or "visible". Defaults to "muted".
     """
     if not bokeh3:
         return
 
     # Collect all glyph with names
     items = defaultdict(lambda: [])
-    for fig, *_ in plot_grid.children:
+    for fig in plot_layout.children:
+        if isinstance(fig, tuple):  # GridPlot
+            fig = fig[0]
         if not isinstance(fig, figure):
             continue
         for r in fig.renderers:
@@ -432,12 +436,11 @@ def sync_legends(plot_grid):
                 items[r.name].append(r)
 
     # Link all glyphs with the same name
-    policy = "muted"
-    code = f"dst.{policy} = src.{policy}"
+    code = f"dst.{click_policy} = src.{click_policy}"
     for item in items.values():
         for src, dst in permutations(item, 2):
             src.js_on_change(
-                policy,
+                click_policy,
                 CustomJS(code=code, args=dict(src=src, dst=dst)),
             )
 
