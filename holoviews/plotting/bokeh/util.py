@@ -6,6 +6,7 @@ import time
 
 from collections import defaultdict
 from contextlib import contextmanager
+from itertools import permutations
 from types import FunctionType
 
 import param
@@ -420,11 +421,9 @@ def sync_legends(plot_grid):
     """
     if not bokeh3:
         return
-    policy = "muted"
-
-    items = defaultdict(lambda: [])
 
     # Collect all glyph with names
+    items = defaultdict(lambda: [])
     for fig, *_ in plot_grid.children:
         if not isinstance(fig, figure):
             continue
@@ -433,15 +432,14 @@ def sync_legends(plot_grid):
                 items[r.name].append(r)
 
     # Link all glyphs with the same name
+    policy = "muted"
+    code = f"dst.{policy} = src.{policy}"
     for item in items.values():
-        for src in item:
-            for dst in item:
-                src.js_on_change(
-                    policy,
-                    CustomJS(
-                        code=f"dst.{policy} = src.{policy}", args=dict(src=src, dst=dst)
-                    ),
-                )
+        for src, dst in permutations(item, 2):
+            src.js_on_change(
+                policy,
+                CustomJS(code=code, args=dict(src=src, dst=dst)),
+            )
 
 def one_legend(plot_grid, legend_no=0, legend_position="top_right"):
     """ Displays only one legend in a grid of plots.
@@ -461,7 +459,7 @@ def one_legend(plot_grid, legend_no=0, legend_position="top_right"):
         else:
             plot.opts(show_legend=False)
 
-    return plot
+    return plot_grid
 
 
 @contextmanager
