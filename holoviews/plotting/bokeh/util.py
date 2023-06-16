@@ -442,6 +442,8 @@ def sync_legends(plot_layout):
     if len(click_policies) > 1:
         warn("Click policy of legends are not the same, no syncing will happen.")
         return
+    elif not click_policies:
+        return
 
     # Link all glyphs with the same name
     mapping = {"mute": "muted", "hide": "visible"}
