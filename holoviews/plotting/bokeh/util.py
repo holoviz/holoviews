@@ -411,11 +411,15 @@ def merge_tools(plot_grid, disambiguation_properties=None):
 def sync_legends(plot_grid):
     """This syncs the legends of all plots in a grid based on their name.
 
+    Only works for Bokeh 3 and above.
+
     Parameters
     ----------
     plot_grid : bokeh.models.plots.GridPlot
         Gridplot to sync legends of.
     """
+    if not bokeh3:
+        return
     policy = "muted"
 
     items = defaultdict(lambda: [])
