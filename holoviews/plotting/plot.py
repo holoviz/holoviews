@@ -988,6 +988,9 @@ class CallbackPlot:
 
         if isinstance(self, GenericOverlayPlot) and not self.batched:
             sources = []
+        elif isinstance(self, GenericOverlayPlot) and isinstance(self.hmap, DynamicMap):
+            # This is to handle the case of https://github.com/holoviz/holoviews/issues/5595
+            sources = [v[0] for v in self.stream_sources.values() if v and isinstance(v[0], DynamicMap)]
         elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]
