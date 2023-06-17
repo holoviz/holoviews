@@ -1532,7 +1532,7 @@ class GenericElementPlot(DimensionedPlot):
             return
 
         for acc in accessors[1:-1]:
-            
+
             # the logic handles resolving something like:
             # legend.get_texts()[0].set_fontsize
             if '[' in acc and acc.endswith(']'):
@@ -1571,7 +1571,7 @@ class GenericElementPlot(DimensionedPlot):
                     model = model.__getitem__(getitem_acc)
                 acc = acc[method_end_index:]
 
-            if acc == "" or model == None:
+            if acc == "" or model is None:
                 continue
 
             if not hasattr(model, acc):
