@@ -545,7 +545,7 @@ class ViolinPlot(BoxWhiskerPlot):
         kde_data, line_data, seg_data, bar_data, scatter_data = (
             defaultdict(list) for i in range(5)
         )
-        for i, (key, g) in enumerate(groups.items()):
+        for key, g in groups.items():
             key = decode_bytes(key)
             if element.kdims:
                 key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))

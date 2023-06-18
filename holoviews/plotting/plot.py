@@ -1719,7 +1719,7 @@ class GenericOverlayPlot(GenericElementPlot):
         """
         length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
-        for i, (k, obj) in enumerate(items):
+        for k, obj in items:
             vmap = self.hmap.clone([(key, obj)])
             self.map_lengths[group_fn(vmap)[:length]] += 1
             subplot = self._create_subplot(k, vmap, [], ranges)
