@@ -67,3 +67,17 @@ def cached(method):
             args = (cache,)+args[2:]
             return getattr(cache.interface, method.__name__)(*args, **kwargs)
     return cached
+
+
+def compare(value1, value2):
+    """Compare two values, returning a boolean.
+
+    Will apply the comparison to all elements of an array/dataframe.
+    """
+    try:
+        check = value1 == value2
+        if not isinstance(check, bool) and hasattr(check, "all"):
+            check = check.all()
+        return bool(check)
+    except Exception:
+        return False

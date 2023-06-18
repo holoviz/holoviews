@@ -29,6 +29,7 @@ from ..core import (
 from ..core.data import (
     Dataset, PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 )
+from ..core.data.util import compare
 from ..core.util import (
     cast_array_to_int64, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values
@@ -1378,8 +1379,12 @@ class rasterize(AggregationOperation):
         # Potentially needs traverse to find element types first?
         all_allowed_kws = set()
         all_supplied_kws = set()
+        non_default_params = {
+            k: v for k, v in self.param.values().items()
+            if not compare(v, self.param[k].default)
+        }
         for predicate, transform in self._transforms:
-            merged_param_values = dict(self.param.values(), **self.p)
+            merged_param_values = dict(non_default_params, **self.p)
 
             # If aggregator or interpolation are 'default', pop parameter so
             # datashader can choose the default aggregator itself
