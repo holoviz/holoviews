@@ -803,6 +803,20 @@ def isnumeric(val):
         return False
 
 
+def isequal(value1, value2):
+    """Compare two values, returning a boolean.
+
+    Will apply the comparison to all elements of an array/dataframe.
+    """
+    try:
+        check = value1 == value2
+        if not isinstance(check, bool) and hasattr(check, "all"):
+            check = check.all()
+        return bool(check)
+    except Exception:
+        return False
+
+
 def asarray(arraylike, strict=True):
     """
     Converts arraylike objects to NumPy ndarray types. Errors if

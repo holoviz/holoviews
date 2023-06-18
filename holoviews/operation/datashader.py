@@ -29,10 +29,9 @@ from ..core import (
 from ..core.data import (
     Dataset, PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 )
-from ..core.data.util import compare
 from ..core.util import (
     cast_array_to_int64, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, get_param_values
+    datetime_types, dt_to_int, get_param_values, isequal
 )
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
@@ -1381,7 +1380,7 @@ class rasterize(AggregationOperation):
         all_supplied_kws = set()
         non_default_params = {
             k: v for k, v in self.param.values().items()
-            if not compare(v, self.param[k].default)
+            if not isequal(v, self.param[k].default)
         }
         for predicate, transform in self._transforms:
             merged_param_values = dict(non_default_params, **self.p)
