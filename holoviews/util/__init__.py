@@ -390,7 +390,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             lb_options = Store.options(backend=lb).get(objtype)
             if lb_options is None:
                 continue
-            for g, group_opts in lb_options.groups.items():
+            for _g, group_opts in lb_options.groups.items():
                 if opt in group_opts.allowed_keywords:
                     found.append(lb)
         if found:
@@ -668,7 +668,7 @@ class extension(_pyviz_extension):
         util.config.param.update(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
-        for p, val in sorted(params.items()):
+        for p, _val in sorted(params.items()):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:

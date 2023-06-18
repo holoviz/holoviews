@@ -335,7 +335,7 @@ class TestCallbacks(TestCase):
                 xyevents[4], xevents[4], yevents[4]
         ):
             assert len(xyevent) == 0
-            assert len(yevent) == 0
+            assert len(xevent) == 0
             assert len(yevent) == 0
 
     def testBoundsXYCallbackEventData(self):
