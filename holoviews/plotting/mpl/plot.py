@@ -1108,8 +1108,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             for cbar_plot in colorbars:
                 if cbar_plot.colorbar:
                     cbar_plot._draw_colorbar(redraw=False)
-            adjoined = self.traverse(specs=[AdjointLayoutPlot])
-            for adjoined in adjoined:
+            adjoineds = self.traverse(specs=[AdjointLayoutPlot])
+            for adjoined in adjoineds:
                 if len(adjoined.subplots) > 1:
                     adjoined.adjust_positions(redraw=False)
         return self._finalize_axis(None)

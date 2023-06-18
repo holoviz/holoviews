@@ -188,9 +188,9 @@ def wrap_formatter(formatter):
 def unpack_adjoints(ratios):
     new_ratios = {}
     offset = 0
-    for k, (num, ratios) in sorted(ratios.items()):
+    for k, (num, ratio_values) in sorted(ratios.items()):
         unpacked = [[] for _ in range(num)]
-        for r in ratios:
+        for r in ratio_values:
             nr = len(r)
             for i in range(num):
                 unpacked[i].append(r[i] if i < nr else np.nan)

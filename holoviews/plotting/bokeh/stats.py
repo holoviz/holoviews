@@ -593,7 +593,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if self.show_legend:
                 kde_map['legend_field'] = repr(split_dim)
 
-        for k, v in list(style.items()):
+        for k in style.copy():
             if k.startswith('violin_line'):
                 style[k.replace('violin', 'outline')] = style.pop(k)
         style['violin_line_width'] = 0

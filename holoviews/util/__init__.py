@@ -238,8 +238,8 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
-        for backend, backend_opts in cls._grouped_backends(options, backend):
-            obj = cls._apply_groups_to_backend(obj, backend_opts, backend, clone)
+        for backend_loop, backend_opts in cls._grouped_backends(options, backend):
+            obj = cls._apply_groups_to_backend(obj, backend_opts, backend_loop, clone)
         return obj
 
     @classmethod
@@ -343,13 +343,13 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if isinstance(options, list):
             options = merge_options_to_dict(options)
 
-        for objspec, options in options.items():
+        for objspec, option_values in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
                 raise ValueError(f'{objtype} type not found, could not apply options.')
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
-            for opt, value in options.items():
+            for opt, value in option_values.items():
                 for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
