@@ -809,7 +809,7 @@ def isequal(value1, value2):
     Will apply the comparison to all elements of an array/dataframe.
     """
     try:
-        check = value1 == value2
+        check = (value1 is value2) or (value1 == value2)
         if not isinstance(check, bool) and hasattr(check, "all"):
             check = check.all()
         return bool(check)
