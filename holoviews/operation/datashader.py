@@ -31,7 +31,7 @@ from ..core.data import (
 )
 from ..core.util import (
     cast_array_to_int64, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, get_param_values, isequal
+    datetime_types, dt_to_int, get_param_values
 )
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
@@ -1374,16 +1374,23 @@ class rasterize(AggregationOperation):
                    (type(None), shade) # To handle parameters of datashade
     ]
 
+    __instance_params = set()
+
+    @bothmethod
+    def instance(self_or_cls, **params):
+        inst = super().instance(**params)
+        inst.__instance_params = set(params)
+        return inst
+
     def _process(self, element, key=None):
         # Potentially needs traverse to find element types first?
         all_allowed_kws = set()
         all_supplied_kws = set()
-        non_default_params = {
-            k: v for k, v in self.param.values().items()
-            if not isequal(v, self.param[k].default)
+        instance_params = {
+            k: getattr(self, k) for k in self.__instance_params
         }
         for predicate, transform in self._transforms:
-            merged_param_values = dict(non_default_params, **self.p)
+            merged_param_values = dict(instance_params, **self.p)
 
             # If aggregator or interpolation are 'default', pop parameter so
             # datashader can choose the default aggregator itself
