@@ -162,9 +162,8 @@ class GridInterface(DictInterface):
             shapes = {arr.shape for arr in arrays}
             if len(shapes) > 1:
                 raise DataError('When concatenating gridded data the shape '
-                                'of arrays must match. %s found that arrays '
-                                'along the %s dimension do not match.' %
-                                (cls.__name__, vdim.name))
+                                'of arrays must match. {} found that arrays '
+                                'along the {} dimension do not match.'.format(cls.__name__, vdim.name))
             stack = dask_array_module().stack if any(is_dask(arr) for arr in arrays) else np.stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
@@ -376,7 +375,7 @@ class GridInterface(DictInterface):
         selected = {}
         adjusted_inds = []
         all_scalar = True
-        for i, (kd, ind) in enumerate(zip(dataset.kdims[::-1], indices)):
+        for kd, ind in zip(dataset.kdims[::-1], indices):
             coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]
@@ -558,9 +557,8 @@ class GridInterface(DictInterface):
             if irregular:
                 if np.isscalar(ind) or isinstance(ind, (set, list)):
                     raise IndexError("Indexing not supported for irregularly "
-                                     "sampled data. %s value along %s dimension."
-                                     "must be a slice or 2D boolean mask."
-                                     % (ind, dim))
+                                     "sampled data. {} value along {} dimension."
+                                     "must be a slice or 2D boolean mask.".format(ind, dim))
                 mask = mask.max(axis=i)
             elif dataset._binned:
                 edges = cls.coords(dataset, dim, False, edges=True)

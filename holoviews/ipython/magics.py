@@ -222,7 +222,7 @@ class OptsCompleter:
 
         verbose_openers = ['style(', 'plot[', 'norm{']
         if suggestions and line.endswith('.'):
-            return ['.'.join([completion_key, el]) for el in suggestions]
+            return [f"{completion_key}.{el}" for el in suggestions]
         elif not completion_key:
             return type_keys + list(compositor_defs.keys()) + verbose_openers
 

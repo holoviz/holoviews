@@ -215,7 +215,7 @@ class AttrTree:
             self._propagate(split_label, '_DELETE')
         else:
             path_item = self
-            for i, identifier in enumerate(split_label[:-1]):
+            for identifier in split_label[:-1]:
                 path_item = path_item[identifier]
             del path_item[split_label[-1]]
 
@@ -270,8 +270,7 @@ class AttrTree:
             self.__dict__[sanitized] = child_tree
             return child_tree
         else:
-            raise AttributeError('%r object has no attribute %s.' %
-                                 (type(self).__name__, identifier))
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {identifier}.')
 
 
     def __iter__(self):

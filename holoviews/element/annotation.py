@@ -76,7 +76,7 @@ class Annotation(Element2D):
             args = args[0]
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        settings = {k: v for k, v in dict(self.param.get_param_values(), **overrides).items()
+        settings = {k: v for k, v in dict(self.param.values(), **overrides).items()
                     if k not in pos_args[:len(args)]}
         if 'id' not in settings:
             settings['id'] = self.id

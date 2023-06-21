@@ -9,7 +9,6 @@ from types import FunctionType
 from pathlib import Path
 
 import param
-import panel as pn
 from pyviz_comms import extension as _pyviz_extension
 
 from ..core import (
@@ -239,8 +238,8 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
-        for backend, backend_opts in cls._grouped_backends(options, backend):
-            obj = cls._apply_groups_to_backend(obj, backend_opts, backend, clone)
+        for backend_loop, backend_opts in cls._grouped_backends(options, backend):
+            obj = cls._apply_groups_to_backend(obj, backend_opts, backend_loop, clone)
         return obj
 
     @classmethod
@@ -344,13 +343,13 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if isinstance(options, list):
             options = merge_options_to_dict(options)
 
-        for objspec, options in options.items():
+        for objspec, option_values in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
                 raise ValueError(f'{objtype} type not found, could not apply options.')
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
-            for opt, value in options.items():
+            for opt, value in option_values.items():
                 for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
@@ -377,15 +376,13 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         matches = sorted(kws.fuzzy_match(opt))
         if backend is not None:
             if matches:
-                raise ValueError('Unexpected option %r for %s type '
-                                 'when using the %r extension. Similar '
-                                 'options are: %s.' %
-                                 (opt, objtype, backend, matches))
+                raise ValueError('Unexpected option {!r} for {} type '
+                                 'when using the {!r} extension. Similar '
+                                 'options are: {}.'.format(opt, objtype, backend, matches))
             else:
-                raise ValueError('Unexpected option %r for %s type '
-                                 'when using the %r extension. No '
-                                 'similar options found.' %
-                                 (opt, objtype, backend))
+                raise ValueError('Unexpected option {!r} for {} type '
+                                 'when using the {!r} extension. No '
+                                 'similar options found.'.format(opt, objtype, backend))
 
         # Check option is invalid for all backends
         found = []
@@ -393,7 +390,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             lb_options = Store.options(backend=lb).get(objtype)
             if lb_options is None:
                 continue
-            for g, group_opts in lb_options.groups.items():
+            for _g, group_opts in lb_options.groups.items():
                 if opt in group_opts.allowed_keywords:
                     found.append(lb)
         if found:
@@ -404,10 +401,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             return
 
         if matches:
-            raise ValueError('Unexpected option %r for %s type '
+            raise ValueError('Unexpected option {!r} for {} type '
                              'across all extensions. Similar options '
-                             'for current extension (%r) are: %s.' %
-                             (opt, objtype, current_backend, matches))
+                             'for current extension ({!r}) are: {}.'.format(opt, objtype, current_backend, matches))
         else:
             raise ValueError('Unexpected option {!r} for {} type '
                              'across all extensions. No similar options '
@@ -471,8 +467,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                 if mismatched and not invalid:  # Keys found across multiple backends
                     msg = ('{prefix}keywords supplied are mixed across backends. '
                            'Keyword(s) {info}')
-                    info = ', '.join('%s are invalid for %s'
-                                     % (', '.join(repr(el) for el in v), k)
+                    info = ', '.join('{} are invalid for {}'.format(', '.join(repr(el) for el in v), k)
                                      for k,v in mismatched.items())
                     raise ValueError(msg.format(info=info, prefix=prefix))
                 allowed_kws = completions
@@ -670,10 +665,10 @@ class extension(_pyviz_extension):
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
-        util.config.param.set_param(**config)
+        util.config.param.update(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
-        for p, val in sorted(params.items()):
+        for p, _val in sorted(params.items()):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
@@ -686,23 +681,20 @@ class extension(_pyviz_extension):
             try:
                 __import__(backend)
             except ImportError:
-                self.param.warning("%s could not be imported, ensure %s is installed."
-                             % (backend, backend))
+                self.param.warning(f"{backend} could not be imported, ensure {backend} is installed.")
             try:
                 __import__(f'holoviews.plotting.{imp}')
                 if selected_backend is None:
                     selected_backend = backend
             except util.VersionError as e:
                 self.param.warning(
-                    "HoloViews %s extension could not be loaded. "
-                    "The installed %s version %s is less than "
-                    "the required version %s." %
-                    (backend, backend, e.version, e.min_version))
+                    "HoloViews {} extension could not be loaded. "
+                    "The installed {} version {} is less than "
+                    "the required version {}.".format(backend, backend, e.version, e.min_version))
             except Exception as e:
                 self.param.warning(
-                    "Holoviews %s extension could not be imported, "
-                    "it raised the following exception: %s('%s')" %
-                    (backend, type(e).__name__, e))
+                    "Holoviews {} extension could not be imported, "
+                    "it raised the following exception: {}('{}')".format(backend, type(e).__name__, e))
             finally:
                 Store.output_settings.allowed['backend'] = list_backends()
                 Store.output_settings.allowed['fig'] = list_formats('fig', backend)
@@ -711,13 +703,14 @@ class extension(_pyviz_extension):
                 try:
                     hook()
                 except Exception as e:
-                    self.param.warning('%s backend hook %s failed with '
-                                       'following exception: %s' %
-                                       (backend, hook, e))
+                    self.param.warning('{} backend hook {} failed with '
+                                       'following exception: {}'.format(backend, hook, e))
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
         Store.set_current_backend(selected_backend)
+
+        import panel as pn
 
         if pn.config.comms == "default":
             try:
@@ -729,12 +722,18 @@ class extension(_pyviz_extension):
 
             if "VSCODE_PID" in os.environ:
                 pn.config.comms = "vscode"
+                self._ignore_bokeh_warnings()
                 return
 
     @classmethod
     def register_backend_callback(cls, backend, callback):
         """Registers a hook which is run when a backend is loaded"""
         cls._backend_hooks[backend].append(callback)
+
+    def _ignore_bokeh_warnings(self):
+        import warnings
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
 
 
 def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):

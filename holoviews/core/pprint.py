@@ -50,12 +50,12 @@ class ParamFilter(param.ParameterizedFunction):
         if isinstance(obj,type):
             return class_proxy
         else:
-            instance_params = obj.param.get_param_values()
+            instance_params = obj.param.values().items()
             obj_proxy = class_proxy()
             filtered = {k:v for k,v in instance_params
                         if (k in obj_proxy.param)
                             and not obj_proxy.param.objects('existing')[k].constant}
-            obj_proxy.param.set_param(**filtered)
+            obj_proxy.param.update(**filtered)
             return obj_proxy
 
     @param.parameterized.bothmethod
@@ -153,8 +153,7 @@ class InfoPrinter:
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
                 if len(list(obj.param)) <= 1:
-                    return ('No %r parameters found matching specified pattern %r'
-                            % (name, pattern))
+                    return (f'No {name!r} parameters found matching specified pattern {pattern!r}')
             info = param.ipython.ParamPager()(obj)
             if ansi is False:
                 info = ansi_escape.sub('', info)
@@ -210,7 +209,7 @@ class InfoPrinter:
         target_footer = ("\nTo see the options info for one of these target specifications,"
                          "\nwhich are of the form {type}[.{group}[.{label}]], do holoviews.help({type}).")
 
-        return '\n'.join([heading, target_header, target_info, target_footer])
+        return f'{heading}\n{target_header}\n{target_info}\n{target_footer}'
 
 
     @classmethod
@@ -247,8 +246,7 @@ class InfoPrinter:
             lines += ["The plot options are the parameters of the plotting class:\n",
                       param_info]
         elif pattern is not None:
-            lines+= ['No %r parameters found matching specified pattern %r.'
-                     % (plot_class.__name__, pattern)]
+            lines+= [f'No {plot_class.__name__!r} parameters found matching specified pattern {pattern!r}.']
         else:
             lines+= [f'No {plot_class.__name__!r} parameters found.']
 
@@ -402,7 +400,7 @@ class PrettyPrinter(param.Parameterized):
             return level, lines
         # .last has different semantics for GridSpace
         last = list(node.data.values())[-1]
-        if last is not None and getattr(last, '_deep_indexable') and not hasattr(last, 'children'):
+        if last is not None and last._deep_indexable and not hasattr(last, 'children'):
             level, additional_lines = cls_or_slf.ndmapping_info(last, [], level, value_dims)
         else:
             additional_lines = cls_or_slf.recurse(last, level=level, value_dims=value_dims)

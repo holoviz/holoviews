@@ -56,7 +56,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
-        for (key, el), zorder in zip(element.data.items(), zorders):
+        for (_key, el), zorder in zip(element.data.items(), zorders):
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -349,7 +349,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
                 for t in ('line', 'fill'):
                     if v is None:
                         continue
-                    key = '_'.join([t, p])
+                    key = f'{t}_{p}'
                     if key not in properties:
                         properties[key] = v
             start = arrow_start(**properties) if arrow_start else None

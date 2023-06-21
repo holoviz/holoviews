@@ -113,7 +113,7 @@ class Raster(Element2D):
             X, Y = samples
             samples = zip(X, Y)
 
-        params = dict(self.param.get_param_values(onlychanged=True),
+        params = dict(self.param.values(onlychanged=True),
                       vdims=self.vdims)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
@@ -173,7 +173,7 @@ class Raster(Element2D):
             if oidx and hasattr(self, 'bounds'):
                 reduced = reduced[::-1]
             data = zip(x_vals, reduced)
-            params = dict(dict(self.param.get_param_values(onlychanged=True)),
+            params = dict(dict(self.param.values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
             params.pop('extents', None)
@@ -275,11 +275,10 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar. "
+            raise DataError("{} type expects gridded data, {} is columnar. "
                             "To display columnar data as gridded use the HeatMap "
                             "element or aggregate the data (e.g. using rasterize "
-                            "or np.histogram2d)." %
-                            (type(self).__name__, self.interface.__name__))
+                            "or np.histogram2d).".format(type(self).__name__, self.interface.__name__))
 
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
         if bounds is None:
@@ -329,7 +328,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if yvals.ndim > 1:
             invalid.append(ydim)
         if invalid:
-            dims = '%s and %s' % tuple(invalid) if len(invalid) > 1 else f'{invalid[0]}'
+            dims = '{} and {}'.format(*tuple(invalid)) if len(invalid) > 1 else f'{invalid[0]}'
             raise ValueError(f'{clsname} coordinates must be 1D arrays, '
                              f'{dims} dimension(s) were found to have '
                              'multiple dimensions. Either supply 1D '
@@ -611,7 +610,8 @@ class RGB(Image):
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
         if vdims is None:
-            vdims = list(self.vdims)
+            # Same as the class variables, put here to secure the class variable is not used
+            vdims = [Dimension(c, range=(0,1)) for c in "RGB"]
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
@@ -729,11 +729,10 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
             data = ([], [], np.zeros((0, 0)))
         super().__init__(data, kdims, vdims, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar. "
+            raise DataError("{} type expects gridded data, {} is columnar. "
                             "To display columnar data as gridded use the HeatMap "
                             "element or aggregate the data (e.g. using "
-                            "np.histogram2d)." %
-                            (type(self).__name__, self.interface.__name__))
+                            "np.histogram2d).".format(type(self).__name__, self.interface.__name__))
 
     def trimesh(self):
         """

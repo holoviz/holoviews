@@ -134,7 +134,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
-        self.param.set_param(**kwargs)
+        self.param.update(**kwargs)
 
         if Store.current_backend not in Store.renderers:
             raise RuntimeError("Cannot perform link_selections operation "
@@ -513,8 +513,7 @@ class SelectionDisplay:
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s on '%r'."
-                                    % (key_error, element))
+                                    "display selection for all elements: {} on '{!r}'.".format(key_error, element))
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
                                     "display selection for all elements: %s." % e)
@@ -663,7 +662,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             color_inds = np.zeros(n, dtype='int8')
 
-            for i, expr, color in zip(range(1, len(clrs)), selection_exprs, selected_colors):
+            for i, expr in zip(range(1, len(clrs)), selection_exprs):
                 if not expr:
                     color_inds[:] = i
                 else:

@@ -146,9 +146,8 @@ def compute_overlayable_zorders(obj, path=[]):
                         zorder_map[k] += v + [obj]
                 else:
                     zorder_map[0] += [obj, el]
-        else:
-            if obj not in zorder_map[0]:
-                zorder_map[0].append(obj)
+        elif obj not in zorder_map[0]:
+            zorder_map[0].append(obj)
         return zorder_map
 
     isoverlay = isinstance(obj.last, CompositeOverlay)
@@ -237,7 +236,7 @@ def split_dmap_overlay(obj, depth=0):
             layers.append(obj)
         return layers
     if isinstance(obj, Overlay):
-        for k, v in obj.items():
+        for _k, v in obj.items():
             layers.append(v)
     else:
         layers.append(obj)
@@ -330,7 +329,7 @@ def undisplayable_info(obj, html=False):
         remedy = f"Please call the {collate} method on the appropriate elements."
 
     if not html:
-        return '\n'.join([error, remedy, info])
+        return f'{error}\n{remedy}\n{info}'
     else:
         return "<center>{msg}</center>".format(msg=('<br>'.join(
             ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
@@ -924,8 +923,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         elif provider == 'colorcet' or (provider is None and cmap in cet_cmaps):
             palette = colorcet_cmap_to_palette(cmap, ncolors, categorical)
         else:
-            raise ValueError("Supplied cmap %s not found among %s colormaps." %
-                             (cmap,providers_checked))
+            raise ValueError(f"Supplied cmap {cmap} not found among {providers_checked} colormaps.")
     else:
         try:
             # Try processing as matplotlib colormap
@@ -933,8 +931,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         except Exception:
             palette = None
     if not isinstance(palette, list):
-        raise TypeError("cmap argument %s expects a list, Cycle or valid %s colormap or palette."
-                        % (cmap,providers_checked))
+        raise TypeError(f"cmap argument {cmap} expects a list, Cycle or valid {providers_checked} colormap or palette.")
     if ncolors and len(palette) != ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return palette

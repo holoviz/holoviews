@@ -1043,7 +1043,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             override_opts = {}
             sublabel_opts = {}
             if pos == 'main':
-                own_params = self.param.get_param_values(onlychanged=True)
+                own_params = self.param.values(onlychanged=True).items()
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
             elif pos == 'right':
@@ -1108,8 +1108,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             for cbar_plot in colorbars:
                 if cbar_plot.colorbar:
                     cbar_plot._draw_colorbar(redraw=False)
-            adjoined = self.traverse(specs=[AdjointLayoutPlot])
-            for adjoined in adjoined:
+            adjoineds = self.traverse(specs=[AdjointLayoutPlot])
+            for adjoined in adjoineds:
                 if len(adjoined.subplots) > 1:
                     adjoined.adjust_positions(redraw=False)
         return self._finalize_axis(None)

@@ -359,7 +359,7 @@ class ViolinPlot(BoxWhiskerPlot):
                    for glyph in ('violin_', 'box_')] +
                   [glyph+p for p in base_properties+line_properties
                    for glyph in ('stats_', 'outline_')] +
-                  ['_'.join([glyph, p]) for p in ('color', 'alpha')
+                  [f'{glyph}_{p}' for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
                   ['cmap', 'box_cmap', 'violin_cmap'])
 
@@ -545,7 +545,7 @@ class ViolinPlot(BoxWhiskerPlot):
         kde_data, line_data, seg_data, bar_data, scatter_data = (
             defaultdict(list) for i in range(5)
         )
-        for i, (key, g) in enumerate(groups.items()):
+        for key, g in groups.items():
             key = decode_bytes(key)
             if element.kdims:
                 key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
@@ -593,7 +593,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if self.show_legend:
                 kde_map['legend_field'] = repr(split_dim)
 
-        for k, v in list(style.items()):
+        for k in style.copy():
             if k.startswith('violin_line'):
                 style[k.replace('violin', 'outline')] = style.pop(k)
         style['violin_line_width'] = 0

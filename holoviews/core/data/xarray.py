@@ -261,7 +261,7 @@ class XArrayInterface(GridInterface):
             nonmatching = [f'{kd}: {dims}' for kd, dims in irregular[1:]
                            if set(dims) != set(irregular[0][1])]
             if nonmatching:
-                nonmatching = ['%s: %s' % irregular[0]] + nonmatching
+                nonmatching = ['{}: {}'.format(*irregular[0])] + nonmatching
                 raise DataError("The dimensions of coordinate arrays "
                                 "on irregular data must match. The "
                                 "following kdims were found to have "

@@ -466,7 +466,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self.current_frame = element
 
         if element is not None:
-            self.param.set_param(**self.lookup_options(element, 'plot').options)
+            self.param.update(**self.lookup_options(element, 'plot').options)
         axis = self.handles['axis']
 
         axes_visible = element is not None or self.overlaid
@@ -579,9 +579,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
                 self.param.warning(
-                    'Specified %s dim transform %r could not be '
-                    'applied, as not all dimensions could be resolved.'
-                    % (k, v))
+                    'Specified {} dim transform {!r} could not be '
+                    'applied, as not all dimensions could be resolved.'.format(k, v))
                 continue
 
             if v.dimension in self.overlay_dims:
@@ -847,7 +846,7 @@ class ColorbarPlot(ElementPlot):
             self.handles['bbox_extra_artists'] += [cax, ylabel]
             ax_colorbars.append((artist, cax, spec, label))
 
-        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
+        for i, (_artist, cax, _spec, _label) in enumerate(ax_colorbars):
             scaled_w = w*width
             cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
                               b, scaled_w, h])
@@ -1113,11 +1112,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                                   for k, dim in zip(key, dimensions)])
                 if handle:
                     legend_data.append((handle, label))
-            else:
-                if isinstance(subplot, OverlayPlot):
-                    legend_data += subplot.handles.get('legend_data', {}).items()
-                elif element.label and handle:
-                    legend_data.append((handle, labels.get(element.label, element.label)))
+            elif isinstance(subplot, OverlayPlot):
+                legend_data += subplot.handles.get('legend_data', {}).items()
+            elif element.label and handle:
+                legend_data.append((handle, labels.get(element.label, element.label)))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
         used_labels = []
@@ -1204,7 +1202,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items()
                             if k not in plot_opts})
-        self.param.set_param(**plot_opts)
+        self.param.update(**plot_opts)
 
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)

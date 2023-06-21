@@ -99,7 +99,7 @@ def convert_timestamp(timestamp):
     """
     Converts bokehJS timestamp to datetime64.
     """
-    datetime = dt.datetime.utcfromtimestamp(timestamp/1000.)
+    datetime = dt.datetime.fromtimestamp(timestamp/1000, tz=dt.timezone.utc)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
@@ -262,13 +262,12 @@ def compute_layout_properties(
                     sizing_mode = 'scale_height'
                 else:
                     sizing_mode = 'scale_both'
+            elif responsive == 'width':
+                sizing_mode = 'stretch_both'
+            elif responsive == 'height':
+                sizing_mode = 'stretch_height'
             else:
-                if responsive == 'width':
-                    sizing_mode = 'stretch_both'
-                elif responsive == 'height':
-                    sizing_mode = 'stretch_height'
-                else:
-                    sizing_mode = 'stretch_both'
+                sizing_mode = 'stretch_both'
 
 
     if fixed_aspect:
@@ -567,8 +566,8 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, Tabs):
         vals = [pad_width(t) for t in model.tabs]
         width = np.max([v for v in vals if v is not None])
-        for model in model.tabs:
-            model.width = width
+        for submodel in model.tabs:
+            submodel.width = width
             width = int(tabs_padding*width)
     elif isinstance(model, DataTable):
         width = model.width
@@ -639,7 +638,7 @@ def py2js_tickformatter(formatter, msg=''):
     args = inspect.getfullargspec(formatter).args
     arg_define = f'var {args[0]} = tick;' if args else ''
     return_js = 'return formatter();\n'
-    jsfunc = '\n'.join([arg_define, jscode, return_js])
+    jsfunc = f"{arg_define}\n{jscode}\n{return_js}"
     match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
     return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
@@ -869,8 +868,8 @@ def attach_periodic(plot):
     Attaches plot refresh to all streams on the object.
     """
     def append_refresh(dmap):
-        for dmap in get_nested_dmaps(dmap):
-            dmap.periodic._periodic_util = periodic(plot.document)
+        for subdmap in get_nested_dmaps(dmap):
+            subdmap.periodic._periodic_util = periodic(plot.document)
     return plot.hmap.traverse(append_refresh, [DynamicMap])
 
 
@@ -1042,3 +1041,22 @@ def property_to_dict(x):
         pass
 
     return x
+
+
+def dtype_fix_hook(plot, element):
+    # Work-around for problems seen in:
+    # https://github.com/holoviz/holoviews/issues/5722
+    # https://github.com/holoviz/holoviews/issues/5726
+    # Should be fixed in Bokeh 3.2
+
+    if not bokeh3:
+        return
+    try:
+        renderers = plot.handles["plot"].renderers
+        for renderer in renderers:
+            data = renderer.data_source.data
+            for k, v in data.items():
+                if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    data[k] = v.tolist()
+    except Exception:
+        pass

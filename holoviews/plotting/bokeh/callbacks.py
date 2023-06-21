@@ -8,7 +8,7 @@ import numpy as np
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
-    PolyDrawTool, BoxEditTool, PolyEditTool, FreehandDrawTool,
+    PolyDrawTool, PolyEditTool, FreehandDrawTool,
     PointDrawTool
 )
 from panel.io.state import state
@@ -381,8 +381,8 @@ class Callback:
             if handle_name not in handles:
                 warn_args = (handle_name, type(self.plot).__name__,
                              type(self).__name__)
-                print('%s handle not found on %s, cannot '
-                      'attach %s callback' % warn_args)
+                print('{} handle not found on {}, cannot '
+                      'attach {} callback'.format(*warn_args))
                 continue
             cb_handles.append(handles[handle_name])
 
@@ -724,7 +724,7 @@ class BoundsCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -795,7 +795,7 @@ class BoundsXCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -818,7 +818,7 @@ class BoundsYCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -1167,20 +1167,20 @@ class BoxEditCallback(GlyphDrawCallback):
         data = cds.data
         element = self.plot.current_frame
 
-        xs, ys, widths, heights = [], [], [], []
+        l, b, r, t =  [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
-            xs.append((x0+x1)/2.)
-            ys.append((y0+y1)/2.)
-            widths.append(x1-x0)
-            heights.append(y1-y0)
-        data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
+            l.append(x0)
+            b.append(y0)
+            r.append(x1)
+            t.append(y1)
+        data = {'left': l, 'bottom': b, 'right': r, 'top': t}
         data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
         cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
+        r1 = plot.state.quad(left='left', bottom='bottom', right='right', top='top', source=cds, **style)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         data = self._process_msg({'data': data})['data']
@@ -1205,8 +1205,9 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        box_tool = BoxEditTool(renderers=[renderer], **kwargs)
-        self.plot.state.tools.append(box_tool)
+        # BoxEditTool does not support Quad type only Rect
+        # box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+        # self.plot.state.tools.append(box_tool)
         self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 
@@ -1214,19 +1215,12 @@ class BoxEditCallback(GlyphDrawCallback):
         data = super()._process_msg(msg)
         if 'data' not in data:
             return {}
-        data = data['data']
-        x0s, x1s, y0s, y1s = [], [], [], []
-        for (x, y, w, h) in zip(data['x'], data['y'], data['width'], data['height']):
-            x0s.append(x-w/2.)
-            x1s.append(x+w/2.)
-            y0s.append(y-h/2.)
-            y1s.append(y+h/2.)
-        values = {}
-        for col in data:
-            if col in ('x', 'y', 'width', 'height'):
-                continue
-            values[col] = data[col]
-        msg = {'data': dict(values, x0=x0s, x1=x1s, y0=y0s, y1=y1s)}
+        values = dict(data['data'])
+        values['x0'] = values.pop("left")
+        values['y0'] = values.pop("bottom")
+        values['x1'] = values.pop("right")
+        values['y1'] = values.pop("top")
+        msg = {'data': values}
         self._update_cds_vdims(msg['data'])
         return self._transform(msg)
 

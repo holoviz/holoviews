@@ -41,8 +41,6 @@ extras_require['tests_core'] = [
     'dash >=1.16',
     'codecov',
     'ipython >=5.4.0',
-    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
-    'ipykernel <6.18.0',
 ]
 
 # Optional tests dependencies, i.e. one should be able
@@ -58,21 +56,16 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy',
     'selenium',
-    'numpy <1.24',  # Upper pin because of numba error
+    'spatialpandas',
+    'datashader >=0.11.1',
 ]
-
-# Packages not working on python 3.11 because of numba
-if sys.version_info < (3, 11):
-    extras_require['tests'] += [
-        'spatialpandas',
-        'datashader >=0.11.1',
-    ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
 ]
 
 extras_require['tests_nb'] = ['nbval']
+extras_require['ui'] = ['playwright', 'pytest-playwright']
 
 # Notebook dependencies
 extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
@@ -100,18 +93,8 @@ extras_require["examples"] = extras_require["recommended"] + [
     "scikit-image",
     "pyarrow",
     "pooch",
-    "numpy <1.24",  # Upper pin because of numba error
+    "datashader >=0.11.1",
 ]
-
-if sys.version_info < (3, 11):
-    extras_require["examples"] += [
-        "datashader >=0.11.1",
-    ]
-
-if sys.version_info < (3, 8):
-    extras_require["tests"] += [
-        "fsspec == 2023.1",
-    ]
 
 
 extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
@@ -125,21 +108,19 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite ==0.8.0rc2',
+    'nbsite ==0.8.0',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
     'bokeh >2.2',
-    'pydata-sphinx-theme ==0.9.0',
-    'sphinx-copybutton',
     'pooch',
     'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
-extras_require['bokeh2'] = ["panel <1.0.0a1"]
-extras_require['bokeh3'] = ["panel >=1.0.0a1"]
+extras_require['bokeh2'] = ["panel ==0.14.4"]  # Hard-pin to not pull in rc releases
+extras_require['bokeh3'] = ["panel >=1.0.0"]
 
 extras_require["build"] = [
     "param >=1.7.0",

@@ -310,7 +310,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
-        for i, coord in enumerate(layout.keys(full_grid=True)):
+        for coord in layout.keys(full_grid=True):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             # Create subplot

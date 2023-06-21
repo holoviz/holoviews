@@ -19,13 +19,12 @@ version = release = base_version(holoviews.__version__)
 holoviews.extension.inline = False
 
 html_theme = 'pydata_sphinx_theme'
-html_logo = '_static/logo_horizontal_theme.png'
+html_logo = '_static/logo_horizontal.png'
 html_favicon = '_static/favicon.ico'
 
 html_static_path += ['_static']
 
-html_css_files = [
-    'nbsite.css',
+html_css_files += [
     'css/custom.css'
 ]
 
@@ -35,20 +34,24 @@ html_theme_options = {
         {
             'name': 'Twitter',
             'url': 'https://twitter.com/holoviews',
-            'icon': 'fab fa-twitter-square',
+            'icon': 'fa-brands fa-twitter-square',
         },
         {
             'name': 'Discourse',
             'url': 'https://discourse.holoviz.org/',
-            'icon': 'fab fa-discourse',
+            'icon': 'fa-brands fa-discourse',
+        },
+        {
+            "name": "Discord",
+            "url": "https://discord.gg/AXRHnJU6sP",
+            "icon": "fa-brands fa-discord",
         },
     ],
     "footer_items": [
         "copyright",
         "last-updated",
     ],
-    "navbar_end": ["navbar-icon-links"],
-    'google_analytics_id': 'UA-61554933-1',
+    "analytics": {"google_analytics_id": 'G-91EZMMHSF7'}
 }
 
 nbbuild_cell_timeout = 360
@@ -85,10 +88,6 @@ if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
             'apps'
         ]
     }
-
-templates_path = [
-    '_templates'
-]
 
 html_context.update({
     # Used to add binder links to the latest released tag.

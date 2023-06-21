@@ -146,13 +146,12 @@ class NotebookArchive(FileArchive):
         display(Javascript(cmd))
         time.sleep(0.5)
         self._auto=enabled
-        self.param.set_param(**kwargs)
+        self.param.update(**kwargs)
         tstamp = time.strftime(" [%Y-%m-%d %H:%M:%S]", self._timestamp)
         # When clear == True, it clears the archive, in order to start a new auto capture in a clean archive
         if clear:
             FileArchive.clear(self)
-        print("Automatic capture is now %s.%s"
-              % ('enabled' if enabled else 'disabled',
+        print("Automatic capture is now {}.{}".format('enabled' if enabled else 'disabled',
                  tstamp if enabled else ''))
 
     def export(self, timestamp=None):

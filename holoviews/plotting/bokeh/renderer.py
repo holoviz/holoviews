@@ -45,7 +45,7 @@ class BokehRenderer(Renderer):
                                 allow_None=True, doc="""
        The applicable Bokeh Theme object (if any).""")
 
-    webgl = param.Boolean(default=False, doc="""
+    webgl = param.Boolean(default=True, doc="""
         Whether to render plots with WebGL if available""")
 
     # Defines the valid output formats for each mode.

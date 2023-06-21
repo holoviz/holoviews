@@ -62,8 +62,8 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle', 'visible'] +
-                  line_properties + fill_properties)
+    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle'] +
+                  base_properties + line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
@@ -89,8 +89,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         if sizes is None:
             eltype = type(element).__name__
             self.param.warning(
-                '%s dimension is not numeric, cannot use to scale %s size.'
-                % (sdim.pprint_label, eltype))
+                f'{sdim.pprint_label} dimension is not numeric, cannot use to scale {eltype} size.')
         else:
             data[map_key] = np.sqrt(sizes)
             mapping['size'] = map_key
@@ -142,7 +141,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         has_angles = False
         for (key, el), zorder in zip(element.data.items(), zorders):
             el_opts = self.lookup_options(el, 'plot').options
-            self.param.set_param(**{k: v for k, v in el_opts.items()
+            self.param.update(**{k: v for k, v in el_opts.items()
                                     if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
@@ -379,7 +378,7 @@ class CurvePlot(ElementPlot):
         zorders = self._updated_zorders(overlay)
         for (key, el), zorder in zip(overlay.data.items(), zorders):
             el_opts = self.lookup_options(el, 'plot').options
-            self.param.set_param(**{k: v for k, v in el_opts.items()
+            self.param.update(**{k: v for k, v in el_opts.items()
                                     if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
@@ -486,10 +485,9 @@ class SideHistogramPlot(HistogramPlot):
                 if dimension.applies(element):
                     dim_name = dimension.dimension.name
                     cvals = [] if self.static_source else dimension.apply(element)
-            else:
-                if dimension in element.dimensions():
-                    dim_name = dimension.name
-                    cvals = [] if self.static_source else element.dimension_values(dimension)
+            elif dimension in element.dimensions():
+                dim_name = dimension.name
+                cvals = [] if self.static_source else element.dimension_values(dimension)
             if cvals is not None:
                 data[dim_name] = cvals
                 mapping['fill_color'] = {'field': dim_name,
@@ -799,7 +797,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):
             props['separator_line_width'] = 0
             props['major_tick_line_alpha'] = 0
-            props['major_label_text_font_size'] = '0pt'
+            # The major_label_text_* is a workaround for 0pt font size not working in Safari.
+            # See: https://github.com/holoviz/holoviews/issues/5672
+            props['major_label_text_font_size'] = '1px'
+            props['major_label_text_alpha'] = 0
+            props['major_label_text_line_height'] = 0
+
             props['group_text_color'] = 'black'
             props['group_text_font_style'] = "normal"
             if axis == 'x':
@@ -966,7 +969,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Iterate over stacks and groups and accumulate data
         data = defaultdict(list)
         baselines = defaultdict(lambda: {'positive': bottom, 'negative': 0})
-        for i, (k, ds) in enumerate(grouped.items()):
+        for k, ds in grouped.items():
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
                 gval = k if isinstance(k, str) else group_dim.pprint_value(k)

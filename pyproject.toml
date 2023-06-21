@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "param >=1.7.0",
+    "param >=1.12.0,<3.0",
     "pyct >=0.4.4",
     "setuptools >=30.3.0",
 ]
@@ -24,7 +24,12 @@ filterwarnings = [
     "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype",  # https://github.com/scikit-image/scikit-image/pull/6637
     # 2023-01: Sqlalchemy 2.0 warning:
     "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy",  # https://github.com/ibis-project/ibis/issues/5048
+    # 2023-03: Already handling the nested sequence
+    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
 ]
+
+[tool.coverage]
+run.concurrency = ["greenlet"]
 
 [tool.ruff]
 target-version = "py38"
@@ -32,7 +37,9 @@ target-version = "py38"
 select = [
     "E",
     "F",
+    "FLY",
     "ICN",
+    "NPY",
     "PLC",
     "PLE",
     "PLR",
@@ -45,16 +52,18 @@ select = [
 ignore = [
     "E402",     # Module level import not at top of file
     "E501",     # Line too long
+    "E701",     # Multiple statements on one line
     "E712",     # Comparison to true should be is
     "E731",     # Do not assign a lambda expression, use a def
     "E741",     # Ambiguous variable name
     "F405",     # From star imports
-    "PLR2004",  # Magic value used in comparison
-    "RUF005",   # Consider {expr} instead of concatenation
-    "PLR091",   # Too many arguments/branches/statements
+    "PLC1901",  # empty string is falsey
     "PLE0604",  # Invalid object in `__all__`, must contain only strings
-    "PLE0605",  # Invalid format for __all__
-    "E701",     # Multiple statements on one line
+    "PLE0605",  # Invalid format for `__all__`
+    "PLR091",   # Too many arguments/branches/statements
+    "PLR2004",  # Magic value used in comparison
+    "PLW2901",  # `for` loop variable is overwritten
+    "RUF005",   # Consider {expr} instead of concatenation
 ]
 
 fix = true
@@ -64,7 +73,10 @@ unfixable = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
-"holoviews/tests/*" = ["RUF001", "RUF002", "RUF003"]  # Ambiguous unicode character
+"holoviews/tests/*" = [
+    "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
+    "NPY002",  # Replace legacy `np.random.rand` call with Generator
+]
 
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"

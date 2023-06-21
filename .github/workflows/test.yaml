@@ -38,8 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
-        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.8", "3.10", "3.11"]') }}
+        python-version: ['3.8', '3.11']
         bokeh-version: ['2', '3']
     timeout-minutes: 120
     defaults:
@@ -53,8 +52,15 @@ jobs:
       PYTHONIOENCODING: "utf-8"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      NUMBA_NUM_THREADS: 1
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a13
         with:
           name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
@@ -83,3 +89,50 @@ jobs:
         run: |
           conda activate test-environment
           codecov
+  ui_test_suite:
+    name: UI tests on ${{ matrix.os }} with Python 3.9
+    needs: [pre_commit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      DESC: "Python ${{ matrix.python-version }} tests"
+      PYTHONIOENCODING: "utf-8"
+      PANEL_LOG_LEVEL: info
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      # Without this env var `doit env_create ...` uses by default
+      # the `pyviz` channel, except that we don't want to configure
+      # it as one of the sources.
+      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a13
+        with:
+          name: ui_test_suite
+          python-version: 3.9
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          envs: "-o recommended -o tests -o build"
+          cache: true
+          playwright: true
+          conda-mamba: mamba
+        id: install
+      - name: doit env_capture
+        run: |
+          conda activate test-environment
+          doit env_capture
+      - name: doit test_ui
+        run: |
+          conda activate test-environment
+          doit test_ui
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: ui-tests
+          fail_ci_if_error: false # optional (default = false)

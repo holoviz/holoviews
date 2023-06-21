@@ -248,11 +248,11 @@ class Area(Curve):
             areas = NdOverlay({i: el for i, el in enumerate(areas)})
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
-        vdim = areas.last.vdims[0]
-        vdims = [vdim, baseline_name]
+        vdims = [[el.vdims[0], baseline_name] for el in areas]
         baseline = None
         stacked = areas.clone(shared_data=False)
-        for key, sdf in df.groupby(level=levels, sort=False):
+        for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims):
+            vdim = element_vdims[0]
             sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
             if baseline is None:
                 sdf[baseline_name] = 0
@@ -260,5 +260,5 @@ class Area(Curve):
                 sdf[vdim.name] = sdf[vdim.name] + baseline
                 sdf[baseline_name] = baseline
             baseline = sdf[vdim.name]
-            stacked[key] = areas[key].clone(sdf, vdims=vdims)
+            stacked[key] = areas[key].clone(sdf, vdims=element_vdims)
         return Overlay(stacked.values()) if is_overlay else stacked

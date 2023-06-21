@@ -85,10 +85,10 @@ class _layout_sankey(Operation):
                            for d in element.nodes.vdims))
         else:
             values = cycle([tuple()])
-        for index, vals in zip(element.nodes.dimension_values(index), values):
-            node = {'index': index, 'sourceLinks': [], 'targetLinks': [], 'values': vals}
+        for idx, vals in zip(element.nodes.dimension_values(index), values):
+            node = {'index': idx, 'sourceLinks': [], 'targetLinks': [], 'values': vals}
             graph['nodes'].append(node)
-            node_map[index] = node
+            node_map[idx] = node
 
         links = [element.dimension_values(d) for d in element.dimensions()[:3]]
         for i, (src, tgt, value) in enumerate(zip(*links)):

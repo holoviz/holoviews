@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from collections.abc import Iterable
+from functools import lru_cache
 from packaging.version import Version
 
 from .. import util
@@ -11,12 +12,15 @@ from . import pandas
 from .util import cached
 
 
-try:
+@lru_cache()
+def ibis_version():
     import ibis
-    ibis_version = Version(ibis.__version__)
-    ibis4 = ibis_version >= Version("4.0")
-except ImportError:
-    pass
+    return Version(ibis.__version__)
+
+
+@lru_cache()
+def ibis4():
+    return ibis_version() >= Version("4.0")
 
 
 class IbisInterface(Interface):
@@ -96,7 +100,7 @@ class IbisInterface(Interface):
     @cached
     def length(self, dataset):
         # Get the length by counting the length of an empty query.
-        if ibis4:
+        if ibis4():
             return dataset.data.count().execute()
         else:
             return dataset.data[[]].count().execute()
@@ -105,7 +109,7 @@ class IbisInterface(Interface):
     @cached
     def nonzero(cls, dataset):
         # Make an empty query to see if a row is returned.
-        if ibis4:
+        if ibis4():
             return bool(len(dataset.data.head(1).execute()))
         else:
             return bool(len(dataset.data[[]].head(1).execute()))
@@ -134,10 +138,12 @@ class IbisInterface(Interface):
         compute=True,
         keep_index=False,
     ):
+        import ibis
+
         dimension = dataset.get_dimension(dimension, strict=True)
         data = dataset.data[dimension.name]
         if (
-            ibis_version > Version("3")
+            ibis_version() > Version("3")
             and isinstance(data, ibis.expr.types.AnyColumn)
             and not expanded
         ):
@@ -152,7 +158,7 @@ class IbisInterface(Interface):
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
         hist = np.zeros(len(bins)-1)
-        if ibis4:
+        if ibis4():
             hist_bins = binned.value_counts().order_by('bucket').execute()
         else:
             # sort_by will be removed in Ibis 5.0
@@ -184,7 +190,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        if ibis4:
+        if ibis4():
             return dataset.data.order_by([(dataset.get_dimension(x).name, not reverse) for x in by])
         else:
             # sort_by will be removed in Ibis 5.0
@@ -211,13 +217,12 @@ class IbisInterface(Interface):
         if "hv_row_id__" in data.columns:
             return data
 
-        if ibis4:
+        if ibis4():
             return data.mutate(hv_row_id__=ibis.row_number())
+        elif cls.is_rowid_zero_indexed(data):
+            return data.mutate(hv_row_id__=data.rowid())
         else:
-            if cls.is_rowid_zero_indexed(data):
-                return data.mutate(hv_row_id__=data.rowid())
-            else:
-                return data.mutate(hv_row_id__=data.rowid() - 1)
+            return data.mutate(hv_row_id__=data.rowid() - 1)
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -257,7 +262,7 @@ class IbisInterface(Interface):
                 rows = [rows]
             data = data.filter([data.hv_row_id__.isin(rows)])
 
-        if ibis4:
+        if ibis4():
             return data.drop("hv_row_id__")
         else:
             # Passing a sequence of fields to `drop` will be removed in Ibis 5.0
@@ -269,7 +274,7 @@ class IbisInterface(Interface):
         Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if ibis4:
+        if ibis4():
             count = data.count().execute()
         else:
             count = data[[]].count().execute()
@@ -293,7 +298,7 @@ class IbisInterface(Interface):
         group_by = [d.name for d in index_dims]
 
         # execute a query against the table to find the unique groups.
-        if ibis4:
+        if ibis4():
             groups = dataset.data.group_by(group_by).aggregate().execute()
         else:
             # groupby will be removed in Ibis 5.0
@@ -360,7 +365,7 @@ class IbisInterface(Interface):
                 data["hv_row_id__"].isin(list(map(int, selection_mask)))
             )
 
-            if ibis4:
+            if ibis4():
                 data = data.drop("hv_row_id__")
             else:
                 # Passing a sequence of fields to `drop` will be removed in Ibis 5.0
@@ -461,7 +466,7 @@ class IbisInterface(Interface):
         }.get(function, function)
 
         if len(dimensions):
-            if ibis4:
+            if ibis4():
                  selection = new.group_by(columns)
             else:
                 # groupby will be removed in Ibis 5.0

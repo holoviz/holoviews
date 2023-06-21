@@ -13,7 +13,6 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections.abc import Iterable # noqa
 from collections import defaultdict, OrderedDict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
@@ -137,7 +136,7 @@ class Config(param.ParameterizedFunction):
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
     def __call__(self, **params):
-        self.param.set_param(**params)
+        self.param.update(**params)
         return self
 
 config = Config()
@@ -800,6 +799,20 @@ def isnumeric(val):
     try:
         float(val)
         return True
+    except Exception:
+        return False
+
+
+def isequal(value1, value2):
+    """Compare two values, returning a boolean.
+
+    Will apply the comparison to all elements of an array/dataframe.
+    """
+    try:
+        check = (value1 is value2) or (value1 == value2)
+        if not isinstance(check, bool) and hasattr(check, "all"):
+            check = check.all()
+        return bool(check)
     except Exception:
         return False
 
@@ -1723,9 +1736,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_ke
         clashes = sorted(clashes)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
-            raise Exception('The supplied stream objects %s and %s '
-                            'clash on the following parameters: %r'
-                            % (clashing, clash_streams[-1], clashes))
+            raise Exception('The supplied stream objects {} and {} '
+                            'clash on the following parameters: {!r}'.format(clashing, clash_streams[-1], clashes))
     return [name for group in param_groups.values() for name in group
             if name not in exclude]
 
@@ -2204,6 +2216,8 @@ def closest_match(match, specs, depth=0):
     Recursively iterates over type, group, label and overlay key,
     finding the closest matching spec.
     """
+    if len(match) == 0:
+        return None
     new_specs = []
     match_lengths = []
     for i, spec in specs:
@@ -2226,11 +2240,10 @@ def closest_match(match, specs, depth=0):
     elif new_specs:
         depth = depth+1
         return closest_match(match[1:], new_specs, depth)
+    elif depth == 0 or not match_lengths:
+        return None
     else:
-        if depth == 0 or not match_lengths:
-            return None
-        else:
-            return sorted(match_lengths, key=lambda x: -x[1])[0][0]
+        return sorted(match_lengths, key=lambda x: -x[1])[0][0]
 
 
 def cast_array_to_int64(array):

@@ -1,8 +1,10 @@
 import numpy as np
+import pytest
 
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Spikes
+from holoviews.core.options import AbbreviatedException
 
 from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -152,7 +154,8 @@ class TestSpikesPlot(TestMPLPlot):
     def test_spikes_alpha_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                               vdims=['y', 'alpha']).opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(spikes)
 
     def test_spikes_line_width_op(self):

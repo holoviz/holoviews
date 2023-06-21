@@ -50,7 +50,7 @@ from .util import (
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
-    prop_is_none, remove_legend, property_to_dict
+    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook
 )
 
 if bokeh3:
@@ -120,7 +120,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     min_width = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
 
-    min_height = param.Integer(default=None, bounds=(0, None), doc="""
+    min_height = param.Integer(default=300, bounds=(0, None), doc="""
         Minimal height of the component (in pixels) if height is adjustable.""")
 
     max_width = param.Integer(default=None, bounds=(0, None), doc="""
@@ -577,6 +577,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             active_tools =  {'pan', 'wheel_zoom'} & enabled_tools
         else:
             active_tools = self.active_tools
+
+        if active_tools == []:
+            # Removes Bokeh default behavior of having Pan enabled by default
+            plot.toolbar.active_drag = None
 
         for tool in active_tools:
             if isinstance(tool, str):
@@ -1653,7 +1657,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ranges = self.compute_ranges(self.hmap, key, ranges)
         else:
             self.ranges.update(ranges)
-        self.param.set_param(**self.lookup_options(style_element, 'plot').options)
+        self.param.update(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
         plot = self.handles['plot']
@@ -1672,6 +1676,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
+
+
+    def _execute_hooks(self, element):
+        dtype_fix_hook(self, element)
+        super()._execute_hooks(element)
 
 
     def model_changed(self, model):
@@ -2574,7 +2583,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                                                self._propagate_options,
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-            self.param.set_param(**plot_opts)
+            self.param.update(**plot_opts)
 
             if not self.overlaid and not self.tabs and not self.batched:
                 self._update_ranges(element, ranges)

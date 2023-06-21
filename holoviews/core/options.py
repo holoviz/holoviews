@@ -346,7 +346,7 @@ class Cycle(param.Parameterized):
 
     def __call__(self, values=None, **params):
         values = values if values else self.values
-        return self.__class__(**dict(self.param.get_param_values(), values=values, **params))
+        return self.__class__(**dict(self.param.values(), values=values, **params))
 
 
     def __len__(self):
@@ -471,15 +471,13 @@ class Options:
                     raise OptionError(kwarg, allowed_keywords)
 
         if key and key[0].islower() and key not in self._option_groups:
-            raise Exception('Key %s does not start with a capitalized element class name and is not a group in %s'
-                            % (repr(key), ', '.join(repr(el) for el in self._option_groups)))
+            raise Exception('Key {} does not start with a capitalized element class name and is not a group in {}'.format(repr(key), ', '.join(repr(el) for el in self._option_groups)))
 
         for invalid_kw in invalid_kws:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
             StoreOptions.record_skipped_option(error)
         if invalid_kws and self.warn_on_skip:
-            self.param.warning("Invalid options %s, valid options are: %s"
-                               % (repr(invalid_kws), str(allowed_keywords)))
+            self.param.warning(f"Invalid options {invalid_kws!r}, valid options are: {allowed_keywords!s}")
 
         self.kwargs = OrderedDict([(k,kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
         self._options = []
@@ -1518,7 +1516,7 @@ class StoreOptions:
         applied = []
         def propagate(o):
             if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
-                setattr(o, 'id', new_id)
+                o.id = new_id
                 applied.append(o)
         obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
@@ -1535,7 +1533,7 @@ class StoreOptions:
         Given an list of ids, capture a list of ids that can be
         restored using the restore_ids.
         """
-        return obj.traverse(lambda o: getattr(o, 'id'))
+        return obj.traverse(lambda o: o.id)
 
     @classmethod
     def restore_ids(cls, obj, ids):

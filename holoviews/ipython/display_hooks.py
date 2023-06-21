@@ -133,7 +133,7 @@ def display_hook(fn):
     """
     @wraps(fn)
     def wrapped(element):
-        global FULL_TRACEBACK
+        global FULL_TRACEBACK  # noqa: PLW0603
         if Store.current_backend is None:
             return {}, {}
 

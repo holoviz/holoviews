@@ -40,21 +40,21 @@ class LinkCallback:
         self.target_plot = target_plot
         self.validate()
 
-        references = {k: v for k, v in link.param.get_param_values()
+        references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
         for sh in self.source_handles+[self.source_model]:
-            key = '_'.join(['source', sh])
+            key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
-        for p, value in link.param.get_param_values():
+        for p, value in link.param.values().items():
             if p in ('name', 'source', 'target'):
                 continue
             references[p] = value
 
         if target_plot is not None:
             for sh in self.target_handles+[self.target_model]:
-                key = '_'.join(['target', sh])
+                key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
         if self.source_model in source_plot.handles:
@@ -116,12 +116,11 @@ class LinkCallback:
                                          src._plot_id == source._plot_id)]
                 if links:
                     return (plot, links)
-            else:
-                if ((link.target is source) or
-                    (link.target is not None and
-                     link.target._plot_id is not None and
-                     link.target._plot_id == source._plot_id)):
-                    return (plot, [link])
+            elif ((link.target is source) or
+                (link.target is not None and
+                    link.target._plot_id is not None and
+                    link.target._plot_id == source._plot_id)):
+                return (plot, [link])
 
     def validate(self):
         """
@@ -166,7 +165,7 @@ class DataLinkCallback(LinkCallback):
         src_len = [len(v) for v in src_cds.data.values()]
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
-            raise Exception('DataLink source data length must match target '
+            raise ValueError('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
 
@@ -233,53 +232,17 @@ class RectanglesTableLinkCallback(DataLinkCallback):
     on_target_changes = ['patching']
 
     source_code = """
-    var xs = source_cds.data[source_glyph.x.field]
-    var ys = source_cds.data[source_glyph.y.field]
-    var ws = source_cds.data[source_glyph.width.field]
-    var hs = source_cds.data[source_glyph.height.field]
-
-    var x0 = []
-    var x1 = []
-    var y0 = []
-    var y1 = []
-    for (var i = 0; i < xs.length; i++) {
-      var hw = ws[i]/2.
-      var hh = hs[i]/2.
-      x0.push(xs[i]-hw)
-      x1.push(xs[i]+hw)
-      y0.push(ys[i]-hh)
-      y1.push(ys[i]+hh)
-    }
-    target_cds.data[columns[0]] = x0
-    target_cds.data[columns[1]] = y0
-    target_cds.data[columns[2]] = x1
-    target_cds.data[columns[3]] = y1
+    target_cds.data[columns[0]] = source_cds.data[source_glyph.left.field]
+    target_cds.data[columns[1]] = source_cds.data[source_glyph.bottom.field]
+    target_cds.data[columns[2]] = source_cds.data[source_glyph.right.field]
+    target_cds.data[columns[3]] = source_cds.data[source_glyph.top.field]
     """
 
     target_code = """
-    var x0s = target_cds.data[columns[0]]
-    var y0s = target_cds.data[columns[1]]
-    var x1s = target_cds.data[columns[2]]
-    var y1s = target_cds.data[columns[3]]
-
-    var xs = []
-    var ys = []
-    var ws = []
-    var hs = []
-    for (var i = 0; i < x0s.length; i++) {
-      var x0 = Math.min(x0s[i], x1s[i])
-      var y0 = Math.min(y0s[i], y1s[i])
-      var x1 = Math.max(x0s[i], x1s[i])
-      var y1 = Math.max(y0s[i], y1s[i])
-      xs.push((x0+x1)/2.)
-      ys.push((y0+y1)/2.)
-      ws.push(x1-x0)
-      hs.push(y1-y0)
-    }
-    source_cds.data['x'] = xs
-    source_cds.data['y'] = ys
-    source_cds.data['width'] = ws
-    source_cds.data['height'] = hs
+    source_cds.data['left'] = target_cds.data[columns[0]]
+    source_cds.data['bottom'] = target_cds.data[columns[1]]
+    source_cds.data['right'] = target_cds.data[columns[2]]
+    source_cds.data['top'] = target_cds.data[columns[3]]
     """
 
     def __init__(self, root_model, link, source_plot, target_plot=None):
