@@ -1,11 +1,13 @@
 import datetime as dt
 
 import numpy as np
+import pytest
 
 from holoviews.core.overlay import NdOverlay
 from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
+from holoviews.core.options import AbbreviatedException
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -116,13 +118,15 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
     def test_histogram_linear_color_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                               vdims=['y', 'color']).opts(color='color')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a continuous dimension to a color'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(histogram)
 
     def test_histogram_categorical_color_op(self):
         histogram = Histogram([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
                               vdims=['y', 'color']).opts(color='color')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a continuous dimension to a color'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(histogram)
 
     def test_histogram_line_color_op(self):
@@ -138,7 +142,8 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
     def test_histogram_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                               vdims=['y', 'alpha']).opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(histogram)
 
     def test_histogram_line_width_op(self):

@@ -928,7 +928,7 @@ class DimensionedPlot(Plot):
         projections = opts.get(from_overlay, {}).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
-            raise Exception("An axis may only be assigned one projection type")
+            raise ValueError("An axis may only be assigned one projection type")
         return custom_projs[0] if custom_projs else None
 
     def update(self, key):

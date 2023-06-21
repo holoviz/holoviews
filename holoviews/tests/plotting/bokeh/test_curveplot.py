@@ -2,9 +2,10 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap
-from holoviews.core.options import Cycle, Palette
+from holoviews.core.options import Cycle, Palette, AbbreviatedException
 from holoviews.element import Curve
 from holoviews.plotting.util import rgb2hex
 from holoviews.streams import PointerX
@@ -356,19 +357,22 @@ class TestCurvePlot(TestBokehPlot):
     def test_curve_color_op(self):
         curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
                        vdims=['y', 'color']).opts(color='color')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "color" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             bokeh_renderer.get_plot(curve)
 
     def test_curve_alpha_op(self):
         curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
                        vdims=['y', 'alpha']).opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             bokeh_renderer.get_plot(curve)
 
     def test_curve_line_width_op(self):
         curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
                        vdims=['y', 'linewidth']).opts(line_width='linewidth')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "line_width" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             bokeh_renderer.get_plot(curve)
 
     def test_curve_style_mapping_ndoverlay_dimensions(self):
