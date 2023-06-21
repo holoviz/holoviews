@@ -724,7 +724,7 @@ class BoundsCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -795,7 +795,7 @@ class BoundsXCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -818,7 +818,7 @@ class BoundsYCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -1180,7 +1180,7 @@ class BoxEditCallback(GlyphDrawCallback):
         cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('left', 'bottom', 'right', 'top', source=cds, **style)
+        r1 = plot.state.quad(left='left', bottom='bottom', right='right', top='top', source=cds, **style)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         data = self._process_msg({'data': data})['data']
