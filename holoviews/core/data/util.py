@@ -60,7 +60,7 @@ def cached(method):
     Decorates an Interface method and using a cached version
     """
     def cached(*args, **kwargs):
-        cache = getattr(args[1], '_cached')
+        cache = args[1]._cached
         if cache is None:
             return method(*args, **kwargs)
         else:

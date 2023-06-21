@@ -266,7 +266,7 @@ class SpatialPandasInterface(MultiInterface):
         if not isinstance(column.dtype, MultiPointDtype) and geom_type != 'Point':
             return cls.base_interface.length(dataset)
         length = 0
-        for i, geom in enumerate(column):
+        for geom in column:
             if isinstance(geom, Point):
                 length += 1
             else:

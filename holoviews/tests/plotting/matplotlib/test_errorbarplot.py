@@ -1,7 +1,9 @@
 import numpy as np
+import pytest
 
 from holoviews.core.spaces import HoloMap
 from holoviews.element import ErrorBars
+from holoviews.core.options import AbbreviatedException
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -39,13 +41,15 @@ class TestErrorBarPlot(TestMPLPlot):
     def test_errorbars_linear_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 0), (0, 1, 0.2, 0.4, 1), (0, 2, 0.6, 1.2, 2)],
                               vdims=['y', 'perr', 'nerr', 'color']).opts(color='color')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a continuous or categorical dimension to a color'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(errorbars)
 
     def test_errorbars_categorical_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 'A'), (0, 1, 0.2, 0.4, 'B'), (0, 2, 0.6, 1.2, 'C')],
                               vdims=['y', 'perr', 'nerr', 'color']).opts(color='color')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a continuous or categorical dimension to a color'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(errorbars)
 
     def test_errorbars_line_color_op(self):
@@ -60,7 +64,8 @@ class TestErrorBarPlot(TestMPLPlot):
     def test_errorbars_alpha_op(self):
         errorbars = ErrorBars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                               vdims=['y', 'alpha']).opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(errorbars)
 
     def test_errorbars_line_width_op(self):

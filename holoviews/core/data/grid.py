@@ -375,7 +375,7 @@ class GridInterface(DictInterface):
         selected = {}
         adjusted_inds = []
         all_scalar = True
-        for i, (kd, ind) in enumerate(zip(dataset.kdims[::-1], indices)):
+        for kd, ind in zip(dataset.kdims[::-1], indices):
             coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]

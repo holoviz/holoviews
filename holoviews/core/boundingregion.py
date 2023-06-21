@@ -350,7 +350,9 @@ class BoundingRegionParameter(param.Parameter):
     __slots__ = ['set_hook']
 
 
-    def __init__(self, default=BoundingBox(radius=0.5), **params):
+    def __init__(self, default=None, **params):
+        if default is None:
+            default = BoundingBox(radius=0.5)
         self.set_hook = identity_hook
         super().__init__(default=default, instantiate=True, **params)
 

@@ -255,7 +255,7 @@ class DaskInterface(PandasInterface):
         mask = None
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
-            for i, (c, v) in enumerate(zip(dims, sample)):
+            for c, v in zip(dims, sample):
                 dim_mask = data[c]==v
                 if mask is None:
                     mask = dim_mask

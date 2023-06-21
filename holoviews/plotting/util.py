@@ -236,7 +236,7 @@ def split_dmap_overlay(obj, depth=0):
             layers.append(obj)
         return layers
     if isinstance(obj, Overlay):
-        for k, v in obj.items():
+        for _k, v in obj.items():
             layers.append(v)
     else:
         layers.append(obj)
