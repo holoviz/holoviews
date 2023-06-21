@@ -4,6 +4,7 @@ from unittest import SkipTest
 from collections import OrderedDict
 
 import numpy as np
+import pytest
 
 from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
 from holoviews.core.util import dt_to_int
@@ -887,7 +888,8 @@ class TestOverlayPlot(TestBokehPlot):
 
     def test_overlay_projection_clashing(self):
         overlay = Curve([]).opts(projection='polar') * Curve([]).opts(projection='custom')
-        with self.assertRaises(Exception):
+        msg = "An axis may only be assigned one projection type"
+        with pytest.raises(ValueError, match=msg):
             bokeh_renderer.get_plot(overlay)
 
     def test_overlay_projection_propagates(self):

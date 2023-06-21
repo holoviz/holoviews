@@ -111,7 +111,7 @@ class BoundsCallback(PlotlyCallback):
 
         # Initialize event data by clearing box selection on everything
         event_data = {}
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_uid = trace.get('uid', None)
             if cls.boundsx and cls.boundsy:
                 stream_data = dict(bounds=None)
@@ -133,7 +133,7 @@ class BoundsCallback(PlotlyCallback):
     @classmethod
     def update_event_data_xyaxis(cls, range_data, traces, event_data):
         # Process traces
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
@@ -163,7 +163,7 @@ class BoundsCallback(PlotlyCallback):
     @classmethod
     def update_event_data_mapbox(cls, range_data, traces, event_data):
         # Process traces
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
@@ -223,7 +223,7 @@ class RangeCallback(PlotlyCallback):
     def build_event_data_from_viewport(cls, traces, property_value):
         # Process traces
         event_data = {}
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
@@ -262,7 +262,7 @@ class RangeCallback(PlotlyCallback):
     def build_event_data_from_relayout_data(cls, traces, property_value):
         # Process traces
         event_data = {}
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scattermapbox')
             trace_uid = trace.get('uid', None)
 

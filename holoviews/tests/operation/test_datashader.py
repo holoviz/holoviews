@@ -1150,6 +1150,24 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
         self.assertEqual(regridded, expected)
 
+    def test_rasterize_image_expand_default(self):
+        # Should use expand=False by default
+        assert not regrid.expand
+
+        data = np.arange(100.0).reshape(10, 10)
+        c = np.arange(10.0)
+        da = xr.DataArray(data, coords=dict(x=c, y=c))
+        rast_input = dict(x_range=(-1, 10), y_range=(-1, 10), precompute=True, dynamic=False)
+        img = rasterize(Image(da), **rast_input)
+        output = img.data["z"].to_numpy()
+
+        np.testing.assert_array_equal(output, data.T)
+        assert not np.isnan(output).any()
+
+        # Setting expand=True with the {x,y}_ranges will expand the data with nan's
+        img = rasterize(Image(da), expand=True, **rast_input)
+        output = img.data["z"].to_numpy()
+        assert np.isnan(output).any()
 
 class DatashaderSpreadTests(ComparisonTestCase):
 

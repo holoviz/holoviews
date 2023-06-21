@@ -923,7 +923,7 @@ argument to specify a selection specification""")
             ndims = len(vdims)
             error = self.clone(error, kdims=kdims, new_type=Dataset)
             combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
-            for i, d in enumerate(vdims):
+            for d in vdims:
                 dim = d.clone(f'{d.name}_{spread_name}')
                 dvals = error.dimension_values(d, flat=False)
                 idx = vdims.index(d)

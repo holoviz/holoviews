@@ -642,8 +642,8 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, Tabs):
         vals = [pad_width(t) for t in model.tabs]
         width = np.max([v for v in vals if v is not None])
-        for model in model.tabs:
-            model.width = width
+        for submodel in model.tabs:
+            submodel.width = width
             width = int(tabs_padding*width)
     elif isinstance(model, DataTable):
         width = model.width
@@ -944,8 +944,8 @@ def attach_periodic(plot):
     Attaches plot refresh to all streams on the object.
     """
     def append_refresh(dmap):
-        for dmap in get_nested_dmaps(dmap):
-            dmap.periodic._periodic_util = periodic(plot.document)
+        for subdmap in get_nested_dmaps(dmap):
+            subdmap.periodic._periodic_util = periodic(plot.document)
     return plot.hmap.traverse(append_refresh, [DynamicMap])
 
 

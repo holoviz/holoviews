@@ -335,7 +335,7 @@ class TestCallbacks(TestCase):
                 xyevents[4], xevents[4], yevents[4]
         ):
             assert len(xyevent) == 0
-            assert len(yevent) == 0
+            assert len(xevent) == 0
             assert len(yevent) == 0
 
     def testBoundsXYCallbackEventData(self):
@@ -628,9 +628,9 @@ class TestCallbacks(TestCase):
         )
 
         # Check that all streams attached to the 'forth' plot were triggered
-        for stream, events in zip(streamss[3], sel_events[3]):
+        for stream, _events in zip(streamss[3], sel_events[3]):
             assert stream.index == [0, 2]
 
         # Check that streams attached to plots not in this figure are not called
-        for stream, events in zip(streamss[4], sel_events[4]):
+        for _stream, events in zip(streamss[4], sel_events[4]):
             assert len(events) == 0

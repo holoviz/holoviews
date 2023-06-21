@@ -238,8 +238,8 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
-        for backend, backend_opts in cls._grouped_backends(options, backend):
-            obj = cls._apply_groups_to_backend(obj, backend_opts, backend, clone)
+        for backend_loop, backend_opts in cls._grouped_backends(options, backend):
+            obj = cls._apply_groups_to_backend(obj, backend_opts, backend_loop, clone)
         return obj
 
     @classmethod
@@ -343,13 +343,13 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if isinstance(options, list):
             options = merge_options_to_dict(options)
 
-        for objspec, options in options.items():
+        for objspec, option_values in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
                 raise ValueError(f'{objtype} type not found, could not apply options.')
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
-            for opt, value in options.items():
+            for opt, value in option_values.items():
                 for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
@@ -390,7 +390,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             lb_options = Store.options(backend=lb).get(objtype)
             if lb_options is None:
                 continue
-            for g, group_opts in lb_options.groups.items():
+            for _g, group_opts in lb_options.groups.items():
                 if opt in group_opts.allowed_keywords:
                     found.append(lb)
         if found:
@@ -668,7 +668,7 @@ class extension(_pyviz_extension):
         util.config.param.update(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
-        for p, val in sorted(params.items()):
+        for p, _val in sorted(params.items()):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:

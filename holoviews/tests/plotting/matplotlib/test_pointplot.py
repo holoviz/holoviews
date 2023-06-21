@@ -1,8 +1,10 @@
 import numpy as np
+import pytest
 
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Points
+from holoviews.core.options import AbbreviatedException
 
 from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
@@ -293,13 +295,15 @@ class TestPointPlot(TestMPLPlot):
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
                         vdims='marker').opts(marker='marker')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "marker" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(points)
 
     def test_point_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                         vdims='alpha').opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(points)
 
     def test_op_ndoverlay_value(self):

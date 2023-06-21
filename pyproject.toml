@@ -28,6 +28,9 @@ filterwarnings = [
     "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
 ]
 
+[tool.coverage]
+run.concurrency = ["greenlet"]
+
 [tool.ruff]
 target-version = "py37"
 
