@@ -179,15 +179,16 @@ class RGBPlot(LegendPlot):
         img = np.dstack([element.dimension_values(d, flat=False)
                          for d in element.vdims])
 
-        # Converting any nan to 0
         nan_mask = np.isnan(img)
         img[nan_mask] = 0
 
         if img.ndim == 3:
+            img_max = img.max()
             # Can be 0 to 255 if nodata has been used
-            if img.dtype.kind == 'f' and img.max() <= 1:
+            if img.dtype.kind == 'f' and img_max <= 1:
                 img = img*255
-            if img.size and (img.min() < 0 or img.max() > 255):
+                # img_max * 255 <- have no effect
+            if img.size and (img.min() < 0 or img_max > 255):
                 self.param.warning('Clipping input data to the valid '
                                    'range for RGB data ([0..1] for '
                                    'floats or [0..255] for integers).')
