@@ -610,7 +610,8 @@ class RGB(Image):
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
         if vdims is None:
-            vdims = list(self.vdims)
+            # Same as the class variables, put here to secure the class variable is not used
+            vdims = [Dimension(c, range=(0,1)) for c in "RGB"]
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
