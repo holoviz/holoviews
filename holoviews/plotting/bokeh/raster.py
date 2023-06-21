@@ -183,7 +183,7 @@ class RGBPlot(LegendPlot):
         img[nan_mask] = 0
 
         if img.ndim == 3:
-            img_max = img.max()
+            img_max = img.max() if img.size else np.nan
             # Can be 0 to 255 if nodata has been used
             if img.dtype.kind == 'f' and img_max <= 1:
                 img = img*255
