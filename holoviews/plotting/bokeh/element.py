@@ -779,7 +779,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
         style_items = list(self.gridstyle.items())
-        both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
+        both = {k: v for k, v in style_items if k.startswith(('grid_', 'minor_grid'))}
         xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
         ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
         xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
