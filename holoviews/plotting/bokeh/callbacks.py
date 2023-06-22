@@ -15,7 +15,7 @@ from panel.io.state import state
 
 from ...core.options import CallbackError
 from ...core.util import (
-    datetime_types, dimension_sanitizer, dt64_to_dt
+    datetime_types, dimension_sanitizer, dt64_to_dt, isequal
 )
 from ...element import Table
 from ...streams import (
@@ -348,10 +348,7 @@ class Callback:
         if self.skip_change(msg):
             equal = True
         else:
-            try:
-                equal = msg == self._prev_msg
-            except Exception:
-                equal = False
+            equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
