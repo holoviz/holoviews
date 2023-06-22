@@ -337,7 +337,13 @@ class Callback:
             else:
                 obj_handle = attr_path[0]
             cb_obj = self.plot_handles.get(obj_handle)
-            msg[attr] = self.resolve_attr_spec(path, cb_obj)
+            for _ in range(5):
+                try:
+                    # To give BokehJS a change to update the model
+                    # https://github.com/holoviz/holoviews/issues/5746
+                    msg[attr] = self.resolve_attr_spec(path, cb_obj)
+                except Exception:
+                    await asyncio.sleep(0.01)
 
         if self.skip_change(msg):
             equal = True
