@@ -44,7 +44,7 @@ from .resample import LinkableOperation, ResampleOperation2D
 def __getattr__(name):
     if name == "ResamplingOperation":
         from ..util.warnings import deprecated
-        deprecated("1.17", "ResamplingOperation", "ResampleOperation2D")
+        deprecated("1.18", "ResamplingOperation", "ResampleOperation2D")
         return ResampleOperation2D
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
