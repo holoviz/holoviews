@@ -428,7 +428,6 @@ class DimensionedPlot(Plot):
         Required on each MPLPlot type to get the data corresponding
         just to the current frame out from the object.
         """
-        pass
 
     def matches(self, spec):
         """
