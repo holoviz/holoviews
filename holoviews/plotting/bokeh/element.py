@@ -1883,9 +1883,6 @@ class ColorbarPlot(ElementPlot):
         True, uses 2nd and 98th percentile; otherwise uses the specified
         numerical percentile value.""")
 
-    cformatter = param.ClassSelector(
-        default=None, class_=(str, TickFormatter, FunctionType), doc="""
-        Formatter for ticks along the colorbar axis.""")
 
     cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
