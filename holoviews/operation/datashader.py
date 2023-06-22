@@ -98,7 +98,7 @@ class AggregationOperation(ResampleOperation2D):
 
         elements = element.traverse(lambda x: x, [Element])
         if (add_field and getattr(agg, 'column', False) in ('__temp__', None) and
-            not isinstance(agg, (rd.count, rd.any))):
+            not isinstance(agg, (rd.count, rd.any, rd.where))):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % cls.__name__)
@@ -148,6 +148,7 @@ class AggregationOperation(ResampleOperation2D):
             category = agg_fn.cat_column
             agg_fn = agg_fn.reduction
         column = agg_fn.column if agg_fn else None
+        agg_name = type(agg_fn).__name__.title()
         if column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
@@ -163,14 +164,15 @@ class AggregationOperation(ResampleOperation2D):
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
         elif category:
-            agg_name = type(agg_fn).__name__.title()
             agg_label = f'{category} {agg_name}'
             vdims = Dimension(f'{vdim_prefix}{agg_label}', label=agg_label)
             if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
-            agg_name = type(agg_fn).__name__.title()
             vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
+
+        if agg_name == "Where" and not column:
+            vdims.nodata = -1
         params['vdims'] = vdims
         return params
 
