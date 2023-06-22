@@ -513,7 +513,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         redim_df = pd.DataFrame({'X': range(10), 'y': range(0,20,2)})
         dataset_redim = Dataset(redim_df, kdims=['X'], vdims=['y'])
         self.assertEqual(dataset.redim(**{'X-label':'X'}), dataset_redim)
-        self.assertEqual(dataset.redim(**{'x':'X'}), dataset_redim)
+        self.assertEqual(dataset.redim(x='X'), dataset_redim)
 
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
