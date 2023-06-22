@@ -234,7 +234,7 @@ class Callback:
         be the same as the model.
         """
         if not cb_obj:
-            raise Exception(f'Bokeh plot attribute {spec} could not be found')
+            raise AttributeError(f'Bokeh plot attribute {spec} could not be found')
         if model is None:
             model = cb_obj
         spec = spec.split('.')
