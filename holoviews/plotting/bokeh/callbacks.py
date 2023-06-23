@@ -339,7 +339,7 @@ class Callback:
             cb_obj = self.plot_handles.get(obj_handle)
             for _ in range(5):
                 try:
-                    # To give BokehJS a change to update the model
+                    # To give BokehJS a chance to update the model
                     # https://github.com/holoviz/holoviews/issues/5746
                     msg[attr] = self.resolve_attr_spec(path, cb_obj)
                 except Exception:
