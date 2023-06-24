@@ -922,16 +922,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif any(rs._triggering for rs in range_streams):
             xupdate, yupdate = False, False
 
-        if not self.drawn or xupdate:
+        if (not self.drawn or xupdate) and self.apply_xrange:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x'], self.logx, streaming)
-        if not self.drawn or yupdate:
+        if (not self.drawn or yupdate) and self.apply_yrange:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
                                self._shared['y'], self.logy, streaming)
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
-        if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
+        if isinstance(axis_range, (Range1d, DataRange1d)):
             if isinstance(low, util.cftime_types):
                 pass
             elif (low == high and low is not None):
@@ -941,7 +941,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     low -= offset
                     high += offset
                 else:
-                    offset = abs(low*0.1 if low else 0.5)
+                    offset = abs(low * 0.1 if low else 0.5)
                     low -= offset
                     high += offset
             if shared:

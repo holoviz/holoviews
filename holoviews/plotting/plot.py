@@ -1004,8 +1004,15 @@ class GenericElementPlot(DimensionedPlot):
     extents and titles.
     """
 
+    apply_xrange = param.Boolean(default=True, doc="""
+        Whether to compute the plot x-axis bounds from the data itself.""")
+
+    apply_yrange = param.Boolean(default=True, doc="""
+        Whether to compute the plot y-axis bounds from the data itself.""")
+
     apply_ranges = param.Boolean(default=True, doc="""
-        Whether to compute the plot bounds from the data itself.""")
+        Whether to compute the plot x-axis and y-axis bounds from the data itself.
+        If this option is provided, apply_yrange and apply_yrange will be ignored.""")
 
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
@@ -1191,6 +1198,14 @@ class GenericElementPlot(DimensionedPlot):
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
+        if 'apply_ranges' in plot_opts:
+            if plot_opts['apply_ranges']:
+                plot_opts['apply_xrange'] = True
+                plot_opts['apply_yrange'] = True
+            else:
+                plot_opts['apply_xrange'] = False
+                plot_opts['apply_yrange'] = False
+
         if self.v17_option_propagation:
             inherited = self._traverse_options(plot_element, 'plot',
                                                self._propagate_options,
