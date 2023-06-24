@@ -120,7 +120,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     min_width = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
 
-    min_height = param.Integer(default=300, bounds=(0, None), doc="""
+    min_height = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal height of the component (in pixels) if height is adjustable.""")
 
     max_width = param.Integer(default=None, bounds=(0, None), doc="""
