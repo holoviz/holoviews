@@ -1,3 +1,4 @@
+from copy import deepcopy
 from operator import itemgetter
 
 import numpy as np
@@ -610,8 +611,8 @@ class RGB(Image):
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
         if vdims is None:
-            # Same as the class variables, put here to secure the class variable is not used
-            vdims = [Dimension(c, range=(0,1)) for c in "RGB"]
+            # Need to make a deepcopy of the value so the RGB.default is not shared across instances
+            vdims = deepcopy(self.vdims)
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 

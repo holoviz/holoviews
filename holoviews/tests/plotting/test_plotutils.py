@@ -481,7 +481,7 @@ class TestMPLColormapUtils(ComparisonTestCase):
             cmap = colormaps.get('Greys')
         except ImportError:
             # This will stop working and can be removed
-            # when we do not support python 3.7
+            # when we only support Matplotlib >= 3.5
             from matplotlib.cm import get_cmap
             cmap = get_cmap('Greys')
 
