@@ -499,12 +499,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         axis_specs = {'x': {}, 'y': {}}
         if self.invert_axes:
-            x, y = 'y', 'x'
             axpos0, axpos1 = 'below', 'above'
         else:
-            x, y = 'x', 'y'
             axpos0, axpos1 = 'left', 'right'
-        axis_specs[x]['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
+        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
         if self.multi_y:
             yaxes, dimensions = {}, {}
             for el in element:
@@ -512,14 +510,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 dimensions[yd.name] = yd
                 opts = el.opts.get('plot', backend='bokeh').kwargs
                 if yd.name not in yaxes:
-                    yaxes[yd.name] = opts.get(f'{y}axis', axpos1 if len(yaxes) else axpos0)
+                    yaxes[yd.name] = opts.get('yaxis', axpos1 if len(yaxes) else axpos0)
 
             for ydim, position in yaxes.items():
-                axis_specs[y][ydim] = self._axis_props(
+                axis_specs['y'][ydim] = self._axis_props(
                     plots, subplots, element, ranges, pos=1, dim=dimensions[ydim]
                 )
         else:
-            axis_specs[y]['y'] = self._axis_props(plots, subplots, element, ranges, pos=1)
+            axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1)
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
@@ -846,9 +844,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _update_ranges(self, element, ranges):
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
-
-        if isinstance(self, OverlayPlot):
-            x_range, y_range = (y_range, x_range) if self.invert_axes else (x_range, y_range)
 
         self._update_main_ranges(element, x_range, y_range, ranges)
 
