@@ -436,7 +436,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 specs = None
 
-            xlabel, ylabel, zlabel = self._get_axis_labels(dims)
+            xlabel, ylabel, zlabel = self._get_axis_labels((None, None) if (dim is None) else dims)
             if self.invert_axes:
                 xlabel, ylabel = ylabel, xlabel
                 dims = dims[:2][::-1]
@@ -480,9 +480,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         #if self._shared['x']:
         #    pass
+
+
+
         if categorical:
             axis_type = 'auto'
             dim_range = FactorRange()
+        elif None in [v0, v1] or any(True if isinstance(el, (str, bytes)) else np.isnan(el) for el in [v0, v1]):
+           dim_range = range_type()
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
 
@@ -889,6 +894,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _update_ranges(self, element, ranges):
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
+
+        if isinstance(self, OverlayPlot):
+            x_range, y_range = (y_range, x_range) if self.invert_axes else (x_range, y_range)
+
         self._update_main_ranges(element, x_range, y_range, ranges)
 
         # ALERT: extra ranges need shared, logx, and stream handling
@@ -1253,7 +1262,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Get factors for categorical axes.
         """
         xdim, ydim = element.dimensions()[:2]
-        xvals, yvals = self._get_dimension_factors(xdim, ydim)
+        #xvals, yvals = self._get_dimension_factors(xdim, ydim)
+        xvals = self._get_dimension_factors(element, ranges, xdim)
+        yvals = self._get_dimension_factors(element, ranges, ydim)
         coords = (xvals, yvals)
         if self.invert_axes: coords = coords[::-1]
         return coords
