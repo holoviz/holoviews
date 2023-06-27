@@ -149,7 +149,7 @@ class HexTilesPlot(ColorbarPlot):
     _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         xdim, ydim = element.kdims[:2]
         ranges[xdim.name]['data'] = xdim.range
         ranges[ydim.name]['data'] = ydim.range
