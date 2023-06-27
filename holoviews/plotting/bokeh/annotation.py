@@ -64,7 +64,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
                 data[k].extend(eld)
         return data, elmapping, style
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         return None, None, None, None
 
 
@@ -161,7 +161,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         plot.renderers.append(box)
         return None, box
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         loc = element.data
         if isinstance(element, VLine):
             dim = 'x'
@@ -241,7 +241,7 @@ class SlopePlot(ElementPlot, AnnotationPlot):
         plot.add_layout(slope)
         return None, slope
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         return None, None, None, None
 
 
@@ -366,7 +366,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         plot.renderers.append(renderer)
         return renderer, glyph
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         return None, None, None, None
 
 

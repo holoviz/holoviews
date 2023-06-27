@@ -8,7 +8,7 @@ from .util import get_axis_padding
 
 class GeomMixin:
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         """
         Use first two key dimensions to set names, and all four
         to set the data range.
@@ -38,7 +38,7 @@ class GeomMixin:
 
 class ChordMixin:
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         """
         A Chord plot is always drawn on a unit circle.
         """
@@ -55,7 +55,7 @@ class ChordMixin:
 
 class HeatMapMixin:
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         if range_type in ('data', 'combined'):
             agg = element.gridded
             xtype = agg.interface.dtype(agg, 0)
@@ -81,7 +81,7 @@ class SpikesMixin:
             return  [element.dimensions()[0], None, None]
         return super()._get_axis_dims(element)
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         opts = self.lookup_options(element, 'plot').options
         if len(element.dimensions()) > 1 and 'spike_length' not in opts:
             ydim = element.get_dimension(1)
@@ -116,7 +116,7 @@ class SpikesMixin:
 
 class AreaMixin:
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         vdims = element.vdims[:2]
         vdim = vdims[0].name
         if len(vdims) > 1:
@@ -142,7 +142,7 @@ class BarsMixin:
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         """
         Make adjustments to plot extents by computing
         stacked bar heights, adjusting the bar baseline
@@ -242,7 +242,7 @@ class MultiDistributionMixin:
     def _get_axis_dims(self, element):
         return element.kdims, element.vdims[0]
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
@@ -255,5 +255,5 @@ class GraphMixin:
             element = element.nodes
         return element.dimensions()[:2]
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         return super().get_extents(element.nodes, ranges, range_type)

@@ -434,7 +434,7 @@ class HistogramPlot(ColorbarPlot):
             self._get_hover_data(data, element)
         return (data, mapping, style)
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
         s0, s1 = ranges[ydim.name]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
