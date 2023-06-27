@@ -1211,7 +1211,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Get factors for categorical axes.
         """
         xdim, ydim = element.dimensions()[:2]
-        #xvals, yvals = self._get_dimension_factors(xdim, ydim)
         xvals = self._get_dimension_factors(element, ranges, xdim)
         yvals = self._get_dimension_factors(element, ranges, ydim)
         coords = (xvals, yvals)
