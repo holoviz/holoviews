@@ -478,7 +478,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif categorical:
             axis_type = 'auto'
             dim_range = FactorRange()
-        elif None in [v0, v1] or any(True if isinstance(el, (str, bytes)) else np.isnan(el) for el in [v0, v1]):
+        elif None in [v0, v1] or any(True if isinstance(el, (str, bytes)+util.cftime_types) else np.isnan(el) for el in [v0, v1]):
            dim_range = range_type()
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
