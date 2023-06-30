@@ -1931,13 +1931,13 @@ def cross_index(values, index):
     the cross product of the values at the supplied index.
     """
     lengths = [len(v) for v in values]
-    length = np.product(lengths)
+    length = np.prod(lengths)
     if index >= length:
         raise IndexError('Index %d out of bounds for cross-product of size %d'
                          % (index, length))
     indexes = []
     for i in range(1, len(values))[::-1]:
-        p = np.product(lengths[-i:])
+        p = np.prod(lengths[-i:])
         indexes.append(index//p)
         index -= indexes[-1] * p
     indexes.append(index)

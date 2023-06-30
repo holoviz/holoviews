@@ -192,7 +192,7 @@ class Raster(Element2D):
         return int(round(coord[1])), int(round(coord[0]))
 
     def __len__(self):
-        return np.product(self._zdata.shape)
+        return np.prod(self._zdata.shape)
 
 
 
@@ -755,7 +755,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
         # Generate triangle simplexes
         shape = self.dimension_values(2, flat=False).shape
         s0 = shape[0]
-        t1 = np.arange(np.product(shape))
+        t1 = np.arange(np.prod(shape))
         js = (t1//s0)
         t1s = js*(s0+1)+t1%s0
         t2s = t1s+1
