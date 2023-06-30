@@ -2,6 +2,7 @@ import param
 import numpy as np
 
 from ...core.ndmapping import sorted_context
+from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
@@ -43,7 +44,7 @@ class BivariatePlot(PolygonPlot):
         A list of scalar values used to specify the contour levels.""")
 
 
-class BoxPlot(ChartPlot):
+class BoxPlot(MultiDistributionMixin, ChartPlot):
     """
     BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
@@ -59,11 +60,6 @@ class BoxPlot(ChartPlot):
     _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='boxplot')
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
 
     def get_data(self, element, ranges, style):
         if element.kdims:
