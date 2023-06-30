@@ -410,7 +410,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._shared['x' if pos == 0 else 'y'] = True
         return dim_range
 
-    def _axis_props(self, plots, subplots, element, ranges, pos, dim=None):
+    def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None):
 
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
@@ -418,7 +418,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             el = el.nodes
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
-        if pos and dim:
+        if pos and dim:  # NEEDS COMMENT WHY THIS DOESN'T APPLY WITH POS=0
             dims = [dim]
             v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
             axis_label = str(dim)
@@ -447,7 +447,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_label = ylabel if pos else xlabel
 
         # ALERT: Cannot just traverse all subplots
-        categorical = any(self.traverse(lambda x: x._categorical))
+        categorical = any(self.traverse(lambda plot: plot._categorical))
         if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
             categorical = True
         else:

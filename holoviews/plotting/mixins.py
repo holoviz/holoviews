@@ -243,9 +243,10 @@ class MultiDistributionMixin:
         return element.kdims, element.vdims[0]
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        return super().get_extents(
+        l,b,r,t =  super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
+        return b,l,t,r  # WHY IS THIS NEEDED FOR BOXWHISKER AND VIOLIN?
 
 
 class GraphMixin:
