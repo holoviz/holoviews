@@ -425,7 +425,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = b, l, t, r
             v0, v1 = (l, r) if pos == 0 else (b, t)
 
-            dims = self._get_axis_dims(el)[pos]
+            axis_dims = self._get_axis_dims(el)
+            if self.invert_axes:
+                axis_dims = axis_dims[:2][::-1] + [axis_dims[2]]
+            dims = axis_dims[pos]
             if dims:
                 if not isinstance(dims, list):
                     dims = [dims]
