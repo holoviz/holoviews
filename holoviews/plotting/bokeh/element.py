@@ -378,29 +378,33 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
-    def _merge_ranges(self, plots, xspecs, yspecs, xtype, ytype):
+    def _shared_axis_range(self, plots, specs, range_type, axis_type, pos):
         """
-        Given a list of other plots return axes that are shared
-        with another plot by matching the dimensions specs stored
-        as tags on the dimensions.
+        Given a list of other plots return the shared axis from another
+        plot by matching the dimensions specs stored as tags on the
+        dimensions. Returns None if there is no such axis.
         """
-        plot_ranges = {}
+        dim_range = None
         for plot in plots:
             if plot is None:
                 continue
-            if hasattr(plot, 'x_range') and plot.x_range.tags and xspecs is not None:
-                if match_dim_specs(plot.x_range.tags[0], xspecs) and match_ax_type(plot.xaxis, xtype):
-                    plot_ranges['x_range'] = plot.x_range
-                if match_dim_specs(plot.x_range.tags[0], yspecs) and match_ax_type(plot.xaxis, ytype):
-                    plot_ranges['y_range'] = plot.x_range
-            if hasattr(plot, 'y_range') and plot.y_range.tags and yspecs is not None:
-                if match_dim_specs(plot.y_range.tags[0], yspecs) and match_ax_type(plot.yaxis, ytype):
-                    plot_ranges['y_range'] = plot.y_range
-                if match_dim_specs(plot.y_range.tags[0], xspecs) and match_ax_type(plot.yaxis, xtype):
-                    plot_ranges['x_range'] = plot.y_range
-        return plot_ranges
+
+            if pos==0:
+                if hasattr(plot, 'x_range') and plot.x_range.tags and specs is not None:
+                    if match_dim_specs(plot.x_range.tags[0], specs) and match_ax_type(plot.xaxis, axis_type):
+                        dim_range= plot.x_range
+
+            if pos==1:
+                if hasattr(plot, 'y_range') and plot.y_range.tags and specs is not None:
+                    if match_dim_specs(plot.y_range.tags[0], specs) and match_ax_type(plot.yaxis, axis_type):
+                        dim_range= plot.y_range
+
+        if dim_range and not (range_type is FactorRange and not isinstance(dim_range, FactorRange)):
+            self._shared['x' if pos == 0 else 'y'] = True
+        return dim_range
 
     def _axis_props(self, plots, subplots, element, ranges, pos, dim=None):
+
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
         if isinstance(el, Graph):
@@ -446,7 +450,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_axes: range_types = range_types[::-1]
         range_type = range_types[pos]
         # If multi_x/y then grab opts from element
-        axis_type = 'log' if (self.logx, self.logy)[pos] else 'linear'
+        axis_type = 'log' if (self.logx, self.logy)[pos] else 'auto'
         if dims:
             if len(dims) > 1 or range_type is FactorRange:
                 axis_type = 'auto'
@@ -457,26 +461,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     dim_type in util.datetime_types):
                     axis_type = 'datetime'
 
-        # ALERT: Rewrite _merge_ranges to handle axes separately
-        # Try finding shared ranges in other plots in the same Layout
-        #plot_ranges = {}
-        #norm_opts = self.lookup_options(el, 'norm').options
-        #if plots and self.shared_axes and not norm_opts.get('axiswise', False):
-        #    plot_ranges = self._merge_ranges(plots, xspecs, yspecs, x_axis_type, y_axis_type)
 
-        # Declare shared axes
-        # x_range, y_range = plot_ranges.get('x_range'), plot_ranges.gext('y_range')
-        #if x_range and not (x_range_type is FactorRange and not isinstance(x_range, FactorRange)):
-        #    self._shared['x'] = True
-        #if y_range and not (y_range_type is FactorRange and not isinstance(y_range, FactorRange)):
-        #    self._shared['y'] = True
+        norm_opts = self.lookup_options(el, 'norm').options
+        if plots and self.shared_axes and not norm_opts.get('axiswise', False):
+            dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos)
 
-        #if self._shared['x']:
-        #    pass
-
-
-
-        if categorical:
+        if self._shared['x' if pos==0 else 'y']:
+            pass
+        elif categorical:
             axis_type = 'auto'
             dim_range = FactorRange()
         elif None in [v0, v1] or any(True if isinstance(el, (str, bytes)) else np.isnan(el) for el in [v0, v1]):
