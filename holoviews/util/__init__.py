@@ -713,12 +713,9 @@ class extension(_pyviz_extension):
         import panel as pn
 
         if pn.config.comms == "default":
-            try:
-                import google.colab  # noqa
+            if "google.colab" in sys.modules:
                 pn.config.comms = "colab"
                 return
-            except ImportError:
-                pass
 
             if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
                 pn.config.comms = "vscode"
