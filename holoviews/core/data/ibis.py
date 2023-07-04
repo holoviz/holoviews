@@ -12,13 +12,13 @@ from . import pandas
 from .util import cached
 
 
-@lru_cache()
+@lru_cache
 def ibis_version():
     import ibis
     return Version(ibis.__version__)
 
 
-@lru_cache()
+@lru_cache
 def ibis4():
     return ibis_version() >= Version("4.0")
 
