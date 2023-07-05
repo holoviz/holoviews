@@ -403,7 +403,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._shared['x' if pos == 0 else 'y'] = True
         return dim_range
 
-    def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None):
+    def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None, extra_range_tags=[]):
 
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
@@ -481,6 +481,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if not dim_range.tags and specs is not None:
             dim_range.tags.append(specs)
+            dim_range.tags.extend(extra_range_tags)
 
         return axis_type, axis_label, dim_range
 
@@ -505,14 +506,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 dimensions[yd.name] = yd
                 opts = el.opts.get('plot', backend='bokeh').kwargs
                 if yd.name not in yaxes:
-                    yaxes[yd.name] = opts.get('yaxis', axpos1 if len(yaxes) else axpos0)
+                    yaxes[yd.name] = {'position':opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
+                                      'autorange':opts.get('autorange', None)}
 
-            for ydim, position in yaxes.items():
+            for ydim, info in yaxes.items():
                 axis_specs['y'][ydim] = self._axis_props(
-                    plots, subplots, element, ranges, pos=1, dim=dimensions[ydim]
+                    plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
+                    extra_range_tags=[] if info['autorange']=='y' else ['no-autorange']
                 )
         else:
-            axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1)
+            axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
+                    extra_range_tags=[] if self.autorange =='y' else ['no-autorange'])
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
@@ -564,7 +568,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_type, axis_label, _ = axis_specs[multi_ax][axis_dim]
             ax_cls, ax_kwargs = _get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
-            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), yaxes[axis_dim])
+            fig.add_layout(ax_cls(axis_label=axis_label,
+                                  **ax_kwargs), yaxes[axis_dim]['position'])
         return fig
 
     def _plot_properties(self, key, element):
@@ -1137,7 +1142,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           }}
 
           if (start_finite && end_finite)  {{
-            plot.{dim}_range.setv({{start, end}})
+            if (!plot.{dim}_range.tags.includes('no-autorange')) {{
+              console.log(plot.{dim}_range.tags)
+              plot.{dim}_range.setv({{start, end}})
+            }}
+
+            for (let key in plot.extra_{dim}_ranges) {{
+              const extra_range = plot.extra_{dim}_ranges[key];
+              if (!extra_range.tags.includes('no-autorange')) {{
+                plot.extra_{dim}_ranges[key].setv({{start, end}})
+               }}
+            }}
           }}
         }}
         // The plot changes will not propagate to the glyph until
