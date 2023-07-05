@@ -122,7 +122,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
-    autorange = param.ObjectSelector(default=None, objects=['x', 'y'], doc="""
+    autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
         when panning or zooming along the orthogonal axis it will
         ensure all the data along the selected axis remains visible.""")
