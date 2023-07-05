@@ -431,7 +431,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = b, l, t, r
             v0, v1 = (l, r) if pos == 0 else (b, t)
 
-            axis_dims = self._get_axis_dims(el)
+            axis_dims = list(self._get_axis_dims(el))
             if self.invert_axes:
                 axis_dims = axis_dims[:2][::-1] + [(axis_dims[2],) if len(axis_dims) == 3 else ()]
             dims = axis_dims[pos]
@@ -445,7 +445,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xlabel, ylabel, zlabel = self._get_axis_labels((None, None) if (dim is None) else dims)
             if self.invert_axes:
                 xlabel, ylabel = ylabel, xlabel
-                dims = dims[:2][::-1]
+                if dims:
+                    dims = dims[:2][::-1]
             axis_label = ylabel if pos else xlabel
 
         # ALERT: Cannot just traverse all subplots
