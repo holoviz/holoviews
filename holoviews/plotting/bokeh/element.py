@@ -27,7 +27,6 @@ from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
 from bokeh.models.tools import Tool
-from bokeh.transform import Field
 
 from packaging.version import Version
 
