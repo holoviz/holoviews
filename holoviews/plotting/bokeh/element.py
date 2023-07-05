@@ -1241,6 +1241,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a Bokeh glyph object.
         """
+        try:
+            from bokeh.transform import Field
+        except ImportError:
+            from bokeh.core.property.vectorization import Field
         mapping['tags'] = ['apply_ranges' if self.apply_ranges else 'no_apply_ranges']
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
