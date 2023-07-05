@@ -433,7 +433,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             axis_dims = self._get_axis_dims(el)
             if self.invert_axes:
-                axis_dims = axis_dims[:2][::-1] + ((axis_dims[2],) if len(axis_dims) == 3 else ())
+                axis_dims = axis_dims[:2][::-1] + [(axis_dims[2],) if len(axis_dims) == 3 else ()]
             dims = axis_dims[pos]
             if dims:
                 if not isinstance(dims, list):
