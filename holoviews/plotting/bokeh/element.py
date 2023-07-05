@@ -47,7 +47,7 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, bokeh3, date_to_integer, decode_bytes, get_tab_title,
+    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type,
@@ -322,6 +322,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tl, **hover_opts)
             if tl in ['vline', 'hline'] else tl for tl in tool_list
         ]
+
+        if bokeh32:
+            tool_list = [
+                tools.WheelZoomTool(zoom_together='none', tags=['hv_created'])
+                if tl in ['wheel_zoom', 'xwheel_zoom', 'ywheel_zoom'] else tl for tl in tool_list
+            ]
 
         copied_tools = []
         for tool in tool_list:
