@@ -682,9 +682,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.xaxis is None:
             plot.xaxis.visible = False
         elif isinstance(self.xaxis, str) and 'top' in self.xaxis:
-            plot.above = plot.below
-            plot.below = []
-            plot.xaxis[:] = plot.above
+            plot.above = [plot.xaxis[0]] + [ax for ax in plot.above if ax is not plot.xaxis[0]]
+            plot.below = [ax for ax in plot.below if ax is not plot.xaxis[0]]
+            plot.xaxis[:] = list(plot.above) + list(plot.below)
         self.handles['xaxis'] = plot.xaxis[0]
         self.handles['x_range'] = plot.x_range
         self.handles['extra_x_ranges'] = plot.extra_x_ranges
@@ -692,9 +692,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.yaxis is None:
             plot.yaxis.visible = False
         elif isinstance(self.yaxis, str) and'right' in self.yaxis:
-            plot.right = plot.left
-            plot.left = []
-            plot.yaxis[:] = plot.right
+            plot.right = [plot.yaxis[0]] + [ax for ax in plot.right if ax is not plot.yaxis[0]]
+            plot.left = [ax for ax in plot.left if ax is not plot.yaxis[0]]
+            plot.yaxis[:] = list(plot.left) + list(plot.right)
         self.handles['yaxis'] = plot.yaxis[0]
         self.handles['y_range'] = plot.y_range
         self.handles['extra_y_ranges'] = plot.extra_y_ranges
