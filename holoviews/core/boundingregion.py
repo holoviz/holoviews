@@ -10,6 +10,7 @@ File originally part of the Topographica project.
 import param
 from param.parameterized import get_occupied_slots
 from .util import datetime_types
+from ..util.warnings import deprecated
 
 
 class BoundingRegion:
@@ -351,6 +352,7 @@ class BoundingRegionParameter(param.Parameter):
 
 
     def __init__(self, default=None, **params):
+        deprecated("1.18", "BoundingRegionParameter")
         if default is None:
             default = BoundingBox(radius=0.5)
         self.set_hook = identity_hook
