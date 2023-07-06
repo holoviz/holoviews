@@ -1293,10 +1293,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a Bokeh glyph object.
         """
-        try:
-            from bokeh.transform import Field
-        except ImportError:
-            from bokeh.core.property.vectorization import Field
         mapping['tags'] = ['apply_ranges' if self.apply_ranges else 'no_apply_ranges']
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
@@ -1307,16 +1303,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             del properties['legend_label']
 
         # ALERT: This only handles XYGlyph types right now
+        mapping = property_to_dict(mapping)
         if 'x' in mapping:
             x = mapping['x']
-            if isinstance(x, Field):
-                x = x.field
             if x in plot.extra_x_ranges:
                 properties['x_range_name'] = mapping['x']
         if 'y' in mapping:
             y = mapping['y']
-            if isinstance(y, Field):
-                y = y.field
             if y in plot.extra_y_ranges:
                 properties['y_range_name'] = mapping['y']
 
