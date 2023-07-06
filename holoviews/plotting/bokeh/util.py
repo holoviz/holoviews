@@ -1001,12 +1001,20 @@ def match_ax_type(ax, range_type):
     """
     Ensure the range_type matches the axis model being matched.
     """
-    if isinstance(ax[0], CategoricalAxis):
+    if isinstance(ax, CategoricalAxis):
         return range_type == 'categorical'
-    elif isinstance(ax[0], DatetimeAxis):
+    elif isinstance(ax, DatetimeAxis):
         return range_type == 'datetime'
     else:
         return range_type in ('auto', 'log')
+
+
+def match_yaxis_type_to_range(yax, range_type, range_name):
+    "Apply match_ax_type to the y-axis found by the given range name "
+    for axis in yax:
+        if axis.y_range_name == range_name:
+            return match_ax_type(axis, range_type)
+    raise Exception('No axis with given range found')
 
 
 def wrap_formatter(formatter, axis):
