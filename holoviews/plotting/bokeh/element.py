@@ -533,14 +533,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 opts = el.opts.get('plot', backend='bokeh').kwargs
                 if yd.name not in yaxes:
                     yaxes[yd.name] = {'position':opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
-                                      'autorange':opts.get('autorange', None)}
+                                      'autorange':opts.get('autorange', None),
+                                      'logx': opts.get('logx', False),
+                                      'logy': opts.get('logy', False)}
 
             for ydim, info in yaxes.items():
-                axis_specs['y'][ydim] = self._axis_props(
+                ax_props = self._axis_props(
                     plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
                     range_tags_extras=[] if info['autorange']=='y' else ['no-autorange'],
                     extra_range_name=ydim
                 )
+                log_enabled = info['logx'] if self.invert_axes else info['logy']
+                ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
+                axis_specs['y'][ydim] = ax_props
         else:
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
                     range_tags_extras=[] if self.autorange =='y' else ['no-autorange'])
@@ -557,6 +562,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
+                    properties[f'{axis}_axis_type'] = axis_type
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -711,6 +717,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['yaxis'] = plot.yaxis[0]
         self.handles['y_range'] = plot.y_range
         self.handles['extra_y_ranges'] = plot.extra_y_ranges
+        self.handles['extra_y_scales'] = plot.extra_y_scales
 
 
     def _axis_properties(self, axis, key, plot, dimension=None,
@@ -915,12 +922,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._update_main_ranges(element, x_range, y_range, ranges)
 
-        # ALERT: extra ranges need shared, logx, and stream handling
-        streaming, log = False, False
+        # ALERT: stream handling not handled
+        streaming = False
         multi_dim = 'x' if self.invert_axes else 'y'
         for axis_dim, extra_y_range in self.handles[f'extra_{multi_dim}_ranges'].items():
             _, b, _, t = self.get_extents(element, ranges, dimension=axis_dim)
             factors = self._get_dimension_factors(element, ranges, axis_dim)
+            extra_scale = self.handles[f'extra_{multi_dim}_scales'][axis_dim] # Assumes scales and ranges zip
+            log = isinstance(extra_scale, LogScale)
             self._update_range(
                 extra_y_range, b, t, factors, self.invert_yaxis,
                 self._shared.get(extra_y_range.name, False), log, streaming
@@ -2424,7 +2433,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
-                          'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
+                          'show_grid', 'logx',  'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title', 'title_format', 'legend_position', 'legend_offset',
