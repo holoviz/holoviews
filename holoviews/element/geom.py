@@ -52,6 +52,35 @@ class VectorField(Selection2DExpr, Geometry):
     vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
                                 Dimension('Magnitude')], bounds=(1, None))
 
+    @classmethod
+    def from_uv(cls, data, kdims=None, vdims=None, **params):
+        if isinstance(data, tuple):
+            xs, ys, us, vs = data
+        else:
+            us = data[vdims[0]]
+            vs = data[vdims[1]]
+
+        uv_magnitudes = np.hypot(us, vs)  # unscaled
+        radians = np.pi / 2 - np.arctan2(us, vs)
+
+        if isinstance(data, tuple):
+            reorganized_data = (xs, ys, radians, uv_magnitudes)
+        else:
+            # calculations on this data could mutate the original data
+            # here we do not do any calculations; we only store the data
+            reorganized_data = {}
+            for kdim in kdims:
+                reorganized_data[kdim] = data[kdim]
+            reorganized_data["Angle"] = radians
+            reorganized_data["Magnitude"] = uv_magnitudes
+            for vdim in vdims[2:]:
+                reorganized_data[vdim] = data[vdim]
+            vdims = [
+                Dimension('Angle', cyclic=True, range=(0, 2 * np.pi)),
+                Dimension('Magnitude')
+            ] + vdims[2:]
+        return cls(reorganized_data, kdims=kdims, vdims=vdims, **params)
+
 
 class Segments(SelectionGeomExpr, Geometry):
     """
