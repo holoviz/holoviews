@@ -116,8 +116,7 @@ class RasterPlot(ColorbarPlot):
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.NaN]])
-            if ((self.invert_axes and type(element) is not Raster) or
-                (not self.invert_axes and type(element) is Raster)):
+            if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
             if self.invert_xaxis and not bokeh3:
                 img = img[:, ::-1]
