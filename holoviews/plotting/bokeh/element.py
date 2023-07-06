@@ -409,7 +409,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._shared['x' if pos == 0 else 'y'] = True
         return dim_range
 
-    def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None, extra_range_tags=[]):
+    def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None, range_tags_extras=[]):
 
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
@@ -488,7 +488,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if not dim_range.tags and specs is not None:
             dim_range.tags.append(specs)
-            dim_range.tags.extend(extra_range_tags)
+            dim_range.tags.extend(range_tags_extras)
 
         return axis_type, axis_label, dim_range
 
@@ -519,11 +519,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for ydim, info in yaxes.items():
                 axis_specs['y'][ydim] = self._axis_props(
                     plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
-                    extra_range_tags=[] if info['autorange']=='y' else ['no-autorange']
+                    range_tags_extras=[] if info['autorange']=='y' else ['no-autorange']
                 )
         else:
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
-                    extra_range_tags=[] if self.autorange =='y' else ['no-autorange'])
+                    range_tags_extras=[] if self.autorange =='y' else ['no-autorange'])
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
