@@ -160,7 +160,7 @@ class ElementSignatureTest(ComparisonTestCase):
         U, V = 5 * X, 5 * Y
         vectorfield = VectorField.from_uv((X, Y, U, V))
 
-        angle = np.pi / 2 - np.arctan2(U, V)
+        angle = np.arctan2(V, U)
         mag = np.hypot(U, V)
         kdims = [Dimension('x'), Dimension('y')]
         vdims = [
@@ -184,7 +184,7 @@ class ElementSignatureTest(ComparisonTestCase):
         })
         vectorfield = VectorField.from_uv(df, ["x", "y"], ["u", "v"])
 
-        angle = np.pi / 2 - np.arctan2(U, V)
+        angle = np.arctan2(V, U)
         mag = np.hypot(U, V)
         kdims = [Dimension('x'), Dimension('y')]
         vdims = [
