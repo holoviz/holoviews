@@ -63,7 +63,7 @@ class VectorField(Selection2DExpr, Geometry):
         uv_magnitudes = np.hypot(us, vs)  # unscaled
         # this follows mathematical conventions,
         # unlike WindBarbs which follows meteorological conventions
-        radians = np.pi / 2 - np.arctan2(us, vs)
+        radians = np.arctan2(vs, us)
 
         if isinstance(data, tuple):
             reorganized_data = (xs, ys, radians, uv_magnitudes)
