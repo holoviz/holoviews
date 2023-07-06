@@ -1165,6 +1165,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Clean this up in bokeh 3.0 using View.find_one API
         callback = CustomJS(code=f"""
         const cb = function() {{
+
+          function get_padded_range(key) {{
+            let vmin = range_limits[key][0]
+            let vmax = range_limits[key][1]
+
+            vmin = {"vmin" if lower is None else lower}  // FIXME: Per axis limits
+            vmax = {"vmax" if upper is None else upper}
+
+            const invert = {str(invert).lower()}
+            const span = vmax-vmin
+            const lower = vmin-(span*{p0})
+            const upper = vmax+(span*{p1})
+            return invert ? [upper, lower] : [lower, upper]
+          }}
+
           const ref = plot.id
 
           const find = (view) => {{
@@ -1189,10 +1204,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           }}
           if (plot_view == null)
             return
-          let [vmin, vmax] = [Infinity, -Infinity]
+
+          let range_limits = {{}}
           for (const dr of plot.data_renderers) {{
             const renderer = plot_view.renderer_view(dr)
             const glyph_view = renderer.glyph_view
+
+            let [vmin, vmax] = [Infinity, -Infinity]
+            let y_range_name = renderer.model.y_range_name
 
             if (!renderer.glyph.model.tags.includes('no_apply_ranges')) {{
               const index = glyph_view.index.index
@@ -1204,34 +1223,26 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 }}
               }}
             }}
-          }}
 
-          vmin = {"vmin" if lower is None else lower}
-          vmax = {"vmax" if upper is None else upper}
-
-          const invert = {str(invert).lower()}
-          const span = vmax-vmin
-          const lower = vmin-(span*{p0})
-          const upper = vmax+(span*{p1})
-          const [start, end] = invert ? [upper, lower] : [lower, upper]
-          const start_finite = window.Number.isFinite(start)
-          const end_finite = window.Number.isFinite(end)
-
-          if (start == end) {{
-            return
-          }}
-
-          if (start_finite && end_finite)  {{
-            if (!plot.{dim}_range.tags.includes('no-autorange')) {{
-              console.log(plot.{dim}_range.tags)
-              plot.{dim}_range.setv({{start, end}})
+            if (y_range_name) {{
+              range_limits[y_range_name] = [vmin, vmax]
             }}
+          }}
 
-            for (let key in plot.extra_{dim}_ranges) {{
-              const extra_range = plot.extra_{dim}_ranges[key];
-              if (!extra_range.tags.includes('no-autorange')) {{
-                plot.extra_{dim}_ranges[key].setv({{start, end}})
-               }}
+           if (!plot.{dim}_range.tags.includes('no-autorange')) {{
+             let [start, end] = get_padded_range('default')
+             if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
+               plot.{dim}_range.setv({{start, end}})
+             }}
+           }}
+
+          for (let key in plot.extra_{dim}_ranges) {{
+            const extra_range = plot.extra_{dim}_ranges[key];
+            if (!extra_range.tags.includes('no-autorange')) {{
+             let [start, end] = get_padded_range(key)
+             if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
+              extra_range.setv({{start, end}})
+              }}
             }}
           }}
         }}
