@@ -267,7 +267,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.projection = 'mercator'
 
         # Whether axes are shared between plots
-        self._shared = {'x': False, 'y': False}
+        self._shared = {'x-main-range': False, 'y-main-range': False}
         self._js_on_data_callbacks = []
 
         # Flag to check whether plot has been updated
@@ -413,7 +413,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                 dim_range = extra_range
 
         if dim_range and not (range_type is FactorRange and not isinstance(dim_range, FactorRange)):
-            shared_name = extra_range_name or ('x' if pos == 0 else 'y')
+            shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
             self._shared[shared_name] = True
 
         return dim_range
@@ -486,7 +486,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if plots and self.shared_axes and not norm_opts.get('axiswise', False):
             dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos, extra_range_name)
 
-        if self._shared['x' if pos==0 else 'y'] or (extra_range_name in self._shared):
+        if self._shared['x-main-range' if pos==0 else 'y-main-range'] or (extra_range_name in self._shared):
             pass
         elif categorical:
             axis_type = 'auto'
@@ -1010,10 +1010,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
-                               self._shared['x'], self.logx, streaming)
+                               self._shared['x-main-range'], self.logx, streaming)
         if not self.drawn or yupdate:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
-                               self._shared['y'], self.logy, streaming)
+                               self._shared['y-main-range'], self.logy, streaming)
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
