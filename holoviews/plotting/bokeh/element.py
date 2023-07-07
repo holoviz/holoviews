@@ -2422,7 +2422,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'logx',  'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
-                          'border', 'invert_xaxis', 'sizing_mode',
+                          'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlabel', 'ylabel', 'xlim', 'zlim',
