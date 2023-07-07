@@ -59,7 +59,7 @@ class VectorField(Selection2DExpr, Geometry):
         if vdims is None:
             vdims = ['u', 'v']
         dataset = Dataset(data, kdims=kdims, vdims=vdims, **params)
-        us, vs = [dataset.dimension_values(i) for i in range(2, 4)]
+        us, vs = (dataset.dimension_values(i) for i in range(2, 4))
 
         uv_magnitudes = np.hypot(us, vs)  # unscaled
         # this follows mathematical conventions,
