@@ -531,13 +531,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                       'logy': opts.get('logy', False),
                                       # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
                                       'ylim': opts.get('ylim', (np.nan, np.nan))}
-
             for ydim, info in yaxes.items():
                 range_tags_extras=[]
                 if info['autorange']=='y':
                     lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
-                    if not np.isnan(lowerlim): range_tags_extras.append(f'lowerlim:{lowerlim}')
-                    if not np.isnan(upperlim): range_tags_extras.append(f'upperlim:{upperlim}')
+                    if not ((lowerlim is None) or np.isnan(lowerlim)):
+                        range_tags_extras.append(f'lowerlim:{lowerlim}')
+                    if not ((upperlim is None) or np.isnan(upperlim)):
+                        range_tags_extras.append(f'upperlim:{upperlim}')
                 else:
                     range_tags_extras.append('no-autorange')
 
@@ -553,8 +554,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             range_tags_extras=[]
             if self.autorange=='y':
                 lowerlim, upperlim = self.ylim
-                if not np.isnan(lowerlim): range_tags_extras.append(f'lowerlim:{lowerlim}')
-                if not np.isnan(upperlim): range_tags_extras.append(f'upperlim:{upperlim}')
+                if not ((lowerlim is None) or np.isnan(lowerlim)):
+                    range_tags_extras.append(f'lowerlim:{lowerlim}')
+                if not ((upperlim is None) or np.isnan(upperlim)):
+                    range_tags_extras.append(f'upperlim:{upperlim}')
             else:
                 range_tags_extras.append('no-autorange')
 
