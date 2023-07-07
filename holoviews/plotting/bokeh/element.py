@@ -505,7 +505,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if not dim_range.tags and specs is not None:
             dim_range.tags.append(specs)
-            dim_range.tags.extend(range_tags_extras)
+            dim_range.tags.append(range_tags_extras)
 
         if extra_range_name:
             dim_range.name = extra_range_name
@@ -538,16 +538,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                       'logy': opts.get('logy', False),
                                       # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
                                       'ylim': opts.get('ylim', (np.nan, np.nan))}
+
             for ydim, info in yaxes.items():
-                range_tags_extras=[]
+                range_tags_extras={}
                 if info['autorange']=='y':
+                    range_tags_extras['autorange'] = True
                     lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
                     if not ((lowerlim is None) or np.isnan(lowerlim)):
-                        range_tags_extras.append(f'lowerlim:{lowerlim}')
+                        range_tags_extras['y-lowerlim'] = lowerlim
                     if not ((upperlim is None) or np.isnan(upperlim)):
-                        range_tags_extras.append(f'upperlim:{upperlim}')
+                        range_tags_extras['y-upperlim'] = upperlim
+
                 else:
-                    range_tags_extras.append('no-autorange')
+                    range_tags_extras['autorange'] = False
 
                 ax_props = self._axis_props(
                     plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
@@ -558,15 +561,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
                 axis_specs['y'][ydim] = ax_props
         else:
-            range_tags_extras=[]
+            range_tags_extras={}
             if self.autorange=='y':
+                range_tags_extras['autorange'] = True
                 lowerlim, upperlim = self.ylim
                 if not ((lowerlim is None) or np.isnan(lowerlim)):
-                    range_tags_extras.append(f'lowerlim:{lowerlim}')
+                    range_tags_extras['y-lowerlim'] = lowerlim
                 if not ((upperlim is None) or np.isnan(upperlim)):
-                    range_tags_extras.append(f'upperlim:{upperlim}')
+                    range_tags_extras['y-upperlim'] = upperlim
             else:
-                range_tags_extras.append('no-autorange')
+                range_tags_extras['autorange'] = False
 
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
                     range_tags_extras = range_tags_extras)
@@ -1196,15 +1200,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return invert ? [upper, lower] : [lower, upper]
           }}
 
-         function get_limit_value(tags, tag_prefix) {{
-           let lim = null
-           let lim_filter = tags.filter(el => (typeof el == 'string' && el.startsWith(tag_prefix)))
-           if (lim_filter.length == 1 ) {{
-             return parseFloat(lim_filter[0].slice(9))
-           }}
-           return lim
-         }}
-
           const ref = plot.id
 
           const find = (view) => {{
@@ -1254,11 +1249,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             }}
           }}
 
-           if (!plot.{dim}_range.tags.includes('no-autorange')) {{
-
-            let lowerlim = get_limit_value(plot.{dim}_range.tags, 'lowerlim:')
-            let upperlim = get_limit_value(plot.{dim}_range.tags, 'upperlim:')
-
+           let range_tags_extras = plot.{dim}_range.tags[1]
+           if (range_tags_extras['autorange']) {{
+             let lowerlim = range_tags_extras['y-lowerlim'] ?? null
+             let upperlim = range_tags_extras['y-upperlim'] ?? null
              let [start, end] = get_padded_range('default', lowerlim, upperlim)
              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
                plot.{dim}_range.setv({{start, end}})
@@ -1267,11 +1261,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
           for (let key in plot.extra_{dim}_ranges) {{
             const extra_range = plot.extra_{dim}_ranges[key]
+            let range_tags_extras = extra_range.tags[1]
+            let lowerlim = range_tags_extras['y-lowerlim'] ?? null
+            let upperlim = range_tags_extras['y-upperlim'] ?? null
 
-            let lowerlim = get_limit_value(extra_range.tags, 'lowerlim:')
-            let upperlim = get_limit_value(extra_range.tags, 'upperlim:')
-
-            if (!extra_range.tags.includes('no-autorange')) {{
+            if (range_tags_extras['autorange']) {{
              let [start, end] = get_padded_range(key, lowerlim, upperlim)
              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
               extra_range.setv({{start, end}})
@@ -2480,7 +2474,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'logx',  'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
-                          'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
+                          'border', 'invert_xaxis', 'sizing_mode',
                           'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlabel', 'ylabel', 'xlim', 'zlim',
