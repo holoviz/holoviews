@@ -535,20 +535,38 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     yaxes[yd.name] = {'position':opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
                                       'autorange':opts.get('autorange', None),
                                       'logx': opts.get('logx', False),
-                                      'logy': opts.get('logy', False)}
+                                      'logy': opts.get('logy', False),
+                                      # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
+                                      'ylim': opts.get('ylim', (np.nan, np.nan))}
 
             for ydim, info in yaxes.items():
+                range_tags_extras=[]
+                if info['autorange']=='y':
+                    lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
+                    if not np.isnan(lowerlim): range_tags_extras.append(f'lowerlim:{lowerlim}')
+                    if not np.isnan(upperlim): range_tags_extras.append(f'upperlim:{upperlim}')
+                else:
+                    range_tags_extras.append('no-autorange')
+
                 ax_props = self._axis_props(
                     plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
-                    range_tags_extras=[] if info['autorange']=='y' else ['no-autorange'],
+                    range_tags_extras=range_tags_extras,
                     extra_range_name=ydim
                 )
                 log_enabled = info['logx'] if self.invert_axes else info['logy']
                 ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
                 axis_specs['y'][ydim] = ax_props
         else:
+            range_tags_extras=[]
+            if self.autorange=='y':
+                lowerlim, upperlim = self.ylim
+                if not np.isnan(lowerlim): range_tags_extras.append(f'lowerlim:{lowerlim}')
+                if not np.isnan(upperlim): range_tags_extras.append(f'upperlim:{upperlim}')
+            else:
+                range_tags_extras.append('no-autorange')
+
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
-                    range_tags_extras=[] if self.autorange =='y' else ['no-autorange'])
+                    range_tags_extras = range_tags_extras)
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
@@ -1152,26 +1170,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             p0, p1 = self.padding, self.padding
 
-        if dim == 'x':
-            lower, upper = self.xlim
-            lower = None if (lower is None) or np.isnan(lower) else lower
-            upper = None if (upper is None) or np.isnan(upper) else upper
-
-        else:
-            lower, upper = self.ylim
-            lower = None if (lower is None) or np.isnan(lower) else lower
-            upper = None if (upper is None) or np.isnan(upper) else upper
-
         # Clean this up in bokeh 3.0 using View.find_one API
         callback = CustomJS(code=f"""
         const cb = function() {{
 
-          function get_padded_range(key) {{
+          function get_padded_range(key, lowerlim, upperlim) {{
             let vmin = range_limits[key][0]
             let vmax = range_limits[key][1]
 
-            vmin = {"vmin" if lower is None else lower}  // FIXME: Per axis limits
-            vmax = {"vmax" if upper is None else upper}
+            if (lowerlim !== null) {{
+             vmin = lowerlim
+            }}
+
+            if (upperlim !== null) {{
+             vmax = upperlim
+            }}
 
             const invert = {str(invert).lower()}
             const span = vmax-vmin
@@ -1179,6 +1192,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             const upper = vmax+(span*{p1})
             return invert ? [upper, lower] : [lower, upper]
           }}
+
+         function get_limit_value(tags, tag_prefix) {{
+           let lim = null
+           let lim_filter = tags.filter(el => (typeof el == 'string' && el.startsWith(tag_prefix)))
+           if (lim_filter.length == 1 ) {{
+             return parseFloat(lim_filter[0].slice(9))
+           }}
+           return lim
+         }}
 
           const ref = plot.id
 
@@ -1230,16 +1252,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           }}
 
            if (!plot.{dim}_range.tags.includes('no-autorange')) {{
-             let [start, end] = get_padded_range('default')
+
+            let lowerlim = get_limit_value(plot.{dim}_range.tags, 'lowerlim:')
+            let upperlim = get_limit_value(plot.{dim}_range.tags, 'upperlim:')
+
+             let [start, end] = get_padded_range('default', lowerlim, upperlim)
              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
                plot.{dim}_range.setv({{start, end}})
              }}
            }}
 
           for (let key in plot.extra_{dim}_ranges) {{
-            const extra_range = plot.extra_{dim}_ranges[key];
+            const extra_range = plot.extra_{dim}_ranges[key]
+
+            let lowerlim = get_limit_value(extra_range.tags, 'lowerlim:')
+            let upperlim = get_limit_value(extra_range.tags, 'upperlim:')
+
             if (!extra_range.tags.includes('no-autorange')) {{
-             let [start, end] = get_padded_range(key)
+             let [start, end] = get_padded_range(key, lowerlim, upperlim)
              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
               extra_range.setv({{start, end}})
               }}
@@ -2449,7 +2479,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
-                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
+                          'xlabel', 'ylabel', 'xlim', 'zlim',
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
