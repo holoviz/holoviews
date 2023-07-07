@@ -1318,14 +1318,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             del properties['legend_label']
 
         # ALERT: This only handles XYGlyph types right now
+        # and note guard against Field (unhashable) when using FactorRanges
         mapping = property_to_dict(mapping)
         if 'x' in mapping:
             x = mapping['x']
-            if x in plot.extra_x_ranges:
+            if plot.extra_x_ranges and (x in plot.extra_x_ranges):
                 properties['x_range_name'] = mapping['x']
         if 'y' in mapping:
             y = mapping['y']
-            if y in plot.extra_y_ranges:
+            if plot.extra_y_ranges and (y in plot.extra_y_ranges):
                 properties['y_range_name'] = mapping['y']
 
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
