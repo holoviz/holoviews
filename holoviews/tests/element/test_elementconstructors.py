@@ -157,7 +157,7 @@ class ElementSignatureTest(ComparisonTestCase):
     def test_vectorfield_from_uv(self):
         x = np.linspace(-1, 1, 4)
         X, Y = np.meshgrid(x, x)
-        U, V = 5 * X, 5 * Y
+        U, V = 3 * X, 4 * Y
         vectorfield = VectorField.from_uv((X, Y, U, V))
 
         angle = np.arctan2(V, U)
@@ -169,8 +169,10 @@ class ElementSignatureTest(ComparisonTestCase):
         ]
         self.assertEqual(vectorfield.kdims, kdims)
         self.assertEqual(vectorfield.vdims, vdims)
-        self.assertEqual(vectorfield.dimension_values(2, flat=False), angle)
-        self.assertEqual(vectorfield.dimension_values(3, flat=False), mag)
+        self.assertEqual(vectorfield.dimension_values(0), X.T.flatten())
+        self.assertEqual(vectorfield.dimension_values(1), Y.T.flatten())
+        self.assertEqual(vectorfield.dimension_values(2), angle.T.flatten())
+        self.assertEqual(vectorfield.dimension_values(3), mag.T.flatten())
 
     def test_vectorfield_from_uv_dataframe(self):
         x = np.linspace(-1, 1, 4)
