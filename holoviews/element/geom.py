@@ -54,11 +54,8 @@ class VectorField(Selection2DExpr, Geometry):
 
     @classmethod
     def from_uv(cls, data, kdims=None, vdims=None, **params):
-        if isinstance(data, tuple):
-            xs, ys, us, vs = data
-        else:
-            us = data[vdims[0]]
-            vs = data[vdims[1]]
+        dataset = Dataset(data, kdims=kdims, vdims=vdims, **params)
+        xs, ys, us, vs = [dataset.dimension_values(i) for i in range(4)]
 
         uv_magnitudes = np.hypot(us, vs)  # unscaled
         # this follows mathematical conventions,
