@@ -2472,17 +2472,21 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
-                          'show_grid', 'logx',  'xticks', 'toolbar',
+                          'show_grid', 'logx', 'logy',  'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
-                          'xlabel', 'ylabel', 'xlim', 'zlim',
+                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive', 'fontscale', 'multix',
-                          'multiy']
+                          'frame_height', 'responsive', 'fontscale']
+
+    def __init__(self, overlay, **kwargs):
+        self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
+        super().__init__(overlay, **kwargs)
+        self._multi_y_propagation = False
 
     @property
     def _x_range_type(self):

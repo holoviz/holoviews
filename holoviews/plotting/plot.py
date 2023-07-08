@@ -1166,6 +1166,8 @@ class GenericElementPlot(DimensionedPlot):
 
     _selection_display = NoOpSelectionDisplay()
 
+    _multi_y_propagation = False
+
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
                  overlay_dims={}, stream_sources={}, streams=None, **params):
@@ -1197,9 +1199,14 @@ class GenericElementPlot(DimensionedPlot):
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
+
+        propagate_options = self._propagate_options[:]
+        if self._multi_y_propagation:
+            propagate_options = list(set(propagate_options) - set(GenericOverlayPlot._multi_y_unpropagated))
+
         if self.v17_option_propagation:
             inherited = self._traverse_options(plot_element, 'plot',
-                                               self._propagate_options,
+                                               propagate_options,
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()
                                 if k not in plot_opts})
@@ -1679,6 +1686,9 @@ class GenericOverlayPlot(GenericElementPlot):
         group, and a value of 3 will group by the full specification.""")
 
     _passed_handles = []
+
+    # Options not to be propagated in multi_y mode to allow independent control of y-axes
+    _multi_y_unpropagated = ['ylim', 'invert_yaxis', 'logy']
 
     def __init__(self, overlay, ranges=None, batched=True, keys=None, group_counter=None, **params):
         if 'projection' not in params:
