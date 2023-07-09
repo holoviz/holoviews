@@ -529,11 +529,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                       'autorange':opts.get('autorange', None),
                                       'logx': opts.get('logx', False),
                                       'logy': opts.get('logy', False),
+                                      'invert_yaxis':opts.get('invert_yaxis',False),
                                       # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
                                       'ylim': opts.get('ylim', (np.nan, np.nan))}
 
             for ydim, info in yaxes.items():
-                range_tags_extras={}
+                range_tags_extras={'invert_yaxis':info['invert_yaxis']}
                 if info['autorange']=='y':
                     range_tags_extras['autorange'] = True
                     lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
@@ -554,7 +555,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
                 axis_specs['y'][ydim] = ax_props
         else:
-            range_tags_extras={}
+            range_tags_extras={'invert_yaxis':self.invert_yaxis}
             if self.autorange=='y':
                 range_tags_extras['autorange'] = True
                 lowerlim, upperlim = self.ylim
@@ -908,7 +909,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             extra_scale = self.handles[f'extra_{multi_dim}_scales'][axis_dim] # Assumes scales and ranges zip
             log = isinstance(extra_scale, LogScale)
             self._update_range(
-                extra_y_range, b, t, factors, self.invert_yaxis,
+                extra_y_range, b, t, factors,
+                extra_y_range.tags[1]['invert_yaxis'] if extra_y_range.tags else False,
                 self._shared.get(extra_y_range.name, False), log, streaming
             )
 
@@ -1046,7 +1048,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
         if not self.drawn or yupdate:
-            self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
+            self._update_range(y_range, b, t, yfactors,
+                               y_range.tags[1]['invert_yaxis'] if y_range.tags else False,
                                self._shared['y-main-range'], self.logy, streaming)
 
 
@@ -1110,11 +1113,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if dim == 'x':
             didx = 0
             odim = 'y'
-            invert = self.invert_xaxis
         else:
             didx = 1
             odim = 'x'
-            invert = self.invert_yaxis
         if not self.padding:
             p0, p1 = 0, 0
         elif isinstance(self.padding, tuple):
@@ -1130,7 +1131,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         callback = CustomJS(code=f"""
         const cb = function() {{
 
-          function get_padded_range(key, lowerlim, upperlim) {{
+          function get_padded_range(key, lowerlim, upperlim, invert) {{
             let vmin = range_limits[key][0]
             let vmax = range_limits[key][1]
 
@@ -1142,7 +1143,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
              vmax = upperlim
             }}
 
-            const invert = {str(invert).lower()}
             const span = vmax-vmin
             const lower = vmin-(span*{p0})
             const upper = vmax+(span*{p1})
@@ -1202,7 +1202,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
            if (range_tags_extras['autorange']) {{
              let lowerlim = range_tags_extras['y-lowerlim'] ?? null
              let upperlim = range_tags_extras['y-upperlim'] ?? null
-             let [start, end] = get_padded_range('default', lowerlim, upperlim)
+             let [start, end] = get_padded_range('default', lowerlim, upperlim, range_tags_extras['invert_yaxis'])
              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
                plot.{dim}_range.setv({{start, end}})
              }}
@@ -1211,11 +1211,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           for (let key in plot.extra_{dim}_ranges) {{
             const extra_range = plot.extra_{dim}_ranges[key]
             let range_tags_extras = extra_range.tags[1]
+
             let lowerlim = range_tags_extras['y-lowerlim'] ?? null
             let upperlim = range_tags_extras['y-upperlim'] ?? null
 
             if (range_tags_extras['autorange']) {{
-             let [start, end] = get_padded_range(key, lowerlim, upperlim)
+             let [start, end] = get_padded_range(key, lowerlim, upperlim, range_tags_extras['invert_yaxis'])
              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
               extra_range.setv({{start, end}})
               }}
