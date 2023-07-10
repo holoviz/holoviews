@@ -573,6 +573,10 @@ class output(param.ParameterizedFunction):
     the cell magic respectively.
     """
 
+    def __init__(self, *args, **kwargs):
+        # To not overwrite param.ParameterizedFunction signature below
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def info(cls):
         deprecate = ['filename', 'info', 'mode']
