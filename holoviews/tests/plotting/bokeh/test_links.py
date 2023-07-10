@@ -40,6 +40,34 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
         self.assertEqual(range_tool.y_range, tgt_plot.handles['y_range'])
 
+    def test_range_tool_link_callback_start_arg(self):
+        from bokeh.models import RangeTool
+        array = np.random.rand(100, 2)
+        src = Curve(array)
+        target = Scatter(array)
+        x_start = 0.2
+        y_start = 0.3
+        RangeToolLink(src, target, axes=['x', 'y'], axes_start={'x': x_start, 'y': y_start})
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        self.assertEqual(tgt_plot.handles['x_range'].start, x_start)
+        self.assertEqual(tgt_plot.handles['y_range'].start, y_start)
+
+    def test_range_tool_link_callback_end_arg(self):
+        from bokeh.models import RangeTool
+        array = np.random.rand(100, 2)
+        src = Curve(array)
+        target = Scatter(array)
+        x_end = 0.8
+        y_end = 0.9
+        RangeToolLink(src, target, axes=['x', 'y'], axes_end={'x': x_end, 'y': y_end})
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        self.assertEqual(tgt_plot.handles['x_range'].end, x_end)
+        self.assertEqual(tgt_plot.handles['y_range'].end, y_end)
+
     def test_data_link_dynamicmap_table(self):
         dmap = DynamicMap(lambda X: Points([(0, X)]), kdims='X').redim.range(X=(-1, 1))
         table = Table([(-1,)], vdims='y')
