@@ -104,6 +104,12 @@ class RangeToolLink(Link):
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
         Which axes to link the tool to.""")
 
+    axes_start = param.Dict(default={}, doc="""
+        The range start values for the specified axes. Example: {'x':1, 'y':2}""")
+
+    axes_end = param.Dict(default={}, doc="""
+        The range end values for the specified axes. Example: {'x':3, 'y':4}""")
+
     _requires_target = True
 
 
