@@ -27,6 +27,7 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertIs(range_tool.y_range, None)
 
     def test_range_tool_link_callback_both_axes(self):
+        from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
         target = Scatter(array)
@@ -53,7 +54,6 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertEqual(tgt_plot.handles['y_range'].start, y_start)
 
     def test_range_tool_link_callback_end_arg(self):
-        from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
         target = Scatter(array)
