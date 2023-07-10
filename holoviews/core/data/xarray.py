@@ -93,114 +93,143 @@ class XArrayInterface(GridInterface):
 
         packed = False
         if isinstance(data, xr.DataArray):
-            kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
-            vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
-            if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
-                packed = True
-            elif vdims:
-                vdim = vdims[0]
-            elif data.name:
-                vdim = Dimension(data.name)
-                vdim.unit = data.attrs.get('units')
-                vdim.nodata = data.attrs.get('NODATA')
-                label = data.attrs.get('long_name')
-                if isinstance(label, str):
-                    vdim.label = label
-            elif len(vdim_param.default) == 1:
-                vdim = vdim_param.default[0]
-                if vdim.name in data.dims:
-                    raise DataError("xarray DataArray does not define a name, "
+            data, kdims, vdims, packed = cls._prepare_dataarray(eltype, data, kdims, vdims, kdim_param, vdim_param, packed)
+
+        if not isinstance(data, (xr.Dataset, xr.DataArray)):
+            data, kdims, vdims, packed = cls._not_xarray_data(data, kdims, vdims, kdim_param, vdim_param, packed)
+        else:
+            data, kdims, vdims, packed = cls._xarray_data(data, kdims, vdims, retrieve_unit_and_label, packed)
+
+        cls._validate_kdims(data, kdims)
+        cls._validate_vdims(eltype, data, kdims, vdims, packed)
+        return data, {'kdims': kdims, 'vdims': vdims}, {}
+
+    @classmethod
+    def _prepare_dataarray(cls, eltype, data, kdims, vdims, kdim_param, vdim_param, packed):
+        kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
+        vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
+        if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
+            packed = True
+        elif vdims:
+            vdim = vdims[0]
+        elif data.name:
+            vdim = Dimension(data.name)
+            vdim.unit = data.attrs.get('units')
+            vdim.nodata = data.attrs.get('NODATA')
+            label = data.attrs.get('long_name')
+            if isinstance(label, str):
+                vdim.label = label
+        elif len(vdim_param.default) == 1:
+            vdim = vdim_param.default[0]
+            if vdim.name in data.dims:
+                raise DataError("xarray DataArray does not define a name, "
                                     "and the default of '%s' clashes with a "
                                     "coordinate dimension. Give the DataArray "
                                     "a name or supply an explicit value dimension."
                                     % vdim.name, cls)
-            else:
-                raise DataError("xarray DataArray does not define a name "
+        else:
+            raise DataError("xarray DataArray does not define a name "
                                 "and %s does not define a default value "
                                 "dimension. Give the DataArray a name or "
                                 "supply an explicit vdim." % eltype.__name__,
                                 cls)
-            if not packed:
-                vdims = [vdim]
-                data = data.to_dataset(name=vdim.name)
+        if not packed:
+            vdims = [vdim]
+            data = data.to_dataset(name=vdim.name)
+        return data,kdims,vdims, packed
 
-        if not isinstance(data, (xr.Dataset, xr.DataArray)):
-            if kdims is None:
-                kdims = kdim_param.default
-            if vdims is None:
-                vdims = vdim_param.default
-            kdims = [asdim(kd) for kd in kdims]
-            vdims = [asdim(vd) for vd in vdims]
-            if isinstance(data, np.ndarray) and data.ndim == 2 and data.shape[1] == len(kdims+vdims):
-                data = tuple(data)
+    @classmethod
+    def _not_xarray_data(cls, data, kdims, vdims, kdim_param, vdim_param, packed):
+        import xarray as xr
 
-            ndims = len(kdims)
-            if isinstance(data, tuple):
-                dimensions = [d.name for d in kdims+vdims]
-                if (len(data) != len(dimensions) and len(data) == (ndims+1) and
+        if kdims is None:
+            kdims = kdim_param.default
+        if vdims is None:
+            vdims = vdim_param.default
+        kdims = [asdim(kd) for kd in kdims]
+        vdims = [asdim(vd) for vd in vdims]
+        if isinstance(data, np.ndarray) and data.ndim == 2 and data.shape[1] == len(kdims+vdims):
+            data = tuple(data)
+
+        ndims = len(kdims)
+        if isinstance(data, tuple):
+            dimensions = [d.name for d in kdims+vdims]
+            if (len(data) != len(dimensions) and len(data) == (ndims+1) and
                     len(data[-1].shape) == (ndims+1)):
-                    value_array = data[-1]
-                    data = {d: v for d, v in zip(dimensions, data[:-1])}
-                    packed = True
-                else:
-                    data = {d: v for d, v in zip(dimensions, data)}
-            elif isinstance(data, list) and data == []:
-                dimensions = [d.name for d in kdims + vdims]
-                data = {d: np.array([]) for d in dimensions[:ndims]}
-                data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
-            if not isinstance(data, dict):
-                raise TypeError('XArrayInterface could not interpret data type')
-            data = {d: np.asarray(values) if d in kdims else values
-                    for d, values in data.items()}
-            coord_dims = [data[kd.name].ndim for kd in kdims]
-            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
-            coords = OrderedDict()
-            for kd in kdims:
-                coord_vals = data[kd.name]
-                if coord_vals.ndim > 1:
-                    coord = (dims[:coord_vals.ndim], coord_vals)
-                else:
-                    coord = coord_vals
-                coords[kd.name] = coord
-            xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
-            if packed:
-                xr_kwargs['dims'] = list(coords)[::-1] + ['band']
-                coords['band'] = list(range(len(vdims)))
-                data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
+                value_array = data[-1]
+                data = {d: v for d, v in zip(dimensions, data[:-1])}
+                packed = True
             else:
-                arrays = {}
-                for vdim in vdims:
-                    arr = data[vdim.name]
-                    if not isinstance(arr, xr.DataArray):
-                        arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
-                    arrays[vdim.name] = arr
-                data = xr.Dataset(arrays)
+                data = {d: v for d, v in zip(dimensions, data)}
+        elif isinstance(data, list) and data == []:
+            dimensions = [d.name for d in kdims + vdims]
+            data = {d: np.array([]) for d in dimensions[:ndims]}
+            data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
+        if not isinstance(data, dict):
+            raise TypeError('XArrayInterface could not interpret data type')
+        data = {d: np.asarray(values) if d in kdims else values
+                    for d, values in data.items()}
+        coord_dims = [data[kd.name].ndim for kd in kdims]
+        dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+        coords = OrderedDict()
+        for kd in kdims:
+            coord_vals = data[kd.name]
+            if coord_vals.ndim > 1:
+                coord = (dims[:coord_vals.ndim], coord_vals)
+            else:
+                coord = coord_vals
+            coords[kd.name] = coord
+        xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
+        if packed:
+            xr_kwargs['dims'] = list(coords)[::-1] + ['band']
+            coords['band'] = list(range(len(vdims)))
+            data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
         else:
-            if not data.coords:
-                data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
-            if vdims is None:
-                vdims = list(data.data_vars)
-            if kdims is None:
-                xrdims = list(data.dims)
-                xrcoords = list(data.coords)
-                kdims = [name for name in data.indexes.keys()
+            arrays = {}
+            for dim in vdims:
+                arr = data[dim.name]
+                if not isinstance(arr, xr.DataArray):
+                    arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
+                arrays[dim.name] = arr
+            data = xr.Dataset(arrays)
+        return data,kdims,vdims,packed
+
+    @classmethod
+    def _xarray_data(cls, data, kdims, vdims, retrieve_unit_and_label, packed):
+        if not data.coords:
+            data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
+        if kdims is None:
+            xrdims = list(data.dims)
+            xrcoords = list(data.coords)
+            kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
-                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
-                if packed:
-                    kdims = kdims[:-1]
-                elif set(xrdims) != set(kdims):
-                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
-                    for c in data.coords:
-                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
-                            kdims.append(c)
-            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
+            kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
+            if packed:
+                kdims = kdims[:-1]
+            elif set(xrdims) != set(kdims):
+                virtual_dims = [xd for xd in xrdims if xd not in kdims]
+                for c in data.coords:
+                    if c not in kdims and set(data[c].dims) == set(virtual_dims):
+                        kdims.append(c)
+        if vdims is None:
+            vdims = [v for v in data.data_vars if v not in kdims]
+        kdims = [retrieve_unit_and_label(kd) for kd in kdims]
+        vdims = [retrieve_unit_and_label(vd) for vd in vdims]
+        return data,kdims,vdims,packed
+
+    @classmethod
+    def _validate_kdims(cls, data, kdims):
+        import xarray as xr
 
         not_found = []
         for d in kdims:
-            if not any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
+            if any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
                        for k, v in data.coords.items()):
-                not_found.append(d)
+                continue
+            if any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
+                       for k, v in data.data_vars.items()):
+                continue
+            not_found.append(d)
         if not isinstance(data, (xr.Dataset, xr.DataArray)):
             raise TypeError('Data must be be an xarray Dataset type.')
         elif not_found:
@@ -208,6 +237,8 @@ class XArrayInterface(GridInterface):
                             "for all defined kdims, %s coordinates not found."
                             % not_found, cls)
 
+    @classmethod
+    def _validate_vdims(cls, eltype, data, kdims, vdims, packed):
         for vdim in vdims:
             if packed:
                 continue
@@ -223,7 +254,7 @@ class XArrayInterface(GridInterface):
                     continue
                 elif all(d in kdims for d in da[c].dims):
                     continue # Skip if coord is alias for another dimension
-                elif any(all(d in da[kd.name].dims for d in da[c].dims) for kd in kdims):
+                elif any(all(d in da[kd.name].dims for d in da[c] if kdims[0].name in da) for kd in kdims):
                     # Skip if all the dims on the coord are present on another coord
                     continue
                 undeclared.append(c)
@@ -236,7 +267,6 @@ class XArrayInterface(GridInterface):
                     'the xarray to a columnar format using the .to_dataframe '
                     'or .to_dask_dataframe methods before providing it to '
                     'HoloViews.'.format(vdim.name, undeclared))
-        return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 
     @classmethod
@@ -354,7 +384,6 @@ class XArrayInterface(GridInterface):
         else:
             return container_type(data)
 
-
     @classmethod
     def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
         import xarray as xr
@@ -362,7 +391,7 @@ class XArrayInterface(GridInterface):
         dim = dimension if dim is None else dim.name
         irregular = cls.irregular(dataset, dim)
         if irregular or expanded:
-            if irregular:
+            if irregular or (dataset.vdims is not None and not len(dataset.vdims)):
                 data = dataset.data[dim]
             else:
                 data = util.expand_grid_coords(dataset, dim)
