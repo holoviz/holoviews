@@ -148,7 +148,7 @@ class RangeToolLinkCallback(LinkCallback):
                         axes[f'{axis}_range'].start = start
                     if end is not None:
                         axes[f'{axis}_range'].end = end
-        tool = RangeTool(**axes)    
+        tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if bokeh3 and toolbars:
             toolbars[0].tools.append(tool)
