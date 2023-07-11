@@ -141,11 +141,14 @@ class RangeToolLinkCallback(LinkCallback):
         for axis in ['x', 'y']:
             if axis in link.axes:
                 axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
-                if axis in link.axes_start:
-                    axes[f'{axis}_range'].start = link.axes_start[axis]
-                if axis in link.axes_end:
-                    axes[f'{axis}_range'].end = link.axes_end[axis]
-        tool = RangeTool(**axes)
+                bounds = getattr(link, f'bounds{axis}', None)
+                if bounds is not None:
+                    start, end = bounds
+                    if start is not None:
+                        axes[f'{axis}_range'].start = start
+                    if end is not None:
+                        axes[f'{axis}_range'].end = end
+        tool = RangeTool(**axes)    
         source_plot.state.add_tools(tool)
         if bokeh3 and toolbars:
             toolbars[0].tools.append(tool)
