@@ -844,7 +844,7 @@ class FileArchive(Archive):
         return len(self._files)
 
     def __repr__(self):
-        return self.pprint()
+        return self.param.pprint()
 
     def contents(self, maxlen=70):
         "Print the current (unexported) contents of the archive"

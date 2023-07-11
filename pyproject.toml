@@ -40,6 +40,7 @@ select = [
     "FLY",
     "ICN",
     "NPY",
+    "PIE",
     "PLC",
     "PLE",
     "PLR",
@@ -64,6 +65,7 @@ ignore = [
     "PLR2004",  # Magic value used in comparison
     "PLW2901",  # `for` loop variable is overwritten
     "RUF005",   # Consider {expr} instead of concatenation
+    "RUF012",   # Mutable class attributes should use `typing.ClassVar`
 ]
 
 fix = true

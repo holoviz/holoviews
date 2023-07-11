@@ -245,7 +245,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Allows extending the _finalize_axis method with Element
         specific options.
         """
-        pass
 
     def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
         """

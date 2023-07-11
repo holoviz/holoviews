@@ -150,7 +150,7 @@ class PlotlyRenderer(Renderer):
         options = plot.lookup_options(obj, 'plot').options
         width = options.get('width', plot.width) * factor
         height = options.get('height', plot.height) * factor
-        return dict(options, **{'width':int(width), 'height': int(height)})
+        return dict(options, width=int(width), height=int(height))
 
 
     @classmethod

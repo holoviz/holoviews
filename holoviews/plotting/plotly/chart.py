@@ -198,7 +198,6 @@ class BarPlot(BarsMixin, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    stacked = param.Boolean(default=False)
 
     style_opts = ['visible']
 

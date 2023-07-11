@@ -19,7 +19,7 @@ class Tiles(Element2D):
 
       * Bounding box tile sources containing {XMIN}, {XMAX}, {YMIN}, {YMAX} variables
 
-      * Quadkey tile sources containin a {Q} variable
+      * Quadkey tile sources containing a {Q} variable
 
     Tiles are defined in a pseudo-Mercator projection (EPSG:3857)
     defined as eastings and northings. Any data overlaid on a tile
