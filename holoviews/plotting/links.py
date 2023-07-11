@@ -107,7 +107,7 @@ class RangeToolLink(Link):
     boundsx = param.Tuple(default=None, length=2, doc="""
         (start, end) bounds for the x-axis""")
 
-    boundsy = param.Tuple(default=None, length=2, doc= """
+    boundsy = param.Tuple(default=None, length=2, doc="""
         (start, end) bounds for the y-axis""")
 
     _requires_target = True
