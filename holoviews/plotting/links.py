@@ -105,10 +105,10 @@ class RangeToolLink(Link):
         Which axes to link the tool to.""")
 
     boundsx = param.Tuple(default=None, length=2, doc="""
-        (start, end) bounds for the x axis""")
+        (start, end) bounds for the x-axis""")
 
     boundsy = param.Tuple(default=None, length=2, doc= """
-        (start, end) bounds for the y axis""")
+        (start, end) bounds for the y-axis""")
 
     _requires_target = True
 

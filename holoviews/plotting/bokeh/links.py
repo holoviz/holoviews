@@ -138,16 +138,22 @@ class RangeToolLinkCallback(LinkCallback):
     def __init__(self, root_model, link, source_plot, target_plot):
         toolbars = list(root_model.select({'type': Toolbar}))
         axes = {}
-        for axis in ['x', 'y']:
-            if axis in link.axes:
-                axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
-                bounds = getattr(link, f'bounds{axis}', None)
-                if bounds is not None:
-                    start, end = bounds
-                    if start is not None:
-                        axes[f'{axis}_range'].start = start
-                    if end is not None:
-                        axes[f'{axis}_range'].end = end
+
+        for axis in ('x', 'y'):
+            if axis not in link.axes:
+                continue
+
+            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
+            bounds = getattr(link, f'bounds{axis}', None)
+            if bounds is None:
+                continue
+
+            start, end = bounds
+            if start is not None:
+                axes[f'{axis}_range'].start = start
+            if end is not None:
+                axes[f'{axis}_range'].end = end
+
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if bokeh3 and toolbars:
