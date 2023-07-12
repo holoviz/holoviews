@@ -1508,8 +1508,8 @@ class GenericElementPlot(DimensionedPlot):
         """
         accessors = opt.split('.')
         if len(accessors) < 2:
-            self.param.warning("Custom option %r expects at least "
-                                "two accessors separated by '.'" % opt)
+            self.param.warning(f"Custom option {opt!r} expects at least "
+                               "two accessors separated by '.'")
             return
 
         model_accessor = accessors[0]
