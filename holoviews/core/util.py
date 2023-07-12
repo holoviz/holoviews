@@ -2166,7 +2166,15 @@ def search_indices(values, source):
     Given a set of values returns the indices of each of those values
     in the source array.
     """
-    orig_indices = source.argsort()
+    try:
+        orig_indices = source.argsort()
+    except TypeError:
+        # Can fail for something like this:
+        # np.array(['circle15', np.nan], dtype=object).argsort()
+        source = source.astype(str)
+        values = values.astype(str)
+        orig_indices = source.argsort()
+
     return orig_indices[np.searchsorted(source[orig_indices], values)]
 
 
