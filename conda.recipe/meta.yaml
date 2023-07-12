@@ -33,11 +33,6 @@ requirements:
     - {{ dep }}
     {% endfor %}
 
-test:
-  requires:
-    - pytest
-  imports:
-    - holoviews
 
 about:
   home: https://holoviews.org
