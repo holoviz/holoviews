@@ -264,17 +264,26 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if not attr_accessor.startswith("set_"):
                 attr_accessor = f"set_{attr_accessor}"
 
+            if not isinstance(model, list):
+                # to reduce the need for many if/else; cast to list
+                # to do the same thing for both single and multiple models
+                models = [model]
+            else:
+                models = model
+
             try:
-                getattr(model, attr_accessor)(val)
+                for m in models:
+                    getattr(m, attr_accessor)(val)
             except AttributeError as exc:
-                valid_options = [attr for attr in dir(model) if attr.startswith("set_")]
+                valid_options = [attr for attr in dir(models[0]) if attr.startswith("set_")]
                 kws = Keywords(values=valid_options)
                 matches = sorted(kws.fuzzy_match(attr_accessor))
-                self.param.warning("Encountered error: {}, or could not find '{}' method on {} "
-                                    "model. Ensure the custom option spec "
-                                    "'{}' you provided references a "
-                                    "valid method on the specified model. "
-                                    "Similar options include {}".format(exc, attr_accessor, type(model).__name__, opt, matches))
+                self.param.warning(
+                    f"Encountered error: {exc}, or could not find "
+                    f"{attr_accessor!r} method on {type(models[0]).__name__!r} "
+                    f"model. Ensure the custom option spec {opt!r} you provided references a "
+                    f"valid method on the specified model. Similar options include {matches!r}"
+                )
 
     def _finalize_artist(self, element):
         """

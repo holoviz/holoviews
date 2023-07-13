@@ -253,15 +253,24 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
     def test_element_backend_opts_getitem(self):
         a = Curve([1, 2, 3], label="a")
         b = Curve([1, 4, 9], label="b")
-        curve = (a * b).opts(
+        c = Curve([1, 4, 18], label="c")
+        d = Curve([1, 4, 36], label="d")
+        e = Curve([1, 4, 36], label="e")
+        curve = (a * b * c * d * e).opts(
             show_legend=True,
             backend_opts={
                 "legend.get_texts()[0].fontsize": 188,
+                "legend.get_texts()[1:3].fontsize": 288,
+                "legend.get_texts()[3,4].fontsize": 388,
             }
         )
         plot = mpl_renderer.get_plot(curve)
         legend = plot.handles['legend']
         self.assertEqual(legend.get_texts()[0].get_fontsize(), 188)
+        self.assertEqual(legend.get_texts()[1].get_fontsize(), 288)
+        self.assertEqual(legend.get_texts()[2].get_fontsize(), 288)
+        self.assertEqual(legend.get_texts()[3].get_fontsize(), 388)
+        self.assertEqual(legend.get_texts()[4].get_fontsize(), 388)
 
     def test_element_backend_opts_two_accessors(self):
         heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
@@ -279,6 +288,20 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         mpl_renderer.get_plot(heat_map)
         self.log_handler.assertContains(
             "WARNING", "cb model could not be"
+        )
+
+    def test_element_backend_opts_model_invalid_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_texts()[0,1].f0ntzise": 811,
+            }
+        )
+        mpl_renderer.get_plot(curve)
+        self.log_handler.assertContains(
+            "WARNING", "valid method on the specified model"
         )
 
 
