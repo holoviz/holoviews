@@ -86,6 +86,11 @@ class AggregationOperation(ResampleOperation2D):
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
+        if ds_version >= Version('1.15.0'):
+            agg_types = (rd.count, rd.any, rd.where)
+        else:
+            agg_types = (rd.count, rd.any)
+
         if isinstance(agg, str):
             if agg not in cls._agg_methods:
                 agg_methods = sorted(cls._agg_methods)
@@ -98,7 +103,7 @@ class AggregationOperation(ResampleOperation2D):
 
         elements = element.traverse(lambda x: x, [Element])
         if (add_field and getattr(agg, 'column', False) in ('__temp__', None) and
-            not isinstance(agg, (rd.count, rd.any, rd.where))):
+            not isinstance(agg, agg_types)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % cls.__name__)
