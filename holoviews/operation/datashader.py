@@ -149,7 +149,9 @@ class AggregationOperation(ResampleOperation2D):
             agg_fn = agg_fn.reduction
         column = agg_fn.column if agg_fn else None
         agg_name = type(agg_fn).__name__.title()
-        if column:
+        # Only str column as ds.where(ds.min("val")).column
+        # returns rd.SpecialColumn added in 1.15.1
+        if isinstance(column, str):
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
                 raise ValueError("Aggregation column '{}' not found on '{}' element. "
@@ -171,7 +173,7 @@ class AggregationOperation(ResampleOperation2D):
         else:
             vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
 
-        if agg_name == "Where" and not column:
+        if agg_name == "Where" and not isinstance(column, str):
             vdims.nodata = -1
         params['vdims'] = vdims
         return params
