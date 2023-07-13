@@ -57,6 +57,7 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
+          pipx install awscli  # Test if it available
       - name: generate rst
         run: |
           conda activate test-environment
@@ -74,14 +75,12 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          conda create -n push-environment python=3.9 awscli
-          conda activate push-environment
+          pipx install awscli
           aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          conda create -n push-environment python=3.9 awscli
-          conda activate push-environment
+          pipx install awscli
           aws s3 sync --quiet ./builtdocs s3://holoviews.org/
