@@ -60,7 +60,7 @@ jobs:
       NUMBA_NUM_THREADS: 1
       PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a14
+      - uses: holoviz-dev/holoviz_tasks/install@update_install
         with:
           name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
           python-version: ${{ matrix.python-version }}
