@@ -1524,10 +1524,10 @@ class GenericElementPlot(DimensionedPlot):
         else:
             self.param.warning(
                 f"{model_accessor} model could not be resolved "
-                f"on {type(self).__name__} plot. "
+                f"on {type(self).__name__!r} plot. "
                 f"Ensure the {opt!r} custom option spec "
                 f"references a valid model in the "
-                f"plot.handles {list(self.handles.keys())} or on the underlying "
+                f"plot.handles {list(self.handles.keys())!r} or on the underlying "
                 f"figure object."
             )
             return
@@ -1611,7 +1611,7 @@ class GenericElementPlot(DimensionedPlot):
             if not hasattr(model, acc):
                 self.param.warning(
                     f"Could not resolve {acc!r} attribute on "
-                    f"{type(model).__name__} model. Ensure the "
+                    f"{type(model).__name__!r} model. Ensure the "
                     f"custom option spec you provided "
                     f"references a valid submodel."
                 )
