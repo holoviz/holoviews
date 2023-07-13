@@ -108,7 +108,7 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite ==0.8.0',
+    'nbsite >=0.8.2,<0.9.0',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
@@ -154,7 +154,7 @@ setup_args.update(
     dict(
         name="holoviews",
         version=get_setup_version("holoviews"),
-        python_requires=">=3.7",
+        python_requires=">=3.8",
         install_requires=install_requires,
         extras_require=extras_require,
         description="Stop plotting your data - annotate your data and let it visualize itself.",
@@ -176,7 +176,6 @@ setup_args.update(
         classifiers=[
             "License :: OSI Approved :: BSD License",
             "Development Status :: 5 - Production/Stable",
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",

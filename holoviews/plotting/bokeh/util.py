@@ -36,6 +36,7 @@ from ...core.util import (
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
+from ...util.warnings import deprecated
 
 bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
@@ -620,6 +621,7 @@ def py2js_tickformatter(formatter, msg=''):
     """
     Uses py2js to compile a python tick formatter to JS code
     """
+    deprecated("1.18", "py2js_tickformatter")
     try:
         from pscript import py2js
     except ImportError:

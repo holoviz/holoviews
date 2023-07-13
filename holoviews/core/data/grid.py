@@ -230,7 +230,7 @@ class GridInterface(DictInterface):
         if gridded:
             return shape
         else:
-            return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
+            return (np.prod(shape, dtype=np.intp), len(dataset.dimensions()))
 
 
     @classmethod

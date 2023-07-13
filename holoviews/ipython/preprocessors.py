@@ -78,7 +78,7 @@ def strip_magics(source):
     """
     filtered=[]
     for line in source.splitlines():
-        if not line.startswith('%') or line.startswith('%%'):
+        if not line.startswith('%'):
             filtered.append(line)
     return '\n'.join(filtered)
 

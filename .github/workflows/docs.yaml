@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 120
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     env:
       DESC: "Documentation build"
       MPLBACKEND: "Agg"
@@ -40,39 +40,19 @@ jobs:
       PANEL_EMBED_JSON: "true"
       PANEL_EMBED_JSON_PREFIX: "json"
     steps:
-      - uses: actions/checkout@v3
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a14
         with:
-          fetch-depth: "100"
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          mamba-version: "*"
-          channels: pyviz/label/dev,conda-forge
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
+          name: Documentation
+          python-version: "3.10"
+          channel-priority: strict
+          channels: pyviz/label/dev,conda-forge,nodefaults
+          envs: "-o doc"
+          cache: true
+          conda-update: true
+          conda-mamba: mamba
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: conda setup
-        run: |
-          conda config --remove channels defaults
-          conda config --set channel_priority strict
-          conda create -n test-environment python=3.10 pyctdev
-          conda create -n push-environment python=3.9 awscli
-      - name: conda info and show sources
-        run: |
-          conda activate test-environment
-          conda info
-          conda config --show-sources
-          conda config --show
-      - name: doit develop_install
-        run: |
-          conda activate test-environment
-          doit develop_install -o doc --conda-mode=mamba
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
       - name: bokeh sampledata
         run: |
           conda activate test-environment
@@ -94,12 +74,12 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          conda activate push-environment
+          pipx install awscli
           aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          conda activate push-environment
+          pipx install awscli
           aws s3 sync --quiet ./builtdocs s3://holoviews.org/

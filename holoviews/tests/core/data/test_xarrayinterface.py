@@ -44,8 +44,10 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             attrs={'transform': (3, 0, 2, 0, -2, -2)})
         xs, ys = (np.tile(x[:, np.newaxis], len(y)).T,
                   np.tile(y[:, np.newaxis], len(x)))
-        return da.assign_coords(**{'xc': xr.DataArray(xs, dims=('y','x')),
-                                   'yc': xr.DataArray(ys, dims=('y','x')),})
+        return da.assign_coords(
+            xc=xr.DataArray(xs, dims=('y','x')),
+            yc=xr.DataArray(ys, dims=('y','x')),
+        )
 
     def get_multi_dim_irregular_dataset(self):
         temp = 15 + 8 * np.random.randn(2, 2, 4, 3)

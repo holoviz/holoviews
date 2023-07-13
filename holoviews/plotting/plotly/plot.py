@@ -59,9 +59,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     adjoint_spacing = param.Number(default=20, bounds=(0, None))
 
     shared_axes = param.Boolean(default=True, doc="""
-            Whether axes should be shared across plots""")
-
-    shared_axes = param.Boolean(default=True, doc="""
         Whether axes ranges should be shared across the layout, if
         disabled switches axiswise normalization option on globally.""")
 
