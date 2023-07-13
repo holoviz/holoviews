@@ -800,14 +800,12 @@ class DynamicCallableMemoize(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
-
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1]))
 
-        for i in range(2):
-            x.event(x=2)
-
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 2]))
 
 
@@ -825,12 +823,12 @@ class DynamicCallableMemoize(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1, 1]))
 
-        for i in range(2):
-            x.event(x=2)
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
@@ -891,13 +889,12 @@ class DynamicStreamReset(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1]))
 
-        for i in range(2):
-            x.event(x=2)
-
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
 
     def test_dynamic_stream_transients(self):
@@ -952,13 +949,12 @@ class DynamicStreamReset(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1, 1]))
 
-        for i in range(2):
-            x.event(x=2)
-
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 

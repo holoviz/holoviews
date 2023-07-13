@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Polygons, Table, Scatter, Path, Points
@@ -38,6 +39,32 @@ class TestLinkCallbacks(TestBokehPlot):
         range_tool = src_plot.state.select_one({'type': RangeTool})
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
         self.assertEqual(range_tool.y_range, tgt_plot.handles['y_range'])
+
+    def test_range_tool_link_callback_boundsx_arg(self):
+        array = np.random.rand(100, 2)
+        src = Curve(array)
+        target = Scatter(array)
+        x_start = 0.2
+        x_end = 0.3
+        RangeToolLink(src, target, axes=['x', 'y'], boundsx=(x_start, x_end))
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        self.assertEqual(tgt_plot.handles['x_range'].start, x_start)
+        self.assertEqual(tgt_plot.handles['x_range'].end, x_end)
+
+    def test_range_tool_link_callback_boundsy_arg(self):
+        array = np.random.rand(100, 2)
+        src = Curve(array)
+        target = Scatter(array)
+        y_start = 0.8
+        y_end = 0.9
+        RangeToolLink(src, target, axes=['x', 'y'], boundsy=(y_start, y_end))
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        self.assertEqual(tgt_plot.handles['y_range'].start, y_start)
+        self.assertEqual(tgt_plot.handles['y_range'].end, y_end)
 
     def test_data_link_dynamicmap_table(self):
         dmap = DynamicMap(lambda X: Points([(0, X)]), kdims='X').redim.range(X=(-1, 1))
@@ -96,7 +123,8 @@ class TestLinkCallbacks(TestBokehPlot):
         table = Table([('A', 1), ('B', 2)], 'A', 'B')
         DataLink(polys, table)
         layout = polys + table
-        with self.assertRaises(Exception):
+        msg = "DataLink source data length must match target"
+        with pytest.raises(ValueError, match=msg):
             bokeh_renderer.get_plot(layout)
 
     def test_data_link_list(self):

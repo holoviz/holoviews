@@ -236,7 +236,7 @@ def split_dmap_overlay(obj, depth=0):
             layers.append(obj)
         return layers
     if isinstance(obj, Overlay):
-        for k, v in obj.items():
+        for _k, v in obj.items():
             layers.append(v)
     else:
         layers.append(obj)
@@ -557,8 +557,6 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
             cmap = cmap.replace('Category', 'tab')
 
         if Version(mpl.__version__) < Version("3.5"):
-            # This will stop working and can be removed
-            # when we do not support python 3.7
             from matplotlib import cm
             try:
                 cmap = cm.get_cmap(cmap)

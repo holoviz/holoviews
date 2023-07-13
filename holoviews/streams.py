@@ -24,7 +24,7 @@ from .core.ndmapping import UniformNdMapping
 # Types supported by Pointer derived streams
 pointer_types = (Number, str, tuple)+util.datetime_types
 
-class _SkipTrigger(): pass
+class _SkipTrigger: pass
 
 
 @contextmanager

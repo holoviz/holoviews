@@ -1365,7 +1365,7 @@ class ViewableTree(AttrTree, Dimensioned):
 
         new_items = []
         counts = defaultdict(lambda: 0)
-        for i, (path, item) in enumerate(items):
+        for path, item in items:
             if counter[path] > 1:
                 path = path + (util.int_to_roman(counts[path]+1),)
             else:

@@ -1,8 +1,10 @@
 import numpy as np
+import pytest
 
 from holoviews.core import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Polygons, Contours, Path
+from holoviews.core.options import AbbreviatedException
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -29,7 +31,8 @@ class TestPathPlot(TestMPLPlot):
         alpha = [0.1, 0.7, 0.3, 0.2]
         data = {'x': xs, 'y': ys, 'alpha': alpha}
         path = Path([data], vdims='alpha').opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(path)
 
     def test_path_continuously_varying_line_width_op(self):
@@ -182,7 +185,8 @@ class TestPolygonPlot(TestMPLPlot):
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
         ], vdims='alpha').opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(polygons)
 
     def test_polygons_line_width_op(self):
@@ -283,7 +287,8 @@ class TestContoursPlot(TestMPLPlot):
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
         ], vdims='alpha').opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(contours)
 
     def test_contours_line_width_op(self):

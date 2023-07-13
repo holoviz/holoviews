@@ -217,7 +217,7 @@ class chain(Operation):
 
     def _process(self, view, key=None):
         processed = view
-        for i, operation in enumerate(self.p.operations):
+        for operation in self.p.operations:
             processed = operation.process_element(
                 processed, key, input_ranges=self.p.input_ranges
             )

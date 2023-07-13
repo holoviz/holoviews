@@ -25,7 +25,6 @@ class KeywordSettings:
         Allows updating options depending on class attributes
         and unvalidated options.
         """
-        pass
 
     @classmethod
     def get_options(cls, items, options, warnfn):

@@ -1,7 +1,9 @@
 import numpy as np
+import pytest
 
 from holoviews.core.spaces import HoloMap
 from holoviews.element import VectorField
+from holoviews.core.options import AbbreviatedException
 
 from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
@@ -69,7 +71,8 @@ class TestVectorFieldPlot(TestMPLPlot):
     def test_vectorfield_alpha_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 0.2), (0, 2, 0, 1, 0.7)],
                                   vdims=['A', 'M', 'alpha']).opts(alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(vectorfield)
 
     def test_vectorfield_line_width_op(self):

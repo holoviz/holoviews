@@ -15,7 +15,7 @@ from panel.io.state import state
 
 from ...core.options import CallbackError
 from ...core.util import (
-    datetime_types, dimension_sanitizer, dt64_to_dt
+    datetime_types, dimension_sanitizer, dt64_to_dt, isequal
 )
 from ...element import Table
 from ...streams import (
@@ -234,7 +234,7 @@ class Callback:
         be the same as the model.
         """
         if not cb_obj:
-            raise Exception(f'Bokeh plot attribute {spec} could not be found')
+            raise AttributeError(f'Bokeh plot attribute {spec} could not be found')
         if model is None:
             model = cb_obj
         spec = spec.split('.')
@@ -337,15 +337,18 @@ class Callback:
             else:
                 obj_handle = attr_path[0]
             cb_obj = self.plot_handles.get(obj_handle)
-            msg[attr] = self.resolve_attr_spec(path, cb_obj)
+            try:
+                msg[attr] = self.resolve_attr_spec(path, cb_obj)
+            except Exception:
+                # To give BokehJS a chance to update the model
+                # https://github.com/holoviz/holoviews/issues/5746
+                await asyncio.sleep(0.05)
+                msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
         if self.skip_change(msg):
             equal = True
         else:
-            try:
-                equal = msg == self._prev_msg
-            except Exception:
-                equal = False
+            equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
@@ -724,7 +727,7 @@ class BoundsCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -795,7 +798,7 @@ class BoundsXCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -818,7 +821,7 @@ class BoundsYCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
+    skip_events = [lambda event: event.geometry['type'] != 'quad',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -1180,7 +1183,7 @@ class BoxEditCallback(GlyphDrawCallback):
         cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('left', 'bottom', 'right', 'top', source=cds, **style)
+        r1 = plot.state.quad(left='left', bottom='bottom', right='right', top='top', source=cds, **style)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         data = self._process_msg({'data': data})['data']
