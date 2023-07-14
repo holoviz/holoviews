@@ -40,7 +40,7 @@ jobs:
       PANEL_EMBED_JSON: "true"
       PANEL_EMBED_JSON_PREFIX: "json"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a14
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
           name: Documentation
           python-version: "3.10"
