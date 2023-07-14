@@ -355,6 +355,25 @@ class aggregate(LineAggregationOperation):
                 category=FutureWarning
             )
             agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
+        if isinstance(agg_fn, ds.where):
+            params["vdims"] = [Dimension("val", nodata=-1)]  # hack
+            neg1 = agg.data == -1
+            data = agg.data
+            agg = agg.to_dataset(name="index")
+            for c in dfdata.columns:
+                if c in params["kdims"]:
+                    continue
+                val = dfdata[c].values[data]
+                if val.dtype.kind == 'f':
+                    val[neg1] = np.nan
+                elif val.dtype.kind == "O":
+                    val[neg1] = ""
+                else:
+                    val[neg1] = -1
+                agg[c] = ((y.name, x.name), val)
+                if c not in params["vdims"]:
+                    params["vdims"].append(c)
+
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
@@ -362,7 +381,7 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if agg.ndim == 2:
+        if isinstance(agg, xr.Dataset) or agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
