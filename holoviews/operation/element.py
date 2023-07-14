@@ -159,7 +159,7 @@ class apply_when(param.ParameterizedFunction):
     def _apply(self, element, x_range, y_range, invert=False):
         selected = element
         if x_range is not None and y_range is not None:
-            selected = element[x_range, y_range]
+            selected = element.select(x_range=x_range, y_range=y_range)
         condition = self.predicate(selected)
         if (not invert and condition) or (invert and not condition):
             return selected
