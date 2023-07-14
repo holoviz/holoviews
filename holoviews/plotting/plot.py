@@ -1697,6 +1697,13 @@ class GenericOverlayPlot(GenericElementPlot):
         super().__init__(overlay, ranges=ranges, keys=keys,
                          batched=batched, **params)
 
+        if ('multi_y' in self.param) and self.multi_y:
+            for s in self.streams:
+                intersection =  set(s.param) & set(['y', 'y_selection', 'y_range', 'bounds', 'boundsy'])
+                if intersection:
+                    self.param.warning(f'{type(s).__name__} stream parameters'
+                                       f' {list(intersection)} not yet supported with multi_y=True')
+
         # Apply data collapse
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.map_lengths = Counter()
@@ -2002,7 +2009,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         # Apply xlim, ylim, zlim plot option
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        if not self.multi_y:
+        if not (('multi_y' in self.param) and self.multi_y):
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
         if isinstance(self.projection, str) and self.projection == '3d':
