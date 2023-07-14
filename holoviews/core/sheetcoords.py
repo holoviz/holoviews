@@ -515,13 +515,18 @@ class Slice(np.ndarray):
         t_m,l_m = scs.sheet2matrix(l,t)
         b_m,r_m = scs.sheet2matrix(r,b)
 
-        l_idx = int(np.ceil(l_m-0.5))
-        t_idx = int(np.ceil(t_m-0.5))
+        l_idx = np.ceil(l_m-0.5)
+        t_idx = np.ceil(t_m-0.5)
         # CBENHANCEMENT: Python 2.6's math.trunc()?
-        r_idx = int(np.floor(r_m+0.5))
-        b_idx = int(np.floor(b_m+0.5))
+        r_idx = np.floor(r_m+0.5)
+        b_idx = np.floor(b_m+0.5)
 
-        return t_idx,b_idx,l_idx,r_idx
+        # sometimes contains NaNs so just set them to 0
+        # rather than raising an exception
+        indices = np.array([t_idx, b_idx, l_idx, r_idx])
+        indices[np.isnan(indices)] = 0
+
+        return tuple(indices.astype(int))
 
 
     @staticmethod
