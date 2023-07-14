@@ -49,6 +49,9 @@ jobs:
           envs: "-o doc"
           cache: true
           conda-update: true
+      - name: Set output
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: bokeh sampledata
         run: |
           conda activate test-environment
@@ -65,23 +68,17 @@ jobs:
         run: |
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews
-      - name: create push-environment
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run:
-          conda create -n push-environment python=3.9 awscli
       - name: upload dev
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          conda activate push-environment
+          pipx install awscli
           aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          conda activate push-environment
+          pipx install awscli
           aws s3 sync --quiet ./builtdocs s3://holoviews.org/
