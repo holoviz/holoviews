@@ -1388,6 +1388,7 @@ class rasterize(AggregationOperation):
         all_supplied_kws = set()
         instance_params = {
             k: getattr(self, k) for k in self.__instance_params
+            if hasattr(self, k)
         }
         for predicate, transform in self._transforms:
             merged_param_values = dict(instance_params, **self.p)
