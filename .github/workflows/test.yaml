@@ -69,7 +69,6 @@ jobs:
           envs: "-o flakes -o tests -o examples_tests -o bokeh${{ matrix.bokeh-version }}"
           cache: true
           conda-update: true
-          conda-mamba: mamba
         id: install
       - name: bokeh sampledata
         run: |
@@ -120,7 +119,6 @@ jobs:
           envs: "-o recommended -o tests -o build"
           cache: true
           playwright: true
-          conda-mamba: mamba
         id: install
       - name: doit env_capture
         run: |

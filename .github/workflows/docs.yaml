@@ -49,7 +49,6 @@ jobs:
           envs: "-o doc"
           cache: true
           conda-update: true
-          conda-mamba: mamba
       - name: bokeh sampledata
         run: |
           conda activate test-environment
