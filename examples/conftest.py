@@ -1,9 +1,5 @@
 import sys
-
-import pandas as pd
-from packaging.version import Version
-
-PD2 = Version(pd.__version__) >= Version("2.0")
+import platform
 
 # Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
 # to avoid crashing when running tests with pytest-xdist on Windows.
@@ -20,10 +16,10 @@ collect_ignore_glob = [
 ]
 
 
-# Pandas bug: https://github.com/pandas-dev/pandas/issues/52451
-if PD2 and sys.platform == "win32":
+if sys.version_info == (3, 8) and platform.system() == "Linux":
+    # from matplotlib.cbook import get_sample_data has problem
+    # on Linux with Python 3.8.
     collect_ignore_glob += [
-        "gallery/demos/bokeh/point_draw_triangulate.ipynb",
-        "reference/elements/*/TriMesh.ipynb",
-        "user_guide/15-Large_Data.ipynb",
+        "gallery/demos/*/bachelors_degrees_by_gender.ipynb",
+        "gallery/demos/*/topographic_hillshading.ipynb",
     ]
