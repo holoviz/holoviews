@@ -1872,9 +1872,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         # Apply xlim, ylim, zlim plot option
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        if self.multi_y:
-            y0, y1 = util.dimension_range(y0, y1, (None, None), (None, None))
-        else:
+        if not self.multi_y:
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
         if isinstance(self.projection, str) and self.projection == '3d':
