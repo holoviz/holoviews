@@ -157,9 +157,10 @@ class AggregationOperation(ResampleOperation2D):
         if agg_name == "Where":
             # Set the first item to be the selector column.
             # TODO: Look into if there is a better way to do this.
+            col = agg_fn.column if not isinstance(agg_fn.column, rd.SpecialColumn) else agg_fn.selector.column
             vdims = sorted(
                 params["vdims"],
-                key=lambda x: str(x) == agg_fn.selector.column,
+                key=lambda x: str(x) == col,
                 reverse=True
             )
             vdims[0] = vdims[0].clone(vdims[0].name, nodata=0)
@@ -355,7 +356,7 @@ class aggregate(LineAggregationOperation):
         if isinstance(agg_fn, ds.where):
             # Only calculating the index no matter the column
             # We will calculate the value later
-            agg_fn.column = rd.SpecialColumn.RowIndex
+            agg_fn = ds.where(agg_fn.selector)
 
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
