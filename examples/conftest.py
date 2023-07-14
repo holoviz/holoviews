@@ -1,6 +1,11 @@
 import sys
 import platform
 
+import pandas as pd
+from packaging.version import Version
+
+PD2 = Version(pd.__version__) >= Version("2.0")
+
 # Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
 # to avoid crashing when running tests with pytest-xdist on Windows.
 # This is set in the .github/workflows/test.yaml file.
@@ -16,9 +21,19 @@ collect_ignore_glob = [
 ]
 
 
-if sys.version_info == (3, 8) and platform.system() == "Linux":
-    # from matplotlib.cbook import get_sample_data has problem
-    # on Linux with Python 3.8.
+# 2022-07-14 with following error:
+# ValueError: Buffer dtype mismatch, expected 'const int64_t' but got 'int'
+if PD2 and platform.system() == "Windows":
+    collect_ignore_glob += [
+        "gallery/demos/bokeh/point_draw_triangulate.ipynb",
+        "reference/elements/*/TriMesh.ipynb",
+        "user_guide/15-Large_Data.ipynb",
+    ]
+
+
+# 2022-07-14 with following error:
+# 'from matplotlib.cbook import get_sample_data' cannot find file
+if sys.version_info[:2] == (3, 8) and platform.system() == "Linux":
     collect_ignore_glob += [
         "gallery/demos/*/bachelors_degrees_by_gender.ipynb",
         "gallery/demos/*/topographic_hillshading.ipynb",
