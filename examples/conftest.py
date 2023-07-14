@@ -1,5 +1,5 @@
-import sys
 import platform
+import sys
 
 import pandas as pd
 from packaging.version import Version
@@ -21,7 +21,7 @@ collect_ignore_glob = [
 ]
 
 
-# 2022-07-14 with following error:
+# 2023-07-14 with following error:
 # ValueError: Buffer dtype mismatch, expected 'const int64_t' but got 'int'
 if PD2 and platform.system() == "Windows":
     collect_ignore_glob += [
@@ -31,7 +31,7 @@ if PD2 and platform.system() == "Windows":
     ]
 
 
-# 2022-07-14 with following error:
+# 2023-07-14 with following error:
 # 'from matplotlib.cbook import get_sample_data' cannot find file
 if sys.version_info[:2] == (3, 8) and platform.system() == "Linux":
     collect_ignore_glob += [
