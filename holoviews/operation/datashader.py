@@ -154,9 +154,17 @@ class AggregationOperation(ResampleOperation2D):
             agg_fn = agg_fn.reduction
         column = agg_fn.column if agg_fn else None
         agg_name = type(agg_fn).__name__.title()
-        # Only str column as ds.where(ds.min("val")).column
-        # returns rd.SpecialColumn added in 1.15.1
-        if isinstance(column, str):
+        if agg_name == "Where":
+            # Set the first item to be the selector column.
+            # TODO: Look into if there is a better way to do this.
+            vdims = sorted(
+                params["vdims"],
+                key=lambda x: str(x) == agg_fn.selector.column,
+                reverse=True
+            )
+            vdims[0] = vdims[0].clone(vdims[0].name, nodata=0)
+            # TODO: Should we add prefix to all of the where columns.
+        elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
                 raise ValueError("Aggregation column '{}' not found on '{}' element. "
@@ -177,9 +185,6 @@ class AggregationOperation(ResampleOperation2D):
                 vdims.nodata = 0
         else:
             vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
-
-        if agg_name == "Where" and not isinstance(column, str):
-            vdims.nodata = -1
         params['vdims'] = vdims
         return params
 
@@ -347,6 +352,11 @@ class aggregate(LineAggregationOperation):
             agg_kwargs['line_width'] = self.p.line_width
 
         dfdata = PandasInterface.as_dframe(data)
+        if isinstance(agg_fn, ds.where):
+            # Only calculating the index no matter the column
+            # We will calculate the value later
+            agg_fn.column = rd.SpecialColumn.RowIndex
+
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
         with warnings.catch_warnings():
@@ -356,23 +366,20 @@ class aggregate(LineAggregationOperation):
             )
             agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
         if isinstance(agg_fn, ds.where):
-            params["vdims"] = [Dimension("val", nodata=-1)]  # hack
             neg1 = agg.data == -1
             data = agg.data
             agg = agg.to_dataset(name="index")
-            for c in dfdata.columns:
-                if c in params["kdims"]:
+            for col in dfdata.columns:
+                if col in params["kdims"]:
                     continue
-                val = dfdata[c].values[data]
+                val = dfdata[col].values[data]
                 if val.dtype.kind == 'f':
                     val[neg1] = np.nan
                 elif val.dtype.kind == "O":
-                    val[neg1] = ""
+                    val[neg1] = "-"
                 else:
-                    val[neg1] = -1
-                agg[c] = ((y.name, x.name), val)
-                if c not in params["vdims"]:
-                    params["vdims"].append(c)
+                    val[neg1] = 0
+                agg[col] = ((y.name, x.name), val)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
