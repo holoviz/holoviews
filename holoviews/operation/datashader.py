@@ -156,13 +156,8 @@ class AggregationOperation(ResampleOperation2D):
         agg_name = type(agg_fn).__name__.title()
         if agg_name == "Where":
             # Set the first item to be the selector column.
-            # TODO: Look into if there is a better way to do this.
             col = agg_fn.column if not isinstance(agg_fn.column, rd.SpecialColumn) else agg_fn.selector.column
-            vdims = sorted(
-                params["vdims"],
-                key=lambda x: str(x) == col,
-                reverse=True
-            )
+            vdims = sorted(params["vdims"], key=lambda x: x == col, reverse=True)
             # TODO: Should we add prefix to all of the where columns.
         elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
