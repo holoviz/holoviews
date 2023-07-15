@@ -163,7 +163,6 @@ class AggregationOperation(ResampleOperation2D):
                 key=lambda x: str(x) == col,
                 reverse=True
             )
-            vdims[0] = vdims[0].clone(vdims[0].name, nodata=0)
             # TODO: Should we add prefix to all of the where columns.
         elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
@@ -379,7 +378,8 @@ class aggregate(LineAggregationOperation):
                 elif val.dtype.kind == "O":
                     val[neg1] = "-"
                 else:
-                    val[neg1] = 0
+                    val = val.astype(np.float64)
+                    val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
