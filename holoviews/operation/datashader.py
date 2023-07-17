@@ -65,6 +65,8 @@ class AggregationOperation(ResampleOperation2D):
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
+    selector = param.ClassSelector(class_=(rd.min, rd.max, rd.first, rd.last), default=None)
+
     vdim_prefix = param.String(default='{kdims} ', allow_None=True, doc="""
         Prefix to prepend to value dimension name where {kdims}
         templates in the names of the input element key dimensions.""")
@@ -307,6 +309,7 @@ class aggregate(LineAggregationOperation):
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
+        sel_fn = getattr(self.p, "selector", None)
         if hasattr(agg_fn, 'cat_column'):
             category = agg_fn.cat_column
         else:
@@ -349,6 +352,16 @@ class aggregate(LineAggregationOperation):
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
         agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
+
+        if sel_fn:
+            sel = self._apply_datashader(dfdata, cvs_fn, ds.where(sel_fn), {}, x, y)
+            if isinstance(params["vdims"], (Dimension, str)):
+                params["vdims"] = [params["vdims"]]
+            # First sel is index, which we don't care
+            sel_prefix = f"{type(sel_fn).__name__}_{sel_fn.column}"
+            sel_vdims = [Dimension(s, label=f"{sel_prefix} {s}") for s in list(sel)[1:]]
+            params["vdims"] = [*params["vdims"], *sel_vdims]
+            agg = agg.to_dataset(name=str(params["vdims"][0])).merge(sel)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
