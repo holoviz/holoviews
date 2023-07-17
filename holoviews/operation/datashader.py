@@ -347,35 +347,8 @@ class aggregate(LineAggregationOperation):
             agg_kwargs['line_width'] = self.p.line_width
 
         dfdata = PandasInterface.as_dframe(data)
-        if isinstance(agg_fn, ds.where):
-            # Only calculating the index no matter the column
-            # We will calculate the value later
-            agg_fn = ds.where(agg_fn.selector)
-
-        # Suppress numpy warning emitted by dask:
-        # https://github.com/dask/dask/issues/8439
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action='ignore', message='casting datetime64',
-                category=FutureWarning
-            )
-            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
-        if isinstance(agg_fn, ds.where):
-            neg1 = agg.data == -1
-            data = agg.data
-            agg = agg.to_dataset(name="index")
-            for col in dfdata.columns:
-                if col in params["kdims"]:
-                    continue
-                val = dfdata[col].values[data]
-                if val.dtype.kind == 'f':
-                    val[neg1] = np.nan
-                elif val.dtype.kind == "O":
-                    val[neg1] = "-"
-                else:
-                    val = val.astype(np.float64)
-                    val[neg1] = np.nan
-                agg[col] = ((y.name, x.name), val)
+        cvs_fn = getattr(cvs, glyph)
+        agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
@@ -395,6 +368,38 @@ class aggregate(LineAggregationOperation):
                 eldata = cagg if ds_version > Version('0.5.0') else (xs, ys, cagg.data)
                 layers[c] = self.p.element_type(eldata, **params)
             return NdOverlay(layers, kdims=[data.get_dimension(agg_fn.column)])
+
+    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
+        if isinstance(agg_fn, ds.where):
+            # Only calculating the index no matter the column
+            # We will calculate the value later
+            agg_fn = ds.where(agg_fn.selector)
+
+        # Suppress numpy warning emitted by dask:
+        # https://github.com/dask/dask/issues/8439
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                action='ignore', message='casting datetime64',
+                category=FutureWarning
+            )
+            agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
+        if isinstance(agg_fn, ds.where):
+            neg1 = agg.data == -1
+            data = agg.data
+            agg = agg.to_dataset(name="index")
+            for col in dfdata.columns:
+                if col in agg.coords:
+                    continue
+                val = dfdata[col].values[data]
+                if val.dtype.kind == 'f':
+                    val[neg1] = np.nan
+                elif val.dtype.kind == "O":
+                    val[neg1] = "-"
+                else:
+                    val = val.astype(np.float64)
+                    val[neg1] = np.nan
+                agg[col] = ((y.name, x.name), val)
+        return agg
 
 
 
