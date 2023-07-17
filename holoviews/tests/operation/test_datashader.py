@@ -1174,14 +1174,15 @@ class DatashaderRasterizeTests(ComparisonTestCase):
     def test_rasterize_apply_when_instance_with_line_width(self):
         df = pd.DataFrame(
             np.random.multivariate_normal(
-            (0, 0), [[0.1, 0.1], [0.1, 1.0]], (500000,))
+            (0, 0), [[0.1, 0.1], [0.1, 1.0]], (100,))
         )
         df.columns = ["a", "b"]
 
         curve = Curve(df, kdims=["a"], vdims=["b"])
+        # line_width is not a parameter
         custom_rasterize = rasterize.instance(line_width=2)
         output = apply_when(
-            curve, operation=custom_rasterize, predicate=lambda x: len(x) > 1000
+            curve, operation=custom_rasterize, predicate=lambda x: len(x) > 10
         )
         render(output, "bokeh")
         assert isinstance(output, DynamicMap)
