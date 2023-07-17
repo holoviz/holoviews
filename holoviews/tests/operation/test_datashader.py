@@ -14,6 +14,7 @@ from holoviews import (
 from holoviews.streams import Tap
 from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
+from holoviews.operation import apply_when
 from packaging.version import Version
 
 try:
@@ -1168,6 +1169,20 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         img = rasterize(Image(da), expand=True, **rast_input)
         output = img.data["z"].to_numpy()
         assert np.isnan(output).any()
+
+    def test_rasterize_apply_when_instance_with_line_width(self):
+        df = pd.DataFrame(
+            np.random.multivariate_normal(
+            (0, 0), [[0.1, 0.1], [0.1, 1.0]], (500000,))
+        )
+        df.columns = ["a", "b"]
+
+        curve = Curve(df, kdims=["a"], vdims=["b"])
+        custom_rasterize = rasterize.instance(line_width=2)
+        output = apply_when(
+            curve, operation=custom_rasterize, predicate=lambda x: len(x) > 1000
+        )
+        assert isinstance(output, Image)
 
 class DatashaderSpreadTests(ComparisonTestCase):
 
