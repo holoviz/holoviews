@@ -9,8 +9,9 @@ import pytest
 from holoviews import (
     Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
     QuadMesh, NdOverlay, Contours, Spikes, Spread, Area, Rectangles,
-    Segments, Polygons, Nodes
+    Segments, Polygons, Nodes, DynamicMap, Overlay
 )
+from holoviews.util import render
 from holoviews.streams import Tap
 from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
@@ -1182,7 +1183,11 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         output = apply_when(
             curve, operation=custom_rasterize, predicate=lambda x: len(x) > 1000
         )
-        assert isinstance(output, Image)
+        render(output, "bokeh")
+        assert isinstance(output, DynamicMap)
+        overlay = output.items()[0][1]
+        assert isinstance(overlay, Overlay)
+        assert len(overlay) == 2
 
 class DatashaderSpreadTests(ComparisonTestCase):
 
