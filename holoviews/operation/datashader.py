@@ -357,17 +357,18 @@ class aggregate(LineAggregationOperation):
 
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
-        agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
 
         if sel_fn:
-            sel = self._apply_datashader(dfdata, cvs_fn, ds.where(sel_fn), {}, x, y)
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]
+            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "index": ds.where(sel_fn)})
+            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
             # First sel is index, which we don't care
             sel_prefix = f"{type(sel_fn).__name__}_{sel_fn.column}"
-            sel_vdims = [Dimension(s, label=f"{sel_prefix} {s}") for s in list(sel)[1:]]
+            sel_vdims = [Dimension(s, label=f"{sel_prefix} {s}") for s in list(agg)[1:] if s not in params["vdims"]]
             params["vdims"] = [*params["vdims"], *sel_vdims]
-            agg = agg.to_dataset(name=str(params["vdims"][0])).merge(sel)
+        else:
+            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
@@ -402,10 +403,14 @@ class aggregate(LineAggregationOperation):
                 category=FutureWarning
             )
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
-        if isinstance(agg_fn, ds.where):
-            neg1 = agg.data == -1
-            data = agg.data
-            agg = agg.to_dataset(name="index")
+        if isinstance(agg_fn, ds.where) or (isinstance(agg_fn, ds.summary) and "index" in agg):
+            if isinstance(agg_fn, xr.DataArray):
+                neg1 = agg.data == -1
+                data = agg.data
+                agg = agg.to_dataset(name="index")
+            else:
+                data = agg.index.data
+                neg1 = data == -1
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
