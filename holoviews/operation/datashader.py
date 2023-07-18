@@ -58,8 +58,8 @@ class AggregationOperation(ResampleOperation2D):
     aggregator parameter used to define a datashader Reduction.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
-                                     default=ds.count(), doc="""
+    aggregator = param.ClassSelector(class_=(rd.Reduction, str, rd.summary),
+                                     default=rd.count(), doc="""
         Datashader reduction function used for aggregating the data.
         The aggregator may also define a column to aggregate; if
         no column is defined the first value dimension of the element
@@ -150,12 +150,15 @@ class AggregationOperation(ResampleOperation2D):
         else:
             vdim_prefix = ''
 
+        agg_name = type(agg_fn).__name__.title()
         category = None
         if hasattr(agg_fn, 'reduction'):
             category = agg_fn.cat_column
             agg_fn = agg_fn.reduction
-        column = agg_fn.column if agg_fn else None
-        agg_name = type(agg_fn).__name__.title()
+        if isinstance(agg_fn, rd.summary):
+            column = None
+        else:
+            column = agg_fn.column if agg_fn else None
         if agg_name == "Where":
             # Set the first item to be the selector column.
             col = agg_fn.column if not isinstance(agg_fn.column, rd.SpecialColumn) else agg_fn.selector.column
@@ -182,6 +185,9 @@ class AggregationOperation(ResampleOperation2D):
                 vdims.nodata = 0
         else:
             vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
+        if agg_name == "Summary":
+            vdims = list(agg_fn.keys)
+
         params['vdims'] = vdims
         return params
 
@@ -768,8 +774,8 @@ class regrid(AggregationOperation):
     with NaN values.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, str, rd.summary))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
@@ -906,8 +912,8 @@ class contours_rasterize(aggregate):
     default to any aggregator.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
@@ -925,8 +931,8 @@ class trimesh_rasterize(aggregate):
     data.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', 'linear', None, False], doc="""
@@ -1306,8 +1312,8 @@ class geometry_rasterize(LineAggregationOperation):
     Rasterizes geometries by converting them to spatialpandas.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
@@ -1391,7 +1397,7 @@ class rasterize(AggregationOperation):
     dimensions of the linked plot and the ranges of the axes.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
+    aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default='default')
 
     interpolation = param.ObjectSelector(
