@@ -363,9 +363,8 @@ class aggregate(LineAggregationOperation):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "index": ds.where(sel_fn)})
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
-            sel_prefix = f"{type(sel_fn).__name__}_{sel_fn.column}"
             _ignore = [*params["vdims"], "index"]
-            sel_vdims = [Dimension(s, label=f"{sel_prefix} {s}") for s in agg if s not in _ignore]
+            sel_vdims = [s for s in agg if s not in _ignore]
             params["vdims"] = [*params["vdims"], *sel_vdims]
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
