@@ -403,7 +403,7 @@ class aggregate(LineAggregationOperation):
             )
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
         if isinstance(agg_fn, ds.where) or (isinstance(agg_fn, ds.summary) and "index" in agg):
-            if isinstance(agg_fn, xr.DataArray):
+            if isinstance(agg, xr.DataArray):
                 neg1 = agg.data == -1
                 data = agg.data
                 agg = agg.to_dataset(name="index")
