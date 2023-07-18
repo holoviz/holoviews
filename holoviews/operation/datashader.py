@@ -150,7 +150,6 @@ class AggregationOperation(ResampleOperation2D):
         else:
             vdim_prefix = ''
 
-        agg_name = type(agg_fn).__name__.title()
         category = None
         if hasattr(agg_fn, 'reduction'):
             category = agg_fn.cat_column
@@ -159,6 +158,7 @@ class AggregationOperation(ResampleOperation2D):
             column = None
         else:
             column = agg_fn.column if agg_fn else None
+        agg_name = type(agg_fn).__name__.title()
         if agg_name == "Where":
             # Set the first item to be the selector column.
             col = agg_fn.column if not isinstance(agg_fn.column, rd.SpecialColumn) else agg_fn.selector.column
