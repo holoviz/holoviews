@@ -50,6 +50,7 @@ def __getattr__(name):
 
 
 ds_version = Version(ds.__version__)
+ds15 = ds_version >= Version('0.15.1')
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -88,7 +89,7 @@ class AggregationOperation(ResampleOperation2D):
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
-        if ds_version >= Version('1.15.0'):
+        if ds15:
             agg_types = (rd.count, rd.any, rd.where)
         else:
             agg_types = (rd.count, rd.any)
@@ -402,14 +403,16 @@ class aggregate(LineAggregationOperation):
                 category=FutureWarning
             )
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
-        if isinstance(agg_fn, ds.where) or (isinstance(agg_fn, ds.summary) and "index" in agg):
-            if isinstance(agg, xr.DataArray):
-                neg1 = agg.data == -1
+
+        is_where_index = ds15 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
+        is_summary_index = isinstance(agg_fn, ds.summary) and "index" in agg.data
+        if is_where_index or is_summary_index:
+            if is_where_index:
                 data = agg.data
                 agg = agg.to_dataset(name="index")
-            else:
+            else:  # summary index
                 data = agg.index.data
-                neg1 = data == -1
+            neg1 = data == -1
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
