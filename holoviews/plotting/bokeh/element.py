@@ -120,7 +120,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     min_width = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
 
-    min_height = param.Integer(default=300, bounds=(0, None), doc="""
+    min_height = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal height of the component (in pixels) if height is adjustable.""")
 
     max_width = param.Integer(default=None, bounds=(0, None), doc="""
@@ -779,7 +779,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
         style_items = list(self.gridstyle.items())
-        both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
+        both = {k: v for k, v in style_items if k.startswith(('grid_', 'minor_grid'))}
         xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
         ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
         xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
@@ -1885,9 +1885,6 @@ class ColorbarPlot(ElementPlot):
         True, uses 2nd and 98th percentile; otherwise uses the specified
         numerical percentile value.""")
 
-    cformatter = param.ClassSelector(
-        default=None, class_=(str, TickFormatter, FunctionType), doc="""
-        Formatter for ticks along the colorbar axis.""")
 
     cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")

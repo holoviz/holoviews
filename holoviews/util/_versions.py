@@ -26,7 +26,7 @@ PACKAGES = [
     "geoviews",
     "hvplot",
     "matplotlib",
-    "pillow",
+    "PIL",
     "plotly",
     # Jupyter
     "IPython",
@@ -44,7 +44,7 @@ def show_versions():
     print(f"Operating system    :  {platform.platform()}")
     _package_version("holoviews")
     print()
-    for p in sorted(PACKAGES):
+    for p in sorted(PACKAGES, key=lambda x: x.lower()):
         _package_version(p)
 
 

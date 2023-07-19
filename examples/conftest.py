@@ -1,3 +1,4 @@
+import platform
 import sys
 
 import pandas as pd
@@ -20,10 +21,20 @@ collect_ignore_glob = [
 ]
 
 
-# Pandas bug: https://github.com/pandas-dev/pandas/issues/52451
-if PD2 and sys.platform == "win32":
+# 2023-07-14 with following error:
+# ValueError: Buffer dtype mismatch, expected 'const int64_t' but got 'int'
+if PD2 and platform.system() == "Windows":
     collect_ignore_glob += [
         "gallery/demos/bokeh/point_draw_triangulate.ipynb",
         "reference/elements/*/TriMesh.ipynb",
         "user_guide/15-Large_Data.ipynb",
+    ]
+
+
+# 2023-07-14 with following error:
+# 'from matplotlib.cbook import get_sample_data' cannot find file
+if sys.version_info[:2] == (3, 8) and platform.system() == "Linux":
+    collect_ignore_glob += [
+        "gallery/demos/*/bachelors_degrees_by_gender.ipynb",
+        "gallery/demos/*/topographic_hillshading.ipynb",
     ]

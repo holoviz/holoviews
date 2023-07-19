@@ -573,6 +573,10 @@ class output(param.ParameterizedFunction):
     the cell magic respectively.
     """
 
+    def __init__(self, *args, **kwargs):
+        # To not overwrite param.ParameterizedFunction signature below
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def info(cls):
         deprecate = ['filename', 'info', 'mode']
@@ -713,14 +717,11 @@ class extension(_pyviz_extension):
         import panel as pn
 
         if pn.config.comms == "default":
-            try:
-                import google.colab  # noqa
+            if "google.colab" in sys.modules:
                 pn.config.comms = "colab"
                 return
-            except ImportError:
-                pass
 
-            if "VSCODE_PID" in os.environ:
+            if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
                 pn.config.comms = "vscode"
                 self._ignore_bokeh_warnings()
                 return

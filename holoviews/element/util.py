@@ -170,7 +170,7 @@ class categorical_aggregate2d(Operation):
         vdims = obj.dimensions()[2:]
         xdim, ydim = dim_labels[:2]
         shape = (len(ycoords), len(xcoords))
-        nsamples = np.product(shape)
+        nsamples = np.prod(shape)
         grid_data = {xdim: xcoords, ydim: ycoords}
 
         ys, xs = cartesian_product([ycoords, xcoords], copy=True)
