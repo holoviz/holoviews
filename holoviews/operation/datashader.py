@@ -59,14 +59,18 @@ class AggregationOperation(ResampleOperation2D):
     aggregator parameter used to define a datashader Reduction.
     """
 
-    aggregator = param.ClassSelector(class_=(rd.Reduction, str, rd.summary),
+    aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default=rd.count(), doc="""
         Datashader reduction function used for aggregating the data.
         The aggregator may also define a column to aggregate; if
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
-    selector = param.ClassSelector(class_=(rd.min, rd.max, rd.first, rd.last), default=None)
+    selector = param.ClassSelector(class_=(rd.min, rd.max, rd.first, rd.last),
+        default=None, doc="""
+        Selector is a datashader reduction function used for selecting data.
+        The selector only works with aggregators which selects an item from
+        the original data. These selectors are min, max, first and last.""")
 
     vdim_prefix = param.String(default='{kdims} ', allow_None=True, doc="""
         Prefix to prepend to value dimension name where {kdims}
@@ -188,7 +192,6 @@ class AggregationOperation(ResampleOperation2D):
                 vdims.nodata = 0
         else:
             vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
-
         params['vdims'] = vdims
         return params
 
@@ -777,7 +780,7 @@ class regrid(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(default=rd.mean(),
-                                     class_=(rd.Reduction, str, rd.summary))
+                                     class_=(rd.Reduction, rd.summary, str))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
