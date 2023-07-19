@@ -412,23 +412,23 @@ def merge_tools(plot_grid, disambiguation_properties=None):
     return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
 
 
-def sync_legends(plot_layout):
+def sync_legends(bokeh_layout):
     """This syncs the legends of all plots in a grid based on their name.
 
     Only works for Bokeh 3 and above.
 
     Parameters
     ----------
-    plot_layout : bokeh.models.{GridPlot, Row, Column}
+    bokeh_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
     """
-    if not bokeh3 or len(plot_layout.children) < 2:
+    if not bokeh3 or len(bokeh_layout.children) < 2:
         return
 
     # Collect all glyph with names
-    items = defaultdict(lambda: [])
+    items = defaultdict(list)
     click_policies = set()
-    for fig in plot_layout.children:
+    for fig in bokeh_layout.children:
         if isinstance(fig, tuple):  # GridPlot
             fig = fig[0]
         if not isinstance(fig, figure):
