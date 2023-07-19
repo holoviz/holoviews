@@ -457,31 +457,37 @@ def sync_legends(plot_layout):
                 CustomJS(code=code, args=dict(src=src, dst=dst)),
             )
 
-def one_legend(plot_layout, legend_no=0, legend_position="top_right"):
-    """ Displays only one legend in a grid of plots.
+
+def select_legends(holoviews_layout, figure_index=None, legend_position="top_right"):
+    """ Only displays selected legends in plot layout.
 
     Parameters
     ----------
-    plot_layout : Holoviews element
-        Holoviews element where one legend is chosen.
-    legend_no : int
-        Figure in gridplot which shows the legend.
+    holoviews_layout : Holoviews Layout
+        Holoviews Layout with legends.
+    figure_index : list[int] | int | None
+        Index of the figures which legends to show.
+        If None is chosen, only the first figures legend is shown
     legend_position : str
-        Position of the legend.
+        Position of the legend(s).
     """
-    if not isinstance(plot_layout, Layout):
-        plot_layout = [plot_layout]
+    if figure_index is None:
+        figure_index = [0]
+    elif isinstance(figure_index, int):
+        figure_index = [figure_index]
+    if not isinstance(holoviews_layout, Layout):
+        holoviews_layout = [holoviews_layout]
 
-    for i, plot in enumerate(plot_layout):
-        if legend_no == i:
+    for i, plot in enumerate(holoviews_layout):
+        if i in figure_index:
             plot.opts(show_legend=True, legend_position=legend_position)
         else:
             plot.opts(show_legend=False)
 
-    if isinstance(plot_layout, list):
-        return plot_layout[0]
+    if isinstance(holoviews_layout, list):
+        return holoviews_layout[0]
 
-    return plot_layout
+    return holoviews_layout
 
 
 @contextmanager

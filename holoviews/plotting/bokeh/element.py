@@ -1171,7 +1171,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
         if "name" not in properties:
-            properties["name"] = properties.get("legend_label") or properties.get("legend_field", None)
+            properties["name"] = properties.get("legend_label") or properties.get("legend_field")
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
