@@ -1164,7 +1164,6 @@ class GenericElementPlot(DimensionedPlot):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
-        self.batched = batched
         self.overlay_dims = overlay_dims
 
         if not isinstance(element, (HoloMap, DynamicMap)):
@@ -1179,7 +1178,7 @@ class GenericElementPlot(DimensionedPlot):
             self.stream_sources = compute_overlayable_zorders(self.hmap)
 
         plot_element = self.hmap.last
-        if self.batched and not isinstance(self, GenericOverlayPlot):
+        if batched and not isinstance(self, GenericOverlayPlot):
             plot_element = plot_element.last
 
         dynamic = isinstance(element, DynamicMap) and not element.unbounded
@@ -1203,6 +1202,7 @@ class GenericElementPlot(DimensionedPlot):
                 self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions,
                          dynamic=dynamic, **applied_params)
+        self.batched = batched
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
 
         # Attach streams if not overlaid and not a batched ElementPlot
