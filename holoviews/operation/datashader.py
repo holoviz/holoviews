@@ -390,11 +390,6 @@ class aggregate(LineAggregationOperation):
             return NdOverlay(layers, kdims=[data.get_dimension(agg_fn.column)])
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
-        if isinstance(agg_fn, ds.where):
-            # Only calculating the index no matter the column
-            # We will calculate the value later
-            agg_fn = ds.where(agg_fn.selector)
-
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
         with warnings.catch_warnings():
@@ -405,7 +400,7 @@ class aggregate(LineAggregationOperation):
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
 
         is_where_index = ds15 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
-        is_summary_index = isinstance(agg_fn, ds.summary) and "index" in agg.data
+        is_summary_index = isinstance(agg_fn, ds.summary) and "index" in agg
         if is_where_index or is_summary_index:
             if is_where_index:
                 data = agg.data
