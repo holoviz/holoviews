@@ -569,6 +569,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
                     range_tags_extras = range_tags_extras) + (self.yaxis,)
 
+        self.axis_specs = axis_specs
         properties = {}
         for axis, axis_spec in axis_specs.items():
             for (axis_dim, (axis_type, axis_label, axis_range, axis_position)) in axis_spec.items():
@@ -855,8 +856,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_labels(self, key, plot, element):
-        el = element.traverse(lambda x: x, [Element])
-        el = el[0] if el else element
+        positions = [el[3] for el in self.axis_specs['y'].values()]
+        traverse_el = element.traverse(lambda x: x, [Element])
+        if traverse_el and positions==['right', 'left']:
+            traverse_el = [traverse_el[1], traverse_el[0]]
+        el = traverse_el[0] if traverse_el else element
         dimensions = self._get_axis_dims(el)
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
@@ -867,8 +871,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         props['y']['axis_label'] = ylabel if 'y' in self.labelled or self.ylabel else ''
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
-        for extra_y_axis in plot.yaxis[1:]:
-            recursive_model_update(extra_y_axis, {'axis_label': 'NOT IMPLEMENTED'})
+
+        extra_els = traverse_el[1:] if traverse_el else []
+        for extra_y_axis, extra_el in zip(plot.yaxis[1:], extra_els):
+            extra_dimensions = self._get_axis_dims(extra_el)
+            extra_props = {} # {'y': self._axis_properties(extra_y_axis, key, plot, extra_dimensions)}
+            _, extra_ylabel, _ = self._get_axis_labels(extra_dimensions)
+            extra_props['axis_label'] = extra_ylabel # if 'y' in self.labelled or self.ylabel else ''
+            recursive_model_update(extra_y_axis, extra_props)
 
     def _update_title(self, key, plot, element):
         if plot.title:
