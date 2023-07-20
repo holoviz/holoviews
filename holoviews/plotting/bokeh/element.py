@@ -848,8 +848,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     frame_aspect = 1
                 elif self.aspect and self.aspect != 'equal':
                     frame_aspect = self.aspect
-                else:
+                elif plot.frame_height and plot.frame_width:
                     frame_aspect = plot.frame_height/plot.frame_width
+                else:
+                    # Skip if aspect can't be determined
+                    return
 
                 if self.drawn:
                     current_l, current_r = plot.x_range.start, plot.x_range.end
