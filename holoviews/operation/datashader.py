@@ -417,6 +417,9 @@ class aggregate(LineAggregationOperation):
                 val = dfdata[col].values[data]
                 if val.dtype.kind == 'f':
                     val[neg1] = np.nan
+                elif isinstance(val.dtype, pd.CategoricalDtype):
+                    val = val.to_numpy()
+                    val[neg1] = "-"
                 elif val.dtype.kind == "O":
                     val[neg1] = "-"
                 else:
