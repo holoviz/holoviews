@@ -198,7 +198,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
             backend_opts={
                 "colorbar.set_label": "Testing",
                 "colorbar.set_ticks": [3.5, 5],
-                "colorbar.ticklabels": ["A", "B"],
+                "colorbar.ax.yticklabels": ["A", "B"],
             },
         )
         plot = mpl_renderer.get_plot(heat_map)
@@ -214,7 +214,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
             backend_opts={
                 "cbar.set_label": "Testing",
                 "cbar.set_ticks": [3.5, 5],
-                "cbar.ticklabels": ["A", "B"],
+                "cbar.ax.yticklabels": ["A", "B"]
             },
         )
         plot = mpl_renderer.get_plot(heat_map)
