@@ -290,7 +290,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Allows extending the _finalize_axis method with Element
         specific options.
         """
-        pass
 
     def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
         """
@@ -891,7 +890,7 @@ class ColorbarPlot(ElementPlot):
             self.handles['bbox_extra_artists'] += [cax, ylabel]
             ax_colorbars.append((artist, cax, spec, label))
 
-        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
+        for i, (_artist, cax, _spec, _label) in enumerate(ax_colorbars):
             scaled_w = w*width
             cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
                               b, scaled_w, h])

@@ -36,6 +36,7 @@ from ...core.util import (
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
+from ...util.warnings import deprecated
 
 bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
@@ -566,8 +567,8 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, Tabs):
         vals = [pad_width(t) for t in model.tabs]
         width = np.max([v for v in vals if v is not None])
-        for model in model.tabs:
-            model.width = width
+        for submodel in model.tabs:
+            submodel.width = width
             width = int(tabs_padding*width)
     elif isinstance(model, DataTable):
         width = model.width
@@ -620,6 +621,7 @@ def py2js_tickformatter(formatter, msg=''):
     """
     Uses py2js to compile a python tick formatter to JS code
     """
+    deprecated("1.18", "py2js_tickformatter")
     try:
         from pscript import py2js
     except ImportError:
@@ -868,8 +870,8 @@ def attach_periodic(plot):
     Attaches plot refresh to all streams on the object.
     """
     def append_refresh(dmap):
-        for dmap in get_nested_dmaps(dmap):
-            dmap.periodic._periodic_util = periodic(plot.document)
+        for subdmap in get_nested_dmaps(dmap):
+            subdmap.periodic._periodic_util = periodic(plot.document)
     return plot.hmap.traverse(append_refresh, [DynamicMap])
 
 

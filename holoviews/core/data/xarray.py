@@ -65,7 +65,7 @@ class XArrayInterface(GridInterface):
         else:
             array = dataset.data[dataset.vdims[0].name]
         if not gridded:
-            return (np.product(array.shape, dtype=np.intp), len(dataset.dimensions()))
+            return (np.prod(array.shape, dtype=np.intp), len(dataset.dimensions()))
         shape_map = dict(zip(array.dims, array.shape))
         return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
@@ -144,7 +144,7 @@ class XArrayInterface(GridInterface):
                     packed = True
                 else:
                     data = {d: v for d, v in zip(dimensions, data)}
-            elif isinstance(data, list) and data == []:
+            elif isinstance(data, (list, np.ndarray)) and len(data) == 0:
                 dimensions = [d.name for d in kdims + vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
@@ -626,7 +626,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def length(cls, dataset):
-        return np.product([len(dataset.data[d.name]) for d in dataset.kdims], dtype=np.intp)
+        return np.prod([len(dataset.data[d.name]) for d in dataset.kdims], dtype=np.intp)
 
     @classmethod
     def dframe(cls, dataset, dimensions):

@@ -1,10 +1,12 @@
 import numpy as np
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
 from holoviews.util.transform import dim
+from holoviews.core.options import AbbreviatedException
 from matplotlib.collections import LineCollection, PolyCollection
 from packaging.version import Version
 
@@ -272,7 +274,8 @@ class TestMplGraphPlot(TestMPLPlot):
     def test_graph_op_edge_alpha(self):
         edges = [(0, 1, 0.1), (0, 2, 0.5), (1, 3, 0.3)]
         graph = Graph(edges, vdims='alpha').opts(edge_alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "edge_alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(graph)
 
     def test_graph_op_edge_linewidth(self):
@@ -452,7 +455,8 @@ class TestMplTriMeshPlot(TestMPLPlot):
         edges = [(0, 1, 2, 0.7), (1, 2, 3, 0.3)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
         trimesh = TriMesh((edges, nodes), vdims='alpha').opts(edge_alpha='alpha')
-        with self.assertRaises(Exception):
+        msg = 'ValueError: Mapping a dimension to the "edge_alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(trimesh)
 
     def test_trimesh_op_edge_line_width(self):

@@ -44,7 +44,7 @@ from .resample import LinkableOperation, ResampleOperation2D
 def __getattr__(name):
     if name == "ResamplingOperation":
         from ..util.warnings import deprecated
-        deprecated("1.17", "ResamplingOperation", "ResampleOperation2D")
+        deprecated("1.18", "ResamplingOperation", "ResampleOperation2D")
         return ResampleOperation2D
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
@@ -1374,12 +1374,23 @@ class rasterize(AggregationOperation):
                    (type(None), shade) # To handle parameters of datashade
     ]
 
+    __instance_params = set()
+
+    @bothmethod
+    def instance(self_or_cls, **params):
+        inst = super().instance(**params)
+        inst.__instance_params = set(params)
+        return inst
+
     def _process(self, element, key=None):
         # Potentially needs traverse to find element types first?
         all_allowed_kws = set()
         all_supplied_kws = set()
+        instance_params = {
+            k: getattr(self, k) for k in self.__instance_params
+        }
         for predicate, transform in self._transforms:
-            merged_param_values = dict(self.param.values(), **self.p)
+            merged_param_values = dict(instance_params, **self.p)
 
             # If aggregator or interpolation are 'default', pop parameter so
             # datashader can choose the default aggregator itself

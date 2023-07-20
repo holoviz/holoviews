@@ -15,7 +15,7 @@ from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
     date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match,
-    dimension_range, tree_attribute
+    dimension_range, tree_attribute, search_indices
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -781,3 +781,9 @@ class TestClosestMatch(ComparisonTestCase):
         self.assertEqual(closest_match(spec, specs), None)
         spec = ('Scatter', 'Foo', 'Bar', 5)
         self.assertEqual(closest_match(spec, specs), None)
+
+
+def test_seach_indices_dtype_object():
+    values = np.array(["c0", "c0", np.nan], dtype=object)
+    source = np.array(["c0", np.nan], dtype=object)
+    search_indices(values, source)

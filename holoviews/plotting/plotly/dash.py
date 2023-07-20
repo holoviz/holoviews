@@ -47,7 +47,7 @@ def get_layout_ranges(plot):
     layout_ranges = {}
     fig_dict = plot.state
     for k in fig_dict['layout']:
-        if k.startswith('xaxis') or k.startswith('yaxis'):
+        if k.startswith(("xaxis", "yaxis")):
             if "range" in fig_dict['layout'][k]:
                 layout_ranges[k] = {"range": fig_dict['layout'][k]["range"]}
 
@@ -87,7 +87,7 @@ def plot_to_figure(
     # Remove range specification so plotly.js autorange + uirevision is in control
     if layout_ranges and use_ranges:
         for k in fig_dict['layout']:
-            if k.startswith('xaxis') or k.startswith('yaxis'):
+            if k.startswith(("xaxis", "yaxis")):
                 fig_dict['layout'][k].pop('range', None)
             if k.startswith('mapbox'):
                 fig_dict['layout'][k].pop('zoom', None)
@@ -533,7 +533,7 @@ def to_dash(
                 any_change = True
 
         # Update store_data with interactive stream values
-        for fig_ind, fig_dict in enumerate(initial_fig_dicts):
+        for fig_ind in range(len(initial_fig_dicts)):
             graph_id = graph_ids[fig_ind]
             # plotly_stream_types
             for plotly_stream_type, uid_to_streams_for_type in uid_to_stream_ids.items():

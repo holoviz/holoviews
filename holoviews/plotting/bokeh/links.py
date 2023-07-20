@@ -138,10 +138,22 @@ class RangeToolLinkCallback(LinkCallback):
     def __init__(self, root_model, link, source_plot, target_plot):
         toolbars = list(root_model.select({'type': Toolbar}))
         axes = {}
-        if 'x' in link.axes:
-            axes['x_range'] = target_plot.handles['x_range']
-        if 'y' in link.axes:
-            axes['y_range'] = target_plot.handles['y_range']
+
+        for axis in ('x', 'y'):
+            if axis not in link.axes:
+                continue
+
+            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
+            bounds = getattr(link, f'bounds{axis}', None)
+            if bounds is None:
+                continue
+
+            start, end = bounds
+            if start is not None:
+                axes[f'{axis}_range'].start = start
+            if end is not None:
+                axes[f'{axis}_range'].end = end
+
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if bokeh3 and toolbars:
@@ -165,7 +177,7 @@ class DataLinkCallback(LinkCallback):
         src_len = [len(v) for v in src_cds.data.values()]
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
-            raise Exception('DataLink source data length must match target '
+            raise ValueError('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
 

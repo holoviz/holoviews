@@ -12,7 +12,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import colormesh
+from .util import bokeh3, colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -102,9 +102,9 @@ class RasterPlot(ColorbarPlot):
                 l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis:
+        if self.invert_xaxis and not bokeh3:
             l, r = r, l
-        if self.invert_yaxis:
+        if self.invert_yaxis and not bokeh3:
             b, t = t, b
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
@@ -116,12 +116,11 @@ class RasterPlot(ColorbarPlot):
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.NaN]])
-            if ((self.invert_axes and type(element) is not Raster) or
-                (not self.invert_axes and type(element) is Raster)):
+            if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
-            if self.invert_xaxis:
+            if self.invert_xaxis and not bokeh3:
                 img = img[:, ::-1]
-            if self.invert_yaxis:
+            if self.invert_yaxis and not bokeh3:
                 img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
@@ -178,10 +177,17 @@ class RGBPlot(LegendPlot):
 
         img = np.dstack([element.dimension_values(d, flat=False)
                          for d in element.vdims])
+
+        nan_mask = np.isnan(img)
+        img[nan_mask] = 0
+
         if img.ndim == 3:
-            if img.dtype.kind == 'f':
+            img_max = img.max() if img.size else np.nan
+            # Can be 0 to 255 if nodata has been used
+            if img.dtype.kind == 'f' and img_max <= 1:
                 img = img*255
-            if img.size and (img.min() < 0 or img.max() > 255):
+                # img_max * 255 <- have no effect
+            if img.size and (img.min() < 0 or img_max > 255):
                 self.param.warning('Clipping input data to the valid '
                                    'range for RGB data ([0..1] for '
                                    'floats or [0..255] for integers).')
@@ -198,6 +204,8 @@ class RGBPlot(LegendPlot):
                 img = img.copy()
             img = img.view(dtype=np.uint32).reshape((N, M))
 
+        img[nan_mask.any(-1)] = 0
+
         # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
         if self.invert_axes:
@@ -205,10 +213,10 @@ class RGBPlot(LegendPlot):
             l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis:
+        if self.invert_xaxis and not bokeh3:
             l, r = r, l
             img = img[:, ::-1]
-        if self.invert_yaxis:
+        if self.invert_yaxis and not bokeh3:
             img = img[::-1]
             b, t = t, b
 

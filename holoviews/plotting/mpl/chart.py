@@ -845,12 +845,17 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     _nonvectorized_styles = ['visible']
 
-    legend_specs = dict(LegendPlot.legend_specs, **{
-        'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
-                       ncol=3, loc=3, mode="expand", borderaxespad=0.),
-        'bottom': dict(ncol=3, mode="expand", loc=2,
-                       bbox_to_anchor=(0., -0.4, 1., .102),
-                       borderaxespad=0.1)})
+    legend_specs = dict(
+        LegendPlot.legend_specs,
+        top=dict(
+            bbox_to_anchor=(0., 1.02, 1., .102),
+            ncol=3, loc=3, mode="expand", borderaxespad=0.
+        ),
+        bottom=dict(
+            bbox_to_anchor=(0., -0.4, 1., .102),
+            ncol=3, loc=2, mode="expand", borderaxespad=0.1
+        )
+    )
 
     def _get_values(self, element, ranges):
         """

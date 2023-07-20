@@ -969,7 +969,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Iterate over stacks and groups and accumulate data
         data = defaultdict(list)
         baselines = defaultdict(lambda: {'positive': bottom, 'negative': 0})
-        for i, (k, ds) in enumerate(grouped.items()):
+        for k, ds in grouped.items():
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
                 gval = k if isinstance(k, str) else group_dim.pprint_value(k)

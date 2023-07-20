@@ -1516,7 +1516,7 @@ class StoreOptions:
         applied = []
         def propagate(o):
             if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
-                setattr(o, 'id', new_id)
+                o.id = new_id
                 applied.append(o)
         obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
@@ -1533,7 +1533,7 @@ class StoreOptions:
         Given an list of ids, capture a list of ids that can be
         restored using the restore_ids.
         """
-        return obj.traverse(lambda o: getattr(o, 'id'))
+        return obj.traverse(lambda o: o.id)
 
     @classmethod
     def restore_ids(cls, obj, ids):

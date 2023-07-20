@@ -1,3 +1,4 @@
+from copy import deepcopy
 from operator import itemgetter
 
 import numpy as np
@@ -191,7 +192,7 @@ class Raster(Element2D):
         return int(round(coord[1])), int(round(coord[0]))
 
     def __len__(self):
-        return np.product(self._zdata.shape)
+        return np.prod(self._zdata.shape)
 
 
 
@@ -610,7 +611,8 @@ class RGB(Image):
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
         if vdims is None:
-            vdims = list(self.vdims)
+            # Need to make a deepcopy of the value so the RGB.default is not shared across instances
+            vdims = deepcopy(self.vdims)
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
@@ -753,7 +755,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
         # Generate triangle simplexes
         shape = self.dimension_values(2, flat=False).shape
         s0 = shape[0]
-        t1 = np.arange(np.product(shape))
+        t1 = np.arange(np.prod(shape))
         js = (t1//s0)
         t1s = js*(s0+1)+t1%s0
         t2s = t1s+1

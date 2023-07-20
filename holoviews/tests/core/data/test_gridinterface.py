@@ -7,6 +7,7 @@ from unittest import SkipTest
 import numpy as np
 import pandas as pd
 from holoviews.core.data import Dataset
+from holoviews.core.data.interface import DataError
 from holoviews.core.util import date_range
 from holoviews.element import Image, Curve, RGB, HSV
 from holoviews.util.transform import dim
@@ -31,12 +32,12 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
     __test__ = False
 
     def test_dataset_dataframe_init_hm(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(DataError):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
     def test_dataset_dataframe_init_hm_alias(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(DataError):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 

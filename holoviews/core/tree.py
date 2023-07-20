@@ -215,7 +215,7 @@ class AttrTree:
             self._propagate(split_label, '_DELETE')
         else:
             path_item = self
-            for i, identifier in enumerate(split_label[:-1]):
+            for identifier in split_label[:-1]:
                 path_item = path_item[identifier]
             del path_item[split_label[-1]]
 
@@ -246,7 +246,7 @@ class AttrTree:
             pass
 
         # Attributes starting with __ get name mangled
-        if identifier.startswith('_' + type(self).__name__) or identifier.startswith('__'):
+        if identifier.startswith(('_' + type(self).__name__, '__')):
             raise AttributeError(f'Attribute {identifier} not found.')
         elif self.fixed==True:
             raise AttributeError(self._fixed_error % identifier)

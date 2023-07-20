@@ -436,7 +436,6 @@ class DimensionedPlot(Plot):
         Required on each MPLPlot type to get the data corresponding
         just to the current frame out from the object.
         """
-        pass
 
     def matches(self, spec):
         """
@@ -936,7 +935,7 @@ class DimensionedPlot(Plot):
         projections = opts.get(from_overlay, {}).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
-            raise Exception("An axis may only be assigned one projection type")
+            raise ValueError("An axis may only be assigned one projection type")
         return custom_projs[0] if custom_projs else None
 
     def update(self, key):
@@ -1173,7 +1172,6 @@ class GenericElementPlot(DimensionedPlot):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
-        self.batched = batched
         self.overlay_dims = overlay_dims
 
         if not isinstance(element, (HoloMap, DynamicMap)):
@@ -1188,7 +1186,7 @@ class GenericElementPlot(DimensionedPlot):
             self.stream_sources = compute_overlayable_zorders(self.hmap)
 
         plot_element = self.hmap.last
-        if self.batched and not isinstance(self, GenericOverlayPlot):
+        if batched and not isinstance(self, GenericOverlayPlot):
             plot_element = plot_element.last
 
         dynamic = isinstance(element, DynamicMap) and not element.unbounded
@@ -1212,6 +1210,7 @@ class GenericElementPlot(DimensionedPlot):
                 self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions,
                          dynamic=dynamic, **applied_params)
+        self.batched = batched
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
 
         # Attach streams if not overlaid and not a batched ElementPlot
@@ -1849,7 +1848,7 @@ class GenericOverlayPlot(GenericElementPlot):
         """
         length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
-        for i, (k, obj) in enumerate(items):
+        for k, obj in items:
             vmap = self.hmap.clone([(key, obj)])
             self.map_lengths[group_fn(vmap)[:length]] += 1
             subplot = self._create_subplot(k, vmap, [], ranges)
