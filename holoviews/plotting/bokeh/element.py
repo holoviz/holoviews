@@ -531,7 +531,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 extra_range_name=ydim
             )
             log_enabled = info['logx'] if self.invert_axes else info['logy']
-            ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
+            ax_type = 'log' if log_enabled else ax_props[0]
+            position = info['position']
+            ax_props = (ax_type, ax_props[1], ax_props[2], position)
             ax_specs[ydim] = ax_props
         return yaxes, ax_specs
 
@@ -544,13 +546,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
+        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + (self.xaxis,)
         if self.multi_y:
             yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
             axis_specs['y'].update(extra_axis_specs)
         else:
-            range_tags_extras={'invert_yaxis':self.invert_yaxis}
-            if self.autorange=='y':
+            range_tags_extras = {'invert_yaxis': self.invert_yaxis}
+            if self.autorange == 'y':
                 range_tags_extras['autorange'] = True
                 lowerlim, upperlim = self.ylim
                 if not ((lowerlim is None) or np.isnan(lowerlim)):
@@ -559,13 +561,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     range_tags_extras['y-upperlim'] = upperlim
             else:
                 range_tags_extras['autorange'] = False
-
-            axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
-                    range_tags_extras = range_tags_extras)
+            axis_specs['y']['y'] = self._axis_props(
+                plots, subplots, element, ranges, pos=1, range_tags_extras = range_tags_extras
+            ) + (self.yaxis,)
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
-            for (axis_dim, (axis_type, axis_label, axis_range)) in axis_spec.items():
+            for (axis_dim, (axis_type, axis_label, axis_range, axis_position)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
@@ -576,6 +578,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
                     properties[f'{axis}_axis_type'] = axis_type
+                    locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
+                    for loc, pos in locs.items():
+                        if axis_position and loc in axis_position:
+                            properties[f'{axis}_axis_location'] = pos
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -611,11 +617,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
-            axis_type, axis_label, _ = axis_specs[multi_ax][axis_dim]
+            axis_type, axis_label, _, axis_position = axis_specs[multi_ax][axis_dim]
             ax_cls, ax_kwargs = get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
-            fig.add_layout(ax_cls(axis_label=axis_label,
-                                  **ax_kwargs), yaxes[axis_dim]['position'])
+            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), axis_position)
         return fig
 
     def _plot_properties(self, key, element):
@@ -658,7 +663,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['lod_'+lod_prop] = v
         return plot_props
 
-
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
         if plot is None or self.toolbar == "disable":
@@ -694,7 +698,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plot.toolbar.active_tap = tool
             if isinstance(tool, tools.InspectTool):
                 plot.toolbar.active_inspect.append(tool)
-
 
     def _title_properties(self, key, plot, element):
         if self.show_title and self.adjoined is None:
