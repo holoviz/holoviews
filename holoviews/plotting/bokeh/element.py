@@ -517,7 +517,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axpos0, axpos1 = 'below', 'above'
         else:
             axpos0, axpos1 = 'left', 'right'
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
+        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + ('below',)
         if self.multi_y:
             yaxes, dimensions = {}, {}
             for el in element:
@@ -553,7 +553,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 )
                 log_enabled = info['logx'] if self.invert_axes else info['logy']
                 ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
-                axis_specs['y'][ydim] = ax_props
+                axis_specs['y'][ydim] = ax_props + (info['position'],)
         else:
             range_tags_extras={'invert_yaxis':self.invert_yaxis}
             if self.autorange=='y':
@@ -567,11 +567,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 range_tags_extras['autorange'] = False
 
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
-                    range_tags_extras = range_tags_extras)
+                    range_tags_extras = range_tags_extras) + (self.yaxis,)
 
         properties = {}
         for axis, axis_spec in axis_specs.items():
-            for (axis_dim, (axis_type, axis_label, axis_range)) in axis_spec.items():
+            for (axis_dim, (axis_type, axis_label, axis_range, axis_position)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
@@ -582,6 +582,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
                     properties[f'{axis}_axis_type'] = axis_type
+                    if axis == 'y' and axis_position in ['right', 'bare-right']:
+                        properties['y_axis_location'] = 'right'
+                    if axis == 'y' and axis_position in ['left', 'bare-left']:
+                        properties['y_axis_location'] = 'left'
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -617,11 +621,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
-            axis_type, axis_label, _ = axis_specs[multi_ax][axis_dim]
+            axis_type, axis_label, _, axis_position= axis_specs[multi_ax][axis_dim]
             ax_cls, ax_kwargs = _get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
-            fig.add_layout(ax_cls(axis_label=axis_label,
-                                  **ax_kwargs), yaxes[axis_dim]['position'])
+            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), axis_position)
         return fig
 
     def _plot_properties(self, key, element):
@@ -729,7 +732,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif isinstance(self.yaxis, str) and'right' in self.yaxis:
+        elif isinstance(self.yaxis, str) and 'right' in self.yaxis:
             plot.right = [plot.yaxis[0]] + [ax for ax in plot.right if ax is not plot.yaxis[0]]
             plot.left = [ax for ax in plot.left if ax is not plot.yaxis[0]]
             plot.yaxis[:] = list(plot.left) + list(plot.right)
@@ -864,7 +867,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         props['y']['axis_label'] = ylabel if 'y' in self.labelled or self.ylabel else ''
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
-
+        for extra_y_axis in plot.yaxis[1:]:
+            recursive_model_update(extra_y_axis, {'axis_label': 'NOT IMPLEMENTED'})
 
     def _update_title(self, key, plot, element):
         if plot.title:

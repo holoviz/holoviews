@@ -1558,7 +1558,7 @@ class GenericOverlayPlot(GenericElementPlot):
     _passed_handles = []
 
     # Options not to be propagated in multi_y mode to allow independent control of y-axes
-    _multi_y_unpropagated = ['ylim', 'invert_yaxis', 'logy']
+    _multi_y_unpropagated = ['yaxis', 'ylim', 'invert_yaxis', 'logy']
 
     def __init__(self, overlay, ranges=None, batched=True, keys=None, group_counter=None, **params):
         if 'projection' not in params:
