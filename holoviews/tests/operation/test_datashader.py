@@ -1181,6 +1181,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         curve = Curve(df, kdims=["a"], vdims=["b"])
         # line_width is not a parameter
         custom_rasterize = rasterize.instance(line_width=2)
+        assert {'line_width': 2} == custom_rasterize._rasterize__instance_kwargs
         output = apply_when(
             curve, operation=custom_rasterize, predicate=lambda x: len(x) > 10
         )
