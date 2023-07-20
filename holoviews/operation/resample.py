@@ -55,7 +55,7 @@ class ResampleOperation1D(LinkableOperation):
        resolution screens where the PlotSize stream reports 'nominal'
        dimensions in pixels that do not match the physical pixels. For
        instance, setting pixel_ratio=2 can give better results on Retina
-       displays.""")
+       displays. Also useful for using lower resolution for speed.""")
 
 class ResampleOperation2D(ResampleOperation1D):
     """
