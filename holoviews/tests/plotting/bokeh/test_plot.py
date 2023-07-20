@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import pyviz_comms as comms
 
 from param import concrete_descendents
@@ -13,6 +14,7 @@ from bokeh.models import (
 )
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
+from holoviews.plotting.bokeh.util import bokeh3
 
 bokeh_renderer = Store.renderers['bokeh']
 
@@ -81,7 +83,8 @@ class TestBokehPlot(ComparisonTestCase):
             self.assertTrue(any(renderer in h.renderers for h in hover))
 
 
-def test_sync_legends():
+@pytest.mark.skipif(not bokeh3, reason="Bokeh>=3.0 required")
+def test_sync_two_plots():
     curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)
     plot2 = curve(0) * curve(1) * curve(2)
@@ -95,5 +98,29 @@ def test_sync_legends():
             else:
                 k, v = next(iter(r.js_property_callbacks.items()))
                 assert k == "change:muted"
+                assert len(v) == 1
                 assert isinstance(v[0], CustomJS)
                 assert v[0].code == "dst.muted = src.muted"
+
+
+@pytest.mark.skipif(not bokeh3, reason="Bokeh>=3.0 required")
+def test_sync_three_plots():
+    curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
+    plot1 = curve(0) * curve(1)
+    plot2 = curve(0) * curve(1) * curve(2)
+    plot3 = curve(0) * curve(1)
+    combined_plot = plot1 + plot2 + plot3
+
+    grid_bkplot = bokeh_renderer.get_plot(combined_plot).handles["plot"]
+    for p, *_ in grid_bkplot.children:
+        for r in p.renderers:
+            if r.name == "C":
+                assert r.js_property_callbacks == {}
+            else:
+                k, v = next(iter(r.js_property_callbacks.items()))
+                assert k == "change:muted"
+                assert len(v) == 2
+                assert isinstance(v[0], CustomJS)
+                assert v[0].code == "dst.muted = src.muted"
+                assert isinstance(v[1], CustomJS)
+                assert v[1].code == "dst.muted = src.muted"
