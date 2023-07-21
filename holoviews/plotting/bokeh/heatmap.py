@@ -286,7 +286,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         if isinstance(renderer.glyph, AnnularWedge):
             super()._postprocess_hover(renderer, source)
 
-    def get_extents(self, view, ranges, range_type='combined'):
+    def get_extents(self, view, ranges, range_type='combined', **kwargs):
         """Supply custom, static extents because radial heatmaps always have
         the same boundaries.
         """

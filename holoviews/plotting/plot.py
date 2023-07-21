@@ -1166,6 +1166,8 @@ class GenericElementPlot(DimensionedPlot):
 
     _selection_display = NoOpSelectionDisplay()
 
+    _multi_y_propagation = False
+
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
                  overlay_dims={}, stream_sources={}, streams=None, **params):
@@ -1197,9 +1199,14 @@ class GenericElementPlot(DimensionedPlot):
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
+
+        propagate_options = self._propagate_options.copy()
+        if self._multi_y_propagation:
+            propagate_options = list(set(propagate_options) - set(GenericOverlayPlot._multi_y_unpropagated))
+
         if self.v17_option_propagation:
             inherited = self._traverse_options(plot_element, 'plot',
-                                               self._propagate_options,
+                                               propagate_options,
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()
                                 if k not in plot_opts})
@@ -1241,6 +1248,27 @@ class GenericElementPlot(DimensionedPlot):
                  for key, el in overlay.data.items()]
         self.ordering = sorted(set(self.ordering+specs))
         return [self.ordering.index(spec) for spec in specs]
+
+    def _get_axis_dims(self, element):
+        """
+        Returns the dimensions corresponding to each axis.
+
+        Should return a list of dimensions or list of lists of
+        dimensions, which will be formatted to label the axis
+        and to link axes.
+        """
+        dims = element.dimensions()[:2]
+        if len(dims) == 1:
+            return dims + [None, None]
+        else:
+            return dims + [None]
+
+    def _has_axis_dimension(self, element, dimension):
+        dims = self._get_axis_dims(element)
+        return any(
+            dimension in ds if isinstance(ds, list) else dimension == ds
+            for ds in dims
+        )
 
     def _get_frame(self, key):
         if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
@@ -1379,7 +1407,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', xdim=None, ydim=None, zdim=None):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
@@ -1659,12 +1687,22 @@ class GenericOverlayPlot(GenericElementPlot):
 
     _passed_handles = []
 
+    # Options not to be propagated in multi_y mode to allow independent control of y-axes
+    _multi_y_unpropagated = ['ylim', 'invert_yaxis', 'logy']
+
     def __init__(self, overlay, ranges=None, batched=True, keys=None, group_counter=None, **params):
         if 'projection' not in params:
             params['projection'] = self._get_projection(overlay)
 
         super().__init__(overlay, ranges=ranges, keys=keys,
                          batched=batched, **params)
+
+        if ('multi_y' in self.param) and self.multi_y:
+            for s in self.streams:
+                intersection =  set(s.param) & {'y', 'y_selection', 'y_range', 'bounds', 'boundsy'}
+                if intersection:
+                    self.param.warning(f'{type(s).__name__} stream parameters'
+                                       f' {list(intersection)} not yet supported with multi_y=True')
 
         # Apply data collapse
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
@@ -1885,7 +1923,7 @@ class GenericOverlayPlot(GenericElementPlot):
             new_dims = zip(subplot.overlay_dims, odim_key)
             subplot.overlay_dims = util.OrderedDict(new_dims)
 
-    def _get_subplot_extents(self, overlay, ranges, range_type):
+    def _get_subplot_extents(self, overlay, ranges, range_type, dimension=None):
         """
         Iterates over all subplots and collects the extents of each.
         """
@@ -1893,6 +1931,7 @@ class GenericOverlayPlot(GenericElementPlot):
             extents = {'extents': [], 'soft': [], 'hard': [], 'data': []}
         else:
             extents = {range_type: []}
+
         items = overlay.items()
         if self.batched and self.subplots:
             subplot = list(self.subplots.values())[0]
@@ -1915,6 +1954,9 @@ class GenericOverlayPlot(GenericElementPlot):
             if layer is None or not subplot.apply_ranges:
                 continue
 
+            if dimension and not subplot._has_axis_dimension(layer, dimension):
+                continue
+
             if isinstance(layer, CompositeOverlay):
                 sp_ranges = ranges
             else:
@@ -1924,8 +1966,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 extents[rt].append(extent)
         return extents
 
-    def get_extents(self, overlay, ranges, range_type='combined'):
-        subplot_extents = self._get_subplot_extents(overlay, ranges, range_type)
+    def get_extents(self, overlay, ranges, range_type='combined', dimension=None, **kwargs):
+        subplot_extents = self._get_subplot_extents(overlay, ranges, range_type, dimension)
         zrange = isinstance(self.projection, str) and self.projection == '3d'
         extents = {k: util.max_extents(rs, zrange) for k, rs in subplot_extents.items()}
         if range_type != 'combined':
@@ -1967,7 +2009,9 @@ class GenericOverlayPlot(GenericElementPlot):
 
         # Apply xlim, ylim, zlim plot option
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if not (('multi_y' in self.param) and self.multi_y):
+            y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+
         if isinstance(self.projection, str) and self.projection == '3d':
             z0, z1 = util.dimension_range(z0, z1, getattr(self, 'zlim', (None, None)), (None, None))
             return (x0, y0, z0, x1, y1, z1)

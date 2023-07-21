@@ -14,16 +14,18 @@ import bokeh
 import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
+from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
 from bokeh.layouts import Row, Column
 from bokeh.models import tools
 from bokeh.models import (
-    Model, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis
+    Model, DataRange1d, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis, LinearAxis, LogAxis, MercatorAxis
 )
 from bokeh.models.formatters import (
     TickFormatter, PrintfTickFormatter
 )
+from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.widgets import DataTable, Div
 from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
@@ -43,6 +45,7 @@ from ...util.warnings import deprecated
 
 bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
+bokeh32 = bokeh_version >= Version("3.2")
 
 if bokeh3:
     from bokeh.layouts import group_tools
@@ -1078,16 +1081,65 @@ def match_dim_specs(specs1, specs2):
     return True
 
 
+def get_scale(range_input, axis_type):
+    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", None]:
+        return LinearScale()
+    elif isinstance(range_input, (DataRange1d, Range1d)) and axis_type == "log":
+        return LogScale()
+    elif isinstance(range_input, FactorRange):
+        return CategoricalScale()
+    else:
+        raise ValueError(f"Unable to determine proper scale for: '{range_input}'")
+
+
+def get_axis_class(axis_type, range_input, dim): # Copied from bokeh
+    if axis_type is None:
+        return None, {}
+    elif axis_type == "linear":
+        return LinearAxis, {}
+    elif axis_type == "log":
+        return LogAxis, {}
+    elif axis_type == "datetime":
+        return DatetimeAxis, {}
+    elif axis_type == "mercator":
+        return MercatorAxis, dict(dimension='lon' if dim == 0 else 'lat')
+    elif axis_type == "auto":
+        if isinstance(range_input, FactorRange):
+            return CategoricalAxis, {}
+        elif isinstance(range_input, Range1d):
+            try:
+                value = range_input.start
+                # Datetime accepts ints/floats as timestamps, but we don't want
+                # to assume that implies a datetime axis
+                if Datetime.is_timestamp(value):
+                    return LinearAxis, {}
+                Datetime.validate(Datetime(), value)
+                return DatetimeAxis, {}
+            except ValueError:
+                pass
+        return LinearAxis, {}
+    else:
+        raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
+
+
 def match_ax_type(ax, range_type):
     """
     Ensure the range_type matches the axis model being matched.
     """
-    if isinstance(ax[0], CategoricalAxis):
+    if isinstance(ax, CategoricalAxis):
         return range_type == 'categorical'
-    elif isinstance(ax[0], DatetimeAxis):
+    elif isinstance(ax, DatetimeAxis):
         return range_type == 'datetime'
     else:
         return range_type in ('auto', 'log')
+
+
+def match_yaxis_type_to_range(yax, range_type, range_name):
+    "Apply match_ax_type to the y-axis found by the given range name "
+    for axis in yax:
+        if axis.y_range_name == range_name:
+            return match_ax_type(axis, range_type)
+    raise ValueError('No axis with given range found')
 
 
 def wrap_formatter(formatter, axis):

@@ -229,7 +229,7 @@ class SankeyPlot(GraphPlot):
         data['patches_1'][src] = [lookup.get(v, v) for v in src_vals]
         data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         """Return the extents of the Sankey box"""
         if range_type == 'extents':
             return element.nodes.extents

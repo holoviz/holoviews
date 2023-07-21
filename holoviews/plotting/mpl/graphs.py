@@ -9,13 +9,13 @@ from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
 from ...core.util import unique_array, search_indices, is_number, isscalar
 from ...util.transform import dim
-from ..mixins import ChordMixin
+from ..mixins import ChordMixin, GraphMixin
 from ..util import process_cmap, get_directed_graph_paths
 from .element import ColorbarPlot
 from .util import filter_styles
 
 
-class GraphPlot(ColorbarPlot):
+class GraphPlot(GraphMixin, ColorbarPlot):
 
     arrowhead_length = param.Number(default=0.025, doc="""
       If directed option is enabled this determines the length of the
@@ -142,9 +142,6 @@ class GraphPlot(ColorbarPlot):
         if self.invert_axes:
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(element.nodes, ranges, range_type)
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         # Draw edges
