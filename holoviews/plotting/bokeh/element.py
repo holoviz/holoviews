@@ -414,7 +414,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 not (categorical and not isinstance(dim_range, FactorRange))
             ):
                 dim_range = plot_range
-                
+
             if dim_range is not None:
                 break
 
@@ -426,7 +426,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ):
                     dim_range = extra_range
                     break
-        
+
         return dim_range
 
     def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None,
@@ -525,7 +525,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axpos0, axpos1 = 'below', 'above'
         else:
             axpos0, axpos1 = 'left', 'right'
-        
+
         ax_specs, yaxes, dimensions = {}, {}, {}
         for el in element:
             yd = el.get_dimension(1)
@@ -576,7 +576,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         axis_specs = {'x': {}, 'y': {}}
         axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
         if self.multi_y:
-            yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges) 
+            yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
             axis_specs['y'].update(extra_axis_specs)
         else:
             range_tags_extras={'invert_yaxis':self.invert_yaxis}
@@ -2490,7 +2490,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
-                          'show_grid', 'logx', 'logy',  'xticks', 'toolbar',
+                          'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title', 'title_format', 'legend_position', 'legend_offset',
