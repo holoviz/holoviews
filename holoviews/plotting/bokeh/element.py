@@ -144,7 +144,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    multi_y = param.Boolean(default=False)
+    multi_y = param.Boolean(default=False, doc="""
+       Enables multiple axes (one per value dimension) in
+       overlays and useful for creating twin-axis plots.
+
+       When enabled, axis options are no longer propagated between the
+       elements and the overlay container, allowing customization on a
+       per-axis basis.""")
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
