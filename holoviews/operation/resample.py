@@ -50,12 +50,13 @@ class ResampleOperation1D(LinkableOperation):
     height = param.Integer(default=400, doc="""
        The height of the output image in pixels.""")
 
-    pixel_ratio = param.Number(default=1, bounds=(1,None), doc="""
+    pixel_ratio = param.Number(default=1, bounds=(0,None),
+                               inclusive_bounds=(False,False), doc="""
        Pixel ratio applied to the height and width. Useful for higher
        resolution screens where the PlotSize stream reports 'nominal'
        dimensions in pixels that do not match the physical pixels. For
        instance, setting pixel_ratio=2 can give better results on Retina
-       displays.""")
+       displays. Also useful for using lower resolution for speed.""")
 
 class ResampleOperation2D(ResampleOperation1D):
     """

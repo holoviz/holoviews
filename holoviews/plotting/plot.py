@@ -6,6 +6,7 @@ of this Plot baseclass.
 import uuid
 import warnings
 
+from ast import literal_eval
 from collections import Counter, defaultdict, OrderedDict
 from functools import partial
 from itertools import groupby, product
@@ -305,6 +306,13 @@ class PlotSelector:
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
         if not allow_mismatch and not all(pset == param_sets[0] for pset in param_sets):
+            # Find the mismatching sets
+            mismatching_sets = [pset for pset in param_sets if pset != param_sets[0]]
+
+            # Print the mismatching sets
+            for mismatch_set in mismatching_sets:
+                print("Mismatching plot options:", mismatch_set)
+
             raise Exception("All selectable plot classes must have identical plot options.")
         styles= [plot.style_opts for plot in plots]
 
@@ -1164,7 +1172,6 @@ class GenericElementPlot(DimensionedPlot):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
-        self.batched = batched
         self.overlay_dims = overlay_dims
 
         if not isinstance(element, (HoloMap, DynamicMap)):
@@ -1179,7 +1186,7 @@ class GenericElementPlot(DimensionedPlot):
             self.stream_sources = compute_overlayable_zorders(self.hmap)
 
         plot_element = self.hmap.last
-        if self.batched and not isinstance(self, GenericOverlayPlot):
+        if batched and not isinstance(self, GenericOverlayPlot):
             plot_element = plot_element.last
 
         dynamic = isinstance(element, DynamicMap) and not element.unbounded
@@ -1203,6 +1210,7 @@ class GenericElementPlot(DimensionedPlot):
                 self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions,
                          dynamic=dynamic, **applied_params)
+        self.batched = batched
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
 
         # Attach streams if not overlaid and not a batched ElementPlot
@@ -1491,6 +1499,128 @@ class GenericElementPlot(DimensionedPlot):
             dim_title = ''
 
         return (label, group, type_name, dim_title)
+
+    def _parse_backend_opt(self, opt, plot, model_accessor_aliases):
+        """
+        Parses a custom option of the form 'model.accessor.option'
+        and returns the corresponding model and accessor.
+        """
+        accessors = opt.split('.')
+        if len(accessors) < 2:
+            self.param.warning(f"Custom option {opt!r} expects at least "
+                               "two accessors separated by '.'")
+            return
+
+        model_accessor = accessors[0]
+
+        # convert alias to handle key (figure -> fig)
+        model_accessor = model_accessor_aliases.get(model_accessor) or model_accessor
+
+        if model_accessor in self.handles:
+            model = self.handles[model_accessor]
+        elif hasattr(plot, model_accessor):
+            model = getattr(plot, model_accessor)
+        else:
+            self.param.warning(
+                f"{model_accessor} model could not be resolved "
+                f"on {type(self).__name__!r} plot. "
+                f"Ensure the {opt!r} custom option spec "
+                f"references a valid model in the "
+                f"plot.handles {list(self.handles.keys())!r} or on the underlying "
+                f"figure object."
+            )
+            return
+
+        for acc in accessors[1:-1]:
+            # the logic handles resolving something like:
+            # legend.get_texts()[0].set_fontsize
+            if '[' in acc and acc.endswith(']'):
+                getitem_index = acc.index('[')
+                # gets the '0:2' or '0,2' or ':2' or '2:'
+                getitem_spec = acc[getitem_index+1:-1]
+                try:
+                    if ':' in getitem_spec:
+                        # slice notation
+                        slice_parts = getitem_spec.split(':')
+                        slice_start = None if slice_parts[0] == '' else int(slice_parts[0])
+                        slice_stop = None if slice_parts[1] == '' else int(slice_parts[1])
+                        slice_step = None if len(slice_parts) < 3 or slice_parts[2] == '' else int(slice_parts[2])
+                        getitem_acc = slice(slice_start, slice_stop, slice_step)
+                    elif ',' in getitem_spec:
+                        # multiple items
+                        getitem_acc = [literal_eval(item.strip()) for item in getitem_spec.split(',')]
+                    else:
+                        # single index
+                        getitem_acc = literal_eval(getitem_spec)
+                except Exception:
+                    self.param.warning(
+                        f"Could not evaluate getitem {getitem_spec!r} "
+                        f"in custom option spec {opt!r}.")
+                    model = None
+                    break
+                # gets the 'legend.get_texts()'
+                acc = acc[:getitem_index]
+            else:
+                getitem_acc = None
+
+            if "(" in acc and ")" in acc:
+                method_ini_index = acc.index("(")
+                method_end_index = acc.index(")")
+                method_spec = acc[method_ini_index + 1:method_end_index]
+                try:
+                    if method_spec:
+                        method_parts = method_spec.split(',')
+                        method_args = []
+                        method_kwargs = {}
+                        for part in method_parts:
+                            if '=' in part:
+                                # Handle keyword argument
+                                key, value = part.split('=')
+                                method_kwargs[key.strip()] = literal_eval(value.strip())
+                            else:
+                                # Handle regular argument
+                                method_args.append(literal_eval(part.strip()))
+                    else:
+                        method_args = ()
+                        method_kwargs = {}
+                except Exception:
+                    self.param.warning(
+                        f"Could not evaluate method arguments {method_spec!r} "
+                        f"in custom option spec {opt!r}.")
+                    model = None
+                    break
+                acc = acc[:method_ini_index]
+
+                # finally, we do something with all the things we gathered above
+                if not isinstance(model, list):
+                    model = getattr(model, acc)(*method_args, **method_kwargs)
+                else:
+                    model = [getattr(m, acc)(*method_args, **method_kwargs) for m in model]
+
+                if getitem_acc is not None:
+                    if not isinstance(getitem_acc, list):
+                        model = model.__getitem__(getitem_acc)
+                    else:
+                        model = [model.__getitem__(i) for i in getitem_acc]
+                acc = acc[method_end_index:]
+
+            if acc == "" or model is None:
+                continue
+
+            if not hasattr(model, acc):
+                self.param.warning(
+                    f"Could not resolve {acc!r} attribute on "
+                    f"{type(model).__name__!r} model. Ensure the "
+                    f"custom option spec you provided "
+                    f"references a valid submodel."
+                )
+                model = None
+                break
+
+            model = getattr(model, acc)
+
+        attr_accessor = accessors[-1]
+        return model, attr_accessor
 
     def update_frame(self, key, ranges=None):
         """

@@ -1438,20 +1438,25 @@ class rasterize(AggregationOperation):
     ]
 
     __instance_params = set()
+    __instance_kwargs = {}
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super().instance(**params)
-        inst.__instance_params = set(params)
+        kwargs = set(params) - set(self_or_cls.param)
+        inst_params = {k: v for k, v in params.items() if k in self_or_cls.param}
+        inst = super().instance(**inst_params)
+        inst.__instance_params = set(inst_params)
+        inst.__instance_kwargs = {k: v for k, v in params.items() if k in kwargs}
         return inst
 
     def _process(self, element, key=None):
         # Potentially needs traverse to find element types first?
         all_allowed_kws = set()
         all_supplied_kws = set()
-        instance_params = {
-            k: getattr(self, k) for k in self.__instance_params
-        }
+        instance_params = dict(
+            self.__instance_kwargs,
+            **{k: getattr(self, k) for k in self.__instance_params}
+        )
         for predicate, transform in self._transforms:
             merged_param_values = dict(instance_params, **self.p)
 

@@ -42,6 +42,15 @@ class TestRasterPlot(TestBokehPlot):
         self.assertEqual(source.data['image'][0],
                          np.array([[2, np.NaN], [np.NaN, 1]]))
 
+    def test_nodata_rgb(self):
+        N = 2
+        rgb_d = np.linspace(0, 1, N * N * 3).reshape(N, N, 3)
+        rgb = RGB(rgb_d).redim.nodata(R=0)
+        plot = bokeh_renderer.get_plot(rgb)
+        image_data = plot.handles["source"].data["image"][0]
+        # Image sets nan-values to 0
+        assert (image_data == 0).sum() == 1
+
     def test_raster_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
         raster = Raster(arr).opts(invert_axes=True)
