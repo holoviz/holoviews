@@ -391,38 +391,42 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
-    def _shared_axis_range(self, plots, specs, range_type, axis_type, pos, extra_range_name):
+    def _shared_axis_range(self, plots, specs, range_type, axis_type, pos):
         """
         Given a list of other plots return the shared axis from another
         plot by matching the dimensions specs stored as tags on the
         dimensions. Returns None if there is no such axis.
         """
         dim_range = None
+        categorical = range_type is FactorRange
         for plot in plots:
-            if plot is None:
+            if plot is None or specs is None:
                 continue
+            ax = 'x' if pos == 0 else 'y'
+            plot_range = getattr(plot, f'{ax}_range', None)
+            axes = getattr(plot, f'{ax}axis', None)
+            extra_ranges = getattr(plot, f'extra_{ax}_ranges', {})
 
-            if pos==0:
-                if hasattr(plot, 'x_range') and plot.x_range.tags and specs is not None:
-                    if match_dim_specs(plot.x_range.tags[0], specs) and match_ax_type(plot.xaxis[0], axis_type):
-                        dim_range = plot.x_range
+            if (
+                plot_range and plot_range.tags and
+                match_dim_specs(plot_range.tags[0], specs) and
+                match_ax_type(axes[0], axis_type) and
+                not (categorical and not isinstance(dim_range, FactorRange))
+            ):
+                dim_range = plot_range
+                
+            if dim_range is not None:
+                break
 
-            if pos==1:
-                if hasattr(plot, 'y_range') and plot.y_range.tags and specs is not None:
-                    if match_dim_specs(plot.y_range.tags[0], specs) and match_ax_type(plot.yaxis[0], axis_type):
-                        dim_range = plot.y_range
-
-                if hasattr(plot, 'extra_y_ranges'):
-                    for extra_range in plot.extra_y_ranges.values():
-                        if extra_range.tags and specs is not None:
-                            if (match_dim_specs(extra_range.tags[0], specs) and
-                                match_yaxis_type_to_range(plot.yaxis, axis_type, extra_range.name)):
-                                dim_range = extra_range
-
-        if dim_range and not (range_type is FactorRange and not isinstance(dim_range, FactorRange)):
-            shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
-            self._shared[shared_name] = True
-
+            for extra_range in extra_ranges.values():
+                if (
+                    extra_range.tags and match_dim_specs(extra_range.tags[0], specs) and
+                    match_yaxis_type_to_range(axes, axis_type, extra_range.name) and
+                    not (categorical and not isinstance(dim_range, FactorRange))
+                ):
+                    dim_range = extra_range
+                    break
+        
         return dim_range
 
     def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None,
@@ -434,7 +438,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             el = el.nodes
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
-        if pos and dim:  # NEEDS COMMENT WHY THIS DOESN'T APPLY WITH POS=0
+
+        # For y-axes check if we explicitly passed in a dimension.
+        # This is used by certain plot types to create an axis from
+        # a synthetic dimension and exclusively supported for y-axes.
+        if pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
             axis_label = str(dim)
@@ -450,7 +458,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             axis_dims = list(self._get_axis_dims(el))
             if self.invert_axes:
-                axis_dims = axis_dims[:2][::-1] + [(axis_dims[2],) if len(axis_dims) == 3 else ()]
+                axis_dims[0], axis_dims[1] = axis_dims[:2]
             dims = axis_dims[pos]
             if dims:
                 if not isinstance(dims, list):
@@ -466,7 +474,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     dims = dims[:2][::-1]
             axis_label = ylabel if pos else xlabel
 
-        # ALERT: Cannot just traverse all subplots
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
             categorical = True
@@ -488,12 +495,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     dim_type in util.datetime_types):
                     axis_type = 'datetime'
 
-
         norm_opts = self.lookup_options(el, 'norm').options
+        shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
         if plots and self.shared_axes and not norm_opts.get('axiswise', False):
-            dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos, extra_range_name)
+            dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos)
+            if dim_range:
+                self._shared[shared_name] = True
 
-        if self._shared['x-main-range' if pos==0 else 'y-main-range'] or (extra_range_name in self._shared):
+        if self._shared.get(shared_name):
             pass
         elif categorical:
             axis_type = 'auto'
