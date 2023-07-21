@@ -21,7 +21,7 @@ from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
-from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
+from bokeh.models.scales import LogScale
 from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
@@ -47,11 +47,13 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer, decode_bytes, get_tab_title,
-    glyph_order, py2js_tickformatter, recursive_model_update,
-    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type, match_yaxis_type_to_range,
-    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook
+    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer,
+    decode_bytes, get_tab_title, glyph_order, py2js_tickformatter,
+    recursive_model_update, theme_attr_json, cds_column_replace,
+    hold_policy, match_dim_specs, compute_layout_properties,
+    wrap_formatter, match_ax_type, match_yaxis_type_to_range,
+    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook,
+    get_scale, get_axis_class
 )
 
 if bokeh3:
@@ -65,49 +67,6 @@ try:
     TOOLS_MAP = Tool._known_aliases
 except Exception:
     TOOLS_MAP = TOOL_TYPES
-
-# Copied from bokeh.plotting._plot
-def get_scale(range_input, axis_type):
-    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", None]:
-        return LinearScale()
-    elif isinstance(range_input, (DataRange1d, Range1d)) and axis_type == "log":
-        return LogScale()
-    elif isinstance(range_input, FactorRange):
-        return CategoricalScale()
-    else:
-        raise ValueError(f"Unable to determine proper scale for: '{range_input}'")
-
-from bokeh.core.property.datetime import Datetime
-from bokeh.models import LinearAxis, LogAxis, MercatorAxis
-
-def _get_axis_class(axis_type, range_input, dim): # Copied from bokeh
-    if axis_type is None:
-        return None, {}
-    elif axis_type == "linear":
-        return LinearAxis, {}
-    elif axis_type == "log":
-        return LogAxis, {}
-    elif axis_type == "datetime":
-        return DatetimeAxis, {}
-    elif axis_type == "mercator":
-        return MercatorAxis, dict(dimension='lon' if dim == 0 else 'lat')
-    elif axis_type == "auto":
-        if isinstance(range_input, FactorRange):
-            return CategoricalAxis, {}
-        elif isinstance(range_input, Range1d):
-            try:
-                value = range_input.start
-                # Datetime accepts ints/floats as timestamps, but we don't want
-                # to assume that implies a datetime axis
-                if Datetime.is_timestamp(value):
-                    return LinearAxis, {}
-                Datetime.validate(Datetime(), value)
-                return DatetimeAxis, {}
-            except ValueError:
-                pass
-        return LinearAxis, {}
-    else:
-        raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -642,7 +601,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
             axis_type, axis_label, _ = axis_specs[multi_ax][axis_dim]
-            ax_cls, ax_kwargs = _get_axis_class(axis_type, range_obj, dim=1)
+            ax_cls, ax_kwargs = get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
             fig.add_layout(ax_cls(axis_label=axis_label,
                                   **ax_kwargs), yaxes[axis_dim]['position'])
