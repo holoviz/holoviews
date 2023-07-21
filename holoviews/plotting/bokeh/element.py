@@ -1221,6 +1221,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_method = plot_method[int(self.invert_axes)]
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
+        if "name" not in properties:
+            properties["name"] = properties.get("legend_label") or properties.get("legend_field")
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
