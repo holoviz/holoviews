@@ -273,20 +273,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        tool_list = [
-            t for t in cb_tools + self.default_tools + self.tools
-            if t not in tool_names]
-
-        tool_list = [
-            tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tl, **hover_opts)
-            if tl in ['vline', 'hline'] else tl for tl in tool_list
-        ]
-
-        if bokeh32:
-            tool_list = [
-                tools.WheelZoomTool(zoom_together='none', tags=['hv_created'])
-                if tl in ['wheel_zoom', 'xwheel_zoom', 'ywheel_zoom'] else tl for tl in tool_list
-            ]
+        tool_list = []
+        for tool in cb_tools + self.default_tools + self.tools:
+            if tool in tool_names:
+                continue
+            if tool in ['vline', 'hline']:
+                tool = tools.HoverTool(
+                    tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts
+                )
+            elif bokeh32 and tool in ['wheel_zoom', 'xwheel_zoom', 'ywheel_zoom']:
+                if tool.startswith('x'):
+                    zoom_dims = 'width'
+                elif tool.startswith('y'):
+                    zoom_dims = 'height'
+                else:
+                    zoom_dims = 'both'
+                tool = tools.WheelZoomTool(
+                    zoom_together='none', dimensions=zoom_dims, tags=['hv_created']
+                )
+            tool_list.append(tool)
 
         copied_tools = []
         for tool in tool_list:
