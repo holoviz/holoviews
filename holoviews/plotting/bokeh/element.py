@@ -458,7 +458,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             axis_dims = list(self._get_axis_dims(el))
             if self.invert_axes:
-                axis_dims[0], axis_dims[1] = axis_dims[:2]
+                axis_dims[0], axis_dims[1] = axis_dims[:2][::-1]
             dims = axis_dims[pos]
             if dims:
                 if not isinstance(dims, list):
@@ -856,7 +856,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         return axis_props
 
-
     def _update_plot(self, key, plot, element=None):
         """
         Updates plot parameters on every frame
@@ -865,7 +864,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
         self._update_grid(plot)
-
 
     def _update_labels(self, key, plot, element):
         el = element.traverse(lambda x: x, [Element])
@@ -881,13 +879,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
-
     def _update_title(self, key, plot, element):
         if plot.title:
             plot.title.update(**self._title_properties(key, plot, element))
         else:
             plot.title = Title(**self._title_properties(key, plot, element))
-
 
     def _update_backend_opts(self):
         plot = self.handles["plot"]
@@ -980,7 +976,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 range_dim = x_range.name if self.invert_axes else y_range.name
             else:
                 range_dim = None
-            l, b, r, t = self.get_extents(element, ranges, dimension=range_dim)
+            try:
+                l, b, r, t = self.get_extents(element, ranges, dimension=range_dim)
+            except Exception:
+                # Backward compatibility for e.g. GeoViews=<1.10.1 since dimension
+                # is a newly added keyword argument
+                l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
