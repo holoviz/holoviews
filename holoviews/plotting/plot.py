@@ -1200,7 +1200,7 @@ class GenericElementPlot(DimensionedPlot):
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
 
-        propagate_options = self._propagate_options[:]
+        propagate_options = self._propagate_options.copy()
         if self._multi_y_propagation:
             propagate_options = list(set(propagate_options) - set(GenericOverlayPlot._multi_y_unpropagated))
 
@@ -1699,7 +1699,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         if ('multi_y' in self.param) and self.multi_y:
             for s in self.streams:
-                intersection =  set(s.param) & set(['y', 'y_selection', 'y_range', 'bounds', 'boundsy'])
+                intersection =  set(s.param) & {'y', 'y_selection', 'y_range', 'bounds', 'boundsy'}
                 if intersection:
                     self.param.warning(f'{type(s).__name__} stream parameters'
                                        f' {list(intersection)} not yet supported with multi_y=True')
@@ -1966,7 +1966,7 @@ class GenericOverlayPlot(GenericElementPlot):
                 extents[rt].append(extent)
         return extents
 
-    def get_extents(self, overlay, ranges, range_type='combined', dimension=None):
+    def get_extents(self, overlay, ranges, range_type='combined', dimension=None, **kwargs):
         subplot_extents = self._get_subplot_extents(overlay, ranges, range_type, dimension)
         zrange = isinstance(self.projection, str) and self.projection == '3d'
         extents = {k: util.max_extents(rs, zrange) for k, rs in subplot_extents.items()}

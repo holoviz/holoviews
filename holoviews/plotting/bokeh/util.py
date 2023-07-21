@@ -1014,7 +1014,7 @@ def match_yaxis_type_to_range(yax, range_type, range_name):
     for axis in yax:
         if axis.y_range_name == range_name:
             return match_ax_type(axis, range_type)
-    raise Exception('No axis with given range found')
+    raise ValueError('No axis with given range found')
 
 
 def wrap_formatter(formatter, axis):
