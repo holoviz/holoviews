@@ -739,7 +739,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             opts['text_font_size'] = title_font
         return opts
 
-
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
@@ -750,10 +749,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['xaxis'] = plot.xaxis[0]
         self.handles['x_range'] = plot.x_range
         self.handles['extra_x_ranges'] = plot.extra_x_ranges
+        self.handles['extra_x_scales'] = plot.extra_x_scales
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif isinstance(self.yaxis, str) and'right' in self.yaxis:
+        elif isinstance(self.yaxis, str) and 'right' in self.yaxis:
             plot.right = [plot.yaxis[0]] + [ax for ax in plot.right if ax is not plot.yaxis[0]]
             plot.left = [ax for ax in plot.left if ax is not plot.yaxis[0]]
             plot.yaxis[:] = list(plot.left) + list(plot.right)
@@ -761,7 +761,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['y_range'] = plot.y_range
         self.handles['extra_y_ranges'] = plot.extra_y_ranges
         self.handles['extra_y_scales'] = plot.extra_y_scales
-
 
     def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):
