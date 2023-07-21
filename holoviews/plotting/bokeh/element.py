@@ -30,7 +30,7 @@ from bokeh.models.tools import Tool
 from packaging.version import Version
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
-from ...core.options import abbreviated_exception, SkipRendering
+from ...core.options import abbreviated_exception, Keywords, SkipRendering
 from ...core import util
 from ...element import (
     Annotation, Contours, Graph, Path, Tiles, VectorField
@@ -96,6 +96,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         width and height may also be passed. To control the aspect
         ratio between the axis scales use the data_aspect option
         instead.""")
+
+    backend_opts = param.Dict(default={}, doc="""
+        A dictionary of custom options to apply to the plot or
+        subcomponents of the plot. The keys in the dictionary mirror
+        attribute access on the underlying models stored in the plot's
+        handles, e.g. {'colorbar.margin': 10} will index the colorbar
+        in the Plot.handles and then set the margin to 10.""")
 
     data_aspect = param.Number(default=None, doc="""
         Defines the aspect of the axis scaling, i.e. the ratio of
@@ -770,6 +777,47 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.title.update(**self._title_properties(key, plot, element))
         else:
             plot.title = Title(**self._title_properties(key, plot, element))
+
+
+    def _update_backend_opts(self):
+        plot = self.handles["plot"]
+        model_accessor_aliases = {
+            "cbar": "colorbar",
+            "p": "plot",
+            "xaxes": "xaxis",
+            "yaxes": "yaxis",
+        }
+
+        for opt, val in self.backend_opts.items():
+            parsed_opt = self._parse_backend_opt(
+                opt, plot, model_accessor_aliases)
+            if parsed_opt is None:
+                continue
+            model, attr_accessor = parsed_opt
+
+            # not using isinstance because some models inherit from list
+            if not isinstance(model, list):
+                # to reduce the need for many if/else; cast to list
+                # to do the same thing for both single and multiple models
+                models = [model]
+            else:
+                models = model
+
+            valid_options = models[0].properties()
+            if attr_accessor not in valid_options:
+                kws = Keywords(values=valid_options)
+                matches = sorted(kws.fuzzy_match(attr_accessor))
+                self.param.warning(
+                    f"Could not find {attr_accessor!r} property on {type(models[0]).__name__!r} "
+                    f"model. Ensure the custom option spec {opt!r} you provided references a "
+                    f"valid attribute on the specified model. "
+                    f"Similar options include {matches!r}"
+                )
+
+                continue
+
+            for m in models:
+                setattr(m, attr_accessor, val)
 
 
     def _update_grid(self, plot):
@@ -1684,6 +1732,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _execute_hooks(self, element):
         dtype_fix_hook(self, element)
         super()._execute_hooks(element)
+        self._update_backend_opts()
 
 
     def model_changed(self, model):

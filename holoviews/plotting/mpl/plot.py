@@ -60,6 +60,13 @@ class MPLPlot(DimensionedPlot):
 
     sideplots = {}
 
+    backend_opts = param.Dict(default={}, doc="""
+        A dictionary of custom options to apply to the plot or
+        subcomponents of the plot. The keys in the dictionary mirror
+        attribute access on the underlying models stored in the plot's
+        handles, e.g. {'colorbar.margin': 10} will index the colorbar
+        in the Plot.handles and then set the margin to 10.""")
+
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
         Alpha of the overall figure background.""")
 
