@@ -520,6 +520,51 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim_range.name = extra_range_name
         return axis_type, axis_label, dim_range
 
+    def _create_extra_axes(self, plots, subplots, element, ranges):
+        if self.invert_axes:
+            axpos0, axpos1 = 'below', 'above'
+        else:
+            axpos0, axpos1 = 'left', 'right'
+        
+        ax_specs, yaxes, dimensions = {}, {}, {}
+        for el in element:
+            yd = el.get_dimension(1)
+            dimensions[yd.name] = yd
+            opts = el.opts.get('plot', backend='bokeh').kwargs
+            if yd.name in yaxes:
+                continue
+            yaxes[yd.name] = {
+                'position': opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
+                'autorange': opts.get('autorange', None),
+                'logx': opts.get('logx', False),
+                'logy': opts.get('logy', False),
+                'invert_yaxis': opts.get('invert_yaxis',False),
+                # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
+                'ylim': opts.get('ylim', (np.nan, np.nan))
+            }
+
+        for ydim, info in yaxes.items():
+            range_tags_extras = {'invert_yaxis': info['invert_yaxis']}
+            if info['autorange'] == 'y':
+                range_tags_extras['autorange'] = True
+                lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
+                if not ((lowerlim is None) or np.isnan(lowerlim)):
+                    range_tags_extras['y-lowerlim'] = lowerlim
+                if not ((upperlim is None) or np.isnan(upperlim)):
+                    range_tags_extras['y-upperlim'] = upperlim
+            else:
+                range_tags_extras['autorange'] = False
+
+            ax_props = self._axis_props(
+                plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
+                range_tags_extras=range_tags_extras,
+                extra_range_name=ydim
+            )
+            log_enabled = info['logx'] if self.invert_axes else info['logy']
+            ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
+            ax_specs[ydim] = ax_props
+        return yaxes, ax_specs
+
     def _init_plot(self, key, element, plots, ranges=None):
         """
         Initializes Bokeh figure to draw Element into and sets basic
@@ -529,47 +574,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        if self.invert_axes:
-            axpos0, axpos1 = 'below', 'above'
-        else:
-            axpos0, axpos1 = 'left', 'right'
         axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
         if self.multi_y:
-            yaxes, dimensions = {}, {}
-            for el in element:
-                yd = el.get_dimension(1)
-                dimensions[yd.name] = yd
-                opts = el.opts.get('plot', backend='bokeh').kwargs
-                if yd.name not in yaxes:
-                    yaxes[yd.name] = {'position':opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
-                                      'autorange':opts.get('autorange', None),
-                                      'logx': opts.get('logx', False),
-                                      'logy': opts.get('logy', False),
-                                      'invert_yaxis':opts.get('invert_yaxis',False),
-                                      # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
-                                      'ylim': opts.get('ylim', (np.nan, np.nan))}
-
-            for ydim, info in yaxes.items():
-                range_tags_extras={'invert_yaxis':info['invert_yaxis']}
-                if info['autorange']=='y':
-                    range_tags_extras['autorange'] = True
-                    lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
-                    if not ((lowerlim is None) or np.isnan(lowerlim)):
-                        range_tags_extras['y-lowerlim'] = lowerlim
-                    if not ((upperlim is None) or np.isnan(upperlim)):
-                        range_tags_extras['y-upperlim'] = upperlim
-
-                else:
-                    range_tags_extras['autorange'] = False
-
-                ax_props = self._axis_props(
-                    plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
-                    range_tags_extras=range_tags_extras,
-                    extra_range_name=ydim
-                )
-                log_enabled = info['logx'] if self.invert_axes else info['logy']
-                ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
-                axis_specs['y'][ydim] = ax_props
+            yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges) 
+            axis_specs['y'].update(extra_axis_specs)
         else:
             range_tags_extras={'invert_yaxis':self.invert_yaxis}
             if self.autorange=='y':
