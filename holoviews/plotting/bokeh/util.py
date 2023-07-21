@@ -6,6 +6,7 @@ import time
 
 from collections import defaultdict
 from contextlib import contextmanager
+from itertools import permutations
 from types import FunctionType
 
 import param
@@ -30,6 +31,7 @@ from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
 from packaging.version import Version
 
+from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
@@ -37,6 +39,7 @@ from ...core.util import (
     cftime_to_timestamp, isnumeric, pd, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
+from ...util.warnings import warn
 from ..util import dim_axis_label
 from ...util.warnings import deprecated
 
@@ -410,6 +413,85 @@ def merge_tools(plot_grid, disambiguation_properties=None):
                 ignore.add(p)
 
     return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
+
+
+def sync_legends(bokeh_layout):
+    """This syncs the legends of all plots in a grid based on their name.
+
+    Only works for Bokeh 3 and above.
+
+    Parameters
+    ----------
+    bokeh_layout : bokeh.models.{GridPlot, Row, Column}
+        Gridplot to sync legends of.
+    """
+    if not bokeh3 or len(bokeh_layout.children) < 2:
+        return
+
+    # Collect all glyph with names
+    items = defaultdict(list)
+    click_policies = set()
+    for fig in bokeh_layout.children:
+        if isinstance(fig, tuple):  # GridPlot
+            fig = fig[0]
+        if not isinstance(fig, figure):
+            continue
+        for r in fig.renderers:
+            if r.name:
+                items[r.name].append(r)
+        if fig.legend:
+            click_policies.add(fig.legend.click_policy)
+
+    click_policies.discard("none")  # If legend is not visible, click_policy is "none"
+    if len(click_policies) > 1:
+        warn("Click policy of legends are not the same, no syncing will happen.")
+        return
+    elif not click_policies:
+        return
+
+    # Link all glyphs with the same name
+    mapping = {"mute": "muted", "hide": "visible"}
+    policy = mapping.get(next(iter(click_policies)))
+    code = f"dst.{policy} = src.{policy}"
+    for item in items.values():
+        for src, dst in permutations(item, 2):
+            src.js_on_change(
+                policy,
+                CustomJS(code=code, args=dict(src=src, dst=dst)),
+            )
+
+
+def select_legends(holoviews_layout, figure_index=None, legend_position="top_right"):
+    """ Only displays selected legends in plot layout.
+
+    Parameters
+    ----------
+    holoviews_layout : Holoviews Layout
+        Holoviews Layout with legends.
+    figure_index : list[int] | int | None
+        Index of the figures which legends to show.
+        If None is chosen, only the first figures legend is shown
+    legend_position : str
+        Position of the legend(s).
+    """
+    if figure_index is None:
+        figure_index = [0]
+    elif isinstance(figure_index, int):
+        figure_index = [figure_index]
+    if not isinstance(holoviews_layout, Layout):
+        holoviews_layout = [holoviews_layout]
+
+    for i, plot in enumerate(holoviews_layout):
+        if i in figure_index:
+            plot.opts(show_legend=True, legend_position=legend_position)
+        else:
+            plot.opts(show_legend=False)
+
+    if isinstance(holoviews_layout, list):
+        return holoviews_layout[0]
+
+    return holoviews_layout
+
 
 @contextmanager
 def silence_warnings(*warnings):

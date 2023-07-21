@@ -1362,6 +1362,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if plot.extra_y_ranges and (y in plot.extra_y_ranges):
                 properties['y_range_name'] = mapping['y']
 
+        if "name" not in properties:
+            properties["name"] = properties.get("legend_label") or properties.get("legend_field")
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
