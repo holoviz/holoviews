@@ -6,21 +6,20 @@ This release brings one of the most requested features - interactive twin-axis s
 
 In addition, this release includes several enhancements and bug fixes.
 
-Many thank to the new contributors @alfredocarella and @RaulPL, as well as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens, @maximlt, @philippjfr, @TheoMathurin and @Hoxbro.
+Many thanks to the new contributors @alfredocarella and @RaulPL, as well as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens, @maximlt, @philippjfr, @TheoMathurin and @Hoxbro.
 
 New features:
 
 - Multi-yaxis support in the Bokeh backend ([#5621](https://github.com/holoviz/holoviews/pull/5621))
-- Support custom options on plot components for the different backends ([#4463](https://github.com/holoviz/holoviews/pull/4463))
-- Support Datashaders `where` and `summary` and add `selector` option to `rasterize` ([#5805](https://github.com/holoviz/holoviews/pull/5805))
-- Synchronize muteness or visibility across Bokeh figures ([#5763](https://github.com/holoviz/holoviews/pull/5763))
-
+- Allow modifying the underlying Bokeh or Matplotlib figure, axes etc. using `backend_opts` ([#4463](https://github.com/holoviz/holoviews/pull/4463))
+- Support Datashaders `where` and `summary` aggregators and add `selector` option to `rasterize` enabling instant hover inspection of value dimensions ([#5805](https://github.com/holoviz/holoviews/pull/5805))
+- Synchronize muteness or visibility across Bokeh figures to support linked legends ([#5763](https://github.com/holoviz/holoviews/pull/5763))
 
 Enhancements:
 
 - Add option for initial ranges to RangeToolLink ([#5800](https://github.com/holoviz/holoviews/pull/5800))
 - Allow resample's `pixel_ratio` to go below 1 ([#5813](https://github.com/holoviz/holoviews/pull/5813), [#5817](https://github.com/holoviz/holoviews/pull/5817))
-Add the ability for `VectorField`` to instantiate from UV coordinates ([#5797](https://github.com/holoviz/holoviews/pull/5797))
+Add the ability for `VectorField` to instantiate from UV coordinates ([#5797](https://github.com/holoviz/holoviews/pull/5797))
 - Handle the `nodata` option for rasterized RGB image ([#5774](https://github.com/holoviz/holoviews/pull/5774))
 
 Bug fixes:
@@ -39,7 +38,6 @@ Bug fixes:
 - Update callbacks to use Bokeh's `quad` instead of `quad` ([#5760](https://github.com/holoviz/holoviews/pull/5760))
 - Update `hv.Image`/`hv.RGB` `invert_{x,y}axis` to work with Bokeh 3 ([#5796](https://github.com/holoviz/holoviews/pull/5796))
 - `strip_magics` should also strip IPython line magic ([#5794](https://github.com/holoviz/holoviews/pull/5794))
-
 
 Compatibility:
 

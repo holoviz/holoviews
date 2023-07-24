@@ -20,7 +20,7 @@ synchronize muteness or visibility across different figures.
 
 In addition, this release includes several enhancements and bug fixes.
 
-Many thank to the new contributors @alfredocarella and @RaulPL, as well
+Many thanks to the new contributors @alfredocarella and @RaulPL, as well
 as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens,
 @maximlt, @philippjfr, @TheoMathurin and @Hoxbro.
 
@@ -28,12 +28,15 @@ New features:
 
 -  Multi-yaxis support in the Bokeh backend
    (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__)
--  Support custom options on plot components for the different backends
+-  Allow modifying the underlying Bokeh or Matplotlib figure, axes,
+   etc. using ``backend_opts``
    (`#4463 <https://github.com/holoviz/holoviews/pull/4463>`__)
--  Support Datashaders ``where`` and ``summary`` and add ``selector``
-   option to ``rasterize``
+-  Support Datashaders ``where`` and ``summary`` aggregators and add
+   ``selector`` option to ``rasterize`` enabling instant hover
+   inspection of value dimensions
    (`#5805 <https://github.com/holoviz/holoviews/pull/5805>`__)
--  Synchronize muteness or visibility across Bokeh figures
+-  Synchronize muteness or visibility across Bokeh figures to support
+   linked legends
    (`#5763 <https://github.com/holoviz/holoviews/pull/5763>`__)
 
 Enhancements:
