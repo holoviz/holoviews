@@ -25,7 +25,7 @@ def test_box_select(page, port):
 
     serve(pn_scatter, port=port, threaded=True, show=False)
 
-    time.sleep(1)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
@@ -41,6 +41,6 @@ def test_box_select(page, port):
     page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
     page.mouse.up()
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     assert bounds.bounds == (0.32844036697247725, 1.8285714285714285, 0.8788990825688077, 2.3183673469387758)
