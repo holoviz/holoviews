@@ -1692,6 +1692,29 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         with abbreviated_exception():
             self._update_glyph(renderer, properties, mapping, glyph, source, source.data)
 
+    def _find_axes(self, plot, element):
+        """
+        Looks up the axes and plot ranges given the plot and an element.
+        """
+        axis_dims = self._get_axis_dims(element)[:2]
+        if self.invert_axes:
+            axis_dims[0], axis_dims[1] = axis_dims[::-1]
+        x, y = axis_dims
+        if x.name in plot.extra_x_ranges:
+            x_range = plot.extra_x_ranges[x.name]
+            xaxes = [xaxis for xaxis in plot.xaxis if xaxis.x_range_name == x.name]
+            x_axis = (xaxes if xaxes else plot.xaxis)[0]
+        else:
+            x_range = plot.x_range
+            x_axis = plot.xaxis[0]
+        if y.name in plot.extra_y_ranges:
+            y_range = plot.extra_y_ranges[y.name]
+            yaxes = [yaxis for yaxis in plot.yaxis if yaxis.y_range_name == y.name]
+            y_axis = (yaxes if yaxes else plot.yaxis)[0]
+        else:
+            y_range = plot.y_range
+            y_axis = plot.yaxis[0]
+        return (x_axis, y_axis), (x_range, y_range)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -1714,10 +1737,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         else:
-            self.handles['xaxis'] = plot.xaxis[0]
-            self.handles['x_range'] = plot.x_range
-            self.handles['yaxis'] = plot.yaxis[0]
-            self.handles['y_range'] = plot.y_range
+            axes, plot_ranges = self._find_axes(plot, element)
+            self.handles['xaxis'], self.handles['yaxis'] = axes
+            self.handles['x_range'], self.handles['y_range'] = plot_ranges
         self.handles['plot'] = plot
 
         if self.autorange:
