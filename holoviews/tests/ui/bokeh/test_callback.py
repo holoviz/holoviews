@@ -14,10 +14,13 @@ from holoviews.streams import BoundsXY
 from holoviews.plotting.bokeh import BokehRenderer
 from panel.pane.holoviews import HoloViews
 from panel.io.server import serve
+from panel.tests.util import wait_until
 
 
 def test_box_select(page, port):
-    hv_scatter = Scatter([1, 2, 3]).opts(tools=['box_select'], active_tools=['box_select'])
+    hv_scatter = Scatter([1, 2, 3]).opts(
+        backend='bokeh', tools=['box_select'], active_tools=['box_select']
+    )
 
     bounds = BoundsXY(source=hv_scatter)
 
@@ -41,6 +44,5 @@ def test_box_select(page, port):
     page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
     page.mouse.up()
 
-    time.sleep(0.5)
-
-    assert bounds.bounds == (0.32844036697247725, 1.8285714285714285, 0.8788990825688077, 2.3183673469387758)
+    EXPECTED_BOUNDS = (0.32844036697247725, 1.8285714285714285, 0.8788990825688077, 2.3183673469387758)
+    wait_until(lambda: bounds.bounds == EXPECTED_BOUNDS, page)
