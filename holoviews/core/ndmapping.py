@@ -835,6 +835,8 @@ class UniformNdMapping(NdMapping):
             elements
         """
         from .data import concat
+        from .overlay import CompositeOverlay
+
         if not dimensions:
             dimensions = self.kdims
         if not isinstance(dimensions, list): dimensions = [dimensions]
@@ -860,11 +862,17 @@ class UniformNdMapping(NdMapping):
                 if function:
                     agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
                     group_data = group.type(agg)
+            elif issubclass(group.type, CompositeOverlay) and hasattr(self, '_split_overlays'):
+                keys, maps = self._split_overlays()
+                group_data = group.type(OrderedDict([
+                    (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
+                    for key, ndmap in zip(keys, maps)
+                ]))
             else:
-                group_data = [el.data for el in group]
-                args = (group_data, function, group.last.kdims)
-                data = group.type.collapse_data(*args, **kwargs)
-                group_data = group.last.clone(data)
+                raise ValueError(
+                    "Could not determine correct collapse operation "
+                    "for items of type: {group.type!r}."
+                )
             collapsed[key] = group_data
         return collapsed if self.ndims-len(dimensions) else collapsed.last
 
