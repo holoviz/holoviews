@@ -1350,27 +1350,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
 
-        # ALERT: This only handles XYGlyph types right now
-        # and note guard against Field (unhashable) when using FactorRanges
-        mapping = property_to_dict(mapping)
-        if 'x' in mapping:
-            x = mapping['x']
-            if plot.extra_x_ranges and (x in plot.extra_x_ranges):
-                properties['x_range_name'] = mapping['x']
-        if 'y' in mapping:
-            y = mapping['y']
-            if plot.extra_y_ranges and (y in plot.extra_y_ranges):
-                properties['y_range_name'] = mapping['y']
+        axis_dims = self._get_axis_dims(self.current_frame)[:2]
+        if self.invert_axes:
+            axis_dims[0], axis_dims[1] = axis_dims[::-1]
+        xdim, ydim = axis_dims
+        if xdim.name in plot.extra_x_ranges:
+            properties['x_range_name'] = xdim.name
+        if ydim.name in plot.extra_y_ranges:
+            properties['y_range_name'] = ydim.name
 
         if "name" not in properties:
             properties["name"] = properties.get("legend_label") or properties.get("legend_field")
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
-
     def _element_transform(self, transform, element, ranges):
         return transform.apply(element, ranges=ranges, flat=True)
-
 
     def _apply_transforms(self, element, data, ranges, style, group=None):
         new_style = dict(style)

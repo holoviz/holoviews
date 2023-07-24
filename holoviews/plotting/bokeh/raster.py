@@ -82,18 +82,6 @@ class RasterPlot(ColorbarPlot):
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
-    def _init_glyph(self, plot, mapping, properties):
-        renderer, glyph = super()._init_glyph(plot, mapping, properties)
-        axis_dims = self._get_axis_dims(self.current_frame)[:2]
-        if self.invert_axes:
-            axis_dims[0], axis_dims[1] = axis_dims[::-1]
-        xdim, ydim = axis_dims
-        if xdim.name in plot.extra_x_ranges:
-            renderer.x_range_name = xdim.name
-        if ydim.name in plot.extra_y_ranges:
-            renderer.y_range_name = ydim.name
-        return renderer, glyph
-
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         val_dim = element.vdims[0]
