@@ -1350,14 +1350,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
 
-        axis_dims = self._get_axis_dims(self.current_frame)[:2]
-        if self.invert_axes:
-            axis_dims[0], axis_dims[1] = axis_dims[::-1]
-        xdim, ydim = axis_dims
-        if xdim.name in plot.extra_x_ranges:
-            properties['x_range_name'] = xdim.name
-        if ydim.name in plot.extra_y_ranges:
-            properties['y_range_name'] = ydim.name
+        if self.handles['x_range'].name in plot.extra_x_ranges:
+            properties['x_range_name'] = self.handles['y_range'].name
+        if self.handles['y_range'].name in plot.extra_y_ranges:
+            properties['y_range_name'] = self.handles['y_range'].name
 
         if "name" not in properties:
             properties["name"] = properties.get("legend_label") or properties.get("legend_field")

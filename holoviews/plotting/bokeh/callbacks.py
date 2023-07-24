@@ -400,7 +400,6 @@ class Callback:
 
         # Hash the plot handle with Callback type allowing multiple
         # callbacks on one handle to be merged
-        handle_ids = [id(h) for h in cb_handles]
         hash_ids = [id(h) for h in hash_handles]
         cb_hash = tuple(hash_ids)+(id(type(self)),)
         if cb_hash in self._callbacks:
