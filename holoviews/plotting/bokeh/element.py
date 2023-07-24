@@ -939,8 +939,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             factors = self._get_dimension_factors(element, ranges, axis_dim)
             extra_scale = self.handles[f'extra_{multi_dim}_scales'][axis_dim] # Assumes scales and ranges zip
             log = isinstance(extra_scale, LogScale)
-            range_update = ((not (self.model_changed(extra_y_range) or self.model_changed(plot))
-                             and self.framewise))
+            range_update = (not (self.model_changed(extra_y_range) or self.model_changed(plot))
+                            and self.framewise)
             if self.drawn and not range_update:
                 continue
             self._update_range(
