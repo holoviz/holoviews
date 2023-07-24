@@ -87,6 +87,9 @@ class Callback:
     # The plotting handle(s) to attach the JS callback on
     models = []
 
+    # Additional handles to hash on for uniqueness
+    extra_handles = []
+
     # Conditions when callback should be skipped
     skip_events  = []
     skip_changes = []
@@ -209,6 +212,9 @@ class Callback:
             if h in self.plot_handles:
                 requested[h] = handles[h]
         self.handle_ids.update(self._get_stream_handle_ids(requested))
+        for h in self.extra_handles:
+            if h in self.plot_handles:
+                requested[h] = handles[h]
         return requested
 
     def _get_stream_handle_ids(self, handles):
@@ -379,20 +385,24 @@ class Callback:
 
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
-        cb_handles = []
-        for handle_name in self.models:
+        hash_handles, cb_handles = [], []
+        for handle_name in self.models+self.extra_handles:
             if handle_name not in handles:
                 warn_args = (handle_name, type(self.plot).__name__,
                              type(self).__name__)
                 print('{} handle not found on {}, cannot '
                       'attach {} callback'.format(*warn_args))
                 continue
-            cb_handles.append(handles[handle_name])
+            handle = handles[handle_name]
+            if handle_name not in self.extra_handles:
+                cb_handles.append(handle)
+            hash_handles.append(handle)
 
         # Hash the plot handle with Callback type allowing multiple
         # callbacks on one handle to be merged
         handle_ids = [id(h) for h in cb_handles]
-        cb_hash = tuple(handle_ids)+(id(type(self)),)
+        hash_ids = [id(h) for h in hash_handles]
+        cb_hash = tuple(hash_ids)+(id(type(self)),)
         if cb_hash in self._callbacks:
             # Merge callbacks if another callback has already been attached
             cb = self._callbacks[cb_hash]
@@ -599,11 +609,13 @@ class RangeXYCallback(Callback):
 
     models = ['plot']
 
+    extra_handles = ['x_range', 'y_range']
+
     attributes = {
         'x0': 'cb_obj.x0',
         'y0': 'cb_obj.y0',
         'x1': 'cb_obj.x1',
-        'y1': 'cb_obj.y1'
+        'y1': 'cb_obj.y1',
     }
 
     _js_on_event = """
@@ -624,6 +636,12 @@ class RangeXYCallback(Callback):
             handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
 
     def _process_msg(self, msg):
+        if self.plot.state.x_range is not self.plot.handles['x_range']:
+            x_range = self.plot.handles['x_range']
+            msg['x0'], msg['x1'] = x_range.start, x_range.end
+        if self.plot.state.y_range is not self.plot.handles['y_range']:
+            y_range = self.plot.handles['y_range']
+            msg['y0'], msg['y1'] = y_range.start, y_range.end
         data = {}
         if 'x0' in msg and 'x1' in msg:
             x0, x1 = msg['x0'], msg['x1']
@@ -657,6 +675,8 @@ class RangeXCallback(RangeXYCallback):
 
     models = ['plot']
 
+    extra_handles = ['x_range']
+
     attributes = {
         'x0': 'cb_obj.x0',
         'x1': 'cb_obj.x1',
@@ -671,6 +691,8 @@ class RangeYCallback(RangeXYCallback):
     on_events = ['rangesupdate']
 
     models = ['plot']
+
+    extra_handles = ['y_range']
 
     attributes = {
         'y0': 'cb_obj.y0',
