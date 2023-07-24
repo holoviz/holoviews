@@ -78,6 +78,8 @@ def test_lasso_select(page, port):
     page.mouse.move(bbox['x']+50, bbox['y']+150, steps=5)
     page.mouse.up()
 
+    time.sleep(1)
+
     expected_array = np.array([
         [ 3.28440367e-01,  2.31836735e+00],
         [ 5.48623853e-01,  2.12244898e+00],
@@ -91,7 +93,7 @@ def test_lasso_select(page, port):
         [-2.00000000e-01,  1.82857143e+00],
         [-2.00000000e-01,  1.82857143e+00]
     ])
-    wait_until(lambda: np.testing.assert_almost_equal(lasso.geometry, expected_array), page)
+    np.testing.assert_almost_equal(lasso.geometry, expected_array)
 
 
 def test_rangexy(page, port):
