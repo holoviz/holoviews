@@ -10,7 +10,7 @@ except ImportError:
 pytestmark = pytest.mark.ui
 
 from holoviews import Scatter
-from holoviews.streams import BoundsXY
+from holoviews.streams import BoundsXY, RangeXY
 from holoviews.plotting.bokeh import BokehRenderer
 from panel.pane.holoviews import HoloViews
 from panel.io.server import serve
@@ -46,3 +46,33 @@ def test_box_select(page, port):
 
     EXPECTED_BOUNDS = (0.32844036697247725, 1.8285714285714285, 0.8788990825688077, 2.3183673469387758)
     wait_until(lambda: bounds.bounds == EXPECTED_BOUNDS, page)
+
+
+def test_rangexy(page, port):
+    hv_scatter = Scatter([1, 2, 3]).opts(backend='bokeh', active_tools=['box_zoom'])
+
+    rangexy = RangeXY(source=hv_scatter)
+
+    pn_scatter = HoloViews(hv_scatter, renderer=BokehRenderer)
+
+    serve(pn_scatter, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
+    page.mouse.up()
+
+    EXPECTED_XRANGE = (0.32844036697247725, 0.8788990825688077)
+    EXPECTED_YRANGE = (1.8285714285714285, 2.3183673469387758)
+    wait_until(lambda: rangexy.x_range == EXPECTED_XRANGE and rangexy.y_range == EXPECTED_YRANGE, page)
