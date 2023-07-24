@@ -1696,14 +1696,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_axes:
             axis_dims[0], axis_dims[1] = axis_dims[::-1]
         x, y = axis_dims
-        if x.name in plot.extra_x_ranges:
+        if isinstance(x, Dimension) and x.name in plot.extra_x_ranges:
             x_range = plot.extra_x_ranges[x.name]
             xaxes = [xaxis for xaxis in plot.xaxis if xaxis.x_range_name == x.name]
             x_axis = (xaxes if xaxes else plot.xaxis)[0]
         else:
             x_range = plot.x_range
             x_axis = plot.xaxis[0]
-        if y.name in plot.extra_y_ranges:
+        if isinstance(y, Dimension) and y.name in plot.extra_y_ranges:
             y_range = plot.extra_y_ranges[y.name]
             yaxes = [yaxis for yaxis in plot.yaxis if yaxis.y_range_name == y.name]
             y_axis = (yaxes if yaxes else plot.yaxis)[0]
