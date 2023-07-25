@@ -442,7 +442,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim:
                 axis_label = str(dim)
             else:
-                xlabel, ylabel, zlabel = self._get_axis_labels(dims)
+                xlabel, ylabel, zlabel = self._get_axis_labels(dims if dims else (None, None))
                 if self.invert_axes:
                     xlabel, ylabel = ylabel, xlabel
                 axis_label = ylabel if pos else xlabel
