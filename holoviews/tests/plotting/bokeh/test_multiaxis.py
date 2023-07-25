@@ -1,9 +1,9 @@
-import pytest
-from holoviews.element import Curve
-from .test_plot import TestBokehPlot, bokeh_renderer
 from bokeh.models import LinearScale, LogScale, LinearAxis, LogAxis
+from holoviews.element import Curve
 
 from ...utils import LoggingComparisonTestCase
+from .test_plot import TestBokehPlot, bokeh_renderer
+
 
 class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
 
@@ -221,17 +221,16 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         assert plot.state.yaxis[0].visible
         assert not plot.state.yaxis[1].visible
 
-    @pytest.mark.xfail
     def test_swapped_position_label(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(yaxis='right')
-                   * Curve(range(10), vdims=['B']).opts(yaxis='left')
-                   ).opts(multi_y=True)
+        overlay = (
+            Curve(range(10), vdims=['A']).opts(yaxis='right') *
+            Curve(range(10), vdims=['B']).opts(yaxis='left')
+        ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
         self.assertEqual(plot.state.yaxis[0].axis_label, 'B')
         self.assertEqual(plot.state.yaxis[1].axis_label, 'A')
 
-    @pytest.mark.xfail
     def test_swapped_position_custom_label(self):
         overlay = (Curve(range(10), vdims=['A']).opts(yaxis='right', ylabel='A-custom')
                    * Curve(range(10), vdims=['B']).opts(yaxis='left', ylabel='B-custom')
@@ -241,19 +240,24 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.yaxis[0].axis_label, 'B-custom')
         self.assertEqual(plot.state.yaxis[1].axis_label, 'A-custom')
 
-    @pytest.mark.xfail
     def test_position_custom_size_label(self):
-        overlay = (Curve(range(10), vdims='A').opts(fontsize={'ylabel': '13pt'})
-                   * Curve(range(10), vdims='B').opts(fontsize={'ylabel': '15pt'})).opts(multi_y=True)
+        overlay = (
+            Curve(range(10), vdims='A').opts(fontsize={'ylabel': '13pt'}) *
+            Curve(range(10), vdims='B').opts(fontsize={'ylabel': '15pt'})
+        ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
+        self.assertEqual(plot.state.yaxis[0].axis_label, 'A')
         self.assertEqual(plot.state.yaxis[0].axis_label_text_font_size, '13pt')
+        self.assertEqual(plot.state.yaxis[1].axis_label, 'B')
         self.assertEqual(plot.state.yaxis[1].axis_label_text_font_size, '15pt')
 
-    @pytest.mark.xfail
     def test_swapped_position_custom_size_label(self):
-        overlay = (Curve(range(10), vdims='A').opts(yaxis='right', fontsize={'ylabel': '13pt'})
-                   * Curve(range(10), vdims='B').opts(yaxis='left',
-                                                      fontsize={'ylabel': '15pt'})).opts(multi_y=True)
+        overlay = (
+            Curve(range(10), vdims='A').opts(yaxis='right', fontsize={'ylabel': '13pt'}) *
+            Curve(range(10), vdims='B').opts(yaxis='left', fontsize={'ylabel': '15pt'})
+        ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(plot.state.yaxis[0].axis_label_text_font_size, '15pt')
-        self.assertEqual(plot.state.yaxis[1].axis_label_text_font_size, '13pt')
+        self.assertEqual(plot.state.yaxis[0].axis_label, 'A')
+        self.assertEqual(plot.state.yaxis[0].axis_label_text_font_size, '13pt')
+        self.assertEqual(plot.state.yaxis[1].axis_label, 'B')
+        self.assertEqual(plot.state.yaxis[1].axis_label_text_font_size, '15pt')

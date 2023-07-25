@@ -39,7 +39,9 @@ from ...element import (
 from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import process_cmap, color_intervals, dim_range_key
+from ..util import (
+    dim_axis_label, process_cmap, color_intervals, dim_range_key
+)
 from .plot import BokehPlot
 from .styles import (
     base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
@@ -497,20 +499,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axpos0, axpos1 = 'left', 'right'
 
         ax_specs, yaxes, dimensions = {}, {}, {}
-        for el in element:
-            yd = el.get_dimension(1)
+        for el, sp in zip(element, self.subplots.values()):
+            ax_dims = sp._get_axis_dims(el)[:2]
+            if sp.invert_axes:
+                ax_dims[::-1]
+            yd = ax_dims[1]
             dimensions[yd.name] = yd
             opts = el.opts.get('plot', backend='bokeh').kwargs
-            if yd.name in yaxes:
+            if not isinstance(yd, Dimension) or yd.name in yaxes:
                 continue
             yaxes[yd.name] = {
                 'position': opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
                 'autorange': opts.get('autorange', None),
                 'logx': opts.get('logx', False),
                 'logy': opts.get('logy', False),
-                'invert_yaxis': opts.get('invert_yaxis',False),
+                'invert_yaxis': opts.get('invert_yaxis', False),
                 # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
-                'ylim': opts.get('ylim', (np.nan, np.nan))
+                'ylim': opts.get('ylim', (np.nan, np.nan)),
+                'label': opts.get('ylabel', dim_axis_label(yd)),
+                'fontsize': {
+                    'axis_label_text_font_size': sp._fontsize('ylabel').get('fontsize'),
+                    'major_label_text_font_size': sp._fontsize('yticks').get('fontsize')
+                }
             }
 
         for ydim, info in yaxes.items():
@@ -532,9 +542,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             )
             log_enabled = info['logx'] if self.invert_axes else info['logy']
             ax_type = 'log' if log_enabled else ax_props[0]
-            position = info['position']
-            ax_props = (ax_type, ax_props[1], ax_props[2], position)
-            ax_specs[ydim] = ax_props
+            ax_specs[ydim] = (
+                ax_type, info['label'], ax_props[2], info['position'],
+                info['fontsize']
+            )
         return yaxes, ax_specs
 
     def _init_plot(self, key, element, plots, ranges=None):
@@ -546,7 +557,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + (self.xaxis,)
+        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + (self.xaxis, {})
         if self.multi_y:
             yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
             axis_specs['y'].update(extra_axis_specs)
@@ -563,11 +574,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 range_tags_extras['autorange'] = False
             axis_specs['y']['y'] = self._axis_props(
                 plots, subplots, element, ranges, pos=1, range_tags_extras = range_tags_extras
-            ) + (self.yaxis,)
+            ) + (self.yaxis, {})
 
         properties, axis_visible = {}, {}
         for axis, axis_spec in axis_specs.items():
-            for (axis_dim, (axis_type, axis_label, axis_range, axis_position)) in axis_spec.items():
+            for (axis_dim, (axis_type, axis_label, axis_range, axis_position, _)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
@@ -578,6 +589,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
                     properties[f'{axis}_axis_type'] = axis_type
+                    if axis_label:
+                        properties[f'{axis}_axis_label'] = axis_label
                     locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
                     if axis_position is None:
                         axis_visible[axis] = False
@@ -624,9 +637,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
-            axis_type, axis_label, _, axis_position = axis_specs[multi_ax][axis_dim]
+            axis_type, axis_label, _, axis_position, fontsize = axis_specs[multi_ax][axis_dim]
             ax_cls, ax_kwargs = get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
+            ax_kwargs.update(fontsize)
             if axis_position is None:
                 ax_kwargs['visible'] = False
                 axis_position = 'above' if multi_ax == 'x' else 'right'
@@ -839,7 +853,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates plot parameters on every frame
         """
         plot.update(**self._plot_properties(key, element))
-        self._update_labels(key, plot, element)
+        if not self.multi_y:
+            self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
         self._update_grid(plot)
 
@@ -2780,7 +2795,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         self._execute_hooks(element)
 
         return self.handles['plot']
-
 
     def update_frame(self, key, ranges=None, element=None):
         """
