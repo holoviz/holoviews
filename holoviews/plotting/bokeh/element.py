@@ -543,8 +543,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             log_enabled = info['logx'] if self.invert_axes else info['logy']
             ax_type = 'log' if log_enabled else ax_props[0]
             ax_specs[ydim] = (
-                ax_type, info['label'], ax_props[2], info['position'],
-                info['fontsize']
+                ax_type, info['label'], ax_props[2], info['position'], info['fontsize']
             )
         return yaxes, ax_specs
 
@@ -576,9 +575,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plots, subplots, element, ranges, pos=1, range_tags_extras = range_tags_extras
             ) + (self.yaxis, {})
 
-        properties, axis_visible = {}, {}
+        properties, axis_props = {}, {'x': {}, 'y': {}}
         for axis, axis_spec in axis_specs.items():
-            for (axis_dim, (axis_type, axis_label, axis_range, axis_position, _)) in axis_spec.items():
+            for (axis_dim, (axis_type, axis_label, axis_range, axis_position, fontsize)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
@@ -593,7 +592,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         properties[f'{axis}_axis_label'] = axis_label
                     locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
                     if axis_position is None:
-                        axis_visible[axis] = False
+                        axis_props[axis]['visible'] = False
+                    axis_props[axis].update(fontsize)
                     for loc, pos in locs.items():
                         if axis_position and loc in axis_position:
                             properties[f'{axis}_axis_location'] = pos
@@ -629,11 +629,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
             fig = figure(title=title, **properties)
-
-        if not axis_visible.get('x', True):
-            fig.xaxis[0].visible = False
-        if not axis_visible.get('y', True):
-            fig.yaxis[0].visible = False
+        fig.xaxis[0].update(**axis_props['x'])
+        fig.yaxis[0].update(**axis_props['y'])
 
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
