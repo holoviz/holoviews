@@ -1,9 +1,9 @@
-import pytest
-from holoviews.element import Curve
-from .test_plot import TestBokehPlot, bokeh_renderer
 from bokeh.models import LinearScale, LogScale, LinearAxis, LogAxis
+from holoviews.element import Curve
 
 from ...utils import LoggingComparisonTestCase
+from .test_plot import TestBokehPlot, bokeh_renderer
+
 
 class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
 
@@ -201,40 +201,107 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual((y_range.start, y_range.end), (5, 19))
         self.assertEqual((extra_y_ranges['B'].start, extra_y_ranges['B'].end), (1, 13))
 
-    @pytest.mark.xfail
-    def test_swapped_position_label(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(yaxis='right')
-                   * Curve(range(10), vdims=['B']).opts(yaxis='left')
-                   ).opts(multi_y=True)
+    def test_invisible_main_axis(self):
+        overlay = (
+            Curve(range(10), vdims=['A']).opts(yaxis=None) *
+            Curve(range(10), vdims=['B'])
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        assert len(plot.state.yaxis) == 2
+        assert not plot.state.yaxis[0].visible
+        assert plot.state.yaxis[1].visible
+
+    def test_invisible_extra_axis(self):
+        overlay = (
+            Curve(range(10), vdims=['A']) *
+            Curve(range(10), vdims=['B']).opts(yaxis=None)
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        assert len(plot.state.yaxis) == 2
+        assert plot.state.yaxis[0].visible
+        assert not plot.state.yaxis[1].visible
+
+    def test_axis_labels(self):
+        overlay = (
+            Curve(range(10), vdims=['A']) *
+            Curve(range(10), vdims=['B'])
+        ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
-        self.assertEqual(plot.state.yaxis[0].axis_label, 'B')
-        self.assertEqual(plot.state.yaxis[1].axis_label, 'A')
+        assert plot.state.xaxis[0].axis_label == 'x'
+        assert plot.state.yaxis[0].axis_label == 'A'
+        assert plot.state.yaxis[1].axis_label == 'B'
 
+    def test_custom_axis_labels(self):
+        overlay = (
+            Curve(range(10), vdims=['A']).opts(xlabel='x-custom', ylabel='A-custom') *
+            Curve(range(10), vdims=['B']).opts(ylabel='B-custom')
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(overlay)
 
-    @pytest.mark.xfail
-    def test_swapped_position_custom_label(self):
+        assert plot.state.xaxis[0].axis_label == 'x-custom'
+        assert plot.state.yaxis[0].axis_label == 'A-custom'
+        assert plot.state.yaxis[1].axis_label == 'B-custom'
+
+    def test_only_x_axis_labels(self):
+        overlay = (
+            Curve(range(10), vdims=['A']) *
+            Curve(range(10), vdims=['B'])
+        ).opts(multi_y=True, labelled=['x'])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.xaxis[0].axis_label == 'x'
+        assert plot.state.yaxis[0].axis_label is None
+        assert plot.state.yaxis[1].axis_label is None
+
+    def test_only_x_axis_labels(self):
+        overlay = (
+            Curve(range(10), vdims=['A']) *
+            Curve(range(10), vdims=['B'])
+        ).opts(multi_y=True, labelled=['y'])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.xaxis[0].axis_label is None
+        assert plot.state.yaxis[0].axis_label == 'A'
+        assert plot.state.yaxis[1].axis_label == 'B'
+
+    def test_swapped_position_label(self):
+        overlay = (
+            Curve(range(10), vdims=['A']).opts(yaxis='right') *
+            Curve(range(10), vdims=['B']).opts(yaxis='left')
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.yaxis[0].axis_label == 'B'
+        assert plot.state.yaxis[1].axis_label == 'A'
+
+    def test_swapped_position_custom_y_labels(self):
         overlay = (Curve(range(10), vdims=['A']).opts(yaxis='right', ylabel='A-custom')
                    * Curve(range(10), vdims=['B']).opts(yaxis='left', ylabel='B-custom')
                    ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
-        self.assertEqual(plot.state.yaxis[0].axis_label, 'B-custom')
-        self.assertEqual(plot.state.yaxis[1].axis_label, 'A-custom')
+        assert plot.state.yaxis[0].axis_label == 'B-custom'
+        assert plot.state.yaxis[1].axis_label == 'A-custom'
 
-    @pytest.mark.xfail
     def test_position_custom_size_label(self):
-        overlay = (Curve(range(10), vdims='A').opts(fontsize={'ylabel': '13pt'})
-                   * Curve(range(10), vdims='B').opts(fontsize={'ylabel': '15pt'})).opts(multi_y=True)
+        overlay = (
+            Curve(range(10), vdims='A').opts(fontsize={'ylabel': '13pt'}) *
+            Curve(range(10), vdims='B').opts(fontsize={'ylabel': '15pt'})
+        ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(plot.state.yaxis[0].axis_label_text_font_size, '13pt')
-        self.assertEqual(plot.state.yaxis[1].axis_label_text_font_size, '15pt')
+        assert plot.state.yaxis[0].axis_label == 'A'
+        assert plot.state.yaxis[0].axis_label_text_font_size == '13pt'
+        assert plot.state.yaxis[1].axis_label == 'B'
+        assert plot.state.yaxis[1].axis_label_text_font_size == '15pt'
 
-    @pytest.mark.xfail
     def test_swapped_position_custom_size_label(self):
-        overlay = (Curve(range(10), vdims='A').opts(yaxis='right', fontsize={'ylabel': '13pt'})
-                   * Curve(range(10), vdims='B').opts(yaxis='left',
-                                                      fontsize={'ylabel': '15pt'})).opts(multi_y=True)
+        overlay = (
+            Curve(range(10), vdims='A').opts(yaxis='right', fontsize={'ylabel': '13pt'}) *
+            Curve(range(10), vdims='B').opts(yaxis='left', fontsize={'ylabel': '15pt'})
+        ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(plot.state.yaxis[0].axis_label_text_font_size, '15pt')
-        self.assertEqual(plot.state.yaxis[1].axis_label_text_font_size, '13pt')
+        assert plot.state.yaxis[0].axis_label == 'B'
+        assert plot.state.yaxis[0].axis_label_text_font_size == '15pt'
+        assert plot.state.yaxis[1].axis_label == 'A'
+        assert plot.state.yaxis[1].axis_label_text_font_size == '13pt'
