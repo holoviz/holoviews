@@ -55,6 +55,19 @@ class TestRGB(ComparisonTestCase):
             assert i is not c
             assert i == c
 
+    def test_nodata(self):
+        N = 2
+        rgb_d = np.linspace(0, 1, N * N * 3).reshape(N, N, 3)
+        rgb = RGB(rgb_d)
+        assert sum(np.isnan(rgb["R"])) == 0
+        assert sum(np.isnan(rgb["G"])) == 0
+        assert sum(np.isnan(rgb["B"])) == 0
+
+        rgb_n = rgb.redim.nodata(R=0)
+        assert sum(np.isnan(rgb_n["R"])) == 1
+        assert sum(np.isnan(rgb_n["G"])) == 0
+        assert sum(np.isnan(rgb_n["B"])) == 0
+
 class TestHSV(ComparisonTestCase):
 
     def setUp(self):

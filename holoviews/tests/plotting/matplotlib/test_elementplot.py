@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import style
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Image, Curve, Scatter, Scatter3D
+from holoviews.element import Image, Curve, Scatter, Scatter3D, HeatMap
 from holoviews.streams import Stream
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -10,8 +10,10 @@ from .test_plot import TestMPLPlot, mpl_renderer
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 from matplotlib.projections import PolarAxes
 
+from ...utils import LoggingComparisonTestCase
 
-class TestElementPlot(TestMPLPlot):
+
+class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_stream_cleanup(self):
         stream = Stream.define('Test', test=1)()
@@ -185,6 +187,122 @@ class TestElementPlot(TestMPLPlot):
         ax = plot.handles['axis']
         self.assertIsInstance(ax, PolarAxes)
         self.assertEqual(ax.get_xlim(), (0, 2 * np.pi))
+
+    #################################################################
+    # Custom opts tests
+    #################################################################
+
+    def test_element_backend_opts(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            backend_opts={
+                "colorbar.set_label": "Testing",
+                "colorbar.set_ticks": [3.5, 5],
+                "colorbar.ax.yticklabels": ["A", "B"],
+            },
+        )
+        plot = mpl_renderer.get_plot(heat_map)
+        colorbar = plot.handles['cbar']
+        self.assertEqual(colorbar.ax.yaxis.get_label().get_text(), "Testing")
+        self.assertEqual(colorbar.get_ticks(), (3.5, 5))
+        ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
+        self.assertEqual(ticklabels, ["A", "B"])
+
+    def test_element_backend_opts_alias(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            backend_opts={
+                "cbar.set_label": "Testing",
+                "cbar.set_ticks": [3.5, 5],
+                "cbar.ax.yticklabels": ["A", "B"]
+            },
+        )
+        plot = mpl_renderer.get_plot(heat_map)
+        colorbar = plot.handles['cbar']
+        self.assertEqual(colorbar.ax.yaxis.get_label().get_text(), "Testing")
+        self.assertEqual(colorbar.get_ticks(), (3.5, 5))
+        ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
+        self.assertEqual(ticklabels, ["A", "B"])
+
+    def test_element_backend_opts_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.frame_on": False,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertFalse(legend.get_frame_on())
+
+    def test_element_backend_opts_sequential_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_title().set_fontsize": 188,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertEqual(legend.get_title().get_fontsize(), 188)
+
+    def test_element_backend_opts_getitem(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        c = Curve([1, 4, 18], label="c")
+        d = Curve([1, 4, 36], label="d")
+        e = Curve([1, 4, 36], label="e")
+        curve = (a * b * c * d * e).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_texts()[0].fontsize": 188,
+                "legend.get_texts()[1:3].fontsize": 288,
+                "legend.get_texts()[3,4].fontsize": 388,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertEqual(legend.get_texts()[0].get_fontsize(), 188)
+        self.assertEqual(legend.get_texts()[1].get_fontsize(), 288)
+        self.assertEqual(legend.get_texts()[2].get_fontsize(), 288)
+        self.assertEqual(legend.get_texts()[3].get_fontsize(), 388)
+        self.assertEqual(legend.get_texts()[4].get_fontsize(), 388)
+
+    def test_element_backend_opts_two_accessors(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, backend_opts={"colorbar": "Testing"},
+        )
+        mpl_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "Custom option 'colorbar' expects at least two"
+        )
+
+    def test_element_backend_opts_model_not_resolved(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, backend_opts={"cb.title": "Testing"},
+        )
+        mpl_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "cb model could not be"
+        )
+
+    def test_element_backend_opts_model_invalid_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_texts()[0,1].f0ntzise": 811,
+            }
+        )
+        mpl_renderer.get_plot(curve)
+        self.log_handler.assertContains(
+            "WARNING", "valid method on the specified model"
+        )
 
 
 class TestColorbarPlot(TestMPLPlot):

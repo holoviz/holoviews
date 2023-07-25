@@ -517,7 +517,6 @@ class Slice(np.ndarray):
 
         l_idx = int(np.ceil(l_m-0.5))
         t_idx = int(np.ceil(t_m-0.5))
-        # CBENHANCEMENT: Python 2.6's math.trunc()?
         r_idx = int(np.floor(r_m+0.5))
         b_idx = int(np.floor(b_m+0.5))
 

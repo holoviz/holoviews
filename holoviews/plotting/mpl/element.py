@@ -15,7 +15,7 @@ from packaging.version import Version
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
-from ...core.options import abbreviated_exception
+from ...core.options import abbreviated_exception, Keywords
 from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
@@ -196,6 +196,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._execute_hooks(element)
         return super()._finalize_axis(key)
 
+    def _execute_hooks(self, element):
+        super()._execute_hooks(element)
+        self._update_backend_opts()
+
     def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
         """
         Finalizes the ticks on the axes based on the supplied ticks
@@ -239,6 +243,47 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         for ax, ax_obj in zip(axes_str, axes_list):
             tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
+
+    def _update_backend_opts(self):
+        plot = self.handles["fig"]
+
+        model_accessor_aliases = {
+            "figure": "fig",
+            "axes": "axis",
+            "ax": "axis",
+            "colorbar": "cbar",
+        }
+
+        for opt, val in self.backend_opts.items():
+            parsed_opt = self._parse_backend_opt(
+                opt, plot, model_accessor_aliases)
+            if parsed_opt is None:
+                continue
+
+            model, attr_accessor = parsed_opt
+            if not attr_accessor.startswith("set_"):
+                attr_accessor = f"set_{attr_accessor}"
+
+            if not isinstance(model, list):
+                # to reduce the need for many if/else; cast to list
+                # to do the same thing for both single and multiple models
+                models = [model]
+            else:
+                models = model
+
+            try:
+                for m in models:
+                    getattr(m, attr_accessor)(val)
+            except AttributeError as exc:
+                valid_options = [attr for attr in dir(models[0]) if attr.startswith("set_")]
+                kws = Keywords(values=valid_options)
+                matches = sorted(kws.fuzzy_match(attr_accessor))
+                self.param.warning(
+                    f"Encountered error: {exc}, or could not find "
+                    f"{attr_accessor!r} method on {type(models[0]).__name__!r} "
+                    f"model. Ensure the custom option spec {opt!r} you provided references a "
+                    f"valid method on the specified model. Similar options include {matches!r}"
+                )
 
     def _finalize_artist(self, element):
         """

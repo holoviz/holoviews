@@ -11,7 +11,7 @@ try:
 except ImportError:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
 
-from holoviews.core.data import Dataset, concat
+from holoviews.core.data import Dataset, concat, XArrayInterface
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Image, RGB, HSV, QuadMesh
@@ -257,6 +257,18 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         expected = array.copy()
         expected[mask] = np.nan
         self.assertEqual(masked_array, expected)
+
+    def test_from_empty_numpy(self):
+        """
+        Datashader sometimes pass an empty array to the interface
+        """
+        kdims = ["dim_0", "dim_1"]
+        vdims = ["dim_2"]
+        ds = XArrayInterface.init(Image, np.array([]), kdims, vdims)
+        assert isinstance(ds[0], xr.Dataset)
+        assert ds[0][vdims[0]].size == 0
+        assert ds[1]["kdims"] == kdims
+        assert ds[1]["vdims"] == vdims
 
     # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):

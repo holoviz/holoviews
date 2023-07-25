@@ -830,7 +830,7 @@ class ParamMethod(Params):
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
-            parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
+            parameters = [p.pobj for p in parameterized.param.method_dependencies(method.__name__)]
 
         params['watch_only'] = True
         super().__init__(parameterized, parameters, watch, **params)

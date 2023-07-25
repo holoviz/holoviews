@@ -50,6 +50,7 @@ def __getattr__(name):
 
 
 ds_version = Version(ds.__version__)
+ds15 = ds_version >= Version('0.15.1')
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -58,12 +59,18 @@ class AggregationOperation(ResampleOperation2D):
     aggregator parameter used to define a datashader Reduction.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
-                                     default=ds.count(), doc="""
+    aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
+                                     default=rd.count(), doc="""
         Datashader reduction function used for aggregating the data.
         The aggregator may also define a column to aggregate; if
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
+
+    selector = param.ClassSelector(class_=(rd.min, rd.max, rd.first, rd.last),
+        default=None, doc="""
+        Selector is a datashader reduction function used for selecting data.
+        The selector only works with aggregators which selects an item from
+        the original data. These selectors are min, max, first and last.""")
 
     vdim_prefix = param.String(default='{kdims} ', allow_None=True, doc="""
         Prefix to prepend to value dimension name where {kdims}
@@ -86,6 +93,11 @@ class AggregationOperation(ResampleOperation2D):
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
+        if ds15:
+            agg_types = (rd.count, rd.any, rd.where)
+        else:
+            agg_types = (rd.count, rd.any)
+
         if isinstance(agg, str):
             if agg not in cls._agg_methods:
                 agg_methods = sorted(cls._agg_methods)
@@ -98,7 +110,7 @@ class AggregationOperation(ResampleOperation2D):
 
         elements = element.traverse(lambda x: x, [Element])
         if (add_field and getattr(agg, 'column', False) in ('__temp__', None) and
-            not isinstance(agg, (rd.count, rd.any))):
+            not isinstance(agg, agg_types)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % cls.__name__)
@@ -147,8 +159,19 @@ class AggregationOperation(ResampleOperation2D):
         if hasattr(agg_fn, 'reduction'):
             category = agg_fn.cat_column
             agg_fn = agg_fn.reduction
-        column = agg_fn.column if agg_fn else None
-        if column:
+        if isinstance(agg_fn, rd.summary):
+            column = None
+        else:
+            column = agg_fn.column if agg_fn else None
+        agg_name = type(agg_fn).__name__.title()
+        if agg_name == "Where":
+            # Set the first item to be the selector column.
+            col = agg_fn.column if not isinstance(agg_fn.column, rd.SpecialColumn) else agg_fn.selector.column
+            vdims = sorted(params["vdims"], key=lambda x: x != col)
+            # TODO: Should we add prefix to all of the where columns.
+        elif agg_name == "Summary":
+            vdims = list(agg_fn.keys)
+        elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
                 raise ValueError("Aggregation column '{}' not found on '{}' element. "
@@ -163,13 +186,11 @@ class AggregationOperation(ResampleOperation2D):
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
         elif category:
-            agg_name = type(agg_fn).__name__.title()
             agg_label = f'{category} {agg_name}'
             vdims = Dimension(f'{vdim_prefix}{agg_label}', label=agg_label)
             if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
-            agg_name = type(agg_fn).__name__.title()
             vdims = Dimension(f'{vdim_prefix}{agg_name}', label=agg_name, nodata=0)
         params['vdims'] = vdims
         return params
@@ -298,6 +319,7 @@ class aggregate(LineAggregationOperation):
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
+        sel_fn = getattr(self.p, "selector", None)
         if hasattr(agg_fn, 'cat_column'):
             category = agg_fn.cat_column
         else:
@@ -338,14 +360,19 @@ class aggregate(LineAggregationOperation):
             agg_kwargs['line_width'] = self.p.line_width
 
         dfdata = PandasInterface.as_dframe(data)
-        # Suppress numpy warning emitted by dask:
-        # https://github.com/dask/dask/issues/8439
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action='ignore', message='casting datetime64',
-                category=FutureWarning
-            )
-            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
+        cvs_fn = getattr(cvs, glyph)
+
+        if sel_fn:
+            if isinstance(params["vdims"], (Dimension, str)):
+                params["vdims"] = [params["vdims"]]
+            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "index": ds.where(sel_fn)})
+            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
+            _ignore = [*params["vdims"], "index"]
+            sel_vdims = [s for s in agg if s not in _ignore]
+            params["vdims"] = [*params["vdims"], *sel_vdims]
+        else:
+            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
+
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
@@ -353,7 +380,7 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if agg.ndim == 2:
+        if isinstance(agg, xr.Dataset) or agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
@@ -364,6 +391,42 @@ class aggregate(LineAggregationOperation):
                 eldata = cagg if ds_version > Version('0.5.0') else (xs, ys, cagg.data)
                 layers[c] = self.p.element_type(eldata, **params)
             return NdOverlay(layers, kdims=[data.get_dimension(agg_fn.column)])
+
+    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
+        # Suppress numpy warning emitted by dask:
+        # https://github.com/dask/dask/issues/8439
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                action='ignore', message='casting datetime64',
+                category=FutureWarning
+            )
+            agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
+
+        is_where_index = ds15 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
+        is_summary_index = isinstance(agg_fn, ds.summary) and "index" in agg
+        if is_where_index or is_summary_index:
+            if is_where_index:
+                data = agg.data
+                agg = agg.to_dataset(name="index")
+            else:  # summary index
+                data = agg.index.data
+            neg1 = data == -1
+            for col in dfdata.columns:
+                if col in agg.coords:
+                    continue
+                val = dfdata[col].values[data]
+                if val.dtype.kind == 'f':
+                    val[neg1] = np.nan
+                elif isinstance(val.dtype, pd.CategoricalDtype):
+                    val = val.to_numpy()
+                    val[neg1] = "-"
+                elif val.dtype.kind == "O":
+                    val[neg1] = "-"
+                else:
+                    val = val.astype(np.float64)
+                    val[neg1] = np.nan
+                agg[col] = ((y.name, x.name), val)
+        return agg
 
 
 
@@ -719,8 +782,8 @@ class regrid(AggregationOperation):
     with NaN values.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
@@ -857,8 +920,8 @@ class contours_rasterize(aggregate):
     default to any aggregator.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
@@ -876,8 +939,8 @@ class trimesh_rasterize(aggregate):
     data.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', 'linear', None, False], doc="""
@@ -1257,8 +1320,8 @@ class geometry_rasterize(LineAggregationOperation):
     Rasterizes geometries by converting them to spatialpandas.
     """
 
-    aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, str))
+    aggregator = param.ClassSelector(default=rd.mean(),
+                                     class_=(rd.Reduction, rd.summary, str))
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
@@ -1342,7 +1405,7 @@ class rasterize(AggregationOperation):
     dimensions of the linked plot and the ranges of the axes.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
+    aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default='default')
 
     interpolation = param.ObjectSelector(
@@ -1375,20 +1438,25 @@ class rasterize(AggregationOperation):
     ]
 
     __instance_params = set()
+    __instance_kwargs = {}
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super().instance(**params)
-        inst.__instance_params = set(params)
+        kwargs = set(params) - set(self_or_cls.param)
+        inst_params = {k: v for k, v in params.items() if k in self_or_cls.param}
+        inst = super().instance(**inst_params)
+        inst.__instance_params = set(inst_params)
+        inst.__instance_kwargs = {k: v for k, v in params.items() if k in kwargs}
         return inst
 
     def _process(self, element, key=None):
         # Potentially needs traverse to find element types first?
         all_allowed_kws = set()
         all_supplied_kws = set()
-        instance_params = {
-            k: getattr(self, k) for k in self.__instance_params
-        }
+        instance_params = dict(
+            self.__instance_kwargs,
+            **{k: getattr(self, k) for k in self.__instance_params}
+        )
         for predicate, transform in self._transforms:
             merged_param_values = dict(instance_params, **self.p)
 

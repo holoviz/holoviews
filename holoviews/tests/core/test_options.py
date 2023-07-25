@@ -406,7 +406,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
         self.assertEqual(node2.kwargs, {'alpha': 0.2})
 
-    def test_custom_opts_to_default_inheritance(self):
+    def test_backend_opts_to_default_inheritance(self):
         """
         Checks customs inheritance backs off to default tree correctly
         using .opts.

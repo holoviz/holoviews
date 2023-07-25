@@ -21,7 +21,7 @@ from bokeh.models.layouts import Tabs
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper
 )
-from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
+from bokeh.models.scales import LogScale
 from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
@@ -31,7 +31,7 @@ from bokeh.models.tools import Tool
 from packaging.version import Version
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
-from ...core.options import abbreviated_exception, SkipRendering
+from ...core.options import abbreviated_exception, Keywords, SkipRendering
 from ...core import util
 from ...element import (
     Annotation, Contours, Graph, Path, Tiles, VectorField
@@ -47,11 +47,13 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer, decode_bytes, get_tab_title,
-    glyph_order, py2js_tickformatter, recursive_model_update,
-    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type, match_yaxis_type_to_range,
-    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook
+    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer,
+    decode_bytes, get_tab_title, glyph_order, py2js_tickformatter,
+    recursive_model_update, theme_attr_json, cds_column_replace,
+    hold_policy, match_dim_specs, compute_layout_properties,
+    wrap_formatter, match_ax_type, match_yaxis_type_to_range,
+    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook,
+    get_scale, get_axis_class
 )
 
 if bokeh3:
@@ -65,49 +67,6 @@ try:
     TOOLS_MAP = Tool._known_aliases
 except Exception:
     TOOLS_MAP = TOOL_TYPES
-
-# Copied from bokeh.plotting._plot
-def get_scale(range_input, axis_type):
-    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", None]:
-        return LinearScale()
-    elif isinstance(range_input, (DataRange1d, Range1d)) and axis_type == "log":
-        return LogScale()
-    elif isinstance(range_input, FactorRange):
-        return CategoricalScale()
-    else:
-        raise ValueError(f"Unable to determine proper scale for: '{range_input}'")
-
-from bokeh.core.property.datetime import Datetime
-from bokeh.models import LinearAxis, LogAxis, MercatorAxis
-
-def _get_axis_class(axis_type, range_input, dim): # Copied from bokeh
-    if axis_type is None:
-        return None, {}
-    elif axis_type == "linear":
-        return LinearAxis, {}
-    elif axis_type == "log":
-        return LogAxis, {}
-    elif axis_type == "datetime":
-        return DatetimeAxis, {}
-    elif axis_type == "mercator":
-        return MercatorAxis, dict(dimension='lon' if dim == 0 else 'lat')
-    elif axis_type == "auto":
-        if isinstance(range_input, FactorRange):
-            return CategoricalAxis, {}
-        elif isinstance(range_input, Range1d):
-            try:
-                value = range_input.start
-                # Datetime accepts ints/floats as timestamps, but we don't want
-                # to assume that implies a datetime axis
-                if Datetime.is_timestamp(value):
-                    return LinearAxis, {}
-                Datetime.validate(Datetime(), value)
-                return DatetimeAxis, {}
-            except ValueError:
-                pass
-        return LinearAxis, {}
-    else:
-        raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -140,6 +99,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         width and height may also be passed. To control the aspect
         ratio between the axis scales use the data_aspect option
         instead.""")
+
+    backend_opts = param.Dict(default={}, doc="""
+        A dictionary of custom options to apply to the plot or
+        subcomponents of the plot. The keys in the dictionary mirror
+        attribute access on the underlying models stored in the plot's
+        handles, e.g. {'colorbar.margin': 10} will index the colorbar
+        in the Plot.handles and then set the margin to 10.""")
 
     data_aspect = param.Number(default=None, doc="""
         Defines the aspect of the axis scaling, i.e. the ratio of
@@ -178,7 +144,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    multi_y = param.Boolean(default=False)
+    multi_y = param.Boolean(default=False, doc="""
+       Enables multiple axes (one per value dimension) in
+       overlays and useful for creating twin-axis plots.
+
+       When enabled, axis options are no longer propagated between the
+       elements and the overlay container, allowing customization on a
+       per-axis basis.""")
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
@@ -307,14 +279,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        tool_list = [
-            t for t in cb_tools + self.default_tools + self.tools
-            if t not in tool_names]
-
-        tool_list = [
-            tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tl, **hover_opts)
-            if tl in ['vline', 'hline'] else tl for tl in tool_list
-        ]
+        tool_list = []
+        for tool in cb_tools + self.default_tools + self.tools:
+            if tool in tool_names:
+                continue
+            if tool in ['vline', 'hline']:
+                tool = tools.HoverTool(
+                    tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts
+                )
+            elif bokeh32 and tool in ['wheel_zoom', 'xwheel_zoom', 'ywheel_zoom']:
+                if tool.startswith('x'):
+                    zoom_dims = 'width'
+                elif tool.startswith('y'):
+                    zoom_dims = 'height'
+                else:
+                    zoom_dims = 'both'
+                tool = tools.WheelZoomTool(
+                    zoom_together='none', dimensions=zoom_dims, tags=['hv_created']
+                )
+            tool_list.append(tool)
 
         if bokeh32:
             tool_list = [
@@ -384,37 +367,41 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
-    def _shared_axis_range(self, plots, specs, range_type, axis_type, pos, extra_range_name):
+    def _shared_axis_range(self, plots, specs, range_type, axis_type, pos):
         """
         Given a list of other plots return the shared axis from another
         plot by matching the dimensions specs stored as tags on the
         dimensions. Returns None if there is no such axis.
         """
         dim_range = None
+        categorical = range_type is FactorRange
         for plot in plots:
-            if plot is None:
+            if plot is None or specs is None:
                 continue
+            ax = 'x' if pos == 0 else 'y'
+            plot_range = getattr(plot, f'{ax}_range', None)
+            axes = getattr(plot, f'{ax}axis', None)
+            extra_ranges = getattr(plot, f'extra_{ax}_ranges', {})
 
-            if pos==0:
-                if hasattr(plot, 'x_range') and plot.x_range.tags and specs is not None:
-                    if match_dim_specs(plot.x_range.tags[0], specs) and match_ax_type(plot.xaxis[0], axis_type):
-                        dim_range = plot.x_range
+            if (
+                plot_range and plot_range.tags and
+                match_dim_specs(plot_range.tags[0], specs) and
+                match_ax_type(axes[0], axis_type) and
+                not (categorical and not isinstance(dim_range, FactorRange))
+            ):
+                dim_range = plot_range
 
-            if pos==1:
-                if hasattr(plot, 'y_range') and plot.y_range.tags and specs is not None:
-                    if match_dim_specs(plot.y_range.tags[0], specs) and match_ax_type(plot.yaxis[0], axis_type):
-                        dim_range = plot.y_range
+            if dim_range is not None:
+                break
 
-                if hasattr(plot, 'extra_y_ranges'):
-                    for extra_range in plot.extra_y_ranges.values():
-                        if extra_range.tags and specs is not None:
-                            if (match_dim_specs(extra_range.tags[0], specs) and
-                                match_yaxis_type_to_range(plot.yaxis, axis_type, extra_range.name)):
-                                dim_range = extra_range
-
-        if dim_range and not (range_type is FactorRange and not isinstance(dim_range, FactorRange)):
-            shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
-            self._shared[shared_name] = True
+            for extra_range in extra_ranges.values():
+                if (
+                    extra_range.tags and match_dim_specs(extra_range.tags[0], specs) and
+                    match_yaxis_type_to_range(axes, axis_type, extra_range.name) and
+                    not (categorical and not isinstance(dim_range, FactorRange))
+                ):
+                    dim_range = extra_range
+                    break
 
         return dim_range
 
@@ -427,7 +414,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             el = el.nodes
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
-        if pos and dim:  # NEEDS COMMENT WHY THIS DOESN'T APPLY WITH POS=0
+
+        # For y-axes check if we explicitly passed in a dimension.
+        # This is used by certain plot types to create an axis from
+        # a synthetic dimension and exclusively supported for y-axes.
+        if pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
             axis_label = str(dim)
@@ -440,10 +431,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
             v0, v1 = (l, r) if pos == 0 else (b, t)
-
             axis_dims = list(self._get_axis_dims(el))
             if self.invert_axes:
-                axis_dims = axis_dims[:2][::-1] + [(axis_dims[2],) if len(axis_dims) == 3 else ()]
+                axis_dims[0], axis_dims[1] = axis_dims[:2][::-1]
             dims = axis_dims[pos]
             if dims:
                 if not isinstance(dims, list):
@@ -459,7 +449,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     dims = dims[:2][::-1]
             axis_label = ylabel if pos else xlabel
 
-        # ALERT: Cannot just traverse all subplots
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
             categorical = True
@@ -481,12 +470,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     dim_type in util.datetime_types):
                     axis_type = 'datetime'
 
-
         norm_opts = self.lookup_options(el, 'norm').options
+        shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
         if plots and self.shared_axes and not norm_opts.get('axiswise', False):
-            dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos, extra_range_name)
+            dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos)
+            if dim_range:
+                self._shared[shared_name] = True
 
-        if self._shared['x-main-range' if pos==0 else 'y-main-range'] or (extra_range_name in self._shared):
+        if self._shared.get(shared_name):
             pass
         elif categorical:
             axis_type = 'auto'
@@ -504,6 +495,51 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim_range.name = extra_range_name
         return axis_type, axis_label, dim_range
 
+    def _create_extra_axes(self, plots, subplots, element, ranges):
+        if self.invert_axes:
+            axpos0, axpos1 = 'below', 'above'
+        else:
+            axpos0, axpos1 = 'left', 'right'
+
+        ax_specs, yaxes, dimensions = {}, {}, {}
+        for el in element:
+            yd = el.get_dimension(1)
+            dimensions[yd.name] = yd
+            opts = el.opts.get('plot', backend='bokeh').kwargs
+            if yd.name in yaxes:
+                continue
+            yaxes[yd.name] = {
+                'position': opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
+                'autorange': opts.get('autorange', None),
+                'logx': opts.get('logx', False),
+                'logy': opts.get('logy', False),
+                'invert_yaxis': opts.get('invert_yaxis',False),
+                # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
+                'ylim': opts.get('ylim', (np.nan, np.nan))
+            }
+
+        for ydim, info in yaxes.items():
+            range_tags_extras = {'invert_yaxis': info['invert_yaxis']}
+            if info['autorange'] == 'y':
+                range_tags_extras['autorange'] = True
+                lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
+                if not ((lowerlim is None) or np.isnan(lowerlim)):
+                    range_tags_extras['y-lowerlim'] = lowerlim
+                if not ((upperlim is None) or np.isnan(upperlim)):
+                    range_tags_extras['y-upperlim'] = upperlim
+            else:
+                range_tags_extras['autorange'] = False
+
+            ax_props = self._axis_props(
+                plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
+                range_tags_extras=range_tags_extras,
+                extra_range_name=ydim
+            )
+            log_enabled = info['logx'] if self.invert_axes else info['logy']
+            ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
+            ax_specs[ydim] = ax_props
+        return yaxes, ax_specs
+
     def _init_plot(self, key, element, plots, ranges=None):
         """
         Initializes Bokeh figure to draw Element into and sets basic
@@ -513,47 +549,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        if self.invert_axes:
-            axpos0, axpos1 = 'below', 'above'
-        else:
-            axpos0, axpos1 = 'left', 'right'
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + ('below',)
+        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0)
         if self.multi_y:
-            yaxes, dimensions = {}, {}
-            for el in element:
-                yd = el.get_dimension(1)
-                dimensions[yd.name] = yd
-                opts = el.opts.get('plot', backend='bokeh').kwargs
-                if yd.name not in yaxes:
-                    yaxes[yd.name] = {'position':opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
-                                      'autorange':opts.get('autorange', None),
-                                      'logx': opts.get('logx', False),
-                                      'logy': opts.get('logy', False),
-                                      'invert_yaxis':opts.get('invert_yaxis',False),
-                                      # 'xlim': opts.get('xlim', (np.nan, np.nan)), # TODO
-                                      'ylim': opts.get('ylim', (np.nan, np.nan))}
-
-            for ydim, info in yaxes.items():
-                range_tags_extras={'invert_yaxis':info['invert_yaxis']}
-                if info['autorange']=='y':
-                    range_tags_extras['autorange'] = True
-                    lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
-                    if not ((lowerlim is None) or np.isnan(lowerlim)):
-                        range_tags_extras['y-lowerlim'] = lowerlim
-                    if not ((upperlim is None) or np.isnan(upperlim)):
-                        range_tags_extras['y-upperlim'] = upperlim
-
-                else:
-                    range_tags_extras['autorange'] = False
-
-                ax_props = self._axis_props(
-                    plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
-                    range_tags_extras=range_tags_extras,
-                    extra_range_name=ydim
-                )
-                log_enabled = info['logx'] if self.invert_axes else info['logy']
-                ax_props = ('log' if log_enabled else ax_props[0], ax_props[1], ax_props[2])
-                axis_specs['y'][ydim] = ax_props + (info['position'],)
+            yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
+            axis_specs['y'].update(extra_axis_specs)
         else:
             range_tags_extras={'invert_yaxis':self.invert_yaxis}
             if self.autorange=='y':
@@ -567,12 +566,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 range_tags_extras['autorange'] = False
 
             axis_specs['y']['y'] = self._axis_props(plots, subplots, element, ranges, pos=1,
-                    range_tags_extras = range_tags_extras) + (self.yaxis,)
+                    range_tags_extras = range_tags_extras)
 
-        self.axis_specs = axis_specs
         properties = {}
         for axis, axis_spec in axis_specs.items():
-            for (axis_dim, (axis_type, axis_label, axis_range, axis_position)) in axis_spec.items():
+            for (axis_dim, (axis_type, axis_label, axis_range)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
@@ -583,10 +581,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
                     properties[f'{axis}_axis_type'] = axis_type
-                    if axis == 'y' and axis_position in ['right', 'bare-right']:
-                        properties['y_axis_location'] = 'right'
-                    if axis == 'y' and axis_position in ['left', 'bare-left']:
-                        properties['y_axis_location'] = 'left'
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -622,10 +616,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
-            axis_type, axis_label, _, axis_position= axis_specs[multi_ax][axis_dim]
-            ax_cls, ax_kwargs = _get_axis_class(axis_type, range_obj, dim=1)
+            axis_type, axis_label, _ = axis_specs[multi_ax][axis_dim]
+            ax_cls, ax_kwargs = get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
-            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), axis_position)
+            fig.add_layout(ax_cls(axis_label=axis_label,
+                                  **ax_kwargs), yaxes[axis_dim]['position'])
         return fig
 
     def _plot_properties(self, key, element):
@@ -719,7 +714,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             opts['text_font_size'] = title_font
         return opts
 
-
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
@@ -730,6 +724,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['xaxis'] = plot.xaxis[0]
         self.handles['x_range'] = plot.x_range
         self.handles['extra_x_ranges'] = plot.extra_x_ranges
+        self.handles['extra_x_scales'] = plot.extra_x_scales
 
         if self.yaxis is None:
             plot.yaxis.visible = False
@@ -741,7 +736,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['y_range'] = plot.y_range
         self.handles['extra_y_ranges'] = plot.extra_y_ranges
         self.handles['extra_y_scales'] = plot.extra_y_scales
-
 
     def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):
@@ -844,7 +838,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         return axis_props
 
-
     def _update_plot(self, key, plot, element=None):
         """
         Updates plot parameters on every frame
@@ -853,7 +846,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
         self._update_grid(plot)
-
 
     def _update_labels(self, key, plot, element):
         positions = [el[3] for el in self.axis_specs['y'].values()]
@@ -885,6 +877,46 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.title.update(**self._title_properties(key, plot, element))
         else:
             plot.title = Title(**self._title_properties(key, plot, element))
+
+    def _update_backend_opts(self):
+        plot = self.handles["plot"]
+        model_accessor_aliases = {
+            "cbar": "colorbar",
+            "p": "plot",
+            "xaxes": "xaxis",
+            "yaxes": "yaxis",
+        }
+
+        for opt, val in self.backend_opts.items():
+            parsed_opt = self._parse_backend_opt(
+                opt, plot, model_accessor_aliases)
+            if parsed_opt is None:
+                continue
+            model, attr_accessor = parsed_opt
+
+            # not using isinstance because some models inherit from list
+            if not isinstance(model, list):
+                # to reduce the need for many if/else; cast to list
+                # to do the same thing for both single and multiple models
+                models = [model]
+            else:
+                models = model
+
+            valid_options = models[0].properties()
+            if attr_accessor not in valid_options:
+                kws = Keywords(values=valid_options)
+                matches = sorted(kws.fuzzy_match(attr_accessor))
+                self.param.warning(
+                    f"Could not find {attr_accessor!r} property on {type(models[0]).__name__!r} "
+                    f"model. Ensure the custom option spec {opt!r} you provided references a "
+                    f"valid attribute on the specified model. "
+                    f"Similar options include {matches!r}"
+                )
+
+                continue
+
+            for m in models:
+                setattr(m, attr_accessor, val)
 
 
     def _update_grid(self, plot):
@@ -937,7 +969,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 range_dim = x_range.name if self.invert_axes else y_range.name
             else:
                 range_dim = None
-            l, b, r, t = self.get_extents(element, ranges, dimension=range_dim)
+            try:
+                l, b, r, t = self.get_extents(element, ranges, dimension=range_dim)
+            except Exception:
+                # Backward compatibility for e.g. GeoViews=<1.10.1 since dimension
+                # is a newly added keyword argument
+                l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
@@ -984,8 +1021,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     frame_aspect = 1
                 elif self.aspect and self.aspect != 'equal':
                     frame_aspect = self.aspect
-                else:
+                elif plot.frame_height and plot.frame_width:
                     frame_aspect = plot.frame_height/plot.frame_width
+                else:
+                    # Skip if aspect can't be determined
+                    return
 
                 if self.drawn:
                     current_l, current_r = plot.x_range.start, plot.x_range.end
@@ -1325,18 +1365,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_method = plot_method[int(self.invert_axes)]
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
+        if "name" not in properties:
+            properties["name"] = properties.get("legend_label") or properties.get("legend_field")
 
-        # ALERT: This only handles XYGlyph types right now
-        # and note guard against Field (unhashable) when using FactorRanges
-        mapping = property_to_dict(mapping)
-        if 'x' in mapping:
-            x = mapping['x']
-            if plot.extra_x_ranges and (x in plot.extra_x_ranges):
-                properties['x_range_name'] = mapping['x']
-        if 'y' in mapping:
-            y = mapping['y']
-            if plot.extra_y_ranges and (y in plot.extra_y_ranges):
-                properties['y_range_name'] = mapping['y']
+        if self.handles['x_range'].name in plot.extra_x_ranges:
+            properties['x_range_name'] = self.handles['y_range'].name
+        if self.handles['y_range'].name in plot.extra_y_ranges:
+            properties['y_range_name'] = self.handles['y_range'].name
 
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
@@ -1849,6 +1884,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _execute_hooks(self, element):
         dtype_fix_hook(self, element)
         super()._execute_hooks(element)
+        self._update_backend_opts()
 
 
     def model_changed(self, model):

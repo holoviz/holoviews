@@ -1,6 +1,127 @@
 Releases
 ========
 
+Version 1.17
+~~~~~~~~~~~~
+
+Version 1.17.0
+**************
+
+**July 24, 2023**
+
+This release brings one of the most requested features - interactive
+twin-axis support! Another feature added in this release is the ability
+to easily set custom options on plot components with ``backend_opts``,
+making it much easier to customize your plots. Datashaders ``where`` and
+``summary`` aggregators are now supported, and ``rasterize`` now has a
+``selector`` option, making it easy to get extra information about your
+rasterized data. Lastly, Bokeh figures with the same labels will
+synchronize muteness or visibility across different figures.
+
+In addition, this release includes several enhancements and bug fixes.
+
+Many thanks to the new contributors @alfredocarella and @RaulPL, as well
+as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens,
+@maximlt, @philippjfr, @TheoMathurin and @Hoxbro.
+
+New features:
+
+-  Multi-yaxis support in the Bokeh backend
+   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__)
+-  Allow modifying the underlying Bokeh or Matplotlib figure, axes,
+   etc. using ``backend_opts``
+   (`#4463 <https://github.com/holoviz/holoviews/pull/4463>`__)
+-  Support Datashaders ``where`` and ``summary`` aggregators and add
+   ``selector`` option to ``rasterize`` enabling instant hover
+   inspection of value dimensions
+   (`#5805 <https://github.com/holoviz/holoviews/pull/5805>`__)
+-  Synchronize muteness or visibility across Bokeh figures to support
+   linked legends
+   (`#5763 <https://github.com/holoviz/holoviews/pull/5763>`__)
+
+Enhancements:
+
+-  Add option for initial ranges to RangeToolLink
+   (`#5800 <https://github.com/holoviz/holoviews/pull/5800>`__)
+-  Allow resample’s ``pixel_ratio`` to go below 1
+   (`#5813 <https://github.com/holoviz/holoviews/pull/5813>`__,
+   `#5817 <https://github.com/holoviz/holoviews/pull/5817>`__) Add the
+   ability for \`VectorField`\` to instantiate from UV coordinates
+   (`#5797 <https://github.com/holoviz/holoviews/pull/5797>`__)
+-  Handle the ``nodata`` option for rasterized RGB image
+   (`#5774 <https://github.com/holoviz/holoviews/pull/5774>`__)
+
+Bug fixes:
+
+-  Fix bins option in the autompg_histogram demo
+   (`#5750 <https://github.com/holoviz/holoviews/pull/5750>`__)
+-  Fix 0pt bug in safari
+   (`#5755 <https://github.com/holoviz/holoviews/pull/5755>`__)
+-  Disable pan if ``active_tools=[]``
+   (`#5754 <https://github.com/holoviz/holoviews/pull/5754>`__)
+-  Better handling of inputs to ``rasterize.instance()``
+   (`#5767 <https://github.com/holoviz/holoviews/pull/5767>`__,
+   `#5811 <https://github.com/holoviz/holoviews/pull/5811>`__)
+-  Fix class variable being used as instance ``vdims`` in ``hv.RGB``
+   (`#5773 <https://github.com/holoviz/holoviews/pull/5773>`__,
+   `#5775 <https://github.com/holoviz/holoviews/pull/5775>`__)
+-  Improve notebook detection in VSCode and Google Colab
+   (`#5792 <https://github.com/holoviz/holoviews/pull/5792>`__)
+-  Don’t warn when running ``rasterize`` in VSCode
+   (`#5780 <https://github.com/holoviz/holoviews/pull/5780>`__)
+-  Add ``__init__`` to ``hv.Output`` to not overwrite its parent
+   signature
+   (`#5799 <https://github.com/holoviz/holoviews/pull/5799>`__)
+-  Fix ``XArrayInterface`` crashing when input is an empty array
+   (`#5809 <https://github.com/holoviz/holoviews/pull/5809>`__)
+-  Avoid setting ``batched`` before the class is initialized
+   (`#5814 <https://github.com/holoviz/holoviews/pull/5814>`__)
+-  Fix aspect handling when plot size is still unknown
+   (`#5808 <https://github.com/holoviz/holoviews/pull/5808>`__)
+-  Update callbacks to use Bokeh’s ``quad`` instead of ``quad``
+   (`#5760 <https://github.com/holoviz/holoviews/pull/5760>`__)
+-  Update ``hv.Image``/``hv.RGB`` ``invert_{x,y}axis`` to work with
+   Bokeh 3 (`#5796 <https://github.com/holoviz/holoviews/pull/5796>`__)
+-  ``strip_magics`` should also strip IPython line magic
+   (`#5794 <https://github.com/holoviz/holoviews/pull/5794>`__)
+
+Compatibility:
+
+-  Implement HEP1 - Drop support for Python 3.7
+   (`#5695 <https://github.com/holoviz/holoviews/pull/5695>`__)
+-  Replace deprecated ``np.product`` with ``np.prod``
+   (`#5787 <https://github.com/holoviz/holoviews/pull/5787>`__)
+-  Update ``FileArchive`` repr for Param 2.0
+   (`#5791 <https://github.com/holoviz/holoviews/pull/5791>`__)
+-  Deprecate functionality
+   (`#5776 <https://github.com/holoviz/holoviews/pull/5776>`__)
+
+Documentation:
+
+-  Fix typo in Getting Started section text
+   (`#5759 <https://github.com/holoviz/holoviews/pull/5759>`__)
+-  Add sep keyword to ``pd.read_csv`` in documentation page
+   (`#5798 <https://github.com/holoviz/holoviews/pull/5798>`__)
+
+Maintenance:
+
+-  General maintenance
+   (`#5758 <https://github.com/holoviz/holoviews/pull/5758>`__,
+   `#5783 <https://github.com/holoviz/holoviews/pull/5783>`__,
+   `#5802 <https://github.com/holoviz/holoviews/pull/5802>`__,
+   `#5804 <https://github.com/holoviz/holoviews/pull/5804>`__,
+   `#5806 <https://github.com/holoviz/holoviews/pull/5806>`__,
+   `#5819 <https://github.com/holoviz/holoviews/pull/5819>`__)
+-  Correctly check the version for deprecation
+   (`#5772 <https://github.com/holoviz/holoviews/pull/5772>`__)
+-  Update pre-commit and lint
+   (`#5747 <https://github.com/holoviz/holoviews/pull/5747>`__,
+   `#5768 <https://github.com/holoviz/holoviews/pull/5768>`__,
+   `#5777 <https://github.com/holoviz/holoviews/pull/5777>`__)
+-  Setup infrastructure for UI tests
+   (`#5764 <https://github.com/holoviz/holoviews/pull/5764>`__)
+
+
 Version 1.16
 ~~~~~~~~~~~~
 
