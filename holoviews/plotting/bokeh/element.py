@@ -439,12 +439,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 specs = None
 
-            xlabel, ylabel, zlabel = self._get_axis_labels((None, None) if (dim is None) else dims)
-            if self.invert_axes:
-                xlabel, ylabel = ylabel, xlabel
-                if dims:
-                    dims = dims[:2][::-1]
-            axis_label = ylabel if pos else xlabel
+            if dim:
+                axis_label = str(dim)
+            else:
+                xlabel, ylabel, zlabel = self._get_axis_labels(dims)
+                if self.invert_axes:
+                    xlabel, ylabel = ylabel, xlabel
+                axis_label = ylabel if pos else xlabel
+            if dims:
+                dims = dims[:2][::-1]
 
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
@@ -588,7 +591,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
                     properties[f'{axis}_axis_type'] = axis_type
-                    if axis_label:
+                    if axis_label and axis in self.labelled:
                         properties[f'{axis}_axis_label'] = axis_label
                     locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
                     if axis_position is None:
@@ -641,7 +644,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if axis_position is None:
                 ax_kwargs['visible'] = False
                 axis_position = 'above' if multi_ax == 'x' else 'right'
-            ax = ax_cls(axis_label=axis_label, **ax_kwargs)
+            if multi_ax in self.labelled:
+                ax_kwargs['axis_label'] = axis_label
+            ax = ax_cls(**ax_kwargs)
             fig.add_layout(ax, axis_position)
         return fig
 
