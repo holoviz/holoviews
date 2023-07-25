@@ -450,8 +450,8 @@ def test_msg_with_base64_array():
 def test_rangexy_multi_yaxes():
     c1 = Curve(np.arange(100).cumsum(), vdims='y')
     c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
-    r1 = RangeXY(source=c1)
-    r2 = RangeXY(source=c2)
+    RangeXY(source=c1)
+    RangeXY(source=c2)
 
     overlay = (c1 * c2).opts(backend='bokeh', multi_y=True)
     plot = bokeh_server_renderer.get_plot(overlay)
