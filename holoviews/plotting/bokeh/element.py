@@ -943,6 +943,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _update_ranges(self, element, ranges):
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
+        plot = self.handles['plot']
 
         self._update_main_ranges(element, x_range, y_range, ranges)
 
@@ -954,6 +955,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             factors = self._get_dimension_factors(element, ranges, axis_dim)
             extra_scale = self.handles[f'extra_{multi_dim}_scales'][axis_dim] # Assumes scales and ranges zip
             log = isinstance(extra_scale, LogScale)
+            range_update = (not (self.model_changed(extra_y_range) or self.model_changed(plot))
+                            and self.framewise)
+            if self.drawn and not range_update:
+                continue
             self._update_range(
                 extra_y_range, b, t, factors,
                 extra_y_range.tags[1]['invert_yaxis'] if extra_y_range.tags else False,
@@ -1365,21 +1370,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_method = plot_method[int(self.invert_axes)]
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
-        if "name" not in properties:
-            properties["name"] = properties.get("legend_label") or properties.get("legend_field")
 
         if self.handles['x_range'].name in plot.extra_x_ranges:
             properties['x_range_name'] = self.handles['y_range'].name
         if self.handles['y_range'].name in plot.extra_y_ranges:
             properties['y_range_name'] = self.handles['y_range'].name
 
+        if "name" not in properties:
+            properties["name"] = properties.get("legend_label") or properties.get("legend_field")
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
-
     def _element_transform(self, transform, element, ranges):
         return transform.apply(element, ranges=ranges, flat=True)
-
 
     def _apply_transforms(self, element, data, ranges, style, group=None):
         new_style = dict(style)
@@ -1701,6 +1704,29 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         with abbreviated_exception():
             self._update_glyph(renderer, properties, mapping, glyph, source, source.data)
 
+    def _find_axes(self, plot, element):
+        """
+        Looks up the axes and plot ranges given the plot and an element.
+        """
+        axis_dims = self._get_axis_dims(element)[:2]
+        if self.invert_axes:
+            axis_dims[0], axis_dims[1] = axis_dims[::-1]
+        x, y = axis_dims
+        if isinstance(x, Dimension) and x.name in plot.extra_x_ranges:
+            x_range = plot.extra_x_ranges[x.name]
+            xaxes = [xaxis for xaxis in plot.xaxis if xaxis.x_range_name == x.name]
+            x_axis = (xaxes if xaxes else plot.xaxis)[0]
+        else:
+            x_range = plot.x_range
+            x_axis = plot.xaxis[0]
+        if isinstance(y, Dimension) and y.name in plot.extra_y_ranges:
+            y_range = plot.extra_y_ranges[y.name]
+            yaxes = [yaxis for yaxis in plot.yaxis if yaxis.y_range_name == y.name]
+            y_axis = (yaxes if yaxes else plot.yaxis)[0]
+        else:
+            y_range = plot.y_range
+            y_axis = plot.yaxis[0]
+        return (x_axis, y_axis), (x_range, y_range)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -1723,10 +1749,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         else:
-            self.handles['xaxis'] = plot.xaxis[0]
-            self.handles['x_range'] = plot.x_range
-            self.handles['yaxis'] = plot.yaxis[0]
-            self.handles['y_range'] = plot.y_range
+            axes, plot_ranges = self._find_axes(plot, element)
+            self.handles['xaxis'], self.handles['yaxis'] = axes
+            self.handles['x_range'], self.handles['y_range'] = plot_ranges
         self.handles['plot'] = plot
 
         if self.autorange:

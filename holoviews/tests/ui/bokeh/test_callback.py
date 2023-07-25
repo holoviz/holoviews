@@ -10,7 +10,7 @@ except ImportError:
 
 pytestmark = pytest.mark.ui
 
-from holoviews import Scatter
+from holoviews import Curve, Scatter
 from holoviews.streams import BoundsXY, Lasso, RangeXY
 from holoviews.plotting.bokeh import BokehRenderer
 from panel.pane.holoviews import HoloViews
@@ -124,3 +124,40 @@ def test_rangexy(page, port):
     expected_xrange = (0.32844036697247725, 0.8788990825688077)
     expected_yrange = (1.8285714285714285, 2.3183673469387758)
     wait_until(lambda: rangexy.x_range == expected_xrange and rangexy.y_range == expected_yrange, page)
+
+def test_multi_axis_rangexy(page, port):
+    c1 = Curve(np.arange(100).cumsum(), vdims='y')
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+    s1 = RangeXY(source=c1)
+    s2 = RangeXY(source=c2)
+
+    overlay = (c1 * c2).opts(backend='bokeh', multi_y=True)
+
+    pn_scatter = HoloViews(overlay, renderer=BokehRenderer)
+
+    serve(pn_scatter, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
+    page.mouse.up()
+
+    expected_xrange = (-35.1063829787234, 63.89361702127659)
+    expected_yrange1 = (717.2448979591848, 6657.244897959185)
+    expected_yrange2 = (-4232.7551020408155, 1707.2448979591848)
+    wait_until(lambda: (
+        s1.x_range == expected_xrange and
+        s1.y_range == expected_yrange1 and
+        s2.y_range == expected_yrange2
+    ), page)

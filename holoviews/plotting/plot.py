@@ -1699,7 +1699,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         if ('multi_y' in self.param) and self.multi_y:
             for s in self.streams:
-                intersection =  set(s.param) & set(['y', 'y_selection', 'y_range', 'bounds', 'boundsy'])
+                intersection =  set(s.param) & {'y', 'y_selection', 'bounds', 'boundsy'}
                 if intersection:
                     self.param.warning(f'{type(s).__name__} stream parameters'
                                        f' {list(intersection)} not yet supported with multi_y=True')
