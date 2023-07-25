@@ -445,3 +445,23 @@ def test_msg_with_base64_array():
 
     data_expected = np.array([10.0, 20.0, 30.0, 40.0])
     assert np.equal(data_expected, data_after).all()
+
+
+def test_rangexy_multi_yaxes():
+    c1 = Curve(np.arange(100).cumsum(), vdims='y')
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+    RangeXY(source=c1)
+    RangeXY(source=c2)
+
+    overlay = (c1 * c2).opts(backend='bokeh', multi_y=True)
+    plot = bokeh_server_renderer.get_plot(overlay)
+
+    p1, p2 = plot.subplots.values()
+
+    assert plot.state.y_range is p1.handles['y_range']
+    assert 'y2' in plot.state.extra_y_ranges
+    assert plot.state.extra_y_ranges['y2'] is p2.handles['y_range']
+
+    # Ensure both callbacks are attached
+    assert p1.callbacks[0].plot is p1
+    assert p2.callbacks[0].plot is p2
