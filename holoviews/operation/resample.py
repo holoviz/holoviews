@@ -114,6 +114,14 @@ class ResampleOperation2D(ResampleOperation1D):
         inst._precomputed = {}
         return inst
 
+
+    def __call__(self, element, **kwargs):
+        opts = element.opts.get('plot', 'bokeh')
+        opts = {} if opts is None else opts.kwargs
+        if 'multi_y' in opts:
+            self.param.warning('Overlay separate datashader operation calls to rasterize with multi_y=True')
+        return super().__call__(element, **kwargs)
+
     def _get_sampling(self, element, x, y, ndim=2, default=None):
         target = self.p.target
         if not isinstance(x, list) and x is not None:
