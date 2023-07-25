@@ -27,7 +27,9 @@ as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens,
 New features:
 
 -  Multi-yaxis support in the Bokeh backend
-   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__)
+   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__,
+    `#5826 <https://github.com/holoviz/holoviews/pull/5826>`__,
+    `#5827 <https://github.com/holoviz/holoviews/pull/5827>`__)
 -  Allow modifying the underlying Bokeh or Matplotlib figure, axes,
    etc. using ``backend_opts``
    (`#4463 <https://github.com/holoviz/holoviews/pull/4463>`__)
@@ -84,6 +86,8 @@ Bug fixes:
    Bokeh 3 (`#5796 <https://github.com/holoviz/holoviews/pull/5796>`__)
 -  ``strip_magics`` should also strip IPython line magic
    (`#5794 <https://github.com/holoviz/holoviews/pull/5794>`__)
+-  Fix ``HoloMap.collapse`` for ``(Nd)Overlay``
+   (`#5825 <https://github.com/holoviz/holoviews/pull/5825>`__)
 
 Compatibility:
 
@@ -118,7 +122,7 @@ Maintenance:
    (`#5747 <https://github.com/holoviz/holoviews/pull/5747>`__,
    `#5768 <https://github.com/holoviz/holoviews/pull/5768>`__,
    `#5777 <https://github.com/holoviz/holoviews/pull/5777>`__)
--  Setup infrastructure for UI tests
+-  Setup infrastructure for UI tests and add first linked streams tests
    (`#5764 <https://github.com/holoviz/holoviews/pull/5764>`__)
 
 

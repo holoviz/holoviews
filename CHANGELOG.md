@@ -10,7 +10,7 @@ Many thanks to the new contributors @alfredocarella and @RaulPL, as well as the 
 
 New features:
 
-- Multi-yaxis support in the Bokeh backend ([#5621](https://github.com/holoviz/holoviews/pull/5621))
+- Multi-yaxis support in the Bokeh backend ([#5621](https://github.com/holoviz/holoviews/pull/5621), [#5826](https://github.com/holoviz/holoviews/pull/5826), [#5827](https://github.com/holoviz/holoviews/pull/5827))
 - Allow modifying the underlying Bokeh or Matplotlib figure, axes etc. using `backend_opts` ([#4463](https://github.com/holoviz/holoviews/pull/4463))
 - Support Datashaders `where` and `summary` aggregators and add `selector` option to `rasterize` enabling instant hover inspection of value dimensions ([#5805](https://github.com/holoviz/holoviews/pull/5805))
 - Synchronize muteness or visibility across Bokeh figures to support linked legends ([#5763](https://github.com/holoviz/holoviews/pull/5763))
@@ -38,6 +38,7 @@ Bug fixes:
 - Update callbacks to use Bokeh's `quad` instead of `quad` ([#5760](https://github.com/holoviz/holoviews/pull/5760))
 - Update `hv.Image`/`hv.RGB` `invert_{x,y}axis` to work with Bokeh 3 ([#5796](https://github.com/holoviz/holoviews/pull/5796))
 - `strip_magics` should also strip IPython line magic ([#5794](https://github.com/holoviz/holoviews/pull/5794))
+- Fix `HoloMap.collapse` for `(Nd)Overlay` ([#5825](https://github.com/holoviz/holoviews/pull/5825))
 
 Compatibility:
 
@@ -56,7 +57,7 @@ Maintenance:
 - General maintenance ([#5758](https://github.com/holoviz/holoviews/pull/5758), [#5783](https://github.com/holoviz/holoviews/pull/5783), [#5802](https://github.com/holoviz/holoviews/pull/5802), [#5804](https://github.com/holoviz/holoviews/pull/5804), [#5806](https://github.com/holoviz/holoviews/pull/5806), [#5819](https://github.com/holoviz/holoviews/pull/5819))
 - Correctly check the version for deprecation ([#5772](https://github.com/holoviz/holoviews/pull/5772))
 - Update pre-commit and lint ([#5747](https://github.com/holoviz/holoviews/pull/5747), [#5768](https://github.com/holoviz/holoviews/pull/5768), [#5777](https://github.com/holoviz/holoviews/pull/5777))
-- Setup infrastructure for UI tests ([#5764](https://github.com/holoviz/holoviews/pull/5764))
+- Setup infrastructure for UI tests and add first linked streams tests ([#5764](https://github.com/holoviz/holoviews/pull/5764))
 
 
 Version 1.16.2
