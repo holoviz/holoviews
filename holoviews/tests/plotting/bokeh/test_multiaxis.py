@@ -201,6 +201,26 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual((y_range.start, y_range.end), (5, 19))
         self.assertEqual((extra_y_ranges['B'].start, extra_y_ranges['B'].end), (1, 13))
 
+    def test_invisible_main_axis(self):
+        overlay = (
+            Curve(range(10), vdims=['A']).opts(yaxis=None) *
+            Curve(range(10), vdims=['B'])
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        assert len(plot.state.yaxis) == 2
+        assert not plot.state.yaxis[0].visible
+        assert plot.state.yaxis[1].visible
+
+    def test_invisible_extra_axis(self):
+        overlay = (
+            Curve(range(10), vdims=['A']) *
+            Curve(range(10), vdims=['B']).opts(yaxis=None)
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        assert len(plot.state.yaxis) == 2
+        assert plot.state.yaxis[0].visible
+        assert not plot.state.yaxis[1].visible
+
     @pytest.mark.xfail
     def test_swapped_position_label(self):
         overlay = (Curve(range(10), vdims=['A']).opts(yaxis='right')
@@ -210,7 +230,6 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
 
         self.assertEqual(plot.state.yaxis[0].axis_label, 'B')
         self.assertEqual(plot.state.yaxis[1].axis_label, 'A')
-
 
     @pytest.mark.xfail
     def test_swapped_position_custom_label(self):

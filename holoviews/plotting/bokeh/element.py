@@ -565,7 +565,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plots, subplots, element, ranges, pos=1, range_tags_extras = range_tags_extras
             ) + (self.yaxis,)
 
-        properties = {}
+        properties, axis_visible = {}, {}
         for axis, axis_spec in axis_specs.items():
             for (axis_dim, (axis_type, axis_label, axis_range, axis_position)) in axis_spec.items():
                 scale = get_scale(axis_range, axis_type)
@@ -579,6 +579,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     properties[f'{axis}_scale'] = scale
                     properties[f'{axis}_axis_type'] = axis_type
                     locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
+                    if axis_position is None:
+                        axis_visible[axis] = False
                     for loc, pos in locs.items():
                         if axis_position and loc in axis_position:
                             properties[f'{axis}_axis_location'] = pos
@@ -615,12 +617,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             warnings.simplefilter('ignore', UserWarning)
             fig = figure(title=title, **properties)
 
+        if not axis_visible.get('x', True):
+            fig.xaxis[0].visible = False
+        if not axis_visible.get('y', True):
+            fig.yaxis[0].visible = False
+
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
             axis_type, axis_label, _, axis_position = axis_specs[multi_ax][axis_dim]
             ax_cls, ax_kwargs = get_axis_class(axis_type, range_obj, dim=1)
             ax_kwargs[f'{multi_ax}_range_name'] = axis_dim
-            fig.add_layout(ax_cls(axis_label=axis_label, **ax_kwargs), axis_position)
+            if axis_position is None:
+                ax_kwargs['visible'] = False
+                axis_position = 'above' if multi_ax == 'x' else 'right'
+            ax = ax_cls(axis_label=axis_label, **ax_kwargs)
+            fig.add_layout(ax, axis_position)
         return fig
 
     def _plot_properties(self, key, element):
@@ -712,24 +723,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             opts['text_font_size'] = title_font
         return opts
 
-    def _init_axes(self, plot):
-        if self.xaxis is None:
-            plot.xaxis.visible = False
-        elif isinstance(self.xaxis, str) and 'top' in self.xaxis:
-            plot.above = [plot.xaxis[0]] + [ax for ax in plot.above if ax is not plot.xaxis[0]]
-            plot.below = [ax for ax in plot.below if ax is not plot.xaxis[0]]
-            plot.xaxis[:] = list(plot.above) + list(plot.below)
+    def _populate_axis_handles(self, plot):
         self.handles['xaxis'] = plot.xaxis[0]
         self.handles['x_range'] = plot.x_range
         self.handles['extra_x_ranges'] = plot.extra_x_ranges
         self.handles['extra_x_scales'] = plot.extra_x_scales
-
-        if self.yaxis is None:
-            plot.yaxis.visible = False
-        elif isinstance(self.yaxis, str) and 'right' in self.yaxis:
-            plot.right = [plot.yaxis[0]] + [ax for ax in plot.right if ax is not plot.yaxis[0]]
-            plot.left = [ax for ax in plot.left if ax is not plot.yaxis[0]]
-            plot.yaxis[:] = list(plot.left) + list(plot.right)
         self.handles['yaxis'] = plot.yaxis[0]
         self.handles['y_range'] = plot.y_range
         self.handles['extra_y_ranges'] = plot.extra_y_ranges
@@ -1734,7 +1732,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
-            self._init_axes(plot)
+            self._populate_axis_handles(plot)
         else:
             axes, plot_ranges = self._find_axes(plot, element)
             self.handles['xaxis'], self.handles['yaxis'] = axes
@@ -2726,7 +2724,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         self.tabs = self.tabs or any(isinstance(sp, TablePlot) for sp in self.subplots.values())
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
-            self._init_axes(plot)
+            self._populate_axis_handles(plot)
         self.handles['plot'] = plot
 
         if plot and not self.overlaid:
