@@ -440,7 +440,7 @@ def sync_legends(bokeh_layout):
             if r.name:
                 items[r.name].append(r)
         if fig.legend:
-            click_policies.add(fig.legend.click_policy)
+            click_policies.add(fig.legend[0].click_policy)
 
     click_policies.discard("none")  # If legend is not visible, click_policy is "none"
     if len(click_policies) > 1:
