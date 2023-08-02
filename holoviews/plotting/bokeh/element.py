@@ -154,6 +154,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        elements and the overlay container, allowing customization on a
        per-axis basis.""")
 
+    subcoordinate_y = param.NumericTuple(default=None, length=2, doc="""
+       Enables sub-coordinate scales.""")
+
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
@@ -426,7 +429,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
-            v0, v1 = (l, r) if pos == 0 else (b, t)
+            if pos == 1 and self.subcoordinate_y:
+                v0, v1 = 0, 1
+            else:
+                v0, v1 = (l, r) if pos == 0 else (b, t)
 
             axis_dims = list(self._get_axis_dims(el))
             if self.invert_axes:
@@ -454,6 +460,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             categorical = True
         else:
             categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))
+        categorical &= not self.subcoordinate_y
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
@@ -800,6 +807,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+            elif isinstance(self, OverlayPlot) and self.subcoordinate_y and axis == 'y':
+                subcoords = self.traverse(lambda p: p.subcoordinate_y)[1:]
+                ticks, labels = [], []
+                for i, (frame, coords) in enumerate(reversed(list(zip(self.current_frame, subcoords)))):
+                    labels.append(frame.label or f'Trace {i}')
+                    ticks.append(np.mean(coords))
+                axis_props['ticker'] = FixedTicker(ticks=ticks)
+                if labels is not None:
+                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)
@@ -997,8 +1013,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     and (framewise or streaming))
                    or xfactors is not None)
         yupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
-                    and (framewise or streaming))
-                   or yfactors is not None)
+                    and (framewise or streaming) or yfactors is not None) and not self.subcoordinate_y)
 
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options.get('width'))
@@ -1110,7 +1125,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
-        if not self.drawn or yupdate:
+        if not (self.drawn or self.subcoordinate_y) or yupdate:
             self._update_range(y_range, b, t, yfactors,
                                y_range.tags[1]['invert_yaxis'] if y_range.tags else False,
                                self._shared['y-main-range'], self.logy, streaming)
@@ -1382,6 +1397,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if "name" not in properties:
             properties["name"] = properties.get("legend_label") or properties.get("legend_field")
+
+        if self.subcoordinate_y:
+            sy0, sy1 = self.subcoordinate_y
+            plot = plot.subplot(
+                x_source=plot.x_range,
+                x_target=plot.x_range,
+                y_source=self.handles['y_range'],
+                y_target=Range1d(start=sy0, end=sy1),
+            )
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
@@ -1732,6 +1756,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             y_axis = plot.yaxis[0]
         return (x_axis, y_axis), (x_range, y_range)
 
+    def _init_subcoordinates(self, plot, element, ranges):
+        _, b, _, t = self.get_extents(element, ranges)
+        return Range1d(start=b, end=t)
+
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
         Initializes a new plot object with the last available frame.
@@ -1756,6 +1784,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axes, plot_ranges = self._find_axes(plot, element)
             self.handles['xaxis'], self.handles['yaxis'] = axes
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
+            if self.subcoordinate_y:
+                self.handles['y_range'] = self._init_subcoordinates(
+                    plot, style_element, ranges
+                )
         self.handles['plot'] = plot
 
         if self.autorange:
@@ -2509,7 +2541,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive', 'fontscale']
+                          'frame_height', 'responsive', 'fontscale', 'subcoordinate_y']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
