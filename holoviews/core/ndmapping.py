@@ -4,6 +4,7 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
+from collections import OrderedDict
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
@@ -12,7 +13,7 @@ import pandas as pd
 import param
 
 from . import util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
+from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
     unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
     process_ellipses, get_ndmapping_label
