@@ -14,13 +14,15 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Rectangles, VLines, HLines)
+                        Tiles, Segments, Slope, Rectangles, VLines, VSpans, HLines, HSpans)
 from ...core.options import Options, Cycle, Palette
 
 from .annotation import (
-    TextPlot, LineAnnotationPlot, VLinesAnnotationPlot, HLinesAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
+    TextPlot, LineAnnotationPlot, VLinesAnnotationPlot, VSpansAnnotationPlot,
+    HLinesAnnotationPlot, HSpansAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
     DivPlot, LabelsPlot, SlopePlot
 )
+
 from ..plot import PlotSelector
 from ..util import fire
 from .callbacks import Callback # noqa (API import)
@@ -59,6 +61,9 @@ associations = {Overlay: OverlayPlot,
 
                 VLines: VLinesAnnotationPlot,
                 HLines: HLinesAnnotationPlot,
+
+                HSpans:HSpansAnnotationPlot,
+                VSpans:VSpansAnnotationPlot,
 
                 # Charts
                 Curve: CurvePlot,

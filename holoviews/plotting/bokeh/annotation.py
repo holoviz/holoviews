@@ -70,6 +70,56 @@ class VLinesAnnotationPlot(ElementPlot):
         return (data, {'x':'x'}, style)
 
 
+class HSpansAnnotationPlot(ElementPlot):
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = line_properties + ['level', 'visible']
+    _allow_implicit_categories = False
+    _plot_methods = dict(single='hstrip')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        loc0 = list(element.dimension_values(element.kdims[2])) # invert_axes?
+        if isinstance(loc0, datetime_types):
+            loc0 = date_to_integer(loc0)
+        data['y0'] = loc0
+
+        loc1 = list(element.dimension_values(element.kdims[3]))
+        if isinstance(loc1, datetime_types):
+            loc1 = date_to_integer(loc1)
+        data['y1'] = loc1
+
+        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
+        data.update(vdim_data)
+        return (data, {'y0':'y0', 'y1':'y1'}, style)
+
+
+
+class VSpansAnnotationPlot(ElementPlot):
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = line_properties + ['level', 'visible']
+    _allow_implicit_categories = False
+    _plot_methods = dict(single='vstrip')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        loc0 = list(element.dimension_values(element.kdims[0])) # invert_axes?
+        if isinstance(loc0, datetime_types):
+            loc0 = date_to_integer(loc0)
+        data['x0'] = loc0
+
+        loc1 = list(element.dimension_values(element.kdims[1]))
+        if isinstance(loc1, datetime_types):
+            loc1 = date_to_integer(loc1)
+        data['x1'] = loc1
+
+        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
+        data.update(vdim_data)
+        return (data, {'x0':'x0', 'x1':'x1'}, style)
+
 
 class TextPlot(ElementPlot, AnnotationPlot):
 
