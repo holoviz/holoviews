@@ -11,7 +11,7 @@ from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, VLine, VSpan
+from ...element import HLine, VLine, VSpan, VLines, HLines
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -22,6 +22,53 @@ from .util import date_to_integer
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
 arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                 '-': None}
+
+try:
+    from bokeh.models import HSpan, VSpan, HStrip, VStrip
+except:
+    raise Exception('Bokeh version check?')
+
+
+
+class HLinesAnnotationPlot(ElementPlot):
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = line_properties + ['level', 'visible']
+    _allow_implicit_categories = False
+    _plot_methods = dict(single='hspan')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        loc = list(element.dimension_values(element.kdims[1])) # invert_axes?
+        if isinstance(loc, datetime_types):
+            loc = date_to_integer(loc)
+        data['y'] = loc
+
+        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
+        data.update(vdim_data)
+        return (data, {'y':'y'}, style)
+
+
+class VLinesAnnotationPlot(ElementPlot):
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = line_properties + ['level', 'visible']
+    _allow_implicit_categories = False
+    _plot_methods = dict(single='vspan')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        loc = list(element.dimension_values(element.kdims[0])) # invert_axes?
+        if isinstance(loc, datetime_types):
+            loc = date_to_integer(loc)
+        data['x'] = loc
+
+        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
+        data.update(vdim_data)
+        return (data, {'x':'x'}, style)
+
 
 
 class TextPlot(ElementPlot, AnnotationPlot):

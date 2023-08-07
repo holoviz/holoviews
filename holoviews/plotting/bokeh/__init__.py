@@ -14,11 +14,11 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Rectangles)
+                        Tiles, Segments, Slope, Rectangles, VLines, HLines)
 from ...core.options import Options, Cycle, Palette
 
 from .annotation import (
-    TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
+    TextPlot, LineAnnotationPlot, VLinesAnnotationPlot, HLinesAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
     DivPlot, LabelsPlot, SlopePlot
 )
 from ..plot import PlotSelector
@@ -56,6 +56,9 @@ associations = {Overlay: OverlayPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
                 NdLayout: LayoutPlot,
+
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
 
                 # Charts
                 Curve: CurvePlot,

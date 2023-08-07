@@ -7,6 +7,44 @@ from ..core import Dimension, Element2D, Element
 from ..core.data import Dataset
 
 
+
+class VectorizedAnnotation(Dataset, Element2D):
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2))
+
+    _auto_indexable_1d = False
+
+class VLines(VectorizedAnnotation):
+
+    group = param.String(default='VLines', constant=True)
+
+    def __init__(self, data, **params):
+        synthetic_dimensions = [1]
+        kdims = params.pop('kdims', self.kdims)
+        real_kdims = [kd for i, kd in enumerate(kdims) if i not in synthetic_dimensions]
+        ds = Dataset(data, real_kdims, params.get('vdims', []))
+        for sd in synthetic_dimensions:
+            ds = ds.add_dimension(kdims[sd], sd, np.nan)
+        super().__init__(ds.data, kdims, **params)
+
+
+class HLines(VectorizedAnnotation):
+
+    group = param.String(default='HLines', constant=True)
+
+    def __init__(self, data, **params):
+        synthetic_dimensions = [0]
+        kdims = params.pop('kdims', self.kdims)
+        real_kdims = [kd for i, kd in enumerate(kdims) if i not in synthetic_dimensions]
+        ds = Dataset(data, real_kdims, params.get('vdims', []))
+        for sd in synthetic_dimensions:
+            ds = ds.add_dimension(kdims[sd], sd, np.nan)
+        super().__init__(ds.data, kdims, **params)
+
+
+
+
 class Annotation(Element2D):
     """
     An Annotation is a special type of element that is designed to be
