@@ -62,7 +62,7 @@ class ProgressBar(ProgressIndicator):
             if percentage==100 and self.elapsed_time:
                 elapsed = time.time() -  self.start_time
                 if clear_output:
-                    clear_output(wait=True)
+                    clear_output()
                 self.out = '\r' + ('100%% %s %02d:%02d:%02d'
                                    % (self.label.lower(), elapsed//3600,
                                       elapsed//60, elapsed%60))
@@ -83,7 +83,7 @@ class ProgressBar(ProgressIndicator):
 
     def _stdout_display(self, percentage, display=True):
         if clear_output:
-            clear_output(wait=True)
+            clear_output()
         percent_per_char = 100.0 / self.width
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)
