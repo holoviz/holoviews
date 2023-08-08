@@ -24,115 +24,56 @@ arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                 '-': None}
 
 
-class HLinesAnnotationPlot(ElementPlot):
+class SyntheticAnnotationPlot(ElementPlot):
+
     apply_ranges = param.Boolean(default=True, doc="""
         Whether to include the annotation in axis range calculations.""")
 
     style_opts = line_properties + ['level', 'visible']
     _allow_implicit_categories = False
+    _element_name = ''
+
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            raise ImportError(f'{self._element_name} element requires bokeh >=3.2')
+        super().__init__(element, **kwargs)
+
+    def get_data(self, element, ranges, style):
+        data = {}
+        for name, index in self._data_dims.items():
+            loc = list(element.dimension_values(element.kdims[index])) # invert_axes?
+            data[name]= date_to_integer(loc) if isinstance(loc, datetime_types) else loc
+
+        mapping = {k:k for k in self._data_dims}
+        data.update({str(name):element.dimension_values(name) for name in element.vdims})
+        return (data, mapping, style)
+
+class HLinesAnnotationPlot(SyntheticAnnotationPlot):
+
+    _data_dims = {'y':1}
+    _element_name = 'VLines'
     _plot_methods = dict(single='hspan')
 
-    def __init__(self, element, **kwargs):
-        if not bokeh32:
-            raise ImportError('HLines element requires bokeh >=3.2')
-        super().__init__(self, **kwargs)
 
-    def get_data(self, element, ranges, style):
-        data = {}
-        loc = list(element.dimension_values(element.kdims[1])) # invert_axes?
-        if isinstance(loc, datetime_types):
-            loc = date_to_integer(loc)
-        data['y'] = loc
+class VLinesAnnotationPlot(SyntheticAnnotationPlot):
 
-        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
-        data.update(vdim_data)
-        return (data, {'y':'y'}, style)
-
-
-class VLinesAnnotationPlot(ElementPlot):
-    apply_ranges = param.Boolean(default=True, doc="""
-        Whether to include the annotation in axis range calculations.""")
-
-    style_opts = line_properties + ['level', 'visible']
-    _allow_implicit_categories = False
     _plot_methods = dict(single='vspan')
-
-    def __init__(self, element, **kwargs):
-        if not bokeh32:
-            raise ImportError('VLines element requires bokeh >=3.2')
-        super().__init__(self, **kwargs)
-
-    def get_data(self, element, ranges, style):
-        data = {}
-        loc = list(element.dimension_values(element.kdims[0])) # invert_axes?
-        if isinstance(loc, datetime_types):
-            loc = date_to_integer(loc)
-        data['x'] = loc
-
-        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
-        data.update(vdim_data)
-        return (data, {'x':'x'}, style)
+    _element_name = 'HLines'
+    _data_dims = {'x':0}
 
 
-class HSpansAnnotationPlot(ElementPlot):
-    apply_ranges = param.Boolean(default=True, doc="""
-        Whether to include the annotation in axis range calculations.""")
+class HSpansAnnotationPlot(SyntheticAnnotationPlot):
 
-    style_opts = line_properties + ['level', 'visible']
-    _allow_implicit_categories = False
     _plot_methods = dict(single='hstrip')
-
-    def __init__(self, element, **kwargs):
-        if not bokeh32:
-            raise ImportError('HSpans element requires bokeh >=3.2')
-        super().__init__(self, **kwargs)
-
-    def get_data(self, element, ranges, style):
-        data = {}
-        loc0 = list(element.dimension_values(element.kdims[2])) # invert_axes?
-        if isinstance(loc0, datetime_types):
-            loc0 = date_to_integer(loc0)
-        data['y0'] = loc0
-
-        loc1 = list(element.dimension_values(element.kdims[3]))
-        if isinstance(loc1, datetime_types):
-            loc1 = date_to_integer(loc1)
-        data['y1'] = loc1
-
-        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
-        data.update(vdim_data)
-        return (data, {'y0':'y0', 'y1':'y1'}, style)
+    _element_name = 'HSpans'
+    _data_dims = {'y0':2, 'y1':3}
 
 
+class VSpansAnnotationPlot(SyntheticAnnotationPlot):
 
-class VSpansAnnotationPlot(ElementPlot):
-    apply_ranges = param.Boolean(default=True, doc="""
-        Whether to include the annotation in axis range calculations.""")
-
-    style_opts = line_properties + ['level', 'visible']
-    _allow_implicit_categories = False
     _plot_methods = dict(single='vstrip')
-
-    def __init__(self, element, **kwargs):
-        if not bokeh32:
-            raise ImportError('VSpans element requires bokeh >=3.2')
-        super().__init__(self, **kwargs)
-
-    def get_data(self, element, ranges, style):
-        data = {}
-        loc0 = list(element.dimension_values(element.kdims[0])) # invert_axes?
-        if isinstance(loc0, datetime_types):
-            loc0 = date_to_integer(loc0)
-        data['x0'] = loc0
-
-        loc1 = list(element.dimension_values(element.kdims[1]))
-        if isinstance(loc1, datetime_types):
-            loc1 = date_to_integer(loc1)
-        data['x1'] = loc1
-
-        vdim_data = {str(name):element.dimension_values(name) for name in element.vdims}
-        data.update(vdim_data)
-        return (data, {'x0':'x0', 'x1':'x1'}, style)
+    _element_name = 'HSpans'
+    _data_dims = {'x0':0, 'x1':1}
 
 
 class TextPlot(ElementPlot, AnnotationPlot):
