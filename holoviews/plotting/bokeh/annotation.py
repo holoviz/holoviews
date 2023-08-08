@@ -11,23 +11,17 @@ from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, VLine, VSpan, VLines, HLines
+from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
 from .plot import BokehPlot
-from .util import date_to_integer
+from .util import date_to_integer, bokeh32
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
 arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                 '-': None}
-
-try:
-    from bokeh.models import HSpan, VSpan, HStrip, VStrip
-except:
-    raise Exception('Bokeh version check?')
-
 
 
 class HLinesAnnotationPlot(ElementPlot):
@@ -38,8 +32,13 @@ class HLinesAnnotationPlot(ElementPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='hspan')
 
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            raise ImportError('HLines element requires bokeh >=3.2')
+        super().__init__(self, **kwargs)
+
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
         loc = list(element.dimension_values(element.kdims[1])) # invert_axes?
         if isinstance(loc, datetime_types):
             loc = date_to_integer(loc)
@@ -58,8 +57,13 @@ class VLinesAnnotationPlot(ElementPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='vspan')
 
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            raise ImportError('VLines element requires bokeh >=3.2')
+        super().__init__(self, **kwargs)
+
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
         loc = list(element.dimension_values(element.kdims[0])) # invert_axes?
         if isinstance(loc, datetime_types):
             loc = date_to_integer(loc)
@@ -78,8 +82,13 @@ class HSpansAnnotationPlot(ElementPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='hstrip')
 
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            raise ImportError('HSpans element requires bokeh >=3.2')
+        super().__init__(self, **kwargs)
+
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
         loc0 = list(element.dimension_values(element.kdims[2])) # invert_axes?
         if isinstance(loc0, datetime_types):
             loc0 = date_to_integer(loc0)
@@ -104,8 +113,13 @@ class VSpansAnnotationPlot(ElementPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='vstrip')
 
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            raise ImportError('VSpans element requires bokeh >=3.2')
+        super().__init__(self, **kwargs)
+
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
         loc0 = list(element.dimension_values(element.kdims[0])) # invert_axes?
         if isinstance(loc0, datetime_types):
             loc0 = date_to_integer(loc0)
