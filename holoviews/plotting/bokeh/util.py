@@ -468,14 +468,17 @@ def select_legends(holoviews_layout, figure_index=None, legend_position="top_rig
     ----------
     holoviews_layout : Holoviews Layout
         Holoviews Layout with legends.
-    figure_index : list[int] | int | None
+    figure_index : list[int] | bool | int | None
         Index of the figures which legends to show.
         If None is chosen, only the first figures legend is shown
+        If True is chosen, all legends are shown.
     legend_position : str
         Position of the legend(s).
     """
     if figure_index is None:
         figure_index = [0]
+    elif isinstance(figure_index, bool):
+        figure_index = range(len(holoviews_layout)) if figure_index else []
     elif isinstance(figure_index, int):
         figure_index = [figure_index]
     if not isinstance(holoviews_layout, Layout):

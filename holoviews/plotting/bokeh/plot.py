@@ -31,7 +31,7 @@ from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
     bokeh3, filter_toolboxes, make_axis, sync_legends, update_shared_sources, empty_plot,
-    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools,
+    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools, select_legends
 )
 
 if bokeh3:
@@ -690,6 +690,21 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     sync_legends = param.Boolean(default=True, doc="""
         Whether to sync the legend when muted/unmuted based on the name""")
 
+    show_legends = param.ClassSelector(default=True, class_=(list, int, bool), doc="""
+        Whether to show the legend for a particular subplot by index. If True all legends
+        will be shown. If False no legends will be shown.""")
+
+    legend_position = param.ObjectSelector(objects=["top_right",
+                                                    "top_left",
+                                                    "bottom_left",
+                                                    "bottom_right",
+                                                    'right', 'left',
+                                                    'top', 'bottom'],
+                                                    default="right",
+                                                    doc="""
+        Allows selecting between a number of predefined legend position
+        options.""")
+
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
@@ -699,6 +714,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         if self.top_level:
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
+
+    @param.depends('show_legends', 'legend_position', watch=True, on_init=True)
+    def _update_show_legend(self):
+        select_legends(self.layout, self.show_legends, self.legend_position)
 
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
