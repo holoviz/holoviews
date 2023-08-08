@@ -506,6 +506,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return axis_type, axis_label, dim_range
 
     def _create_extra_axes(self, plots, subplots, element, ranges):
+        if self.subplots is None:
+            # Occurs with subcoordinate_y is set
+            return {}, {}
         if self.invert_axes:
             axpos0, axpos1 = 'below', 'above'
         else:
