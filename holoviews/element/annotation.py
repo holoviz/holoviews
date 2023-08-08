@@ -14,33 +14,27 @@ class VectorizedAnnotation(Dataset, Element2D):
                        bounds=(2, 2))
 
     _auto_indexable_1d = False
+    _synthetic_dimensions = []
+
+    def __init__(self, data, **params):
+        kdims = params.pop('kdims', self.kdims)
+        real_kdims = [kd for i, kd in enumerate(kdims) if i not in self._synthetic_dimensions]
+        ds = Dataset(data, real_kdims, params.get('vdims', []))
+        for sd in self._synthetic_dimensions:
+            ds = ds.add_dimension(kdims[sd], sd, np.nan)
+        super().__init__(ds.data, kdims, **params)
 
 class VLines(VectorizedAnnotation):
 
     group = param.String(default='VLines', constant=True)
 
-    def __init__(self, data, **params):
-        synthetic_dimensions = [1]
-        kdims = params.pop('kdims', self.kdims)
-        real_kdims = [kd for i, kd in enumerate(kdims) if i not in synthetic_dimensions]
-        ds = Dataset(data, real_kdims, params.get('vdims', []))
-        for sd in synthetic_dimensions:
-            ds = ds.add_dimension(kdims[sd], sd, np.nan)
-        super().__init__(ds.data, kdims, **params)
+    _synthetic_dimensions = [1]
 
 
 class HLines(VectorizedAnnotation):
 
     group = param.String(default='HLines', constant=True)
-
-    def __init__(self, data, **params):
-        synthetic_dimensions = [0]
-        kdims = params.pop('kdims', self.kdims)
-        real_kdims = [kd for i, kd in enumerate(kdims) if i not in synthetic_dimensions]
-        ds = Dataset(data, real_kdims, params.get('vdims', []))
-        for sd in synthetic_dimensions:
-            ds = ds.add_dimension(kdims[sd], sd, np.nan)
-        super().__init__(ds.data, kdims, **params)
+    _synthetic_dimensions = [0]
 
 
 class HSpans(VectorizedAnnotation):
@@ -50,16 +44,7 @@ class HSpans(VectorizedAnnotation):
                        bounds=(4, 4))
 
     group = param.String(default='HSpans', constant=True)
-    _auto_indexable_1d = False
-
-    def __init__(self, data, **params):
-        synthetic_dimensions = [0,1]
-        kdims = params.pop('kdims', self.kdims)
-        real_kdims = [kd for i, kd in enumerate(kdims) if i not in synthetic_dimensions]
-        ds = Dataset(data, real_kdims, params.get('vdims', []))
-        for sd in synthetic_dimensions:
-            ds = ds.add_dimension(kdims[sd], sd, np.nan)
-        super().__init__(ds.data, kdims, **params)
+    _synthetic_dimensions = [0,1]
 
 
 class VSpans(VectorizedAnnotation):
@@ -69,16 +54,8 @@ class VSpans(VectorizedAnnotation):
                        bounds=(4, 4))
 
     group = param.String(default='VSpans', constant=True)
-    _auto_indexable_1d = False
+    _synthetic_dimensions = [2,3]
 
-    def __init__(self, data, **params):
-        synthetic_dimensions = [2,3]
-        kdims = params.pop('kdims', self.kdims)
-        real_kdims = [kd for i, kd in enumerate(kdims) if i not in synthetic_dimensions]
-        ds = Dataset(data, real_kdims, params.get('vdims', []))
-        for sd in synthetic_dimensions:
-            ds = ds.add_dimension(kdims[sd], sd, np.nan)
-        super().__init__(ds.data, kdims, **params)
 
 
 class Annotation(Element2D):
