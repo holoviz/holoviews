@@ -52,6 +52,8 @@ class TestLinkCallbacks(TestBokehPlot):
         tgt_plot = plot.subplots[(0, 0)].subplots['main']
         self.assertEqual(tgt_plot.handles['x_range'].start, x_start)
         self.assertEqual(tgt_plot.handles['x_range'].end, x_end)
+        self.assertEqual(tgt_plot.handles['x_range'].reset_start, x_start)
+        self.assertEqual(tgt_plot.handles['x_range'].reset_end, x_end)
 
     def test_range_tool_link_callback_boundsy_arg(self):
         array = np.random.rand(100, 2)
@@ -65,6 +67,8 @@ class TestLinkCallbacks(TestBokehPlot):
         tgt_plot = plot.subplots[(0, 0)].subplots['main']
         self.assertEqual(tgt_plot.handles['y_range'].start, y_start)
         self.assertEqual(tgt_plot.handles['y_range'].end, y_end)
+        self.assertEqual(tgt_plot.handles['y_range'].reset_start, y_start)
+        self.assertEqual(tgt_plot.handles['y_range'].reset_end, y_end)
 
     def test_data_link_dynamicmap_table(self):
         dmap = DynamicMap(lambda X: Points([(0, X)]), kdims='X').redim.range(X=(-1, 1))
