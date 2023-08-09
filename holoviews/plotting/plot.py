@@ -666,7 +666,7 @@ class DimensionedPlot(Plot):
         if 'factors' in ranges:
             all_factors = ranges['factors']
             factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
-            dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+            dtype = next(iter(factor_dtypes)) if len(factor_dtypes) == 1 else None
             expanded = [v for fctrs in all_factors for v in fctrs]
             if dtype is not None:
                 try:
@@ -1934,7 +1934,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         items = overlay.items()
         if self.batched and self.subplots:
-            subplot = list(self.subplots.values())[0]
+            subplot = next(iter(self.subplots.values()))
             subplots = [(k, subplot) for k in overlay.data.keys()]
         else:
             subplots = self.subplots.items()

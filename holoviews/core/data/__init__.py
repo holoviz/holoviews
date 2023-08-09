@@ -454,7 +454,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             if len(kwargs) > 1:
                 raise NotImplementedError("Closest method currently only "
                                           "supports 1D indexes")
-            samples = list(kwargs.values())[0]
+            samples = next(iter(kwargs.values()))
             coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)

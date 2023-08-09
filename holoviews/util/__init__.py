@@ -277,7 +277,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
            *options: Option objects used to specify the defaults.
            backend:  The plotting extension the options apply to
         """
-        if kwargs and len(kwargs) != 1 and list(kwargs.keys())[0] != 'backend':
+        if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
         cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
@@ -475,7 +475,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             reraise = False
             if invalid:
                 try:
-                    cls._options_error(list(invalid)[0], element, backend, allowed_kws)
+                    cls._options_error(next(iter(invalid)), element, backend, allowed_kws)
                 except ValueError as e:
                     msg = str(e)[0].lower() + str(e)[1:]
                     reraise = True

@@ -1433,7 +1433,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.'.format(
                                          style=k, dim=v.dimension, element=element,
                                          backend=self.renderer.backend))
-                elif data and len(val) != len(list(data.values())[0]):
+                elif data and len(val) != len(next(iter(data.values()))):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
                     elif isinstance(element, Path) and not isinstance(element, Contours):
@@ -1638,7 +1638,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                             prop = 'value' if 'label' in lp else 'field'
                             label = {prop: legend}
                         elif isinstance(item.label, dict):
-                            label = {list(item.label)[0]: legend}
+                            label = {next(iter(item.label)): legend}
                         else:
                             label = {'value': legend}
                         item.label = label

@@ -159,7 +159,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 continue
 
             # Apply static styles
-            nvals = len(list(eldata.values())[0])
+            nvals = len(next(iter(eldata.values())))
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
             elmapping.update({k: v for k, v in smapping.items() if k not in elmapping})

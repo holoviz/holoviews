@@ -340,7 +340,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 elif v in element:
                     v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
-                    v = dim([d for d in self.overlay_dims if d==v][0])
+                    v = dim(next(d for d in self.overlay_dims if d==v))
 
             if not isinstance(v, dim):
                 continue
@@ -682,7 +682,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        return self.generate_plot(list(self.hmap.data.keys())[0], ranges, is_geo=is_geo)
+        return self.generate_plot(next(iter(self.hmap.data.keys())), ranges, is_geo=is_geo)
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
         if element is None:

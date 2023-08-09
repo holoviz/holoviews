@@ -297,7 +297,7 @@ class ImageInterface(GridInterface):
         """
         if np.isscalar(data) or len(data) != 1:
             return data
-        key = list(data.keys())[0]
+        key = next(iter(data.keys()))
 
         if len(data[key]) == 1 and key in dataset.vdims:
             return data[key][0]
