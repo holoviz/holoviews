@@ -55,9 +55,9 @@ class ImageInterface(GridInterface):
             shape = data.shape[:2]
             error = DataError if len(shape) > 1 and not eltype._binned else ValueError
             if shape != expected and not (not expected and shape == (1,)):
-                raise error('Key dimension values and value array {} '
-                            'shapes do not match. Expected shape {}, '
-                            'actual shape: {}'.format(vdims[0], expected, shape), cls)
+                raise error(f'Key dimension values and value array {vdims[0]} '
+                            f'shapes do not match. Expected shape {expected}, '
+                            f'actual shape: {shape}', cls)
 
         if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')

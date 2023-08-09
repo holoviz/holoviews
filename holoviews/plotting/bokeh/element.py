@@ -1407,8 +1407,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
                 self.param.warning(
-                    'Specified {} dim transform {!r} could not be applied, '
-                    'as not all dimensions could be resolved.'.format(k, v))
+                    f'Specified {k} dim transform {v!r} could not be applied, '
+                    'as not all dimensions could be resolved.')
                 continue
 
             if v.dimension in self.overlay_dims:

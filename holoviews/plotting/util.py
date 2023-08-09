@@ -684,8 +684,8 @@ def _list_cmaps(provider=None, records=False):
         provider = providers
     elif isinstance(provider, str):
         if provider not in providers:
-            raise ValueError('Colormap provider {!r} not recognized, must '
-                             'be one of {!r}'.format(provider, providers))
+            raise ValueError(f'Colormap provider {provider!r} not recognized, must '
+                             f'be one of {providers!r}')
         provider = [provider]
 
     cmaps = []

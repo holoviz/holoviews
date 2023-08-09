@@ -1296,8 +1296,8 @@ class GenericElementPlot(DimensionedPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook {!r} could not be "
-                                   "applied:\n\n {}".format(hook, e))
+                self.param.warning(f"Plotting hook {hook!r} could not be "
+                                   f"applied:\n\n {e}")
 
     def get_aspect(self, xspan, yspan):
         """

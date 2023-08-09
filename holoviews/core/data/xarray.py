@@ -229,13 +229,13 @@ class XArrayInterface(GridInterface):
                 undeclared.append(c)
             if undeclared and eltype.param.kdims.bounds[1] not in (0, None):
                 raise DataError(
-                    'The coordinates on the {!r} DataArray do not match the '
+                    f'The coordinates on the {vdim.name!r} DataArray do not match the '
                     'provided key dimensions (kdims). The following coords '
-                    'were left unspecified: {!r}. If you are requesting a '
+                    f'were left unspecified: {undeclared!r}. If you are requesting a '
                     'lower dimensional view such as a histogram cast '
                     'the xarray to a columnar format using the .to_dataframe '
                     'or .to_dask_dataframe methods before providing it to '
-                    'HoloViews.'.format(vdim.name, undeclared))
+                    'HoloViews.')
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 

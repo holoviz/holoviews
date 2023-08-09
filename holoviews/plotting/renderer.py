@@ -324,8 +324,8 @@ class Renderer(Exporter):
             try:
                 data = hook(data, obj)
             except Exception as e:
-                self.param.warning("The post_render_hook {!r} could not "
-                                   "be applied:\n\n {}".format(hook, e))
+                self.param.warning(f"The post_render_hook {hook!r} could not "
+                                   f"be applied:\n\n {e}")
         return data
 
     def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):

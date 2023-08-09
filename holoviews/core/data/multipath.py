@@ -59,8 +59,8 @@ class MultiInterface(Interface):
                                 if hasattr(Interface.interfaces.get(dt), 'has_holes')]
                 geom_type = d.get('geom_type')
                 if geom_type is not None and geom_type not in cls.geom_types:
-                    raise DataError("Geometry type '{}' not recognized, "
-                                    "must be one of {}.".format(geom_type, cls.geom_types))
+                    raise DataError(f"Geometry type '{geom_type}' not recognized, "
+                                    f"must be one of {cls.geom_types}.")
                 else:
                     datatype = [dt for dt in datatype
                                 if hasattr(Interface.interfaces.get(dt), 'geom_type')]

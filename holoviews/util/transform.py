@@ -654,8 +654,8 @@ class dim:
             if method is None:
                 mtype = 'attribute' if accessor else 'method'
                 raise AttributeError(
-                    "{!r} could not be applied to '{!r}', '{}' {} "
-                    "does not exist on {} type.".format(self, dataset, fn, mtype, type(data).__name__)
+                    f"{self!r} could not be applied to '{dataset!r}', '{fn}' {mtype} "
+                    f"does not exist on {type(data).__name__} type."
                 )
             if accessor:
                 data = method
@@ -720,10 +720,10 @@ class dim:
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
 
         if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
-            raise KeyError("One or more dimensions in the expression {!r} "
-                           "could not resolve on '{}'. Ensure all "
+            raise KeyError(f"One or more dimensions in the expression {self!r} "
+                           f"could not resolve on '{dataset}'. Ensure all "
                            "dimensions referenced by the expression are "
-                           "present on the supplied object.".format(self, dataset))
+                           "present on the supplied object.")
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
                 raise ValueError("The expression {!r} assumes a {}-like "

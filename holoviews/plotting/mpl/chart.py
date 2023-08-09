@@ -335,11 +335,9 @@ class HistogramPlot(ColorbarPlot):
             if 'vmin' in style:
                 raise ValueError('Mapping a continuous dimension to a '
                                  'color on a HistogramPlot is not '
-                                 'supported by the {backend} backend. '
+                                 f'supported by the {self.renderer.backend} backend. '
                                  'To map a dimension to a color supply '
-                                 'an explicit list of rgba colors.'.format(
-                                     backend=self.renderer.backend
-                                 )
+                                 'an explicit list of rgba colors.'
                 )
 
         # Plot bars and make any adjustments
@@ -631,8 +629,8 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
             if sizes is None:
                 eltype = type(element).__name__
                 self.param.warning(
-                    '{} dimension is not numeric, cannot use to '
-                    'scale {} size.'.format(sdim.pprint_label, eltype))
+                    f'{sdim.pprint_label} dimension is not numeric, cannot use to '
+                    f'scale {eltype} size.')
             else:
                 style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')

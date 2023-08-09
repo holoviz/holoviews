@@ -170,8 +170,8 @@ class MultiDimensionalMapping(Dimensioned):
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
-                raise KeyError('{} dimension value {} not in'
-                               ' specified dimension values.'.format(dim, repr(val)))
+                raise KeyError(f'{dim} dimension value {val!r} not in'
+                               ' specified dimension values.')
 
         # Updates nested data structures rather than simply overriding them.
         if (update and (dim_vals in self.data)
