@@ -33,7 +33,7 @@ from packaging.version import Version
 
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
-from ...core.overlay import Overlay
+from ...core.overlay import Overlay, NdOverlay
 from ...core.util import (
     arraylike_types, callable_name, cftime_types,
     cftime_to_timestamp, isnumeric, pd, unique_array
@@ -485,6 +485,8 @@ def select_legends(holoviews_layout, figure_index=None, legend_position="top_rig
         holoviews_layout = [holoviews_layout]
 
     for i, plot in enumerate(holoviews_layout):
+        if not isinstance(plot, (NdOverlay, Overlay)):
+            continue
         if i in figure_index:
             plot.opts(show_legend=True, legend_position=legend_position)
         else:

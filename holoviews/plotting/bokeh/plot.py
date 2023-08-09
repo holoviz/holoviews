@@ -700,7 +700,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                                     "bottom_right",
                                                     'right', 'left',
                                                     'top', 'bottom'],
-                                                    default="right",
+                                                    default="top_right",
                                                     doc="""
         Allows selecting between a number of predefined legend position
         options.""")
