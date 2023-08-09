@@ -405,9 +405,8 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              'across all extensions. Similar options '
                              'for current extension ({!r}) are: {}.'.format(opt, objtype, current_backend, matches))
         else:
-            raise ValueError('Unexpected option {!r} for {} type '
-                             'across all extensions. No similar options '
-                             'found.'.format(opt, objtype))
+            raise ValueError(f'Unexpected option {opt!r} for {objtype} type '
+                             'across all extensions. No similar options found.')
 
     @classmethod
     def _builder_reprs(cls, options, namespace=None, ns=None):

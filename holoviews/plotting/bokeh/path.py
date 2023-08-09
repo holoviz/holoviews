@@ -72,7 +72,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
-                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+                data[dim] = [v] * len(next(iter(data.values())))
 
 
     def get_data(self, element, ranges, style):
@@ -219,7 +219,7 @@ class ContourPlot(PathPlot):
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
-                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+                data[dim] = [v] * len(next(iter(data.values())))
 
     def get_data(self, element, ranges, style):
         if self._has_holes is None:
