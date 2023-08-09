@@ -609,7 +609,7 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(eldim, dim):
                     title = str(eldim)
                     if eldim.ops:
-                        title = title
+                        pass
                     elif title.startswith("dim('") and title.endswith("')"):
                         title = title[5:-2]
                     else:
