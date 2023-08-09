@@ -252,7 +252,7 @@ class MPLPlot(DimensionedPlot):
 
 
     def update(self, key):
-        if len(self) == 1 and ((key == 0) or (key == self.keys[0])) and not self.drawn:
+        if len(self) == 1 and key in (0, self.keys[0]) and not self.drawn:
             return self.initialize_plot()
         return self.__getitem__(key)
 
