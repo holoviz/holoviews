@@ -25,7 +25,9 @@ filterwarnings = [
     # 2023-01: Sqlalchemy 2.0 warning:
     "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy",  # https://github.com/ibis-project/ibis/issues/5048
     # 2023-03: Already handling the nested sequence
-    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
+    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas",
+    # 2023-08: Dash needs to update their code to use the comm module
+    "ignore:The `.+?` class has been deprecated:DeprecationWarning:dash._jupyter:",
 ]
 
 [tool.coverage]
