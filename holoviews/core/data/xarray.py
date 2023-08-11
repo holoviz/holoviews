@@ -1,5 +1,6 @@
 import sys
 import types
+import warnings
 
 from collections import OrderedDict
 
@@ -172,7 +173,17 @@ class XArrayInterface(GridInterface):
                 for vdim in vdims:
                     arr = data[vdim.name]
                     if not isinstance(arr, xr.DataArray):
-                        arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
+                        with warnings.catch_warnings():
+                            # xarray emit a warning when datetime/timedelta is not nanosecond,
+                            # and then convert it to nanosecond precision. The full warning is:
+                            #   Converting non-nanosecond precision {case} values to nanosecond precision.
+                            #   This behavior can eventually be relaxed in xarray, as it is an artifact from
+                            #   pandas which is now beginning to support non-nanosecond precision values.
+                            #   This warning is caused by passing non-nanosecond np.datetime64 or
+                            #   np.timedelta64 values to the DataArray or Variable constructor; it can be
+                            #   silenced by converting the values to nanosecond precision ahead of time.
+                            warnings.filterwarnings("ignore", "Converting non-nanosecond precision")
+                            arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
                     arrays[vdim.name] = arr
                 data = xr.Dataset(arrays)
         else:
