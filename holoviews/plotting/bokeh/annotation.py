@@ -50,6 +50,13 @@ class _SyntheticAnnotationPlot(ElementPlot):
         data.update({str(name): element.dimension_values(name) for name in element.vdims})
         return data, mapping, style
 
+    def _hover_opts(self, element):
+        dims, opts = super()._hover_opts(element)
+        for sd in element._synthetic_dimensions:
+            name = element.kdims[sd]
+            if name in dims:
+                dims.remove(name)
+        return dims, opts
 
 class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
 
