@@ -25,7 +25,7 @@ def ibis4():
 
 @lru_cache
 def ibis6():
-    return ibis_version() >= Version("7.0")
+    return ibis_version() >= Version("6.0")
 
 
 class IbisInterface(Interface):
