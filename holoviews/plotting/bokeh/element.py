@@ -486,7 +486,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             True if isinstance(el, (str, bytes)+util.cftime_types)
             else not util.isfinite(el) for el in [v0, v1]
         ):
-           dim_range = range_type()
+            dim_range = range_type()
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
 
