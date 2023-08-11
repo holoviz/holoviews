@@ -813,8 +813,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
-        return img
-
 
     def test_mpl_bokeh_offset_mpl(self):
         img = Image(np.random.rand(10,10))
@@ -841,7 +839,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
-        return img
 
     def test_builder_backend_switch_signature(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
