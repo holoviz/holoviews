@@ -39,22 +39,22 @@ class HLines(VectorizedAnnotation):
 
 class HSpans(VectorizedAnnotation):
 
-    kdims = param.List(default=[Dimension('x0'), Dimension('x1'),
-                                Dimension('y0'), Dimension('y1')],
+    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
+                                Dimension('x1'), Dimension('y1')],
                        bounds=(4, 4))
 
     group = param.String(default='HSpans', constant=True)
-    _synthetic_dimensions = [0,1]
+    _synthetic_dimensions = [0,2]
 
 
 class VSpans(VectorizedAnnotation):
 
-    kdims = param.List(default=[Dimension('x0'), Dimension('x1'),
-                                Dimension('y0'), Dimension('y1')],
+    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
+                                Dimension('x1'), Dimension('y1')],
                        bounds=(4, 4))
 
     group = param.String(default='VSpans', constant=True)
-    _synthetic_dimensions = [2,3]
+    _synthetic_dimensions = [1,3]
 
 
 
