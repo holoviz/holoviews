@@ -194,7 +194,7 @@ class IbisInterface(Interface):
             import ibis
             order = ibis.desc if reverse else ibis.asc
             return dataset.data.order_by([order(dataset.get_dimension(x).name) for x in by])
-        if ibis4():
+        elif ibis4():
             # Tuple syntax will be removed in Ibis 7.0:
             # https://github.com/ibis-project/ibis/pull/6082
             return dataset.data.order_by([(dataset.get_dimension(x).name, not reverse) for x in by])
