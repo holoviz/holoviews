@@ -24,7 +24,7 @@ arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                 '-': None}
 
 
-class SyntheticAnnotationPlot(ElementPlot):
+class _SyntheticAnnotationPlot(ElementPlot):
 
     apply_ranges = param.Boolean(default=True, doc="""
         Whether to include the annotation in axis range calculations.""")
@@ -40,40 +40,39 @@ class SyntheticAnnotationPlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         data = {}
-        for name, index in self._data_dims.items():
-            loc = list(element.dimension_values(element.kdims[index])) # invert_axes?
-            data[name]= date_to_integer(loc) if isinstance(loc, datetime_types) else loc
+        indices = set(range(4)) - set(element._synthetic_dimensions)
+        for index in indices:
+            name = element.kdims[index]
+            loc = list(element.dimension_values(name)) # invert_axes?
+            data[str(name)] = date_to_integer(loc) if isinstance(loc, datetime_types) else loc
 
-        mapping = {k:k for k in self._data_dims}
-        data.update({str(name):element.dimension_values(name) for name in element.vdims})
-        return (data, mapping, style)
+        mapping = {k: k for k in data}
+        data.update({str(name): element.dimension_values(name) for name in element.vdims})
+        return data, mapping, style
 
-class HLinesAnnotationPlot(SyntheticAnnotationPlot):
 
-    _data_dims = {'y':1}
-    _element_name = 'VLines'
+class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
+
     _plot_methods = dict(single='hspan')
+    _element_name = 'VLines'
 
 
-class VLinesAnnotationPlot(SyntheticAnnotationPlot):
+class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
 
     _plot_methods = dict(single='vspan')
     _element_name = 'HLines'
-    _data_dims = {'x':0}
 
 
-class HSpansAnnotationPlot(SyntheticAnnotationPlot):
+class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
     _plot_methods = dict(single='hstrip')
     _element_name = 'HSpans'
-    _data_dims = {'y0':2, 'y1':3}
 
 
-class VSpansAnnotationPlot(SyntheticAnnotationPlot):
+class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
     _plot_methods = dict(single='vstrip')
-    _element_name = 'HSpans'
-    _data_dims = {'x0':0, 'x1':1}
+    _element_name = 'VSpans'
 
 
 class TextPlot(ElementPlot, AnnotationPlot):
