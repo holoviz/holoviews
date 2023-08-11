@@ -23,6 +23,11 @@ def ibis4():
     return ibis_version() >= Version("4.0")
 
 
+@lru_cache
+def ibis6():
+    return ibis_version() >= Version("7.0")
+
+
 class IbisInterface(Interface):
 
     types = ()
@@ -158,7 +163,10 @@ class IbisInterface(Interface):
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
         hist = np.zeros(len(bins)-1)
-        if ibis4():
+        if ibis6():
+            hist_bins = binned.value_counts().desc('bucket').execute()
+        elif ibis4():
+            # order_by will be removed in Ibis 7.0
             hist_bins = binned.value_counts().order_by('bucket').execute()
         else:
             # sort_by will be removed in Ibis 5.0
@@ -190,7 +198,10 @@ class IbisInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
+        if ibis6():
+            return dataset.data.desc([(dataset.get_dimension(x).name, not reverse) for x in by])
         if ibis4():
+            # order_by will be removed in Ibis 7.0
             return dataset.data.order_by([(dataset.get_dimension(x).name, not reverse) for x in by])
         else:
             # sort_by will be removed in Ibis 5.0
