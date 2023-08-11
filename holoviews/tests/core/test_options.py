@@ -1089,6 +1089,14 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
 
     cleanup = ['test_raw_pickle.pkl', 'test_pickle_mpl_bokeh.pkl']
 
+    def setUp(self):
+        super().setUp()
+        self.raw = Image(np.random.rand(10,10))
+        Store.current_backend = 'matplotlib'
+        StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Blues'}})
+        Store.current_backend = 'bokeh'
+        StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Purple'}})
+
     def tearDown(self):
         super().tearDown()
         for f in self.cleanup:
@@ -1102,12 +1110,13 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Test usual pickle saving and loading (no style information preserved)
         """
         fname= 'test_raw_pickle.pkl'
-        raw = super().test_mpl_bokeh_mpl()
-        pickle.dump(raw, open(fname,'wb'))
+        with open(fname,'wb') as handle:
+            pickle.dump(self.raw, handle)
         self.clear_options()
-        img = pickle.load(open(fname,'rb'))
+        with open(fname,'rb') as handle:
+            img = pickle.load(handle)
         # Data should match
-        self.assertEqual(raw, img)
+        self.assertEqual(self.raw, img)
         # But the styles will be lost without using Store.load/Store.dump
         pickle.current_backend = 'matplotlib'
         mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
@@ -1122,12 +1131,13 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Test pickle saving and loading with Store (style information preserved)
         """
         fname = 'test_pickle_mpl_bokeh.pkl'
-        raw = super().test_mpl_bokeh_mpl()
-        Store.dump(raw, open(fname,'wb'))
+        with open(fname,'wb') as handle:
+            Store.dump(self.raw, handle)
         self.clear_options()
-        img = Store.load(open(fname,'rb'))
+        with open(fname,'rb') as handle:
+            img = Store.load(handle)
         # Data should match
-        self.assertEqual(raw, img)
+        self.assertEqual(self.raw, img)
         # Check it is still blue in matplotlib...
         Store.current_backend = 'matplotlib'
         mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
