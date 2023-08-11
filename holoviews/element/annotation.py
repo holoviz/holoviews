@@ -39,8 +39,8 @@ class HLines(VectorizedAnnotation):
 
 class HSpans(VectorizedAnnotation):
 
-    kdims = param.List(default=[Dimension('x1'), Dimension('x2'),
-                                Dimension('y1'), Dimension('y2')],
+    kdims = param.List(default=[Dimension('x0'), Dimension('x1'),
+                                Dimension('y0'), Dimension('y1')],
                        bounds=(4, 4))
 
     group = param.String(default='HSpans', constant=True)
@@ -49,8 +49,8 @@ class HSpans(VectorizedAnnotation):
 
 class VSpans(VectorizedAnnotation):
 
-    kdims = param.List(default=[Dimension('x1'), Dimension('x2'),
-                                Dimension('y1'), Dimension('y2')],
+    kdims = param.List(default=[Dimension('x0'), Dimension('x1'),
+                                Dimension('y0'), Dimension('y1')],
                        bounds=(4, 4))
 
     group = param.String(default='VSpans', constant=True)
