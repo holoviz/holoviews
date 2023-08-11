@@ -40,7 +40,7 @@ class _SyntheticAnnotationPlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         data = {}
-        indices = set(range(4)) - set(element._synthetic_dimensions)
+        indices = set(range(len(element.kdims))) - set(element._synthetic_dimensions)
         for index in indices:
             name = element.kdims[index]
             loc = list(element.dimension_values(name)) # invert_axes?
