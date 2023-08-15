@@ -35,7 +35,7 @@ import numpy as np
 import param
 
 from .resample import ResampleOperation1D
-from ..core.overlay import NdOverlay, Overlay
+from ..core import NdOverlay, Overlay, Store
 from ..element.chart import Area
 
 
@@ -169,7 +169,7 @@ class downsample1d(ResampleOperation1D):
     def _process(self, element, key=None):
         if isinstance(element, (Overlay, NdOverlay)):
             _process = partial(self._process, key=key)
-            _opts = element.opts.get().kwargs
+            _opts = element.opts.get().kwargs if Store._options else {}
             if isinstance(element, Overlay):
                 elements = [v.map(_process) for v in element]
                 return Overlay(elements).opts(**_opts)
