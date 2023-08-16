@@ -78,9 +78,7 @@ as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens,
 New features:
 
 -  Multi-yaxis support in the Bokeh backend
-   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__,
-    `#5826 <https://github.com/holoviz/holoviews/pull/5826>`__,
-    `#5827 <https://github.com/holoviz/holoviews/pull/5827>`__)
+   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__, `#5826 <https://github.com/holoviz/holoviews/pull/5826>`__, `#5827 <https://github.com/holoviz/holoviews/pull/5827>`__)
 -  Allow modifying the underlying Bokeh or Matplotlib figure, axes,
    etc. using ``backend_opts``
    (`#4463 <https://github.com/holoviz/holoviews/pull/4463>`__)
