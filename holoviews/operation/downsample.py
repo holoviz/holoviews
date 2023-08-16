@@ -29,11 +29,13 @@ SOFTWARE.
 """
 
 import math
+from functools import partial
 
 import numpy as np
 import param
 
 from .resample import ResampleOperation1D
+from ..core import NdOverlay, Overlay
 from ..element.chart import Area
 
 
@@ -165,6 +167,14 @@ class downsample1d(ResampleOperation1D):
     algorithm = param.Selector(default='lttb', objects=['lttb', 'nth'])
 
     def _process(self, element, key=None):
+        if isinstance(element, (Overlay, NdOverlay)):
+            _process = partial(self._process, key=key)
+            if isinstance(element, Overlay):
+                elements = [v.map(_process) for v in element]
+            else:
+                elements = {k: v.map(_process) for k, v in element.items()}
+            return element.clone(elements)
+
         if self.p.x_range:
             element = element[slice(*self.p.x_range)]
         if len(element) <= self.p.width:
