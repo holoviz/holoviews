@@ -12,6 +12,7 @@ from types import FunctionType
 import param
 import bokeh
 import numpy as np
+import pandas as pd
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.property.datetime import Datetime
@@ -36,7 +37,7 @@ from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     arraylike_types, callable_name, cftime_types,
-    cftime_to_timestamp, isnumeric, pd, unique_array
+    cftime_to_timestamp, isnumeric, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ...util.warnings import warn
