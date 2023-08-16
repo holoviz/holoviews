@@ -898,9 +898,9 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                                     wspace=self.hspace,
                                     hspace=self.vspace)
 
-        # Explicitly clear current Matplotlib figure to avoid
+        # Explicitly clear Matplotlib figures to avoid
         # "Auto-removal of overlapping axes" warning.
-        plt.clf()
+        self.handles['fig'].clf()
 
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
