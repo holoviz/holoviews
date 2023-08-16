@@ -690,7 +690,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     sync_legends = param.Boolean(default=True, doc="""
         Whether to sync the legend when muted/unmuted based on the name""")
 
-    show_legends = param.ClassSelector(default=True, class_=(list, int, bool), doc="""
+    show_legends = param.ClassSelector(default=None, class_=(list, int, bool), doc="""
         Whether to show the legend for a particular subplot by index. If True all legends
         will be shown. If False no legends will be shown.""")
 
@@ -703,7 +703,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                                     default="top_right",
                                                     doc="""
         Allows selecting between a number of predefined legend position
-        options.""")
+        options. Will only be applied if show_legend is not None.""")
 
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
@@ -717,7 +717,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     @param.depends('show_legends', 'legend_position', watch=True, on_init=True)
     def _update_show_legend(self):
-        select_legends(self.layout, self.show_legends, self.legend_position)
+        if self.show_legends is not None:
+            select_legends(self.layout, self.show_legends, self.legend_position)
 
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
