@@ -155,7 +155,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
                 continue
 
             # Apply static styles
-            nvals = len(list(eldata.values())[0])
+            nvals = len(next(iter(eldata.values())))
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
             if 'angle' in sdata and '__angle' not in data and 'marker' in data:
@@ -864,7 +864,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         for k, cd in cdata.items():
             if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
                 cd = categorize_array(cd, cdim)
-            if k not in data or len(data[k]) != [len(data[key]) for key in data if key != k][0]:
+            if k not in data or len(data[k]) != next(len(data[key]) for key in data if key != k):
                 data[k].append(cd)
             else:
                 data[k][-1] = cd

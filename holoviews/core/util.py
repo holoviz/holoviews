@@ -2024,7 +2024,7 @@ def bound_range(vals, density, time_unit='us'):
             full_precision_density = compute_density(low, high, len(vals)-1)
             with np.errstate(over='ignore'):
                 density = round(full_precision_density, sys.float_info.dig)
-        if density == 0 or density == np.inf:
+        if density in (0, np.inf):
             density = full_precision_density
     if density == 0:
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')

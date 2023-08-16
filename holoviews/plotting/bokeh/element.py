@@ -361,7 +361,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
-                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+                data[dim] = [v] * len(next(iter(data.values())))
 
     def _shared_axis_range(self, plots, specs, range_type, axis_type, pos):
         """
@@ -1400,15 +1400,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 elif isinstance(element, Graph) and v in element.nodes:
                     v = dim(element.nodes.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
-                    v = dim([d for d in self.overlay_dims if d==v][0])
+                    v = dim(next(d for d in self.overlay_dims if d==v))
 
             if (not isinstance(v, dim) or (group is not None and not k.startswith(group))):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
                 self.param.warning(
-                    'Specified {} dim transform {!r} could not be applied, '
-                    'as not all dimensions could be resolved.'.format(k, v))
+                    f'Specified {k} dim transform {v!r} could not be applied, '
+                    'as not all dimensions could be resolved.')
                 continue
 
             if v.dimension in self.overlay_dims:
@@ -1433,7 +1433,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.'.format(
                                          style=k, dim=v.dimension, element=element,
                                          backend=self.renderer.backend))
-                elif data and len(val) != len(list(data.values())[0]):
+                elif data and len(val) != len(next(iter(data.values()))):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
                     elif isinstance(element, Path) and not isinstance(element, Contours):
@@ -1638,7 +1638,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                             prop = 'value' if 'label' in lp else 'field'
                             label = {prop: legend}
                         elif isinstance(item.label, dict):
-                            label = {list(item.label)[0]: legend}
+                            label = {next(iter(item.label)): legend}
                         else:
                             label = {'value': legend}
                         item.label = label

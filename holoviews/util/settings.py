@@ -317,10 +317,10 @@ class OutputSettings(KeywordSettings):
             OutputSettings.options = prev_restore
             cls.set_backend(prev_backend)
             if backend not in Store.renderers:
-                raise ValueError("The selected plotting extension {ext} "
+                raise ValueError(f"The selected plotting extension {backend!r} "
                                  "has not been loaded, ensure you load it "
-                                 "with hv.extension({ext}) before using "
-                                 "hv.output.".format(ext=repr(backend)))
+                                 f"with hv.extension({backend!r}) before using "
+                                 "hv.output.")
             print(f'Error: {e}')
             if help_prompt:
                 print(help_prompt)

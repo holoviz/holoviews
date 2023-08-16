@@ -132,9 +132,9 @@ class GridInterface(DictInterface):
                             'by the key dimensions. Expected %d-D array, '
                             'found %d-D array.' % (vdim, len(expected), len(shape)))
             elif any((s!=e and (s+1)!=e) for s, e in zip(shape, valid_shape)):
-                raise error('Key dimension values and value array {} '
-                            'shapes do not match. Expected shape {}, '
-                            'actual shape: {}'.format(vdim, valid_shape, shape), cls)
+                raise error(f'Key dimension values and value array {vdim} '
+                            f'shapes do not match. Expected shape {valid_shape}, '
+                            f'actual shape: {shape}', cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -557,8 +557,8 @@ class GridInterface(DictInterface):
             if irregular:
                 if np.isscalar(ind) or isinstance(ind, (set, list)):
                     raise IndexError("Indexing not supported for irregularly "
-                                     "sampled data. {} value along {} dimension."
-                                     "must be a slice or 2D boolean mask.".format(ind, dim))
+                                     f"sampled data. {ind} value along {dim} dimension."
+                                     "must be a slice or 2D boolean mask.")
                 mask = mask.max(axis=i)
             elif dataset._binned:
                 edges = cls.coords(dataset, dim, False, edges=True)
@@ -566,8 +566,8 @@ class GridInterface(DictInterface):
                 if np.isscalar(ind):
                     emin, emax = edges.min(), edges.max()
                     if ind < emin:
-                        raise IndexError("Index {} less than lower bound "
-                                         "of {} for {} dimension.".format(ind, emin, dim))
+                        raise IndexError(f"Index {ind} less than lower bound "
+                                         f"of {emin} for {dim} dimension.")
                     elif ind >= emax:
                         raise IndexError("Index {} more than or equal to upper bound "
                                          "of {} for {} dimension.".format(ind, emax, dim))

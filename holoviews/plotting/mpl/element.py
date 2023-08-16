@@ -106,8 +106,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook {!r} could not be "
-                                   "applied:\n\n {}".format(hook, e))
+                self.param.warning(f"Plotting hook {hook!r} could not be "
+                                   f"applied:\n\n {e}")
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
@@ -616,15 +616,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 elif v in element or (isinstance(element, Graph) and v in element.nodes):
                     v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
-                    v = dim([d for d in self.overlay_dims if d==v][0])
+                    v = dim(next(d for d in self.overlay_dims if d==v))
 
             if not isinstance(v, dim):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
                 self.param.warning(
-                    'Specified {} dim transform {!r} could not be '
-                    'applied, as not all dimensions could be resolved.'.format(k, v))
+                    f'Specified {k} dim transform {v!r} could not be '
+                    'applied, as not all dimensions could be resolved.')
                 continue
 
             if v.dimension in self.overlay_dims:
@@ -643,14 +643,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if not np.isscalar(val) and k in self._nonvectorized_styles:
                 element = type(element).__name__
-                raise ValueError('Mapping a dimension to the "{style}" '
+                raise ValueError(f'Mapping a dimension to the "{k}" '
                                  'style option is not supported by the '
-                                 '{element} element using the {backend} '
-                                 'backend. To map the "{dim}" dimension '
-                                 'to the {style} use a groupby operation '
-                                 'to overlay your data along the dimension.'.format(
-                                     style=k, dim=v.dimension, element=element,
-                                     backend=self.renderer.backend))
+                                 f'{element} element using the {self.renderer.backend} '
+                                 f'backend. To map the "{v.dimension}" dimension '
+                                 f'to the {k} use a groupby operation '
+                                 'to overlay your data along the dimension.')
 
             style_groups = getattr(self, '_style_groups', [])
             groups = [sg for sg in style_groups if k.startswith(sg)]

@@ -239,8 +239,8 @@ class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
         values = {el.group for el in elements}
         types = {type(el) for el in elements}
         if values:
-            group = list(values)[0]
-            vtype = list(types)[0].__name__
+            group = next(iter(values))
+            vtype = next(iter(types)).__name__
         else:
             group, vtype = [], ''
         if len(values) == 1 and group != vtype:
@@ -262,7 +262,7 @@ class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
         labels = {el.label for el in self
                   if not el._auxiliary_component}
         if len(labels) == 1:
-            return list(labels)[0]
+            return next(iter(labels))
         else:
             return ''
 
