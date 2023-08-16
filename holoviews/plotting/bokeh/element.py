@@ -968,7 +968,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
             self._update_range(
                 extra_y_range, b, t, factors,
-                extra_y_range.tags[1]['invert_yaxis'] if extra_y_range.tags else False,
+                self._get_tag(extra_y_range, 'invert_yaxis'),
                 self._shared.get(extra_y_range.name, False), log, streaming
             )
 
@@ -1114,10 +1114,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
         if not self.drawn or yupdate:
-            self._update_range(y_range, b, t, yfactors,
-                               y_range.tags[1]['invert_yaxis'] if y_range.tags else False,
-                               self._shared['y-main-range'], self.logy, streaming)
+            self._update_range(
+                y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
+                self._shared['y-main-range'], self.logy, streaming
+            )
 
+    def _get_tag(self, model, tag_name):
+        """Get a tag from a Bokeh model
+
+        Args:
+            model (Model): Bokeh model
+            tag_name (str): Name of tag to get
+        Returns:
+            tag_value: Value of tag or False if not found
+        """
+        for tag in model.tags:
+            if isinstance(tag, dict) and tag_name in tag:
+                return tag[tag_name]
+        return False
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         if isinstance(axis_range, FactorRange):
