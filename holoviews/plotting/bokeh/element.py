@@ -1116,8 +1116,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self._shared['y-main-range'], self.logy, streaming
             )
 
-    def _get_tag(self, element, tag_name):
-        for tag in element.tags:
+    def _get_tag(self, model, tag_name):
+        """Get a tag from a Bokeh model
+
+        Args:
+            model (Model): Bokeh model
+            tag_name (str): Name of tag to get
+        Returns:
+            tag_value: Value of tag or False if not found
+        """
+        for tag in model.tags:
             if isinstance(tag, dict) and tag_name in tag:
                 return tag[tag_name]
         return False
