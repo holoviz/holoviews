@@ -161,7 +161,7 @@ class BarsMixin:
         s1 = max(s1, 0) if util.isfinite(s1) else 0
         ranges[vdim]['soft'] = (s0, s1)
         if range_type not in ('combined', 'data'):
-            return super().get_extents(element, ranges, range_type)
+            return super().get_extents(element, ranges, range_type, ydim=element.vdims[0])
 
         # Compute stack heights
         xdim = element.kdims[0]

@@ -1730,9 +1730,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Looks up the axes and plot ranges given the plot and an element.
         """
         axis_dims = self._get_axis_dims(element)[:2]
-        if self.invert_axes:
-            axis_dims[0], axis_dims[1] = axis_dims[::-1]
-        x, y = axis_dims
+        x, y = axis_dims[::-1] if self.invert_axes else axis_dims
         if isinstance(x, Dimension) and x.name in plot.extra_x_ranges:
             x_range = plot.extra_x_ranges[x.name]
             xaxes = [xaxis for xaxis in plot.xaxis if xaxis.x_range_name == x.name]
