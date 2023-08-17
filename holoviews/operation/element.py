@@ -711,7 +711,7 @@ class histogram(Operation):
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
-            selected_dim = [d.name for d in element.vdims + element.kdims][0]
+            selected_dim = next(d.name for d in element.vdims + element.kdims)
         dim = element.get_dimension(selected_dim)
 
         if hasattr(element, 'interface'):

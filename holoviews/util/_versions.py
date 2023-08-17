@@ -42,6 +42,8 @@ PACKAGES = [
 def show_versions():
     print(f"Python              :  {sys.version}")
     print(f"Operating system    :  {platform.platform()}")
+    _panel_comms()
+    print()
     _package_version("holoviews")
     print()
     for p in sorted(PACKAGES, key=lambda x: x.lower()):
@@ -54,3 +56,9 @@ def _package_version(p):
         print(f"{p:20}:  {sys.modules[p].__version__}")
     except ImportError:
         print(f"{p:20}:  -")
+
+
+def _panel_comms():
+    import panel as pn
+
+    print(f"{'Panel comms':20}:  {pn.config.comms}")

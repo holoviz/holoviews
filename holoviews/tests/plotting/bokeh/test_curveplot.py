@@ -28,7 +28,7 @@ class TestCurvePlot(TestBokehPlot):
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
         self.assertIn(plot.refresh, posx.subscribers)
-        self.assertNotIn(list(plot.subplots.values())[0].refresh, posx.subscribers)
+        self.assertNotIn(next(iter(plot.subplots.values())).refresh, posx.subscribers)
 
     def test_batched_curve_subscribers_correctly_linked(self):
         # Checks if a stream callback is created to link batched plot
@@ -41,7 +41,7 @@ class TestCurvePlot(TestBokehPlot):
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(Callback._callbacks), 1)
-        key = list(Callback._callbacks.keys())[0]
+        key = next(iter(Callback._callbacks.keys()))
         self.assertEqual(key, (id(plot.handles['plot']), id(PointerXCallback)))
 
     def test_cyclic_palette_curves(self):

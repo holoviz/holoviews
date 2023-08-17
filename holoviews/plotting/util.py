@@ -50,8 +50,8 @@ display_warning = Warning(name='Warning')
 
 def collate(obj):
     if isinstance(obj, Overlay):
-        nested_type = [type(o).__name__ for o in obj
-                       if isinstance(o, (HoloMap, GridSpace, AdjointLayout))][0]
+        nested_type = next(type(o).__name__ for o in obj
+                       if isinstance(o, (HoloMap, GridSpace, AdjointLayout)))
         display_warning.param.warning(
             "Nesting %ss within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
@@ -419,8 +419,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
     range_item = main
     if isinstance(main, HoloMap):
         if issubclass(main.type, CompositeOverlay):
-            range_item = [hm for hm in main._split_overlays()[1]
-                          if dim in hm.dimensions('all')][0]
+            range_item = next(hm for hm in main._split_overlays()[1]
+                          if dim in hm.dimensions('all'))
     else:
         range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
@@ -438,8 +438,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
     if isinstance(range_item, HoloMap):
         range_item = range_item.last
     if isinstance(range_item, CompositeOverlay):
-        range_item = [ov for ov in range_item
-                      if dim in ov.dimensions('all')][0]
+        range_item = next(ov for ov in range_item
+                      if dim in ov.dimensions('all'))
     return range_item, main_range, dim
 
 
@@ -684,8 +684,8 @@ def _list_cmaps(provider=None, records=False):
         provider = providers
     elif isinstance(provider, str):
         if provider not in providers:
-            raise ValueError('Colormap provider {!r} not recognized, must '
-                             'be one of {!r}'.format(provider, providers))
+            raise ValueError(f'Colormap provider {provider!r} not recognized, must '
+                             f'be one of {providers!r}')
         provider = [provider]
 
     cmaps = []

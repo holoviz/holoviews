@@ -146,7 +146,7 @@ class InfoPrinter:
         plot_class = backend_registry.get(obj if isclass else type(obj), None)
         # Special case to handle PlotSelectors
         if hasattr(plot_class, 'plot_classes'):
-            plot_class =  list(plot_class.plot_classes.values())[0]
+            plot_class =  next(iter(plot_class.plot_classes.values()))
 
 
         if visualization is False or plot_class is None:
@@ -189,13 +189,13 @@ class InfoPrinter:
 
         element_info = None
         if len(element_set) == 1:
-            element_info = f'Element: {list(element_set)[0]}'
+            element_info = f'Element: {next(iter(element_set))}'
         elif len(element_set) > 1:
             element_info = 'Elements:\n   %s'  % '\n   '.join(sorted(element_set))
 
         container_info = None
         if len(container_set) == 1:
-            container_info = f'Container: {list(container_set)[0]}'
+            container_info = f'Container: {next(iter(container_set))}'
         elif len(container_set) > 1:
             container_info = 'Containers:\n   %s'  % '\n   '.join(sorted(container_set))
         heading = cls.heading('Target Specifications', ansi=ansi, char="-")

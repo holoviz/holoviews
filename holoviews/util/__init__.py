@@ -277,7 +277,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
            *options: Option objects used to specify the defaults.
            backend:  The plotting extension the options apply to
         """
-        if kwargs and len(kwargs) != 1 and list(kwargs.keys())[0] != 'backend':
+        if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
         cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
@@ -376,13 +376,13 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         matches = sorted(kws.fuzzy_match(opt))
         if backend is not None:
             if matches:
-                raise ValueError('Unexpected option {!r} for {} type '
-                                 'when using the {!r} extension. Similar '
-                                 'options are: {}.'.format(opt, objtype, backend, matches))
+                raise ValueError(f'Unexpected option {opt!r} for {objtype} type '
+                                 f'when using the {backend!r} extension. Similar '
+                                 f'options are: {matches}.')
             else:
-                raise ValueError('Unexpected option {!r} for {} type '
-                                 'when using the {!r} extension. No '
-                                 'similar options found.'.format(opt, objtype, backend))
+                raise ValueError(f'Unexpected option {opt!r} for {objtype} type '
+                                 f'when using the {backend!r} extension. No '
+                                 'similar options found.')
 
         # Check option is invalid for all backends
         found = []
@@ -395,9 +395,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                     found.append(lb)
         if found:
             param.main.param.warning(
-                'Option {!r} for {} type not valid for selected '
-                'backend ({!r}). Option only applies to following '
-                'backends: {!r}'.format(opt, objtype, current_backend, found))
+                f'Option {opt!r} for {objtype} type not valid for selected '
+                f'backend ({current_backend!r}). Option only applies to following '
+                f'backends: {found!r}')
             return
 
         if matches:
@@ -405,9 +405,8 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              'across all extensions. Similar options '
                              'for current extension ({!r}) are: {}.'.format(opt, objtype, current_backend, matches))
         else:
-            raise ValueError('Unexpected option {!r} for {} type '
-                             'across all extensions. No similar options '
-                             'found.'.format(opt, objtype))
+            raise ValueError(f'Unexpected option {opt!r} for {objtype} type '
+                             'across all extensions. No similar options found.')
 
     @classmethod
     def _builder_reprs(cls, options, namespace=None, ns=None):
@@ -475,7 +474,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             reraise = False
             if invalid:
                 try:
-                    cls._options_error(list(invalid)[0], element, backend, allowed_kws)
+                    cls._options_error(next(iter(invalid)), element, backend, allowed_kws)
                 except ValueError as e:
                     msg = str(e)[0].lower() + str(e)[1:]
                     reraise = True
@@ -692,13 +691,13 @@ class extension(_pyviz_extension):
                     selected_backend = backend
             except util.VersionError as e:
                 self.param.warning(
-                    "HoloViews {} extension could not be loaded. "
-                    "The installed {} version {} is less than "
-                    "the required version {}.".format(backend, backend, e.version, e.min_version))
+                    f"HoloViews {backend} extension could not be loaded. "
+                    f"The installed {backend} version {e.version} is less than "
+                    f"the required version {e.min_version}.")
             except Exception as e:
                 self.param.warning(
-                    "Holoviews {} extension could not be imported, "
-                    "it raised the following exception: {}('{}')".format(backend, type(e).__name__, e))
+                    f"Holoviews {backend} extension could not be imported, "
+                    f"it raised the following exception: {type(e).__name__}('{e}')")
             finally:
                 Store.output_settings.allowed['backend'] = list_backends()
                 Store.output_settings.allowed['fig'] = list_formats('fig', backend)
@@ -707,8 +706,8 @@ class extension(_pyviz_extension):
                 try:
                     hook()
                 except Exception as e:
-                    self.param.warning('{} backend hook {} failed with '
-                                       'following exception: {}'.format(backend, hook, e))
+                    self.param.warning(f'{backend} backend hook {hook} failed with '
+                                       f'following exception: {e}')
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')

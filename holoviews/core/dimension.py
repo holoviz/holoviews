@@ -997,7 +997,7 @@ class Dimensioned(LabelledData):
         dim = dimension_name(dimension)
         try:
             dimensions = self.kdims+self.vdims
-            return [i for i, d in enumerate(dimensions) if d == dim][0]
+            return next(i for i, d in enumerate(dimensions) if d == dim)
         except IndexError:
             raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.")
 

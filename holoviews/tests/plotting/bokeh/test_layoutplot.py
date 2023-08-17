@@ -388,7 +388,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_shared_inverted_yaxis(self):
         layout = (Curve([]) + Curve([])).opts('Curve', invert_yaxis=True)
         plot = bokeh_renderer.get_plot(layout)
-        subplot = list(plot.subplots.values())[0].subplots['main']
+        subplot = next(iter(plot.subplots.values())).subplots['main']
         self.assertEqual(subplot.handles['y_range'].start, 1)
         self.assertEqual(subplot.handles['y_range'].end, 0)
 

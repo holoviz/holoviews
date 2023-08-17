@@ -41,7 +41,7 @@ class TestBokehTablePlot(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(table)
         source = plot.handles['source']
         renderer = plot.handles['glyph_renderer']
-        self.assertEqual(list(source.data.keys())[0], renderer.columns[0].field)
+        self.assertEqual(next(iter(source.data.keys())), renderer.columns[0].field)
 
     def test_table_plot_datetimes(self):
         table = Table([dt.now(), dt.now()], 'Date')

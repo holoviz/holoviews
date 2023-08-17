@@ -1,10 +1,10 @@
 import numpy as np
 
-from holoviews.core.overlay import NdOverlay
+from holoviews.core.overlay import NdOverlay, Overlay
 from holoviews.element import Bars
 from holoviews.plotting.bokeh.util import property_to_dict
 
-from bokeh.models import CategoricalColorMapper, LinearColorMapper
+from bokeh.models import CategoricalColorMapper, LinearColorMapper, LinearAxis
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -64,6 +64,15 @@ class TestBarPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [
             ('1', 'A'), ('1', 'B'), ('3', 'A'), ('3', 'B'), ('10', 'A'), ('10', 'B')])
+
+    def test_bars_multi_level_two_factors_in_overlay(self):
+        # See: https://github.com/holoviz/holoviews/pull/5850
+        box= Bars((["1", "2", "3"]*10, ['A', 'B']*15, np.random.randn(30)),
+                  ['Group', 'Category'], 'Value').aggregate(function=np.mean)
+        overlay = Overlay([box])
+        plot = bokeh_renderer.get_plot(overlay)
+        left_axis = plot.handles["plot"].left[0]
+        assert isinstance(left_axis, LinearAxis)
 
     def test_bars_positive_negative_mixed(self):
         bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],

@@ -1023,7 +1023,7 @@ class GlyphDrawCallback(CDSCallback):
             if dim in data:
                 continue
             values = element.dimension_values(d)
-            if len(values) != len(list(data.values())[0]):
+            if len(values) != len(next(iter(data.values()))):
                 values = np.concatenate([values, [stream.empty_value]])
             data[dim] = values
 
