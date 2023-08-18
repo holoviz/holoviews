@@ -552,8 +552,7 @@ class TriMesh(Graph):
         tris = Delaunay(data.array([0, 1]))
         return cls((tris.simplices, data))
 
-    @property
-    def edgepaths(self):
+    def _initialize_edgepaths(self):
         """
         Returns the EdgePaths by generating a triangle for each simplex.
         """
@@ -576,6 +575,13 @@ class TriMesh(Graph):
         self._edgepaths = edgepaths
         return edgepaths
 
+    @property
+    def edgepaths(self):
+        """
+        Returns the EdgePaths by generating a triangle for each simplex.
+        """
+        return self._initialize_edgepaths()
+
     def select(self, selection_specs=None, **selection):
         """
         Allows selecting data by the slices, sets and scalar values
@@ -586,8 +592,7 @@ class TriMesh(Graph):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
-        # Ensure that edgepaths are initialized so they can be selected on
-        self.edgepaths
+        self._initialize_edgepaths()
         return super().select(selection_specs=None,
                               selection_mode='nodes',
                               **selection)

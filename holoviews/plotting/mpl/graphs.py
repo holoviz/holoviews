@@ -245,8 +245,7 @@ class TriMeshPlot(GraphPlot):
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
-        # Ensure the edgepaths for the triangles are generated before plotting
-        element.edgepaths
+        element._initialize_edgepaths()
         return super().get_data(element, ranges, style)
 
 

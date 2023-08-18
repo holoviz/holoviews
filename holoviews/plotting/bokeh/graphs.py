@@ -507,7 +507,7 @@ class TriMeshPlot(GraphPlot):
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
-        element.edgepaths
+        element._initialize_edgepaths()
         return element
 
     def _init_glyphs(self, plot, element, ranges, source):
