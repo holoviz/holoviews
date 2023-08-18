@@ -35,6 +35,7 @@ run.concurrency = ["greenlet"]
 target-version = "py38"
 
 select = [
+    "B",
     "E",
     "F",
     "FLY",
@@ -51,6 +52,7 @@ select = [
 ]
 
 ignore = [
+    "B904",     # Within an `except` clause, raise exceptions with from err or None
     "E402",     # Module level import not at top of file
     "E501",     # Line too long
     "E701",     # Multiple statements on one line
