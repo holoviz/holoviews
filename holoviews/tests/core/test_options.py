@@ -182,10 +182,9 @@ class TestCycle(ComparisonTestCase):
     def test_options_property_disabled(self):
         cycle1 = Cycle(values=['a', 'b', 'c'])
         opts = Options('test', one=cycle1)
-        try:
-            opts.options
-        except Exception as e:
-            self.assertEqual(str(e), "The options property may only be used with non-cyclic Options.")
+        msg = r"The options property may only be used with non-cyclic Options\."
+        with pytest.raises(Exception, match=msg):
+            opts.options  # noqa: B018
 
 
 

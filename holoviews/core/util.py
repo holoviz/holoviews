@@ -1209,7 +1209,7 @@ def python2sort(x,key=None):
             try:
                 item_precedence = item if key is None else key(item)
                 group_precedence = group[0] if key is None else key(group[0])
-                item_precedence < group_precedence  # exception if not comparable
+                item_precedence < group_precedence  # noqa: B015, TypeError if not comparable
                 group.append(item)
                 break
             except TypeError:
