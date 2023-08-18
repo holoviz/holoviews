@@ -98,7 +98,8 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['y'], np.array([0.4]))
 
     def test_stream_callback_single_call(self):
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
         stream = PointerX(x=0)

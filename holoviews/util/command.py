@@ -25,6 +25,7 @@ except ImportError:
 
 from . import examples
 
+_PREPROCESSORS = [OptsMagicProcessor(), OutputMagicProcessor(), StripMagicsProcessor()]
 
 def main():
     if len(sys.argv) < 2:
@@ -56,11 +57,9 @@ def main():
         examples(path=examples_dir, root=root)
 
 
-def export_to_python(filename=None,
-         preprocessors=[OptsMagicProcessor(),
-                        OutputMagicProcessor(),
-                        StripMagicsProcessor()]):
-
+def export_to_python(filename=None, preprocessors=None):
+    if preprocessors is None:
+        preprocessors = _PREPROCESSORS.copy()
     filename = filename if filename else sys.argv[1]
     with open(filename) as f:
         nb = nbformat.read(f, nbformat.NO_CONVERT)

@@ -13,7 +13,8 @@ from .test_plot import TestPlotlyPlot, plotly_renderer
 class TestElementPlot(TestPlotlyPlot):
 
     def test_stream_callback_single_call(self):
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
         stream = PointerX(x=0)
