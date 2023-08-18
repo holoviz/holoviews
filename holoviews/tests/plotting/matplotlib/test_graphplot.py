@@ -206,7 +206,8 @@ class TestMplGraphPlot(TestMPLPlot):
 
         if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
-            with self.assertRaises(Exception):
+            msg = 'TypeError: alpha must be a float or None'
+            with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(graph)
         else:
             plot = mpl_renderer.get_plot(graph)
