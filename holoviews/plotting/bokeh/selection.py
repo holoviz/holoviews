@@ -14,7 +14,9 @@ class TabularSelectionDisplay(SelectionDisplay):
             opts['selected'] = list(np.where(mask)[0])
         return el.opts(clone=True, backend='bokeh', **opts)
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         sel_streams = [selection_streams.exprs_stream]
         hvobj = hvobj.apply(self._build_selection, streams=sel_streams, per_element=True)
         for op in operations:

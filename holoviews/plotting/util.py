@@ -120,7 +120,7 @@ def overlay_depth(obj):
         return 1
 
 
-def compute_overlayable_zorders(obj, path=[]):
+def compute_overlayable_zorders(obj, path=None):
     """
     Traverses an overlayable composite container to determine which
     objects are associated with specific (Nd)Overlay layers by
@@ -131,6 +131,8 @@ def compute_overlayable_zorders(obj, path=[]):
     Used to determine which overlaid subplots should be linked with
     Stream callbacks.
     """
+    if path is None:
+        path = []
     path = path+[obj]
     zorder_map = defaultdict(list)
 

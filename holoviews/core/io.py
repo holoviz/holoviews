@@ -37,10 +37,12 @@ from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 
 
-def sanitizer(name, replacements=[(':','_'), ('/','_'), ('\\','_')]):
+def sanitizer(name, replacements=None):
     """
     String sanitizer to avoid problematic characters in filenames.
     """
+    if replacements is None:
+        replacements = [(':', '_'), ('/', '_'), ('\\', '_')]
     for old,new in replacements:
         name = name.replace(old,new)
     return name
@@ -160,7 +162,7 @@ class Exporter(param.ParameterizedFunction):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, **kwargs):
+    def save(self_or_cls, obj, basename, fmt=None, key=None, info=None, **kwargs):
         """
         Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
@@ -171,6 +173,10 @@ class Exporter(param.ParameterizedFunction):
         to update the output of the relevant key and info functions
         which is then saved (if supported).
         """
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         raise NotImplementedError("Exporter save method not implemented.")
 
 
@@ -250,7 +256,11 @@ class Serializer(Exporter):
         return data, {'file-ext': self.file_ext, 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, filename, info={}, key={}, **kwargs):
+    def save(self_or_cls, obj, filename, info=None, key=None, **kwargs):
+        if key is None:
+            key = {}
+        if info is None:
+            info = {}
         data, base_info = self_or_cls(obj, **kwargs)
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
@@ -331,14 +341,22 @@ class Pickler(Exporter):
     file_ext = 'hvz'
 
 
-    def __call__(self, obj, key={}, info={}, **kwargs):
+    def __call__(self, obj, key=None, info=None, **kwargs):
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         buff = BytesIO()
         self.save(obj, buff, key=key, info=info, **kwargs)
         buff.seek(0)
         return buff.read(), {'file-ext': 'hvz', 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, filename, key={}, info={}, **kwargs):
+    def save(self_or_cls, obj, filename, key=None, info=None, **kwargs):
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         base_info = {'file-ext': 'hvz', 'mime_type':self_or_cls.mime_type}
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
@@ -421,7 +439,7 @@ class Unpickler(Importer):
             return [el for el in f.namelist() if el != 'metadata']
 
     @bothmethod
-    def collect(self_or_cls, files, drop=[], metadata=True):
+    def collect(self_or_cls, files, drop=None, metadata=True):
         """
         Given a list or NdMapping type containing file paths return a
         Layout of Collators, which can be called to load a given set
@@ -433,6 +451,8 @@ class Unpickler(Importer):
         they do not clash with the file metadata. Any key dimension
         may be dropped by name by supplying a drop argument.
         """
+        if drop is None:
+            drop = []
         aslist = not isinstance(files, (NdMapping, Element))
         if isinstance(files, Element):
             files = Collator(files)
@@ -658,7 +678,7 @@ class FileArchive(Archive):
             raise Exception("Timestamp format invalid")
 
 
-    def add(self, obj=None, filename=None, data=None, info={}, **kwargs):
+    def add(self, obj=None, filename=None, data=None, info=None, **kwargs):
         """
         If a filename is supplied, it will be used. Otherwise, a
         filename will be generated from the supplied object. Note that
@@ -668,6 +688,8 @@ class FileArchive(Archive):
         The data to be archived is either supplied explicitly as
         'data' or automatically rendered from the object.
         """
+        if info is None:
+            info = {}
         if [filename, obj] == [None, None]:
             raise Exception("Either filename or a HoloViews object is "
                             "needed to create an entry in the archive.")
@@ -810,10 +832,12 @@ class FileArchive(Archive):
         return basename.replace(' ', '_')
 
 
-    def export(self, timestamp=None, info={}):
+    def export(self, timestamp=None, info=None):
         """
         Export the archive, directory or file.
         """
+        if info is None:
+            info = {}
         tval = tuple(time.localtime()) if timestamp is None else timestamp
         tstamp = time.strftime(self.timestamp_format, tval)
 

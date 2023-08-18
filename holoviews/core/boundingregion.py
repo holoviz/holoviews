@@ -103,8 +103,10 @@ class BoundingBox(BoundingRegion):
         return self.__str__()
 
 
-    def script_repr(self, imports=[], prefix="    "):
+    def script_repr(self, imports=None, prefix="    "):
         # Generate import statement
+        if imports is None:
+            imports = []
         cls = self.__class__.__name__
         mod = self.__module__
         imports.append(f"from {mod} import {cls}")

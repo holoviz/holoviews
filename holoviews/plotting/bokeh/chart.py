@@ -786,7 +786,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     _y_range_type = Range1d
 
     def _axis_properties(self, axis, key, plot, dimension=None,
-                         ax_mapping={'x': 0, 'y': 1}):
+                         ax_mapping=None):
+        if ax_mapping is None:
+            ax_mapping = {"x": 0, "y": 1}
         props = super()._axis_properties(axis, key, plot, dimension, ax_mapping)
         if (not self.multi_level and not self.stacked and self.current_frame.ndims > 1 and
             ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):

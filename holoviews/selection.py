@@ -475,11 +475,15 @@ class SelectionDisplay:
     def __call__(self, element):
         return self
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         raise NotImplementedError()
 
     @staticmethod
-    def _select(element, selection_expr, cache={}):
+    def _select(element, selection_expr, cache=None):
+        if cache is None:
+            cache = {}
         from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
@@ -646,7 +650,9 @@ class ColorListSelectionDisplay(SelectionDisplay):
         self.alpha_props = [alpha_prop]
         self.backend = backend
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         def _build_selection(el, colors, alpha, exprs, **kwargs):
             from .plotting.util import linear_gradient
             ds = el.dataset

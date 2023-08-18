@@ -326,7 +326,9 @@ class cuDFInterface(PandasInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 

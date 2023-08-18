@@ -558,12 +558,16 @@ class Renderer(Exporter):
         raise NotImplementedError
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
+    def save(self_or_cls, obj, basename, fmt='auto', key=None, info=None,
              options=None, resources='inline', title=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
 

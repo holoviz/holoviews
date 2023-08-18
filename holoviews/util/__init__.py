@@ -991,7 +991,9 @@ class Dynamic(param.ParameterizedFunction):
             raise TypeError(msg.format(objs = ', '.join(f'{el!r}' for el in invalid)))
         return valid
 
-    def _process(self, element, key=None, kwargs={}):
+    def _process(self, element, key=None, kwargs=None):
+        if kwargs is None:
+            kwargs = {}
         if util.is_param_method(self.p.operation) and util.get_method_owner(self.p.operation) is element:
             return self.p.operation(**kwargs)
         elif isinstance(self.p.operation, Operation):

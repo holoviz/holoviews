@@ -258,8 +258,10 @@ class Keywords(param.Parameterized):
     target = param.String(allow_None=True, doc="""
        Optional string description of what the keywords apply to.""")
 
-    def __init__(self, values=[], target=None):
+    def __init__(self, values=None, target=None):
 
+        if values is None:
+            values = []
         strings = [isinstance(v, str) for v in values]
         if False in strings:
             raise ValueError(f'All keywords must be strings: {values}')
@@ -459,9 +461,11 @@ class Options:
 
     _output_allowed_kws = ['backend']
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True,
+    def __init__(self, key=None, allowed_keywords=None, merge_keywords=True,
                  max_cycles=None, **kwargs):
 
+        if allowed_keywords is None:
+            allowed_keywords = []
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
@@ -1240,12 +1244,14 @@ class Store:
 
     @classmethod
     def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
-             recursive=False, pattern=None, elements=[]):
+             recursive=False, pattern=None, elements=None):
         """
         Show information about a particular object or component class
         including the applicable style and plot options. Returns None if
         the object is not parameterized.
         """
+        if elements is None:
+            elements = []
         parameterized_object = isinstance(obj, param.Parameterized)
         parameterized_class = (isinstance(obj,type)
                                and  issubclass(obj,param.Parameterized))
@@ -1352,11 +1358,13 @@ class Store:
         )
 
     @classmethod
-    def register(cls, associations, backend, style_aliases={}):
+    def register(cls, associations, backend, style_aliases=None):
         """
         Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
         """
+        if style_aliases is None:
+            style_aliases = {}
         if backend not in cls.registry:
             cls.registry[backend] = {}
         cls.registry[backend].update(associations)

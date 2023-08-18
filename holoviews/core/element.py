@@ -109,7 +109,7 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         raise NotImplementedError
 
-    def sample(self, samples=[], bounds=None, closest=False, **sample_values):
+    def sample(self, samples=None, bounds=None, closest=False, **sample_values):
         """Samples values at supplied coordinates.
 
         Allows sampling of element with a list of coordinates matching
@@ -141,10 +141,12 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             Element containing the sampled coordinates
         """
+        if samples is None:
+            samples = []
         raise NotImplementedError
 
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduction):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reduction):
         """Applies reduction along the specified dimension(s).
 
         Allows reducing the values along one or more key dimension
@@ -172,6 +174,8 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             The element after reductions have been applied.
         """
+        if dimensions is None:
+            dimensions = []
         raise NotImplementedError
 
 

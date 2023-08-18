@@ -128,7 +128,7 @@ def validate(style, value, vectorized=True):
         return False
 
 
-def filter_styles(style, group, other_groups, blacklist=[]):
+def filter_styles(style, group, other_groups, blacklist=None):
     """
     Filters styles which are specific to a particular artist, e.g.
     for a GraphPlot this will filter options specific to the nodes and
@@ -150,6 +150,8 @@ def filter_styles(style, group, other_groups, blacklist=[]):
     filtered: dict
         Filtered dictionary of styles
     """
+    if blacklist is None:
+        blacklist = []
     group = group+'_'
     filtered = {}
     for k, v in style.items():
@@ -248,12 +250,14 @@ def resolve_rows(rows):
         return resolve_rows(merged_rows)
 
 
-def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
+def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
                vspace=0.2, hspace=0.2):
     """
     Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
     """
+    if extra_artists is None:
+        extra_artists = []
     fig.canvas.draw()
     w, h = fig.get_size_inches()
 
@@ -288,10 +292,12 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
             title.set_y(top/(w*aspect))
 
 
-def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
+def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
     """
     Compute a tight bounding box around all the artists in the figure.
     """
+    if bbox_extra_artists is None:
+        bbox_extra_artists = []
     renderer = fig.canvas.get_renderer()
     bbox_inches = fig.get_tightbbox(renderer)
     bbox_artists = bbox_extra_artists[:]

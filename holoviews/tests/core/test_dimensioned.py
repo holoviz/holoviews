@@ -40,7 +40,11 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         Store.renderers.pop('backend_2')
 
     @classmethod
-    def register_custom(cls, objtype, backend, custom_plot=[], custom_style=[]):
+    def register_custom(cls, objtype, backend, custom_plot=None, custom_style=None):
+        if custom_style is None:
+            custom_style = []
+        if custom_plot is None:
+            custom_plot = []
         groups = Options._option_groups
         if backend not in Store._options:
             Store._options[backend] = OptionTree([], groups=groups)

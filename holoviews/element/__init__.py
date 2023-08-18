@@ -35,7 +35,9 @@ class ElementConversion(DataConversion):
     def errorbars(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(ErrorBars, kdims, vdims, groupby, **kwargs)
 
-    def distribution(self, dim=None, groupby=[], **kwargs):
+    def distribution(self, dim=None, groupby=None, **kwargs):
+        if groupby is None:
+            groupby = []
         if dim is None:
             if self._element.vdims:
                 dim = self._element.vdims[0]

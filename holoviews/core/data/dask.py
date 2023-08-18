@@ -90,7 +90,9 @@ class DaskInterface(PandasInterface):
             return dd.compute(column.min(), column.max())
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         dataset.param.warning('Dask dataframes do not support sorting')
         return dataset.data
 
@@ -249,7 +251,9 @@ class DaskInterface(PandasInterface):
         return data.iat[0,0]
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         dims = dataset.dimensions('key', label='name')
         mask = None

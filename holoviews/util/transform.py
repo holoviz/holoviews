@@ -689,7 +689,7 @@ class dim:
         """
         return data
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+    def apply(self, dataset, flat=False, expanded=None, ranges=None, all_values=False,
               keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
@@ -712,6 +712,8 @@ class dim:
         Returns:
             values: NumPy array computed by evaluating the expression
         """
+        if ranges is None:
+            ranges = {}
         from ..element import Graph
 
         dimension = self.dimension

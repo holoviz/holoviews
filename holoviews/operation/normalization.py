@@ -79,12 +79,16 @@ class Normalization(Operation):
        normalization.""")
 
 
-    def __call__(self, element, ranges={}, keys=None, **params):
+    def __call__(self, element, ranges=None, keys=None, **params):
+        if ranges is None:
+            ranges = {}
         params = dict(params,ranges=ranges, keys=keys)
         return super().__call__(element, **params)
 
 
-    def process_element(self, element, key, ranges={}, keys=None, **params):
+    def process_element(self, element, key, ranges=None, keys=None, **params):
+        if ranges is None:
+            ranges = {}
         params = dict(params,ranges=ranges, keys=keys)
         self.p = param.ParamOverrides(self, params)
         return self._process(element, key)

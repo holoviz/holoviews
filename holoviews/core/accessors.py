@@ -92,7 +92,7 @@ class Apply(metaclass=AccessorPipelineMeta):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, apply_function, streams=[], link_inputs=True,
+    def __call__(self, apply_function, streams=None, link_inputs=True,
                  link_dataset=True, dynamic=None, per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
@@ -132,6 +132,8 @@ class Apply(metaclass=AccessorPipelineMeta):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        if streams is None:
+            streams = []
         from .data import Dataset
         from .dimension import ViewableElement
         from .element import Element
@@ -238,22 +240,26 @@ class Apply(metaclass=AccessorPipelineMeta):
         kwargs['_method_args'] = args
         return self.__call__('opts', **kwargs)
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **kwargs):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a reduce function to all ViewableElement objects.
 
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
+        if dimensions is None:
+            dimensions = []
         kwargs['_method_args'] = (dimensions, function, spreadfn)
         kwargs['per_element'] = True
         return self.__call__('reduce', **kwargs)
 
-    def sample(self, samples=[], bounds=None, **kwargs):
+    def sample(self, samples=None, bounds=None, **kwargs):
         """Samples element values at supplied coordinates.
 
         See :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
         for more information.
         """
+        if samples is None:
+            samples = []
         kwargs['_method_args'] = (samples, bounds)
         kwargs['per_element'] = True
         return self.__call__('sample', **kwargs)
@@ -357,7 +363,9 @@ class Redim(metaclass=AccessorPipelineMeta):
             dimension = self._obj.vdims[idx]
         return dimension
 
-    def _create_expression_transform(self, kdims, vdims, exclude=[]):
+    def _create_expression_transform(self, kdims, vdims, exclude=None):
+        if exclude is None:
+            exclude = []
         from .dimension import dimension_name
         from ..util.transform import dim
 

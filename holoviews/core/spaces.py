@@ -304,7 +304,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
 
-    def collate(self, merge_type=None, drop=[], drop_constant=False):
+    def collate(self, merge_type=None, drop=None, drop_constant=False):
         """Collate allows reordering nested containers
 
         Collation allows collapsing nested mapping types by merging
@@ -328,6 +328,8 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         Returns:
             Collated Layout or HoloMap
         """
+        if drop is None:
+            drop = []
         from .element import Collator
         merge_type=merge_type if merge_type else self.__class__
         return Collator(self, merge_type=merge_type, drop=drop,
@@ -1681,7 +1683,7 @@ class DynamicMap(HoloMap):
             return hist
 
 
-    def reindex(self, kdims=[], force=False):
+    def reindex(self, kdims=None, force=False):
         """Reorders key dimensions on DynamicMap
 
         Create a new object with a reordered set of key dimensions.
@@ -1694,6 +1696,8 @@ class DynamicMap(HoloMap):
         Returns:
             Reindexed DynamicMap
         """
+        if kdims is None:
+            kdims = []
         if not isinstance(kdims, list):
             kdims = [kdims]
         kdims = [self.get_dimension(kd, strict=True) for kd in kdims]

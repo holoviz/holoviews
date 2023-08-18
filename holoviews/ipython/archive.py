@@ -156,8 +156,10 @@ class NotebookArchive(FileArchive):
         display(Javascript(cmd))
 
 
-    def add(self, obj=None, filename=None, data=None, info={}, html=None):
+    def add(self, obj=None, filename=None, data=None, info=None, html=None):
         "Similar to FileArchive.add but accepts html strings for substitution"
+        if info is None:
+            info = {}
         initial_last_key = list(self._files.keys())[-1] if len(self) else None
         if self._auto:
             exporters = self.exporters[:]

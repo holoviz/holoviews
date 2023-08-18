@@ -695,12 +695,18 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return chars
 
     @param.parameterized.bothmethod
-    def shortened_character_name(self_or_cls, c, eliminations=[], substitutions={}, transforms=[]):
+    def shortened_character_name(self_or_cls, c, eliminations=None, substitutions=None, transforms=None):
         """
         Given a unicode character c, return the shortened unicode name
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
         """
+        if transforms is None:
+            transforms = []
+        if substitutions is None:
+            substitutions = {}
+        if eliminations is None:
+            eliminations = []
         name = unicodedata.name(c).lower()
         # Filtering
         for elim in eliminations:
@@ -922,12 +928,14 @@ def find_minmax(lims, olims):
     return limits
 
 
-def find_range(values, soft_range=[]):
+def find_range(values, soft_range=None):
     """
     Safely finds either the numerical min and max of
     a set of values, falling back to the first and
     the last value in the sorted list of values.
     """
+    if soft_range is None:
+        soft_range = []
     try:
         values = np.array(values)
         values = np.squeeze(values) if len(values.shape) > 1 else values
@@ -1658,7 +1666,7 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
-def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
+def stream_name_mapping(stream, exclude_params=None, reverse=False):
     """
     Return a complete dictionary mapping between stream parameter names
     to their applicable renames, excluding parameters listed in
@@ -1667,6 +1675,8 @@ def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
     If reverse is True, the mapping is from the renamed strings to the
     original stream parameter names.
     """
+    if exclude_params is None:
+        exclude_params = ['name']
     from ..streams import Params
     if isinstance(stream, Params):
         mapping = {}
@@ -1703,7 +1713,7 @@ def rename_stream_kwargs(stream, kwargs, reverse=False):
     return mapped_kwargs
 
 
-def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_key']):
+def stream_parameters(streams, no_duplicates=True, exclude=None):
     """
     Given a list of streams, return a flat list of parameter name,
     excluding those listed in the exclude list.
@@ -1711,6 +1721,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_ke
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
+    if exclude is None:
+        exclude = ['name', '_memoize_key']
     from ..streams import Params
     param_groups = {}
     for s in streams:

@@ -1069,9 +1069,11 @@ class gridmatrix(param.ParameterizedFunction):
             return GridMatrix(data)
 
 
-    def _process(self, p, element, ranges={}):
+    def _process(self, p, element, ranges=None):
         # Creates a unified Dataset.data attribute
         # to draw the data from
+        if ranges is None:
+            ranges = {}
         if isinstance(element.data, np.ndarray):
             el_data = element.table(default_datatype)
         else:

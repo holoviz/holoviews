@@ -998,7 +998,7 @@ def date_to_integer(date):
     return dt_int
 
 
-def glyph_order(keys, draw_order=[]):
+def glyph_order(keys, draw_order=None):
     """
     Orders a set of glyph handles using regular sort and an explicit
     sort order. The explicit draw order must take the form of a list
@@ -1006,6 +1006,8 @@ def glyph_order(keys, draw_order=[]):
     suffix. The draw order may only match subset of the keys and any
     matched items will take precedence over other entries.
     """
+    if draw_order is None:
+        draw_order = []
     keys = sorted(keys)
     def order_fn(glyph):
         matches = [item for item in draw_order if glyph.startswith(item)]

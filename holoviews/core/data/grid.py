@@ -298,7 +298,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=[]):
+    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=None):
         """
         Canonicalize takes an array of values as input and reorients
         and transposes it to match the canonical format expected by
@@ -313,6 +313,8 @@ class GridInterface(DictInterface):
         with a virtual integer index. This ensures these coordinates
         are not simply dropped.
         """
+        if virtual_coords is None:
+            virtual_coords = []
         if data_coords is None:
             data_coords = dataset.dimensions('key', label='name')[::-1]
 
@@ -641,10 +643,12 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
         """
         Samples the gridded data into dataset of samples.
         """
+        if samples is None:
+            samples = []
         ndims = dataset.ndims
         dimensions = dataset.dimensions(label='name')
         arrays = [dataset.data[vdim.name] for vdim in dataset.vdims]
@@ -742,7 +746,9 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         if not by or by in [dataset.kdims, dataset.dimensions()]:
             return dataset.data
         else:

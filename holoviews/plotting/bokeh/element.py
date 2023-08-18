@@ -255,10 +255,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
-    def _init_tools(self, element, callbacks=[]):
+    def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
         """
+        if callbacks is None:
+            callbacks = []
         tooltips, hover_opts = self._hover_opts(element)
         tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
                     if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
@@ -402,8 +404,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return dim_range
 
     def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None,
-                    range_tags_extras=[], extra_range_name=None):
+                    range_tags_extras=None, extra_range_name=None):
 
+        if range_tags_extras is None:
+            range_tags_extras = []
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
         if isinstance(el, Graph):
@@ -755,12 +759,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['extra_y_scales'] = plot.extra_y_scales
 
     def _axis_properties(self, axis, key, plot, dimension=None,
-                         ax_mapping={'x': 0, 'y': 1}):
+                         ax_mapping=None):
         """
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
         # need to copy dictionary by calling dict() on it
+        if ax_mapping is None:
+            ax_mapping = {'x': 0, 'y': 1}
         axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
@@ -2662,10 +2668,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     r.muted = self.legend_muted or r.muted
 
 
-    def _init_tools(self, element, callbacks=[]):
+    def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
         """
+        if callbacks is None:
+            callbacks = []
         hover_tools = {}
         init_tools, tool_types = [], []
         for key, subplot in self.subplots.items():

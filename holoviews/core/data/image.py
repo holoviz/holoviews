@@ -239,7 +239,7 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
         """
         Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -248,6 +248,8 @@ class ImageInterface(GridInterface):
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
         """
+        if samples is None:
+            samples = []
         if len(samples[0]) == 1:
             select = {dataset.kdims[0].name: [s[0] for s in samples]}
             return tuple(dataset.select(**select).columns().values())

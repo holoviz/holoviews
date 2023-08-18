@@ -431,7 +431,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         self._cached = persisted
         return self
 
-    def closest(self, coords=[], **kwargs):
+    def closest(self, coords=None, **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
 
         Args:
@@ -444,6 +444,8 @@ class Dataset(Element, metaclass=PipelineMeta):
         Raises:
             NotImplementedError: Raised if snapping is not supported
         """
+        if coords is None:
+            coords = []
         if self.ndims > 1:
             raise NotImplementedError("Closest method currently only "
                                       "implemented for 1D Elements")
@@ -717,7 +719,7 @@ argument to specify a selection specification""")
         return data
 
 
-    def sample(self, samples=[], bounds=None, closest=True, **kwargs):
+    def sample(self, samples=None, bounds=None, closest=True, **kwargs):
         """Samples values at supplied coordinates.
 
         Allows sampling of element with a list of coordinates matching
@@ -749,6 +751,8 @@ argument to specify a selection specification""")
         Returns:
             Element containing the sampled coordinates
         """
+        if samples is None:
+            samples = []
         if kwargs and samples != []:
             raise Exception('Supply explicit list of samples or kwargs, not both.')
         elif kwargs:
@@ -824,7 +828,7 @@ argument to specify a selection specification""")
         return self.clone(sampled, new_type=Table, datatype=datatype)
 
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **reductions):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reductions):
         """Applies reduction along the specified dimension(s).
 
         Allows reducing the values along one or more key dimension
@@ -852,6 +856,8 @@ argument to specify a selection specification""")
         Returns:
             The Dataset after reductions have been applied.
         """
+        if dimensions is None:
+            dimensions = []
         if any(dim in self.vdims for dim in dimensions):
             raise Exception("Reduce cannot be applied to value dimensions")
         function, dims = self._reduce_map(dimensions, function, reductions)
@@ -941,7 +947,7 @@ argument to specify a selection specification""")
                                   new_type=new_type, datatype=datatype)
 
 
-    def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
+    def groupby(self, dimensions=None, container_type=HoloMap, group_type=None,
                 dynamic=False, **kwargs):
         """Groups object by one or more dimensions
 
@@ -960,6 +966,8 @@ argument to specify a selection specification""")
             Returns object of supplied container_type containing the
             groups. If dynamic=True returns a DynamicMap instead.
         """
+        if dimensions is None:
+            dimensions = []
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
