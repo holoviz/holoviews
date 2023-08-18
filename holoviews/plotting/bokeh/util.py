@@ -12,6 +12,7 @@ from types import FunctionType
 import param
 import bokeh
 import numpy as np
+import pandas as pd
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.property.datetime import Datetime
@@ -33,10 +34,10 @@ from packaging.version import Version
 
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
-from ...core.overlay import Overlay
+from ...core.overlay import Overlay, NdOverlay
 from ...core.util import (
     arraylike_types, callable_name, cftime_types,
-    cftime_to_timestamp, isnumeric, pd, unique_array
+    cftime_to_timestamp, isnumeric, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ...util.warnings import warn
@@ -468,20 +469,25 @@ def select_legends(holoviews_layout, figure_index=None, legend_position="top_rig
     ----------
     holoviews_layout : Holoviews Layout
         Holoviews Layout with legends.
-    figure_index : list[int] | int | None
+    figure_index : list[int] | bool | int | None
         Index of the figures which legends to show.
         If None is chosen, only the first figures legend is shown
+        If True is chosen, all legends are shown.
     legend_position : str
         Position of the legend(s).
     """
     if figure_index is None:
         figure_index = [0]
+    elif isinstance(figure_index, bool):
+        figure_index = range(len(holoviews_layout)) if figure_index else []
     elif isinstance(figure_index, int):
         figure_index = [figure_index]
     if not isinstance(holoviews_layout, Layout):
         holoviews_layout = [holoviews_layout]
 
     for i, plot in enumerate(holoviews_layout):
+        if not isinstance(plot, (NdOverlay, Overlay)):
+            continue
         if i in figure_index:
             plot.opts(show_legend=True, legend_position=legend_position)
         else:

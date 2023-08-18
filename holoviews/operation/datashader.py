@@ -101,8 +101,8 @@ class AggregationOperation(ResampleOperation2D):
         if isinstance(agg, str):
             if agg not in cls._agg_methods:
                 agg_methods = sorted(cls._agg_methods)
-                raise ValueError("Aggregation method '{!r}' is not known; "
-                                 "aggregator must be one of: {!r}".format(agg, agg_methods))
+                raise ValueError(f"Aggregation method '{agg!r}' is not known; "
+                                 f"aggregator must be one of: {agg_methods!r}")
             if agg == 'count_cat':
                 agg = cls._agg_methods[agg]('__temp__')
             else:
@@ -968,10 +968,10 @@ class trimesh_rasterize(aggregate):
                 else:
                     p, n = 'vertices', 'simplexes'
                 self.param.warning(
-                    "TriMesh {} were provided as dask DataFrame but {} "
+                    f"TriMesh {p} were provided as dask DataFrame but {n} "
                     "were not. Datashader will not use dask to parallelize "
                     "rasterization unless both are provided as dask "
-                    "DataFrames.".format(p, n))
+                    "DataFrames.")
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes):

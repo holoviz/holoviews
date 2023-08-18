@@ -1292,7 +1292,7 @@ class Store:
             idlist = ",".join([str(el) for el in sorted(ids)])
             raise Exception("Object contains elements combined across "
                             "multiple custom trees (ids %s)" % idlist)
-        return cls._custom_options[backend][list(ids)[0]]
+        return cls._custom_options[backend][next(iter(ids))]
 
     @classmethod
     def transfer_options(cls, obj, new_obj, backend=None, names=None, level=3):

@@ -4,6 +4,57 @@ Releases
 Version 1.17
 ~~~~~~~~~~~~
 
+Version 1.17.1
+**************
+
+**August 16, 2023**
+
+This release contains a small number of important bug fixes and
+regressions — many thanks to @ianthomas23, @maximlt, @philippjfr, and
+@Hoxbro for their contributions.
+
+Enhancements:
+
+-  Improve support for ``hv.NdOverlay`` and ``hv.Overlay`` in
+   downsample1d
+   (`#5856 <https://github.com/holoviz/holoviews/pull/5856>`__)
+-  Improve legend support for ``hv.Layout`` and add documentation for
+   ``sync_legends`` and ``show_legends``
+   (`#5852 <https://github.com/holoviz/holoviews/pull/5852>`__)
+
+Bug fixes:
+
+-  ``RangeToolLink`` now correctly reset to the predefined ``boundsx``
+   and ``boundsy`` values
+   (`#5848 <https://github.com/holoviz/holoviews/pull/5848>`__)
+-  Fix regressions with Bokeh’s axis
+   (`#5838 <https://github.com/holoviz/holoviews/pull/5838>`__, `#5850 <https://github.com/holoviz/holoviews/pull/5850>`__, `#5851 <https://github.com/holoviz/holoviews/pull/5851>`__)
+
+Compatibility:
+
+-  Pin Param version for Bokeh 2
+   (`#5844 <https://github.com/holoviz/holoviews/pull/5844>`__)
+-  Explicitly clear Matplotlib figure to remove warning about
+   auto-removal of overlapping axes
+   (`#5857 <https://github.com/holoviz/holoviews/pull/5857>`__)
+
+Documentation:
+
+-  Set ``autohide`` example to ``True`` as in the hook
+   (`#5832 <https://github.com/holoviz/holoviews/pull/5832>`__)
+
+Maintenance:
+
+-  Add `OpenCollective <https://opencollective.com/holoviz>`__ sponsor
+   link on the repo page
+   (`#5839 <https://github.com/holoviz/holoviews/pull/5839>`__)
+-  Update Ruff in pre-commit and report panel communication in
+   ``hv.show_versions``
+   (`#5853 <https://github.com/holoviz/holoviews/pull/5853>`__)
+-  Cleanup imports
+   (`#5846 <https://github.com/holoviz/holoviews/pull/5846>`__)
+
+
 Version 1.17.0
 **************
 
@@ -27,9 +78,7 @@ as the returning contributors @ahuang11, @droumis, @jbednar, @jlstevens,
 New features:
 
 -  Multi-yaxis support in the Bokeh backend
-   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__,
-    `#5826 <https://github.com/holoviz/holoviews/pull/5826>`__,
-    `#5827 <https://github.com/holoviz/holoviews/pull/5827>`__)
+   (`#5621 <https://github.com/holoviz/holoviews/pull/5621>`__, `#5826 <https://github.com/holoviz/holoviews/pull/5826>`__, `#5827 <https://github.com/holoviz/holoviews/pull/5827>`__)
 -  Allow modifying the underlying Bokeh or Matplotlib figure, axes,
    etc. using ``backend_opts``
    (`#4463 <https://github.com/holoviz/holoviews/pull/4463>`__)

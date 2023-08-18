@@ -254,7 +254,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         assert plot.state.yaxis[0].axis_label is None
         assert plot.state.yaxis[1].axis_label is None
 
-    def test_only_x_axis_labels(self):
+    def test_none_x_axis_labels(self):
         overlay = (
             Curve(range(10), vdims=['A']) *
             Curve(range(10), vdims=['B'])

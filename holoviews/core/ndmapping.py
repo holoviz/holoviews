@@ -4,6 +4,7 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
+from collections import OrderedDict
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
@@ -12,7 +13,7 @@ import pandas as pd
 import param
 
 from . import util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
+from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
     unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
     process_ellipses, get_ndmapping_label
@@ -170,8 +171,8 @@ class MultiDimensionalMapping(Dimensioned):
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
-                raise KeyError('{} dimension value {} not in'
-                               ' specified dimension values.'.format(dim, repr(val)))
+                raise KeyError(f'{dim} dimension value {val!r} not in'
+                               ' specified dimension values.')
 
         # Updates nested data structures rather than simply overriding them.
         if (update and (dim_vals in self.data)

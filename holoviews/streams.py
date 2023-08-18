@@ -625,7 +625,7 @@ class Buffer(Pipe):
             elif data_length > self.length:
                 data = data.iloc[-self.length:]
         elif isinstance(data, dict) and data:
-            data_length = len(list(data.values())[0])
+            data_length = len(next(iter(data.values())))
             new_data = {}
             for k, v in data.items():
                 if not self.length:
@@ -735,7 +735,7 @@ class Params(Stream):
         streams = []
         for _, group in groupby(sorted(params.items(), key=key_fn), key_fn):
             group = list(group)
-            inst = [p.owner for _, p in group][0]
+            inst = next(p.owner for _, p in group)
             if inst is None:
                 continue
             names = [p.name for _, p in group]

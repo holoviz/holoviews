@@ -65,7 +65,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -206,7 +206,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -296,7 +296,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -428,7 +428,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 0)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -444,7 +444,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
             (g.id, prop)
             for g in components.graphs
             for prop in ["selectedData", "relayoutData"]
-        ] + [(list(components.kdims.values())[0].children[1].id, 'value')]
+        ] + [(next(iter(components.kdims.values())).children[1].id, 'value')]
 
         self.assertEqual(
             [(ip.component_id, ip.component_property) for ip in inputs],

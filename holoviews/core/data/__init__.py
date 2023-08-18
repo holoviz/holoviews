@@ -17,6 +17,7 @@ from ..dimension import (
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
+from .. import util as core_util
 
 from .array import ArrayInterface
 from .cudf import cuDFInterface               # noqa (API import)
@@ -31,9 +32,6 @@ from .pandas import PandasAPI, PandasInterface        # noqa (API import)
 from .spatialpandas import SpatialPandasInterface     # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
-
-# Ensures correct holoviews.core.util is sourced
-from .. import util
 
 default_datatype = 'dataframe'
 
@@ -311,7 +309,7 @@ class Dataset(Element, metaclass=PipelineMeta):
                     data.get_dimension(vd) if isinstance(vd, str) else vd
                     for vd in kwargs['vdims']
                 ]
-            pvals = util.get_param_values(data)
+            pvals = core_util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
         if isinstance(data, Dataset):
@@ -386,7 +384,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if self._dataset is None:
             if type(self) is Dataset:
                 return self
-            datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
+            datatype = list(core_util.unique_iterator(self.datatype+Dataset.datatype))
             dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
                               _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
@@ -454,7 +452,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             if len(kwargs) > 1:
                 raise NotImplementedError("Closest method currently only "
                                           "supports 1D indexes")
-            samples = list(kwargs.values())[0]
+            samples = next(iter(kwargs.values()))
             coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)
@@ -500,7 +498,7 @@ class Dataset(Element, metaclass=PipelineMeta):
 
         if dim is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(util.isfinite(v) for v in dim.range) and dimension_range:
+        elif all(core_util.isfinite(v) for v in dim.range) and dimension_range:
             return dim.range
         elif dim in self.dimensions() and data_range and bool(self):
             lower, upper = self.interface.range(self, dim)
@@ -508,7 +506,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             lower, upper = (np.NaN, np.NaN)
         if not dimension_range:
             return lower, upper
-        return util.dimension_range(lower, upper, dim.range, dim.soft_range)
+        return core_util.dimension_range(lower, upper, dim.range, dim.soft_range)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -691,7 +689,7 @@ argument to specify a selection specification""")
            (4) A boolean array index matching the length of the Dataset
                object.
         """
-        slices = util.process_ellipses(self, slices, vdim_selection=True)
+        slices = core_util.process_ellipses(self, slices, vdim_selection=True)
         if getattr(getattr(slices, 'dtype', None), 'kind', None) == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
@@ -758,7 +756,7 @@ argument to specify a selection specification""")
             for dim, val in kwargs.items():
                 sample[self.get_dimension_index(dim)] = val
             samples = [tuple(sample)]
-        elif isinstance(samples, tuple) or util.isscalar(samples):
+        elif isinstance(samples, tuple) or core_util.isscalar(samples):
             if self.ndims == 1:
                 xlim = self.range(0)
                 lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
@@ -782,7 +780,7 @@ argument to specify a selection specification""")
             else:
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for elements with more than two dimensions.")
-            samples = list(util.unique_iterator(self.closest(linsamples)))
+            samples = list(core_util.unique_iterator(self.closest(linsamples)))
 
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
@@ -808,11 +806,11 @@ argument to specify a selection specification""")
                 reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
-            datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
+            datatype = list(core_util.unique_iterator(self.datatype+['dataframe', 'dict']))
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
-        lens = {len(util.wrap_tuple(s)) for s in samples}
+        lens = {len(core_util.wrap_tuple(s)) for s in samples}
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
@@ -821,7 +819,7 @@ argument to specify a selection specification""")
                 samples = self.closest(samples)
             except NotImplementedError:
                 pass
-        samples = [util.wrap_tuple(s) for s in samples]
+        samples = [core_util.wrap_tuple(s) for s in samples]
         sampled = self.interface.sample(self, samples)
         return self.clone(sampled, new_type=Table, datatype=datatype)
 
@@ -973,7 +971,7 @@ argument to specify a selection specification""")
             group_dims = [kd for kd in self.kdims if kd not in dimensions]
             kdims = [self.get_dimension(d) for d in kwargs.pop('kdims', group_dims)]
             drop_dim = len(group_dims) != len(kdims)
-            group_kwargs = dict(util.get_param_values(self), kdims=kdims)
+            group_kwargs = dict(core_util.get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
@@ -1023,7 +1021,7 @@ argument to specify a selection specification""")
         keep_index = kwargs.pop('keep_index', True)
         transforms = OrderedDict()
         for s, transform in list(args)+list(kwargs.items()):
-            transforms[util.wrap_tuple(s)] = transform
+            transforms[core_util.wrap_tuple(s)] = transform
 
         new_data = OrderedDict()
         for signature, transform in transforms.items():
@@ -1179,7 +1177,7 @@ argument to specify a selection specification""")
         """
         if 'datatype' not in overrides:
             datatypes = [self.interface.datatype] + self.datatype
-            overrides['datatype'] = list(util.unique_iterator(datatypes))
+            overrides['datatype'] = list(core_util.unique_iterator(datatypes))
 
         if data is None:
             overrides['_validate_vdims'] = False
