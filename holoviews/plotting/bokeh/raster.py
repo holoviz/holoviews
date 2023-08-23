@@ -258,6 +258,14 @@ class ImageStackPlot(RasterPlot):
 
         return WeightedStackColorMapper, opts
 
+    def _get_colormapper(self, eldim, element, ranges, style, factors=None,
+                         colors=None, group=None, name='color_mapper'):
+        cmapper = super()._get_colormapper(
+            eldim, element, ranges, style, factors=factors,
+            colors=colors, group=group, name=name
+        )
+        cmapper.palette = cmapper.palette[:len(element.vdims)]
+        return cmapper
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
@@ -268,11 +276,14 @@ class ImageStackPlot(RasterPlot):
         #     return {}, mapping, style
         x, y, z = element.dimensions()[:3]
 
-        cmapper = self._get_colormapper(z, element, ranges, style)
-        mapping["color_mapper"] = cmapper
+        mapping['color_mapper'] = self._get_colormapper(
+            z, element, ranges, style
+        )
 
-
-        img = element.data
+        img = np.dstack([
+            element.dimension_values(vd, flat=False)
+            for vd in element.vdims
+        ])
         # # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
         # if self.invert_axes:
