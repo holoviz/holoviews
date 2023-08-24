@@ -421,7 +421,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             specs = ((dim.name, dim.label, dim.unit),)
         else:
             if isinstance(self, OverlayPlot):
-                l, b, r, t = self.get_extents(range_el, ranges, range_type=dim or "combined")
+                l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
             else:
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
