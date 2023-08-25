@@ -71,24 +71,24 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(xy.y, 2)
 
     def test_XY_set_invalid_class_x(self):
-        regexp = "Parameter 'x' only takes numeric values"
+        regexp = "Number parameter 'XY.x' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             self.XY.x = 'string'
 
     def test_XY_set_invalid_class_y(self):
-        regexp = "Parameter 'y' only takes numeric values"
+        regexp = "Number parameter 'XY.y' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             self.XY.y = 'string'
 
     def test_XY_set_invalid_instance_x(self):
         xy = self.XY(x=1,y=2)
-        regexp = "Parameter 'x' only takes numeric values"
+        regexp = "Number parameter 'XY.x' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             xy.x = 'string'
 
     def test_XY_set_invalid_instance_y(self):
         xy = self.XY(x=1,y=2)
-        regexp = "Parameter 'y' only takes numeric values"
+        regexp = "Number parameter 'XY.y' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             xy.y = 'string'
 
