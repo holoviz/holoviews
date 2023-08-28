@@ -517,8 +517,11 @@ class ImageStack(Image):
     - overlay/ndoverlay of Images
     """
 
+    group = param.String(default='ImageStack', constant=True)
+
     _ndim = 3
-    # _vdim_reductions = {1: Image}
+
+    _vdim_reductions = {1: Image}
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         super().__init__(data, kdims, vdims, **params)
