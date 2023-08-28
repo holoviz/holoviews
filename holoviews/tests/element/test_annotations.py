@@ -1,9 +1,11 @@
 import numpy as np
+import param
 import pytest
 
 from holoviews import HLine, VLine, Text, Arrow, Annotation, Spline
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Points
+from packaging.version import Version
 
 
 class AnnotationTests(ComparisonTestCase):
@@ -13,7 +15,10 @@ class AnnotationTests(ComparisonTestCase):
     """
 
     def test_hline_invalid_constructor(self):
-        err = "ClassSelector parameter 'y' value must be an instance of"
+        if Version(param.__version__) > Version('2.0.0a2'):
+            err = "ClassSelector parameter 'HLine.y' value must be an instance of"
+        else:
+            err = "ClassSelector parameter 'y' value must be an instance of"
         with pytest.raises(ValueError) as excinfo:
             HLine(None)
         assert err in str(excinfo.value)
