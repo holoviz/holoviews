@@ -132,13 +132,14 @@ class Apply(metaclass=AccessorPipelineMeta):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
-        if streams is None:
-            streams = []
         from .data import Dataset
         from .dimension import ViewableElement
         from .element import Element
         from .spaces import HoloMap, DynamicMap
         from ..util import Dynamic
+
+        if streams is None:
+            streams = []
 
         if isinstance(self._obj, DynamicMap) and dynamic == False:
             samples = tuple(d.values for d in self._obj.kdims)

@@ -712,9 +712,10 @@ class dim:
         Returns:
             values: NumPy array computed by evaluating the expression
         """
+        from ..element import Graph
+
         if ranges is None:
             ranges = {}
-        from ..element import Graph
 
         dimension = self.dimension
         if expanded is None:

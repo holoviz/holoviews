@@ -417,9 +417,9 @@ class IbisInterface(Interface):
 
     @classmethod
     def sample(cls, dataset, samples=None):
+        import ibis
         if samples is None:
             samples = []
-        import ibis
         dims = dataset.dimensions()
         data = dataset.data
         if all(util.isscalar(s) or len(s) == 1 for s in samples):
