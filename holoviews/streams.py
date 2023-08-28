@@ -1429,8 +1429,8 @@ class PlotSize(LinkedStream):
        Scale factor to scale width and height values reported by the stream""")
 
     def transform(self):
-        return {'width':  int(self.width * self.scale),
-                'height': int(self.height * self.scale)}
+        return {'width':  int(self.width * self.scale) if self.width else None,
+                'height': int(self.height * self.scale) if self.height else None}
 
 
 class SelectMode(LinkedStream):
