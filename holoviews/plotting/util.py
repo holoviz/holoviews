@@ -225,14 +225,14 @@ def split_dmap_overlay(obj, depth=0):
     if isinstance(obj, DynamicMap):
         initialize_dynamic(obj)
         if issubclass(obj.type, NdOverlay) and not depth:
-            for v in obj.last.values():
+            for _ in obj.last.values():
                 layers.append(obj)
         elif issubclass(obj.type, Overlay):
             if obj.callback.inputs and is_dynamic_overlay(obj):
                 for inp in obj.callback.inputs:
                     layers += split_dmap_overlay(inp, depth+1)
             else:
-                for v in obj.last.values():
+                for _ in obj.last.values():
                     layers.append(obj)
         else:
             layers.append(obj)
