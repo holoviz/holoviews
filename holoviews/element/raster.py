@@ -517,6 +517,9 @@ class ImageStack(Image):
     - overlay/ndoverlay of Images
     """
 
+    vdims = param.List(doc="""
+        The dimension description of the data held in the matrix.""")
+
     group = param.String(default='ImageStack', constant=True)
 
     _ndim = 3
@@ -524,6 +527,8 @@ class ImageStack(Image):
     _vdim_reductions = {1: Image}
 
     def __init__(self, data, kdims=None, vdims=None, **params):
+        if vdims is None:
+            raise ValueError("ImageStack requires vdims to be defined.")
         super().__init__(data, kdims, vdims, **params)
 
 

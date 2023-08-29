@@ -267,14 +267,8 @@ class ImageStackPlot(RasterPlot):
         cmapper.palette = cmapper.palette[:len(element.vdims)]
         return cmapper
 
-
     def get_data(self, element, ranges, style):
         mapping = dict(image="image", x="x", y="y", dw="dw", dh="dh")
-        # if 'alpha' in style:
-        #     style['global_alpha'] = style['alpha']
-
-        # if self.static_source:
-        #     return {}, mapping, style
         x, y, z = element.dimensions()[:3]
 
         mapping["color_mapper"] = self._get_colormapper(z, element, ranges, style)
@@ -300,9 +294,6 @@ class ImageStackPlot(RasterPlot):
         if self.invert_yaxis:
             b, t = t, b
             y = [t]
-
-        # if 0 in img.shape:
-        #     img = np.zeros((1, 1), dtype=np.uint32)
 
         data = dict(image=[img], x=x, y=y, dw=[dw], dh=[dh])
         return (data, mapping, style)

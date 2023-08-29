@@ -1251,7 +1251,7 @@ class shade(LinkableOperation):
 
         if isinstance(element, ImageStack):
             vdim = element.vdims
-            array = element.data.to_array().transpose("x", "y", "variable")
+            array = element.data.to_array("z").transpose("x", "y", "z")
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
