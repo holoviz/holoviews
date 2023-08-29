@@ -193,9 +193,11 @@ def _python_isin(array, values):
 
 python_isin = _maybe_map(_python_isin)
 
+# Type of numpy function like np.max changed in Numpy 1.25
+# from function to a numpy._ArrayFunctionDispatcher.
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc, loc
+    MethodType, np.ufunc, iloc, loc, type(np.max)
 )
 
 
