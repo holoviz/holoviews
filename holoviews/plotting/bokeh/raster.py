@@ -309,24 +309,25 @@ class ImageStackPlot(RasterPlot):
 
         mapping["color_mapper"] = self._get_colormapper(z, element, ranges, style)
 
-        img = np.dstack(
-            [element.dimension_values(vd, flat=False) for vd in element.vdims]
-        )
+        img = np.dstack([
+            element.dimension_values(vd, flat=False)
+            if not self.invert_axes
+            else element.dimension_values(vd, flat=False).transpose()
+            for vd in element.vdims
+        ])
         # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
         if self.invert_axes:
-            img = img.T
+            # transposed in dstack
             l, b, r, t = b, l, t, r
 
         x = [l]
         y = [b]
         dh, dw = t - b, r - l
         if self.invert_xaxis:
-            img = img[:, ::-1]
             l, r = r, l
             x = [r]
         if self.invert_yaxis:
-            img = img[::-1]
             b, t = t, b
             y = [t]
 
