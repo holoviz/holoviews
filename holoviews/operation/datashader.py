@@ -1237,11 +1237,7 @@ class shade(LinkableOperation):
 
     def _process(self, element, key=None):
         element = element.map(self.to_xarray, Image)
-        if isinstance(element, ImageStack):
-            bounds = element.bounds
-            xdensity = element.xdensity
-            ydensity = element.ydensity
-        elif isinstance(element, NdOverlay):
+        if isinstance(element, NdOverlay):
             bounds = element.last.bounds
             xdensity = element.last.xdensity
             ydensity = element.last.ydensity
@@ -1252,7 +1248,6 @@ class shade(LinkableOperation):
             xdensity = element.xdensity
             ydensity = element.ydensity
             bounds = element.bounds
-
 
         if isinstance(element, ImageStack):
             vdim = element.vdims
