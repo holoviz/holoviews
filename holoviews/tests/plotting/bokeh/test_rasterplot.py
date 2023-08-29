@@ -1,7 +1,8 @@
 import numpy as np
 
-from holoviews.element import Raster, Image, RGB
+from holoviews.element import Raster, Image, RGB, ImageStack
 from holoviews.plotting.bokeh.util import bokeh3
+from holoviews.plotting.bokeh.raster import ImageStackPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -150,3 +151,78 @@ class TestRasterPlot(TestBokehPlot):
             self.assertEqual(cdata['y'], [-0.5])
         else:
             self.assertEqual(cdata['y'], [0.5])
+
+    def test_image_stack(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0][0], a.T)
+        self.assertEqual(source.data['image'][0][1], b.T)
+        self.assertEqual(source.data['image'][0][2], c.T)
+        self.assertEqual(source.data['x'][0], -0.5)
+        self.assertEqual(source.data['y'][0], 4.5)
+        self.assertEqual(source.data['dw'][0], 3)
+        self.assertEqual(source.data['dh'][0], 3)
+        assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_invert_xaxis(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack.opts(invert_xaxis=True))
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0][0], a.T)
+        self.assertEqual(source.data['image'][0][1], b.T)
+        self.assertEqual(source.data['image'][0][2], c.T)
+        self.assertEqual(source.data['x'][0], -0.5)
+        self.assertEqual(source.data['y'][0], 4.5)
+        self.assertEqual(source.data['dw'][0], 3)
+        self.assertEqual(source.data['dh'][0], 3)
+
+    def test_image_stack_invert_yaxis(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack.opts(invert_yaxis=True))
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0][0], a.T)
+        self.assertEqual(source.data['image'][0][1], b.T)
+        self.assertEqual(source.data['image'][0][2], c.T)
+        self.assertEqual(source.data['x'][0], -0.5)
+        self.assertEqual(source.data['y'][0], 4.5)
+        self.assertEqual(source.data['dw'][0], 3)
+        self.assertEqual(source.data['dh'][0], 3)
+
+    def test_image_stack_invert_axes(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack.opts(invert_axes=True))
+        source = plot.handles['source']
+
+        at, bt, ct = np.dstack([a, b, c]).reshape(3, 9).T.reshape(3, 3, 3)
+        self.assertEqual(source.data['image'][0][0], at)
+        self.assertEqual(source.data['image'][0][1], bt)
+        self.assertEqual(source.data['image'][0][2], ct)
+        self.assertEqual(source.data['x'][0], 4.5)
+        self.assertEqual(source.data['y'][0], -0.5)
+        self.assertEqual(source.data['dw'][0], 3)
+        self.assertEqual(source.data['dh'][0], 3)

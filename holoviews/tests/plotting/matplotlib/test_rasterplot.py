@@ -1,6 +1,7 @@
 import numpy as np
 
-from holoviews.element import Raster, Image
+from holoviews.element import Raster, Image, ImageStack
+from holoviews.plotting.mpl.raster import RGBPlot
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -75,3 +76,18 @@ class TestRasterPlot(TestMPLPlot):
             clim=(np.nan, np.nan), colorbar=True)
         plot = mpl_renderer.get_plot(img)
         self.assertEqual(plot.handles['cbar'].extend, 'neither')
+
+    def test_image_stack(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = mpl_renderer.get_plot(img_stack)
+        artist = plot.handles['artist']
+        array = artist.get_array().data
+        assert array.shape == (3, 3, 4)
+        assert artist.get_extent() == [-0.5, 2.5, 4.5, 7.5]
+        assert isinstance(plot, RGBPlot)
