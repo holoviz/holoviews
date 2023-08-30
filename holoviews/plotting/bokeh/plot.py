@@ -1,3 +1,4 @@
+import warnings
 from itertools import groupby
 from collections import defaultdict
 
@@ -984,12 +985,16 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
-            layout_plot = gridplot(
-                children=plot_grid,
-                toolbar_location=self.toolbar,
-                merge_tools=self.merge_tools,
-                sizing_mode=sizing_mode
-            )
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", message="found multiple competing values", category=UserWarning
+                )
+                layout_plot = gridplot(
+                    children=plot_grid,
+                    toolbar_location=self.toolbar,
+                    merge_tools=self.merge_tools,
+                    sizing_mode=sizing_mode
+                )
             if self.sync_legends:
                 sync_legends(layout_plot)
             if bokeh3:
