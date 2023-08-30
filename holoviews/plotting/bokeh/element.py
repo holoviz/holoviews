@@ -154,8 +154,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        elements and the overlay container, allowing customization on a
        per-axis basis.""")
 
-    subcoordinate_y = param.NumericTuple(default=None, length=2, doc="""
-       Enables sub-coordinate scales.""")
+    subcoordinate_y = param.ClassSelector(default=False, class_=(bool, float, int), doc="""
+       Enables sub-coordinate scales for this plot.""")
+
+    subcoordinate_scale = param.Number(default=1, doc="""
+       Scale factor for subcoordinate ranges to control the level of overlap.""")
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
@@ -433,7 +436,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
             if pos == 1 and self.subcoordinate_y:
-                v0, v1 = 0, 1
+                offset = (self.subcoordinate_scale)/2.
+                v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-1+offset
             else:
                 v0, v1 = (l, r) if pos == 0 else (b, t)
 
@@ -515,6 +519,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axpos0, axpos1 = 'left', 'right'
 
         ax_specs, yaxes, dimensions = {}, {}, {}
+        subcoordinate_axes = 0
         for i, (el, sp) in enumerate(zip(element, self.subplots.values())):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
@@ -527,6 +532,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if opts.get('subcoordinate_y') is None:
                     continue
                 ax_name = el.label or f'Trace {i}'
+                subcoordinate_axes += 1
             else:
                 ax_name = yd.name
             dimensions[ax_name] = yd
@@ -542,11 +548,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 'fontsize': {
                     'axis_label_text_font_size': sp._fontsize('ylabel').get('fontsize'),
                     'major_label_text_font_size': sp._fontsize('yticks').get('fontsize')
-                }
+                },
+                'subcoordinate_y': subcoordinate_axes-1 if self.subcoordinate_y else None
             }
 
         for ydim, info in yaxes.items():
             range_tags_extras = {'invert_yaxis': info['invert_yaxis']}
+            if info['subcoordinate_y'] is not None:
+                range_tags_extras['subcoordinate_y'] = info['subcoordinate_y']
             if info['autorange'] == 'y':
                 range_tags_extras['autorange'] = True
                 lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
@@ -829,12 +838,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
             elif isinstance(self, OverlayPlot) and self.subcoordinate_y and axis == 'y':
-                subcoords = self.traverse(lambda p: p.subcoordinate_y)[1:]
                 ticks, labels = [], []
-                for i, (frame, coords) in enumerate(reversed(list(zip(self.current_frame, subcoords)))):
-                    if coords:
-                        ticks.append(np.mean(coords))
-                        labels.append(frame.label or f'Trace {i}')
+                for i, (el, sp) in enumerate(zip(self.current_frame, self.subplots.values())):
+                    if not sp.subcoordinate_y:
+                        continue
+                    ycenter = i if isinstance(sp.subcoordinate_y, bool) else np.mean(sp.subcoordinate_y)
+                    ticks.append(ycenter)
+                    labels.append(el.label or f'Trace {i}')
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
@@ -1424,12 +1434,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             properties["name"] = properties.get("legend_label") or properties.get("legend_field")
 
         if self.subcoordinate_y:
-            sy0, sy1 = self.subcoordinate_y
+            y_source_range = self.handles['y_range']
+            if isinstance(self.subcoordinate_y, bool):
+                center = y_source_range.tags[1]['subcoordinate_y']
+            else:
+                center = self.subcoordinate_y
+            offset = self.subcoordinate_scale/2.
             plot = plot.subplot(
                 x_source=plot.x_range,
                 x_target=plot.x_range,
-                y_source=self.handles['y_range'],
-                y_target=Range1d(start=sy0, end=sy1),
+                y_source=y_source_range,
+                y_target=Range1d(start=center-offset, end=center+offset),
             )
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
@@ -1806,7 +1821,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['xaxis'], self.handles['yaxis'] = axes
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
             if self.subcoordinate_y and style_element.label in plot.extra_y_ranges:
-                self.handles['y_range'] = plot.extra_y_ranges[style_element.label]
+                self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
         self.handles['plot'] = plot
 
         if self.autorange:
@@ -2560,7 +2575,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive', 'fontscale', 'subcoordinate_y']
+                          'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
+                          'subcoordinate_scale']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
