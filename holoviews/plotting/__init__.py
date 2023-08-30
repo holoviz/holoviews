@@ -10,9 +10,8 @@ from ..element import Area, Image, ImageStack, QuadMesh, Polygons, Raster, RGB
 from ..element.sankey import _layout_sankey, Sankey
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
-from .util import apply_nodata, list_cmaps # noqa (API import)
+from .util import apply_nodata, flatten_stack, list_cmaps # noqa (API import)
 from ..operation.stats import univariate_kde, bivariate_kde
-from ..operation.flatten import flatten_stack
 
 Compositor.register(Compositor("Image", apply_nodata, None,
                                'data', transfer_options=True,
