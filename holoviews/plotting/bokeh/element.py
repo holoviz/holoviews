@@ -421,7 +421,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             specs = ((dim.name, dim.label, dim.unit),)
         else:
             if isinstance(self, OverlayPlot):
-                l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
+                try:
+                    l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
+                except TypeError:
+                    # GeoViews ProjectionPlot.get_extents() does not support dimension
+                    # before 1.10.2
+                    l, b, r, t = self.get_extents(range_el, ranges)
             else:
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
