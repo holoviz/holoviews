@@ -253,7 +253,7 @@ class dim:
 
     def __init__(self, obj, *args, **kwargs):
         from panel.widgets import Widget
-        ops = []
+        self.ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
         if isinstance(obj, str):
@@ -266,7 +266,7 @@ class dim:
             self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
-            ops = obj.ops
+            self.ops = obj.ops
         if args:
             fn = args[0]
         else:
@@ -276,9 +276,8 @@ class dim:
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
-            ops = ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
+            self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
-        self.ops = ops
 
     def __getstate__(self):
         return self.__dict__
