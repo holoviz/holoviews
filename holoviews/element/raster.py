@@ -510,14 +510,13 @@ class ImageStack(Image):
     If only one channel it should behave the same as an Image.
 
     Type of data inputs:
-    - 3D ndarray (x,y,level) (automatic named vdims level_x)
-    - A list of 2D ndarrays  (automatic named vdims level_x)
+    - 3D ndarray (x,y,level)
+    - A list of 2D ndarrays
     - A dict of 2D ndarrays (key=level: value=2D ndarray)
     - xarray with all the whistles
-    - overlay/ndoverlay of Images
     """
 
-    vdims = param.List(doc="""
+    vdims = param.List(default=["z"], bounds=(1, None), doc="""
         The dimension description of the data held in the matrix.""")
 
     group = param.String(default='ImageStack', constant=True)
@@ -527,9 +526,16 @@ class ImageStack(Image):
     _vdim_reductions = {1: Image}
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if vdims is None:
-            raise ValueError("ImageStack requires vdims to be defined.")
         super().__init__(data, kdims, vdims, **params)
+        # I think we don't have to consider pandas here
+        # len(xr.Dataset) simply provides the number of variables
+        # len(dict) provides the number of keys
+        unused_dims = len(data) - len(self.kdims + self.vdims)
+        if vdims is None and unused_dims > 0:
+            raise ValueError(
+                f"Detected {unused_dims} unused dimensions"
+                f"in the input data for ImageStack. "
+                f"Please specify the vdims explicitly.")
 
 
 class RGB(Image):

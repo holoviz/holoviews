@@ -1,4 +1,6 @@
+import pytest
 import numpy as np
+import xarray as xr
 
 from holoviews.element import Raster, Image, RGB, ImageStack
 from holoviews.plotting.bokeh.util import bokeh3
@@ -170,6 +172,60 @@ class TestRasterPlot(TestBokehPlot):
         self.assertEqual(source.data['dw'][0], 3)
         self.assertEqual(source.data['dh'][0], 3)
         assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_xarray(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = xr.Dataset(
+            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            coords={"x": x, "y": y},
+        )
+        at, bt, ct = np.dstack([a, b, c]).reshape(3, 9).T.reshape(3, 3, 3)
+        img_stack = ImageStack(ds, kdims=["x", "y"])
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0][0], at)
+        self.assertEqual(source.data['image'][0][1], bt)
+        self.assertEqual(source.data['image'][0][2], ct)
+        self.assertEqual(source.data['x'][0], -0.5)
+        self.assertEqual(source.data['y'][0], 4.5)
+        self.assertEqual(source.data['dw'][0], 3)
+        self.assertEqual(source.data['dh'][0], 3)
+        assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_dict(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
+        img_stack = ImageStack(ds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0][0], a.T)
+        self.assertEqual(source.data['image'][0][1], b.T)
+        self.assertEqual(source.data['image'][0][2], c.T)
+        self.assertEqual(source.data['x'][0], -0.5)
+        self.assertEqual(source.data['y'][0], 4.5)
+        self.assertEqual(source.data['dw'][0], 3)
+        self.assertEqual(source.data['dh'][0], 3)
+        assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_extra_dims(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        with pytest.raises(ValueError, match="Detected 2 unused dimensions"):
+            ImageStack((x, y, a, b, c), kdims=["x", "y"])
 
     def test_image_stack_invert_xaxis(self):
         x = np.arange(0, 3)
