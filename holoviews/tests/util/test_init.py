@@ -14,6 +14,6 @@ def test_no_blocklist_imports():
         print(", ".join(mods), end="")
         """
 
-    output = check_output(['python', '-c', dedent(check)])
+    output = check_output(['python3', '-c', dedent(check)])
 
     assert output == b""
