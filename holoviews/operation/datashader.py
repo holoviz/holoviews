@@ -1249,15 +1249,16 @@ class shade(LinkableOperation):
             ydensity = element.ydensity
             bounds = element.bounds
 
+        kdims = element.kdims
         if isinstance(element, ImageStack):
             vdim = element.vdims
             array = element.data
             if hasattr(array, "to_array"):
                 array = array.to_array("z")
+            array = array.transpose(*[kdim.name for kdim in kdims], ...)
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
-        kdims = element.kdims
 
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
