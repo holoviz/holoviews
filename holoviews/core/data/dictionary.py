@@ -141,7 +141,7 @@ class DictInterface(Interface):
         """
         if len(data) != 1:
             return data
-        key = list(data.keys())[0]
+        key = next(iter(data.keys()))
 
         if len(data[key]) == 1 and key in dataset.vdims:
             scalar = data[key][0]
@@ -331,7 +331,7 @@ class DictInterface(Interface):
                 data[k] = v
             else:
                 data[k] = v[selection_mask]
-        if indexed and len(list(data.values())[0]) == 1 and len(dataset.vdims) == 1:
+        if indexed and len(next(iter(data.values()))) == 1 and len(dataset.vdims) == 1:
             value = data[dataset.vdims[0].name]
             return value if isscalar(value) else value[0]
         return data

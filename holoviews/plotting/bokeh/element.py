@@ -367,7 +367,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
-                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+                data[dim] = [v] * len(next(iter(data.values())))
 
     def _shared_axis_range(self, plots, specs, range_type, axis_type, pos):
         """
@@ -430,7 +430,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             specs = ((dim.name, dim.label, dim.unit),)
         else:
             if isinstance(self, OverlayPlot):
-                l, b, r, t = self.get_extents(range_el, ranges, dim)
+                l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
             else:
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
@@ -496,7 +496,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif categorical:
             axis_type = 'auto'
             dim_range = FactorRange()
-        elif None in [v0, v1] or any(True if isinstance(el, (str, bytes)+util.cftime_types) else not util.isfinite(el) for el in [v0, v1]):
+        elif None in [v0, v1] or any(
+            True if isinstance(el, (str, bytes)+util.cftime_types)
+            else not util.isfinite(el) for el in [v0, v1]
+        ):
             dim_range = range_type()
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
@@ -1016,7 +1019,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
             self._update_range(
                 extra_y_range, b, t, factors,
-                extra_y_range.tags[1]['invert_yaxis'] if extra_y_range.tags else False,
+                self._get_tag(extra_y_range, 'invert_yaxis'),
                 self._shared.get(extra_y_range.name, False), log, streaming
             )
 
@@ -1161,10 +1164,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
         if not (self.drawn or self.subcoordinate_y) or yupdate:
-            self._update_range(y_range, b, t, yfactors,
-                               y_range.tags[1]['invert_yaxis'] if y_range.tags else False,
-                               self._shared['y-main-range'], self.logy, streaming)
+            self._update_range(
+                y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
+                self._shared['y-main-range'], self.logy, streaming
+            )
 
+    def _get_tag(self, model, tag_name):
+        """Get a tag from a Bokeh model
+
+        Args:
+            model (Model): Bokeh model
+            tag_name (str): Name of tag to get
+        Returns:
+            tag_value: Value of tag or False if not found
+        """
+        for tag in model.tags:
+            if isinstance(tag, dict) and tag_name in tag:
+                return tag[tag_name]
+        return False
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         if isinstance(axis_range, FactorRange):
@@ -1464,15 +1481,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 elif isinstance(element, Graph) and v in element.nodes:
                     v = dim(element.nodes.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
-                    v = dim([d for d in self.overlay_dims if d==v][0])
+                    v = dim(next(d for d in self.overlay_dims if d==v))
 
             if (not isinstance(v, dim) or (group is not None and not k.startswith(group))):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
                 self.param.warning(
-                    'Specified {} dim transform {!r} could not be applied, '
-                    'as not all dimensions could be resolved.'.format(k, v))
+                    f'Specified {k} dim transform {v!r} could not be applied, '
+                    'as not all dimensions could be resolved.')
                 continue
 
             if v.dimension in self.overlay_dims:
@@ -1497,7 +1514,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.'.format(
                                          style=k, dim=v.dimension, element=element,
                                          backend=self.renderer.backend))
-                elif data and len(val) != len(list(data.values())[0]):
+                elif data and len(val) != len(next(iter(data.values()))):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
                     elif isinstance(element, Path) and not isinstance(element, Contours):
@@ -1702,7 +1719,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                             prop = 'value' if 'label' in lp else 'field'
                             label = {prop: legend}
                         elif isinstance(item.label, dict):
-                            label = {list(item.label)[0]: legend}
+                            label = {next(iter(item.label)): legend}
                         else:
                             label = {'value': legend}
                         item.label = label
@@ -1777,9 +1794,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Looks up the axes and plot ranges given the plot and an element.
         """
         axis_dims = self._get_axis_dims(element)[:2]
-        if self.invert_axes:
-            axis_dims[0], axis_dims[1] = axis_dims[::-1]
-        x, y = axis_dims
+        x, y = axis_dims[::-1] if self.invert_axes else axis_dims
         if isinstance(x, Dimension) and x.name in plot.extra_x_ranges:
             x_range = plot.extra_x_ranges[x.name]
             xaxes = [xaxis for xaxis in plot.xaxis if xaxis.x_range_name == x.name]

@@ -666,7 +666,7 @@ class DimensionedPlot(Plot):
         if 'factors' in ranges:
             all_factors = ranges['factors']
             factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
-            dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+            dtype = next(iter(factor_dtypes)) if len(factor_dtypes) == 1 else None
             expanded = [v for fctrs in all_factors for v in fctrs]
             if dtype is not None:
                 try:
@@ -939,7 +939,7 @@ class DimensionedPlot(Plot):
         return custom_projs[0] if custom_projs else None
 
     def update(self, key):
-        if len(self) == 1 and ((key == 0) or (key == self.keys[0])) and not self.drawn:
+        if len(self) == 1 and key in (0, self.keys[0]) and not self.drawn:
             return self.initialize_plot()
         item = self.__getitem__(key)
         self.traverse(lambda x: setattr(x, '_updated', True))
@@ -1296,8 +1296,8 @@ class GenericElementPlot(DimensionedPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.param.warning("Plotting hook {!r} could not be "
-                                   "applied:\n\n {}".format(hook, e))
+                self.param.warning(f"Plotting hook {hook!r} could not be "
+                                   f"applied:\n\n {e}")
 
     def get_aspect(self, xspan, yspan):
         """
@@ -1934,7 +1934,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         items = overlay.items()
         if self.batched and self.subplots:
-            subplot = list(self.subplots.values())[0]
+            subplot = next(iter(self.subplots.values()))
             subplots = [(k, subplot) for k in overlay.data.keys()]
         else:
             subplots = self.subplots.items()

@@ -151,8 +151,10 @@ class RangeToolLinkCallback(LinkCallback):
             start, end = bounds
             if start is not None:
                 axes[f'{axis}_range'].start = start
+                axes[f'{axis}_range'].reset_start = start
             if end is not None:
                 axes[f'{axis}_range'].end = end
+                axes[f'{axis}_range'].reset_end = end
 
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)

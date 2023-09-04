@@ -126,7 +126,7 @@ class Raster(Element2D):
             params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
-            dimension, sample_coord = list(sample_values.items())[0]
+            dimension, sample_coord = next(iter(sample_values.items()))
             if isinstance(sample_coord, slice):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
