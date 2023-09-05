@@ -3,6 +3,7 @@ import requests
 
 from packaging.version import Version
 
+
 def main(*packages):
     is_latest = True
     for package in packages:
@@ -15,6 +16,7 @@ def main(*packages):
 
     if not is_latest:
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main("numpy", "pandas")
