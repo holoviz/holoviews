@@ -41,6 +41,7 @@ extras_require['tests_core'] = [
     'dash >=1.16',
     'codecov',
     'ipython >=5.4.0',
+    'pandas <2.1',  # for spatialpandas recursion https://github.com/holoviz/spatialpandas/issues/124
 ]
 
 # Optional tests dependencies, i.e. one should be able
