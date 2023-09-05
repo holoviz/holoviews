@@ -177,6 +177,10 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
+      - name: Check packages latest version
+        run: |
+          conda activate test-environment
+          python scripts/check_latest_packages.py
       - name: doit test_unit
         run: |
           conda activate test-environment
