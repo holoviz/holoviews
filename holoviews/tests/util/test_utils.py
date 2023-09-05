@@ -1,6 +1,7 @@
 """
 Unit tests of the helper functions in utils
 """
+from unittest import skipIf
 from collections import OrderedDict
 
 from holoviews import notebook_extension
@@ -18,7 +19,15 @@ BACKENDS = ['matplotlib', 'bokeh']
 
 from ..utils import LoggingComparisonTestCase
 
+try:
+    import IPython
+except ImportError:
+    IPython = None
 
+ipy_available = skipIf(IPython is None, "IPython is not available")
+
+
+@ipy_available
 class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
