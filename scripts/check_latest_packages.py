@@ -20,7 +20,7 @@ def main(*packages):
             resp["releases"][current][0]["upload_time_iso_8601"]
         ).date()
         version_check = Version(current) >= Version(latest)
-        date_check = latest_release_date >= allowed_date
+        date_check = allowed_date >= latest_release_date
         is_latest &= version_check and date_check
         print(
             f"Package: {package:<10} Current: {current:<7} ({current_release_date})\tLatest: {latest:<7} ({latest_release_date})"
