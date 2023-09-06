@@ -603,7 +603,7 @@ class TestSelectionPolyExpr(ComparisonTestCase):
         self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
 
 
-@shapelib_available
+@pytest.mark.skipif(shapely is None and spd is None, reason='Neither shapely nor spatialpandas are available')
 class TestSpatialSelectColumnar:
     geometry_encl = np.array([
         [-1, 0.5],

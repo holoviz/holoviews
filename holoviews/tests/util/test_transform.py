@@ -26,6 +26,19 @@ except ImportError:
 
 xr_skip = skipIf(xr is None, "xarray not available")
 
+try:
+    import spatialpandas as spd
+except ImportError:
+    spd = None
+
+try:
+    import shapely
+except ImportError:
+    shapely = None
+
+shapelib_available = skipIf(shapely is None and spd is None,
+                            'Neither shapely nor spatialpandas are available')
+
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
@@ -524,6 +537,7 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(expr, expr2)
 
 
+@shapelib_available
 def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
     """Ensure 'spatial_select' expression works when index not zero-based.
     Use 'spatial_select' defined by four nodes to select index 104, 105.

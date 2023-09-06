@@ -464,6 +464,17 @@ class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
 
     __test__ = True
 
+    def test_reduce_to_single_values(self):
+        try:
+            super().test_reduce_to_single_values()
+        except DataError:
+            msg = (
+                "RGB element can't run with this command: "
+                "'pytest holoviews/tests -k test_reduce_to_single_values'"
+                "but runs fine with 'pytest holoviews/tests/core/'"
+            )
+            raise SkipTest(msg)
+
 
 class BaseHSVElementInterfaceTests(InterfaceTests):
 
