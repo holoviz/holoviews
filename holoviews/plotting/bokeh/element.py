@@ -429,9 +429,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_label = str(dim)
             specs = ((dim.name, dim.label, dim.unit),)
         else:
-            if isinstance(self, OverlayPlot):
+            try:
                 l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
-            else:
+            except TypeError:
+                # Backward compatibility for e.g. GeoViews=<1.10.1 since dimension
+                # is a newly added keyword argument in HoloViews 1.17
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
@@ -1034,9 +1036,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 range_dim = None
             try:
                 l, b, r, t = self.get_extents(element, ranges, dimension=range_dim)
-            except Exception:
+            except TypeError:
                 # Backward compatibility for e.g. GeoViews=<1.10.1 since dimension
-                # is a newly added keyword argument
+                # is a newly added keyword argument in HoloViews 1.17
                 l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
