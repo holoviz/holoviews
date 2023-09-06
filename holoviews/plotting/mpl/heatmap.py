@@ -298,7 +298,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         return ticks
 
 
-    def get_extents(self, view, ranges, range_type='combined'):
+    def get_extents(self, view, ranges, range_type='combined', **kwargs):
         if range_type == 'hard':
             return (np.nan,)*4
         return (0, 0, np.pi*2, self.max_radius+self.radius_outer)

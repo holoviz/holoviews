@@ -37,7 +37,7 @@ class RasterBasePlot(ElementPlot):
 
     _plot_methods = dict(single='imshow')
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
@@ -294,7 +294,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     def _finalize_artist(self, key):
         pass
 
-    def get_extents(self, view, ranges, range_type='combined'):
+    def get_extents(self, view, ranges, range_type='combined', **kwargs):
         if range_type == 'hard':
             return (np.nan,)*4
         width, height, _, _, _, _ = self.border_extents
