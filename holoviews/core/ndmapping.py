@@ -104,10 +104,6 @@ class MultiDimensionalMapping(Dimensioned):
         if kdims is not None:
             params['kdims'] = kdims
         super().__init__(OrderedDict(), **dict(params))
-        if type(initial_items) is dict and not self.sort:
-            raise ValueError('If sort=False the data must define a fixed '
-                             'ordering, please supply a list of items or '
-                             'an OrderedDict, not a regular dictionary.')
 
         self._next_ind = 0
         self._check_key_type = True

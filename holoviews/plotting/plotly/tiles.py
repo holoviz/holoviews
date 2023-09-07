@@ -53,7 +53,7 @@ class TilePlot(ElementPlot):
 
         return opts
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if (not self.overlaid and all(e is None or not np.isfinite(e) for e in extents)
             and range_type in ('combined', 'data')):
