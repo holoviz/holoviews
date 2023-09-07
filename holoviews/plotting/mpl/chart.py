@@ -276,7 +276,7 @@ class SpreadPlot(AreaPlot):
         pos_error = element.dimension_values(pos_idx)
         return (xs, mean-neg_error, mean+pos_error), style, {}
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         return ChartPlot.get_extents(self, element, ranges, range_type)
 
 
@@ -390,7 +390,7 @@ class HistogramPlot(ColorbarPlot):
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
         s0, s1 = ranges[ydim.name]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0

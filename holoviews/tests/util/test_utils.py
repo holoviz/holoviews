@@ -1,6 +1,7 @@
 """
 Unit tests of the helper functions in utils
 """
+from unittest import SkipTest
 from collections import OrderedDict
 
 from holoviews import notebook_extension
@@ -18,10 +19,17 @@ BACKENDS = ['matplotlib', 'bokeh']
 
 from ..utils import LoggingComparisonTestCase
 
+try:
+    import notebook
+except ImportError:
+    notebook = None
+
 
 class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
+        if notebook is None:
+            raise SkipTest("Jupyter Notebook not available")
         notebook_extension(*BACKENDS)
         Store.current_backend = 'matplotlib'
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
