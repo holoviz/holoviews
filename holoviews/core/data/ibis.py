@@ -191,7 +191,9 @@ class IbisInterface(Interface):
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
         if ibis4():
-            return dataset.data.order_by([(dataset.get_dimension(x).name, not reverse) for x in by])
+            import ibis
+            ikey = getattr(ibis, 'desc' if reverse else 'asc')
+            return dataset.data.order_by([ikey(dataset.get_dimension(x).name) for x in by])
         else:
             # sort_by will be removed in Ibis 5.0
             return dataset.data.sort_by([(dataset.get_dimension(x).name, not reverse) for x in by])
