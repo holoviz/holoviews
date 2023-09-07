@@ -11,7 +11,7 @@ from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, VLine, VSpan
+from ...element import HLine, VLine, VSpan, HLines, VLines
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -29,34 +29,28 @@ class _SyntheticAnnotationPlot(ElementPlot):
     apply_ranges = param.Boolean(default=True, doc="""
         Whether to include the annotation in axis range calculations.""")
 
-    style_opts = line_properties + ['level', 'visible']
+    style_opts = [*line_properties, 'level', 'visible']
     _allow_implicit_categories = False
-    _element_name = ''
 
     def __init__(self, element, **kwargs):
         if not bokeh32:
-            raise ImportError(f'{self._element_name} element requires bokeh >=3.2')
+            name = type(element.last).__name__
+            msg = f'{name} element requires Bokeh >=3.2'
+            raise ImportError(msg)
         super().__init__(element, **kwargs)
 
     def get_data(self, element, ranges, style):
-        data = {}
-        indices = set(range(len(element.kdims))) - set(element._synthetic_dimensions)
-        for index in indices:
-            name = element.kdims[index]
-            loc = list(element.dimension_values(name)) # invert_axes?
-            data[str(name)] = date_to_integer(loc) if isinstance(loc, datetime_types) else loc
-
-        mapping = {k: k for k in data}
-        data.update({str(name): element.dimension_values(name) for name in element.vdims})
+        data = {str(k): v for k, v in element.data.items()}
+        mapping = {str(k): str(k) for k in element.kdims}
         return data, mapping, style
 
-    def _hover_opts(self, element):
-        dims, opts = super()._hover_opts(element)
-        for sd in element._synthetic_dimensions:
-            name = element.kdims[sd]
-            if name in dims:
-                dims.remove(name)
-        return dims, opts
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        extents = super().get_extents(element, ranges, range_type)
+        if isinstance(element, HLines):
+            extents = np.nan, extents[0], np.nan, extents[2]
+        elif isinstance(element, VLines):
+            extents = extents[0], np.nan, extents[2], np.nan
+        return extents
 
 class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
 
