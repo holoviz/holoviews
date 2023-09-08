@@ -219,6 +219,23 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
+    def test_hlines_nondefault_kdim(self):
+        hlines = HLines(
+            {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(hlines)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 5.5
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["extra"]
+        assert (source.data["extra"] == [0, 1, 2, 5.5]).all()
+
     def test_vlines_plot(self):
         vlines = VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
@@ -236,6 +253,23 @@ class TestHVLinesPlot(TestBokehPlot):
         assert list(source.data.keys()) == ["x", "extra"]
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
+
+    def test_vlines_nondefault_kdim(self):
+        vlines = VLines(
+            {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(vlines)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 5.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["extra"]
+        assert (source.data["extra"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_hlines_overlay(self):
         hlines = HLines(
@@ -275,6 +309,24 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["y1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
 
+    def test_hspans_nondefault_kdims(self):
+        hspans = HSpans(
+            {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
+        )
+        plot = bokeh_renderer.get_plot(hspans)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 6.5
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["other0", "other1"]
+        assert (source.data["other0"] == [0, 3, 5.5]).all()
+        assert (source.data["other1"] == [1, 4, 6.5]).all()
+
     def test_vspans_plot(self):
         vspans = VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
@@ -293,6 +345,24 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["x0"] == [0, 3, 5.5]).all()
         assert (source.data["x1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
+
+    def test_vspans_nondefault_kdims(self):
+        vspans = VSpans(
+            {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
+        )
+        plot = bokeh_renderer.get_plot(vspans)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 6.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["other0", "other1"]
+        assert (source.data["other0"] == [0, 3, 5.5]).all()
+        assert (source.data["other1"] == [1, 4, 6.5]).all()
 
     def test_vspans_hspans_overlay(self):
         hspans = HSpans(

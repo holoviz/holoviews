@@ -41,7 +41,7 @@ class _SyntheticAnnotationPlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         data = {str(k): v for k, v in element.data.items()}
-        mapping = {str(k): str(k) for k in element.kdims}
+        mapping = {str(d): str(k) for d, k in zip(element.param.kdims.default, element.kdims)}
         return data, mapping, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
