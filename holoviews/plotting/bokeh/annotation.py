@@ -44,6 +44,12 @@ class _SyntheticAnnotationPlot(ElementPlot):
         mapping = {str(k): str(k) for k in element.kdims}
         return data, mapping, style
 
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        figure = super().initialize_plot(ranges=ranges, plot=plot, plots=plots, source=source)
+        for ax, label in zip(figure.axis, "xy"):
+            ax.axis_label = label
+        return figure
+
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if isinstance(element, HLines):
