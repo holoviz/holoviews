@@ -11,7 +11,7 @@ from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, VLine, VSpan, HLines, VLines
+from ...element import HLine, VLine, VSpan, HLines, VLines, HSpans, VSpans
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -50,6 +50,10 @@ class _SyntheticAnnotationPlot(ElementPlot):
             extents = np.nan, extents[0], np.nan, extents[2]
         elif isinstance(element, VLines):
             extents = extents[0], np.nan, extents[2], np.nan
+        elif isinstance(element, HSpans):
+            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
+        elif isinstance(element, VSpans):
+            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
         return extents
 
 class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
