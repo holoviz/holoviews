@@ -39,14 +39,20 @@ class _SyntheticAnnotationPlot(ElementPlot):
             raise ImportError(msg)
         super().__init__(element, **kwargs)
 
+    def _init_glyph(self, plot, mapping, properties):
+        self._plot_methods = {"single": self._methods[self.invert_axes]}
+        return super()._init_glyph(plot, mapping, properties)
+
     def get_data(self, element, ranges, style):
         data = {str(k): v for k, v in element.data.items()}
-        mapping = {str(d): str(k) for d, k in zip(element.param.kdims.default, element.kdims)}
+        default = self._element_default[self.invert_axes].kdims
+        mapping = {str(d): str(k) for d, k in zip(default, element.kdims)}
         return data, mapping, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         figure = super().initialize_plot(ranges=ranges, plot=plot, plots=plots, source=source)
-        for ax, label in zip(figure.axis, "xy"):
+        labels = "yx" if self.invert_axes else "xy"
+        for ax, label in zip(figure.axis, labels):
             ax.axis_label = label
         return figure
 
@@ -64,26 +70,27 @@ class _SyntheticAnnotationPlot(ElementPlot):
 
 class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
 
-    _plot_methods = dict(single='hspan')
-    _element_name = 'VLines'
+    # If invert_axes is False we use the first method,
+    # and if True the second as _plot_methods(single=...)
+    _methods = ('hspan', 'vspan')
+    _element_default = (HLines, VLines)
 
 
 class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
 
-    _plot_methods = dict(single='vspan')
-    _element_name = 'HLines'
-
+    _methods = ('vspan', 'hspan')
+    _element_default = (VLines, HLines)
 
 class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
-    _plot_methods = dict(single='hstrip')
-    _element_name = 'HSpans'
+    _methods = ('hstrip', 'vstrip')
+    _element_default = (HSpans, VSpans)
 
 
 class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
-    _plot_methods = dict(single='vstrip')
-    _element_name = 'VSpans'
+    _methods = ('vstrip', 'hstrip')
+    _element_default = (VSpans, HSpans)
 
 
 class TextPlot(ElementPlot, AnnotationPlot):

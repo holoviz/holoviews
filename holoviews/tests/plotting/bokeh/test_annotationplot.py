@@ -222,6 +222,25 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
+    def test_hlines_plot_invert_axes(self):
+        hlines = HLines(
+            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        ).opts(invert_axes=True)
+        plot = bokeh_renderer.get_plot(hlines)
+        assert isinstance(plot.handles["glyph"], BkVSpan)
+        assert plot.handles["xaxis"].axis_label == "y"
+        assert plot.handles["yaxis"].axis_label == "x"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 5.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["y", "extra"]
+        assert (source.data["y"] == [0, 1, 2, 5.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
+
     def test_hlines_nondefault_kdim(self):
         hlines = HLines(
             {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
@@ -253,6 +272,25 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["x_range"].end == 5.5
         assert plot.handles["y_range"].start == 0
         assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["x", "extra"]
+        assert (source.data["x"] == [0, 1, 2, 5.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
+
+    def test_vlines_plot_invert_axes(self):
+        vlines = VLines(
+            {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        ).opts(invert_axes=True)
+        plot = bokeh_renderer.get_plot(vlines)
+        assert isinstance(plot.handles["glyph"], BkHSpan)
+        assert plot.handles["xaxis"].axis_label == "y"
+        assert plot.handles["yaxis"].axis_label == "x"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
         assert list(source.data.keys()) == ["x", "extra"]
@@ -316,6 +354,26 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["y1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
 
+    def test_hspans_plot_invert_axes(self):
+        hspans = HSpans(
+            {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        ).opts(invert_axes=True)
+        plot = bokeh_renderer.get_plot(hspans)
+        assert isinstance(plot.handles["glyph"], BkVStrip)
+        assert plot.handles["xaxis"].axis_label == "y"
+        assert plot.handles["yaxis"].axis_label == "x"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 6.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["y0", "y1", "extra"]
+        assert (source.data["y0"] == [0, 3, 5.5]).all()
+        assert (source.data["y1"] == [1, 4, 6.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3]).all()
+
     def test_hspans_nondefault_kdims(self):
         hspans = HSpans(
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
@@ -348,6 +406,26 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["x_range"].end == 6.5
         assert plot.handles["y_range"].start == 0
         assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["x0", "x1", "extra"]
+        assert (source.data["x0"] == [0, 3, 5.5]).all()
+        assert (source.data["x1"] == [1, 4, 6.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3]).all()
+
+    def test_vspans_plot_invert_axes(self):
+        vspans = VSpans(
+            {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        ).opts(invert_axes=True)
+        plot = bokeh_renderer.get_plot(vspans)
+        assert isinstance(plot.handles["glyph"], BkHStrip)
+        assert plot.handles["xaxis"].axis_label == "y"
+        assert plot.handles["yaxis"].axis_label == "x"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 6.5
 
         source = plot.handles["source"]
         assert list(source.data.keys()) == ["x0", "x1", "extra"]
