@@ -10,40 +10,13 @@ from ..core.data import Dataset
 
 class VectorizedAnnotation(Dataset, Element2D):
 
-
     _auto_indexable_1d = False
-
-    # def __init__(self, data, **params):
-    #     kdims = params.pop('kdims', self.kdims)
-    #     real_kdims = [kd for i, kd in enumerate(kdims) if i not in self._synthetic_dimensions]
-    #     ds = Dataset(data, real_kdims, params.get('vdims', []))
-    #     for sd in self._synthetic_dimensions:
-
-    #         ds = ds.add_dimension(kdims[sd], sd, np.nan)
-    #     super().__init__(ds.data, kdims, **params)
 
 
 class VLines(VectorizedAnnotation):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
     group = param.String(default='VLines', constant=True)
-
-
-    def __dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Args:
-            dimension: The dimension to return values for
-            expanded (bool, optional): Whether to expand values
-            flat (bool, optional): Whether to flatten array
-
-        Returns:
-            NumPy array of values along the requested dimension
-        """
-        index = self.get_dimension_index(dimension)
-        if index == 1 and len(self.kdims) == 1:
-            return self.data[str(self.kdims[0])]
-        return super().dimension_values(dimension)
 
 
 class HLines(VectorizedAnnotation):
