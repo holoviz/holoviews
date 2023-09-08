@@ -26,6 +26,20 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
         self.assertIs(range_tool.y_range, None)
 
+    def test_range_tool_link_callback_single_axis_overlay_target(self):
+        from bokeh.models import RangeTool
+        array = np.random.rand(100, 2)
+        src = Curve(array)
+        target = Scatter(array, label='a') * Scatter(array, label='b')
+        RangeToolLink(src, target)
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        src_plot = plot.subplots[(0, 1)].subplots['main']
+        range_tool = src_plot.state.select_one({'type': RangeTool})
+        self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
+        self.assertIs(range_tool.y_range, None)
+
     def test_range_tool_link_callback_both_axes(self):
         from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
