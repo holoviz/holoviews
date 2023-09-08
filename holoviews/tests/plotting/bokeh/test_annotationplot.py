@@ -1,5 +1,7 @@
 import numpy as np
 
+from bokeh.models import VSpan as BkVSpan, HSpan as BkHSpan, VStrip as BkVStrip, HStrip as BkHStrip
+
 from holoviews.element import (
     HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope,
     HLines, VLines, HSpans, VSpans,
@@ -206,6 +208,7 @@ class TestHVLinesPlot(TestBokehPlot):
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hlines)
+        assert isinstance(plot.handles["glyph"], BkHSpan)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -224,6 +227,7 @@ class TestHVLinesPlot(TestBokehPlot):
             {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hlines)
+        assert isinstance(plot.handles["glyph"], BkHSpan)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -241,6 +245,7 @@ class TestHVLinesPlot(TestBokehPlot):
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(vlines)
+        assert isinstance(plot.handles["glyph"], BkVSpan)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -259,6 +264,7 @@ class TestHVLinesPlot(TestBokehPlot):
             {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(vlines)
+        assert isinstance(plot.handles["glyph"], BkVSpan)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -295,6 +301,7 @@ class TestHVSpansPlot(TestBokehPlot):
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hspans)
+        assert isinstance(plot.handles["glyph"], BkHStrip)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -314,6 +321,7 @@ class TestHVSpansPlot(TestBokehPlot):
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
         )
         plot = bokeh_renderer.get_plot(hspans)
+        assert isinstance(plot.handles["glyph"], BkHStrip)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -332,6 +340,7 @@ class TestHVSpansPlot(TestBokehPlot):
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(vspans)
+        assert isinstance(plot.handles["glyph"], BkVStrip)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
@@ -351,6 +360,7 @@ class TestHVSpansPlot(TestBokehPlot):
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
         )
         plot = bokeh_renderer.get_plot(vspans)
+        assert isinstance(plot.handles["glyph"], BkVStrip)
         assert plot.handles["xaxis"].axis_label == "x"
         assert plot.handles["yaxis"].axis_label == "y"
 
