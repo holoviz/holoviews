@@ -1,7 +1,8 @@
 import numpy as np
 
 from holoviews.element import (
-    HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope
+    HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope,
+    HLines, VLines, HSpans, VSpans,
 )
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -196,3 +197,115 @@ class TestLabelsPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.angle, np.pi/2.)
+
+
+class TestHVLinesPlot(TestBokehPlot):
+
+    def test_hlines_plot(self):
+        hlines = HLines(
+            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(hlines)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 5.5
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["y", "extra"]
+        assert (source.data["y"] == [0, 1, 2, 5.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
+
+    def test_vlines_plot(self):
+        vlines = VLines(
+            {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(vlines)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 5.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["x", "extra"]
+        assert (source.data["x"] == [0, 1, 2, 5.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
+
+    def test_vlines_hlines_overlay(self):
+        hlines = HLines(
+            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        )
+        vlines = VLines(
+            {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(hlines * vlines)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 5.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 5.5
+
+
+class TestHVSpansPlot(TestBokehPlot):
+
+    def test_hspans_plot(self):
+        hspans = HSpans(
+            {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(hspans)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 6.5
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["y0", "y1", "extra"]
+        assert (source.data["y0"] == [0, 3, 5.5]).all()
+        assert (source.data["y1"] == [1, 4, 6.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3]).all()
+
+    def test_vspans_plot(self):
+        vspans = VSpans(
+            {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(vspans)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 6.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 1
+
+        source = plot.handles["source"]
+        assert list(source.data.keys()) == ["x0", "x1", "extra"]
+        assert (source.data["x0"] == [0, 3, 5.5]).all()
+        assert (source.data["x1"] == [1, 4, 6.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3]).all()
+
+    def test_vspans_hspans_overlay(self):
+        hspans = HSpans(
+            {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        )
+        vspans = VSpans(
+            {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(hspans * vspans)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 6.5
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 6.5
