@@ -365,10 +365,11 @@ class Redim(metaclass=AccessorPipelineMeta):
         return dimension
 
     def _create_expression_transform(self, kdims, vdims, exclude=None):
-        if exclude is None:
-            exclude = []
         from .dimension import dimension_name
         from ..util.transform import dim
+
+        if exclude is None:
+            exclude = []
 
         def _transform_expression(expression):
             if dimension_name(expression.dimension) in exclude:
