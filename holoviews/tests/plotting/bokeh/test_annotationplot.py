@@ -1,13 +1,18 @@
+import unittest
+
 import numpy as np
 
-from bokeh.models import VSpan as BkVSpan, HSpan as BkHSpan, VStrip as BkVStrip, HStrip as BkHStrip
 
 from holoviews.element import (
     HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope,
     HLines, VLines, HSpans, VSpans,
 )
+from holoviews.plotting.bokeh.util import bokeh32
 
 from .test_plot import TestBokehPlot, bokeh_renderer
+
+if bokeh32:
+    from bokeh.models import VSpan as BkVSpan, HSpan as BkHSpan, VStrip as BkVStrip, HStrip as BkHStrip
 
 
 class TestHVLinePlot(TestBokehPlot):
@@ -203,6 +208,11 @@ class TestLabelsPlot(TestBokehPlot):
 
 class TestHVLinesPlot(TestBokehPlot):
 
+    def setUp(self):
+        if not bokeh32:
+            raise unittest.SkipTest("Bokeh 3.2 added H/VLines")
+        super().setUp()
+
     def test_hlines_plot(self):
         hlines = HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
@@ -333,6 +343,11 @@ class TestHVLinesPlot(TestBokehPlot):
 
 
 class TestHVSpansPlot(TestBokehPlot):
+
+    def setUp(self):
+        if not bokeh32:
+            raise unittest.SkipTest("Bokeh 3.2 added H/VSpans")
+        super().setUp()
 
     def test_hspans_plot(self):
         hspans = HSpans(

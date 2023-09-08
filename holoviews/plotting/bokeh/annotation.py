@@ -34,7 +34,7 @@ class _SyntheticAnnotationPlot(ElementPlot):
 
     def __init__(self, element, **kwargs):
         if not bokeh32:
-            name = type(element.last).__name__
+            name = type(getattr(element, "last", element)).__name__
             msg = f'{name} element requires Bokeh >=3.2'
             raise ImportError(msg)
         super().__init__(element, **kwargs)
