@@ -264,7 +264,10 @@ class ImageStackPlot(RasterPlot):
             eldim, element, ranges, style, factors=factors,
             colors=colors, group=group, name=name
         )
-        cmapper.palette = cmapper.palette[:len(element.vdims)]
+        num_elements = len(element.vdims)
+        step_size = len(cmapper.palette) / num_elements
+        indices = [int(i * step_size) for i in range(num_elements)]
+        cmapper.palette = np.array(cmapper.palette)[indices].tolist()
         return cmapper
 
     def get_data(self, element, ranges, style):
