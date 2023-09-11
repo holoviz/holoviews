@@ -34,7 +34,8 @@ filterwarnings = [
     # 2023-09: Not a relevant warning for HoloViews
     "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
     # 2023-09: See https://github.com/matplotlib/matplotlib/issues/25244
-    "ignore:Deprecated call to `pkg_resources.declare_namespace('mpl_toolkits')`;DeprecationWarning",
+    "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning",
+    "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",
 ]
 
 [tool.coverage]
