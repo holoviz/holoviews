@@ -9,6 +9,7 @@ from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
+from ...element import HLines, VLines, HSpans, VSpans
 
 
 class ABLine2D(Line2D):
@@ -283,3 +284,59 @@ class SplinePlot(AnnotationPlot):
                                   facecolor='none', **opts)
         axis.add_patch(patch)
         return [patch]
+
+
+
+class _SyntheticAnnotationPlot(AnnotationPlot):
+
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
+                  'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, positions, opts):
+        size = len(self.hmap.last.kdims)
+        first_keys = list(positions)[:size]
+        values = zip(*[positions[n] for n in first_keys])
+        fn = getattr(axis, self._methods[self.invert_axes])
+        return [fn(*val, **opts) for val in values]
+
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        extents = super().get_extents(element, ranges, range_type)
+        if isinstance(element, HLines):
+            extents = np.nan, extents[0], np.nan, extents[2]
+        elif isinstance(element, VLines):
+            extents = extents[0], np.nan, extents[2], np.nan
+        elif isinstance(element, HSpans):
+            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
+        elif isinstance(element, VSpans):
+            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
+        return extents
+
+    def initialize_plot(self, ranges=None):
+        figure = super().initialize_plot(ranges=ranges)
+        labels = "yx" if self.invert_axes else "xy"
+        if isinstance(figure, mpl.axes.Axes):
+            figure.set_xlabel(labels[0])
+            figure.set_ylabel(labels[1])
+        else:
+            figure.axes[0].set_xlabel(labels[0])
+            figure.axes[0].set_ylabel(labels[1])
+        return figure
+
+
+class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axhline", "axvline")
+
+
+class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axvline", "axhline")
+
+
+class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axhspan", "axvspan")
+
+
+class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axvspan", "axhspan")

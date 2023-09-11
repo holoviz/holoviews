@@ -164,6 +164,10 @@ Store.register({Curve: CurvePlot,
                 Sankey: SankeyPlot,
 
                 # Annotation plots
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 VLine: VLinePlot,
                 HLine: HLinePlot,
                 VSpan: VSpanPlot,
