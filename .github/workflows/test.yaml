@@ -134,8 +134,8 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
-  core_test:
-    name: Core test on ${{ matrix.python-version }}, ${{ matrix.os }}
+  core_tests:
+    name: Core tests on ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -148,7 +148,7 @@ jobs:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
+      DESC: "Python ${{ matrix.python-version }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
