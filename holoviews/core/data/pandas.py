@@ -257,10 +257,7 @@ class PandasInterface(Interface, PandasAPI):
             # pandas uses ddof=1 for std and var
             fn = lambda x: function(x, ddof=0)
         else:
-            # To avoid pandas warning about using DataFrameGroupBy.function
-            # introduced in Pandas 2.1
-            # MRE: pd.DataFrame([0, 1]).groupby(0).aggregate(np.mean)
-            fn = lambda x: function(x)
+            fn = util._PANDAS_FUNC_LOOKUP.get(function, function)
         if len(dimensions):
             # The reason to use `numeric_cols` is to prepare for when pandas will not
             # automatically drop columns that are not numerical for numerical

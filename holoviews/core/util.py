@@ -1,3 +1,4 @@
+import builtins
 import sys
 import warnings
 import operator
@@ -86,6 +87,40 @@ try:
 except ImportError:
     cftime_types = ()
 _STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
+
+
+# To avoid pandas warning about using DataFrameGroupBy.function
+# introduced in Pandas 2.1.
+# MRE: pd.DataFrame([0, 1]).groupby(0).aggregate(np.mean)
+# Copied from here:
+# https://github.com/pandas-dev/pandas/blob/723feb984e6516e3e1798d3c4440c844b12ea18f/pandas/core/common.py#L592
+_PANDAS_FUNC_LOOKUP = {
+    builtins.sum: "sum",
+    builtins.max: "max",
+    builtins.min: "min",
+    np.all: "all",
+    np.any: "any",
+    np.sum: "sum",
+    np.nansum: "sum",
+    np.mean: "mean",
+    np.nanmean: "mean",
+    np.prod: "prod",
+    np.nanprod: "prod",
+    np.std: "std",
+    np.nanstd: "std",
+    np.var: "var",
+    np.nanvar: "var",
+    np.median: "median",
+    np.nanmedian: "median",
+    np.max: "max",
+    np.nanmax: "max",
+    np.min: "min",
+    np.nanmin: "min",
+    np.cumprod: "cumprod",
+    np.nancumprod: "cumprod",
+    np.cumsum: "cumsum",
+    np.nancumsum: "cumsum",
+}
 
 
 class VersionError(Exception):
