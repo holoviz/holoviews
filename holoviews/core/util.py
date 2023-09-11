@@ -1172,7 +1172,7 @@ def unique_array(arr):
             not isinstance(v, cftime_types)):
             v = pd.Timestamp(v).to_datetime64()
         values.append(v)
-    return pd.unique(values)
+    return pd.unique(np.asarray(values))
 
 
 def match_spec(element, specification):
@@ -1888,8 +1888,14 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
         # TODO: Look at sort here
         kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), sort=sort, **kwargs)
-        groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
-                   for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
+        with warnings.catch_warnings():
+            # Pandas 2.1 raises this warning, can be ignored as the future behavior is what
+            # we already do with wrap_tuple. MRE: list(pd.DataFrame([0]).groupby(level=[0]))
+            warnings.filterwarnings(
+                'ignore', category=FutureWarning, message="Creating a Groupby object with a length-1"
+            )
+            groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+                    for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
 
         if sort:
             selects = list(get_unique_keys(ndmapping, dimensions))
