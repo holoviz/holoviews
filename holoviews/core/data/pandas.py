@@ -266,7 +266,7 @@ class PandasInterface(Interface, PandasAPI):
             # automatically drop columns that are not numerical for numerical
             # functions, e.g., `np.mean`.
             # pandas started warning about this in v1.5.0
-            if fn in [np.size]:
+            if function in [np.size]:
                 # np.size actually works with non-numerical columns
                 numeric_cols = [
                     c for c in reindexed.columns if c not in cols
