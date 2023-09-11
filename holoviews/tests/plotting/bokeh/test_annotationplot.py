@@ -228,7 +228,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["y", "extra"]
+        assert list(source.data) == ["y", "extra"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
@@ -247,7 +247,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["y", "extra"]
+        assert list(source.data) == ["y", "extra"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
@@ -266,7 +266,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["extra"]
+        assert list(source.data) == ["extra"]
         assert (source.data["extra"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_plot(self):
@@ -284,7 +284,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["x", "extra"]
+        assert list(source.data) == ["x", "extra"]
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
@@ -303,7 +303,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["x", "extra"]
+        assert list(source.data) == ["x", "extra"]
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
@@ -322,7 +322,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["extra"]
+        assert list(source.data) == ["extra"]
         assert (source.data["extra"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_hlines_overlay(self):
@@ -364,7 +364,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 6.5
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["y0", "y1", "extra"]
+        assert list(source.data) == ["y0", "y1", "extra"]
         assert (source.data["y0"] == [0, 3, 5.5]).all()
         assert (source.data["y1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
@@ -384,7 +384,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["y0", "y1", "extra"]
+        assert list(source.data) == ["y0", "y1", "extra"]
         assert (source.data["y0"] == [0, 3, 5.5]).all()
         assert (source.data["y1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
@@ -404,7 +404,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 6.5
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["other0", "other1"]
+        assert list(source.data) == ["other0", "other1"]
         assert (source.data["other0"] == [0, 3, 5.5]).all()
         assert (source.data["other1"] == [1, 4, 6.5]).all()
 
@@ -423,7 +423,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["x0", "x1", "extra"]
+        assert list(source.data) == ["x0", "x1", "extra"]
         assert (source.data["x0"] == [0, 3, 5.5]).all()
         assert (source.data["x1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
@@ -443,7 +443,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 6.5
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["x0", "x1", "extra"]
+        assert list(source.data) == ["x0", "x1", "extra"]
         assert (source.data["x0"] == [0, 3, 5.5]).all()
         assert (source.data["x1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
@@ -463,7 +463,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data.keys()) == ["other0", "other1"]
+        assert list(source.data) == ["other0", "other1"]
         assert (source.data["other0"] == [0, 3, 5.5]).all()
         assert (source.data["other1"] == [1, 4, 6.5]).all()
 

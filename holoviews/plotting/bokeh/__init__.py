@@ -59,12 +59,6 @@ associations = {Overlay: OverlayPlot,
                 Layout: LayoutPlot,
                 NdLayout: LayoutPlot,
 
-                VLines: VLinesAnnotationPlot,
-                HLines: HLinesAnnotationPlot,
-
-                HSpans:HSpansAnnotationPlot,
-                VSpans:VSpansAnnotationPlot,
-
                 # Charts
                 Curve: CurvePlot,
                 Bars: BarPlot,
@@ -101,6 +95,10 @@ associations = {Overlay: OverlayPlot,
                 Segments: SegmentPlot,
 
                 # Annotations
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
                 HSpan: BoxAnnotationPlot,
