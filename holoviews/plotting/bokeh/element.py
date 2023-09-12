@@ -1837,8 +1837,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axes, plot_ranges = self._find_axes(plot, element)
             self.handles['xaxis'], self.handles['yaxis'] = axes
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
-            if self.subcoordinate_y and style_element.label in plot.extra_y_ranges:
-                self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
+            if self.subcoordinate_y:
+                if style_element.label in plot.extra_y_ranges:
+                    trace = style_element.label
+                else:
+                    # We need to pop the range from plot.extra_y_ranges using
+                    # the yaxis label. When the element has no label set, we're
+                    # leveraging the auto value (Trace X).
+                    trace = next(iter(plot.extra_y_ranges))
+                self.handles['y_range'] = plot.extra_y_ranges.pop(trace)
         self.handles['plot'] = plot
 
         if self.autorange:
