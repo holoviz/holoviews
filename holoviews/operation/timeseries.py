@@ -5,7 +5,7 @@ from packaging.version import Version
 
 from ..core import Operation, Element
 from ..core.data import PandasInterface
-from ..core.util import pandas_version
+from ..core.util import pandas_version, _PANDAS_FUNC_LOOKUP
 from ..element import Scatter
 
 
@@ -89,7 +89,8 @@ class resample(Operation):
         resample_kwargs = {'rule': self.p.rule, 'label': self.p.label,
                            'closed': self.p.closed}
         df = df.set_index(xdim).resample(**resample_kwargs)
-        return element.clone(df.apply(self.p.function).reset_index())
+        fn = _PANDAS_FUNC_LOOKUP.get(self.p.function, self.p.function)
+        return element.clone(df.apply(fn).reset_index())
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
