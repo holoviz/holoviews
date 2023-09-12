@@ -324,6 +324,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
         validate_vdims = kwargs.pop('_validate_vdims', True)
+        print(type(self))
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized

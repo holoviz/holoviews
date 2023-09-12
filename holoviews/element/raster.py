@@ -6,7 +6,7 @@ import colorsys
 import param
 
 from ..core import util, config, Dimension, Element2D, Overlay, Dataset
-from ..core.data import ImageInterface
+from ..core.data import ImageInterface, GridInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -303,6 +303,10 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             bounds = BoundingBox(points=((0, 0), (0, 0)))
             xdensity = xdensity or 1
             ydensity = ydensity or 1
+            if not util.isfinite(xdensity):
+                xdensity = 1
+            if not util.isfinite(ydensity):
+                ydensity = 1
         else:
             l, b, r, t = bounds.lbrt()
             xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
@@ -516,7 +520,7 @@ class ImageStack(Image):
     - xarray with all the whistles
     """
 
-    vdims = param.List(default=["z"], bounds=(1, None), doc="""
+    vdims = param.List(doc="""
         The dimension description of the data held in the matrix.""")
 
     group = param.String(default='ImageStack', constant=True)
@@ -527,16 +531,17 @@ class ImageStack(Image):
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         super().__init__(data, kdims, vdims, **params)
-        # I think we don't have to consider pandas here
-        # len(xr.Dataset) simply provides the number of variables
-        # len(dict) provides the number of keys
-        unused_dims = len(data) - len(self.kdims + self.vdims)
-        if vdims is None and unused_dims > 0:
-            raise ValueError(
-                f"Detected {unused_dims} unused dimensions"
-                f"in the input data for ImageStack. "
-                f"Please specify the vdims explicitly.")
 
+    def _validate(self, data_bounds, supplied_bounds):
+        print(self.interface)
+        print(self.vdims)
+        print(self.kdims)
+        print(self.interface)
+        interface: GridInterface = self.interface
+        print(dir(interface))
+        print(interface.shape(self))
+        print(self.data)
+        pass
 
 class RGB(Image):
     """
