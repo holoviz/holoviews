@@ -557,8 +557,8 @@ class LabelledData(param.Parameterized):
 
         if data is None and shared_data:
             data = self.data
-        if link: # HACK
-            settings['plot_id'] = self._plot_id
+            if link:
+                settings['plot_id'] = self._plot_id
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         return clone_type(data, *args, **{k:v for k,v in settings.items()
