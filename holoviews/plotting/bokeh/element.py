@@ -154,7 +154,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        elements and the overlay container, allowing customization on a
        per-axis basis.""")
 
-    subcoordinate_y = param.ClassSelector(default=False, class_=(bool, float, int), doc="""
+    subcoordinate_y = param.ClassSelector(default=False, class_=(bool, tuple), doc="""
        Enables sub-coordinate scales for this plot.""")
 
     subcoordinate_scale = param.Number(default=1, bounds=(0, None), inclusive_bounds=(False, True), doc="""
@@ -438,8 +438,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
             if pos == 1 and self.subcoordinate_y:
-                offset = self.subcoordinate_scale / 2.
-                v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-1+offset
+                if isinstance(self.subcoordinate_y, bool):
+                    offset = self.subcoordinate_scale / 2.
+                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-1+offset
+                else:
+                    v0, v1 = 0, 1
             else:
                 v0, v1 = (l, r) if pos == 0 else (b, t)
 
@@ -1456,14 +1459,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             y_source_range = self.handles['y_range']
             if isinstance(self.subcoordinate_y, bool):
                 center = y_source_range.tags[1]['subcoordinate_y']
+                offset = self.subcoordinate_scale/2.
+                ytarget_range = dict(start=center-offset, end=center+offset)
             else:
-                center = self.subcoordinate_y
-            offset = self.subcoordinate_scale/2.
+                ytarget_range = dict(zip(['start', 'end'], self.subcoordinate_y))
             plot = plot.subplot(
                 x_source=plot.x_range,
                 x_target=plot.x_range,
                 y_source=y_source_range,
-                y_target=Range1d(start=center-offset, end=center+offset),
+                y_target=Range1d(**ytarget_range),
             )
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph

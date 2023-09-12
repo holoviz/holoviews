@@ -9,6 +9,8 @@ from .test_plot import bokeh_renderer
 
 class TestSubcoordinateY:
 
+    # With subcoordinate_y set to True
+
     def test_bool_base(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
@@ -62,7 +64,7 @@ class TestSubcoordinateY:
         assert plot.handles['y_range'].start == ytarget[0]
         assert plot.handles['y_range'].end == ytarget[1]
 
-    def test_bool_no_label(self):
+    def test_no_label(self):
         overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
         # the overlay has two subplots
@@ -138,3 +140,35 @@ class TestSubcoordinateY:
 
         assert plot.state.xaxis.axis_label == 'x'
         assert plot.state.yaxis.axis_label == 'A'
+
+    # With subcoordinate_y set to a range
+
+    def test_range_base(self):
+        overlay = Overlay([
+            Curve(range(10), label='Data 0').opts(subcoordinate_y=(0, 0.5)),
+            Curve(range(10), label='Data 1').opts(subcoordinate_y=(0.5, 1)),
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+        # subcoordinate_y is propagated to the overlay, just the first one though :(
+        assert plot.subcoordinate_y == (0, 0.5)
+        # the figure has only one yaxis
+        assert len(plot.state.yaxis) == 1
+        # the overlay has two subplots
+        assert len(plot.subplots) == 2
+        assert ('Curve', 'Data_0') in plot.subplots
+        assert ('Curve', 'Data_1') in plot.subplots
+        # the range per subplots are correctly computed
+        sp1 = plot.subplots[('Curve', 'Data_0')]
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.start == 0
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.end == 0.5
+        sp2 = plot.subplots[('Curve', 'Data_1')]
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.start == 0.5
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.end == 1
+        # y_range is correctly computed
+        assert plot.handles['y_range'].start == 0
+        assert plot.handles['y_range'].end == 1
+        # extra_y_range is empty
+        assert plot.handles['extra_y_ranges'] == {}
+        # the ticks show the labels
+        assert plot.state.yaxis.ticker.ticks == [0.25, 0.75]
+        assert plot.state.yaxis.major_label_overrides == {0.25: 'Data 0', 0.75: 'Data 1'}
