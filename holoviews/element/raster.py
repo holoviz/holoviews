@@ -301,12 +301,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         non_finite = all(not util.isfinite(v) for v in bounds.lbrt())
         if non_finite:
             bounds = BoundingBox(points=((0, 0), (0, 0)))
-            xdensity = xdensity or 1
-            ydensity = ydensity or 1
-            if not util.isfinite(xdensity):
-                xdensity = 1
-            if not util.isfinite(ydensity):
-                ydensity = 1
+            xdensity = xdensity if xdensity and util.isfinite(xdensity) else 1
+            ydensity = ydensity if ydensity and util.isfinite(ydensity) else 1
         else:
             l, b, r, t = bounds.lbrt()
             xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)

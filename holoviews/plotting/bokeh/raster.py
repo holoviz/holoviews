@@ -265,8 +265,8 @@ class ImageStackPlot(RasterPlot):
             colors=colors, group=group, name=name
         )
         num_elements = len(element.vdims)
-        step_size = len(cmapper.palette) / num_elements
-        indices = [int(i * step_size) for i in range(num_elements)]
+        step_size = len(cmapper.palette) // num_elements
+        indices = np.arange(num_elements) * step_size
         cmapper.palette = np.array(cmapper.palette)[indices].tolist()
         return cmapper
 
@@ -300,6 +300,11 @@ class ImageStackPlot(RasterPlot):
 
         data = dict(image=[img], x=x, y=y, dw=[dw], dh=[dh])
         return (data, mapping, style)
+
+    def _hover_opts(self, element):
+        xdim, ydim = element.kdims
+        print(xdim)
+        super()._hover_opts(element)
 
 
 class HSVPlot(RGBPlot):
