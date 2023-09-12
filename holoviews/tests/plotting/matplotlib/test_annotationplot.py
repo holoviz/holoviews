@@ -23,6 +23,22 @@ class TestHVLinesPlot(TestMPLPlot):
         for source, val in zip(sources, hlines.data["y"]):
             assert source.get_data() == ([0, 1], [val, val])
 
+    def test_hlines_array(self):
+        hlines = HLines(np.array([0, 1, 2, 5.5]))
+        plot = mpl_renderer.get_plot(hlines)
+        assert plot.handles["fig"].axes[0].get_xlabel() == "x"
+        assert plot.handles["fig"].axes[0].get_ylabel() == "y"
+
+        xlim = plot.handles["fig"].axes[0].get_xlim()
+        ylim = plot.handles["fig"].axes[0].get_ylim()
+        assert np.allclose(xlim, (-0.055, 0.055))
+        assert np.allclose(ylim, (0, 5.5))
+
+        sources = plot.handles["annotations"]
+        assert len(sources) == 4
+        for source, val in zip(sources, hlines.data):
+            assert source.get_data() == ([0, 1], [val, val])
+
     def test_hlines_plot_invert_axes(self):
         hlines = HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]

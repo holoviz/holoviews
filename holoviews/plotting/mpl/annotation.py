@@ -296,9 +296,12 @@ class _SyntheticAnnotationPlot(AnnotationPlot):
                   'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, positions, opts):
-        size = len(self.hmap.last.kdims)
-        first_keys = list(positions)[:size]
-        values = zip(*[positions[n] for n in first_keys])
+        if isinstance(positions, np.ndarray):
+            values = positions
+        else:
+            size = len(self.hmap.last.kdims)
+            first_keys = list(positions)[:size]
+            values = zip(*[positions[n] for n in first_keys])
         fn = getattr(axis, self._methods[self.invert_axes])
         return [fn(*val, **opts) for val in values]
 
