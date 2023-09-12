@@ -44,7 +44,7 @@ class _SyntheticAnnotationPlot(ElementPlot):
         return super()._init_glyph(plot, mapping, properties)
 
     def get_data(self, element, ranges, style):
-        data = {str(k): v for k, v in element.data.items()}
+        data = {str(k): v for k, v in element.dataset.data.items()}
         default = self._element_default[self.invert_axes].kdims
         mapping = {str(d): str(k) for d, k in zip(default, element.kdims)}
         return data, mapping, style

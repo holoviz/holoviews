@@ -232,6 +232,23 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
+    def test_hlines_array(self):
+        hlines = HLines(np.array([0, 1, 2, 5.5]))
+        plot = bokeh_renderer.get_plot(hlines)
+        assert isinstance(plot.handles["glyph"], BkHSpan)
+        assert plot.handles["xaxis"].axis_label == "x"
+        assert plot.handles["yaxis"].axis_label == "y"
+
+        assert plot.handles["x_range"].start == 0
+        assert plot.handles["x_range"].end == 1
+        assert plot.handles["y_range"].start == 0
+        assert plot.handles["y_range"].end == 5.5
+
+        source = plot.handles["source"]
+        assert list(source.data) == ["y", "extra"]
+        assert (source.data["y"] == [0, 1, 2, 5.5]).all()
+        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
+
     def test_hlines_plot_invert_axes(self):
         hlines = HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
