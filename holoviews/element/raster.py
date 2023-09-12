@@ -525,6 +525,14 @@ class ImageStack(Image):
 
     _vdim_reductions = {1: Image}
 
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        if vdims is None:
+            if isinstance(data, tuple):
+                vdims = [Dimension(f"level_{i}") for i in range(len(data[2:]))]
+            elif isinstance(data, dict):
+                vdims = [Dimension(key) for key in data.keys() if key not in self.kdims]
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
 
 class RGB(Image):
     """
