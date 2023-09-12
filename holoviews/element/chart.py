@@ -251,6 +251,11 @@ class Area(Curve):
         vdims = [[el.vdims[0], baseline_name] for el in areas]
         baseline = None
         stacked = areas.clone(shared_data=False)
+        if len(levels) == 1:
+            # Pandas 2.1 gives the following FutureWarning:
+            #   Creating a Groupby object with a length-1 list-like level parameter
+            #   will yield indexes as tuples in a future version.
+            levels = levels[0]
         for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims):
             vdim = element_vdims[0]
             sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
