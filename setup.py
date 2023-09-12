@@ -58,7 +58,6 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',
-    'pandas <2.1',  # for spatialpandas recursion error: https://github.com/holoviz/spatialpandas/issues/124
 ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
