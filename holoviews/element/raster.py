@@ -525,9 +525,6 @@ class ImageStack(Image):
 
     _vdim_reductions = {1: Image}
 
-    def __init__(self, data, kdims=None, vdims=None, **params):
-        super().__init__(data, kdims, vdims, **params)
-
 
 class RGB(Image):
     """

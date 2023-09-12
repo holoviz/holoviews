@@ -303,8 +303,7 @@ class ImageStackPlot(RasterPlot):
 
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
-        print(xdim)
-        super()._hover_opts(element)
+        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
 
 
 class HSVPlot(RGBPlot):
