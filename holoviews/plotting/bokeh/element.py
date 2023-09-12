@@ -26,6 +26,7 @@ from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
+from bokeh.models.dom import Template
 from bokeh.models.tools import Tool
 
 from packaging.version import Version
@@ -2680,7 +2681,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     else:
                         tool_type = type(tool)
                     if isinstance(tool, tools.HoverTool):
-                        tooltips = tuple(tool.tooltips) if tool.tooltips else ()
+                        if tool.tooltips:
+                            tooltips = tool.tooltips
+                            if not isinstance(tool.tooltips, Template):
+                                tooltips = Template(tooltips)
+                        else:
+                            tooltips = ()
                         if tooltips in hover_tools:
                             continue
                         else:
@@ -2702,7 +2708,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['hover'] = subplot.handles['hover']
         elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
             hover = subplot.handles['hover']
-            if hover.tooltips and not isinstance(hover.tooltips, str):
+            if isinstance(hover.tooltips, Template):
+                tooltips = hover.tooltips
+            elif hover.tooltips and not isinstance(hover.tooltips, str):
                 tooltips = tuple((name, spec.replace('{%F %T}', '')) for name, spec in hover.tooltips)
             else:
                 tooltips = ()
