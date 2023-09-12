@@ -4,10 +4,10 @@ import pytest
 from holoviews.core import Overlay
 from holoviews.element import Curve
 
-from .test_plot import bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestSubcoordinateY:
+class TestSubcoordinateY(TestBokehPlot):
 
     # With subcoordinate_y set to True
 
