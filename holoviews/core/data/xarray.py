@@ -107,7 +107,7 @@ class XArrayInterface(GridInterface):
                 if isinstance(label, str):
                     vdim.label = label
             elif len(vdim_param.default) == 1:
-                vdim = vdim_param.default[0]
+                vdim = asdim(vdim_param.default[0])
                 if vdim.name in data.dims:
                     raise DataError("xarray DataArray does not define a name, "
                                     "and the default of '%s' clashes with a "
