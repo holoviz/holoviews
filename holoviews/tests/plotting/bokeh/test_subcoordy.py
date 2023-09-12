@@ -1,0 +1,114 @@
+import numpy as np
+
+# from bokeh.models import LinearScale, LogScale, LinearAxis, LogAxis
+from holoviews.core import Overlay
+from holoviews.element import Curve
+
+from .test_plot import bokeh_renderer
+
+
+class TestSubcoordinateY:
+
+    def test_bool_base(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+        # subcoordinate_y is propagated to the overlay
+        assert plot.subcoordinate_y is True
+        # the figure has only one yaxis
+        assert len(plot.state.yaxis) == 1
+        # the overlay has two subplots
+        assert len(plot.subplots) == 2
+        assert ('Curve', 'Data_0') in plot.subplots
+        assert ('Curve', 'Data_1') in plot.subplots
+        # the range per subplots are correctly computed
+        sp1 = plot.subplots[('Curve', 'Data_0')]
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.start == -0.5
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.end == 0.5
+        sp2 = plot.subplots[('Curve', 'Data_1')]
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.start == 0.5
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.end == 1.5
+        # y_range is correctly computed
+        assert plot.handles['y_range'].start == -0.5
+        assert plot.handles['y_range'].end == 2.5
+        # extra_y_range is empty
+        assert plot.handles['extra_y_ranges'] == {}
+        # the ticks show the labels
+        assert plot.state.yaxis.ticker.ticks == [0, 1]
+        assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
+
+    def test_bool_no_label(self):
+        overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+        # the overlay has two subplots
+        assert len(plot.subplots) == 2
+        assert ('Curve', 'I') in plot.subplots
+        assert ('Curve', 'II') in plot.subplots
+        # extra_y_range is empty
+        assert plot.handles['extra_y_ranges'] == {}
+        # the ticks show the labels
+        assert plot.state.yaxis.ticker.ticks == [0, 1]
+        assert plot.state.yaxis.major_label_overrides == {0: 'Trace 0', 1: 'Trace 1'}
+
+    def test_custom_ylabel(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay.opts(ylabel='Y label')
+        plot = bokeh_renderer.get_plot(overlay)
+        # the figure axis has the label set
+        assert plot.state.yaxis.axis_label == 'Y label'
+        # the ticks show the labels
+        assert plot.state.yaxis.ticker.ticks == [0, 1]
+        assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
+
+    def test_legend_default(self):
+        overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+        # no legend if no label set on each curve
+        assert plot.state.legend == []
+
+    def test_legend_label(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+        legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
+        # the legend displays the labels
+        assert legend_labels == ['Data 0', 'Data 1']
+
+    def test_shared_multi_axes(self):
+        overlay1 = Overlay([Curve(np.arange(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay2 = Overlay([Curve(np.arange(10) + 5, label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+
+        plot = bokeh_renderer.get_plot(overlay1 + overlay2)
+
+        oplot1 = plot.subplots[(0, 0)].subplots['main']
+        oplot2 = plot.subplots[(0, 1)].subplots['main']
+        assert (oplot1.handles['y_range'].start, oplot1.handles['y_range'].end) == (-0.5, 2.5)
+        assert oplot1.handles['extra_y_ranges'] == {}
+        assert (oplot2.handles['y_range'].start, oplot2.handles['y_range'].end) == (-0.5, 2.5)
+        assert oplot2.handles['extra_y_ranges'] == {}
+
+    def test_invisible_yaxis(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay.opts(yaxis=None)
+        plot = bokeh_renderer.get_plot(overlay)
+        assert not plot.state.yaxis.visible
+
+    def test_axis_labels(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.xaxis.axis_label == 'x'
+        assert plot.state.yaxis.axis_label == 'y'
+
+    def test_only_x_axis_labels(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay.opts(labelled=['x'])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.xaxis.axis_label == 'x'
+        assert plot.state.yaxis.axis_label == ''
+
+    def test_none_x_axis_labels(self):
+        overlay = Overlay([Curve(range(10), vdims=['A'], label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.xaxis.axis_label == 'x'
+        assert plot.state.yaxis.axis_label == 'A'
