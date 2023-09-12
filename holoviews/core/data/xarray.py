@@ -126,7 +126,7 @@ class XArrayInterface(GridInterface):
                     vdims = [asdim(vd) for vd in data.data_vars]
                 else:
                     vdims = [vdim]
-                    data = data.to_dataset(vdim.name)
+                    data = data.to_dataset(name=vdim.name)
 
         if not isinstance(data, (xr.Dataset, xr.DataArray)):
             if kdims is None:
