@@ -6,7 +6,7 @@ import colorsys
 import param
 
 from ..core import util, config, Dimension, Element2D, Overlay, Dataset
-from ..core.data import ImageInterface, GridInterface
+from ..core.data import ImageInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -532,16 +532,6 @@ class ImageStack(Image):
     def __init__(self, data, kdims=None, vdims=None, **params):
         super().__init__(data, kdims, vdims, **params)
 
-    def _validate(self, data_bounds, supplied_bounds):
-        print(self.interface)
-        print(self.vdims)
-        print(self.kdims)
-        print(self.interface)
-        interface: GridInterface = self.interface
-        print(dir(interface))
-        print(interface.shape(self))
-        print(self.data)
-        pass
 
 class RGB(Image):
     """

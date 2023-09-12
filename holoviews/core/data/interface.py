@@ -254,6 +254,9 @@ class Interface(param.Parameterized):
                 break
             except DataError:
                 raise
+            except Exception as e:
+                if interface in head or len(prioritized) == 1:
+                    priority_errors.append((interface, e, True))
         else:
             error = ("None of the available storage backends were able "
                      "to support the supplied data format.")
