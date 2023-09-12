@@ -157,7 +157,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     subcoordinate_y = param.ClassSelector(default=False, class_=(bool, float, int), doc="""
        Enables sub-coordinate scales for this plot.""")
 
-    subcoordinate_scale = param.Number(default=1, doc="""
+    subcoordinate_scale = param.Number(default=1, bounds=(0, None), inclusive_bounds=(False, True), doc="""
        Scale factor for subcoordinate ranges to control the level of overlap.""")
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
@@ -438,7 +438,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
             if pos == 1 and self.subcoordinate_y:
-                offset = (self.subcoordinate_scale)/2.
+                offset = self.subcoordinate_scale / 2.
                 v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-1+offset
             else:
                 v0, v1 = (l, r) if pos == 0 else (b, t)
