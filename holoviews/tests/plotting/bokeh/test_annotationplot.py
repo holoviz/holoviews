@@ -245,9 +245,8 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
-        assert list(source.data) == ["y", "extra"]
+        assert list(source.data) == ["y"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
     def test_hlines_plot_invert_axes(self):
         hlines = HLines(
