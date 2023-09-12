@@ -1,6 +1,7 @@
 import platform
 import sys
 
+import bokeh
 import pandas as pd
 from packaging.version import Version
 
@@ -37,4 +38,14 @@ if sys.version_info[:2] == (3, 8) and platform.system() == "Linux":
     collect_ignore_glob += [
         "gallery/demos/*/bachelors_degrees_by_gender.ipynb",
         "gallery/demos/*/topographic_hillshading.ipynb",
+    ]
+
+
+# First available in Bokeh 3.2.0
+if Version(bokeh.__version__) < Version("3.2.0"):
+    collect_ignore_glob += [
+        "reference/elements/bokeh/HLines.ipynb",
+        "reference/elements/bokeh/HSpans.ipynb",
+        "reference/elements/bokeh/VLines.ipynb",
+        "reference/elements/bokeh/VSpans.ipynb",
     ]
