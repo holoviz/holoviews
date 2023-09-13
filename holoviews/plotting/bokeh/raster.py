@@ -243,7 +243,7 @@ class ImageStackPlot(RasterPlot):
         from bokeh.models import WeightedStackColorMapper
         from bokeh.palettes import varying_alpha_palette
 
-        AlphaMapper, _ = super()._get_cmapper_opts(low, high, factors, colors)
+        AlphaMapper, _ = super()._get_cmapper_opts(low, max(high, 1), factors, colors)
         palette = varying_alpha_palette(
             color="#000",
             n=self.num_colors,
@@ -303,6 +303,9 @@ class ImageStackPlot(RasterPlot):
 
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
+        # TODO: Bokeh 3.3 not yet released; it has support for multi hover
+        # https://github.com/bokeh/bokeh/pull/13193
+        # https://github.com/bokeh/bokeh/pull/13366
         return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
 
 

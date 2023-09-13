@@ -283,6 +283,8 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         )
         img_stack = ImageStack(ds, kdims=["x", "y"])
         assert img_stack.interface is XArrayInterface
+        assert img_stack.kdims == [Dimension("x"), Dimension("y")]
+        assert img_stack.vdims == [Dimension("a"), Dimension("b"), Dimension("c")]
 
     def test_image_stack_xarray_dataarray(self):
         x = np.arange(0, 3)
@@ -297,6 +299,8 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ).to_array("level")
         img_stack = ImageStack(ds, vdims=["level"])
         assert img_stack.interface is XArrayInterface
+        assert img_stack.kdims == [Dimension("x"), Dimension("y")]
+        assert img_stack.vdims == [Dimension("a"), Dimension("b"), Dimension("c")]
 
     # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):
