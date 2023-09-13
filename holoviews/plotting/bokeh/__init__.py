@@ -211,6 +211,10 @@ options.VSpan = Options('style', color=Cycle(), alpha=0.5)
 options.HSpan = Options('style', color=Cycle(), alpha=0.5)
 options.Arrow = Options('style', arrow_size=10)
 options.Labels = Options('style', text_align='center', text_baseline='middle')
+options.HLines = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VLines = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VSpans = Options('style', color=Cycle(), alpha=0.5)
+options.HSpans = Options('style', color=Cycle(), alpha=0.5)
 
 # Graphs
 options.Graph = Options(
