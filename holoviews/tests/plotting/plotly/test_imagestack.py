@@ -1,4 +1,8 @@
 from unittest import SkipTest
+try:
+    import datashader  # noqa: F401
+except ImportError:
+   raise SkipTest("Test requires datashader")
 
 import numpy as np
 from holoviews.element import ImageStack
@@ -17,10 +21,7 @@ class TestImageStackPlot(TestPlotlyPlot):
         image_stack = ImageStack(
             (x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"]
         )
-        try:
-            assert isinstance(plotly_renderer.get_plot(image_stack), RGBPlot)
-        except ImportError:
-            return SkipTest("Skip test if datashader is unavailable for core tests")
+        assert isinstance(plotly_renderer.get_plot(image_stack), RGBPlot)
         fig_dict = plotly_renderer.get_plot_state(image_stack)
         x_range = fig_dict["layout"]["xaxis"]["range"]
         assert x_range[0] == -0.5

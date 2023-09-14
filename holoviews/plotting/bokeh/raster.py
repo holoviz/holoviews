@@ -260,7 +260,6 @@ class ImageStackPlot(RasterPlot):
 
     def _get_colormapper(self, eldim, element, ranges, style, factors=None,
                          colors=None, group=None, name='color_mapper'):
-        print(element)
         cmapper = super()._get_colormapper(
             eldim, element, ranges, style, factors=factors,
             colors=colors, group=group, name=name
