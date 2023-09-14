@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Rectangles)
+                        Tiles, Segments, Slope, Rectangles, ImageStack)
 from ...core.options import Options, Cycle, Palette
 
 from .annotation import (
@@ -35,7 +35,7 @@ from .hex_tiles import HexTilesPlot
 from .links import LinkCallback # noqa (API import)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
+from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, ImageStackPlot
 from .renderer import BokehRenderer
 from .sankey import SankeyPlot
 from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
@@ -79,6 +79,7 @@ associations = {Overlay: OverlayPlot,
                                        False: HeatMapPlot},
                                       True),
                 QuadMesh: QuadMeshPlot,
+                ImageStack: ImageStackPlot,
 
                 # Paths
                 Path: PathPlot,

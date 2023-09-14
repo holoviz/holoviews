@@ -128,7 +128,6 @@ class RasterPlot(ColorbarPlot):
         return (data, mapping, style)
 
 
-
 class RGBPlot(LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
@@ -225,6 +224,89 @@ class RGBPlot(LegendPlot):
 
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping, style)
+
+
+class ImageStackPlot(RasterPlot):
+
+    _plot_methods = dict(single='image_stack')
+
+    cnorm = param.ObjectSelector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
+
+    start_alpha = param.Integer(default=0, bounds=(0, 255))
+
+    end_alpha = param.Integer(default=255, bounds=(0, 255))
+
+    num_colors = param.Integer(default=10)
+
+    def _get_cmapper_opts(self, low, high, factors, colors):
+        from bokeh.models import WeightedStackColorMapper
+        from bokeh.palettes import varying_alpha_palette
+
+        AlphaMapper, _ = super()._get_cmapper_opts(low, high, factors, colors)
+        palette = varying_alpha_palette(
+            color="#000",
+            n=self.num_colors,
+            start_alpha=self.start_alpha,
+            end_alpha=self.end_alpha,
+        )
+        alpha_mapper = AlphaMapper(palette=palette)
+        opts = {"alpha_mapper": alpha_mapper}
+
+        if "NaN" in colors:
+            opts["nan_color"] = colors["NaN"]
+
+        return WeightedStackColorMapper, opts
+
+    def _get_colormapper(self, eldim, element, ranges, style, factors=None,
+                         colors=None, group=None, name='color_mapper'):
+        cmapper = super()._get_colormapper(
+            eldim, element, ranges, style, factors=factors,
+            colors=colors, group=group, name=name
+        )
+        num_elements = len(element.vdims)
+        step_size = len(cmapper.palette) // num_elements
+        indices = np.arange(num_elements) * step_size
+        cmapper.palette = np.array(cmapper.palette)[indices].tolist()
+        return cmapper
+
+    def get_data(self, element, ranges, style):
+        mapping = dict(image="image", x="x", y="y", dw="dw", dh="dh")
+        x, y, z = element.dimensions()[:3]
+
+        mapping["color_mapper"] = self._get_colormapper(z, element, ranges, style)
+
+        img = np.dstack([
+            element.dimension_values(vd, flat=False)
+            if not self.invert_axes
+            else element.dimension_values(vd, flat=False).transpose()
+            for vd in element.vdims
+        ])
+        # Ensure axis inversions are handled correctly
+        l, b, r, t = element.bounds.lbrt()
+        if self.invert_axes:
+            # transposed in dstack
+            l, b, r, t = b, l, t, r
+
+        x = [l]
+        y = [b]
+        dh, dw = t - b, r - l
+        if self.invert_xaxis:
+            l, r = r, l
+            x = [r]
+        if self.invert_yaxis:
+            b, t = t, b
+            y = [t]
+
+        data = dict(image=[img], x=x, y=y, dw=[dw], dh=[dh])
+        return (data, mapping, style)
+
+    def _hover_opts(self, element):
+        xdim, ydim = element.kdims
+        # TODO: Bokeh 3.3 not yet released; it has support for multi hover
+        # https://github.com/bokeh/bokeh/pull/13193
+        # https://github.com/bokeh/bokeh/pull/13366
+        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
 
 
 class HSVPlot(RGBPlot):

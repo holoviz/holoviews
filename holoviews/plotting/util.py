@@ -1348,3 +1348,23 @@ class categorical_legend(Operation):
         return Points(color_data, vdims=['category']).opts(
             cmap=cmap, color='category', show_legend=True,
             backend=self.p.backend, visible=False)
+
+
+class flatten_stack(Operation):
+    """
+    Thin wrapper around datashader's shade operation to flatten
+    ImageStacks into RGB elements.
+
+    Used for the MPL and Plotly backends because these backends
+    do not natively support ImageStacks, unlike Bokeh.
+    """
+
+    shade_params = param.Dict(default={}, doc="""
+        Additional parameters passed to datashader's shade operation.""")
+
+    def _process(self, element, key=None):
+        try:
+            from ..operation.datashader import shade
+        except ImportError as exc:
+            raise ImportError('Flattening ImageStacks requires datashader.') from exc
+        return shade(element, **self.shade_params)
