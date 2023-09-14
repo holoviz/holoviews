@@ -36,7 +36,7 @@ class PandasInterface(Interface, PandasAPI):
     def dimension_type(cls, dataset, dim):
         name = dataset.get_dimension(dim, strict=True).name
         idx = list(dataset.data.columns).index(name)
-        return dataset.data.dtypes[idx].type
+        return dataset.data.dtypes.iloc[idx].type
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -257,13 +257,13 @@ class PandasInterface(Interface, PandasAPI):
             # pandas uses ddof=1 for std and var
             fn = lambda x: function(x, ddof=0)
         else:
-            fn = function
+            fn = util._PANDAS_FUNC_LOOKUP.get(function, function)
         if len(dimensions):
             # The reason to use `numeric_cols` is to prepare for when pandas will not
             # automatically drop columns that are not numerical for numerical
             # functions, e.g., `np.mean`.
             # pandas started warning about this in v1.5.0
-            if fn in [np.size]:
+            if function in [np.size]:
                 # np.size actually works with non-numerical columns
                 numeric_cols = [
                     c for c in reindexed.columns if c not in cols

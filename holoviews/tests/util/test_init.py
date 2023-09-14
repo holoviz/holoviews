@@ -1,5 +1,6 @@
 from textwrap import dedent
 from subprocess import check_output
+from shutil import which
 
 
 def test_no_blocklist_imports():
@@ -14,6 +15,6 @@ def test_no_blocklist_imports():
         print(", ".join(mods), end="")
         """
 
-    output = check_output(['python', '-c', dedent(check)])
+    output = check_output([('python' if which('python') else 'python3'), '-c', dedent(check)])
 
     assert output == b""
