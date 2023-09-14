@@ -80,6 +80,10 @@ class TestRasterPlot(TestMPLPlot):
         assert plot.handles['cbar'].extend == 'neither'
 
     def test_image_stack(self):
+        try:
+            import datashader  # noqa: F401
+        except ImportError:
+            raise SkipTest("Test requires datashader")
         x = np.arange(0, 3)
         y = np.arange(5, 8)
         a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
@@ -87,10 +91,7 @@ class TestRasterPlot(TestMPLPlot):
         c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
-        try:
-            plot = mpl_renderer.get_plot(img_stack)
-        except ImportError:
-            raise SkipTest("Skip test if datashader is unavailable for core tests")
+        plot = mpl_renderer.get_plot(img_stack)
         artist = plot.handles['artist']
         array = artist.get_array().data
         assert array.shape == (3, 3, 4)
