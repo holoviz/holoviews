@@ -13,7 +13,7 @@ from bokeh.transform import dodge
 from ...core.util import datetime_types, dimension_sanitizer
 from ...element import HLine, VLine, VSpan, HLines, VLines, HSpans, VSpans
 from ..plot import GenericElementPlot
-from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
 from .plot import BokehPlot
@@ -24,7 +24,7 @@ arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                 '-': None}
 
 
-class _SyntheticAnnotationPlot(ElementPlot):
+class _SyntheticAnnotationPlot(ColorbarPlot):
 
     apply_ranges = param.Boolean(default=True, doc="""
         Whether to include the annotation in axis range calculations.""")
@@ -81,16 +81,19 @@ class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
     _methods = ('vspan', 'hspan')
     _element_default = (VLines, HLines)
 
+
 class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
     _methods = ('hstrip', 'vstrip')
     _element_default = (HSpans, VSpans)
+    style_opts = [*fill_properties, *line_properties, 'level', 'visible']
 
 
 class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
     _methods = ('vstrip', 'hstrip')
     _element_default = (VSpans, HSpans)
+    style_opts = [*fill_properties, *line_properties, 'level', 'visible']
 
 
 class TextPlot(ElementPlot, AnnotationPlot):
