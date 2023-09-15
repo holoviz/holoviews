@@ -14,7 +14,7 @@ except ImportError:
 from holoviews.core.data import Dataset, concat, XArrayInterface
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Image, RGB, HSV, QuadMesh
+from holoviews.element import Image, RGB, HSV, QuadMesh, ImageStack
 
 from .test_imageinterface import (
     BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
@@ -269,6 +269,38 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         assert ds[0][vdims[0]].size == 0
         assert ds[1]["kdims"] == kdims
         assert ds[1]["vdims"] == vdims
+
+    def test_image_stack_xarray_dataset(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = xr.Dataset(
+            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            coords={"x": x, "y": y},
+        )
+        img_stack = ImageStack(ds, kdims=["x", "y"])
+        assert img_stack.interface is XArrayInterface
+        assert img_stack.kdims == [Dimension("x"), Dimension("y")]
+        assert img_stack.vdims == [Dimension("a"), Dimension("b"), Dimension("c")]
+
+    def test_image_stack_xarray_dataarray(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = xr.Dataset(
+            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            coords={"x": x, "y": y},
+        ).to_array("level")
+        img_stack = ImageStack(ds, vdims=["level"])
+        assert img_stack.interface is XArrayInterface
+        assert img_stack.kdims == [Dimension("x"), Dimension("y")]
+        assert img_stack.vdims == [Dimension("a"), Dimension("b"), Dimension("c")]
 
     # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):

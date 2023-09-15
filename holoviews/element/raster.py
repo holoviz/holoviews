@@ -301,8 +301,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         non_finite = all(not util.isfinite(v) for v in bounds.lbrt())
         if non_finite:
             bounds = BoundingBox(points=((0, 0), (0, 0)))
-            xdensity = xdensity or 1
-            ydensity = ydensity or 1
+            xdensity = xdensity if xdensity and util.isfinite(xdensity) else 1
+            ydensity = ydensity if ydensity and util.isfinite(ydensity) else 1
         else:
             l, b, r, t = bounds.lbrt()
             xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
@@ -500,6 +500,38 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
+
+
+class ImageStack(Image):
+    """
+    Supports the same constructor RGB and HSV elements, but without the
+    limit of 3/4 channels (one of more channels).
+
+    If only one channel it should behave the same as an Image.
+
+    Type of data inputs:
+    - 3D ndarray (x,y,level)
+    - A list of 2D ndarrays
+    - A dict of 2D ndarrays (key=level: value=2D ndarray)
+    - xarray with all the whistles
+    """
+
+    vdims = param.List(doc="""
+        The dimension description of the data held in the matrix.""")
+
+    group = param.String(default='ImageStack', constant=True)
+
+    _ndim = 3
+
+    _vdim_reductions = {1: Image}
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        if vdims is None:
+            if isinstance(data, tuple):
+                vdims = [Dimension(f"level_{i}") for i in range(len(data[2:]))]
+            elif isinstance(data, dict):
+                vdims = [Dimension(key) for key in data.keys() if key not in self.kdims]
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 class RGB(Image):
