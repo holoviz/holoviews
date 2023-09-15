@@ -193,9 +193,11 @@ def _python_isin(array, values):
 
 python_isin = _maybe_map(_python_isin)
 
+# Type of numpy function like np.max changed in Numpy 1.25
+# from function to a numpy._ArrayFunctionDispatcher.
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc, loc
+    MethodType, np.ufunc, iloc, loc, type(np.max)
 )
 
 
@@ -251,7 +253,7 @@ class dim:
 
     def __init__(self, obj, *args, **kwargs):
         from panel.widgets import Widget
-        ops = []
+        self.ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
         if isinstance(obj, str):
@@ -264,7 +266,7 @@ class dim:
             self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
-            ops = obj.ops
+            self.ops = obj.ops
         if args:
             fn = args[0]
         else:
@@ -274,9 +276,8 @@ class dim:
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
-            ops = ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
+            self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
-        self.ops = ops
 
     def __getstate__(self):
         return self.__dict__

@@ -55,6 +55,7 @@ Store.register({Points: ScatterPlot,
                 # Raster plots
                 Raster: RasterPlot,
                 Image: RasterPlot,
+                ImageStack: RGBPlot,
                 HeatMap: HeatMapPlot,
                 QuadMesh: QuadMeshPlot,
                 RGB: RGBPlot,

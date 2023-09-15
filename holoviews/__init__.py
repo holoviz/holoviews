@@ -117,7 +117,7 @@ if "IPython" in sys.modules:
 else:
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **opts): # noqa (dummy signature)
-            raise Exception("IPython notebook not available: use hv.extension instead.")
+            raise Exception("Jupyter notebook not available: use hv.extension instead.")
 
 if '_pyodide' in sys.modules:
     from .pyodide import pyodide_extension, in_jupyterlite

@@ -994,7 +994,7 @@ class CallbackPlot:
             zorders = [self.zorder]
 
         if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = []
+            sources = [self.hmap.last]
         elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]
@@ -1407,7 +1407,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, **kwargs):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.

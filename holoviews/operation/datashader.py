@@ -33,9 +33,11 @@ from ..core.util import (
     cast_array_to_int64, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values
 )
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
-                       QuadMesh, Contours, Spikes, Area, Rectangles,
-                       Spread, Segments, Scatter, Points, Polygons)
+from ..element import (
+    Image, ImageStack, Path, Curve, RGB, Graph, TriMesh, QuadMesh,
+    Contours, Spikes, Area, Rectangles, Spread, Segments, Scatter,
+    Points, Polygons
+)
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
@@ -385,12 +387,8 @@ class aggregate(LineAggregationOperation):
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
-            layers = {}
-            for c in agg.coords[agg_fn.column].data:
-                cagg = agg.sel(**{agg_fn.column: c})
-                eldata = cagg if ds_version > Version('0.5.0') else (xs, ys, cagg.data)
-                layers[c] = self.p.element_type(eldata, **params)
-            return NdOverlay(layers, kdims=[data.get_dimension(agg_fn.column)])
+            params['vdims'] = list(agg.coords[agg_fn.column].data)
+            return ImageStack(agg, **params)
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
         # Suppress numpy warning emitted by dask:
@@ -427,7 +425,6 @@ class aggregate(LineAggregationOperation):
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
         return agg
-
 
 
 class overlay_aggregate(aggregate):
@@ -1252,9 +1249,16 @@ class shade(LinkableOperation):
             ydensity = element.ydensity
             bounds = element.bounds
 
-        vdim = element.vdims[0].name
-        array = element.data[vdim]
         kdims = element.kdims
+        if isinstance(element, ImageStack):
+            vdim = element.vdims
+            array = element.data
+            if hasattr(array, "to_array"):
+                array = array.to_array("z")
+            array = array.transpose(*[kdim.name for kdim in kdims], ...)
+        else:
+            vdim = element.vdims[0].name
+            array = element.data[vdim]
 
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha

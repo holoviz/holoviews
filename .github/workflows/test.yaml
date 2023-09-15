@@ -39,7 +39,7 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: ['3.8', '3.11']
-        bokeh-version: ['2', '3']
+        bokeh-version: ['3']
     timeout-minutes: 120
     defaults:
       run:
@@ -134,3 +134,54 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
+  core_tests:
+    name: Core tests on ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [pre_commit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: ['3.11']
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      DESC: "Python ${{ matrix.python-version }} core tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      DISPLAY: ":99.0"
+      PYTHONIOENCODING: "utf-8"
+      MPLBACKEND: "Agg"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      NUMBA_NUM_THREADS: 1
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+        with:
+          name: core_test_suite
+          python-version: ${{ matrix.python-version }}
+          channel-priority: strict
+          channels: pyviz/label/dev,conda-forge,nodefaults
+          envs: "-o tests_core"
+          cache: true
+          conda-update: true
+        id: install
+      - name: bokeh sampledata
+        run: |
+          conda activate test-environment
+          bokeh sampledata
+      - name: Check packages latest version
+        run: |
+          conda activate test-environment
+          python scripts/check_latest_packages.py
+      - name: doit test_unit
+        run: |
+          conda activate test-environment
+          pytest holoviews
