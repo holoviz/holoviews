@@ -1,4 +1,3 @@
-import warnings
 from itertools import groupby
 from collections import defaultdict
 
@@ -587,13 +586,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 passed_plots.append(None)
 
         plot = gridplot(plots[::-1],
-                        merge_tools=self.merge_tools,
+                        merge_tools=False,
                         sizing_mode=self.sizing_mode,
                         toolbar_location=self.toolbar)
         if self.sync_legends:
             sync_legends(plot)
         plot = self._make_axes(plot)
-        if bokeh3 and hasattr(plot, "toolbar"):
+        if bokeh3 and hasattr(plot, "toolbar") and self.merge_tools:
             plot.toolbar = merge_tools(plots)
 
         title = self._get_title_div(self.keys[-1])
@@ -645,7 +644,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            plot = gridplot([r1, r2])
+            plot = gridplot([r1, r2], merge_tools=False)
+            if self.merge_tools:
+                merge_tools(plot)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
@@ -948,10 +949,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                     else:
                         children = [subplots] if nsubplots == 2 else [[subplots[2], None], subplots[:2]]
                         grid = gridplot(children,
-                                        merge_tools=self.merge_tools,
+                                        merge_tools=False,
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
-                        if bokeh3:
+                        if bokeh3 and self.merge_tools:
                             grid.toolbar = merge_tools(children)
                     tab_plots.append((title, grid))
                     continue
@@ -985,19 +986,15 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore", message="found multiple competing values", category=UserWarning
-                )
-                layout_plot = gridplot(
-                    children=plot_grid,
-                    toolbar_location=self.toolbar,
-                    merge_tools=self.merge_tools,
-                    sizing_mode=sizing_mode
-                )
+            layout_plot = gridplot(
+                children=plot_grid,
+                toolbar_location=self.toolbar,
+                merge_tools=False,
+                sizing_mode=sizing_mode
+            )
             if self.sync_legends:
                 sync_legends(layout_plot)
-            if bokeh3:
+            if bokeh3 and self.merge_tools:
                 layout_plot.toolbar = merge_tools(plot_grid)
 
         title = self._get_title_div(self.keys[-1])
