@@ -270,7 +270,7 @@ options.Slope = Options('style', color=Cycle())
 options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.Spline = Options('style', edgecolor=Cycle())
-options.Labels = Options('style', text_color=Cycle())
+options.Labels = Options('style', color=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 # Paths

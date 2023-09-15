@@ -142,4 +142,4 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
                 (1, 1 + i, "Label 2")
             ]) for i in range(0, 3)}
         ).overlay()
-        assert isinstance(hm[0].opts["text_color"], Cycle)
+        assert isinstance(hm[0].opts["color"], Cycle)
