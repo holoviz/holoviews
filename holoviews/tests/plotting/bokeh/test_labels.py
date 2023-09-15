@@ -2,7 +2,9 @@ import numpy as np
 
 from holoviews.core.dimension import Dimension
 from holoviews.element import Labels
+from holoviews.core.spaces import HoloMap
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.core.options import Cycle
 
 from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
@@ -186,3 +188,12 @@ class TestLabelsPlot(TestBokehPlot):
             "color_index.\n"
         )
         self.assertEqual(log_msg, warning)
+
+    def test_labels_text_color_cycle(self):
+        hm = HoloMap(
+            {i: Labels([
+                (0, 0 + i, "Label 1"),
+                (1, 1 + i, "Label 2")
+            ]) for i in range(0, 3)}
+        ).overlay()
+        assert isinstance(hm[0].opts["text_color"], Cycle)
