@@ -14,7 +14,7 @@ install_requires = [
     "param >=1.12.0,<3.0",
     "numpy >=1.0",
     "pyviz_comms >=0.7.4",
-    "panel >=0.13.1",
+    "panel >=1.0",
     "colorcet",
     "packaging",
     "pandas >=0.20.0",
@@ -118,9 +118,6 @@ extras_require['doc'] = extras_require['examples'] + [
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
-
-extras_require['bokeh2'] = ["panel ==0.14.4", "param ==1.13.0"]  # Hard-pin to not pull in rc releases
-extras_require['bokeh3'] = ["panel >=1.0.0"]
 
 extras_require["build"] = [
     "param >=1.7.0",
