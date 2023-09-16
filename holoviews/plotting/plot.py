@@ -994,7 +994,7 @@ class CallbackPlot:
             zorders = [self.zorder]
 
         if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = []
+            sources = [self.hmap.last]
         elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]

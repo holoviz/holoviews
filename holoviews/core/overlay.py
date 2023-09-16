@@ -287,6 +287,12 @@ class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
     def shape(self):
         raise NotImplementedError
 
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
+              *args, **overrides):
+        if data is None and link:
+            overrides['plot_id'] = self._plot_id
+        return super().clone(data, shared_data=shared_data, new_type=new_type, link=link, *args, **overrides)
+
 
 class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     """
