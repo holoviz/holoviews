@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 import pyviz_comms as comms
 
 from param import concrete_descendents

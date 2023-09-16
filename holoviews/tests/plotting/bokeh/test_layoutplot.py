@@ -1,7 +1,6 @@
 import datetime as dt
 import re
 
-import pytest
 import numpy as np
 
 from holoviews.core import (HoloMap, GridSpace, Layout, Empty, Dataset,
@@ -11,7 +10,7 @@ from holoviews.streams import Stream
 from holoviews.util import render, opts
 from holoviews.util.transform import dim
 
-from bokeh.models import Div, GlyphRenderer, Tabs, Spacer, Title, Row, Column
+from bokeh.models import Div, GlyphRenderer, Tabs, Spacer, Title
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
