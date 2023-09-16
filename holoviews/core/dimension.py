@@ -804,7 +804,7 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    cdims = param.Dict(default=dict(), doc="""
+    cdims = param.Dict(default={}, doc="""
        The constant dimensions defined as a dictionary of Dimension:value
        pairs providing additional dimension information about the object.
 

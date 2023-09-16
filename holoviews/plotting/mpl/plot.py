@@ -390,7 +390,7 @@ class GridPlot(CompositePlot):
         axiswise = all(norm_opts.get('axiswise', []))
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
-        subplots, subaxes = dict(), dict()
+        subplots, subaxes = {}, {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))

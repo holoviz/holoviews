@@ -1127,7 +1127,7 @@ class Store:
     object.
     """
 
-    renderers = dict() # The set of available Renderers across all backends.
+    renderers = {} # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.

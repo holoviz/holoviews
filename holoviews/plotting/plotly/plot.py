@@ -302,7 +302,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
 
     def _create_subplots(self, layout, ranges):
-        subplots = dict()
+        subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])

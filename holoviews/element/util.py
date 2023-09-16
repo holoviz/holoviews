@@ -138,7 +138,7 @@ class categorical_aggregate2d(Operation):
         # Determine global orderings of y-values using topological sort
         grouped = obj.groupby(xdim, container_type=dict,
                               group_type=Dataset).values()
-        orderings = dict()
+        orderings = {}
         sort = True
         for group in grouped:
             vals = group.dimension_values(ydim, False)

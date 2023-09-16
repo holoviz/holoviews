@@ -1019,11 +1019,11 @@ argument to specify a selection specification""")
         """
         drop = kwargs.pop('drop', False)
         keep_index = kwargs.pop('keep_index', True)
-        transforms = dict()
+        transforms = {}
         for s, transform in list(args)+list(kwargs.items()):
             transforms[core_util.wrap_tuple(s)] = transform
 
-        new_data = dict()
+        new_data = {}
         for signature, transform in transforms.items():
             applied = transform.apply(
                 self, compute=False, keep_index=keep_index

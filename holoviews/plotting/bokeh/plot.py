@@ -495,7 +495,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         else:
             width, height = self.plot_size, self.plot_size
 
-        subplots = dict()
+        subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))

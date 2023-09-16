@@ -571,7 +571,7 @@ class DimensionedPlot(Plot):
         prev_frame = getattr(self, 'prev_frame', None)
         all_table = all(isinstance(el, Table) for el in obj.traverse(lambda x: x, [Element]))
         if obj is None or not self.normalize or all_table:
-            return dict()
+            return {}
         # Get inherited ranges
         ranges = self.ranges if ranges is None else {k: dict(v) for k, v in ranges.items()}
 
@@ -725,7 +725,7 @@ class DimensionedPlot(Plot):
                     categorical_dims.append(el_dim)
 
         prev_ranges = ranges.get(group, {})
-        group_ranges = dict()
+        group_ranges = {}
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
             opts = cls.lookup_options(el, 'style')
@@ -895,7 +895,7 @@ class DimensionedPlot(Plot):
 
         # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
-        options = dict()
+        options = {}
         default_opts = defaultdict(lambda: defaultdict(list))
         for key, opts in traversed:
             defaults = opts.pop('defaults', {})
@@ -1769,7 +1769,7 @@ class GenericOverlayPlot(GenericElementPlot):
         for m in vmaps:
             self.map_lengths[group_fn(m)[:length]] += 1
 
-        subplots = dict()
+        subplots = {}
         for (key, vmap, streams) in zip(keys, vmaps, dmap_streams):
             subplot = self._create_subplot(key, vmap, streams, ranges)
             if subplot is None:

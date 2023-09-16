@@ -158,7 +158,7 @@ class XArrayInterface(GridInterface):
                     for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
             dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
-            coords = dict()
+            coords = {}
             for kd in kdims:
                 coord_vals = data[kd.name]
                 if coord_vals.ndim > 1:
@@ -671,7 +671,7 @@ class XArrayInterface(GridInterface):
         prev_coords = set.intersection(*[
             set(var.coords) for var in data.data_vars.values()
         ])
-        coords = dict()
+        coords = {}
         for k, v in new_data.items():
             if k not in dataset.kdims:
                 continue
@@ -686,7 +686,7 @@ class XArrayInterface(GridInterface):
             data = data.assign_coords(**coords)
 
         dims = tuple(kd.name for kd in dataset.kdims[::-1])
-        vars = dict()
+        vars = {}
         for k, v in new_data.items():
             if k in dataset.kdims:
                 continue

@@ -178,7 +178,7 @@ class OutputSettings(KeywordSettings):
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css',
                      'widget_mode', 'mode', 'widget_location', 'center']
 
-    options = dict()
+    options = {}
     _backend_options = defaultdict(dict)
 
     # Used to disable info output in testing
@@ -293,7 +293,7 @@ class OutputSettings(KeywordSettings):
             if line is not None:
                 # Parse line
                 line = line.split('#')[0].strip()
-                kwargs = cls.extract_keywords(line, dict())
+                kwargs = cls.extract_keywords(line, {})
 
             options = cls.get_options(kwargs, {}, warnfn)
 

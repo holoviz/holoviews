@@ -325,7 +325,7 @@ class DictInterface(Interface):
             return {d.name: np.array([], dtype=cls.dtype(dataset, d))
                     for d in dimensions}
         indexed = cls.indexed(dataset, selection)
-        data = dict()
+        data = {}
         for k, v in dataset.data.items():
             if k not in dimensions or isscalar(v):
                 data[k] = v
@@ -394,7 +394,7 @@ class DictInterface(Interface):
         if isscalar(rows):
             rows = [rows]
 
-        new_data = dict()
+        new_data = {}
         for d, values in dataset.data.items():
             if d in cols:
                 if isscalar(values):

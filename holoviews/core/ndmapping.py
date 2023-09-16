@@ -103,7 +103,7 @@ class MultiDimensionalMapping(Dimensioned):
             params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
-        super().__init__(dict(), **dict(params))
+        super().__init__({}, **dict(params))
 
         self._next_ind = 0
         self._check_key_type = True
@@ -343,7 +343,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise ValueError("Added dimension values must be same length"
                                 "as existing keys.")
 
-        items = dict()
+        items = {}
         for dval, (key, val) in zip(dim_val, self.data.items()):
             if vdim:
                 new_val = list(val)

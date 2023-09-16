@@ -310,7 +310,7 @@ class DaskInterface(PandasInterface):
         if np.isscalar(rows):
             rows = [rows]
 
-        data = dict()
+        data = {}
         for c in cols:
             data[c] = dataset.data[c].compute().iloc[rows].values
         if scalar:

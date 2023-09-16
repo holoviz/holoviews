@@ -147,7 +147,7 @@ def to_function_spec(hvobj):
 
     # Build mapping from kdims to values/range
     dimensions_dict = {d.name: d for d in hvobj.dimensions()}
-    kdims = dict()
+    kdims = {}
     for k in kdims_list:
         dim = dimensions_dict[k.name]
         label = dim.label or dim.name
@@ -341,7 +341,7 @@ def to_dash(
     plots = []
     graph_ids = []
     initial_fig_dicts = []
-    all_kdims = dict()
+    all_kdims = {}
     kdims_per_fig = []
 
     # Initialize stream mappings
@@ -426,7 +426,7 @@ def to_dash(
     #    breadth-first order so all inputs to a triple are guaranteed to be earlier
     #    in the list. History streams will input and output their own id, which is
     #    fine.
-    stream_callbacks = dict()
+    stream_callbacks = {}
     for fn_spec in fig_to_fn_stream.values():
         populate_stream_callback_graph(stream_callbacks, fn_spec.streams)
 

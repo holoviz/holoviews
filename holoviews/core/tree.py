@@ -59,7 +59,7 @@ class AttrTree:
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
-        self.__dict__['data'] = dict()
+        self.__dict__['data'] = {}
         items = items.items() if isinstance(items, dict) else items
         # Python 3
         items = list(items) if items else items

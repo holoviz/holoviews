@@ -147,7 +147,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if not issubclass(self.type, CompositeOverlay):
             return None, self.clone()
 
-        item_maps = dict()
+        item_maps = {}
         for k, overlay in self.data.items():
             for key, el in overlay.items():
                 if key not in item_maps:
@@ -1061,7 +1061,7 @@ class DynamicMap(HoloMap):
 
     def reset(self):
         "Clear the DynamicMap cache"
-        self.data = dict()
+        self.data = {}
         return self
 
 
