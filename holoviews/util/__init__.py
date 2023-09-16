@@ -896,7 +896,7 @@ class Dynamic(param.ParameterizedFunction):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=streams)
             if self.p.shared_data:
-                dmap.data = OrderedDict([(k, callback.callable(*k))
+                dmap.data = dict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)

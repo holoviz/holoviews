@@ -77,7 +77,7 @@ class TestDimTransforms(ComparisonTestCase):
         array = np.arange(100).reshape(5, 20)
         darray = xr.DataArray(
             data=array,
-            coords=OrderedDict([('x', x), ('y', y)]),
+            coords=dict([('x', x), ('y', y)]),
             dims=['y','x']
         )
         self.dataset_xarray = Dataset(darray, vdims=['z'])
@@ -85,7 +85,7 @@ class TestDimTransforms(ComparisonTestCase):
             dask_array = da.from_array(array)
             dask_da = xr.DataArray(
                 data=dask_array,
-                coords=OrderedDict([('x', x), ('y', y)]),
+                coords=dict([('x', x), ('y', y)]),
                 dims=['y','x']
             )
             self.dataset_xarray_dask = Dataset(dask_da, vdims=['z'])

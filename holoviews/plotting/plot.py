@@ -292,7 +292,7 @@ class PlotSelector:
         the appropriate key to index plot_classes dictionary.
         """
         self.selector = selector
-        self.plot_classes = OrderedDict(plot_classes)
+        self.plot_classes = dict(plot_classes)
         interface = self._define_interface(self.plot_classes.values(), allow_mismatch)
         self.style_opts, self.plot_options = interface
 
@@ -571,7 +571,7 @@ class DimensionedPlot(Plot):
         prev_frame = getattr(self, 'prev_frame', None)
         all_table = all(isinstance(el, Table) for el in obj.traverse(lambda x: x, [Element]))
         if obj is None or not self.normalize or all_table:
-            return OrderedDict()
+            return dict()
         # Get inherited ranges
         ranges = self.ranges if ranges is None else {k: dict(v) for k, v in ranges.items()}
 
@@ -725,7 +725,7 @@ class DimensionedPlot(Plot):
                     categorical_dims.append(el_dim)
 
         prev_ranges = ranges.get(group, {})
-        group_ranges = OrderedDict()
+        group_ranges = dict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
             opts = cls.lookup_options(el, 'style')
@@ -867,7 +867,7 @@ class DimensionedPlot(Plot):
                                                            combined=g=='hard')
         else:
             # Override global range
-            ranges[group] = OrderedDict(dim_ranges)
+            ranges[group] = dict(dim_ranges)
 
     @classmethod
     def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None, defaults=True):
@@ -895,7 +895,7 @@ class DimensionedPlot(Plot):
 
         # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
-        options = OrderedDict()
+        options = dict()
         default_opts = defaultdict(lambda: defaultdict(list))
         for key, opts in traversed:
             defaults = opts.pop('defaults', {})
@@ -1730,11 +1730,11 @@ class GenericOverlayPlot(GenericElementPlot):
         if keys and ranges and dimensions and not defaultdim:
             dim_inds = [dimensions.index(d) for d in holomap.kdims]
             sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
-            frame_ranges = OrderedDict([(slckey, self.compute_ranges(holomap, key, ranges[key]))
+            frame_ranges = dict([(slckey, self.compute_ranges(holomap, key, ranges[key]))
                                         for key, slckey in zip(keys, sliced_keys) if slckey in holomap.data.keys()])
         else:
             mapwise_ranges = self.compute_ranges(holomap, None, None)
-            frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
+            frame_ranges = dict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
                                         for key in holomap.data.keys()])
         ranges = frame_ranges.values()
 
@@ -1769,7 +1769,7 @@ class GenericOverlayPlot(GenericElementPlot):
         for m in vmaps:
             self.map_lengths[group_fn(m)[:length]] += 1
 
-        subplots = OrderedDict()
+        subplots = dict()
         for (key, vmap, streams) in zip(keys, vmaps, dmap_streams):
             subplot = self._create_subplot(key, vmap, streams, ranges)
             if subplot is None:
@@ -1798,7 +1798,7 @@ class GenericOverlayPlot(GenericElementPlot):
         else:
             if not isinstance(key, tuple): key = (key,)
             style_key = group_fn(obj) + key
-            opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
+            opts['overlay_dims'] = dict(zip(self.hmap.last.kdims, key))
 
         if self.batched:
             vtype = type(obj.last.last)
@@ -1921,7 +1921,7 @@ class GenericOverlayPlot(GenericElementPlot):
         if subplot.overlay_dims:
             odim_key = util.wrap_tuple(spec[-1])
             new_dims = zip(subplot.overlay_dims, odim_key)
-            subplot.overlay_dims = util.OrderedDict(new_dims)
+            subplot.overlay_dims = util.dict(new_dims)
 
     def _get_subplot_extents(self, overlay, ranges, range_type, dimension=None):
         """

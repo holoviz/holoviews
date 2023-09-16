@@ -212,7 +212,7 @@ class Element(ViewableElement, Composable, Overlayable):
         else:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
         column_names = dimensions
-        dim_vals = OrderedDict([(dim, self.dimension_values(dim)) for dim in column_names])
+        dim_vals = dict([(dim, self.dimension_values(dim)) for dim in column_names])
         df = pd.DataFrame(dim_vals)
         if multi_index:
             df = df.set_index([d for d in dimensions if d in self.kdims])

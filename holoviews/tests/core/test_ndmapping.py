@@ -41,7 +41,7 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def setUp(self):
         self.init_items_1D_list = [(1, 'a'), (5, 'b')]
         self.init_item_list = [((1, 2.0), 'a'), ((5, 3.0), 'b')]
-        self.init_item_odict = OrderedDict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
+        self.init_item_odict = dict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
         self.dimension_labels = ['intdim', 'floatdim']
         self.dim1 = Dimension('intdim', type=int)
         self.dim2 = Dimension('floatdim', type=float)

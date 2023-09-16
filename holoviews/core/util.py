@@ -1929,7 +1929,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
             warnings.filterwarnings(
                 'ignore', category=FutureWarning, message="Creating a Groupby object with a length-1"
             )
-            groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+            groups = ((wrap_tuple(k), group_type(dict(unpack_group(group, getter)), **kwargs))
                     for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
 
         if sort:

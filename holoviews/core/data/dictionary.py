@@ -18,7 +18,7 @@ class DictInterface(Interface):
     are collections representing the values in that column.
     """
 
-    types = (dict, OrderedDict)
+    types = (dict,)
 
     datatype = 'dictionary'
 
@@ -52,7 +52,7 @@ class DictInterface(Interface):
                     data = np.atleast_2d(data).T
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and data == []:
-            data = OrderedDict([(d, []) for d in dimensions])
+            data = dict([(d, []) for d in dimensions])
         elif isinstance(data, list) and isscalar(data[0]):
             if eltype._auto_indexable_1d:
                 data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
@@ -109,10 +109,10 @@ class DictInterface(Interface):
 
         if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
             raise ValueError('DictInterface expects data to be of uniform shape.')
-        if isinstance(data, OrderedDict):
+        if isinstance(data, dict):
             data.update(unpacked)
         else:
-            data = OrderedDict(unpacked)
+            data = dict(unpacked)
 
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
@@ -189,7 +189,7 @@ class DictInterface(Interface):
         dim = dimension_name(dimension)
         data = list(dataset.data.items())
         data.insert(dim_pos, (dim, values))
-        return OrderedDict(data)
+        return dict(data)
 
     @classmethod
     def redim(cls, dataset, dimensions):
@@ -201,7 +201,7 @@ class DictInterface(Interface):
             elif k in all_dims:
                 k = dataset.get_dimension(k).name
             renamed.append((k, v))
-        return OrderedDict(renamed)
+        return dict(renamed)
 
 
     @classmethod
@@ -215,12 +215,12 @@ class DictInterface(Interface):
 
         template = datasets[0][1]
         dims = dimensions+template.dimensions()
-        return OrderedDict([(d.name, np.concatenate(columns[d.name])) for d in dims])
+        return dict([(d.name, np.concatenate(columns[d.name])) for d in dims])
 
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
-        masked = OrderedDict(dataset.data)
+        masked = dict(dataset.data)
         for vd in dataset.vdims:
             new_array = np.copy(dataset.data[vd.name])
             new_array[mask] = mask_value
@@ -236,7 +236,7 @@ class DictInterface(Interface):
         else:
             arrays = [dataset.dimension_values(d) for d in by]
             sorting = util.arglexsort(arrays)
-        return OrderedDict([(d, v if isscalar(v) else (v[sorting][::-1] if reverse else v[sorting]))
+        return dict([(d, v if isscalar(v) else (v[sorting][::-1] if reverse else v[sorting]))
                             for d, v in dataset.data.items()])
 
 
@@ -266,7 +266,7 @@ class DictInterface(Interface):
 
     @classmethod
     def assign(cls, dataset, new_data):
-        data = OrderedDict(dataset.data)
+        data = dict(dataset.data)
         data.update(new_data)
         return data
 
@@ -274,7 +274,7 @@ class DictInterface(Interface):
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
         dimensions = [dataset.get_dimension(d).name for d in kdims+vdims]
-        return OrderedDict([(d, dataset.dimension_values(d))
+        return dict([(d, dataset.dimension_values(d))
                             for d in dimensions])
 
 
@@ -302,7 +302,7 @@ class DictInterface(Interface):
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key)))
-            group_data = OrderedDict((d.name, dataset.data[d.name] if isscalar(dataset.data[d.name])
+            group_data = dict((d.name, dataset.data[d.name] if isscalar(dataset.data[d.name])
                                        else dataset.data[d.name][mask])
                                       for d in kdims+vdims)
             group_data = group_type(group_data, **group_kwargs)
@@ -325,7 +325,7 @@ class DictInterface(Interface):
             return {d.name: np.array([], dtype=cls.dtype(dataset, d))
                     for d in dimensions}
         indexed = cls.indexed(dataset, selection)
-        data = OrderedDict()
+        data = dict()
         for k, v in dataset.data.items():
             if k not in dimensions or isscalar(v):
                 data[k] = v
@@ -355,8 +355,8 @@ class DictInterface(Interface):
     def aggregate(cls, dataset, kdims, function, **kwargs):
         kdims = [dataset.get_dimension(d, strict=True).name for d in kdims]
         vdims = dataset.dimensions('value', label='name')
-        groups = cls.groupby(dataset, kdims, list, OrderedDict)
-        aggregated = OrderedDict([(k, []) for k in kdims+vdims])
+        groups = cls.groupby(dataset, kdims, list, dict)
+        aggregated = dict([(k, []) for k in kdims+vdims])
 
         dropped = []
         for key, group in groups:
@@ -394,7 +394,7 @@ class DictInterface(Interface):
         if isscalar(rows):
             rows = [rows]
 
-        new_data = OrderedDict()
+        new_data = dict()
         for d, values in dataset.data.items():
             if d in cols:
                 if isscalar(values):

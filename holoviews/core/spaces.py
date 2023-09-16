@@ -138,7 +138,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         Returns:
             Returns the cloned object with the options applied
         """
-        data = OrderedDict([(k, v.options(*args, **kwargs))
+        data = dict([(k, v.options(*args, **kwargs))
                              for k, v in self.data.items()])
         return self.clone(data)
 
@@ -147,7 +147,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if not issubclass(self.type, CompositeOverlay):
             return None, self.clone()
 
-        item_maps = OrderedDict()
+        item_maps = dict()
         for k, overlay in self.data.items():
             for key, el in overlay.items():
                 if key not in item_maps:
@@ -1061,7 +1061,7 @@ class DynamicMap(HoloMap):
 
     def reset(self):
         "Clear the DynamicMap cache"
-        self.data = OrderedDict()
+        self.data = dict()
         return self
 
 
@@ -1376,7 +1376,7 @@ class DynamicMap(HoloMap):
                                    f'layers of the {otype} do not change.')
                 return items[match][1]
             dmap = Dynamic(self, streams=self.streams, operation=split_overlay_callback)
-            dmap.data = OrderedDict([(list(self.data.keys())[-1], self.last.data[key])])
+            dmap.data = dict([(list(self.data.keys())[-1], self.last.data[key])])
             dmaps.append(dmap)
         return keys, dmaps
 
@@ -1804,8 +1804,8 @@ class GridSpace(Layoutable, UniformNdMapping):
         keys = super().keys()
         if self.ndims == 1 or not full_grid:
             return keys
-        dim1_keys = list(OrderedDict.fromkeys(k[0] for k in keys))
-        dim2_keys = list(OrderedDict.fromkeys(k[1] for k in keys))
+        dim1_keys = list(dict.fromkeys(k[0] for k in keys))
+        dim2_keys = list(dict.fromkeys(k[1] for k in keys))
         return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
 
 

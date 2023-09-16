@@ -804,7 +804,7 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    cdims = param.Dict(default=OrderedDict(), doc="""
+    cdims = param.Dict(default=dict(), doc="""
        The constant dimensions defined as a dictionary of Dimension:value
        pairs providing additional dimension information about the object.
 
@@ -842,7 +842,7 @@ class Dimensioned(LabelledData):
         super().__init__(data, **params)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
-        self._cached_constants = OrderedDict(cdims)
+        self._cached_constants = dict(cdims)
         self._settings = None
 
         # Instantiate accessors

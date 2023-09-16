@@ -1159,7 +1159,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             elif element.label and handle:
                 legend_data.append((handle, labels.get(element.label, element.label)))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
-        data = OrderedDict()
+        data = dict()
         used_labels = []
         for handle, label in zip(all_handles, all_labels):
             # Ensure that artists with multiple handles are supported

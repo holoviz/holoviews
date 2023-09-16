@@ -34,14 +34,14 @@ class TestOutputUtil(ComparisonTestCase):
         Store.current_backend = 'matplotlib'
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
-        OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
+        OutputSettings.options =  dict(OutputSettings.defaults.items())
 
         super().setUp()
 
     def tearDown(self):
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
-        OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
+        OutputSettings.options =  dict(OutputSettings.defaults.items())
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
         super().tearDown()

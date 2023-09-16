@@ -479,7 +479,7 @@ class Options:
         if invalid_kws and self.warn_on_skip:
             self.param.warning(f"Invalid options {invalid_kws!r}, valid options are: {allowed_keywords!s}")
 
-        self.kwargs = OrderedDict([(k,kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
+        self.kwargs = dict([(k,kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
         self._options = []
         self._max_cycles = max_cycles
 
@@ -1127,7 +1127,7 @@ class Store:
     object.
     """
 
-    renderers = OrderedDict() # The set of available Renderers across all backends.
+    renderers = dict() # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.

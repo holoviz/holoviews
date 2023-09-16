@@ -190,7 +190,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
             import xarray as xr
         except ImportError:
             raise SkipTest("Test requires xarray")
-        coords = OrderedDict([('lat', (('y', 'x'), self.ys)),
+        coords = dict([('lat', (('y', 'x'), self.ys)),
                               ('lon', (('y', 'x'), self.xs))])
         da = xr.DataArray(self.zs, dims=['y', 'x'],
                           coords=coords, name='z')

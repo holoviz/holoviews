@@ -39,7 +39,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         y = np.arange(2, 12, 2) * multiplier
         da = xr.DataArray(
             data=[np.arange(100).reshape(5, 20)],
-            coords=OrderedDict([('band', [1]), ('x', x), ('y', y)]),
+            coords=dict([('band', [1]), ('x', x), ('y', y)]),
             dims=['band', 'y','x'],
             attrs={'transform': (3, 0, 2, 0, -2, -2)})
         xs, ys = (np.tile(x[:, np.newaxis], len(y)).T,
@@ -63,7 +63,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
                                 'reference_time': pd.Timestamp('2014-09-05')})
 
     def test_ignore_dependent_dimensions_if_not_specified(self):
-        coords = OrderedDict([('time', [0, 1]), ('lat', [0, 1]), ('lon', [0, 1])])
+        coords = dict([('time', [0, 1]), ('lat', [0, 1]), ('lon', [0, 1])])
         da = xr.DataArray(np.arange(8).reshape((2, 2, 2)),
                           coords, ['time', 'lat', 'lon']).assign_coords(
                               lat1=xr.DataArray([2,3], dims=['lat']))
@@ -155,7 +155,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
 
     def test_xarray_coord_ordering(self):
         data = np.zeros((3,4,5))
-        coords = OrderedDict([('b', range(3)), ('c', range(4)), ('a', range(5))])
+        coords = dict([('b', range(3)), ('c', range(4)), ('a', range(5))])
         darray = xr.DataArray(data, coords=coords, dims=['b', 'c', 'a'])
         dataset = xr.Dataset({'value': darray}, coords=coords)
         ds = Dataset(dataset)

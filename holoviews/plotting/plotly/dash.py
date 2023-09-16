@@ -147,7 +147,7 @@ def to_function_spec(hvobj):
 
     # Build mapping from kdims to values/range
     dimensions_dict = {d.name: d for d in hvobj.dimensions()}
-    kdims = OrderedDict()
+    kdims = dict()
     for k in kdims_list:
         dim = dimensions_dict[k.name]
         label = dim.label or dim.name
@@ -227,13 +227,13 @@ def build_history_callback(history_stream):
 
 def populate_stream_callback_graph(stream_callbacks, streams):
     """
-    Populate the stream_callbacks OrderedDict with StreamCallback instances
+    Populate the stream_callbacks dict with StreamCallback instances
     associated with all of the History and Derived streams in input stream list.
 
     Input streams to any History or Derived streams are processed recursively
 
     Args:
-        stream_callbacks:  OrderedDict from id(stream) to StreamCallbacks the should
+        stream_callbacks:  dict from id(stream) to StreamCallbacks the should
             be populated. Order will be a breadth-first traversal of the provided
             streams list, and any input streams that these depend on.
 
@@ -341,7 +341,7 @@ def to_dash(
     plots = []
     graph_ids = []
     initial_fig_dicts = []
-    all_kdims = OrderedDict()
+    all_kdims = dict()
     kdims_per_fig = []
 
     # Initialize stream mappings
@@ -426,7 +426,7 @@ def to_dash(
     #    breadth-first order so all inputs to a triple are guaranteed to be earlier
     #    in the list. History streams will input and output their own id, which is
     #    fine.
-    stream_callbacks = OrderedDict()
+    stream_callbacks = dict()
     for fn_spec in fig_to_fn_stream.values():
         populate_stream_callback_graph(stream_callbacks, fn_spec.streams)
 

@@ -9,8 +9,8 @@ class KeywordSettings:
     """
     # Dictionary from keywords to allowed bounds/values
     allowed = {}
-    defaults = OrderedDict([])  # Default keyword values.
-    options =  OrderedDict(defaults.items()) # Current options
+    defaults = dict([])  # Default keyword values.
+    options =  dict(defaults.items()) # Current options
 
     # Callables accepting (value, keyword, allowed) for custom exceptions
     custom_exceptions = {}
@@ -156,7 +156,7 @@ class OutputSettings(KeywordSettings):
                                             'max-width', 'min-width', 'max-height',
                                             'min-height', 'outline', 'float']}}
 
-    defaults = OrderedDict([('backend'      , None),
+    defaults = dict([('backend'      , None),
                             ('center'       , True),
                             ('fig'          , None),
                             ('holomap'      , None),
@@ -178,7 +178,7 @@ class OutputSettings(KeywordSettings):
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css',
                      'widget_mode', 'mode', 'widget_location', 'center']
 
-    options = OrderedDict()
+    options = dict()
     _backend_options = defaultdict(dict)
 
     # Used to disable info output in testing
@@ -293,7 +293,7 @@ class OutputSettings(KeywordSettings):
             if line is not None:
                 # Parse line
                 line = line.split('#')[0].strip()
-                kwargs = cls.extract_keywords(line, OrderedDict())
+                kwargs = cls.extract_keywords(line, dict())
 
             options = cls.get_options(kwargs, {}, warnfn)
 

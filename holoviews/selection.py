@@ -196,7 +196,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
-            data = OrderedDict([(k, self._selection_transform(v, operations))
+            data = dict([(k, self._selection_transform(v, operations))
                                  for k, v in hvobj.items()])
             if isinstance(hvobj, NdOverlay):
                 def compose(*args, **kwargs):

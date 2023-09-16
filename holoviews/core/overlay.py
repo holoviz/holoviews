@@ -98,7 +98,7 @@ class CompositeOverlay(ViewableElement, Composable):
             dimension = [dim.name for dim in self.values()[main_layer_int_index].kdims]
         # Compute histogram for each dimension and each element in OverLay
         hists_per_dim = {
-            dim: OrderedDict([  # All histograms for a given dimension
+            dim: dict([  # All histograms for a given dimension
                 (
                     elem_key, elem.hist(
                         adjoin=False, dimension=dim, bin_range=bin_range,

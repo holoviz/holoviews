@@ -106,7 +106,7 @@ class AdjointLayout(Layoutable, Dimensioned):
         elif isinstance(data, list):
             data = dict(zip(self.layout_order, data))
         else:
-            data = OrderedDict()
+            data = dict()
 
         super().__init__(data, **params)
 

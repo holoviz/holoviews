@@ -1019,11 +1019,11 @@ argument to specify a selection specification""")
         """
         drop = kwargs.pop('drop', False)
         keep_index = kwargs.pop('keep_index', True)
-        transforms = OrderedDict()
+        transforms = dict()
         for s, transform in list(args)+list(kwargs.items()):
             transforms[core_util.wrap_tuple(s)] = transform
 
-        new_data = OrderedDict()
+        new_data = dict()
         for signature, transform in transforms.items():
             applied = transform.apply(
                 self, compute=False, keep_index=keep_index
@@ -1046,10 +1046,10 @@ argument to specify a selection specification""")
         if drop:
             kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]
             vdims = [ds.get_dimension(d) or d for d in new_data if d not in ds.kdims]
-            data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            data = dict([(dimension_name(d), values) for d, values in new_data.items()])
             return ds.clone(data, kdims=kdims, vdims=vdims)
         else:
-            new_data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            new_data = dict([(dimension_name(d), values) for d, values in new_data.items()])
             data = ds.interface.assign(ds, new_data)
             data, drop = data if isinstance(data, tuple) else (data, [])
             kdims = [kd for kd in self.kdims if kd.name not in drop]
@@ -1149,7 +1149,7 @@ argument to specify a selection specification""")
             dimensions = self.dimensions()
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
+        return dict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
     @property

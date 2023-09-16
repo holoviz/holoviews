@@ -922,7 +922,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(colorbar.major_label_text_font_size, '22px')
 
     def test_explicit_categorical_cmap_on_integer_data(self):
-        explicit_mapping = OrderedDict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
+        explicit_mapping = dict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
         points = Scatter(([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=['y', 'Category']).opts(
             color_index='Category', cmap=explicit_mapping
         )

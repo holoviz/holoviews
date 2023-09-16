@@ -80,7 +80,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
@@ -103,7 +103,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
             # to create the correct subaxes for all plots in the layout
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -302,9 +302,9 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
 
     def _create_subplots(self, layout, ranges):
-        subplots = OrderedDict()
+        subplots = dict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for coord in layout.keys(full_grid=True):

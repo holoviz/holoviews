@@ -76,7 +76,7 @@ class annotate(param.ParameterizedFunction):
     vertex_style = param.Dict(default={'nonselection_alpha': 0.5}, doc="""
         Options to apply to vertices during drawing and editing.""")
 
-    _annotator_types = OrderedDict()
+    _annotator_types = dict()
 
     @property
     def annotated(self):

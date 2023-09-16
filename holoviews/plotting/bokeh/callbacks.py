@@ -308,7 +308,7 @@ class Callback:
             return
 
         # Get unique event types in the queue
-        events = list(OrderedDict([(event.event_name, event)
+        events = list(dict([(event.event_name, event)
                                    for event, dt in self._queue]).values())
         self._queue = []
 

@@ -390,10 +390,10 @@ class GridPlot(CompositePlot):
         axiswise = all(norm_opts.get('axiswise', []))
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
-        subplots, subaxes = OrderedDict(), OrderedDict()
+        subplots, subaxes = dict(), dict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         r, c = (0, 0)
@@ -910,7 +910,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in keys])
         layout_subplots, layout_axes = {}, {}
         for r, c in self.coords:
@@ -938,7 +938,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.

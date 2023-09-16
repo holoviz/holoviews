@@ -909,7 +909,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             grouped = {0: element}
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
-                                      container_type=OrderedDict,
+                                      container_type=dict,
                                       datatype=['dataframe', 'dictionary'])
 
         y0, y1 = ranges.get(ydim.name, {'combined': (None, None)})['combined']
