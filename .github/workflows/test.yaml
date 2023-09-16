@@ -81,8 +81,6 @@ jobs:
       - name: test examples
         run: |
           conda activate test-environment
-          mkdir -p ~/.jupyter/
-          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
           doit test_examples
       - name: codecov
         run: |
