@@ -9,7 +9,7 @@ import pytest
 from holoviews import (
     Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
     QuadMesh, NdOverlay, Contours, Spikes, Spread, Area, Rectangles,
-    Segments, Polygons, Nodes, DynamicMap, Overlay
+    Segments, Polygons, Nodes, DynamicMap, Overlay, ImageStack
 )
 from holoviews.util import render
 from holoviews.streams import Tap
@@ -143,12 +143,18 @@ class DatashaderAggregateTests(ComparisonTestCase):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count_cat('z'))
-        xs, ys = [0.25, 0.75], [0.25, 0.75]
-        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0))},
-                             kdims=['z'])
-        self.assertEqual(img, expected)
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[1, 0], [0, 0]])
+        b = np.array([[0, 1], [0, 0]])
+        c = np.array([[0, 1], [0, 0]])
+        xrds = xr.Dataset(
+            coords={"x": x, "y": y},
+            data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_zero_range(self):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
@@ -458,7 +464,6 @@ class DatashaderAggregateTests(ComparisonTestCase):
         agg = rasterize(rects, width=4, height=4, aggregator='sum', dynamic=False)
         xs = [0.375, 1.125, 1.875, 2.625]
         ys = [0.25, 0.75, 1.25, 1.75]
-        nan = np.nan
         arr = np.array([
             [0.5, 0.5, nan, nan],
             [0.5, 0.5, nan, nan],
@@ -763,25 +768,35 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('z', ds.count()))
-        xs, ys = [0.25, 0.75], [0.25, 0.75]
-        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0))},
-                             kdims=['z'])
-        self.assertEqual(img, expected)
-
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[1, 0], [0, 0]])
+        b = np.array([[0, 1], [0, 0]])
+        c = np.array([[0, 1], [0, 0]])
+        xrds = xr.Dataset(
+            coords={"x": x, "y": y},
+            data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_mean(self):
         points = Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('cat', ds.mean('z')))
-        xs, ys = [0.25, 0.75], [0.25, 0.75]
-        expected = NdOverlay({'A': Image((xs, ys, [[0.1, nan], [nan, nan]]), vdims='z'),
-                              'B': Image((xs, ys, [[nan, nan], [0.2, nan]]), vdims='z'),
-                              'C': Image((xs, ys, [[nan, nan], [0.3, nan]]), vdims='z')},
-                             kdims=['cat'])
-        self.assertEqual(img, expected)
-
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[0.1, np.nan], [np.nan, np.nan]])
+        b = np.array([[np.nan, 0.2], [np.nan, np.nan]])
+        c = np.array([[np.nan, 0.3], [np.nan, np.nan]])
+        xrds = xr.Dataset(
+            coords={"x": x, "y": y},
+            data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        np.testing.assert_equal(expected.data.to_array("z").values, actual.T.values)
 
 
 class DatashaderShadeTests(ComparisonTestCase):

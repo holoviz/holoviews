@@ -107,7 +107,7 @@ class XArrayInterface(GridInterface):
                 if isinstance(label, str):
                     vdim.label = label
             elif len(vdim_param.default) == 1:
-                vdim = vdim_param.default[0]
+                vdim = asdim(vdim_param.default[0])
                 if vdim.name in data.dims:
                     raise DataError("xarray DataArray does not define a name, "
                                     "and the default of '%s' clashes with a "
@@ -121,8 +121,12 @@ class XArrayInterface(GridInterface):
                                 "supply an explicit vdim." % eltype.__name__,
                                 cls)
             if not packed:
-                vdims = [vdim]
-                data = data.to_dataset(name=vdim.name)
+                if vdim in data.dims:
+                    data = data.to_dataset(vdim.name)
+                    vdims = [asdim(vd) for vd in data.data_vars]
+                else:
+                    vdims = [vdim]
+                    data = data.to_dataset(name=vdim.name)
 
         if not isinstance(data, (xr.Dataset, xr.DataArray)):
             if kdims is None:

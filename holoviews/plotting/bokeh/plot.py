@@ -331,9 +331,9 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             cb = Link._callbacks['bokeh'][type(link)]
             if src_plot is None or (link._requires_target and tgt_plot is None):
                 continue
+            # The link callback (`cb`) is instantiated (with side-effects).
             callbacks.append(cb(self.root, link, src_plot, tgt_plot))
         return callbacks
-
 
 
 class CompositePlot(BokehPlot):
