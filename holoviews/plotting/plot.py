@@ -1921,7 +1921,7 @@ class GenericOverlayPlot(GenericElementPlot):
         if subplot.overlay_dims:
             odim_key = util.wrap_tuple(spec[-1])
             new_dims = zip(subplot.overlay_dims, odim_key)
-            subplot.overlay_dims = util.dict(new_dims)
+            subplot.overlay_dims = dict(new_dims)
 
     def _get_subplot_extents(self, overlay, ranges, range_type, dimension=None):
         """
