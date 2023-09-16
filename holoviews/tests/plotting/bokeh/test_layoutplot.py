@@ -10,23 +10,16 @@ from holoviews.element import Curve, Image, Points, Histogram, Scatter
 from holoviews.streams import Stream
 from holoviews.util import render, opts
 from holoviews.util.transform import dim
-from holoviews.plotting.bokeh.util import bokeh3
 
 from bokeh.models import Div, GlyphRenderer, Tabs, Spacer, Title, Row, Column
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-if bokeh3:
-    from bokeh.models.layouts import TabPanel
-    from bokeh.plotting import figure
-    from bokeh.models import GridPlot
-    from bokeh.models import Toolbar
-else:
-    from bokeh.models.layouts import Panel as TabPanel
-    from bokeh.plotting import Figure as figure
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
-    from bokeh.models import GridBox as GridPlot  # Not completely correct
+from bokeh.models.layouts import TabPanel
+from bokeh.plotting import figure
+from bokeh.models import GridPlot
+from bokeh.models import Toolbar
 
 
 class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
@@ -172,8 +165,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
                 'font-weight:bold;font-size:12pt">Default: 1</span>')
         self.assertEqual(title.text, text)
 
-    @pytest.mark.skipif(not bokeh3, reason="Only work for Bokeh 3")
-    def test_layout_gridspaces_bokeh3(self):
+    def test_layout_gridspaces(self):
         layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
                              for j in range(2,4)}) +
                   GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
@@ -204,45 +196,6 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
             for gfig, *_ in grid.children:
                 self.assertIsInstance(gfig, figure)
 
-    @pytest.mark.skipif(bokeh3, reason="Only work for Bokeh 2")
-    def test_layout_gridspaces_bokeh2(self):
-        layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
-                             for j in range(2,4)}) +
-                  GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
-                             for j in range(2,4)}) +
-                  Curve(range(10))).cols(2)
-        layout_plot = bokeh_renderer.get_plot(layout)
-        plot = layout_plot.state
-
-        # Unpack until getting down to two rows
-        self.assertIsInstance(plot, Column)
-        self.assertEqual(len(plot.children), 2)
-        toolbar, grid = plot.children
-        self.assertIsInstance(toolbar, Toolbar)
-        self.assertIsInstance(grid, GridPlot)
-        self.assertEqual(len(grid.children), 3)
-        (col1, *_), (col2, *_), _ = grid.children
-        self.assertIsInstance(col1, Column)
-        self.assertIsInstance(col2, Column)
-        grid1 = col1.children[0]
-        grid2 = col2.children[0]
-
-        # Check the row of GridSpaces
-        self.assertEqual(len(grid1.children), 3)
-        _, (col1, *_), _ = grid1.children
-        self.assertIsInstance(col1, Column)
-        inner_grid1 = col1.children[0]
-
-        self.assertEqual(len(grid2.children), 3)
-        _, (col2, *_), _ = grid2.children
-        self.assertIsInstance(col2, Column)
-        inner_grid2 = col2.children[0]
-        for grid in [inner_grid1, inner_grid2]:
-            self.assertEqual(len(grid.children), 4)
-            for gfig, *_ in grid.children:
-                self.assertIsInstance(gfig, figure)
-
-
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
@@ -262,10 +215,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(adjoint)
         adjoint_plot = plot.subplots[(0, 0)]
         self.assertEqual(len(adjoint_plot.subplots), 3)
-        if bokeh3:
-            grid = plot.state
-        else:
-            grid = plot.state.children[1]
+        grid = plot.state
         (f1, *_), (f2, *_), (s1, *_) = grid.children
         self.assertIsInstance(grid, GridPlot)
         self.assertIsInstance(s1, Spacer)
@@ -285,11 +235,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_plot_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).cols(1)
         plot = bokeh_renderer.get_plot(layout)
-        if bokeh3:
-            grid = plot.state
-            toolbar = grid.toolbar
-        else:
-            toolbar, grid = plot.state.children
+        grid = plot.state
+        toolbar = grid.toolbar
         self.assertIsInstance(toolbar, Toolbar)
         self.assertIsInstance(grid, GridPlot)
         for (fig, _, _) in grid.children:
@@ -372,12 +319,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_set_toolbar_location(self):
         layout = (Curve([]) + Points([])).opts(toolbar='left')
         plot = bokeh_renderer.get_plot(layout)
-        if bokeh3:
-            self.assertIsInstance(plot.state, GridPlot)
-            self.assertIsInstance(plot.state.toolbar, Toolbar)
-        else:
-            self.assertIsInstance(plot.state, Row)
-            self.assertIsInstance(plot.state.children[0], Toolbar)
+        self.assertIsInstance(plot.state, GridPlot)
+        self.assertIsInstance(plot.state.toolbar, Toolbar)
 
     def test_layout_disable_toolbar(self):
         layout = (Curve([]) + Points([])).opts(toolbar=None)

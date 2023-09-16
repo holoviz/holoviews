@@ -30,14 +30,11 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
-    bokeh3, filter_toolboxes, make_axis, sync_legends, update_shared_sources, empty_plot,
+    filter_toolboxes, make_axis, sync_legends, update_shared_sources, empty_plot,
     decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools, select_legends
 )
 
-if bokeh3:
-    from bokeh.models.layouts import TabPanel
-else:
-    from bokeh.models.layouts import Panel as TabPanel
+from bokeh.models.layouts import TabPanel
 
 
 class BokehPlot(DimensionedPlot, CallbackPlot):
@@ -271,10 +268,9 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
         if 'title' in self.handles:
             title_div = self.handles['title']
-        elif bokeh3:
-            title_div = Div(width=width, styles={"white-space": "nowrap"})  # so it won't wrap long titles easily
         else:
-            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
+            # so it won't wrap long titles easily
+            title_div = Div(width=width, styles={"white-space": "nowrap"})
         title_div.text = title_tags
 
         return title_div
@@ -310,8 +306,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
-                    if not bokeh3 and hasattr(renderer, 'view'):
-                        renderer.view.update(source=new_source)
                     plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
@@ -592,7 +586,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         if self.sync_legends:
             sync_legends(plot)
         plot = self._make_axes(plot)
-        if bokeh3 and hasattr(plot, "toolbar"):
+        if hasattr(plot, "toolbar"):
             plot.toolbar = merge_tools(plots)
 
         title = self._get_title_div(self.keys[-1])
@@ -950,8 +944,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                         merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
-                        if bokeh3:
-                            grid.toolbar = merge_tools(children)
+                        grid.toolbar = merge_tools(children)
                     tab_plots.append((title, grid))
                     continue
 
@@ -992,8 +985,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             )
             if self.sync_legends:
                 sync_legends(layout_plot)
-            if bokeh3:
-                layout_plot.toolbar = merge_tools(plot_grid)
+            layout_plot.toolbar = merge_tools(plot_grid)
 
         title = self._get_title_div(self.keys[-1])
         if title:

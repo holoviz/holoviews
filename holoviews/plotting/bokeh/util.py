@@ -44,24 +44,14 @@ from ...util.warnings import warn
 from ..util import dim_axis_label
 from ...util.warnings import deprecated
 
+from bokeh.layouts import group_tools
+from bokeh.models.formatters import CustomJSTickFormatter
+from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
+from bokeh.plotting import figure
+class WidgetBox: pass  # Does not exist in Bokeh 3
+
 bokeh_version = Version(bokeh.__version__)
-bokeh3 = bokeh_version >= Version("3.0")
 bokeh32 = bokeh_version >= Version("3.2")
-
-if bokeh3:
-    from bokeh.layouts import group_tools
-    from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
-    from bokeh.plotting import figure
-    class WidgetBox: pass  # Does not exist in Bokeh 3
-
-else:
-    from bokeh.layouts import WidgetBox
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
-    from bokeh.models.widgets import Tabs
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
-    from bokeh.plotting import Figure as figure
-    class GridPlot: pass  # Does not exist in Bokeh 2
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -426,7 +416,7 @@ def sync_legends(bokeh_layout):
     bokeh_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
     """
-    if not bokeh3 or len(bokeh_layout.children) < 2:
+    if len(bokeh_layout.children) < 2:
         return
 
     # Collect all glyph with names
@@ -687,8 +677,7 @@ def pad_plots(plots):
             row_widths.append(width)
         widths.append(row_widths)
 
-    layout = Column if bokeh3 else WidgetBox
-    plots = [[layout(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+    plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
@@ -1191,8 +1180,6 @@ def dtype_fix_hook(plot, element):
     # https://github.com/holoviz/holoviews/issues/5726
     # Should be fixed in Bokeh 3.2
 
-    if not bokeh3:
-        return
     try:
         renderers = plot.handles["plot"].renderers
         for renderer in renderers:

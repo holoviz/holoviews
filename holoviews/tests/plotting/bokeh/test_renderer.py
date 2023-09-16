@@ -9,7 +9,6 @@ from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve
 from holoviews.streams import Stream
 from holoviews.plotting import Renderer
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.bokeh.util import bokeh3
 
 from pyviz_comms import CommManager
 
@@ -82,10 +81,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (800, 300))
 
     def test_theme_rendering(self):
-        if bokeh3:
-            attrs = {'figure': {'outline_line_color': '#444444'}}
-        else:
-            attrs = {'Figure': {'outline_line_color': '#444444'}}
+        attrs = {'figure': {'outline_line_color': '#444444'}}
         theme = Theme(json={'attrs' : attrs})
         self.renderer.theme = theme
         plot = self.renderer.get_plot(Curve([]))

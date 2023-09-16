@@ -5,17 +5,13 @@ from holoviews.core import (HoloMap, GridSpace, NdOverlay, Dataset,
 from holoviews.element import Curve, Image, Points
 from holoviews.operation import gridmatrix
 from holoviews.streams import Stream
-from holoviews.plotting.bokeh.util import bokeh3
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 from bokeh.layouts import Column
 from bokeh.models import Div
 
-if bokeh3:
-    from bokeh.models import Toolbar
-else:
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
+from bokeh.models import Toolbar
 
 
 
@@ -111,10 +107,7 @@ class TestGridPlot(TestBokehPlot):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        if bokeh3:
-            self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
-        else:
-            self.assertIsInstance(plot.state.children[0].children[0], Toolbar)
+        self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
 
 
     def test_grid_disable_toolbar(self):

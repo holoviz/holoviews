@@ -14,7 +14,6 @@ from bokeh.models import (
 )
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
-from holoviews.plotting.bokeh.util import bokeh3
 
 bokeh_renderer = Store.renderers['bokeh']
 
@@ -83,7 +82,6 @@ class TestBokehPlot(ComparisonTestCase):
             self.assertTrue(any(renderer in h.renderers for h in hover))
 
 
-@pytest.mark.skipif(not bokeh3, reason="Bokeh>=3.0 required")
 def test_sync_two_plots():
     curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)
@@ -103,7 +101,6 @@ def test_sync_two_plots():
                 assert v[0].code == "dst.muted = src.muted"
 
 
-@pytest.mark.skipif(not bokeh3, reason="Bokeh>=3.0 required")
 def test_sync_three_plots():
     curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)

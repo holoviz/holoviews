@@ -11,7 +11,6 @@ from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, Image, Scatter, Labels, HeatMap
 from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
-from holoviews.plotting.bokeh.util import bokeh3
 from holoviews.util import render
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -25,10 +24,7 @@ from bokeh.models import (PrintfTickFormatter, FixedTicker,
                             NumeralTickFormatter, LogTicker,
                             LinearColorMapper, LogColorMapper, EqHistColorMapper)
 
-if bokeh3:
-    from bokeh.models.formatters import CustomJSTickFormatter
-else:
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+from bokeh.models.formatters import CustomJSTickFormatter
 
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
