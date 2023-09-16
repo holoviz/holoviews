@@ -4,7 +4,7 @@ import param
 import numpy as np
 import pandas as pd
 
-from ..core import Dataset, OrderedDict
+from ..core import Dataset
 from ..core.boundingregion import BoundingBox
 from ..core.data import default_datatype, PandasInterface
 from ..core.operation import Operation

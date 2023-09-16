@@ -1,7 +1,6 @@
 """
 Test cases for rendering exporters
 """
-from collections import OrderedDict
 
 import panel as pn
 import param

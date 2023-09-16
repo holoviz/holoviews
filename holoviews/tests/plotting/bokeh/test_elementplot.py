@@ -1,7 +1,6 @@
 import datetime as dt
 
 from unittest import SkipTest
-from collections import OrderedDict
 
 import numpy as np
 import pytest

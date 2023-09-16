@@ -1,6 +1,5 @@
 import sys
 
-from collections import OrderedDict
 from inspect import getmro
 
 import param

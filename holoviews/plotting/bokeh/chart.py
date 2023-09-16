@@ -12,7 +12,7 @@ from bokeh.transform import jitter
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
-    OrderedDict, dimension_sanitizer, isfinite
+    dimension_sanitizer, isfinite
 )
 from ...operation import interpolate_curve
 from ...util.transform import dim

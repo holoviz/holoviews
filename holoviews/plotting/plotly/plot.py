@@ -1,7 +1,7 @@
 import param
 
 from holoviews.plotting.util import attach_streams
-from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
+from ...core import (NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
 from ...element import Histogram
 from ...core.options import Store

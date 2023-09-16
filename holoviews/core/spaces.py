@@ -13,7 +13,7 @@ import param
 
 from . import traversal, util
 from .accessors import Opts, Redim
-from .dimension import OrderedDict, Dimension, ViewableElement
+from .dimension import Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout, Empty, Layoutable
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable

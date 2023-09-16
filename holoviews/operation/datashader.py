@@ -1,6 +1,5 @@
 import warnings
 
-from collections import OrderedDict
 from collections.abc import Callable, Iterable
 from functools import partial
 

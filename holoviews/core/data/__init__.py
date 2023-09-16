@@ -15,7 +15,7 @@ from ..dimension import (
     Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
 )
 from ..element import Element
-from ..ndmapping import OrderedDict, MultiDimensionalMapping
+from ..ndmapping import MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
 from .. import util as core_util
 

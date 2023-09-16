@@ -12,7 +12,7 @@ from bokeh.models.layouts import Tabs
 
 from ...selection import NoOpSelectionDisplay
 from ...core import (
-    OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
+    Store, AdjointLayout, NdLayout, Layout, Empty,
     GridSpace, HoloMap, Element
 )
 from ...core.options import SkipRendering

@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from packaging.version import Version
 
 import numpy as np

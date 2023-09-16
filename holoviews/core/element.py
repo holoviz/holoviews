@@ -6,7 +6,7 @@ import pandas as pd
 
 from .dimension import Dimensioned, ViewableElement, asdim
 from .layout import Composable, Layout, NdLayout
-from .ndmapping import OrderedDict, NdMapping
+from .ndmapping import NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree

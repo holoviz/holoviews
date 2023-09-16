@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from io import BytesIO
 from unittest import SkipTest
 

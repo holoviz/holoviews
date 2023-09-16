@@ -14,7 +14,7 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections import defaultdict, OrderedDict, namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
 from functools import partial

@@ -2,7 +2,6 @@
 Unit tests of the helper functions in utils
 """
 from unittest import SkipTest
-from collections import OrderedDict
 
 from holoviews import notebook_extension
 from holoviews.element.comparison import ComparisonTestCase

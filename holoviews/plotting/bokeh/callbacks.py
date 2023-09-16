@@ -2,7 +2,7 @@ import asyncio
 import base64
 import time
 
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 import numpy as np
 

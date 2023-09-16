@@ -4,7 +4,6 @@ Module for accessor objects for viewable HoloViews objects.
 import copy
 import sys
 
-from collections import OrderedDict
 from functools import wraps
 from types import FunctionType
 

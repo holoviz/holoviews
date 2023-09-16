@@ -32,7 +32,7 @@ from param.parameterized import bothmethod
 from .dimension import LabelledData
 from .element import Collator, Element
 from .overlay import Overlay, Layout
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
+from .ndmapping import NdMapping, UniformNdMapping
 from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 

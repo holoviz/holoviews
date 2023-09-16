@@ -3,7 +3,6 @@ Test cases for rendering exporters
 """
 import subprocess
 
-from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np

@@ -6,7 +6,6 @@ import warnings
 
 import holoviews as hv
 
-from collections import OrderedDict
 from unittest import skipIf
 
 import numpy as np

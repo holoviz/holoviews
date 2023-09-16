@@ -6,7 +6,6 @@ import math
 import unittest
 
 from itertools import product
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd

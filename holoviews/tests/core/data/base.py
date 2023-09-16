@@ -13,7 +13,6 @@ from holoviews.element import Scatter, Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
 
-from collections import OrderedDict
 
 import pandas as pd
 

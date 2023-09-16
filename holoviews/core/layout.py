@@ -9,7 +9,7 @@ import param
 import numpy as np
 
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
+from .ndmapping import NdMapping, UniformNdMapping
 from . import traversal
 
 

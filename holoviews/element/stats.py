@@ -4,7 +4,7 @@ import numpy as np
 from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
-from ..core.util import get_param_values, unique_iterator, OrderedDict
+from ..core.util import get_param_values, unique_iterator
 from .selection import Selection1DExpr, Selection2DExpr
 
 

@@ -1,6 +1,5 @@
 import datetime as dt
 
-from collections import OrderedDict
 from itertools import product
 from unittest import SkipTest
 

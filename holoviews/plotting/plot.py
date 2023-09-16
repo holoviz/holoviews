@@ -7,7 +7,7 @@ import uuid
 import warnings
 
 from ast import literal_eval
-from collections import Counter, defaultdict, OrderedDict
+from collections import Counter, defaultdict
 from functools import partial
 from itertools import groupby, product
 

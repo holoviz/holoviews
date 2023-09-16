@@ -1,4 +1,3 @@
-from collections import OrderedDict
 
 from . import util
 from .pprint import PrettyPrinter

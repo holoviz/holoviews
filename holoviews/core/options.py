@@ -46,7 +46,7 @@ import param
 from .accessors import Opts # noqa (clean up in 2.0)
 from .tree import AttrTree
 from .util import (
-    OrderedDict, group_sanitizer, label_sanitizer, sanitize_identifier
+    group_sanitizer, label_sanitizer, sanitize_identifier
 )
 from .pprint import InfoPrinter
 

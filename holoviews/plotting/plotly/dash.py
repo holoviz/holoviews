@@ -1,7 +1,7 @@
 # standard library imports
 import uuid
 import copy
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 import pickle
 import base64
 

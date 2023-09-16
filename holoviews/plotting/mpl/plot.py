@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation, rcParams
 from matplotlib.font_manager import font_scalings
 
-from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
+from ...core import (HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix, Layout)
 from ...core.options import Store, SkipRendering

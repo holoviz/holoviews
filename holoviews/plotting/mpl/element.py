@@ -13,7 +13,7 @@ from matplotlib.image import AxesImage
 from packaging.version import Version
 
 from ...core import util
-from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
+from ...core import (NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception, Keywords
 from ...element import Graph, Path

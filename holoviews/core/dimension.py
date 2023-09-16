@@ -22,7 +22,7 @@ from .accessors import Opts, Apply, Redim
 from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
-from .util import OrderedDict, bytes_to_unicode
+from .util import bytes_to_unicode
 
 # Alias parameter support for pickle loading
 
