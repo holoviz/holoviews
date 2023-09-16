@@ -6,7 +6,7 @@ import param
 
 from bokeh.layouts import gridplot
 from bokeh.models import (
-    ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar, GridPlot as bkGridPlot
+    ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
 )
 from bokeh.models.layouts import Tabs
 
@@ -645,8 +645,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
             plot = gridplot([r1, r2], merge_tools=False)
-            if self.merge_tools and not isinstance(plot, bkGridPlot):
-                plot.toolbar = merge_tools(plot)
+            if bokeh3 and self.merge_tools:
+                plot.toolbar = merge_tools([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
