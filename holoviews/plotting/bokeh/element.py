@@ -762,7 +762,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
-        # need to copy dictionary by calling {} on it
+        # need to copy dictionary by calling dict() on it
         axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
