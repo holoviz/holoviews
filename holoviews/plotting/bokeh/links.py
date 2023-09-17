@@ -85,7 +85,7 @@ class LinkCallback:
         Traverses the supplied plot and searches for any Links on
         the plotted objects.
         """
-        plot_fn = lambda x: isinstance(x, GenericElementPlot) and not isinstance(x, GenericOverlayPlot)
+        plot_fn = lambda x: isinstance(x, (GenericElementPlot, GenericOverlayPlot))
         plots = root_plot.traverse(lambda x: x, [plot_fn])
         potentials = [cls.find_link(plot) for plot in plots]
         source_links = [p for p in potentials if p is not None]
