@@ -131,7 +131,7 @@ class GridInterface(DictInterface):
                             'match the expected dimensionality indicated '
                             'by the key dimensions. Expected %d-D array, '
                             'found %d-D array.' % (vdim, len(expected), len(shape)))
-            elif any((s!=e and (s+1)!=e) for s, e in zip(shape, valid_shape)):
+            elif any((e not in (s, s + 1)) for s, e in zip(shape, valid_shape)):
                 raise error(f'Key dimension values and value array {vdim} '
                             f'shapes do not match. Expected shape {valid_shape}, '
                             f'actual shape: {shape}', cls)

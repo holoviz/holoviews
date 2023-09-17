@@ -14,6 +14,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+  DISPLAY: ":99.0"
+  PYTHONIOENCODING: "utf-8"
+  MPLBACKEND: "Agg"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OMP_NUM_THREADS: 1
+  OPENBLAS_NUM_THREADS: 1
+  MKL_NUM_THREADS: 1
+  VECLIB_MAXIMUM_THREADS: 1
+  NUMEXPR_NUM_THREADS: 1
+  NUMBA_NUM_THREADS: 1
+  PYDEVD_DISABLE_FILE_VALIDATION: 1
+
 jobs:
   pre_commit:
     name: Run pre-commit hooks
@@ -30,8 +44,8 @@ jobs:
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: pre-commit
         uses: pre-commit/action@v3.0.0
-  test_suite:
-    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+  unit_test_suite:
+    name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -39,25 +53,18 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: ['3.8', '3.11']
+        include:
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+          - os: 'ubuntu-latest'
+            python-version: '3.10'
     timeout-minutes: 120
     defaults:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      DISPLAY: ":99.0"
-      PYTHONIOENCODING: "utf-8"
-      MPLBACKEND: "Agg"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      OMP_NUM_THREADS: 1
-      OPENBLAS_NUM_THREADS: 1
-      MKL_NUM_THREADS: 1
-      VECLIB_MAXIMUM_THREADS: 1
-      NUMEXPR_NUM_THREADS: 1
-      NUMBA_NUM_THREADS: 1
-      PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
@@ -80,31 +87,27 @@ jobs:
       - name: test examples
         run: |
           conda activate test-environment
-          mkdir -p ~/.jupyter/
-          echo "c.ExecutePreprocessor.startup_timeout=600" >> ~/.jupyter/jupyter_nbconvert_config.py
           doit test_examples
       - name: codecov
         run: |
           conda activate test-environment
           codecov
   ui_test_suite:
-    name: UI tests on ${{ matrix.os }} with Python 3.9
+    name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest']
+        python-version: ['3.9']
     timeout-minutes: 60
     defaults:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHONIOENCODING: "utf-8"
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
       PANEL_LOG_LEVEL: info
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
@@ -113,7 +116,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
           name: ui_test_suite
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
@@ -133,8 +136,8 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
-  core_tests:
-    name: Core tests on ${{ matrix.python-version }}, ${{ matrix.os }}
+  core_test_suite:
+    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -147,20 +150,8 @@ jobs:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} core tests"
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      DISPLAY: ":99.0"
-      PYTHONIOENCODING: "utf-8"
-      MPLBACKEND: "Agg"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      OMP_NUM_THREADS: 1
-      OPENBLAS_NUM_THREADS: 1
-      MKL_NUM_THREADS: 1
-      VECLIB_MAXIMUM_THREADS: 1
-      NUMEXPR_NUM_THREADS: 1
-      NUMBA_NUM_THREADS: 1
-      PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
