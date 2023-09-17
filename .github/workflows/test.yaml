@@ -132,7 +132,7 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
-  core_tests:
+  core_test_suite:
     name: Core tests on ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
