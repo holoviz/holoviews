@@ -14,6 +14,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+  DISPLAY: ":99.0"
+  PYTHONIOENCODING: "utf-8"
+  MPLBACKEND: "Agg"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OMP_NUM_THREADS: 1
+  OPENBLAS_NUM_THREADS: 1
+  MKL_NUM_THREADS: 1
+  VECLIB_MAXIMUM_THREADS: 1
+  NUMEXPR_NUM_THREADS: 1
+  NUMBA_NUM_THREADS: 1
+  PYDEVD_DISABLE_FILE_VALIDATION: 1
+
 jobs:
   pre_commit:
     name: Run pre-commit hooks
@@ -44,7 +58,6 @@ jobs:
             python-version: '3.9'
           - os: 'ubuntu-latest'
             python-version: '3.10'
-
     timeout-minutes: 120
     defaults:
       run:
@@ -52,18 +65,6 @@ jobs:
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      DISPLAY: ":99.0"
-      PYTHONIOENCODING: "utf-8"
-      MPLBACKEND: "Agg"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      OMP_NUM_THREADS: 1
-      OPENBLAS_NUM_THREADS: 1
-      MKL_NUM_THREADS: 1
-      VECLIB_MAXIMUM_THREADS: 1
-      NUMEXPR_NUM_THREADS: 1
-      NUMBA_NUM_THREADS: 1
-      PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
@@ -106,10 +107,7 @@ jobs:
         shell: bash -el {0}
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
-      PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
@@ -154,18 +152,6 @@ jobs:
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      DISPLAY: ":99.0"
-      PYTHONIOENCODING: "utf-8"
-      MPLBACKEND: "Agg"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      OMP_NUM_THREADS: 1
-      OPENBLAS_NUM_THREADS: 1
-      MKL_NUM_THREADS: 1
-      VECLIB_MAXIMUM_THREADS: 1
-      NUMEXPR_NUM_THREADS: 1
-      NUMBA_NUM_THREADS: 1
-      PYDEVD_DISABLE_FILE_VALIDATION: 1
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
