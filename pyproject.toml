@@ -68,7 +68,6 @@ ignore = [
     "E731",     # Do not assign a lambda expression, use a def
     "E741",     # Ambiguous variable name
     "F405",     # From star imports
-    "PLC1901",  # empty string is falsey
     "PLE0604",  # Invalid object in `__all__`, must contain only strings
     "PLE0605",  # Invalid format for `__all__`
     "PLR091",   # Too many arguments/branches/statements
