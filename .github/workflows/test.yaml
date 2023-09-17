@@ -30,8 +30,8 @@ jobs:
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: pre-commit
         uses: pre-commit/action@v3.0.0
-  test_suite:
-    name: Pytest on ${{ matrix.python-version }}, Bokeh ${{ matrix.bokeh-version }}, ${{ matrix.os }}
+  unit_test_suite:
+    name: Unit tests on ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -39,13 +39,12 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: ['3.8', '3.11']
-        bokeh-version: ['3']
     timeout-minutes: 120
     defaults:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} - Bokeh ${{ matrix.bokeh-version }} tests"
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
@@ -62,11 +61,11 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
-          name: unit_test_suite_bokeh${{ matrix.bokeh-version }}
+          name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o flakes -o tests -o examples_tests -o bokeh${{ matrix.bokeh-version }}"
+          envs: "-o flakes -o tests -o examples_tests"
           cache: true
           conda-update: true
         id: install
@@ -87,19 +86,20 @@ jobs:
           conda activate test-environment
           codecov
   ui_test_suite:
-    name: UI tests on ${{ matrix.os }} with Python 3.9
+    name: UI tests on ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest']
+        python-version: ['3.9']
     timeout-minutes: 60
     defaults:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
       PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -112,7 +112,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
           name: ui_test_suite
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
@@ -146,7 +146,7 @@ jobs:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} core tests"
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
