@@ -31,7 +31,7 @@ jobs:
       - name: pre-commit
         uses: pre-commit/action@v3.0.0
   unit_test_suite:
-    name: Unit tests on ${{ matrix.python-version }}, ${{ matrix.os }}
+    name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -92,7 +92,7 @@ jobs:
           conda activate test-environment
           codecov
   ui_test_suite:
-    name: UI tests on ${{ matrix.python-version }}, ${{ matrix.os }}
+    name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -139,7 +139,7 @@ jobs:
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
   core_test_suite:
-    name: Core tests on ${{ matrix.python-version }}, ${{ matrix.os }}
+    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
