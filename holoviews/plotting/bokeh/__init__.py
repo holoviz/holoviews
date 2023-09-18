@@ -205,7 +205,7 @@ options.Slope = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VSpan = Options('style', color=Cycle(), alpha=0.5)
 options.HSpan = Options('style', color=Cycle(), alpha=0.5)
 options.Arrow = Options('style', arrow_size=10)
-options.Labels = Options('style', text_align='center', text_baseline='middle')
+options.Labels = Options('style', text_color=Cycle(), text_align='center', text_baseline='middle')
 
 # Graphs
 options.Graph = Options(
