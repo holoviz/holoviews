@@ -14,13 +14,15 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Rectangles, ImageStack)
+                        Tiles, Segments, Slope, Rectangles, VLines, VSpans, HLines, HSpans, ImageStack)
 from ...core.options import Options, Cycle, Palette
 
 from .annotation import (
-    TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
+    TextPlot, LineAnnotationPlot, VLinesAnnotationPlot, VSpansAnnotationPlot,
+    HLinesAnnotationPlot, HSpansAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
     DivPlot, LabelsPlot, SlopePlot
 )
+
 from ..plot import PlotSelector
 from ..util import fire
 from .callbacks import Callback # noqa (API import)
@@ -94,6 +96,10 @@ associations = {Overlay: OverlayPlot,
                 Segments: SegmentPlot,
 
                 # Annotations
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
                 HSpan: BoxAnnotationPlot,
@@ -205,6 +211,11 @@ options.Slope = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VSpan = Options('style', color=Cycle(), alpha=0.5)
 options.HSpan = Options('style', color=Cycle(), alpha=0.5)
 options.Arrow = Options('style', arrow_size=10)
+options.Labels = Options('style', text_align='center', text_baseline='middle')
+options.HLines = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VLines = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VSpans = Options('style', color=Cycle(), alpha=0.5)
+options.HSpans = Options('style', color=Cycle(), alpha=0.5)
 options.Labels = Options('style', text_color=Cycle(), text_align='center', text_baseline='middle')
 
 # Graphs

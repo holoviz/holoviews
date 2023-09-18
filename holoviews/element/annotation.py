@@ -7,6 +7,41 @@ from ..core import Dimension, Element2D, Element
 from ..core.data import Dataset
 
 
+
+class VectorizedAnnotation(Dataset, Element2D):
+
+    _auto_indexable_1d = False
+
+
+class VLines(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
+    group = param.String(default='VLines', constant=True)
+
+
+class HLines(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('y')], bounds=(1, 1))
+    group = param.String(default='HLines', constant=True)
+
+
+class HSpans(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('y0'), Dimension('y1')],
+                       bounds=(2, 2))
+
+    group = param.String(default='HSpans', constant=True)
+
+
+class VSpans(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('x0'), Dimension('x1')],
+                       bounds=(2, 2))
+
+    group = param.String(default='VSpans', constant=True)
+
+
+
 class Annotation(Element2D):
     """
     An Annotation is a special type of element that is designed to be
