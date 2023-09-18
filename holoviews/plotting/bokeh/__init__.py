@@ -216,6 +216,7 @@ options.HLines = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLines = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VSpans = Options('style', color=Cycle(), alpha=0.5)
 options.HSpans = Options('style', color=Cycle(), alpha=0.5)
+options.Labels = Options('style', text_color=Cycle(), text_align='center', text_baseline='middle')
 
 # Graphs
 options.Graph = Options(
