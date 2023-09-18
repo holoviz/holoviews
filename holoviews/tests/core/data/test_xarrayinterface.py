@@ -21,6 +21,7 @@ from .test_imageinterface import (
     BaseHSVElementInterfaceTests
 )
 from .test_gridinterface import BaseGridInterfaceTests
+from . import ignore_xarray_nanosecond_warning
 
 
 class XArrayInterfaceTests(BaseGridInterfaceTests):
@@ -232,7 +233,8 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xs = [np.datetime64(dt.datetime(2018, 1, i)) for i in range(1, 11)]
         ys = np.arange(10)
         array = np.random.rand(10, 10)
-        ds = QuadMesh((xs, ys, array))
+        with ignore_xarray_nanosecond_warning():
+            ds = QuadMesh((xs, ys, array))
         self.assertEqual(ds.interface.datatype, 'xarray')
         expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
                     np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
