@@ -539,7 +539,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(self, OverlayPlot) and self.subcoordinate_y:
                 if opts.get('subcoordinate_y') is None:
                     continue
-                ax_name = el.label or f'Trace {i}'
+                ax_name = el.label
+                if not ax_name:
+                    raise ValueError(
+                        f'Missing label for {type(el).__name__} element '
+                         'configured with subcoordinate_y.'
+                    )
                 subcoordinate_axes += 1
             else:
                 ax_name = yd.name
@@ -1842,13 +1847,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
             if self.overlaid and self.subcoordinate_y:
                 if style_element.label in plot.extra_y_ranges:
-                    trace = style_element.label
-                else:
-                    # We need to pop the range from plot.extra_y_ranges using
-                    # the yaxis label. When the element has no label set, we're
-                    # leveraging the auto value (Trace X).
-                    trace = next(iter(plot.extra_y_ranges))
-                self.handles['y_range'] = plot.extra_y_ranges.pop(trace)
+                    self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
         self.handles['plot'] = plot
 
         if self.autorange:

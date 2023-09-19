@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from holoviews.core import Overlay
 from holoviews.element import Curve
@@ -63,16 +64,11 @@ class TestSubcoordinateY(TestBokehPlot):
 
     def test_no_label(self):
         overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
-        plot = bokeh_renderer.get_plot(overlay)
-        # the overlay has two subplots
-        assert len(plot.subplots) == 2
-        assert ('Curve', 'I') in plot.subplots
-        assert ('Curve', 'II') in plot.subplots
-        # extra_y_range is empty
-        assert plot.handles['extra_y_ranges'] == {}
-        # the ticks show the labels
-        assert plot.state.yaxis.ticker.ticks == [0, 1]
-        assert plot.state.yaxis.major_label_overrides == {0: 'Trace 0', 1: 'Trace 1'}
+        with pytest.raises(
+            ValueError,
+            match='Missing label for Curve element configured with subcoordinate_y'
+        ):
+            bokeh_renderer.get_plot(overlay)
 
     def test_custom_ylabel(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
@@ -83,12 +79,6 @@ class TestSubcoordinateY(TestBokehPlot):
         # the ticks show the labels
         assert plot.state.yaxis.ticker.ticks == [0, 1]
         assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
-
-    def test_legend_default(self):
-        overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
-        plot = bokeh_renderer.get_plot(overlay)
-        # no legend if no label set on each curve
-        assert plot.state.legend == []
 
     def test_legend_label(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
