@@ -30,7 +30,7 @@ class TestSubcoordinateY(TestBokehPlot):
         assert sp2.handles['glyph_renderer'].coordinates.y_target.end == 1.5
         # y_range is correctly computed
         assert plot.handles['y_range'].start == -0.5
-        assert plot.handles['y_range'].end == 2.5
+        assert plot.handles['y_range'].end == 1.5
         # extra_y_range is empty
         assert plot.handles['extra_y_ranges'] == {}
         # the ticks show the labels
@@ -39,10 +39,10 @@ class TestSubcoordinateY(TestBokehPlot):
 
     def test_bool_scale(self):
         test_data = [
-            (0.5, (-0.25, 0.25), (0.75, 1.25), (-0.25, 2.25)),
-            (1, (-0.5, 0.5), (0.5, 1.5), (-0.5, 2.5)),
-            (2, (-1, 1), (0, 2), (-1, 3)),
-            (5, (-2.5, 2.5), (-1.5, 3.5), (-2.5, 4.5)),
+            (0.5, (-0.25, 0.25), (0.75, 1.25), (-0.25, 1.25)),
+            (1, (-0.5, 0.5), (0.5, 1.5), (-0.5, 1.5)),
+            (2, (-1, 1), (0, 2), (-1, 2)),
+            (5, (-2.5, 2.5), (-1.5, 3.5), (-2.5, 3.5)),
         ]
         for scale, ytarget1, ytarget2, ytarget in test_data:
             overlay = Overlay([
@@ -105,9 +105,9 @@ class TestSubcoordinateY(TestBokehPlot):
 
         oplot1 = plot.subplots[(0, 0)].subplots['main']
         oplot2 = plot.subplots[(0, 1)].subplots['main']
-        assert (oplot1.handles['y_range'].start, oplot1.handles['y_range'].end) == (-0.5, 2.5)
+        assert (oplot1.handles['y_range'].start, oplot1.handles['y_range'].end) == (-0.5, 1.5)
         assert oplot1.handles['extra_y_ranges'] == {}
-        assert (oplot2.handles['y_range'].start, oplot2.handles['y_range'].end) == (-0.5, 2.5)
+        assert (oplot2.handles['y_range'].start, oplot2.handles['y_range'].end) == (-0.5, 1.5)
         assert oplot2.handles['extra_y_ranges'] == {}
 
     def test_invisible_yaxis(self):

@@ -440,7 +440,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if pos == 1 and self.subcoordinate_y:
                 if isinstance(self.subcoordinate_y, bool):
                     offset = self.subcoordinate_scale / 2.
-                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-1+offset
+                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
                 else:
                     v0, v1 = 0, 1
             else:
