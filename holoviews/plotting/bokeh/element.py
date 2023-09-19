@@ -437,7 +437,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
-            if pos == 1 and self.subcoordinate_y:
+            if pos == 1 and isinstance(self, OverlayPlot) and self.subcoordinate_y:
                 if isinstance(self.subcoordinate_y, bool):
                     offset = self.subcoordinate_scale / 2.
                     v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
@@ -536,7 +536,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             opts = el.opts.get('plot', backend='bokeh').kwargs
             if not isinstance(yd, Dimension) or yd.name in yaxes:
                 continue
-            if self.subcoordinate_y:
+            if isinstance(self, OverlayPlot) and self.subcoordinate_y:
                 if opts.get('subcoordinate_y') is None:
                     continue
                 ax_name = el.label or f'Trace {i}'
@@ -557,7 +557,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     'axis_label_text_font_size': sp._fontsize('ylabel').get('fontsize'),
                     'major_label_text_font_size': sp._fontsize('yticks').get('fontsize')
                 },
-                'subcoordinate_y': subcoordinate_axes-1 if self.subcoordinate_y else None
+                'subcoordinate_y': subcoordinate_axes-1 if (isinstance(self, OverlayPlot) and self.subcoordinate_y) else None
             }
 
         for ydim, info in yaxes.items():
@@ -615,8 +615,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras
             ) + (self.yaxis, {})
 
-
-        if self.subcoordinate_y:
+        if isinstance(self, OverlayPlot) and self.subcoordinate_y:
             _, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
             axis_specs['y'].update(extra_axis_specs)
 
@@ -679,7 +678,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         fig.yaxis[0].update(**axis_props['y'])
 
         # Do not add the extra axes to the layout if subcoordinates are used
-        if self.subcoordinate_y:
+        if isinstance(self, OverlayPlot) and self.subcoordinate_y:
             return fig
 
         multi_ax = 'x' if self.invert_axes else 'y'
@@ -1007,7 +1006,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._update_main_ranges(element, x_range, y_range, ranges)
 
-        if self.subcoordinate_y:
+        if isinstance(self, OverlayPlot) and self.subcoordinate_y:
             return
 
         # ALERT: stream handling not handled
@@ -1455,7 +1454,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if "name" not in properties:
             properties["name"] = properties.get("legend_label") or properties.get("legend_field")
 
-        if self.subcoordinate_y:
+        if self.overlaid and self.subcoordinate_y:
             y_source_range = self.handles['y_range']
             if isinstance(self.subcoordinate_y, bool):
                 center = y_source_range.tags[1]['subcoordinate_y']
@@ -1841,7 +1840,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axes, plot_ranges = self._find_axes(plot, element)
             self.handles['xaxis'], self.handles['yaxis'] = axes
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
-            if self.subcoordinate_y:
+            if self.overlaid and self.subcoordinate_y:
                 if style_element.label in plot.extra_y_ranges:
                     trace = style_element.label
                 else:

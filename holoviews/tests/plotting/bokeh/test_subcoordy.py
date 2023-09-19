@@ -169,3 +169,9 @@ class TestSubcoordinateY(TestBokehPlot):
         # the ticks show the labels
         assert plot.state.yaxis.ticker.ticks == [0.25, 0.75]
         assert plot.state.yaxis.major_label_overrides == {0.25: 'Data 0', 0.75: 'Data 1'}
+
+    def test_plot_standalone(self):
+        standalone = Curve(range(10), label='Data 0').opts(subcoordinate_y=True)
+        plot = bokeh_renderer.get_plot(standalone)
+        assert (plot.state.x_range.start, plot.state.x_range.end) == (0, 9)
+        assert (plot.state.y_range.start, plot.state.y_range.end) == (0, 9)
