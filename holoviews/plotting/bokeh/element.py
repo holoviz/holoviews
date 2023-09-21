@@ -473,9 +473,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
             categorical = True
+        elif self.subcoordinate_y:
+            categorical = False
         else:
             categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))
-        categorical &= not self.subcoordinate_y
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
