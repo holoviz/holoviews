@@ -857,7 +857,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 for i, (el, sp) in enumerate(zip(self.current_frame, self.subplots.values())):
                     if not sp.subcoordinate_y:
                         continue
-                    ycenter = i if isinstance(sp.subcoordinate_y, bool) else np.mean(sp.subcoordinate_y)
+                    ycenter = i if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
                     ticks.append(ycenter)
                     labels.append(el.label or f'Trace {i}')
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
