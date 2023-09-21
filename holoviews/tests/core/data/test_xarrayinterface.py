@@ -229,7 +229,13 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         self.assertEqual(ds.range('x'), expected)
 
     def test_datetime64_bins_range(self):
-        xs = [np.datetime64(dt.datetime(2018, 1, i)) for i in range(1, 11)]
+        xs = list(
+            np.arange(
+                dt.datetime(2018, 1, 1),
+                dt.datetime(2018, 1, 11),
+                dt.timedelta(days=1)
+            ).astype("datetime64[ns]")
+        )
         ys = np.arange(10)
         array = np.random.rand(10, 10)
         ds = QuadMesh((xs, ys, array))

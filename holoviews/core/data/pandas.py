@@ -359,8 +359,7 @@ class PandasInterface(Interface, PandasAPI):
         if keep_index:
             return data
         if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
-            dts = [dt.replace(tzinfo=None) for dt in data.dt.to_pydatetime()]
-            data = np.array(dts, dtype=data.dtype.base)
+            data = data.dt.tz_localize(None)
         if not expanded:
             return pd.unique(data)
         return data.values if hasattr(data, 'values') else data

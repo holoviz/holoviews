@@ -136,6 +136,7 @@ options.Scatter3D = Options('style', color=Cycle(), size=6)
 # Annotations
 options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
+options.Labels = Options('style', color=Cycle())
 
 # Shapes
 options.Rectangles = Options('style', line_color=dflt_shape_line_color)

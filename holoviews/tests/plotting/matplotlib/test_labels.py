@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
+from holoviews.core.options import Cycle
 from holoviews.plotting.util import rgb2hex
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -171,3 +172,12 @@ class TestLabelsPlot(TestMPLPlot):
         artist = plot.handles['artist']
         self.assertEqual([a.get_rotation() for a in artist],
                          [30, 120, 60])
+
+    def test_labels_text_color_cycle(self):
+        hm = HoloMap(
+            {i: Labels([
+                (0, 0 + i, "Label 1"),
+                (1, 1 + i, "Label 2")
+            ]) for i in range(3)}
+        ).overlay()
+        assert isinstance(hm[0].opts["color"], Cycle)
