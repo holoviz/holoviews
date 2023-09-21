@@ -531,7 +531,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         ax_specs, yaxes, dimensions = {}, {}, {}
         subcoordinate_axes = 0
-        for i, (el, sp) in enumerate(zip(element, self.subplots.values())):
+        for el, sp in zip(element, self.subplots.values()):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
                 ax_dims[::-1]
