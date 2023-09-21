@@ -155,7 +155,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        per-axis basis.""")
 
     subcoordinate_y = param.ClassSelector(default=False, class_=(bool, tuple), doc="""
-       Enables sub-coordinate scales for this plot.""")
+       Enables sub-coordinate systems for this plot. Accepts also a numerical
+       two-tuple that must be a range between 0 and 1, the plot will be
+       rendered on this vertical range of the axis.""")
 
     subcoordinate_scale = param.Number(default=1, bounds=(0, None), inclusive_bounds=(False, True), doc="""
        Scale factor for subcoordinate ranges to control the level of overlap.""")
