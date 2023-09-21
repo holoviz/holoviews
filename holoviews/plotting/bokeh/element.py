@@ -1469,7 +1469,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 offset = self.subcoordinate_scale/2.
                 ytarget_range = dict(start=center-offset, end=center+offset)
             else:
-                ytarget_range = dict(zip(['start', 'end'], self.subcoordinate_y))
+                ytarget_range = dict(start=self.subcoordinate_y[0], end=self.subcoordinate_y[1])
             plot = plot.subplot(
                 x_source=plot.x_range,
                 x_target=plot.x_range,
