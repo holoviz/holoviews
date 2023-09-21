@@ -440,6 +440,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if pos == 1 and isinstance(self, OverlayPlot) and self.subcoordinate_y:
                 if isinstance(self.subcoordinate_y, bool):
                     offset = self.subcoordinate_scale / 2.
+                    # This sum() is equal to n+1, n being the number of elements contained
+                    # in the overlay with subcoordinate_y=True, as the traversal goes through
+                    # the root overlay that has subcoordinate_y=True too since it's propagated.
                     v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
                 else:
                     v0, v1 = 0, 1
