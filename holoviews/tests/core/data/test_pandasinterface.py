@@ -171,3 +171,10 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
     data_type = pd.DataFrame
 
     __test__ = True
+
+    def test_data_with_tz(self):
+        dates = pd.date_range("2018-01-01", periods=3, freq="H")
+        dates_tz = dates.tz_localize("UTC")
+        df = pd.DataFrame({"dates": dates_tz})
+        data = Dataset(df).dimension_values("dates")
+        np.testing.assert_equal(dates, data)

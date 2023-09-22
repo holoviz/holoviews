@@ -36,6 +36,8 @@ filterwarnings = [
     # 2023-09: See https://github.com/matplotlib/matplotlib/issues/25244
     "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning",
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",
+    # 2023-09: See https://github.com/python-streamz/streamz/issues/460
+    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins",
 ]
 
 [tool.coverage]
@@ -70,7 +72,6 @@ ignore = [
     "E731",     # Do not assign a lambda expression, use a def
     "E741",     # Ambiguous variable name
     "F405",     # From star imports
-    "PLC1901",  # empty string is falsey
     "PLE0604",  # Invalid object in `__all__`, must contain only strings
     "PLE0605",  # Invalid format for `__all__`
     "PLR091",   # Too many arguments/branches/statements

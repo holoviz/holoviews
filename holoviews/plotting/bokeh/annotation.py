@@ -11,17 +11,89 @@ from bokeh.models import TeeHead, NormalHead
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, VLine, VSpan
+from ...element import HLine, VLine, VSpan, HLines, VLines, HSpans, VSpans
 from ..plot import GenericElementPlot
-from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
 from .plot import BokehPlot
-from .util import date_to_integer
+from .util import date_to_integer, bokeh32
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
 arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
                 '-': None}
+
+
+class _SyntheticAnnotationPlot(ColorbarPlot):
+
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = [*line_properties, 'level', 'visible']
+    _allow_implicit_categories = False
+
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            name = type(getattr(element, "last", element)).__name__
+            msg = f'{name} element requires Bokeh >=3.2'
+            raise ImportError(msg)
+        super().__init__(element, **kwargs)
+
+    def _init_glyph(self, plot, mapping, properties):
+        self._plot_methods = {"single": self._methods[self.invert_axes]}
+        return super()._init_glyph(plot, mapping, properties)
+
+    def get_data(self, element, ranges, style):
+        data = {str(k): v for k, v in element.dataset.data.items()}
+        default = self._element_default[self.invert_axes].kdims
+        mapping = {str(d): str(k) for d, k in zip(default, element.kdims)}
+        return data, mapping, style
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        figure = super().initialize_plot(ranges=ranges, plot=plot, plots=plots, source=source)
+        labels = "yx" if self.invert_axes else "xy"
+        for ax, label in zip(figure.axis, labels):
+            ax.axis_label = label
+        return figure
+
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        extents = super().get_extents(element, ranges, range_type)
+        if isinstance(element, HLines):
+            extents = np.nan, extents[0], np.nan, extents[2]
+        elif isinstance(element, VLines):
+            extents = extents[0], np.nan, extents[2], np.nan
+        elif isinstance(element, HSpans):
+            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
+        elif isinstance(element, VSpans):
+            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
+        return extents
+
+class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
+
+    # If invert_axes is False we use the first method,
+    # and if True the second as _plot_methods(single=...)
+    _methods = ('hspan', 'vspan')
+    _element_default = (HLines, VLines)
+
+
+class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
+
+    _methods = ('vspan', 'hspan')
+    _element_default = (VLines, HLines)
+
+
+class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
+
+    _methods = ('hstrip', 'vstrip')
+    _element_default = (HSpans, VSpans)
+    style_opts = [*fill_properties, *line_properties, 'level', 'visible']
+
+
+class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
+
+    _methods = ('vstrip', 'hstrip')
+    _element_default = (VSpans, HSpans)
+    style_opts = [*fill_properties, *line_properties, 'level', 'visible']
 
 
 class TextPlot(ElementPlot, AnnotationPlot):

@@ -676,6 +676,7 @@ class spikes_aggregate(LineAggregationOperation):
         if ds_version >= Version('0.14.0'):
             agg_kwargs['line_width'] = self.p.line_width
 
+        rename_dict = {k: v for k, v in rename_dict.items() if k != v}
         agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, **agg_kwargs).rename(rename_dict)
         if xtype == "datetime":
             agg[x.name] = agg[x.name].astype('datetime64[ns]')
@@ -1045,9 +1046,10 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
         if wireframe:
+            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name)) if k != v}
             agg = cvs.line(segments, x=['x0', 'x1', 'x2', 'x0'],
                            y=['y0', 'y1', 'y2', 'y0'], axis=1,
-                           agg=agg).rename({'x': x.name, 'y': y.name})
+                           agg=agg).rename(rename_dict)
         else:
             interpolate = bool(self.p.interpolation)
             agg = cvs.trimesh(pts, simplices, agg=agg,
@@ -1373,7 +1375,8 @@ class geometry_rasterize(LineAggregationOperation):
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
             agg = cvs.points(data, **agg_kwargs)
-        agg = agg.rename({'x': xdim.name, 'y': ydim.name})
+        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name)) if k != v}
+        agg = agg.rename(rename_dict)
 
         if agg.ndim == 2:
             return self.p.element_type(agg, **params)

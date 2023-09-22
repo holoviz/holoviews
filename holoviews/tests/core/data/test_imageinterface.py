@@ -90,13 +90,13 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        xs = date_range(start, end, 10)
+        xs = date_range(start, end, 10).astype("datetime64[ns]")
         Image((xs, self.ys, self.array))
 
     def test_init_data_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        ys = date_range(start, end, 10)
+        ys = date_range(start, end, 10).astype("datetime64[ns]")
         Image((self.xs, ys, self.array))
 
     def test_init_bounds(self):
@@ -105,7 +105,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_init_bounds_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        xs = date_range(start, end, 10)
+        xs = date_range(start, end, 10).astype("datetime64[ns]")
         bounds = (start, 0, end, 10)
         image = Image((xs, self.ys, self.array), bounds=bounds)
         self.assertEqual(image.bounds.lbrt(), bounds)
@@ -113,7 +113,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_init_bounds_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        ys = date_range(start, end, 10)
+        ys = date_range(start, end, 10).astype("datetime64[ns]")
         bounds = (-10, start, 10, end)
         image = Image((self.xs, ys, self.array))
         self.assertEqual(image.bounds.lbrt(), bounds)
@@ -125,7 +125,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_init_densities_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        xs = date_range(start, end, 10)
+        xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((xs, self.ys, self.array))
         self.assertEqual(image.xdensity, 1e-5)
         self.assertEqual(image.ydensity, 1)
@@ -133,7 +133,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_init_densities_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        ys = date_range(start, end, 10)
+        ys = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((self.xs, ys, self.array))
         self.assertEqual(image.xdensity, 0.5)
         self.assertEqual(image.ydensity, 1e-5)
@@ -165,7 +165,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         bounds = (start, 0, end, 10)
-        xs = date_range(start, end, 10)
+        xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((xs, self.ys, self.array), bounds=bounds)
         sliced = image[start+np.timedelta64(530, 'ms'): start+np.timedelta64(770, 'ms')]
         self.assertEqual(sliced.dimension_values(2, flat=False),
@@ -182,7 +182,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_slice_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        ys = date_range(start, end, 10)
+        ys = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((self.xs, ys, self.array))
         sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
         self.assertEqual(sliced.dimension_values(2, flat=False),
@@ -218,7 +218,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_range_datetime_xdim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        xs = date_range(start, end, 10)
+        xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((xs, self.ys, self.array))
         self.assertEqual(image.range(0), (start, end))
 
@@ -228,7 +228,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_range_datetime_ydim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        ys = date_range(start, end, 10)
+        ys = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((self.xs, ys, self.array))
         self.assertEqual(image.range(1), (start, end))
 
@@ -242,7 +242,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_dimension_values_datetime_xcoords(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        xs = date_range(start, end, 10)
+        xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = Image((xs, self.ys, self.array))
         self.assertEqual(image.dimension_values(0, expanded=False),
                          date_range(start, end, 10))
