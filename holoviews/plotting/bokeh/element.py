@@ -862,7 +862,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         continue
                     ycenter = i if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
                     ticks.append(ycenter)
-                    labels.append(el.label or f'Trace {i}')
+                    labels.append(el.label)
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
