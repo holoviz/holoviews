@@ -51,6 +51,8 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         figure = super().initialize_plot(ranges=ranges, plot=plot, plots=plots, source=source)
+        if self.overlaid:
+            return figure
         labels = "yx" if self.invert_axes else "xy"
         for ax, label in zip(figure.axis, labels):
             ax.axis_label = label
