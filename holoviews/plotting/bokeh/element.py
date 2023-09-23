@@ -1681,7 +1681,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for k, values in source.data.items():
                 key = '@{%s}' % k
                 if ((isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
-                    (len(values) and isinstance(values[0], util.datetime_types))):
+                    (len(values) and isinstance(np.asarray(values)[0], util.datetime_types))):
                     hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
                     hover.formatters[key] = "datetime"
 
