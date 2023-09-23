@@ -725,6 +725,10 @@ class extension(_pyviz_extension):
                 self._ignore_bokeh_warnings()
                 return
 
+        if params.get("enable_mathjax", True) and selected_backend == "bokeh":
+            pn.extension("mathjax")
+
+
     @classmethod
     def register_backend_callback(cls, backend, callback):
         """Registers a hook which is run when a backend is loaded"""
