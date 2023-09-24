@@ -38,12 +38,22 @@ jobs:
           fetch-depth: "1"
       - name: set PY
         run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - name: "Install pre-commit"
+        run: pipx install pre-commit
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: pre-commit
-        uses: pre-commit/action@v3.0.0
+      - name: "Run pre-commit"
+        run: |
+          echo '```console' > $GITHUB_STEP_SUMMARY
+          # Enable color output for pre-commit and remove it for the summary
+          pre-commit run --all-files --show-diff-on-failure --color=always | \
+            tee >(sed -E 's/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?[mGK]//g' >> $GITHUB_STEP_SUMMARY) >&1
+          exit_code=${PIPESTATUS[0]}
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $exit_code
+
   unit_test_suite:
     name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
