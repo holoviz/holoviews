@@ -86,6 +86,14 @@ jobs:
           cache: true
           conda-update: true
         id: install
+      - name: Create conda environment
+        run: |
+          conda activate test-environment
+          conda env export > environment_${{ matrix.python-version }}_${{ matrix.os }}.yml
+      - uses: actions/upload-artifact@v3
+        with:
+          name: test-environment
+          path: environment_${{ matrix.python-version }}_${{ matrix.os }}.yml
       - name: bokeh sampledata
         run: |
           conda activate test-environment
