@@ -155,9 +155,6 @@ class RangeToolLinkCallback(LinkCallback):
         source_plot.state.add_tools(tool)
         if toolbars:
             toolbars[0].tools.append(tool)
-        elif toolbars:
-            toolbar = toolbars[0].toolbar
-            toolbar.tools.append(tool)
 
 
 class DataLinkCallback(LinkCallback):
