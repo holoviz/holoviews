@@ -90,9 +90,12 @@ jobs:
         run: |
           conda activate test-environment
           conda env export > environment_${{ matrix.python-version }}_${{ matrix.os }}.yml
+          echo ${{ github.event.number }}
+          echo ${{ env.sha_short }}
+          echo ${{ env.branch }}
       - uses: actions/upload-artifact@v3
         with:
-          name: test-environment
+          name: environment_#${{ github.event.number }}
           path: environment_${{ matrix.python-version }}_${{ matrix.os }}.yml
       - name: bokeh sampledata
         run: |
