@@ -481,7 +481,7 @@ class TestDimTransforms(ComparisonTestCase):
         with warnings.catch_warnings():
             # The kwargs is {'axis': None} and is already handled by the code.
             # This context manager can be removed, when it raises an TypeError instead of warning.
-            warnings.simplefilter("ignore", "Passing additional kwargs to Rolling.mean")
+            warnings.filterwarnings("ignore", "Passing additional kwargs to Rolling.mean")
             self.assert_apply(expr, self.linear_ints.rolling(1).mean())
 
 
