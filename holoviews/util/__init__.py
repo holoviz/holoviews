@@ -885,7 +885,7 @@ class Dynamic(param.ParameterizedFunction):
         Whether the cloned DynamicMap will share the same cache.""")
 
     streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
-        List of streams to attach to the returned DynamicMap""")
+        List of streams to attach to the returned DynamicMap""", **util.disallow_refs)
 
     def __call__(self, map_obj, **params):
         watch = params.pop('watch', True)
