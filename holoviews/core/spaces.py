@@ -547,6 +547,8 @@ class Callable(param.Parameterized):
         # Nothing to do for callbacks that accept no arguments
         kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
+        if hasattr(self.callable, 'rx'):
+            return self.callable.rx.resolve()
         if not args and not kwargs and not any(kwarg_hash): return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
@@ -773,7 +775,9 @@ class DynamicMap(HoloMap):
             streams = streams_list_from_dict(streams)
 
         # If callback is a parameterized method and watch is disabled add as stream
-        if (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
+        if util.param_version > util.Version('2.0.0rc1') and param.parameterized.resolve_ref(callback):
+            streams.append(callback)
+        elif (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
             (isinstance(callback, FunctionType) and hasattr(callback, '_dinfo')))):
             streams.append(callback)
 

@@ -51,7 +51,10 @@ def streams_list_from_dict(streams):
     for k, v in streams.items():
         if 'panel' in sys.modules:
             from panel.depends import param_value_if_widget
-            v = param_value_if_widget(v)
+            if util.param_version > util.Version('2.0.0rc1'):
+                v = param.parameterized.resolve_value(v)
+            else:
+                v = param_value_if_widget(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
@@ -222,8 +225,15 @@ class Stream(param.Parameterized):
                 rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
-                invalid.append(s)
-                continue
+                if util.param_version > util.Version('2.0.0rc1'):
+                    deps = param.parameterized.resolve_ref(s)
+                else:
+                    deps = None
+                if deps:
+                    s = Params(parameters=deps)
+                else:
+                    invalid.append(s)
+                    continue
             if isinstance(s, Params):
                 pid = id(s.parameterized)
                 overlap = (set(s.parameters) & parameterizeds[pid])
