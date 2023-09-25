@@ -36,6 +36,8 @@ filterwarnings = [
     # 2023-09: See https://github.com/matplotlib/matplotlib/issues/25244
     "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning",
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",
+    # 2023-09: See https://github.com/python-streamz/streamz/issues/460
+    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins",
 ]
 
 [tool.coverage]

@@ -1,6 +1,7 @@
 import platform
 import sys
 
+import bokeh
 import pandas as pd
 from packaging.version import Version
 
@@ -38,3 +39,33 @@ if sys.version_info[:2] == (3, 8) and platform.system() == "Linux":
         "gallery/demos/*/bachelors_degrees_by_gender.ipynb",
         "gallery/demos/*/topographic_hillshading.ipynb",
     ]
+
+
+# First available in Bokeh 3.2.0
+if Version(bokeh.__version__) < Version("3.2.0"):
+    collect_ignore_glob += [
+        "reference/elements/bokeh/HLines.ipynb",
+        "reference/elements/bokeh/HSpans.ipynb",
+        "reference/elements/bokeh/VLines.ipynb",
+        "reference/elements/bokeh/VSpans.ipynb",
+    ]
+
+
+def pytest_runtest_makereport(item, call):
+    """
+    Skip tests that fail because "the kernel died before replying to kernel_info"
+    this is a common error when running the example tests in CI.
+
+    Inspired from: https://stackoverflow.com/questions/32451811
+
+    """
+    from _pytest.runner import pytest_runtest_makereport
+    tr = pytest_runtest_makereport(item, call)
+
+    if call.excinfo is not None:
+        msg = "Kernel died before replying to kernel_info"
+        if call.excinfo.type == RuntimeError and call.excinfo.value.args[0] == msg:
+            tr.outcome = 'skipped'
+            tr.wasxfail = f"reason: {msg}"
+
+    return tr

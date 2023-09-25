@@ -56,7 +56,7 @@ class Path(SelectionPolyExpr, Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=[
+    datatype = param.List(default=[
         'multitabular', 'spatialpandas', 'dask_spatialpandas']
     )
 

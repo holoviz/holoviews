@@ -6,7 +6,7 @@ from packaging.version import Version
 
 
 def main(*packages):
-    allowed_date = date.today() - timedelta(days=2)
+    allowed_date = date.today() - timedelta(days=5)
     is_latest = True
     for package in sorted(packages):
         url = f"https://pypi.org/pypi/{package}/json"
@@ -23,7 +23,7 @@ def main(*packages):
 
         version_check = Version(current) >= Version(latest)
         date_check = allowed_date >= latest_release_date
-        is_latest &= version_check and date_check
+        is_latest &= version_check or date_check
 
         print(
             f"Package: {package:<10} Current: {current:<7} ({current_release_date})\tLatest: {latest:<7} ({latest_release_date})"
