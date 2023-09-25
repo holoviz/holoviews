@@ -2845,6 +2845,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         return super()._get_axis_dims(element)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
+        if self.multi_y and self.subcoordinate_y:
+            raise ValueError('multi_y and subcoordinate_y are not supported together.')
         key = util.wrap_tuple(self.hmap.last_key)
         nonempty = [(k, el) for k, el in self.hmap.data.items() if el]
         if not nonempty:
