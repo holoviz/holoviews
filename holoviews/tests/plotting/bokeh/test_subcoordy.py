@@ -66,7 +66,7 @@ class TestSubcoordinateY(TestBokehPlot):
         overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
         with pytest.raises(
             ValueError,
-            match='Missing label for Curve element configured with subcoordinate_y'
+            match='Every element wrapped in a subcoordinate_y overlay must have a label'
         ):
             bokeh_renderer.get_plot(overlay)
 
@@ -172,5 +172,13 @@ class TestSubcoordinateY(TestBokehPlot):
         with pytest.raises(
             ValueError,
             match='multi_y and subcoordinate_y are not supported together'
+        ):
+            bokeh_renderer.get_plot(overlay)
+
+    def test_same_label_error(self):
+        overlay = Overlay([Curve(range(10), label='Same').opts(subcoordinate_y=True) for _ in range(2)])
+        with pytest.raises(
+            ValueError,
+            match='Elements wrapped in a subcoordinate_y overlay must all have a unique label',
         ):
             bokeh_renderer.get_plot(overlay)

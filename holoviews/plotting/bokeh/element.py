@@ -559,11 +559,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if opts.get('subcoordinate_y') is None:
                     continue
                 ax_name = el.label
-                if not ax_name:
-                    raise ValueError(
-                        f'Missing label for {type(el).__name__} element '
-                         'configured with subcoordinate_y.'
-                    )
                 subcoordinate_axes += 1
             else:
                 ax_name = yd.name
@@ -2847,6 +2842,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         if self.multi_y and self.subcoordinate_y:
             raise ValueError('multi_y and subcoordinate_y are not supported together.')
+        if self.subcoordinate_y:
+            labels = self.hmap.last.traverse(lambda x: x.label, [lambda el: isinstance(el, Element)])
+            if any(not label for label in labels):
+                raise ValueError(
+                    'Every element wrapped in a subcoordinate_y overlay must have '
+                    'a label.'
+                )
+            if len(set(labels)) == 1:
+                raise ValueError(
+                    'Elements wrapped in a subcoordinate_y overlay must all have '
+                    'a unique label.'
+                )
         key = util.wrap_tuple(self.hmap.last_key)
         nonempty = [(k, el) for k, el in self.hmap.data.items() if el]
         if not nonempty:
