@@ -3,6 +3,7 @@ from unittest import SkipTest
 
 import param
 import holoviews as hv
+import random
 
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
