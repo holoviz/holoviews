@@ -681,7 +681,7 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, doc="""
+                                        constant=True, allow_refs=False, allow_None=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List(default=[], constant=True, doc="""
