@@ -76,7 +76,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@update_task
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -86,17 +86,6 @@ jobs:
           cache: true
           conda-update: true
         id: install
-      - name: Create conda environment
-        run: |
-          conda activate test-environment
-          conda env export > environment_${{ matrix.python-version }}_${{ matrix.os }}.yml
-          echo ${{ github.event.number }}
-          echo ${{ env.sha_short }}
-          echo ${{ env.branch }}
-      - uses: actions/upload-artifact@v3
-        with:
-          name: environment_#${{ github.event.number }}
-          path: environment_${{ matrix.python-version }}_${{ matrix.os }}.yml
       - name: bokeh sampledata
         run: |
           conda activate test-environment
@@ -134,7 +123,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@update_task
         with:
           name: ui_test_suite
           python-version: ${{ matrix.python-version }}
@@ -174,7 +163,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@update_task
         with:
           name: core_test_suite
           python-version: ${{ matrix.python-version }}
