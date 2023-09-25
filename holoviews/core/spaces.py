@@ -459,8 +459,7 @@ class Callable(param.Parameterized):
     """
 
     callable = param.Callable(default=None, constant=True, doc="""
-         The callable function being wrapped.""",
-        **{'allow_refs': False} if util.param_version > util.Version('2.0.0rc1') else {})
+         The callable function being wrapped.""", **util.disallow_refs)
 
     inputs = param.List(default=[], constant=True, doc="""
          The list of inputs the callable function is wrapping. Used

@@ -50,10 +50,10 @@ def streams_list_from_dict(streams):
     params = {}
     for k, v in streams.items():
         if 'panel' in sys.modules:
-            from panel.depends import param_value_if_widget
             if util.param_version > util.Version('2.0.0rc1'):
-                v = param.parameterized.resolve_value(v)
+                v = param.parameterized.transform_reference(v)
             else:
+                from panel.depends import param_value_if_widget
                 v = param_value_if_widget(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
@@ -682,8 +682,7 @@ class Params(Stream):
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
                                         constant=True, allow_None=True, doc="""
-        Parameterized instance to watch for parameter changes.""",
-        **{'allow_refs': False} if util.param_version > util.Version('2.0.0rc1') else {})
+        Parameterized instance to watch for parameter changes.""", **util.disallow_refs)
 
     parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
