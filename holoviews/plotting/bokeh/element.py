@@ -2843,7 +2843,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if self.multi_y and self.subcoordinate_y:
             raise ValueError('multi_y and subcoordinate_y are not supported together.')
         if self.subcoordinate_y:
-            labels = self.hmap.last.traverse(lambda x: x.label, [lambda el: isinstance(el, Element)])
+            labels = self.hmap.last.traverse(lambda x: x.label, [
+                lambda el: isinstance(el, Element) and el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            ])
             if any(not label for label in labels):
                 raise ValueError(
                     'Every element wrapped in a subcoordinate_y overlay must have '
