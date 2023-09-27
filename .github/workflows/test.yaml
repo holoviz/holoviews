@@ -30,20 +30,11 @@ env:
 
 jobs:
   pre_commit:
-    name: Run pre-commit hooks
+    name: Run pre-commit
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: "1"
-      - name: set PY
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: pre-commit
-        uses: pre-commit/action@v3.0.0
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a16
+
   unit_test_suite:
     name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit]
@@ -66,7 +57,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a16
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -113,7 +104,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a16
         with:
           name: ui_test_suite
           python-version: ${{ matrix.python-version }}
@@ -153,7 +144,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a16
         with:
           name: core_test_suite
           python-version: ${{ matrix.python-version }}
