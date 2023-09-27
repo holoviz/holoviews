@@ -144,7 +144,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a17
+      - uses: holoviz-dev/holoviz_tasks/install@remove_python
         with:
           name: core_test_suite
           python-version: ${{ matrix.python-version }}
