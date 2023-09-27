@@ -154,6 +154,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        elements and the overlay container, allowing customization on a
        per-axis basis.""")
 
+    subcoordinate_y = param.ClassSelector(default=False, class_=(bool, tuple), doc="""
+       Enables sub-coordinate systems for this plot. Accepts also a numerical
+       two-tuple that must be a range between 0 and 1, the plot will be
+       rendered on this vertical range of the axis.""")
+
+    subcoordinate_scale = param.Number(default=1, bounds=(0, None), inclusive_bounds=(False, True), doc="""
+       Scale factor for subcoordinate ranges to control the level of overlap.""")
+
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
@@ -229,6 +237,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     _stream_data = True
 
     def __init__(self, element, plot=None, **params):
+        self._subcoord_standalone_ = None
         self.current_ranges = None
         super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
@@ -401,6 +410,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         return dim_range
 
+    @property
+    def _subcoord_overlaid(self):
+        """
+        Indicates when the context is a subcoordinate plot, either from within
+        the overlay rendering or one of its subplots. Used to skip code paths
+        when rendering an element outside of an overlay.
+        """
+        if self._subcoord_standalone_ is not None:
+            return self._subcoord_standalone_
+        self._subcoord_standalone_ = (
+            (isinstance(self, OverlayPlot) and self.subcoordinate_y) or
+            (not isinstance(self, OverlayPlot) and self.overlaid and self.subcoordinate_y)
+        )
+        return self._subcoord_standalone_
+
     def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None,
                     range_tags_extras=[], extra_range_name=None):
 
@@ -416,7 +440,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # a synthetic dimension and exclusively supported for y-axes.
         if pos == 1 and dim:
             dims = [dim]
-            v0, v1 = util.max_range([elrange.get(dim, {'combined': (None, None)})['combined'] for elrange in ranges.values()])
+            v0, v1 = util.max_range([
+                elrange.get(dim.name, {'combined': (None, None)})['combined']
+                for elrange in ranges.values()
+            ])
             axis_label = str(dim)
             specs = ((dim.name, dim.label, dim.unit),)
         else:
@@ -428,7 +455,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = self.get_extents(range_el, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
-            v0, v1 = (l, r) if pos == 0 else (b, t)
+            if pos == 1 and self._subcoord_overlaid:
+                if isinstance(self.subcoordinate_y, bool):
+                    offset = self.subcoordinate_scale / 2.
+                    # This sum() is equal to n+1, n being the number of elements contained
+                    # in the overlay with subcoordinate_y=True, as the traversal goes through
+                    # the root overlay that has subcoordinate_y=True too since it's propagated.
+                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
+                else:
+                    v0, v1 = 0, 1
+            else:
+                v0, v1 = (l, r) if pos == 0 else (b, t)
 
             axis_dims = list(self._get_axis_dims(el))
             if self.invert_axes:
@@ -452,7 +489,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 dims = dims[:2][::-1]
 
         categorical = any(self.traverse(lambda plot: plot._categorical))
-        if dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
+        if self.subcoordinate_y:
+            categorical = False
+        elif dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
             categorical = True
         else:
             categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))
@@ -474,12 +513,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         norm_opts = self.lookup_options(el, 'norm').options
         shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
-        if plots and self.shared_axes and not norm_opts.get('axiswise', False):
+        if plots and self.shared_axes and not norm_opts.get('axiswise', False) and not dim:
             dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos)
             if dim_range:
                 self._shared[shared_name] = True
 
-        if self._shared.get(shared_name):
+        if self._shared.get(shared_name) and not dim:
             pass
         elif categorical:
             axis_type = 'auto'
@@ -507,16 +546,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axpos0, axpos1 = 'left', 'right'
 
         ax_specs, yaxes, dimensions = {}, {}, {}
+        subcoordinate_axes = 0
         for el, sp in zip(element, self.subplots.values()):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
                 ax_dims[::-1]
             yd = ax_dims[1]
-            dimensions[yd.name] = yd
             opts = el.opts.get('plot', backend='bokeh').kwargs
             if not isinstance(yd, Dimension) or yd.name in yaxes:
                 continue
-            yaxes[yd.name] = {
+            if self._subcoord_overlaid:
+                if opts.get('subcoordinate_y') is None:
+                    continue
+                ax_name = el.label
+                subcoordinate_axes += 1
+            else:
+                ax_name = yd.name
+            dimensions[ax_name] = yd
+            yaxes[ax_name] = {
                 'position': opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
                 'autorange': opts.get('autorange', None),
                 'logx': opts.get('logx', False),
@@ -528,11 +575,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 'fontsize': {
                     'axis_label_text_font_size': sp._fontsize('ylabel').get('fontsize'),
                     'major_label_text_font_size': sp._fontsize('yticks').get('fontsize')
-                }
+                },
+                'subcoordinate_y': subcoordinate_axes-1 if self._subcoord_overlaid else None
             }
 
         for ydim, info in yaxes.items():
             range_tags_extras = {'invert_yaxis': info['invert_yaxis']}
+            if info['subcoordinate_y'] is not None:
+                range_tags_extras['subcoordinate_y'] = info['subcoordinate_y']
             if info['autorange'] == 'y':
                 range_tags_extras['autorange'] = True
                 lowerlim, upperlim = info['ylim'][0], info['ylim'][1]
@@ -542,7 +592,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     range_tags_extras['y-upperlim'] = upperlim
             else:
                 range_tags_extras['autorange'] = False
-
             ax_props = self._axis_props(
                 plots, subplots, element, ranges, pos=1, dim=dimensions[ydim],
                 range_tags_extras=range_tags_extras,
@@ -582,8 +631,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 range_tags_extras['autorange'] = False
             axis_specs['y']['y'] = self._axis_props(
-                plots, subplots, element, ranges, pos=1, range_tags_extras = range_tags_extras
+                plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras
             ) + (self.yaxis, {})
+
+        if self._subcoord_overlaid:
+            _, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
+            axis_specs['y'].update(extra_axis_specs)
 
         properties, axis_props = {}, {'x': {}, 'y': {}}
         for axis, axis_spec in axis_specs.items():
@@ -591,9 +644,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 scale = get_scale(axis_range, axis_type)
                 if f'{axis}_range' in properties:
                     properties[f'extra_{axis}_ranges'] = extra_ranges = properties.get(f'extra_{axis}_ranges', {})
-                    properties[f'extra_{axis}_scales'] = extra_scales = properties.get(f'extra_{axis}_scales', {})
                     extra_ranges[axis_dim] = axis_range
-                    extra_scales[axis_dim] = scale
+                    if not self.subcoordinate_y:
+                        properties[f'extra_{axis}_scales'] = extra_scales = properties.get(f'extra_{axis}_scales', {})
+                        extra_scales[axis_dim] = scale
                 else:
                     properties[f'{axis}_range'] = axis_range
                     properties[f'{axis}_scale'] = scale
@@ -641,6 +695,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             fig = figure(title=title, **properties)
         fig.xaxis[0].update(**axis_props['x'])
         fig.yaxis[0].update(**axis_props['y'])
+
+        # Do not add the extra axes to the layout if subcoordinates are used
+        if self._subcoord_overlaid:
+            return fig
 
         multi_ax = 'x' if self.invert_axes else 'y'
         for axis_dim, range_obj in properties.get(f'extra_{multi_ax}_ranges', {}).items():
@@ -805,6 +863,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+            elif self._subcoord_overlaid and axis == 'y':
+                ticks, labels = [], []
+                for i, (el, sp) in enumerate(zip(self.current_frame, self.subplots.values())):
+                    if not sp.subcoordinate_y:
+                        continue
+                    ycenter = i if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
+                    ticks.append(ycenter)
+                    labels.append(el.label)
+                axis_props['ticker'] = FixedTicker(ticks=ticks)
+                if labels is not None:
+                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)
@@ -956,6 +1025,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._update_main_ranges(element, x_range, y_range, ranges)
 
+        if self._subcoord_overlaid:
+            return
+
         # ALERT: stream handling not handled
         streaming = False
         multi_dim = 'x' if self.invert_axes else 'y'
@@ -1002,8 +1074,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     and (framewise or streaming))
                    or xfactors is not None)
         yupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
-                    and (framewise or streaming))
-                   or yfactors is not None)
+                    and (framewise or streaming) or yfactors is not None) and not self.subcoordinate_y)
 
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options.get('width'))
@@ -1115,7 +1186,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
-        if not self.drawn or yupdate:
+        if not (self.drawn or self.subcoordinate_y) or yupdate:
             self._update_range(
                 y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
                 self._shared['y-main-range'], self.logy, streaming
@@ -1394,13 +1465,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if 'legend_field' in properties and 'legend_label' in properties:
             del properties['legend_label']
 
-        if self.handles['x_range'].name in plot.extra_x_ranges:
-            properties['x_range_name'] = self.handles['y_range'].name
-        if self.handles['y_range'].name in plot.extra_y_ranges:
+        if self.handles['x_range'].name in plot.extra_x_ranges and not self.subcoordinate_y:
+            properties['x_range_name'] = self.handles['x_range'].name
+        if self.handles['y_range'].name in plot.extra_y_ranges and not self.subcoordinate_y:
             properties['y_range_name'] = self.handles['y_range'].name
 
         if "name" not in properties:
             properties["name"] = properties.get("legend_label") or properties.get("legend_field")
+
+        if self._subcoord_overlaid:
+            y_source_range = self.handles['y_range']
+            if isinstance(self.subcoordinate_y, bool):
+                center = y_source_range.tags[1]['subcoordinate_y']
+                offset = self.subcoordinate_scale/2.
+                ytarget_range = dict(start=center-offset, end=center+offset)
+            else:
+                ytarget_range = dict(start=self.subcoordinate_y[0], end=self.subcoordinate_y[1])
+            plot = plot.subplot(
+                x_source=plot.x_range,
+                x_target=plot.x_range,
+                y_source=y_source_range,
+                y_target=Range1d(**ytarget_range),
+            )
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
@@ -1773,6 +1859,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axes, plot_ranges = self._find_axes(plot, element)
             self.handles['xaxis'], self.handles['yaxis'] = axes
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
+            if self._subcoord_overlaid:
+                if style_element.label in plot.extra_y_ranges:
+                    self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
         self.handles['plot'] = plot
 
         if self.autorange:
@@ -2526,7 +2615,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive', 'fontscale']
+                          'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
+                          'subcoordinate_scale']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
@@ -2750,6 +2840,22 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         return super()._get_axis_dims(element)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
+        if self.multi_y and self.subcoordinate_y:
+            raise ValueError('multi_y and subcoordinate_y are not supported together.')
+        if self.subcoordinate_y:
+            labels = self.hmap.last.traverse(lambda x: x.label, [
+                lambda el: isinstance(el, Element) and el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            ])
+            if any(not label for label in labels):
+                raise ValueError(
+                    'Every element wrapped in a subcoordinate_y overlay must have '
+                    'a label.'
+                )
+            if len(set(labels)) == 1:
+                raise ValueError(
+                    'Elements wrapped in a subcoordinate_y overlay must all have '
+                    'a unique label.'
+                )
         key = util.wrap_tuple(self.hmap.last_key)
         nonempty = [(k, el) for k, el in self.hmap.data.items() if el]
         if not nonempty:
