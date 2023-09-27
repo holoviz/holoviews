@@ -38,7 +38,6 @@ extras_require['tests_core'] = [
     'bokeh',
     'pillow',
     'plotly >=4.0',
-    'dash >=1.16',
     'codecov',
     'ipython >=5.4.0',
 ]
@@ -58,6 +57,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',
+    'dash >=1.16',
 ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [

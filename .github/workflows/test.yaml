@@ -135,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest']
-        python-version: ['3.11']
+        python-version: ['3.12']
     timeout-minutes: 120
     defaults:
       run:
@@ -149,7 +149,7 @@ jobs:
           name: core_test_suite
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,conda-forge,conda-forge/label/python_rc,nodefaults
           envs: "-o tests_core"
           cache: true
           conda-update: true
