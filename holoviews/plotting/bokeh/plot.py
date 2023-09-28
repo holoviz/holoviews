@@ -131,7 +131,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             values = decode_bytes(values) # Bytes need decoding to strings
 
             # Certain datetime types need to be converted
-            if len(values) and isinstance(np.asarray(values)[0], cftime_types):
+            if len(values) and isinstance(next(iter(values)), cftime_types):
                 if any(v.calendar not in _STANDARD_CALENDARS for v in values):
                     self.param.warning(
                         'Converting cftime.datetime from a non-standard '
