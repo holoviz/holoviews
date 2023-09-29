@@ -1,7 +1,6 @@
 import param
 import numpy as np
 import matplotlib as mpl
-import pandas as pd
 
 from matplotlib import patches
 from matplotlib.lines import Line2D
@@ -313,11 +312,9 @@ class _SyntheticAnnotationPlot(AnnotationPlot):
         elif isinstance(element, VLines):
             extents = extents[0], np.nan, extents[2], np.nan
         elif isinstance(element, HSpans):
-            extents = pd.array(extents)  # Handle both nan and None
-            extents = np.nan, extents[:2].min(), np.nan, extents[2:].max()
+            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
         elif isinstance(element, VSpans):
-            extents = pd.array(extents)  # Handle both nan and None
-            extents = extents[:2].min(), np.nan, extents[2:].max(), np.nan
+            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
         return extents
 
     def initialize_plot(self, ranges=None):
