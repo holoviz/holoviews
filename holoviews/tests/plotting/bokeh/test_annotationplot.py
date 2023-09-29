@@ -232,6 +232,15 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
+    def test_hlines_xlabel_ylabel(self):
+        hlines = HLines(
+            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        ).opts(xlabel="xlabel", ylabel="xlabel")
+        plot = bokeh_renderer.get_plot(hlines)
+        assert isinstance(plot.handles["glyph"], BkHSpan)
+        assert plot.handles["xaxis"].axis_label == "xlabel"
+        assert plot.handles["yaxis"].axis_label == "xlabel"
+
     def test_hlines_array(self):
         hlines = HLines(np.array([0, 1, 2, 5.5]))
         plot = bokeh_renderer.get_plot(hlines)
@@ -411,6 +420,15 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["y0"] == [0, 3, 5.5]).all()
         assert (source.data["y1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
+
+    def test_hspans_plot_xlabel_ylabel(self):
+        hspans = HSpans(
+            {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        ).opts(xlabel="xlabel", ylabel="xlabel")
+        plot = bokeh_renderer.get_plot(hspans)
+        assert isinstance(plot.handles["glyph"], BkHStrip)
+        assert plot.handles["xaxis"].axis_label == "xlabel"
+        assert plot.handles["yaxis"].axis_label == "xlabel"
 
     def test_hspans_plot_invert_axes(self):
         hspans = HSpans(
