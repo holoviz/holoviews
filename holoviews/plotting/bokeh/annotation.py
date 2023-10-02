@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 from html import escape
 
@@ -51,7 +52,11 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         figure = super().initialize_plot(ranges=ranges, plot=plot, plots=plots, source=source)
-        labels = "yx" if self.invert_axes else "xy"
+        # Only force labels if no other ranges are set
+        if self.overlaid and set(itertools.chain.from_iterable(ranges)) - {"HSpans", "VSpans", "VLines", "HLines"}:
+            return figure
+        labels = [self.xlabel or "x", self.ylabel or "y"]
+        labels = labels[::-1] if self.invert_axes else labels
         for ax, label in zip(figure.axis, labels):
             ax.axis_label = label
         return figure
