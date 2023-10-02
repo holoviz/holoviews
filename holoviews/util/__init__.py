@@ -715,6 +715,9 @@ class extension(_pyviz_extension):
 
         import panel as pn
 
+        if params.get("enable_mathjax", False) and selected_backend == "bokeh":
+            pn.extension("mathjax")
+
         if pn.config.comms == "default":
             if "google.colab" in sys.modules:
                 pn.config.comms = "colab"
