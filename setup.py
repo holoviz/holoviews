@@ -39,6 +39,7 @@ extras_require['tests_core'] = [
     'pillow',
     'plotly >=4.0',
     'ipython >=5.4.0',
+    'contourpy',
 ]
 
 # Optional tests dependencies, i.e. one should be able
