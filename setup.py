@@ -39,7 +39,6 @@ extras_require['tests_core'] = [
     'pillow',
     'plotly >=4.0',
     'dash >=1.16',
-    'codecov',
     'ipython >=5.4.0',
 ]
 
@@ -61,7 +60,8 @@ extras_require['tests'] = extras_require['tests_core'] + [
 ]
 
 extras_require['test_ci'] = [
-    "pytest-github-actions-annotate-failures"
+    'codecov',
+    "pytest-github-actions-annotate-failures",
 ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
