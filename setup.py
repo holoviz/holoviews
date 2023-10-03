@@ -60,6 +60,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'datashader >=0.11.1',
 ]
 
+extras_require['test_ci'] = [
+    "pytest-github-actions-annotate-failures"
+]
+
 extras_require['tests_gpu'] = extras_require['tests'] + [
     'cudf',
 ]
