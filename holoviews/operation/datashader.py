@@ -42,14 +42,6 @@ from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
 
-def __getattr__(name):
-    if name == "ResamplingOperation":
-        from ..util.warnings import deprecated
-        deprecated("1.18", "ResamplingOperation", "ResampleOperation2D")
-        return ResampleOperation2D
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 ds_version = Version(ds.__version__)
 ds15 = ds_version >= Version('0.15.1')
 
