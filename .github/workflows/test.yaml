@@ -149,7 +149,7 @@ jobs:
           name: core_test_suite
           python-version: ${{ matrix.python-version }}
           # channel-priority: strict
-          channels: pyviz/label/dev,conda-forge,conda-forge/label/python_rc,nodefaults
+          channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o tests_core"
           cache: true
           conda-update: true
