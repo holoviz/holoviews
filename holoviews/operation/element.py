@@ -23,6 +23,7 @@ from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)
 from ..streams import RangeXY
+from ..util.locator import MaxNLocator
 
 column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
@@ -546,7 +547,6 @@ class contours(Operation):
     def _process(self, element, key=None):
         try:
             from matplotlib.dates import num2date, date2num
-            from matplotlib.ticker import MaxNLocator
         except ImportError:
             raise ImportError("contours operation requires matplotlib.")
 
