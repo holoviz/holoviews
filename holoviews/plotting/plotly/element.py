@@ -385,10 +385,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
 
+        formatted_title = self._format_title(key, separator=' ')
         layout = dict(
-            title=self._format_title(key, separator=' '),
+            title=formatted_title,
             plot_bgcolor=self.bgcolor, uirevision=True
         )
+        if self.fontsize is not None :  # plotly title is a dict with text and fontsize etc
+            layout = dict(title=dict(text=formatted_title, font=dict(size=self.fontsize['title'])) ,
+            plot_bgcolor=self.bgcolor, uirevision=True
+            )
 
         if not self.responsive:
             layout['width'] = self.width
