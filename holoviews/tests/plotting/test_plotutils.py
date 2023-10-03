@@ -1,4 +1,3 @@
-from unittest import SkipTest
 
 import numpy as np
 
@@ -16,7 +15,6 @@ from holoviews.plotting.util import (
     get_range, get_axis_padding)
 from holoviews.streams import PointerX
 
-from holoviews.plotting.bokeh import util
 bokeh_renderer = Store.renderers['bokeh']
 
 
@@ -656,38 +654,3 @@ class TestRangeUtilities(ComparisonTestCase):
         self.assertEqual(drange, (-0.5, 2.5))
         self.assertEqual(srange, (-1, 4))
         self.assertEqual(hrange, (-1, 3))
-
-
-
-class TestBokehUtils(ComparisonTestCase):
-
-    def setUp(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest("Flexx required to test transpiling formatter functions.")
-
-
-    def test_py2js_funcformatter_single_arg(self):
-        def test(x):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_two_args(self):
-        def test(x, pos):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_arg_and_kwarg(self):
-        def test(x, pos=None):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    pos = (pos === undefined) ? null: pos;\n    return "" '
-                   '+ x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)

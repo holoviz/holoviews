@@ -50,7 +50,7 @@ from .styles import (
 from .tabular import TablePlot
 from .util import (
     TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer,
-    decode_bytes, get_tab_title, glyph_order, py2js_tickformatter,
+    decode_bytes, get_tab_title, glyph_order,
     recursive_model_update, theme_attr_json, cds_column_replace,
     hold_policy, match_dim_specs, compute_layout_properties,
     wrap_formatter, match_ax_type, match_yaxis_type_to_range,
@@ -885,13 +885,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 formatter = dimension.value_format
             elif dimension.type in dimension.type_formatters:
                 formatter = dimension.type_formatters[dimension.type]
-            if formatter:
-                msg = ('%s dimension formatter could not be '
-                       'converted to tick formatter. ' % dimension.name)
-                jsfunc = py2js_tickformatter(formatter, msg)
-                if jsfunc:
-                    formatter = CustomJSTickFormatter(code=jsfunc)
-                    axis_props['formatter'] = formatter
 
         if axis == 'x':
             axis_obj = plot.xaxis[0]
