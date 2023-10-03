@@ -32,7 +32,7 @@ from param.parameterized import bothmethod
 from .dimension import LabelledData
 from .element import Collator, Element
 from .overlay import Overlay, Layout
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
+from .ndmapping import NdMapping, UniformNdMapping
 from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 
@@ -621,7 +621,7 @@ class FileArchive(Archive):
     def __init__(self, **params):
         super().__init__(**params)
         #  Items with key: (basename,ext) and value: (data, info)
-        self._files = OrderedDict()
+        self._files = {}
         self._validate_formatters()
 
 
@@ -832,7 +832,7 @@ class FileArchive(Archive):
         elif self.archive_format == 'tar':
             self._tar_archive(export_name, files, root)
         if self.flush_archive:
-            self._files = OrderedDict()
+            self._files = {}
 
     def _format(self, formatter, info):
         filtered = {k:v for k,v in info.items()

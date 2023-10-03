@@ -10,7 +10,6 @@ from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
-from holoviews.core.util import OrderedDict
 from holoviews.element import Histogram, QuadMesh
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
@@ -190,7 +189,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
             import xarray as xr
         except ImportError:
             raise SkipTest("Test requires xarray")
-        coords = OrderedDict([('lat', (('y', 'x'), self.ys)),
+        coords = dict([('lat', (('y', 'x'), self.ys)),
                               ('lon', (('y', 'x'), self.xs))])
         da = xr.DataArray(self.zs, dims=['y', 'x'],
                           coords=coords, name='z')

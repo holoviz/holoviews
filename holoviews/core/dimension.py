@@ -22,7 +22,7 @@ from .accessors import Opts, Apply, Redim
 from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
-from .util import OrderedDict, bytes_to_unicode
+from .util import bytes_to_unicode
 
 # Alias parameter support for pickle loading
 
@@ -804,7 +804,7 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    cdims = param.Dict(default=OrderedDict(), doc="""
+    cdims = param.Dict(default={}, doc="""
        The constant dimensions defined as a dictionary of Dimension:value
        pairs providing additional dimension information about the object.
 
@@ -842,7 +842,7 @@ class Dimensioned(LabelledData):
         super().__init__(data, **params)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
-        self._cached_constants = OrderedDict(cdims)
+        self._cached_constants = dict(cdims)
         self._settings = None
 
         # Instantiate accessors

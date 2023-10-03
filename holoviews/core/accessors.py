@@ -4,7 +4,6 @@ Module for accessor objects for viewable HoloViews objects.
 import copy
 import sys
 
-from collections import OrderedDict
 from functools import wraps
 from types import FunctionType
 
@@ -435,7 +434,7 @@ class Redim(metaclass=AccessorPipelineMeta):
         def dynamic_redim(obj, **dynkwargs):
             return obj.redim(specs, **dimensions)
         dmap = Dynamic(obj, streams=obj.streams, operation=dynamic_redim)
-        dmap.data = OrderedDict(self._filter_cache(redimmed, kdims))
+        dmap.data = dict(self._filter_cache(redimmed, kdims))
         with util.disable_constant(dmap):
             dmap.kdims = kdims
             dmap.vdims = vdims
@@ -597,7 +596,7 @@ class Opts(metaclass=AccessorPipelineMeta):
 
     def _holomap_opts(self, *args, clone=None, **kwargs):
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        data = OrderedDict([(k, v.opts(*args, **kwargs))
+        data = dict([(k, v.opts(*args, **kwargs))
                              for k, v in self._obj.data.items()])
 
         # By default do not clone in .opts method
@@ -623,7 +622,7 @@ class Opts(metaclass=AccessorPipelineMeta):
                 obj.callback = self._obj.callback
                 self._obj.callback = dmap.callback
             dmap = self._obj
-            dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
+            dmap.data = dict([(k, v.opts(*args, **kwargs))
                                      for k, v in self._obj.data.items()])
         return dmap
 

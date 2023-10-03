@@ -14,7 +14,7 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections import defaultdict, OrderedDict, namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
 from functools import partial
@@ -1934,7 +1934,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
             warnings.filterwarnings(
                 'ignore', category=FutureWarning, message="Creating a Groupby object with a length-1"
             )
-            groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+            groups = ((wrap_tuple(k), group_type(dict(unpack_group(group, getter)), **kwargs))
                     for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
 
         if sort:

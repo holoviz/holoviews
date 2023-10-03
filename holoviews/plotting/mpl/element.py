@@ -13,7 +13,7 @@ from matplotlib.image import AxesImage
 from packaging.version import Version
 
 from ...core import util
-from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
+from ...core import (NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception, Keywords
 from ...element import Graph, Path
@@ -1159,7 +1159,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             elif element.label and handle:
                 legend_data.append((handle, labels.get(element.label, element.label)))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
-        data = OrderedDict()
+        data = {}
         used_labels = []
         for handle, label in zip(all_handles, all_labels):
             # Ensure that artists with multiple handles are supported

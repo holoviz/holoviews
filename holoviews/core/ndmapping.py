@@ -4,7 +4,6 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
-from collections import OrderedDict
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
@@ -103,7 +102,7 @@ class MultiDimensionalMapping(Dimensioned):
             params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
-        super().__init__(OrderedDict(), **dict(params))
+        super().__init__({}, **dict(params))
 
         self._next_ind = 0
         self._check_key_type = True
@@ -116,12 +115,12 @@ class MultiDimensionalMapping(Dimensioned):
                 initial_items = initial_items.items()
             elif isinstance(initial_items, MultiDimensionalMapping):
                 initial_items = initial_items.data.items()
-            self.data = OrderedDict((k if isinstance(k, tuple) else (k,), v)
+            self.data = dict((k if isinstance(k, tuple) else (k,), v)
                                     for k, v in initial_items)
             if self.sort:
                 self._resort()
         elif initial_items is not None:
-            self.update(OrderedDict(initial_items))
+            self.update(dict(initial_items))
 
 
     def _item_check(self, dim_vals, data):
@@ -172,7 +171,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         # Updates nested data structures rather than simply overriding them.
         if (update and (dim_vals in self.data)
-            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, OrderedDict))):
+            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, dict))):
             self.data[dim_vals].update(data)
         else:
             self.data[dim_vals] = data
@@ -246,7 +245,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        self.data = OrderedDict(dimension_sort(self.data, self.kdims, self.vdims,
+        self.data = dict(dimension_sort(self.data, self.kdims, self.vdims,
                                                range(self.ndims)))
 
 
@@ -343,7 +342,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise ValueError("Added dimension values must be same length"
                                 "as existing keys.")
 
-        items = OrderedDict()
+        items = {}
         for dval, (key, val) in zip(dim_val, self.data.items()):
             if vdim:
                 new_val = list(val)
@@ -429,7 +428,7 @@ class MultiDimensionalMapping(Dimensioned):
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
-        reindexed_items = OrderedDict(
+        reindexed_items = dict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
         reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
@@ -850,7 +849,7 @@ class UniformNdMapping(NdMapping):
         for key, group in groups.items():
             last = group.values()[-1]
             if isinstance(last, UniformNdMapping):
-                group_data = OrderedDict([
+                group_data = dict([
                     (k, v.collapse()) for k, v in group.items()
                 ])
                 group = group.clone(group_data)
@@ -861,7 +860,7 @@ class UniformNdMapping(NdMapping):
                     group_data = group.type(agg)
             elif issubclass(group.type, CompositeOverlay) and hasattr(self, '_split_overlays'):
                 keys, maps = self._split_overlays()
-                group_data = group.type(OrderedDict([
+                group_data = group.type(dict([
                     (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
                     for key, ndmap in zip(keys, maps)
                 ]))
