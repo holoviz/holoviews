@@ -21,7 +21,7 @@ jobs:
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       PKG_TEST_PYTHON: "--test-python=py38"
-      PYTHON_VERSION: "3.8"
+      PYTHON_VERSION: "3.9"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
@@ -30,10 +30,13 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          python-version: 3.9
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
