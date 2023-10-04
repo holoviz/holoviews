@@ -384,7 +384,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def init_layout(self, key, element, ranges, is_geo=False):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
-
         formatted_title = self._format_title(key, separator=' ')
         layout = dict(
             title=formatted_title,
