@@ -60,7 +60,7 @@ jobs:
         run: |
           VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
           FILE="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"
-          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $FILE
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $FILE
   pip_build:
     name: Build PyPI Packages
     runs-on: 'ubuntu-latest'
