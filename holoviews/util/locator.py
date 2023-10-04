@@ -129,6 +129,8 @@ class MaxNLocator:
     _min_n_ticks = 1
 
     def __init__(self, nbins: int = 10):
+        if nbins < 1:
+            raise ValueError("MaxNLocator nbins must be an integer greater than zero")
         self.nbins = nbins
 
     def _raw_ticks(self, vmin, vmax):
