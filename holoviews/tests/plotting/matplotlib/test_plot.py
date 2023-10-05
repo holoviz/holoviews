@@ -1,14 +1,17 @@
 import matplotlib.pyplot as plt
 import pyviz_comms as comms
+from packaging.version import Version
 
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.mpl.element import ElementPlot
+from holoviews.plotting.mpl import mpl_version
 from param import concrete_descendents
 
 from .. import option_intersections
 
 mpl_renderer = Store.renderers['matplotlib']
+mpl38 = mpl_version >= Version("3.8")
 
 
 class TestPlotDefinitions(ComparisonTestCase):
