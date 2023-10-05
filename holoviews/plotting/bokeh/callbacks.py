@@ -9,7 +9,7 @@ import numpy as np
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
     PolyDrawTool, PolyEditTool, FreehandDrawTool,
-    PointDrawTool
+    PointDrawTool, BoxEditTool
 )
 from panel.io.state import state
 
@@ -25,7 +25,8 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from .util import bokeh3, convert_timestamp
+from .util import bokeh3, bokeh33, convert_timestamp
+from ...util.warnings import warn
 
 
 class Callback:
@@ -1229,9 +1230,12 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        # BoxEditTool does not support Quad type only Rect
-        # box_tool = BoxEditTool(renderers=[renderer], **kwargs)
-        # self.plot.state.tools.append(box_tool)
+        if bokeh33:
+            # First version with Quad support
+            box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+            self.plot.state.tools.append(box_tool)
+        else:
+            warn("BoxEditTool requires Bokeh >= 3.3")
         self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 

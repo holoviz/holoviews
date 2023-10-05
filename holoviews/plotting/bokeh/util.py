@@ -47,6 +47,7 @@ from ...util.warnings import deprecated
 bokeh_version = Version(bokeh.__version__)
 bokeh3 = bokeh_version >= Version("3.0")
 bokeh32 = bokeh_version >= Version("3.2")
+bokeh33 = bokeh_version >= Version("3.3")
 
 if bokeh3:
     from bokeh.layouts import group_tools
