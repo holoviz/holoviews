@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 
@@ -109,7 +109,9 @@ class DictInterface(Interface):
 
         if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
             raise ValueError('DictInterface expects data to be of uniform shape.')
-        if isinstance(data, dict):
+        if isinstance(data, OrderedDict):
+            # If OrderedDict is replaced with a regular dict, the following will not work:
+            # xr.tutorial.open_dataset('air_temperature').hvplot.contourf(geo=True)
             data.update(unpacked)
         else:
             data = dict(unpacked)
