@@ -39,7 +39,6 @@ extras_require['tests_core'] = [
     'pillow',
     'plotly >=4.0',
     'dash >=1.16',
-    'codecov',
     'ipython >=5.4.0',
 ]
 
@@ -48,7 +47,7 @@ extras_require['tests_core'] = [
 # of those.
 extras_require['tests'] = extras_require['tests_core'] + [
     'dask',
-    'ibis-framework != 7.0.0',  # Mapped to ibis-sqlite in setup.cfg for conda
+    'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
     'xarray >=0.10.4',
     'networkx',
     'shapely',
@@ -58,6 +57,11 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',
+]
+
+extras_require['test_ci'] = [
+    'codecov',
+    "pytest-github-actions-annotate-failures",
 ]
 
 extras_require['tests_gpu'] = extras_require['tests'] + [
