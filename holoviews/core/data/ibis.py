@@ -177,7 +177,7 @@ class IbisInterface(Interface):
             raise NotImplementedError("Weighted histograms currently "
                                       "not implemented for IbisInterface.")
         if density:
-            hist = hist/expr.count().execute()
+            hist = hist/expr.count().execute()/np.diff(bins)
         return hist, bins
 
     @classmethod
