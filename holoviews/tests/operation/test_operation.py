@@ -12,10 +12,10 @@ except ImportError:
 
 try:
     import ibis
-    from ibis import sqlite
 except ImportError:
-    ibis = sqlite = None
-
+    ibis = None
+else:
+    ibis.set_backend("sqlite")
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
