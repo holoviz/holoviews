@@ -10,6 +10,13 @@ try:
 except ImportError:
     da = None
 
+try:
+    import ibis
+    from ibis import sqlite
+except ImportError:
+    ibis = sqlite = None
+
+
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
                        QuadMesh, Dataset, renderer)
@@ -20,6 +27,7 @@ from holoviews.operation.element import (operation, transform, threshold,
                                          interpolate_curve, decimate)
 
 da_skip = skipIf(da is None, "dask.array is not available")
+ibis_skip = skipIf(ibis is None, "ibis is not available")
 
 
 class OperationTests(ComparisonTestCase):
@@ -177,6 +185,28 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]),
                          vdims='y')
         self.assertIsInstance(op_hist.data['y'], da.Array)
+        self.assertEqual(op_hist, hist)
+
+    @ibis_skip
+    def test_dataset_histogram_ibis(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = ibis.memtable(df, name='t')
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, dimension='x', num_bins=3, normed=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @ibis_skip
+    def test_dataset_cumulative_histogram_ibis(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = ibis.memtable(df, name='t')
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
+                         vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
