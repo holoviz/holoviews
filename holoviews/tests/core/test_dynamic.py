@@ -740,7 +740,7 @@ class DynamicTestOverlay(ComparisonTestCase):
 
         overlaid = dmap * dmap2
         overlay = overlaid[()]
-        self.assertEqual(overlay.Scatter.I, fn(0, 0))
+        self.assertEqual(overlay.Scatter.I, fn(None, None))
 
         dmap.event(x=1, y=2)
         overlay = overlaid[()]
