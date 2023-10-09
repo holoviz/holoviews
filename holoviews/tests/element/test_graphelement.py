@@ -227,9 +227,9 @@ class ChordTests(ComparisonTestCase):
 
     def test_chord_constructor_self_reference(self):
         chord = Chord([('A', 'B', 2), ('B', 'A', 3), ('A', 'A', 2)])
-        nodes = np.array(
-            [[-0.5, 0.866025, 0],
-             [0.5, -0.866025, 1]]
+        nodes = pd.DataFrame(
+            [[-0.5, 0.866025, "A"], [0.5, -0.866025, "B"]],
+            columns=["x", "y", "index"]
         )
         self.assertEqual(chord.nodes, Nodes(nodes))
 
