@@ -14,8 +14,6 @@ try:
     import ibis
 except ImportError:
     ibis = None
-else:
-    ibis.set_backend("sqlite")
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
@@ -188,6 +186,7 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_hist, hist)
 
     @ibis_skip
+    @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = ibis.memtable(df, name='t')
@@ -199,6 +198,7 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_hist, hist)
 
     @ibis_skip
+    @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_cumulative_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = ibis.memtable(df, name='t')

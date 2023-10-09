@@ -1,3 +1,5 @@
+import pytest
+
 from panel.tests.conftest import server_cleanup, port, pytest_addoption, pytest_configure, optional_markers  # noqa
 
 
@@ -26,3 +28,12 @@ try:
     dask.config.set({"dataframe.convert-string": False})
 except Exception:
     pass
+
+
+@pytest.fixture
+def ibis_sqlite_backend():
+    import ibis
+    old = ibis.get_backend()
+    ibis.set_backend('sqlite')
+    yield
+    ibis.set_backend(old)
