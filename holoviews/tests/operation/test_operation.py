@@ -209,6 +209,17 @@ class OperationTests(ComparisonTestCase):
                          vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
+    def test_dataset_histogram_explicit_bins_ibis(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = ibis.memtable(df, name='t')
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
+
+        hist = Histogram(([0, 1, 3], [1, 3]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
+
+
     def test_points_histogram_bin_range(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, bin_range=(0, 3), normed=True)
