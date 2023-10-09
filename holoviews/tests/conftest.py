@@ -32,8 +32,12 @@ except Exception:
 
 @pytest.fixture
 def ibis_sqlite_backend():
-    import ibis
-    old = ibis.get_backend()
-    ibis.set_backend('sqlite')
-    yield
-    ibis.set_backend(old)
+    try:
+        import ibis
+    except ImportError:
+        yield None
+    else:
+        old = ibis.get_backend()
+        ibis.set_backend('sqlite')
+        yield
+        ibis.set_backend(old)
