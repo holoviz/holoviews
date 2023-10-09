@@ -573,6 +573,9 @@ class contours(Operation):
         # if any data is a datetime, transform to matplotlib's numerical format
         data_is_datetime = tuple(isdatetime(arr) for k, arr in enumerate(data))
         if any(data_is_datetime):
+            if any(data_is_datetime[:2]) and self.p.filled:
+                raise RuntimeError("Datetime spatial coordinates are not supported "
+                                   "for filled contour calculations.")
             data = tuple(
                 date2num(d) if is_datetime else d
                 for d, is_datetime in zip(data, data_is_datetime)

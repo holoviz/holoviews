@@ -192,12 +192,16 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_contours, contour)
 
     def test_image_contours_filled(self):
-        img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
-        op_contours = contours(img, filled=True, levels=[2, 2.5])
-        data = [[(-0.333333, 0.111111, 2.25), (-0.333333, 0.055556, 2.25), (0., 0.166667, 2.25),
-                 (0.333333, 0.166667, 2.25), (0.333333, 0.2, 2.25), (0., 0.222222, 2.25), (-0.333333, 0.111111, 2.25)]]
-        polys = Polygons(data, vdims=img.vdims[0].clone(range=(2, 2.5)))
+        img = Image(np.array([[0, 0, 0], [0, 1, 0.], [0, 0, 0]]))
+        # Single polygon with hole
+        op_contours = contours(img, filled=True, levels=[0.25, 0.75])
+        data = [[(-0.25, 0.0, 0.5), (0.0, -0.25, 0.5), (0.25, 0.0, 0.5), (0.0, 0.25, 0.5),
+                  (-0.25, 0.0, 0.5)]]
+        polys = Polygons(data, vdims=img.vdims[0].clone(range=(0.25, 0.75)))
         self.assertEqual(op_contours, polys)
+        expected_holes = [[[np.array([[0.0, -0.08333333], [-0.08333333, 0.0], [0.0,  0.08333333],
+                                      [0.08333333, 0.0], [0.0, -0.08333333]])]]]
+        np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
 
     def test_image_contours_filled_empty(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
@@ -206,13 +210,14 @@ class OperationTests(ComparisonTestCase):
         polys = Polygons(None, vdims=img.vdims[0].clone(range=(20.0, 23.0)))
         self.assertEqual(op_contours, polys)
 
-
-
-    # dates on x, y, and xy ...
-
-
-
-
+    def test_image_contours_filled_xy_datetime(self):
+        x = np.array(['2023-09-01', '2023-09-02', '2023-09-03'], dtype='datetime64')
+        y = np.array(['2023-10-07', '2023-10-08', '2023-10-09'], dtype='datetime64')
+        z = np.array([[0, 0, 0], [0, 1, 0.], [0, 0, 0]])
+        img = Image((x, y, z))
+        msg = 'Datetime spatial coordinates are not supported for filled contour calculations.'
+        with pytest.raises(RuntimeError, match=msg):
+            _ = contours(img, filled=True, levels=[0.5, 2.0])
 
     def test_points_histogram(self):
         points = Points([float(i) for i in range(10)])
