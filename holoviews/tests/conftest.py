@@ -37,7 +37,6 @@ def ibis_sqlite_backend():
     except ImportError:
         yield None
     else:
-        old = ibis.get_backend()
         ibis.set_backend('sqlite')
         yield
-        ibis.set_backend(old)
+        ibis.set_backend(None)
