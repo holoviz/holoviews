@@ -524,8 +524,6 @@ class Comparison(ComparisonInterface):
         for dim, d1, d2 in dimension_data:
             try:
                 np.testing.assert_equal(d1, d2)
-            except AssertionError:
-                raise
             except Exception:
                 if d1.dtype != d2.dtype:
                     raise cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
