@@ -23,6 +23,11 @@ def ibis4():
     return ibis_version() >= Version("4.0")
 
 
+@lru_cache
+def ibis5():
+    return ibis_version() >= Version("5.0")
+
+
 class IbisInterface(Interface):
 
     types = ()
@@ -163,8 +168,8 @@ class IbisInterface(Interface):
         else:
             # sort_by will be removed in Ibis 5.0
             hist_bins = binned.value_counts().sort_by('bucket').execute()
-
-        for b, v in zip(hist_bins['bucket'], hist_bins['count']):
+        metric_name = 'bucket_count' if ibis5() else 'count'
+        for b, v in zip(hist_bins['bucket'], hist_bins[metric_name]):
             if np.isnan(b):
                 continue
             hist[int(b)] = v
@@ -172,7 +177,7 @@ class IbisInterface(Interface):
             raise NotImplementedError("Weighted histograms currently "
                                       "not implemented for IbisInterface.")
         if density:
-            hist = hist/expr.count().execute()
+            hist = hist/expr.count().execute()/np.diff(bins)
         return hist, bins
 
     @classmethod
