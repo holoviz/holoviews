@@ -209,6 +209,8 @@ class OperationTests(ComparisonTestCase):
                          vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
+    @ibis_skip
+    @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_histogram_explicit_bins_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = ibis.memtable(df, name='t')
