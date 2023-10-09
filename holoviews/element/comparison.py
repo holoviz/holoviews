@@ -524,13 +524,13 @@ class Comparison(ComparisonInterface):
         for dim, d1, d2 in dimension_data:
             try:
                 np.testing.assert_equal(d1, d2)
-            except Exception:
+            except Exception as e:
                 if d1.dtype != d2.dtype:
                     raise cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                        + f" First has type {d1}, and second has type {d2}.")
+                                        + f" First has type {d1}, and second has type {d2}.") from e
                 if d1.dtype.kind in 'SUOV':
                     if list(d1) == list(d2):
-                        raise cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
+                        raise cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.") from e
                 else:
                     cls.compare_arrays(d1, d2, msg)
 
