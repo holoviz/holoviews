@@ -1,7 +1,6 @@
 import sqlite3
-from unittest import SkipTest
-
 from tempfile import NamedTemporaryFile
+from unittest import SkipTest
 
 try:
     import ibis
@@ -9,14 +8,24 @@ try:
 except ImportError:
     raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
 
+try:
+    import duckdb
+except:
+    raise SkipTest("Could not import duckdb, skipping IbisInterface tests.")
+
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-
+import pytest
+from bokeh.models import axes as bokeh_axes
+from holoviews import render
 from holoviews.core.data import Dataset
-from holoviews.core.spaces import HoloMap
 from holoviews.core.data.ibis import IbisInterface
+from holoviews.core.spaces import HoloMap
+from holoviews.element.chart import Curve
 
-from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
+from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
 
 
 def create_temp_db(df, name, index=False):
@@ -303,3 +312,78 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
+
+def create_pandas_connection(df: pd.DataFrame, *args, **kwargs):
+    return ibis.pandas.connect({"df": df})
+
+def create_duckdb_connection(df: pd.DataFrame, *args, **kwargs):
+    tmpdir = kwargs["tmpdir"]
+    filename = str(Path(tmpdir)/"db.db")
+    duckdb_con = duckdb.connect(filename)
+    duckdb_con.execute("CREATE TABLE df AS SELECT * FROM df")
+
+    return ibis.duckdb.connect(filename)
+
+def create_sqlite_connection(df: pd.DataFrame, *args, **kwargs):
+    return create_temp_db(df, "df")
+
+@pytest.fixture
+def reference_df():
+    return pd.DataFrame(
+        {
+            "actual": [100, 150, 125, 140, 145, 135, 123],
+            "forecast": [90, 160, 125, 150, 141, 141, 120],
+            "numerical": [1.1, 1.9, 3.2, 3.8, 4.3, 5.0, 5.5],
+            "date": pd.date_range("2022-01-03", "2022-01-09"),
+            "string": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        },
+    )
+
+@pytest.fixture(params=[create_pandas_connection, create_duckdb_connection, create_sqlite_connection])
+def connection(request, reference_df, tmpdir):
+    return request.param(reference_df, tmpdir=tmpdir)
+
+@pytest.fixture
+def data(connection):
+    return connection.table("df")
+
+@pytest.fixture
+def dataset(data):
+    return Dataset(data, kdims=["numerical", "date", "string"], vdims=["actual", "forecast"])
+
+def test_index_ibis_table(data):
+        table = IbisInterface._index_ibis_table(data)
+        table.execute()
+
+@pytest.mark.parametrize(["dimension", "expected"], [
+    ("date", (np.datetime64('2022-01-03'), np.datetime64('2022-01-09'))),
+    ("string", ('Mon', 'Sun')),
+    ("numerical",(np.float64(1.1), np.float64(5.5))),
+])
+def test_range(dimension, expected, dataset):
+    assert IbisInterface.range(dataset, dimension) == expected
+
+@pytest.mark.parametrize(["dimension", "expected"], [
+    ("date", np.datetime64),
+    ("string", np.object_),
+    ("numerical", np.float64),
+])
+def test_dimension_type(dimension, expected, dataset):
+    assert IbisInterface.dimension_type(dataset, dimension) is expected
+
+@pytest.mark.parametrize(["kdims", "vdims", "xaxis_type", "yaxis_type"], [
+        ("date", "actual", bokeh_axes.DatetimeAxis, bokeh_axes.LinearAxis),
+        ("string", "actual", bokeh_axes.CategoricalAxis, bokeh_axes.LinearAxis),
+        ("numerical", "actual", bokeh_axes.LinearAxis, bokeh_axes.LinearAxis),
+        ("numerical", "date", bokeh_axes.LinearAxis, bokeh_axes.DatetimeAxis),
+        ("numerical", "string", bokeh_axes.LinearAxis, bokeh_axes.CategoricalAxis),
+    ])
+def test_bokeh_axis(data, kdims, vdims, xaxis_type, yaxis_type):
+    """Test to make sure the right axis can be identified for the bokeh backend"""
+    plot_ibis = Curve(data, kdims=kdims, vdims=vdims)
+    # When
+    plot_bokeh = render(plot_ibis, "bokeh")
+    xaxis, yaxis = plot_bokeh.axis
+    # Then
+    assert isinstance(xaxis, xaxis_type)
+    assert isinstance(yaxis, yaxis_type)
