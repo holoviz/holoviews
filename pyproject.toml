@@ -38,6 +38,9 @@ filterwarnings = [
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",
     # 2023-09: See https://github.com/python-streamz/streamz/issues/460
     "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins",
+    # 2023-10: datetime.utctimestamp() is deprecated in Python 3.12
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh.util.serialization",
 ]
 
 [tool.coverage]
