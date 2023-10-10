@@ -63,7 +63,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o flakes -o tests -o examples_tests"
+          envs: "-o flakes -o tests -o examples_tests -o test_ci"
           cache: true
           conda-update: true
         id: install
@@ -109,7 +109,7 @@ jobs:
           name: ui_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          envs: "-o recommended -o tests -o build"
+          envs: "-o recommended -o tests -o build -o test_ci"
           cache: true
           playwright: true
         id: install
@@ -150,7 +150,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           # channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o tests_core"
+          envs: "-o tests_core -o test_ci"
           cache: true
           conda-update: true
         id: install

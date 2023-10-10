@@ -27,7 +27,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from . import *    # noqa (All Elements need to support comparison)
 from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix, OrderedDict)
+                    GridSpace, DynamicMap, GridMatrix)
 from ..core.options import Options, Cycle
 from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
                          is_float)
@@ -112,7 +112,6 @@ class Comparison(ComparisonInterface):
 
         # Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
-        cls.equality_type_funcs[OrderedDict] =  cls.compare_dictionaries
 
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray]          = cls.compare_arrays

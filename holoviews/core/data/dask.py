@@ -6,7 +6,7 @@ import pandas as pd
 from .. import util
 from ..dimension import Dimension
 from ..element import Element
-from ..ndmapping import NdMapping, item_check, OrderedDict, sorted_context
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import Interface
 from .pandas import PandasInterface
 
@@ -310,7 +310,7 @@ class DaskInterface(PandasInterface):
         if np.isscalar(rows):
             rows = [rows]
 
-        data = OrderedDict()
+        data = {}
         for c in cols:
             data[c] = dataset.data[c].compute().iloc[rows].values
         if scalar:

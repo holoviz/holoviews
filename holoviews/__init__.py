@@ -84,7 +84,7 @@ __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:
 from . import util                                       # noqa (API import)
 from .core import archive, config                        # noqa (API import)
 from .core.boundingregion import BoundingBox             # noqa (API import)
-from .core.dimension import OrderedDict, Dimension       # noqa (API import)
+from .core.dimension import Dimension                    # noqa (API import)
 from .core.element import Element, Collator              # noqa (API import)
 from .core.layout import (Layout, NdLayout, Empty,       # noqa (API import)
                           AdjointLayout)

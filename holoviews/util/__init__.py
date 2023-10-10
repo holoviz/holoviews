@@ -18,7 +18,7 @@ from ..core import (
 from ..core.options import Keywords, Options, options_policy
 from ..core.operation import Operation
 from ..core.overlay import Overlay
-from ..core.util import merge_options_to_dict, OrderedDict
+from ..core.util import merge_options_to_dict
 from ..core.operation import OperationCallable
 from ..core import util
 from ..operation.element import function
@@ -715,6 +715,9 @@ class extension(_pyviz_extension):
 
         import panel as pn
 
+        if params.get("enable_mathjax", False) and selected_backend == "bokeh":
+            pn.extension("mathjax")
+
         if pn.config.comms == "default":
             if "google.colab" in sys.modules:
                 pn.config.comms = "colab"
@@ -896,7 +899,7 @@ class Dynamic(param.ParameterizedFunction):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=streams)
             if self.p.shared_data:
-                dmap.data = OrderedDict([(k, callback.callable(*k))
+                dmap.data = dict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)

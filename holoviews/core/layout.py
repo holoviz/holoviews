@@ -9,7 +9,7 @@ import param
 import numpy as np
 
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
+from .ndmapping import NdMapping, UniformNdMapping
 from . import traversal
 
 
@@ -106,7 +106,7 @@ class AdjointLayout(Layoutable, Dimensioned):
         elif isinstance(data, list):
             data = dict(zip(self.layout_order, data))
         else:
-            data = OrderedDict()
+            data = {}
 
         super().__init__(data, **params)
 

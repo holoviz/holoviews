@@ -1,6 +1,5 @@
 import sys
 
-from collections import OrderedDict
 from inspect import getmro
 
 import param
@@ -76,7 +75,7 @@ class annotate(param.ParameterizedFunction):
     vertex_style = param.Dict(default={'nonselection_alpha': 0.5}, doc="""
         Options to apply to vertices during drawing and editing.""")
 
-    _annotator_types = OrderedDict()
+    _annotator_types = {}
 
     @property
     def annotated(self):
