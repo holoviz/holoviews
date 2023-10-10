@@ -157,11 +157,13 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
       - uses: actions/setup-python@v4
         with:
           python-version: 3.12
       - run: |
-          python -m pip install '.["tests_core", "tests_ci"]'
+          python -m pip install -ve '.[tests_core, tests_ci]'
       - name: bokeh sampledata
         run: |
           # conda activate test-environment
@@ -174,4 +176,3 @@ jobs:
         run: |
           # conda activate test-environment
           pytest holoviews
-          python --version
