@@ -929,10 +929,7 @@ def isfinite(val):
     if pandas_version >= Version('1.0.0'):
         if finite is pd.NA:
             return False
-        if np.isscalar(val):
-            return finite and not pd.isna(val)
-        else:
-            return finite & ~pd.isna(val)
+        return finite & ~pd.isna(np.asarray(val))
     return finite
 
 
