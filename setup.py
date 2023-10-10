@@ -59,7 +59,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'dash >=1.16',
 ]
 
-extras_require['test_ci'] = [
+extras_require['tests_ci'] = [
     'codecov',
     "pytest-github-actions-annotate-failures",
 ]
