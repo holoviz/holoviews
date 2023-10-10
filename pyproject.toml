@@ -40,7 +40,7 @@ filterwarnings = [
     "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins",
     # 2023-10: datetime.utctimestamp() is deprecated in Python 3.12
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",
-    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh.util.serialization",
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
 ]
 
 [tool.coverage]
