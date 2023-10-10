@@ -528,11 +528,15 @@ class Comparison(ComparisonInterface):
                 continue  # if equal, no need to check further
 
             if d1.dtype != d2.dtype:
-                raise cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                    + f" First has type {d1}, and second has type {d2}.")
+                failure_msg = (
+                    f"{msg} {dim.pprint_label} columns have different type. "
+                    f"First has type {d1}, and second has type {d2}."
+                )
+                raise cls.failureException(failure_msg)
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
-                    raise cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
+                    failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
+                    raise cls.failureException(failure_msg)
             else:
                 cls.compare_arrays(d1, d2, msg)
 
