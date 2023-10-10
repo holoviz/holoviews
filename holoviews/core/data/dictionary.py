@@ -1,4 +1,4 @@
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 
 import numpy as np
 
@@ -18,7 +18,7 @@ class DictInterface(Interface):
     are collections representing the values in that column.
     """
 
-    types = (dict,)
+    types = (dict, OrderedDict)
 
     datatype = 'dictionary'
 
@@ -109,12 +109,11 @@ class DictInterface(Interface):
 
         if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
             raise ValueError('DictInterface expects data to be of uniform shape.')
+        # OrderedDict can't be replaced with dict: https://github.com/holoviz/holoviews/pull/5925
         if isinstance(data, OrderedDict):
-            # If OrderedDict is replaced with a regular dict, the following will not work:
-            # xr.tutorial.open_dataset('air_temperature').hvplot.contourf(geo=True)
             data.update(unpacked)
         else:
-            data = dict(unpacked)
+            data = OrderedDict(unpacked)
 
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
