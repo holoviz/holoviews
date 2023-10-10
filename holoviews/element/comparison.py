@@ -17,6 +17,7 @@ methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
+import contextlib
 from functools import partial
 import numpy as np
 import pandas as pd
@@ -522,17 +523,18 @@ class Comparison(ComparisonInterface):
             raise AssertionError("%s not of matching length, %d vs. %d."
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
-            try:
+            with contextlib.suppress(Exception):
                 np.testing.assert_equal(d1, d2)
-            except Exception as e:
-                if d1.dtype != d2.dtype:
-                    raise cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                        + f" First has type {d1}, and second has type {d2}.") from e
-                if d1.dtype.kind in 'SUOV':
-                    if list(d1) == list(d2):
-                        raise cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.") from e
-                else:
-                    cls.compare_arrays(d1, d2, msg)
+                continue  # if equal, no need to check further
+
+            if d1.dtype != d2.dtype:
+                raise cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
+                                    + f" First has type {d1}, and second has type {d2}.")
+            if d1.dtype.kind in 'SUOV':
+                if list(d1) == list(d2):
+                    raise cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
+            else:
+                cls.compare_arrays(d1, d2, msg)
 
 
     @classmethod
