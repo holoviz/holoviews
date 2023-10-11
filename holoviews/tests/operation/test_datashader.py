@@ -875,7 +875,7 @@ class DatashaderRegridTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
     def test_regrid_rgb_mean(self):
-        arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('f')
+        arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('float64')
         rgb = RGB((range(10), range(5), arr, arr*2, arr*2))
         regridded = regrid(rgb, width=2, height=2, dynamic=False)
         new_arr = np.array([[1.6, 5.6], [6.4, 22.4]])
