@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+import pandas as pd
 
 import holoviews as hv
 from holoviews.element import (
@@ -53,21 +54,21 @@ class TestHVSpanPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
 
-        self.assertEqual(span.left, 1.1)
-        self.assertEqual(span.right, 1.5)
-        self.assertEqual(span.bottom, None)
-        self.assertEqual(span.top, None)
-        self.assertEqual(span.visible, True)
+        assert span.left == 1.1
+        assert span.right == 1.5
+        assert pd.isna(span.bottom)
+        assert pd.isna(span.top)
+        assert span.visible
 
     def test_hspan_plot(self):
         hspan = HSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, None)
-        self.assertEqual(span.right, None)
-        self.assertEqual(span.bottom, 1.1)
-        self.assertEqual(span.top, 1.5)
-        self.assertEqual(span.visible, True)
+        assert pd.isna(span.left)
+        assert pd.isna(span.right)
+        assert span.bottom == 1.1
+        assert span.top == 1.5
+        assert span.visible
 
     def test_hspan_empty(self):
         vline = HSpan(None)
@@ -79,21 +80,21 @@ class TestHVSpanPlot(TestBokehPlot):
         vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, None)
-        self.assertEqual(span.right, None)
-        self.assertEqual(span.bottom, 1.1)
-        self.assertEqual(span.top, 1.5)
-        self.assertEqual(span.visible, True)
+        assert pd.isna(span.left)
+        assert pd.isna(span.right)
+        assert span.bottom == 1.1
+        assert span.top == 1.5
+        assert span.visible
 
     def test_vspan_plot(self):
         vspan = VSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, 1.1)
-        self.assertEqual(span.right, 1.5)
-        self.assertEqual(span.bottom, None)
-        self.assertEqual(span.top, None)
-        self.assertEqual(span.visible, True)
+        assert span.left == 1.1
+        assert span.right == 1.5
+        assert pd.isna(span.bottom)
+        assert pd.isna(span.top)
+        assert span.visible
 
     def test_vspan_empty(self):
         vline = VSpan(None)
