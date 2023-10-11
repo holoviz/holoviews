@@ -524,6 +524,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else not util.isfinite(el) for el in [v0, v1]
         ):
             dim_range = range_type()
+        elif issubclass(range_type, FactorRange):
+            dim_range = range_type(name=dim.name if dim else None)
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
 

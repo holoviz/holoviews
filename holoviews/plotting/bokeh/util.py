@@ -51,6 +51,7 @@ from ...util.warnings import deprecated
 
 bokeh_version = Version(bokeh.__version__)
 bokeh32 = bokeh_version >= Version("3.2")
+bokeh33 = bokeh_version >= Version("3.3")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
