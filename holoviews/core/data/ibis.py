@@ -123,7 +123,14 @@ class IbisInterface(Interface):
     @cached
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.dtype(dataset, dimension).kind in 'SUO':
+        dtype_kind = cls.dtype(dataset, dimension).kind
+        if dtype_kind == 'O':
+            # Can this be done more efficiently?
+            column = dataset.data[dimension.name].execute()
+            first = column.iloc[0]
+            last = column.iloc[-1]
+            return first, last
+        if dtype_kind in 'SU':
             return None, None
         if dimension.nodata is not None:
             return Interface.range(dataset, dimension)
@@ -191,7 +198,9 @@ class IbisInterface(Interface):
         dimension = dataset.get_dimension(dimension)
         return dataset.data.head(0).execute().dtypes[dimension.name]
 
-    dimension_type = dtype
+    @classmethod
+    def dimension_type(cls, dataset, dim):
+        return cls.dtype(dataset, dim).type
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
