@@ -138,6 +138,10 @@ class Interface(param.Parameterized):
     # Whether the interface stores the names of the underlying dimensions
     named = True
 
+    ##################################################################
+    # Initialization                                                 #
+    ##################################################################
+
     @classmethod
     def loaded(cls):
         """
@@ -158,25 +162,16 @@ class Interface(param.Parameterized):
 
     @classmethod
     def register(cls, interface):
+        """"
+        Registers a new Interface.
+        """
         cls.interfaces[interface.datatype] = interface
 
     @classmethod
-    def cast(cls, datasets, datatype=None, cast_type=None):
-        """
-        Given a list of Dataset objects, cast them to the specified
-        datatype (by default the format matching the current interface)
-        with the given cast_type (if specified).
-        """
-        datatype = datatype or cls.datatype
-        cast = []
-        for ds in datasets:
-            if cast_type is not None or ds.interface.datatype != datatype:
-                ds = ds.clone(ds, datatype=[datatype], new_type=cast_type)
-            cast.append(ds)
-        return cast
-
-    @classmethod
     def error(cls):
+        """"
+        Error message raised if interface could not resolve data.
+        """
         info = dict(interface=cls.__name__)
         url = "http://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
@@ -191,7 +186,6 @@ class Interface(param.Parameterized):
         info['datatype'] = datatype
         return ("{interface} expects {datatype} data, for more information "
                 "on supported datatypes see {url}".format(**info))
-
 
     @classmethod
     def initialize(cls, eltype, data, kdims, vdims, datatype=None):
@@ -269,9 +263,13 @@ class Interface(param.Parameterized):
 
         return data, interface, dims, extra_kws
 
-
     @classmethod
     def validate(cls, dataset, vdims=True):
+        """
+        Validation runs after the Dataset has been constructed and should
+        validate that the Dataset is correctly formed and contains
+        all declared dimensions.
+        """
         dims = 'all' if vdims else 'key'
         not_found = [d for d in dataset.dimensions(dims, label='name')
                      if d not in dataset.data]
@@ -280,135 +278,24 @@ class Interface(param.Parameterized):
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
-    @classmethod
-    def persist(cls, dataset):
-        """
-        Should return a persisted version of the Dataset.
-        """
-        return dataset
+    ##################################################################
+    # Utility methods                                                #
+    ##################################################################
 
     @classmethod
-    def compute(cls, dataset):
+    def cast(cls, datasets, datatype=None, cast_type=None):
         """
-        Should return a computed version of the Dataset.
+        Given a list of Dataset objects, cast them to the specified
+        datatype (by default the format matching the current interface)
+        with the given cast_type (if specified).
         """
-        return dataset
-
-    @classmethod
-    def expanded(cls, arrays):
-        return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
-
-    @classmethod
-    def isscalar(cls, dataset, dim):
-        return len(cls.values(dataset, dim, expanded=False)) == 1
-
-    @classmethod
-    def isunique(cls, dataset, dim, per_geom=False):
-        """
-        Compatibility method introduced for v1.13.0 to smooth
-        over addition of per_geom kwarg for isscalar method.
-        """
-        try:
-            return cls.isscalar(dataset, dim, per_geom)
-        except TypeError:
-            return cls.isscalar(dataset, dim)
-
-    @classmethod
-    def dtype(cls, dataset, dimension):
-        name = dataset.get_dimension(dimension, strict=True).name
-        data = dataset.data[name]
-        if util.isscalar(data):
-            return np.array([data]).dtype
-        else:
-            return data.dtype
-
-    @classmethod
-    def replace_value(cls, data, nodata):
-        """
-        Replace `nodata` value in data with NaN
-        """
-        data = data.astype('float64')
-        mask = data != nodata
-        if hasattr(data, 'where'):
-            return data.where(mask, np.NaN)
-        return np.where(mask, data, np.NaN)
-
-    @classmethod
-    def select_mask(cls, dataset, selection):
-        """
-        Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
-        return a boolean mask over the rows in the Dataset object that
-        have been selected.
-        """
-        mask = np.ones(len(dataset), dtype=np.bool_)
-        for dim, sel in selection.items():
-            if isinstance(sel, tuple):
-                sel = slice(*sel)
-            arr = cls.values(dataset, dim)
-            if util.isdatetime(arr):
-                try:
-                    sel = util.parse_datetime_selection(sel)
-                except Exception:
-                    pass
-            if isinstance(sel, slice):
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'invalid value encountered')
-                    if sel.start is not None:
-                        mask &= sel.start <= arr
-                    if sel.stop is not None:
-                        mask &= arr < sel.stop
-            elif isinstance(sel, (set, list)):
-                iter_slcs = []
-                for ik in sel:
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings('ignore', r'invalid value encountered')
-                        iter_slcs.append(arr == ik)
-                mask &= np.logical_or.reduce(iter_slcs)
-            elif callable(sel):
-                mask &= sel(arr)
-            else:
-                index_mask = arr == sel
-                if dataset.ndims == 1 and np.sum(index_mask) == 0:
-                    data_index = np.argmin(np.abs(arr - sel))
-                    mask = np.zeros(len(dataset), dtype=np.bool_)
-                    mask[data_index] = True
-                else:
-                    mask &= index_mask
-        return mask
-
-
-    @classmethod
-    def indexed(cls, dataset, selection):
-        """
-        Given a Dataset object and selection to be applied returns
-        boolean to indicate whether a scalar value has been indexed.
-        """
-        selected = list(selection.keys())
-        all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
-                          and not callable(sel)) for sel in selection.values())
-        all_kdims = all(d in selected for d in dataset.kdims)
-        return all_scalar and all_kdims
-
-
-    @classmethod
-    def range(cls, dataset, dimension):
-        column = dataset.dimension_values(dimension)
-        if column.dtype.kind == 'M':
-            return column.min(), column.max()
-        elif len(column) == 0:
-            return np.NaN, np.NaN
-        else:
-            try:
-                assert column.dtype.kind not in 'SUO'
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                    return finite_range(column, np.nanmin(column), np.nanmax(column))
-            except (AssertionError, TypeError):
-                column = [v for v in util.python2sort(column) if v is not None]
-                if not len(column):
-                    return np.NaN, np.NaN
-                return column[0], column[-1]
+        datatype = datatype or cls.datatype
+        cast = []
+        for ds in datasets:
+            if cast_type is not None or ds.interface.datatype != datatype:
+                ds = ds.clone(ds, datatype=[datatype], new_type=cast_type)
+            cast.append(ds)
+        return cast
 
     @classmethod
     def concatenate(cls, datasets, datatype=None, new_type=None):
@@ -449,63 +336,405 @@ class Interface(param.Parameterized):
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
     @classmethod
-    def histogram(cls, array, bins, density=True, weights=None):
-        if util.is_dask_array(array):
+    def expanded(cls, arrays):
+        return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
+
+    ##################################################################
+    # Lazy and out-of-core data conversion                           #
+    ##################################################################
+
+    @classmethod
+    def compute(cls, dataset):
+        """
+        Converts a lazy Dataset to a non-lazy, in-memory format.
+
+        Note: This is a no-op if the data is already non-lazy.
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           Dataset: Dataset with non-lazy data.
+        """
+        return dataset
+
+    @classmethod
+    def persist(cls, dataset):
+        """
+        Persists the data backing the Dataset in memory.
+
+        Note: This is a no-op if the data is already in memory.
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           Dataset: Dataset with the data persisted to memory.
+        """
+        return dataset
+
+    ##################################################################
+    # Shape info                                                     #
+    ##################################################################
+
+    @classmethod
+    def length(cls, dataset):
+        """
+        Returns the number of rows in the Dataset
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           int: Length of the data
+        """
+        return len(dataset.data)
+
+    @classmethod
+    def nonzero(cls, dataset):
+        """
+        Returns a boolean indicating whether the Dataset contains any data.
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           bool: Whether the dataset is not empty.
+        """
+        return bool(cls.length(dataset))
+
+    @classmethod
+    def shape(cls, dataset):
+        """
+        Returns the shape of the data.
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           tuple[int, int]: The shape of the data (rows, cols)
+        """
+        return dataset.data.shape
+
+    ##################################################################
+    # Dimension info                                                 #
+    ##################################################################
+
+    @classmethod
+    def dtype(cls, dataset, dimension):
+        """
+        Returns the dtype for the selected dimension.
+
+        Args:
+           dataset (Dataset)
+           dimension (str | Dimension): Dimension to return the dtype for.
+        Returns:
+           np.dtype: The dtype of the selected dimension.
+        """
+        name = dataset.get_dimension(dimension, strict=True).name
+        data = dataset.data[name]
+        if util.isscalar(data):
+            return np.array([data]).dtype
+        else:
+            return data.dtype
+
+    @classmethod
+    def isscalar(cls, dataset, dimension):
+        """
+        Whether the selected dimension is a scalar value.
+
+        Args:
+           dataset (Dataset)
+           dimension (str | Dimension): Dimension to check for scalar value.
+        Returns:
+           bool: Whether the dimension is scalar.
+        """
+        return len(cls.values(dataset, dimension, expanded=False)) == 1
+
+    @classmethod
+    def range(cls, dataset, dimension):
+        """
+        Computes the minimum and maximum value along a dimension.
+
+        Note: In the past categorical and string columns were handled
+              by sorting the values and taking the first and last value.
+              This behavior is deprecated and will be removed in 2.0.
+              In future the range for these columns will be returned
+              as (None, None).
+
+        Args:
+           dataset (Dataset)
+           dimension (str | Dimension): Dimension to compute the range on.
+        Returns:
+           Tuple[Any, Any]
+        """
+        column = dataset.dimension_values(dimension)
+        if column.dtype.kind == 'M':
+            return column.min(), column.max()
+        elif len(column) == 0:
+            return np.NaN, np.NaN
+        else:
+            try:
+                assert column.dtype.kind not in 'SUO'
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                    return finite_range(column, np.nanmin(column), np.nanmax(column))
+            except (AssertionError, TypeError):
+                column = [v for v in util.python2sort(column) if v is not None]
+                if not len(column):
+                    return np.NaN, np.NaN
+                return column[0], column[-1]
+
+    @classmethod
+    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+        """
+        Returns the values along a dimension of the dataset.
+
+        Note: The expanded keyword has different behavior for gridded
+              interfaces where it determines whether 1D coordinates
+              are expanded into a multi-dimensional array.
+
+        Args:
+           dataset (Dataset)
+           dimension (str | Dimension): Dimension to return the values for.
+           expanded (bool): When false returns unique values along the dimension.
+           flat (bool): Whether to flatten the array.
+           compute (bool): Whether to load lazy data into memory as a NumPy array.
+           keep_index (bool): Whether to return the data with an index (if present).
+        Returns:
+           Dimension values in the requested format.
+        """
+        raise NotImplementedError
+
+    ##################################################################
+    # Adding dimensions                                              #
+    ##################################################################
+
+    @classmethod
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        """
+        Returns a copy of the data with the dimension values added.
+
+        Args:
+           dataset (Dataset): The Dataset to add the dimension to.
+           dimension (Dimension): The dimension to add.
+           dim_pos (int): The position in the data to add it to.
+           values (array-like): The array of values to add.
+           vdims (bool): Whether the data is a value dimension.
+        Returns
+           data: A copy of the data with the new dimension.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def assign(cls, dataset, new_data):
+        """
+        Adds a dictionary containing data for multiple new dimensions
+        to a copy of the dataset.data.
+
+        Args:
+           dataset (Dataset): The Dataset to add the dimension to.
+           new_data (Dict[str, array-like]): Dictionary containing new data to add to the Dataset.
+        Returns:
+           data: A copy of the data with the new data dimensions added.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
+        """
+
+        """
+
+        raise NotImplementedError
+
+    ##################################################################
+    # Selection utilities                                            #
+    ##################################################################
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        """
+        Implements integer indexing on the rows and columns of the data.
+
+        Note: Only implement for tabular interfaces.
+
+        Args:
+            dataset (Dataset): The dataset to apply the indexing operation on.
+            index (Tuple[Index, Index] | Index)
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def select_mask(cls, dataset, selection):
+        """
+        Given a Dataset object and a dictionary with dimension keys and
+        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
+        return a boolean mask over the rows in the Dataset object that
+        have been selected.
+
+        Args:
+           dataset (Dataset)
+           selection (Dict[str, Any]): Dictionary containing selections for each column.
+        Returns:
+           np.ndarray[bool]: Boolean array representing the selectio mask.
+        """
+        mask = np.ones(len(dataset), dtype=np.bool_)
+        for dim, sel in selection.items():
+            if isinstance(sel, tuple):
+                sel = slice(*sel)
+            arr = cls.values(dataset, dim)
+            if util.isdatetime(arr):
+                try:
+                    sel = util.parse_datetime_selection(sel)
+                except Exception:
+                    pass
+            if isinstance(sel, slice):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', r'invalid value encountered')
+                    if sel.start is not None:
+                        mask &= sel.start <= arr
+                    if sel.stop is not None:
+                        mask &= arr < sel.stop
+            elif isinstance(sel, (set, list)):
+                iter_slcs = []
+                for ik in sel:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', r'invalid value encountered')
+                        iter_slcs.append(arr == ik)
+                mask &= np.logical_or.reduce(iter_slcs)
+            elif callable(sel):
+                mask &= sel(arr)
+            else:
+                index_mask = arr == sel
+                if dataset.ndims == 1 and np.sum(index_mask) == 0:
+                    data_index = np.argmin(np.abs(arr - sel))
+                    mask = np.zeros(len(dataset), dtype=np.bool_)
+                    mask[data_index] = True
+                else:
+                    mask &= index_mask
+        return mask
+
+    @classmethod
+    def indexed(cls, dataset, selection):
+        """
+        Given a Dataset object and selection to be applied returns
+        boolean to indicate whether a scalar value has been indexed.
+        """
+        selected = list(selection.keys())
+        all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
+                          and not callable(sel)) for sel in selection.values())
+        all_kdims = all(d in selected for d in dataset.kdims)
+        return all_scalar and all_kdims
+
+    @classmethod
+    def sample(cls, dataset, samples=[]):
+        raise NotImplementedError
+
+    @classmethod
+    def select(cls, dataset, selection_mask=None, **selection):
+        raise NotImplementedError
+
+    ##################################################################
+    # Data transformations                                           #
+    ##################################################################
+
+    @classmethod
+    def aggregate(cls, dataset, kdims, function, **kwargs):
+        raise NotImplementedError
+
+    @classmethod
+    def histogram(cls, dimension_values, bins, density=True, weights=None):
+        """
+        Computes the histogram on the dimension values with support
+        for specific bins, normalization and weighting.
+
+        Note: Usually the dimension_values and weights are assumed to
+              be arrays but each interface should support data stored
+              in whatever format it uses to store dimensions internally.
+
+        Args:
+           dimension_values (array-like): In memory representation of the dimension values.
+           bins (np.ndarray | int): An array of bins or the number of bins.
+           density (bool): Whether to normalize the histogram.
+           weights (array-like): In memory representation of the weighting.
+        Returns:
+           Tuple[array-like, array-like]: Tuple of histogram values and bin edges.
+        """
+        if util.is_dask_array(dimension_values):
             import dask.array as da
             histogram = da.histogram
-        elif util.is_cupy_array(array):
+        elif util.is_cupy_array(dimension_values):
             import cupy
             histogram = cupy.histogram
         else:
             histogram = np.histogram
-        hist, edges = histogram(array, bins=bins, density=density, weights=weights)
+        hist, edges = histogram(dimension_values, bins=bins, density=density, weights=weights)
         if util.is_cupy_array(hist):
             edges = cupy.asnumpy(edges)
             hist = cupy.asnumpy(hist)
         return hist, edges
 
     @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        raise NotImplementedError
+
+    @classmethod
+    def redim(cls, dataset, dimensions):
+        """
+        Renames dimensions in the data.
+
+        Note: Only meaningful for data formats that store dimension names.
+
+        Args:
+           dataset (Dataset)
+           dimensions (Dict[str, str]): Dictionary mapping from old to new dimension names.
+        Returns:
+           Data after the dimension names have been transformed.
+        """
+        return dataset.data
+
+    @classmethod
+    def reindex(cls, dataset, kdims, vdims):
+        """
+        Reindexes data given new key and value dimensions.
+        """
+        raise NotImplementedError
+
+    @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):
+        """
+        Reduces one or more dimensions using the supplied reduction function.
+
+        Args:
+           dataset (Dataset)
+           dimensions (List[str | Dimension]): List of dimensions to reduce.
+           function (str | np.ufunc): Reduction operation to apply.
+        Returns:
+           Dataset: Dataset containing the reduced (or aggregated) data.
+        """
         kdims = [kdim for kdim in dataset.kdims if kdim not in reduce_dims]
         return cls.aggregate(dataset, kdims, function, **kwargs)
 
     @classmethod
-    def array(cls, dataset, dimensions):
-        return Element.array(dataset, dimensions)
+    def replace_value(cls, data, nodata):
+        """
+        Replace `nodata` value in data with NaN
+
+        Args:
+           dataset (Dataset)
+           nodata (numbers.Number): The nodata value to replace.
+        Returns:
+           np.ndarray: Array with the nodata value replaced with NaN.
+        """
+        data = data.astype('float64')
+        mask = data != nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
 
     @classmethod
-    def dframe(cls, dataset, dimensions):
-        return Element.dframe(dataset, dimensions)
+    def sort(cls, dataset, by=[], reverse=False):
+        raise NotImplementedError
 
-    @classmethod
-    def columns(cls, dataset, dimensions):
-        return Element.columns(dataset, dimensions)
-
-    @classmethod
-    def shape(cls, dataset):
-        return dataset.data.shape
-
-    @classmethod
-    def length(cls, dataset):
-        return len(dataset.data)
-
-    @classmethod
-    def nonzero(cls, dataset):
-        return bool(cls.length(dataset))
-
-    @classmethod
-    def redim(cls, dataset, dimensions):
-        return dataset.data
-
-    @classmethod
-    def has_holes(cls, dataset):
-        return False
-
-    @classmethod
-    def holes(cls, dataset):
-        coords = cls.values(dataset, dataset.kdims[0])
-        splits = np.where(np.isnan(coords.astype('float')))[0]
-        return [[[]]*(len(splits)+1)]
+    ##################################################################
+    # Conversion methods                                             #
+    ##################################################################
 
     @classmethod
     def as_dframe(cls, dataset):
@@ -514,3 +743,103 @@ class Interface(param.Parameterized):
         if it already a dataframe type.
         """
         return dataset.dframe()
+
+    @classmethod
+    def array(cls, dataset, dimensions):
+        """
+        Returns the data as a numpy.ndarray containing the selected dimensions.
+
+        Args:
+           dataset (Dataset)
+           dimensions (List[str]): List of dimensions to include.
+        Returns:
+           np.ndarray: A Numpy ndarray containing the selected dimensions.
+        """
+        return Element.array(dataset, dimensions)
+
+    @classmethod
+    def dframe(cls, dataset, dimensions):
+        """
+        Returns the data as a pandas.DataFrame containing the selected dimensions.
+
+        Args:
+           dataset (Dataset)
+           dimensions (List[str]): List of dimensions to include.
+        Returns:
+           pandas.DataFrame: A DataFrame containing the selected dimensions.
+        """
+        return Element.dframe(dataset, dimensions)
+
+    @classmethod
+    def columns(cls, dataset, dimensions):
+        """
+        Returns the data as a dictionary of 1D arrays indexed by column name.
+
+        Args:
+           dataset (Dataset)
+           dimensions (List[str]): List of dimensions to include.
+        Returns:
+           Dict[str, np.ndarray]: Whether the dataset is not empty.
+        """
+        return Element.columns(dataset, dimensions)
+
+    ##################################################################
+    # Geometry methods                                               #
+    ##################################################################
+
+    @classmethod
+    def geom_type(cls, dataset):
+        raise NotImplementedError
+
+    @classmethod
+    def has_holes(cls, dataset):
+        """
+        Whether the Dataset contains geometries with holes.
+
+        Note: Only meaningful to implement on Interfaces that support
+              geometry data.
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           bool: Whether the Dataset contains geometries with holes.
+        """
+        return False
+
+    @classmethod
+    def holes(cls, dataset):
+        """
+        Returns a list of lists of arrays containing the holes for
+        each geometry in the Dataset.
+
+        Note: Only meaningful to implement on Interfaces that support
+              geometry data.
+
+        Args:
+           dataset (Dataset)
+        Returns:
+           List[List[np.ndarray]]: List of list of arrays representing geometry holes.
+        """
+        coords = cls.values(dataset, dataset.kdims[0])
+        splits = np.where(np.isnan(coords.astype('float')))[0]
+        return [[[]]*(len(splits)+1)]
+
+    @classmethod
+    def isunique(cls, dataset, dim, per_geom=False):
+        """
+        Whether the selected dimension has only a single unique value.
+
+        Compatibility method introduced for v1.13.0 to smooth
+        over addition of per_geom kwarg for isscalar method.
+
+        Args:
+           dataset (Dataset)
+           dimension (str | Dimension): Dimension to check for scalar value.
+           per_geom (bool): If geometry
+        Returns:
+           bool: Whether the dimension is scalar.
+        """
+        try:
+            return cls.isscalar(dataset, dim, per_geom)
+        except TypeError:
+            return cls.isscalar(dataset, dim)
