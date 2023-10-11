@@ -14,7 +14,7 @@ install_requires = [
     "param >=1.12.0,<3.0",
     "numpy >=1.0",
     "pyviz_comms >=0.7.4",
-    "panel >=0.13.1",
+    "panel >=1.0",
     "colorcet",
     "packaging",
     "pandas >=0.20.0",
@@ -35,7 +35,7 @@ extras_require['tests_core'] = [
     'flaky',
     'matplotlib >=3, <3.8',  # 3.8 breaks tests
     'nbconvert',
-    'bokeh',
+    'bokeh >=3.1',
     'pillow',
     'plotly >=4.0',
     'dash >=1.16',
@@ -77,7 +77,7 @@ extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
     "matplotlib >=3",
-    "bokeh >=2.4.3",
+    "bokeh >=3.1",
 ]
 
 # Requirements to run all examples
@@ -116,15 +116,12 @@ extras_require['doc'] = extras_require['examples'] + [
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
-    'bokeh >2.2',
+    'bokeh >=3.1',
     'pooch',
     'selenium',
 ]
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
-
-extras_require['bokeh2'] = ["panel ==0.14.4", "param ==1.13.0"]  # Hard-pin to not pull in rc releases
-extras_require['bokeh3'] = ["panel >=1.0.0"]
 
 extras_require["build"] = [
     "param >=1.7.0",
