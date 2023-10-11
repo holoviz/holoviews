@@ -25,7 +25,7 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from .util import bokeh3, convert_timestamp
+from .util import convert_timestamp
 
 
 class Callback:
@@ -616,23 +616,6 @@ class RangeXYCallback(Callback):
         'x1': 'cb_obj.x1',
         'y1': 'cb_obj.y1',
     }
-
-    _js_on_event = """
-    if (this._updating)
-        return
-    const plot = this.origin
-    const plots = plot.x_range.plots.concat(plot.y_range.plots)
-    for (const p of plots) {
-      const event = new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end)
-      event._updating = true
-      p.trigger_event(event)
-    }
-    """
-
-    def set_callback(self, handle):
-        super().set_callback(handle)
-        if not bokeh3:
-            handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
 
     def _process_msg(self, msg):
         if self.plot.state.x_range is not self.plot.handles['x_range']:

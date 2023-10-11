@@ -12,7 +12,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import bokeh3, colormesh
+from .util import colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -102,10 +102,6 @@ class RasterPlot(ColorbarPlot):
                 l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis and not bokeh3:
-            l, r = r, l
-        if self.invert_yaxis and not bokeh3:
-            b, t = t, b
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
         for i, vdim in enumerate(element.vdims, 2):
@@ -118,10 +114,6 @@ class RasterPlot(ColorbarPlot):
                 img = np.array([[np.NaN]])
             if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
-            if self.invert_xaxis and not bokeh3:
-                img = img[:, ::-1]
-            if self.invert_yaxis and not bokeh3:
-                img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
 
@@ -212,12 +204,6 @@ class RGBPlot(LegendPlot):
             l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis and not bokeh3:
-            l, r = r, l
-            img = img[:, ::-1]
-        if self.invert_yaxis and not bokeh3:
-            img = img[::-1]
-            b, t = t, b
 
         if 0 in img.shape:
             img = np.zeros((1, 1), dtype=np.uint32)
