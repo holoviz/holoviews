@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable
 from functools import partial
 
 import param
+import numba as nb
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -1863,11 +1864,32 @@ class inspect(Operation):
 
 
 
+
+def _between(vals, lower, upper, res):
+    for i in range(vals.shape[0]):
+        val = vals[i]
+        res[i] = (val >= upper) & (val <= upper)
+
+def _between_bounds(vals, x0, x1, y0, y1, res):
+    for i in range(vals.shape[0]):
+        res[i] = ((vals[i, 0] >= x0) & (vals[i, 0] <= x1) &
+                  (vals[i, 1] >= y0) & (vals[i, 1] <= y1))
+
+
 class inspect_base(inspect):
     """
     Given datashaded aggregate (Image) output, return a set of
     (hoverable) points sampled from those near the cursor.
     """
+
+    _between_funcs = {}
+
+    _numba_types = {
+        np.float32: nb.float32,
+        np.float64: nb.float64,
+        np.int32: nb.int32,
+        np.int64: nb.int64
+    }
 
     def _process(self, raster, key=None):
         self._validate(raster)
@@ -1894,7 +1916,7 @@ class inspect_base(inspect):
 
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
-        ycount, xcount =  element.interface.shape(element, gridded=True)
+        ycount, xcount = element.interface.shape(element, gridded=True)
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
         return (x_delta*pixels, y_delta*pixels)
@@ -1908,6 +1930,41 @@ class inspect_base(inspect):
         return dataset.iloc[:0].dframe()
 
     @classmethod
+    def _get_between_func(cls, dtype):
+        if dtype not in cls._numba_types:
+            return _between
+        dtype = cls._numba_types[dtype]
+        if dtype in cls._between_funcs:
+            return cls._between_funcs[dtype]
+        args = (dtype[:], dtype, dtype, nb.bool_[:])
+        signature = '(n),(),()->(n)'
+        try:
+            cls._between_funcs[dtype] = between_fn = (
+                nb.guvectorize([args], signature)(_between)
+            )
+        except Exception as e:
+            return None
+        return between_fn
+
+    @classmethod
+    def _get_bounds_func(cls, dtype):
+        if dtype not in cls._numba_types:
+            return _between
+        dtype = cls._numba_types[dtype]
+        key = (dtype, dtype)
+        if key in cls._between_funcs:
+            return cls._between_funcs[key]
+        args = (dtype[:, :], dtype, dtype, dtype, dtype, nb.bool_[:])
+        signature = '(n,m),(),(),(),()->(n)'
+        try:
+            cls._between_funcs[key] = between_fn = (
+                nb.guvectorize([args], signature)(_between_bounds)
+            )
+        except Exception as e:
+            return None
+        return between_fn
+
+    @classmethod
     def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
         """
         Mask the dataframe around the specified x and y position with
@@ -1919,6 +1976,31 @@ class inspect_base(inspect):
             df = ds.data.cx[x0:x1, y0:y1]
             return df.compute() if hasattr(df, 'compute') else df
         xdim, ydim = raster.kdims
+        if ds.interface.datatype == 'dataframe':
+            xs, ys = ds.data[xdim.name], ds.data[ydim.name]
+            xt, yt = xs.dtype.type, ys.dtype.type
+            if xs.values.base is ys.values.base:
+                array = ds.data[[xdim.name, xdim.name]].values
+                if not len(array):
+                    return ds.data
+                func = cls._get_bounds_func(xt)
+                if func:
+                    mask = np.empty(len(array), dtype='bool')
+                    func(array, xt(x0), xt(x1), yt(y0), yt(y1), mask)
+                    return ds.data[mask]
+            xfunc = cls._get_between_func(xt)
+            if xfunc:
+                xmask = np.empty(len(array), dtype='bool')
+                xfunc(xs.values, xt(x0), xt(x1), xmask)
+            else:
+                xmask = (xs.values >= x0) & (xs.values <= x1)
+            yfunc = cls._get_between_func(yt)
+            if yfunc:
+                ymask = np.empty(len(array), dtype='bool')
+                yfunc(ys.values, yt(y0), yt(y1), ymask)
+            else:
+                ymask = (ys.values >= y0) & (ys.values <= y1)
+            return ds.data[xmask & ymask]
         query = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
         return ds.select(**query).dframe()
 
