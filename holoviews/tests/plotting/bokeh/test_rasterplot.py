@@ -3,7 +3,6 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews.element import Raster, Image, RGB, ImageStack
-from holoviews.plotting.bokeh.util import bokeh3
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -59,18 +58,11 @@ class TestRasterPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(raster)
         source = plot.handles["source"]
 
-        if bokeh3:
-            np.testing.assert_equal(source.data["image"][0], arr.T)
-            assert source.data["x"][0] == 0
-            assert source.data["y"][0] == 0
-            assert source.data["dw"][0] == 2
-            assert source.data["dh"][0] == 3
-        else:
-            np.testing.assert_equal(source.data["image"][0], np.rot90(arr))
-            assert source.data["x"][0] == 0
-            assert source.data["y"][0] == 3
-            assert source.data["dw"][0] == 2
-            assert source.data["dh"][0] == 3
+        np.testing.assert_equal(source.data["image"][0], arr.T)
+        assert source.data["x"][0] == 0
+        assert source.data["y"][0] == 0
+        assert source.data["dw"][0] == 2
+        assert source.data["dh"][0] == 3
 
     def test_image_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
@@ -95,12 +87,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["dh"] == [1.0]
         assert cdata["dw"] == [1.0]
 
-        if bokeh3:
-            assert cdata["x"] == [-0.5]
-            np.testing.assert_equal(cdata["image"][0], arr[::-1])
-        else:
-            assert cdata["x"] == [0.5]
-            np.testing.assert_equal(cdata["image"][0], arr[::-1, ::-1])
+        assert cdata["x"] == [-0.5]
+        np.testing.assert_equal(cdata["image"][0], arr[::-1])
 
     def test_image_invert_yaxis(self):
         arr = np.random.rand(10, 10)
@@ -114,12 +102,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["dh"] == [1.0]
         assert cdata["dw"] == [1.0]
 
-        if bokeh3:
-            assert cdata["y"] == [-0.5]
-            np.testing.assert_equal(cdata["image"][0], arr[::-1])
-        else:
-            assert cdata["y"] == [0.5]
-            np.testing.assert_equal(cdata["image"][0], arr)
+        assert cdata["y"] == [-0.5]
+        np.testing.assert_equal(cdata["image"][0], arr[::-1])
 
     def test_rgb_invert_xaxis(self):
         rgb = RGB(np.random.rand(10, 10, 3)).opts(invert_xaxis=True)
@@ -131,11 +115,7 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["y"] == [-0.5]
         assert cdata["dh"] == [1.0]
         assert cdata["dw"] == [1.0]
-
-        if bokeh3:
-            assert cdata["x"] == [-0.5]
-        else:
-            assert cdata["x"] == [0.5]
+        assert cdata["x"] == [-0.5]
 
     def test_rgb_invert_yaxis(self):
         rgb = RGB(np.random.rand(10, 10, 3)).opts(invert_yaxis=True)
@@ -147,11 +127,7 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["x"] == [-0.5]
         assert cdata["dh"] == [1.0]
         assert cdata["dw"] == [1.0]
-
-        if bokeh3:
-            assert cdata["y"] == [-0.5]
-        else:
-            assert cdata["y"] == [0.5]
+        assert cdata["y"] == [-0.5]
 
     def test_image_stack_tuple(self):
         x = np.arange(0, 3)
