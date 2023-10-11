@@ -604,7 +604,7 @@ class XArrayInterface(GridInterface):
         if dropped and not indexed:
             data = data.expand_dims(dropped)
             # see https://github.com/pydata/xarray/issues/2891
-            # since we only expanded on dimnesions of size 1
+            # since we only expanded on dimensions of size 1
             # we can monkeypatch the dataarray back to writeable.
             for d in data.values():
                 if hasattr(d.data, 'flags'):
