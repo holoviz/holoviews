@@ -35,7 +35,7 @@ extras_require['tests_core'] = [
     'flaky',
     'matplotlib >=3, <3.8',  # 3.8 breaks tests
     'nbconvert',
-    'bokeh',
+    'bokeh >=3.1',
     'pillow',
     'plotly >=4.0',
     'dash >=1.16',
@@ -73,7 +73,7 @@ extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
     "matplotlib >=3",
-    "bokeh >=2.4.3",
+    "bokeh >=3.1",
 ]
 
 # Requirements to run all examples
@@ -112,7 +112,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
-    'bokeh >2.2',
+    'bokeh >=3.1',
     'pooch',
     'selenium',
 ]
