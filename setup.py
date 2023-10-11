@@ -38,7 +38,6 @@ extras_require['tests_core'] = [
     'bokeh >=3.1',
     'pillow',
     'plotly >=4.0',
-    'dash >=1.16',
     'ipython >=5.4.0',
 ]
 
@@ -57,9 +56,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',
+    'dash >=1.16',
 ]
 
-extras_require['test_ci'] = [
+extras_require['tests_ci'] = [
     'codecov',
     "pytest-github-actions-annotate-failures",
 ]
@@ -181,6 +181,7 @@ setup_args.update(
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
             "Operating System :: OS Independent",
             "Intended Audience :: Science/Research",
             "Intended Audience :: Developers",

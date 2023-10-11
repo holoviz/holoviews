@@ -56,13 +56,15 @@ class MPLRendererTest(ComparisonTestCase):
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 257))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (576, 257) or (w, h) == (576, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 509))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
