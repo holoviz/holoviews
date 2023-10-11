@@ -19,7 +19,6 @@ from .styles import (
     base_properties, line_properties, fill_properties, text_properties,
     rgba_tuple
 )
-from .util import bokeh3
 
 
 class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
@@ -185,8 +184,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             index = nodes.astype(np.int32)
             layout = {k: (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(index, node_positions)}
-        if not bokeh3:
-            layout = {str(k): v for k, v in layout.items()}
 
         point_data = {'index': index}
 

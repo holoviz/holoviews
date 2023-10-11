@@ -27,6 +27,9 @@ from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.widgets import DataTable, Div
 from bokeh.themes.theme import Theme
 from bokeh.themes import built_in_themes
+from bokeh.layouts import group_tools
+from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
+from bokeh.plotting import figure
 from packaging.version import Version
 
 from ...core.layout import Layout
@@ -41,21 +44,7 @@ from ...util.warnings import warn
 from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
-bokeh3 = bokeh_version >= Version("3.0")
 bokeh32 = bokeh_version >= Version("3.2")
-
-if bokeh3:
-    from bokeh.layouts import group_tools
-    from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
-    from bokeh.plotting import figure
-    class WidgetBox: pass  # Does not exist in Bokeh 3
-
-else:
-    from bokeh.layouts import WidgetBox
-    from bokeh.models.widgets import Tabs
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
-    from bokeh.plotting import Figure as figure
-    class GridPlot: pass  # Does not exist in Bokeh 2
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -169,7 +158,7 @@ def compute_plot_size(plot):
     elif isinstance(plot, (Div, Toolbar)):
         # Cannot compute size for Div or Toolbar
         return 0, 0
-    elif isinstance(plot, (Row, Column, Tabs, WidgetBox)):
+    elif isinstance(plot, (Row, Column, Tabs)):
         if not plot.children: return 0, 0
         if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
@@ -413,14 +402,12 @@ def merge_tools(plot_grid, disambiguation_properties=None):
 def sync_legends(bokeh_layout):
     """This syncs the legends of all plots in a grid based on their name.
 
-    Only works for Bokeh 3 and above.
-
     Parameters
     ----------
     bokeh_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
     """
-    if not bokeh3 or len(bokeh_layout.children) < 2:
+    if len(bokeh_layout.children) < 2:
         return
 
     # Collect all glyph with names
@@ -658,7 +645,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, DataTable):
         width = model.width
         model.width = int(table_padding*width)
-    elif isinstance(model, (WidgetBox, Div)):
+    elif isinstance(model, Div):
         width = model.width
     elif model:
         width = model.width
@@ -681,8 +668,7 @@ def pad_plots(plots):
             row_widths.append(width)
         widths.append(row_widths)
 
-    layout = Column if bokeh3 else WidgetBox
-    plots = [[layout(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+    plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
@@ -1129,8 +1115,6 @@ def wrap_formatter(formatter, axis):
 def property_to_dict(x):
     """
     Convert Bokeh's property Field and Value to a dictionary
-
-    Was added in bokeh 3.0
     """
 
     try:
@@ -1150,8 +1134,6 @@ def dtype_fix_hook(plot, element):
     # https://github.com/holoviz/holoviews/issues/5726
     # Should be fixed in Bokeh 3.2
 
-    if not bokeh3:
-        return
     try:
         renderers = plot.handles["plot"].renderers
         for renderer in renderers:

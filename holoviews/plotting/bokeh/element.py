@@ -49,7 +49,7 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer,
+    TOOL_TYPES, bokeh_version, bokeh32, date_to_integer,
     decode_bytes, get_tab_title, glyph_order,
     recursive_model_update, theme_attr_json, cds_column_replace,
     hold_policy, match_dim_specs, compute_layout_properties,
@@ -58,12 +58,8 @@ from .util import (
     get_scale, get_axis_class
 )
 
-if bokeh3:
-    from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models.layouts import TabPanel
-else:
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
-    from bokeh.models.layouts import Panel as TabPanel
+from bokeh.models.formatters import CustomJSTickFormatter
+from bokeh.models.layouts import TabPanel
 
 try:
     TOOLS_MAP = Tool._known_aliases
@@ -683,10 +679,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties.update(**self._plot_properties(key, element))
 
-        if bokeh3:
-            figure = bokeh.plotting.figure
-        else:
-            figure = bokeh.plotting.Figure
+        figure = bokeh.plotting.figure
 
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
@@ -1712,18 +1705,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                if bokeh3:
-                    event = ModelChangedEvent(
-                        document=self.document,
-                        model=source,
-                        attr='data',
-                        new=empty_data,
-                        setter='empty'
-                    )
-                else:
-                    event = ModelChangedEvent(
-                        self.document, source, 'data', source.data, empty_data, empty_data, setter='empty'
-                    )
+                event = ModelChangedEvent(
+                    document=self.document,
+                    model=source,
+                    attr='data',
+                    new=empty_data,
+                    setter='empty'
+                )
                 self.document.callbacks._held_events.append(event)
 
         if legend is not None:
@@ -2556,7 +2544,7 @@ class LegendPlot(ElementPlot):
             or not self.show_legend):
             legend.items[:] = []
         else:
-            if bokeh3 and self.legend_cols:
+            if self.legend_cols:
                 plot.legend.nrows = self.legend_cols
             else:
                 plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
@@ -2659,8 +2647,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             options[k] = v
 
         pos = self.legend_position
-        if not bokeh3:
-            options['orientation'] = 'horizontal' if self.legend_cols else 'vertical'
         if pos in ['top', 'bottom'] and not self.legend_cols:
             options['orientation'] = 'horizontal'
 
@@ -2670,7 +2656,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         options.update(self._fontsize('legend', 'label_text_font_size'))
         options.update(self._fontsize('legend_title', 'title_text_font_size'))
-        if bokeh3 and self.legend_cols:
+        if self.legend_cols:
             options.update({"ncols": self.legend_cols})
         legend.update(**options)
 
