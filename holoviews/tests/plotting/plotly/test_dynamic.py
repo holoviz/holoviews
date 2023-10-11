@@ -135,7 +135,7 @@ class TestInteractiveStream(TestPlotlyPlot):
         self.assertEqual(boundsxy2a.bounds, (10, 11, 20, 22))
         self.assertEqual(boundsxy2b.bounds, (10, 11, 20, 22))
 
-        # Box selecrt on third subplot
+        # Box select on third subplot
         plotly_pane.selected_data = {
             'points': [
                 {'curveNumber': 2, 'pointNumber': 0},
