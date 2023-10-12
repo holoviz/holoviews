@@ -1,7 +1,6 @@
 import datetime as dt
 
 from unittest import SkipTest
-from collections import OrderedDict
 
 import numpy as np
 import pytest
@@ -11,7 +10,6 @@ from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, Image, Scatter, Labels, HeatMap
 from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
-from holoviews.plotting.bokeh.util import bokeh3
 from holoviews.util import render
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -25,10 +23,7 @@ from bokeh.models import (PrintfTickFormatter, FixedTicker,
                             NumeralTickFormatter, LogTicker,
                             LinearColorMapper, LogColorMapper, EqHistColorMapper)
 
-if bokeh3:
-    from bokeh.models.formatters import CustomJSTickFormatter
-else:
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+from bokeh.models.formatters import CustomJSTickFormatter
 
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
@@ -922,7 +917,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(colorbar.major_label_text_font_size, '22px')
 
     def test_explicit_categorical_cmap_on_integer_data(self):
-        explicit_mapping = OrderedDict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
+        explicit_mapping = dict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
         points = Scatter(([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=['y', 'Category']).opts(
             color_index='Category', cmap=explicit_mapping
         )

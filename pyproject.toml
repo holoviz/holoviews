@@ -38,6 +38,10 @@ filterwarnings = [
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",
     # 2023-09: See https://github.com/python-streamz/streamz/issues/460
     "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins",
+    # 2023-10: Datetime's utctimestamp() and utcnow() is deprecated in Python 3.12
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
+    "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
 ]
 
 [tool.coverage]

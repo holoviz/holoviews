@@ -6,7 +6,6 @@ import math
 import unittest
 
 from itertools import product
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -50,13 +49,13 @@ class TestDeepHash(ComparisonTestCase):
         self.assertNotEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'c'}))
 
     def test_deephash_odict_equality_v1(self):
-        odict1 = OrderedDict([(1,'a'), (2,'b')])
-        odict2 = OrderedDict([(1,'a'), (2,'b')])
+        odict1 = dict([(1,'a'), (2,'b')])
+        odict2 = dict([(1,'a'), (2,'b')])
         self.assertEqual(deephash(odict1), deephash(odict2))
 
     def test_deephash_odict_equality_v2(self):
-        odict1 = OrderedDict([(1,'a'), (2,'b')])
-        odict2 = OrderedDict([(1,'a'), (2,'c')])
+        odict1 = dict([(1,'a'), (2,'b')])
+        odict2 = dict([(1,'a'), (2,'c')])
         self.assertNotEqual(deephash(odict1), deephash(odict2))
 
     def test_deephash_numpy_equality(self):
@@ -130,22 +129,22 @@ class TestDeepHash(ComparisonTestCase):
         obj1 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
-                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+                dict([(1,'a'),(2,'b')]), np.int64(34)]
         obj2 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
-                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+                dict([(1,'a'),(2,'b')]), np.int64(34)]
         self.assertEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_nested_mixed_inequality(self):
         obj1 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '2':True},
-                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+                dict([(1,'a'),(2,'b')]), np.int64(34)]
         obj2 = [datetime.datetime(1,2,3), {1,2,3},
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
-                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+                dict([(1,'a'),(2,'b')]), np.int64(34)]
         self.assertNotEqual(deephash(obj1), deephash(obj2))
 
 

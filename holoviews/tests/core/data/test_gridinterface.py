@@ -1,6 +1,5 @@
 import datetime as dt
 
-from collections import OrderedDict
 from itertools import product
 from unittest import SkipTest
 
@@ -345,7 +344,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
 class GridInterfaceTests(BaseGridInterfaceTests):
     datatype = 'grid'
-    data_type = (OrderedDict, dict)
+    data_type = (dict,)
     element = Dataset
 
     __test__ = True
@@ -528,7 +527,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 
@@ -685,7 +684,7 @@ class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
 class RGBElement_GridInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 
@@ -697,7 +696,7 @@ class RGBElement_GridInterfaceTests(BaseRGBElementInterfaceTests):
 class RGBElement_PackedGridInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 
@@ -708,7 +707,7 @@ class RGBElement_PackedGridInterfaceTests(BaseRGBElementInterfaceTests):
 class HSVElement_GridInterfaceTests(BaseHSVElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 

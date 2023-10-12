@@ -1,7 +1,6 @@
 import sys
 import types
 
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -158,7 +157,7 @@ class XArrayInterface(GridInterface):
                     for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
             dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
-            coords = OrderedDict()
+            coords = {}
             for kd in kdims:
                 coord_vals = data[kd.name]
                 if coord_vals.ndim > 1:
@@ -601,13 +600,13 @@ class XArrayInterface(GridInterface):
 
         # Restore constant dimensions
         indexed = cls.indexed(dataset, selection)
-        dropped = OrderedDict((d.name, np.atleast_1d(data[d.name]))
+        dropped = dict((d.name, np.atleast_1d(data[d.name]))
                    for d in dataset.kdims
                    if not data[d.name].data.shape)
         if dropped and not indexed:
             data = data.expand_dims(dropped)
             # see https://github.com/pydata/xarray/issues/2891
-            # since we only exapanded on dimnesions of size 1
+            # since we only expanded on dimensions of size 1
             # we can monkeypatch the dataarray back to writeable.
             for d in data.values():
                 if hasattr(d.data, 'flags'):
@@ -675,7 +674,7 @@ class XArrayInterface(GridInterface):
         prev_coords = set.intersection(*[
             set(var.coords) for var in data.data_vars.values()
         ])
-        coords = OrderedDict()
+        coords = {}
         for k, v in new_data.items():
             if k not in dataset.kdims:
                 continue
@@ -690,7 +689,7 @@ class XArrayInterface(GridInterface):
             data = data.assign_coords(**coords)
 
         dims = tuple(kd.name for kd in dataset.kdims[::-1])
-        vars = OrderedDict()
+        vars = {}
         for k, v in new_data.items():
             if k in dataset.kdims:
                 continue

@@ -50,8 +50,11 @@ def streams_list_from_dict(streams):
     params = {}
     for k, v in streams.items():
         if 'panel' in sys.modules:
-            from panel.depends import param_value_if_widget
-            v = param_value_if_widget(v)
+            if util.param_version > util.Version('2.0.0rc1'):
+                v = param.parameterized.transform_reference(v)
+            else:
+                from panel.depends import param_value_if_widget
+                v = param_value_if_widget(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
@@ -222,8 +225,15 @@ class Stream(param.Parameterized):
                 rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
-                invalid.append(s)
-                continue
+                if util.param_version > util.Version('2.0.0rc1'):
+                    deps = param.parameterized.resolve_ref(s)
+                else:
+                    deps = None
+                if deps:
+                    s = Params(parameters=deps)
+                else:
+                    invalid.append(s)
+                    continue
             if isinstance(s, Params):
                 pid = id(s.parameterized)
                 overlap = (set(s.parameters) & parameterizeds[pid])
@@ -676,7 +686,7 @@ class Params(Stream):
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
                                         constant=True, allow_None=True, doc="""
-        Parameterized instance to watch for parameter changes.""")
+        Parameterized instance to watch for parameter changes.""", **util.disallow_refs)
 
     parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")

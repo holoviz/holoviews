@@ -740,10 +740,10 @@ class TestOptionTreeFind(ComparisonTestCase):
                          dict(kw2='value2'))
 
     def test_optiontree_find_mismatch3(self):
-        self.assertEqual(self.options.find('Baz').options('group').options, dict())
+        self.assertEqual(self.options.find('Baz').options('group').options, {})
 
     def test_optiontree_find_mismatch4(self):
-        self.assertEqual(self.options.find('Baz.Baz').options('group').options, dict())
+        self.assertEqual(self.options.find('Baz.Baz').options('group').options, {})
 
 
 

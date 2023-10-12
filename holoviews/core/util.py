@@ -14,7 +14,7 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections import defaultdict, OrderedDict, namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from packaging.version import Version
 from functools import partial
@@ -42,6 +42,8 @@ arraylike_types = (np.ndarray,)
 masked_types = ()
 
 anonymous_dimension_label = '_'
+
+disallow_refs = {'allow_refs': False} if param_version > Version('2.0.0rc1') else {}
 
 # Argspec was removed in Python 3.11
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
@@ -933,7 +935,7 @@ def isfinite(val):
     if pandas_version >= Version('1.0.0'):
         if finite is pd.NA:
             return False
-        return finite & (~pd.isna(val))
+        return finite & ~pd.isna(np.asarray(val))
     return finite
 
 
@@ -1625,7 +1627,10 @@ def resolve_dependent_value(value):
         from panel.depends import param_value_if_widget
         from panel.widgets import RangeSlider
         range_widget = isinstance(value, RangeSlider)
-        value = param_value_if_widget(value)
+        if param_version > Version('2.0.0rc1'):
+            value = param.parameterized.resolve_value(value)
+        else:
+            value = param_value_if_widget(value)
 
     if is_param_method(value, has_deps=True):
         value = value()
@@ -1941,7 +1946,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
             warnings.filterwarnings(
                 'ignore', category=FutureWarning, message="Creating a Groupby object with a length-1"
             )
-            groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+            groups = ((wrap_tuple(k), group_type(dict(unpack_group(group, getter)), **kwargs))
                     for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
 
         if sort:

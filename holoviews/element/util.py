@@ -4,7 +4,7 @@ import param
 import numpy as np
 import pandas as pd
 
-from ..core import Dataset, OrderedDict
+from ..core import Dataset
 from ..core.boundingregion import BoundingBox
 from ..core.data import default_datatype, PandasInterface
 from ..core.operation import Operation
@@ -136,9 +136,9 @@ class categorical_aggregate2d(Operation):
             return xcoords, np.sort(ycoords)
 
         # Determine global orderings of y-values using topological sort
-        grouped = obj.groupby(xdim, container_type=OrderedDict,
+        grouped = obj.groupby(xdim, container_type=dict,
                               group_type=Dataset).values()
-        orderings = OrderedDict()
+        orderings = {}
         sort = True
         for group in grouped:
             vals = group.dimension_values(ydim, False)

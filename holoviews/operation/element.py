@@ -737,10 +737,16 @@ class histogram(Operation):
 
         # Mask data
         if is_ibis_expr(data):
+            from ..core.data.ibis import ibis5
+
             mask = data.notnull()
             if self.p.nonzero:
                 mask = mask & (data != 0)
-            data = data.to_projection()
+            if ibis5():
+                data = data.as_table()
+            else:
+                # to_projection removed in ibis 5.0.0
+                data = data.to_projection()
             data = data[mask]
             no_data = not len(data.head(1).execute())
             data = data[dim.name]

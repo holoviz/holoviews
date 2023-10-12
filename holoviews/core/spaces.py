@@ -13,7 +13,7 @@ import param
 
 from . import traversal, util
 from .accessors import Opts, Redim
-from .dimension import OrderedDict, Dimension, ViewableElement
+from .dimension import Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout, Empty, Layoutable
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
@@ -138,7 +138,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         Returns:
             Returns the cloned object with the options applied
         """
-        data = OrderedDict([(k, v.options(*args, **kwargs))
+        data = dict([(k, v.options(*args, **kwargs))
                              for k, v in self.data.items()])
         return self.clone(data)
 
@@ -147,7 +147,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if not issubclass(self.type, CompositeOverlay):
             return None, self.clone()
 
-        item_maps = OrderedDict()
+        item_maps = {}
         for k, overlay in self.data.items():
             for key, el in overlay.items():
                 if key not in item_maps:
@@ -461,7 +461,7 @@ class Callable(param.Parameterized):
     """
 
     callable = param.Callable(default=None, constant=True, doc="""
-         The callable function being wrapped.""")
+         The callable function being wrapped.""", **util.disallow_refs)
 
     inputs = param.List(default=[], constant=True, doc="""
          The list of inputs the callable function is wrapping. Used
@@ -548,6 +548,8 @@ class Callable(param.Parameterized):
         # Nothing to do for callbacks that accept no arguments
         kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
+        if hasattr(self.callable, 'rx'):
+            return self.callable.rx.value
         if not args and not kwargs and not any(kwarg_hash): return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
@@ -774,7 +776,9 @@ class DynamicMap(HoloMap):
             streams = streams_list_from_dict(streams)
 
         # If callback is a parameterized method and watch is disabled add as stream
-        if (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
+        if util.param_version > util.Version('2.0.0rc1') and param.parameterized.resolve_ref(callback):
+            streams.append(callback)
+        elif (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
             (isinstance(callback, FunctionType) and hasattr(callback, '_dinfo')))):
             streams.append(callback)
 
@@ -1063,7 +1067,7 @@ class DynamicMap(HoloMap):
 
     def reset(self):
         "Clear the DynamicMap cache"
-        self.data = OrderedDict()
+        self.data = {}
         return self
 
 
@@ -1378,7 +1382,7 @@ class DynamicMap(HoloMap):
                                    f'layers of the {otype} do not change.')
                 return items[match][1]
             dmap = Dynamic(self, streams=self.streams, operation=split_overlay_callback)
-            dmap.data = OrderedDict([(list(self.data.keys())[-1], self.last.data[key])])
+            dmap.data = dict([(list(self.data.keys())[-1], self.last.data[key])])
             dmaps.append(dmap)
         return keys, dmaps
 
@@ -1808,8 +1812,8 @@ class GridSpace(Layoutable, UniformNdMapping):
         keys = super().keys()
         if self.ndims == 1 or not full_grid:
             return keys
-        dim1_keys = list(OrderedDict.fromkeys(k[0] for k in keys))
-        dim2_keys = list(OrderedDict.fromkeys(k[1] for k in keys))
+        dim1_keys = list(dict.fromkeys(k[0] for k in keys))
+        dim2_keys = list(dict.fromkeys(k[1] for k in keys))
         return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
 
 

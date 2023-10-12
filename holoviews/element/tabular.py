@@ -1,4 +1,3 @@
-from collections import OrderedDict
 
 import numpy as np
 
@@ -12,10 +11,9 @@ from .selection import SelectionIndexExpr
 class ItemTable(Element):
     """
     A tabular element type to allow convenient visualization of either
-    a standard Python dictionary, an OrderedDict or a list of tuples
-    (i.e. input suitable for an OrderedDict constructor). If an
-    OrderedDict is used, the headings will be kept in the correct
-    order. Tables store heterogeneous data with different labels.
+    a standard Python dictionary or a list of tuples
+    (i.e. input suitable for an dict constructor).
+    Tables store heterogeneous data with different labels.
 
     Dimension objects are also accepted as keys, allowing dimensional
     information (e.g. type and units) to be associated per heading.
@@ -44,12 +42,12 @@ class ItemTable(Element):
         if isinstance(data, dict):
             pass
         elif isinstance(data, list):
-            data = OrderedDict(data)
+            data = dict(data)
         else:
-            data = OrderedDict(list(data)) # Python 3
+            data = dict(list(data))
         if "vdims" not in params:
             params['vdims'] = list(data.keys())
-        str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
+        str_keys = dict((dimension_name(k), v) for (k,v) in data.items())
         super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
@@ -73,10 +71,10 @@ class ItemTable(Element):
         if samples is None:
             samples = []
         if callable(samples):
-            sampled_data = OrderedDict(item for item in self.data.items()
+            sampled_data = dict(item for item in self.data.items()
                                        if samples(item))
         else:
-            sampled_data = OrderedDict((s, self.data.get(s, np.NaN)) for s in samples)
+            sampled_data = dict((s, self.data.get(s, np.NaN)) for s in samples)
         return self.clone(sampled_data)
 
 

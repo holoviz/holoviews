@@ -1,4 +1,4 @@
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 import numpy as np
 
@@ -28,7 +28,7 @@ class GridInterface(DictInterface):
     longitudes can specify the position of NxM temperature samples.
     """
 
-    types = (dict, OrderedDict)
+    types = (dict,)
 
     datatype = 'grid'
 
@@ -59,9 +59,9 @@ class GridInterface(DictInterface):
                 data = {d: v for d, v in zip(dimensions, data)}
         elif (isinstance(data, list) and data == []):
             if len(kdims) == 1:
-                data = OrderedDict([(d, []) for d in dimensions])
+                data = dict([(d, []) for d in dimensions])
             else:
-                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data = dict([(d.name, np.array([])) for d in kdims])
                 if len(vdims) == 1:
                     data[vdims[0].name] = np.zeros((0, 0))
                 else:
@@ -72,11 +72,11 @@ class GridInterface(DictInterface):
         elif isinstance(data, np.ndarray):
             if data.shape == (0, 0) and len(vdims) == 1:
                 array = data
-                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data = dict([(d.name, np.array([])) for d in kdims])
                 data[vdims[0].name] = array
             elif data.shape == (0, 0, len(vdims)):
                 array = data
-                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data = dict([(d.name, np.array([])) for d in kdims])
                 data[vdim_tuple] = array
             else:
                 if data.ndim == 1:
@@ -623,7 +623,7 @@ class GridInterface(DictInterface):
     def mask(cls, dataset, mask, mask_val=np.nan):
         mask = cls.canonicalize(dataset, mask)
         packed = cls.packed(dataset)
-        masked = OrderedDict(dataset.data)
+        masked = dict(dataset.data)
         if packed:
             masked = dataset.data[packed].copy()
             try:
@@ -810,7 +810,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def assign(cls, dataset, new_data):
-        data = OrderedDict(dataset.data)
+        data = dict(dataset.data)
         for k, v in new_data.items():
             if k in dataset.kdims:
                 coords = cls.coords(dataset, k)

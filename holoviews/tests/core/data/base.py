@@ -13,7 +13,6 @@ from holoviews.element import Scatter, Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
 
-from collections import OrderedDict
 
 import pandas as pd
 
@@ -488,11 +487,11 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init(self):
-        dataset = Dataset(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        dataset = Dataset(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init_alias(self):
-        dataset = Dataset(OrderedDict(zip(self.xs, self.ys)),
+        dataset = Dataset(dict(zip(self.xs, self.ys)),
                           kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 

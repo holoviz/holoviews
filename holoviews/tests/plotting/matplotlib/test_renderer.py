@@ -3,7 +3,6 @@ Test cases for rendering exporters
 """
 import subprocess
 
-from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np
@@ -57,13 +56,15 @@ class MPLRendererTest(ComparisonTestCase):
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 257))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (576, 257) or (w, h) == (576, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 509))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
@@ -105,7 +106,7 @@ class MPLRendererTest(ComparisonTestCase):
         widgets = obj.layout.select(DiscreteSlider)
         self.assertEqual(len(widgets), 1)
         slider = widgets[0]
-        self.assertEqual(slider.options, OrderedDict([(str(i), i) for i in range(5)]))
+        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})

@@ -186,7 +186,7 @@ class notebook_extension(extension):
         same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
-        Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=self.enable_mathjax)
+        Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,

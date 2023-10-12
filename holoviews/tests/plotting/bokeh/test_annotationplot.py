@@ -7,12 +7,15 @@ from holoviews.element import (
     HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope,
     HLines, VLines, HSpans, VSpans,
 )
-from holoviews.plotting.bokeh.util import bokeh32
+from holoviews.plotting.bokeh.util import bokeh32, bokeh33
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 if bokeh32:
     from bokeh.models import VSpan as BkVSpan, HSpan as BkHSpan, VStrip as BkVStrip, HStrip as BkHStrip
+
+if bokeh33:
+    from bokeh.models.coordinates import Node
 
 
 class TestHVLinePlot(TestBokehPlot):
@@ -53,21 +56,29 @@ class TestHVSpanPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
 
-        self.assertEqual(span.left, 1.1)
-        self.assertEqual(span.right, 1.5)
-        self.assertEqual(span.bottom, None)
-        self.assertEqual(span.top, None)
-        self.assertEqual(span.visible, True)
+        assert span.left == 1.1
+        assert span.right == 1.5
+        if bokeh33:
+            assert isinstance(span.bottom, Node)
+            assert isinstance(span.top, Node)
+        else:
+            assert span.bottom is None
+            assert span.top is None
+        assert span.visible
 
     def test_hspan_plot(self):
         hspan = HSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, None)
-        self.assertEqual(span.right, None)
-        self.assertEqual(span.bottom, 1.1)
-        self.assertEqual(span.top, 1.5)
-        self.assertEqual(span.visible, True)
+        if bokeh33:
+            assert isinstance(span.left, Node)
+            assert isinstance(span.right, Node)
+        else:
+            assert span.left is None
+            assert span.right is None
+        assert span.bottom == 1.1
+        assert span.top == 1.5
+        assert span.visible
 
     def test_hspan_empty(self):
         vline = HSpan(None)
@@ -79,21 +90,29 @@ class TestHVSpanPlot(TestBokehPlot):
         vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, None)
-        self.assertEqual(span.right, None)
-        self.assertEqual(span.bottom, 1.1)
-        self.assertEqual(span.top, 1.5)
-        self.assertEqual(span.visible, True)
+        if bokeh33:
+            assert isinstance(span.left, Node)
+            assert isinstance(span.right, Node)
+        else:
+            assert span.left is None
+            assert span.right is None
+        assert span.bottom == 1.1
+        assert span.top == 1.5
+        assert span.visible
 
     def test_vspan_plot(self):
         vspan = VSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, 1.1)
-        self.assertEqual(span.right, 1.5)
-        self.assertEqual(span.bottom, None)
-        self.assertEqual(span.top, None)
-        self.assertEqual(span.visible, True)
+        assert span.left == 1.1
+        assert span.right == 1.5
+        if bokeh33:
+            assert isinstance(span.bottom, Node)
+            assert isinstance(span.top, Node)
+        else:
+            assert span.bottom is None
+            assert span.top is None
+        assert span.visible
 
     def test_vspan_empty(self):
         vline = VSpan(None)
@@ -232,6 +251,15 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
         assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
+    def test_hlines_xlabel_ylabel(self):
+        hlines = HLines(
+            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        ).opts(xlabel="xlabel", ylabel="xlabel")
+        plot = bokeh_renderer.get_plot(hlines)
+        assert isinstance(plot.handles["glyph"], BkHSpan)
+        assert plot.handles["xaxis"].axis_label == "xlabel"
+        assert plot.handles["yaxis"].axis_label == "xlabel"
+
     def test_hlines_array(self):
         hlines = HLines(np.array([0, 1, 2, 5.5]))
         plot = bokeh_renderer.get_plot(hlines)
@@ -357,6 +385,18 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].start == 0
         assert plot.handles["y_range"].end == 5.5
 
+    def test_vlines_hlines_overlay_non_annotation(self):
+        non_annotation = hv.Curve([], kdims=["time"])
+        hlines = HLines(
+            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        )
+        vlines = VLines(
+            {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(non_annotation * hlines * vlines)
+        assert plot.handles["xaxis"].axis_label == "time"
+        assert plot.handles["yaxis"].axis_label == "y"
+
     def test_coloring_hline(self):
         hlines = HLines({"y": [1, 2, 3]})
         hlines = hlines.opts(
@@ -399,6 +439,15 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["y0"] == [0, 3, 5.5]).all()
         assert (source.data["y1"] == [1, 4, 6.5]).all()
         assert (source.data["extra"] == [-1, -2, -3]).all()
+
+    def test_hspans_plot_xlabel_ylabel(self):
+        hspans = HSpans(
+            {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        ).opts(xlabel="xlabel", ylabel="xlabel")
+        plot = bokeh_renderer.get_plot(hspans)
+        assert isinstance(plot.handles["glyph"], BkHStrip)
+        assert plot.handles["xaxis"].axis_label == "xlabel"
+        assert plot.handles["yaxis"].axis_label == "xlabel"
 
     def test_hspans_plot_invert_axes(self):
         hspans = HSpans(
@@ -513,6 +562,18 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["x_range"].end == 6.5
         assert plot.handles["y_range"].start == 0
         assert plot.handles["y_range"].end == 6.5
+
+    def test_vlines_hlines_overlay_non_annotation(self):
+        non_annotation = hv.Curve([], kdims=["time"])
+        hspans = HSpans(
+            {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        )
+        vspans = VSpans(
+            {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
+        )
+        plot = bokeh_renderer.get_plot(non_annotation * hspans * vspans)
+        assert plot.handles["xaxis"].axis_label == "time"
+        assert plot.handles["yaxis"].axis_label == "y"
 
     def test_coloring_hline(self):
         hspans = HSpans({"y0": [1, 3, 5], "y1": [2, 4, 6]}).opts(

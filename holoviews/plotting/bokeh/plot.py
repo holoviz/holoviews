@@ -12,7 +12,7 @@ from bokeh.models.layouts import Tabs
 
 from ...selection import NoOpSelectionDisplay
 from ...core import (
-    OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
+    Store, AdjointLayout, NdLayout, Layout, Empty,
     GridSpace, HoloMap, Element
 )
 from ...core.options import SkipRendering
@@ -30,14 +30,11 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
-    bokeh3, filter_toolboxes, make_axis, sync_legends, update_shared_sources, empty_plot,
+    filter_toolboxes, make_axis, sync_legends, update_shared_sources, empty_plot,
     decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools, select_legends
 )
 
-if bokeh3:
-    from bokeh.models.layouts import TabPanel
-else:
-    from bokeh.models.layouts import Panel as TabPanel
+from bokeh.models.layouts import TabPanel
 
 
 class BokehPlot(DimensionedPlot, CallbackPlot):
@@ -271,10 +268,9 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
         if 'title' in self.handles:
             title_div = self.handles['title']
-        elif bokeh3:
-            title_div = Div(width=width, styles={"white-space": "nowrap"})  # so it won't wrap long titles easily
         else:
-            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
+            # so it won't wrap long titles easily
+            title_div = Div(width=width, styles={"white-space": "nowrap"})
         title_div.text = title_tags
 
         return title_div
@@ -310,8 +306,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
-                    if not bokeh3 and hasattr(renderer, 'view'):
-                        renderer.view.update(source=new_source)
                     plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
@@ -495,10 +489,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         else:
             width, height = self.plot_size, self.plot_size
 
-        subplots = OrderedDict()
+        subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
@@ -594,7 +588,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         if self.sync_legends:
             sync_legends(plot)
         plot = self._make_axes(plot)
-        if bokeh3 and hasattr(plot, "toolbar") and self.merge_tools:
+        if hasattr(plot, "toolbar") and self.merge_tools:
             plot.toolbar = merge_tools(plots)
 
         title = self._get_title_div(self.keys[-1])
@@ -647,7 +641,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
             plot = gridplot([r1, r2], merge_tools=False)
-            if bokeh3 and self.merge_tools:
+            if self.merge_tools:
                 plot.toolbar = merge_tools([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
@@ -731,7 +725,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
@@ -754,7 +748,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             # to create the correct subaxes for all plots in the layout
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -954,7 +948,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                         merge_tools=False,
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
-                        if bokeh3 and self.merge_tools:
+                        if self.merge_tools:
                             grid.toolbar = merge_tools(children)
                     tab_plots.append((title, grid))
                     continue
@@ -996,7 +990,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             )
             if self.sync_legends:
                 sync_legends(layout_plot)
-            if bokeh3 and self.merge_tools:
+            if self.merge_tools:
                 layout_plot.toolbar = merge_tools(plot_grid)
 
         title = self._get_title_div(self.keys[-1])

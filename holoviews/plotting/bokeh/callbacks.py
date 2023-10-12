@@ -2,14 +2,14 @@ import asyncio
 import base64
 import time
 
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 import numpy as np
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
     PolyDrawTool, PolyEditTool, FreehandDrawTool,
-    PointDrawTool
+    PointDrawTool, BoxEditTool
 )
 from panel.io.state import state
 
@@ -25,7 +25,8 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from .util import bokeh3, convert_timestamp
+from .util import bokeh33, convert_timestamp
+from ...util.warnings import warn
 
 
 class Callback:
@@ -308,7 +309,7 @@ class Callback:
             return
 
         # Get unique event types in the queue
-        events = list(OrderedDict([(event.event_name, event)
+        events = list(dict([(event.event_name, event)
                                    for event, dt in self._queue]).values())
         self._queue = []
 
@@ -616,23 +617,6 @@ class RangeXYCallback(Callback):
         'x1': 'cb_obj.x1',
         'y1': 'cb_obj.y1',
     }
-
-    _js_on_event = """
-    if (this._updating)
-        return
-    const plot = this.origin
-    const plots = plot.x_range.plots.concat(plot.y_range.plots)
-    for (const p of plots) {
-      const event = new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end)
-      event._updating = true
-      p.trigger_event(event)
-    }
-    """
-
-    def set_callback(self, handle):
-        super().set_callback(handle)
-        if not bokeh3:
-            handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
 
     def _process_msg(self, msg):
         if self.plot.state.x_range is not self.plot.handles['x_range']:
@@ -1229,9 +1213,12 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        # BoxEditTool does not support Quad type only Rect
-        # box_tool = BoxEditTool(renderers=[renderer], **kwargs)
-        # self.plot.state.tools.append(box_tool)
+        if bokeh33:
+            # First version with Quad support
+            box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+            self.plot.state.tools.append(box_tool)
+        else:
+            warn("BoxEditTool requires Bokeh >= 3.3")
         self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 
