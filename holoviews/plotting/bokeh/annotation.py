@@ -263,7 +263,8 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
     selection_display = None
 
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
+        mapping = {k: None for k in ('left', 'right', 'bottom', 'top')}
         kwd_dim1 = 'left' if isinstance(element, VSpan) else 'bottom'
         kwd_dim2 = 'right' if isinstance(element, VSpan) else 'top'
         if self.invert_axes:
