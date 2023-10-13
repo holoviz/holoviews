@@ -33,13 +33,12 @@ filterwarnings = [
     "ignore:log_path has been deprecated, please use log_output:DeprecationWarning:bokeh.io.webdriver",
     # 2023-09: Not a relevant warning for HoloViews
     "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
-    # 2023-09: See https://github.com/matplotlib/matplotlib/issues/25244
-    "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning",
-    "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",
-    # 2023-09: See https://github.com/python-streamz/streamz/issues/460
-    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins",
+    # 2023-09: `pkg_resources` is deprecated
+    "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning",  # https://github.com/matplotlib/matplotlib/issues/25244
+    "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning",  # https://github.com/mgaitan/sphinxcontrib-mermaid/issues/119
+    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
     # 2023-10: Datetime's utctimestamp() and utcnow() is deprecated in Python 3.12
-    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",  # https://github.com/dateutil/dateutil/pull/1285
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
     "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
 ]
