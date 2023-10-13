@@ -47,7 +47,7 @@ filterwarnings = [
 run.concurrency = ["greenlet"]
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py39"
 
 select = [
     "E",
