@@ -1,18 +1,15 @@
 import base64
-
 from io import BytesIO
 
-import param
 import panel as pn
-
+import param
 from param.parameterized import bothmethod
 
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from ...core.options import Store
 from ...core import HoloMap
+from ...core.options import Store
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .callbacks import callbacks
 from .util import clean_internal_figure_properties
-
 
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
@@ -93,7 +90,6 @@ class PlotlyRenderer(Renderer):
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         if fmt == 'gif':
             import plotly.io as pio
-
             from PIL import Image
             from plotly.io.orca import ensure_server, shutdown_server, status
 

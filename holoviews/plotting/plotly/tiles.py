@@ -1,7 +1,8 @@
+import numpy as np
+
+from holoviews.element.tiles import _ATTRIBUTIONS
 from holoviews.plotting.plotly import ElementPlot
 from holoviews.plotting.plotly.util import STYLE_ALIASES
-import numpy as np
-from holoviews.element.tiles import _ATTRIBUTIONS
 
 
 class TilePlot(ElementPlot):

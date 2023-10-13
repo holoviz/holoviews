@@ -1,8 +1,7 @@
 import numpy as np
-
 import param
 
-from ..core import Dimension, Dataset, Element2D
+from ..core import Dataset, Dimension, Element2D
 from .selection import Selection2DExpr, SelectionGeomExpr
 
 

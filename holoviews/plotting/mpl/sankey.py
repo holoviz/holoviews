@@ -1,7 +1,6 @@
 import param
-
-from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 from ...core.util import max_range
 from ...util.transform import dim

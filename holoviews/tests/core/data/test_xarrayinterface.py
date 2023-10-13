@@ -1,5 +1,4 @@
 import datetime as dt
-
 from unittest import SkipTest
 
 import numpy as np
@@ -10,16 +9,17 @@ try:
 except ImportError:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
 
-from holoviews.core.data import Dataset, concat, XArrayInterface
+from holoviews.core.data import Dataset, XArrayInterface, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Image, RGB, HSV, QuadMesh, ImageStack
+from holoviews.element import HSV, RGB, Image, ImageStack, QuadMesh
 
-from .test_imageinterface import (
-    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
-    BaseHSVElementInterfaceTests
-)
 from .test_gridinterface import BaseGridInterfaceTests
+from .test_imageinterface import (
+    BaseHSVElementInterfaceTests,
+    BaseImageElementInterfaceTests,
+    BaseRGBElementInterfaceTests,
+)
 
 
 class XArrayInterfaceTests(BaseGridInterfaceTests):

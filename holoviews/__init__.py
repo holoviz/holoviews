@@ -120,7 +120,7 @@ else:
             raise Exception("Jupyter notebook not available: use hv.extension instead.")
 
 if '_pyodide' in sys.modules:
-    from .pyodide import pyodide_extension, in_jupyterlite
+    from .pyodide import in_jupyterlite, pyodide_extension
     # The notebook_extension is needed inside jupyterlite,
     # so the override is only done if we are not inside jupyterlite.
     if in_jupyterlite():

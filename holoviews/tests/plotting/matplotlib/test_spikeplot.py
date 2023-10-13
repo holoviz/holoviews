@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Spikes
-from holoviews.core.options import AbbreviatedException
 
 from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer

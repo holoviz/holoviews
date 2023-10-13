@@ -1,29 +1,31 @@
 import datetime as dt
-
 from unittest import SkipTest
 
 import numpy as np
+import panel as pn
 import pytest
+from bokeh.document import Document
+from bokeh.models import (
+    EqHistColorMapper,
+    FixedTicker,
+    LinearColorMapper,
+    LogColorMapper,
+    LogTicker,
+    NumeralTickFormatter,
+    PrintfTickFormatter,
+    tools,
+)
+from bokeh.models.formatters import CustomJSTickFormatter
 
-from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay
 from holoviews.core.util import dt_to_int
-from holoviews.element import Curve, Image, Scatter, Labels, HeatMap
-from holoviews.streams import Stream, PointDraw
+from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.util import process_cmap
+from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
 
-from .test_plot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
-
-import panel as pn
-
-from bokeh.document import Document
-from bokeh.models import tools
-from bokeh.models import (PrintfTickFormatter, FixedTicker,
-                            NumeralTickFormatter, LogTicker,
-                            LinearColorMapper, LogColorMapper, EqHistColorMapper)
-
-from bokeh.models.formatters import CustomJSTickFormatter
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):

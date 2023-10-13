@@ -2,22 +2,20 @@
 Test cases for rendering exporters
 """
 import subprocess
-
 from unittest import SkipTest
 
 import numpy as np
-import param
 import panel as pn
+import param
 from matplotlib import style
-
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
-                       GridSpace, Table, Curve)
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream
-from holoviews.plotting.mpl import MPLRenderer, CurvePlot
-from holoviews.plotting.renderer import Renderer
-from panel.widgets import DiscreteSlider, Player, FloatSlider
+from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
+
+from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, ItemTable, Table
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.mpl import CurvePlot, MPLRenderer
+from holoviews.plotting.renderer import Renderer
+from holoviews.streams import Stream
 
 
 class MPLRendererTest(ComparisonTestCase):

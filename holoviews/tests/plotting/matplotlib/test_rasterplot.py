@@ -1,13 +1,12 @@
 from unittest import SkipTest
 
 import numpy as np
+from matplotlib.colors import ListedColormap
 
-from holoviews.element import Raster, Image, ImageStack
+from holoviews.element import Image, ImageStack, Raster
 from holoviews.plotting.mpl.raster import RGBPlot
 
 from .test_plot import TestMPLPlot, mpl_renderer
-
-from matplotlib.colors import ListedColormap
 
 
 class TestRasterPlot(TestMPLPlot):

@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from holoviews.core import NdOverlay
-from holoviews.core.spaces import HoloMap
-from holoviews.element import Polygons, Contours, Path
 from holoviews.core.options import AbbreviatedException
+from holoviews.core.spaces import HoloMap
+from holoviews.element import Contours, Path, Polygons
 
 from .test_plot import TestMPLPlot, mpl_renderer
 

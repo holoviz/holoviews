@@ -1,8 +1,8 @@
 import sys
 import warnings
 
-import param
 import numpy as np
+import param
 
 from .. import util
 from ..element import Element
@@ -24,8 +24,8 @@ class Accessor:
         self.dataset = dataset
 
     def __getitem__(self, index):
-        from ..data import Dataset
         from ...operation.element import method
+        from ..data import Dataset
         in_method = self.dataset._in_method
         if not in_method:
             self.dataset._in_method = True

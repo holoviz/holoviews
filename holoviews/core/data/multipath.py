@@ -4,7 +4,7 @@ from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .dictionary import DictInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 
 
 class MultiInterface(Interface):
@@ -31,7 +31,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        from ...element import Polygons, Path
+        from ...element import Path, Polygons
 
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
@@ -101,7 +101,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def geom_type(cls, dataset):
-        from holoviews.element import Polygons, Path, Points
+        from holoviews.element import Path, Points, Polygons
         if isinstance(dataset, type):
             eltype = dataset
         else:

@@ -8,8 +8,8 @@ from ...core import Dimension
 from ...core.options import abbreviated_exception
 from ...util.transform import dim as dim_expr
 from ..util import map_colors
-from .element import ColorbarPlot
 from .chart import PointPlot
+from .element import ColorbarPlot
 from .path import PathPlot
 from .util import mpl_version
 

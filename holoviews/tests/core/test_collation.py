@@ -2,9 +2,10 @@
 Test cases for Collator
 """
 import itertools
+
 import numpy as np
 
-from holoviews.core import Collator, HoloMap, NdOverlay, Overlay, GridSpace
+from holoviews.core import Collator, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 

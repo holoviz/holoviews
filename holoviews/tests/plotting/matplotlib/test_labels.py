@@ -1,9 +1,9 @@
 import numpy as np
 
 from holoviews.core.dimension import Dimension
+from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
-from holoviews.core.options import Cycle
 from holoviews.plotting.util import rgb2hex
 
 from .test_plot import TestMPLPlot, mpl_renderer
