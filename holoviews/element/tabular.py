@@ -58,12 +58,12 @@ class ItemTable(Element):
             return self
         if heading not in self.vdims:
             raise KeyError(f"{heading!r} not in available headings.")
-        return np.array(self.data.get(heading, np.NaN))
+        return np.array(self.data.get(heading, np.nan))
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
-            return np.array([self.data.get(dimension, np.NaN)])
+            return np.array([self.data.get(dimension, np.nan)])
         else:
             return super().dimension_values(dimension)
 
@@ -72,7 +72,7 @@ class ItemTable(Element):
             sampled_data = dict(item for item in self.data.items()
                                        if samples(item))
         else:
-            sampled_data = dict((s, self.data.get(s, np.NaN)) for s in samples)
+            sampled_data = dict((s, self.data.get(s, np.nan)) for s in samples)
         return self.clone(sampled_data)
 
 
@@ -93,7 +93,7 @@ class ItemTable(Element):
         else:
             dim = self.get_dimension(row)
             heading = self.vdims[row]
-            return dim.pprint_value(self.data.get(heading.name, np.NaN))
+            return dim.pprint_value(self.data.get(heading.name, np.nan))
 
     def hist(self, *args, **kwargs):
         raise NotImplementedError("ItemTables are not homogeneous and "

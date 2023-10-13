@@ -861,7 +861,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             expected = source_cols[id(source)]
             found = [c for c in expected if c in source.data]
-            empty = np.full_like(source.data[found[0]], np.NaN) if found else []
+            empty = np.full_like(source.data[found[0]], np.nan) if found else []
             patch = {c: empty for c in expected if c not in source.data}
             source.data.update(patch)
         return ret

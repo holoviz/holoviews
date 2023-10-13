@@ -21,7 +21,7 @@ class KDEOperationTests(ComparisonTestCase):
     def setUp(self):
         self.values = np.arange(4)
         self.dist = Distribution(self.values)
-        self.nans = np.full(5, np.NaN)
+        self.nans = np.full(5, np.nan)
         self.values2d = [(i, j) for i in np.linspace(0, 4, 10)
                          for j in np.linspace(0, 4, 10)]
         self.bivariate = Bivariate(self.values2d)

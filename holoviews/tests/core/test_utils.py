@@ -294,7 +294,7 @@ class TestFindRange(unittest.TestCase):
     def setUp(self):
         self.int_vals = [1, 5, 3, 9, 7, 121, 14]
         self.float_vals = [0.38, 0.121, -0.1424, 5.12]
-        self.nan_floats = [np.NaN, 0.32, 1.42, -0.32]
+        self.nan_floats = [np.nan, 0.32, 1.42, -0.32]
         self.str_vals = ["Aardvark", "Zebra", "Platypus", "Wallaby"]
 
     def test_int_range(self):
@@ -310,7 +310,7 @@ class TestFindRange(unittest.TestCase):
         self.assertEqual(find_range(self.str_vals), ("Aardvark",  "Zebra"))
 
     def test_soft_range(self):
-        self.assertEqual(find_range(self.float_vals, soft_range=(np.NaN, 100)), (-0.1424, 100))
+        self.assertEqual(find_range(self.float_vals, soft_range=(np.nan, 100)), (-0.1424, 100))
 
 
 class TestDimensionRange(unittest.TestCase):
@@ -341,8 +341,8 @@ class TestMaxRange(unittest.TestCase):
     """
 
     def setUp(self):
-        self.ranges1 = [(-0.2, 0.5), (0, 1), (-0.37, 1.02), (np.NaN, 0.3)]
-        self.ranges2 = [(np.NaN, np.NaN), (np.NaN, np.NaN)]
+        self.ranges1 = [(-0.2, 0.5), (0, 1), (-0.37, 1.02), (np.nan, 0.3)]
+        self.ranges2 = [(np.nan, np.nan), (np.nan, np.nan)]
 
     def test_max_range1(self):
         self.assertEqual(max_range(self.ranges1), (-0.37, 1.02))
@@ -583,7 +583,7 @@ class TestNumericUtilities(ComparisonTestCase):
         self.assertTrue(isfinite(1.2))
 
     def test_isfinite_float_array_nan(self):
-        array = np.array([1.2, 3.0, np.NaN])
+        array = np.array([1.2, 3.0, np.nan])
         self.assertEqual(isfinite(array), np.array([True, True, False]))
 
     def test_isfinite_float_array_inf(self):

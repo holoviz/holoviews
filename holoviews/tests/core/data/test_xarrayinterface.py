@@ -201,7 +201,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ds1 = Dataset(([0, 1], [1, 2, 3], arr1), ['x', 'y'], 'z')
         ds2 = Dataset(([0, 1, 2], [1, 2], arr2), ['x', 'y'], 'z')
         hmap = HoloMap({1: ds1, 2: ds2})
-        arr = np.full((3, 3, 2), np.NaN)
+        arr = np.full((3, 3, 2), np.nan)
         arr[:, :2, 0] = arr1
         arr[:2, :, 1] = arr2
         ds = Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')

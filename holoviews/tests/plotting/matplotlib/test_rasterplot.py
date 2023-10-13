@@ -23,7 +23,7 @@ class TestRasterPlot(TestMPLPlot):
     def test_raster_nodata(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
         expected = np.array([[3, 4, 5],
-                             [np.NaN, 1, 2]])
+                             [np.nan, 1, 2]])
 
         raster = Raster(arr).opts(nodata=0)
         plot = mpl_renderer.get_plot(raster)
@@ -33,7 +33,7 @@ class TestRasterPlot(TestMPLPlot):
     def test_raster_nodata_uint(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]], dtype='uint32')
         expected = np.array([[3, 4, 5],
-                             [np.NaN, 1, 2]])
+                             [np.nan, 1, 2]])
 
         raster = Raster(arr).opts(nodata=0)
         plot = mpl_renderer.get_plot(raster)

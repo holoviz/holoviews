@@ -676,7 +676,7 @@ class layout_chords(Operation):
 
         # Draw each chord by interpolating quadratic splines
         # Separate chords in each edge by NaNs
-        empty = np.array([[np.NaN, np.NaN]])
+        empty = np.array([[np.nan, np.nan]])
         paths = []
         for i in range(len(element)):
             sidx, tidx = src_idx[i], tgt_idx[i]

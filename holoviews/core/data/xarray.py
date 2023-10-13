@@ -295,7 +295,7 @@ class XArrayInterface(GridInterface):
                 data = cls.replace_value(data, dimension.nodata)
 
         if not len(data):
-            dmin, dmax = np.NaN, np.NaN
+            dmin, dmax = np.nan, np.nan
         elif data.dtype.kind == 'M' or not edges:
             dmin, dmax = data.min(), data.max()
             if not edges:

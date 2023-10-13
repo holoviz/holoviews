@@ -789,7 +789,7 @@ class GridInterface(DictInterface):
 
         da = dask_array_module()
         if len(array) == 0:
-            return np.NaN, np.NaN
+            return np.nan, np.nan
 
         if array.dtype.kind == 'M':
             dmin, dmax = array.min(), array.max()
@@ -797,7 +797,7 @@ class GridInterface(DictInterface):
             try:
                 dmin, dmax = (np.nanmin(array), np.nanmax(array))
             except TypeError:
-                return np.NaN, np.NaN
+                return np.nan, np.nan
         if da and isinstance(array, da.Array):
             return finite_range(array, *da.compute(dmin, dmax))
         return finite_range(array, dmin, dmax)

@@ -752,7 +752,7 @@ class DimensionedPlot(Plot):
                     elif values.dtype.kind in 'US':
                         factors = util.unique_array(values)
                     elif len(values) == 0:
-                        drange = np.NaN, np.NaN
+                        drange = np.nan, np.nan
                     else:
                         try:
                             with warnings.catch_warnings():
@@ -1384,7 +1384,7 @@ class GenericElementPlot(DimensionedPlot):
         elif ydim == 'categorical':
             y0, y1 = '', ''
         elif ydim is None:
-            y0, y1 = np.NaN, np.NaN
+            y0, y1 = np.nan, np.nan
 
         if isinstance(self.projection, str) and self.projection == '3d':
             if range_type == 'soft':
@@ -1396,7 +1396,7 @@ class GenericElementPlot(DimensionedPlot):
             elif zdim == 'categorical':
                 z0, z1 = '', ''
             elif zdim is None:
-                z0, z1 = np.NaN, np.NaN
+                z0, z1 = np.nan, np.nan
             return (x0, y0, z0, x1, y1, z1)
 
         if not self.drawn:
@@ -1441,7 +1441,7 @@ class GenericElementPlot(DimensionedPlot):
                     isinstance(self.projection, str) and self.projection == '3d'
                 )
         else:
-            extents = (np.NaN,) * num
+            extents = (np.nan,) * num
 
         if range_type == 'extents':
             return extents
@@ -1449,7 +1449,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.apply_ranges:
             range_extents = self._get_range_extents(element, ranges, range_type, xdim, ydim, zdim)
         else:
-            range_extents = (np.NaN,) * num
+            range_extents = (np.nan,) * num
 
         if getattr(self, 'shared_axes', False) and self.subplot:
             combined = util.max_extents(
@@ -1982,7 +1982,7 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, x1, y1 = extents['data']
             sx0, sy0, sx1, sy1 = extents['soft']
             hx0, hy0, hx1, hy1 = extents['hard']
-            z0, z1 = np.NaN, np.NaN
+            z0, z1 = np.nan, np.nan
 
         # Apply minimum span
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))

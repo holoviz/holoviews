@@ -20,7 +20,7 @@ class TestQuadMeshPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(qmesh)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_array().data,
-                         np.array([3, 4, 5, np.NaN, 1, 2]))
+                         np.array([3, 4, 5, np.nan, 1, 2]))
 
     def test_quadmesh_nodata_uint(self):
         arr = np.array([[0, 1, 2], [3, 4,  5]], dtype='uint32')
@@ -28,7 +28,7 @@ class TestQuadMeshPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(qmesh)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_array().data,
-                         np.array([3, 4, 5, np.NaN, 1, 2]))
+                         np.array([3, 4, 5, np.nan, 1, 2]))
 
     def test_quadmesh_update_cbar(self):
         xs = ys = np.linspace(0, 6, 10)

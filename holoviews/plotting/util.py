@@ -402,7 +402,7 @@ def get_range(element, ranges, dimension):
             srange = dimension.soft_range
             hrange = dimension.range
     else:
-        drange = srange = hrange = (np.NaN, np.NaN)
+        drange = srange = hrange = (np.nan, np.nan)
     return drange, srange, hrange
 
 
@@ -1125,8 +1125,8 @@ class apply_nodata(Operation):
         data = data.astype('float64')
         mask = data!=self.p.nodata
         if hasattr(data, 'where'):
-            return data.where(mask, np.NaN)
-        return np.where(mask, data, np.NaN)
+            return data.where(mask, np.nan)
+        return np.where(mask, data, np.nan)
 
     def _process(self, element, key=None):
         if self.p.nodata is None:

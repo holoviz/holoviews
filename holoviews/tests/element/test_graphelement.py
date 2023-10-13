@@ -63,7 +63,7 @@ class GraphTests(ComparisonTestCase):
     def test_graph_node_info_merge_on_index_partial(self):
         node_info = Dataset((np.arange(5), np.arange(1,6)), 'index', 'label')
         graph = Graph(((self.source, self.target), node_info))
-        expected = np.array([1., 2., 3., 4., 5., np.NaN, np.NaN, np.NaN])
+        expected = np.array([1., 2., 3., 4., 5., np.nan, np.nan, np.nan])
         self.assertEqual(graph.nodes.dimension_values(3), expected)
 
     def test_graph_edge_segments_pd(self):
@@ -282,7 +282,7 @@ class TriMeshTests(ComparisonTestCase):
 
     def test_trimesh_edgepaths(self):
         trimesh = TriMesh((self.simplices, self.nodes))
-        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.NaN, np.NaN),
+        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.nan, np.nan),
                  (0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
         for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths):
             self.assertEqual(p1, p2)

@@ -77,7 +77,7 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, levels=[0.5])
         contour = Contours([[(-0.166667,  0.333333, 0.5), (-0.333333, 0.277778, 0.5),
-                             (np.NaN, np.NaN, 0.5), (0.333333, 0.3, 0.5),
+                             (np.nan, np.nan, 0.5), (0.333333, 0.3, 0.5),
                              (0.166667, 0.333333, 0.5)]],
                             vdims=img.vdims)
         self.assertEqual(op_contours, contour)
@@ -92,7 +92,7 @@ class OperationTests(ComparisonTestCase):
         qmesh = QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])))
         op_contours = contours(qmesh, levels=[0.5])
         contour = Contours([[(0,  1.166667, 0.5), (0.5, 1., 0.5),
-                             (np.NaN, np.NaN, 0.5), (1.5, 1., 0.5),
+                             (np.nan, np.nan, 0.5), (1.5, 1., 0.5),
                              (2, 1.1, 0.5)]],
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
@@ -104,7 +104,7 @@ class OperationTests(ComparisonTestCase):
         qmesh = QuadMesh((xs, ys+0.1, zs))
         op_contours = contours(qmesh, levels=[0.5])
         contour = Contours([[(0,  0.266667, 0.5), (0.5, 0.1, 0.5),
-                             (np.NaN, np.NaN, 0.5), (1.5, 0.1, 0.5),
+                             (np.nan, np.nan, 0.5), (1.5, 0.1, 0.5),
                              (2, 0.2, 0.5)]],
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
@@ -120,7 +120,7 @@ class OperationTests(ComparisonTestCase):
         qmesh = QuadMesh((xs, ys+0.1, zs))
         op_contours = contours(qmesh, levels=[0.5])
         contour = Contours([[(0,  0.266667, 0.5), (0.5, 0.1, 0.5),
-                             (np.NaN, np.NaN, 0.5), (1.5, 0.1, 0.5),
+                             (np.nan, np.nan, 0.5), (1.5, 0.1, 0.5),
                              (2, 0.2, 0.5)]],
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)

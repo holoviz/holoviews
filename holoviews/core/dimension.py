@@ -1187,7 +1187,7 @@ class Dimensioned(LabelledData):
                 ranges = self.traverse(range_fn, [match_fn])
                 lower, upper = util.max_range(ranges)
         else:
-            lower, upper = (np.NaN, np.NaN)
+            lower, upper = (np.nan, np.nan)
         if not dimension_range:
             return lower, upper
         return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)

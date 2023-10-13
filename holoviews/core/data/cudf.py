@@ -122,7 +122,7 @@ class cuDFInterface(PandasInterface):
         if dimension.nodata is not None:
             column = cls.replace_value(column, dimension.nodata)
         if column.dtype.kind == 'O':
-            return np.NaN, np.NaN
+            return np.nan, np.nan
         else:
             return finite_range(column, column.min(), column.max())
 

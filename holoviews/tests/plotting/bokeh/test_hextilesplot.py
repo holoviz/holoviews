@@ -39,7 +39,7 @@ class TestHexTilesPlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data, {'q': [], 'r': []})
 
     def test_hex_tiles_only_nans(self):
-        tiles = HexTiles([(np.NaN, 0), (1, np.NaN)])
+        tiles = HexTiles([(np.nan, 0), (1, np.nan)])
         plot = bokeh_renderer.get_plot(tiles)
         self.assertEqual(plot.handles['source'].data, {'q': [], 'r': []})
 

@@ -825,7 +825,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             else:
                 width_ratios = [4]
 
-            inv_aspect = 1./main_aspect if main_aspect else np.NaN
+            inv_aspect = 1./main_aspect if main_aspect else np.nan
             if layout_type in ['Embedded Dual', 'Triple']:
                 el = layout_view.get('top', None)
                 eltype = type(el)
