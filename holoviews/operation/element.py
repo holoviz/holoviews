@@ -546,11 +546,6 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from matplotlib.dates import num2date, date2num
-        except ImportError:
-            raise ImportError("contours operation requires matplotlib.")
-
-        try:
             from contourpy import contour_generator, FillType, LineType
         except ImportError:
             raise ImportError("contours operation requires contourpy.")
@@ -576,6 +571,11 @@ class contours(Operation):
             if any(data_is_datetime[:2]) and self.p.filled:
                 raise RuntimeError("Datetime spatial coordinates are not supported "
                                    "for filled contour calculations.")
+            try:
+                from matplotlib.dates import num2date, date2num
+            except ImportError:
+                raise ImportError("contours operation using datetimes requires matplotlib.")
+
             data = tuple(
                 date2num(d) if is_datetime else d
                 for d, is_datetime in zip(data, data_is_datetime)
