@@ -561,7 +561,7 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from contourpy import contour_generator, FillType, LineType
+            from contourpy import FillType, LineType, contour_generator
         except ImportError:
             raise ImportError("contours operation requires contourpy.")
 
@@ -588,7 +588,7 @@ class contours(Operation):
                                    "for filled contour calculations.")
 
             try:
-                from matplotlib.dates import num2date, date2num
+                from matplotlib.dates import date2num, num2date
             except ImportError:
                 raise ImportError("contours operation using datetimes requires matplotlib.") from None
 
