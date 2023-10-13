@@ -575,7 +575,7 @@ class contours(Operation):
             try:
                 from matplotlib.dates import num2date, date2num
             except ImportError:
-                raise ImportError("contours operation using datetimes requires matplotlib.")
+                raise ImportError("contours operation using datetimes requires matplotlib.") from None
 
             data = tuple(
                 date2num(d) if is_datetime else d
