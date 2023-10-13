@@ -596,6 +596,7 @@ class contours(Operation):
                 contours = contour_type([], [xdim, ydim], vdims)
                 return (element * contours) if self.p.overlaid else contours
             else:
+                # The +1 is consistent with Matplotlib's use of MaxNLocator for contours.
                 locator = MaxNLocator(levels + 1)
                 levels = locator.tick_values(zmin, zmax)
         else:

@@ -277,12 +277,11 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_contours, polys)
 
     def test_image_contours_filled_auto_levels(self):
-        z = np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])
+        z = np.array([[0, 1, 0], [3, 4, 5], [6, 7, 8]])
         img = Image(z)
         for nlevels in range(3, 20):
             op_contours = contours(img, filled=True, levels=nlevels)
             levels = [item['z'] for item in op_contours.data]
-            print(nlevels, len(levels), levels)
             assert len(levels) <= nlevels + 1
             delta = 0.5*(levels[1] - levels[0])
             assert np.min(levels) <= z.min() + delta
@@ -293,7 +292,7 @@ class OperationTests(ComparisonTestCase):
         y = np.array([6, 7])
         z = np.array([[0, 2, 0], [0, 2, 0]])
         img = Image((x, y, z))
-        msg = 'Datetime spatial coordinates are not supported for filled contour calculations.'
+        msg = r'Datetime spatial coordinates are not supported for filled contour calculations.'
         with pytest.raises(RuntimeError, match=msg):
             _ = contours(img, filled=True, levels=[0.5, 1.5])
 

@@ -1,6 +1,7 @@
 """
 Minimal set of functionality of Matplotlib's MaxNLocator to choose contour
 levels without having to have Matplotlib installed.
+Taken from Matplotlib 3.8.0.
 """
 import math
 import numpy as np
