@@ -287,8 +287,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot.update((1,))
         self.assertEqual(data['A'], hmap1[1].dimension_values(0))
         self.assertEqual(data['B'], hmap1[1].dimension_values(1))
-        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
-        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.nan))
+        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
     def test_shared_axes(self):
         curve = Curve(range(10))

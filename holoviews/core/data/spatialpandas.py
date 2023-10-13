@@ -621,7 +621,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
         elif scalar:
             arrays.append(np.full(length, val))
         if expanded and not is_points and not i == (len(data[geom_col])-1):
-            arrays.append(np.array([np.NaN]))
+            arrays.append(np.array([np.nan]))
 
     if not len(data):
         return np.array([])

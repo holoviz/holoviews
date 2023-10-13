@@ -111,7 +111,7 @@ class RasterPlot(ColorbarPlot):
             if img.dtype.kind == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
-                img = np.array([[np.NaN]])
+                img = np.array([[np.nan]])
             if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)

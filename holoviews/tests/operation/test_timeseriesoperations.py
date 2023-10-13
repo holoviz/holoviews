@@ -32,24 +32,24 @@ class TimeseriesOperationTests(ComparisonTestCase):
 
     def test_roll_dates(self):
         rolled = rolling(self.date_curve, rolling_window=2)
-        rolled_vals = [np.NaN, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
+        rolled_vals = [np.nan, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         self.assertEqual(rolled, Curve((self.dates, rolled_vals)))
 
     def test_roll_ints(self):
         rolled = rolling(self.int_curve, rolling_window=2)
-        rolled_vals = [np.NaN, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
+        rolled_vals = [np.nan, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         self.assertEqual(rolled, Curve(rolled_vals))
 
     @scipy_skip
     def test_roll_date_with_window_type(self):
         rolled = rolling(self.date_curve, rolling_window=3, window_type='triang')
-        rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
+        rolled_vals = [np.nan, 2, 3, 4, 5, 6, np.nan]
         self.assertEqual(rolled, Curve((self.dates, rolled_vals)))
 
     @scipy_skip
     def test_roll_ints_with_window_type(self):
         rolled = rolling(self.int_curve, rolling_window=3, window_type='triang')
-        rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
+        rolled_vals = [np.nan, 2, 3, 4, 5, 6, np.nan]
         self.assertEqual(rolled, Curve(rolled_vals))
 
     def test_resample_weekly(self):

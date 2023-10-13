@@ -421,7 +421,7 @@ class MultiInterface(Interface):
                 continue
             values.append(dvals)
             if not is_points and expanded:
-                values.append([np.NaN])
+                values.append([np.nan])
 
         if not values:
             return np.array([])

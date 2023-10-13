@@ -955,7 +955,7 @@ def find_minmax(lims, olims):
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except Exception:
-        limits = (np.NaN, np.NaN)
+        limits = (np.nan, np.nan)
     return limits
 
 
@@ -999,7 +999,7 @@ def max_range(ranges, combined=True):
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
+            values = [tuple(np.nan if v is None else v for v in r) for r in ranges]
             if any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
@@ -1015,7 +1015,7 @@ def max_range(ranges, combined=True):
 
             arr = np.array(values)
             if not len(arr):
-                return np.NaN, np.NaN
+                return np.nan, np.nan
             elif arr.dtype.kind in 'OSU':
                 arr = list(python2sort([
                     v for r in values for v in r
@@ -1031,7 +1031,7 @@ def max_range(ranges, combined=True):
             else:
                 return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except Exception:
-        return (np.NaN, np.NaN)
+        return (np.nan, np.nan)
 
 
 def range_pad(lower, upper, padding=None, log=False):
@@ -1101,7 +1101,7 @@ def max_extents(extents, zrange=False):
         num = 4
         inds = [(0, 2), (1, 3)]
     arr = list(zip(*extents)) if extents else []
-    extents = [np.NaN] * num
+    extents = [np.nan] * num
     if len(arr) == 0:
         return extents
     with warnings.catch_warnings():

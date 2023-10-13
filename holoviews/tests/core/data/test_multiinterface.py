@@ -126,7 +126,7 @@ class GeomTests(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.NaN, 1, 2]))
+        self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.nan, 1, 2]))
 
     def test_empty_array_values(self):
         mds = Path([], kdims=['x', 'y'], datatype=[self.datatype])

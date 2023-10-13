@@ -85,7 +85,7 @@ class StatisticsElement(Dataset, Element2D):
         """
         dim = self.get_dimension(dim, strict=True)
         if dim in self.vdims:
-            return np.full(len(self), np.NaN)
+            return np.full(len(self), np.nan)
         return self.interface.values(self, dim, expanded, flat)
 
     def get_dimension_type(self, dim):

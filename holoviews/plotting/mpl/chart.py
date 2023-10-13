@@ -970,7 +970,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                         sel_key[sdim.name] = [stk]
                     el = element.select(**sel_key)
                     vals = el.dimension_values(element.vdims[0].name)
-                    val = float(vals[0]) if len(vals) else np.NaN
+                    val = float(vals[0]) if len(vals) else np.nan
                     xval = xpos+width/2.
                     if label in bar_data:
                         group = bar_data[label]

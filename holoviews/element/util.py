@@ -95,7 +95,7 @@ def reduce_fn(x):
     for v in values:
         if not is_nan(v):
             return v
-    return np.NaN
+    return np.nan
 
 
 class categorical_aggregate2d(Operation):
@@ -114,7 +114,7 @@ class categorical_aggregate2d(Operation):
                      kdims=['Country', 'Year'], vdims=['Population'])
     >> categorical_aggregate2d(table)
     Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
-             'Population': [[ 282.2 , np.NaN], [np.NaN,   58.89]]},
+             'Population': [[ 282.2 , np.nan], [np.nan,   58.89]]},
             kdims=['Country', 'Year'], vdims=['Population'])
     """
 
@@ -177,7 +177,7 @@ class categorical_aggregate2d(Operation):
         data = {xdim: xs, ydim: ys}
         for vdim in vdims:
             values = np.empty(nsamples)
-            values[:] = np.NaN
+            values[:] = np.nan
             data[vdim.name] = values
         dtype = default_datatype
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])

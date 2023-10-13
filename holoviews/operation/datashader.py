@@ -133,7 +133,7 @@ class AggregationOperation(ResampleOperation2D):
     def _empty_agg(self, element, x, y, width, height, xs, ys, agg_fn, **params):
         x = x.name if x else 'x'
         y = y.name if x else 'y'
-        xarray = xr.DataArray(np.full((height, width), np.NaN),
+        xarray = xr.DataArray(np.full((height, width), np.nan),
                               dims=[y, x], coords={x: xs, y: ys})
         if width == 0:
             params['xdensity'] = 1
@@ -285,7 +285,7 @@ class aggregate(LineAggregationOperation):
                 if isinstance(path, dd.DataFrame):
                     path = path.compute()
                 empty = path.copy()
-                empty.iloc[0, :] = (np.NaN,) * empty.shape[1]
+                empty.iloc[0, :] = (np.nan,) * empty.shape[1]
                 paths = [elem for p in paths for elem in (p, empty)][:-1]
             if all(isinstance(path, dd.DataFrame) for path in paths):
                 df = dd.concat(paths)
@@ -348,7 +348,7 @@ class aggregate(LineAggregationOperation):
         if x is None or y is None or width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
         elif getattr(data, "interface", None) is not DaskInterface and not len(data):
-            empty_val = 0 if isinstance(agg_fn, ds.count) else np.NaN
+            empty_val = 0 if isinstance(agg_fn, ds.count) else np.nan
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
             return self.p.element_type(xarray, **params)
@@ -535,7 +535,7 @@ class overlay_aggregate(aggregate):
 
         # Fill masked with with NaNs
         if is_sum:
-            agg.data[column].values[mask] = np.NaN
+            agg.data[column].values[mask] = np.nan
 
         return agg.clone(bounds=bbox)
 

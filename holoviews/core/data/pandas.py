@@ -184,7 +184,7 @@ class PandasInterface(Interface, PandasAPI):
             except Exception:
                 pass
             if not len(column):
-                return np.NaN, np.NaN
+                return np.nan, np.nan
             return column.iloc[0], column.iloc[-1]
         else:
             if dimension.nodata is not None:

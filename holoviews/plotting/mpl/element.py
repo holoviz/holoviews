@@ -369,7 +369,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             return
 
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
-        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.NaN for coord in extents]
+        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.nan for coord in extents]
         coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
                   for c in coords]
         if (isinstance(self.projection, str) and self.projection == '3d') or len(extents) == 6:
@@ -938,14 +938,14 @@ class ColorbarPlot(ElementPlot):
                     if values.dtype.kind == 'M':
                         clim = values.min(), values.max()
                     elif len(values) == 0:
-                        clim = np.NaN, np.NaN
+                        clim = np.nan, np.nan
                     else:
                         try:
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 clim = (np.nanmin(values), np.nanmax(values))
                         except Exception:
-                            clim = np.NaN, np.NaN
+                            clim = np.nan, np.nan
                 else:
                     clim = element.range(vdim)
                 if self.logz:

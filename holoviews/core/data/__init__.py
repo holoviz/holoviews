@@ -503,7 +503,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         elif dim in self.dimensions() and data_range and bool(self):
             lower, upper = self.interface.range(self, dim)
         else:
-            lower, upper = (np.NaN, np.NaN)
+            lower, upper = (np.nan, np.nan)
         if not dimension_range:
             return lower, upper
         return core_util.dimension_range(lower, upper, dim.range, dim.soft_range)
@@ -1089,7 +1089,7 @@ argument to specify a selection specification""")
         values = self.interface.values(self, dim, expanded, flat)
         if dim.nodata is not None:
             # Ensure nodata applies to boolean data in py2
-            values = np.where(values==dim.nodata, np.NaN, values)
+            values = np.where(values==dim.nodata, np.nan, values)
         return values
 
     def get_dimension_type(self, dim):

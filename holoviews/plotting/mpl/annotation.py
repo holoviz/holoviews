@@ -229,7 +229,7 @@ class LabelsPlot(ColorbarPlot):
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:
-                    color = colors.index(color) if color in colors else np.NaN
+                    color = colors.index(color) if color in colors else np.nan
                     plot_kwargs['color'] = cmap(color)
             kwargs = dict(plot_kwargs, **{k: v[i] for k, v in vectorized.items()})
             texts.append(ax.text(x, y, text, **kwargs))
