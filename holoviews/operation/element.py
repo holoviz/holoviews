@@ -571,6 +571,7 @@ class contours(Operation):
             if any(data_is_datetime[:2]) and self.p.filled:
                 raise RuntimeError("Datetime spatial coordinates are not supported "
                                    "for filled contour calculations.")
+
             try:
                 from matplotlib.dates import num2date, date2num
             except ImportError:
@@ -602,7 +603,6 @@ class contours(Operation):
 
         if data_is_datetime[2]:
             levels = date2num(levels)
-            # Should check isdatetime(levels) too?
 
         crange = levels.min(), levels.max()
         if self.p.filled:
@@ -639,14 +639,14 @@ class contours(Operation):
                 outer_offsets = filled[2][0]
                 exteriors = []
                 interiors = []
-                for i in range(len(outer_offsets)-1):  # Loop through exterior boundaries
-                    jstart = outer_offsets[i]  # Start boundary index
-                    jend = outer_offsets[i+1]  # End boundary index
+
+                # Loop through exterior polygon boundaries.
+                for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
                     if exteriors:
                         exteriors.append(empty)
                     exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])
 
-                    # Loop over the (jend-jstart-1) interior boundaries,
+                    # Loop over the (jend-jstart-1) interior boundaries.
                     interior = [points[offsets[j]:offsets[j + 1]] for j in range(jstart+1, jend)]
                     interiors.append(interior)
                 level = (lower_level + upper_level) / 2
