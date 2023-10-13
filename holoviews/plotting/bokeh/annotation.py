@@ -4,6 +4,7 @@ from html import escape
 
 import param
 import numpy as np
+import pandas as pd
 
 from bokeh.models import BoxAnnotation, Span, Arrow, Slope
 from panel.models import HTML
@@ -68,9 +69,11 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         elif isinstance(element, VLines):
             extents = extents[0], np.nan, extents[2], np.nan
         elif isinstance(element, HSpans):
-            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
+            extents = pd.array(extents)
+            extents = np.nan, extents[:2].min(), np.nan, extents[2:].max()
         elif isinstance(element, VSpans):
-            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
+            extents = pd.array(extents)
+            extents = extents[:2].min(), np.nan, extents[2:].max(), np.nan
         return extents
 
 class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
