@@ -54,6 +54,7 @@ select = [
     "E",
     "F",
     "FLY",
+    "I",
     "ICN",
     "NPY",
     "PIE",
@@ -94,6 +95,11 @@ unfixable = [
     "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
     "NPY002",  # Replace legacy `np.random.rand` call with Generator
 ]
+
+[tool.ruff.isort]
+known-first-party = ["holoviews"]
+force-wrap-aliases = true
+combine-as-imports = true
 
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"

@@ -1,10 +1,9 @@
 import numpy as np
+from bokeh.models import ColorBar
 
-from holoviews.element import QuadMesh, Image
+from holoviews.element import Image, QuadMesh
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import ColorBar
 
 
 class TestQuadMeshPlot(TestBokehPlot):

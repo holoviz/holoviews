@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.overlay import NdOverlay
 from holoviews.element import Curve
 from holoviews.util.transform import dim
-from holoviews.core.options import AbbreviatedException
 
 from .test_plot import TestMPLPlot, mpl_renderer
 

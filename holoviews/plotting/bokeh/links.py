@@ -1,13 +1,15 @@
 import numpy as np
-
-from bokeh.models import CustomJS
+from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
-from bokeh.models import Toolbar
 
 from ...core.util import isscalar
 from ..links import (
-    Link, RectanglesTableLink, DataLink, RangeToolLink,
-    SelectionLink, VertexTableLink
+    DataLink,
+    Link,
+    RangeToolLink,
+    RectanglesTableLink,
+    SelectionLink,
+    VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
 

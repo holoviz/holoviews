@@ -2,7 +2,7 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.element import Raster, Image, RGB, ImageStack
+from holoviews.element import RGB, Image, ImageStack, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer

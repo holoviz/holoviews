@@ -1,31 +1,60 @@
 import datetime as dt
-
 from unittest import SkipTest, skipIf
 
 import numpy as np
 import pandas as pd
 import pytest
-
-from holoviews import (
-    Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
-    QuadMesh, NdOverlay, Contours, Spikes, Spread, Area, Rectangles,
-    Segments, Polygons, Nodes, DynamicMap, Overlay, ImageStack
-)
-from holoviews.util import render
-from holoviews.streams import Tap
-from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
-from holoviews.operation import apply_when
 from packaging.version import Version
 
+from holoviews import (
+    RGB,
+    Area,
+    Contours,
+    Curve,
+    Dataset,
+    Dimension,
+    DynamicMap,
+    Graph,
+    Image,
+    ImageStack,
+    NdOverlay,
+    Nodes,
+    Overlay,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Segments,
+    Spikes,
+    Spread,
+    TriMesh,
+)
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.operation import apply_when
+from holoviews.streams import Tap
+from holoviews.util import render
+
 try:
-    import datashader as ds
     import dask.dataframe as dd
+    import datashader as ds
     import xarray as xr
+
     from holoviews.operation.datashader import (
-        aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, spread, rasterize, datashade, AggregationOperation,
-        inspect, inspect_points, inspect_polygons
+        AggregationOperation,
+        aggregate,
+        datashade,
+        directly_connect_edges,
+        ds_version,
+        inspect,
+        inspect_points,
+        inspect_polygons,
+        rasterize,
+        regrid,
+        shade,
+        spread,
+        stack,
     )
 except ImportError:
     raise SkipTest('Datashader not available')

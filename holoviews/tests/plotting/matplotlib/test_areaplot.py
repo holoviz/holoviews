@@ -1,6 +1,7 @@
-from holoviews.element import Area, Overlay
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from holoviews.element import Area, Overlay
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer

@@ -1,5 +1,4 @@
 import numpy as np
-
 from plotly.graph_objs.layout import Image as _Image
 
 from ...core.util import VersionError

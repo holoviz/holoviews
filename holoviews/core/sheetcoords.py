@@ -76,9 +76,9 @@ outside of the actual matrix.
 """
 
 import numpy as np
+
 from .boundingregion import BoundingBox
 from .util import datetime_types
-
 
 # Note about the 'bounds-master' approach we have adopted
 # =======================================================

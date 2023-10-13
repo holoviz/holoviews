@@ -1,15 +1,15 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Points
-from holoviews.core.options import AbbreviatedException
 
-from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
+from .test_plot import TestMPLPlot, mpl_renderer
 
-import matplotlib.pyplot as plt
 
 class TestPointPlot(TestMPLPlot):
 
