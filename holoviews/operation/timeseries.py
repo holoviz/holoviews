@@ -1,11 +1,11 @@
-import param
 import numpy as np
 import pandas as pd
+import param
 from packaging.version import Version
 
-from ..core import Operation, Element
+from ..core import Element, Operation
 from ..core.data import PandasInterface
-from ..core.util import pandas_version, _PANDAS_FUNC_LOOKUP
+from ..core.util import _PANDAS_FUNC_LOOKUP, pandas_version
 from ..element import Scatter
 
 

@@ -1,13 +1,11 @@
-import time
 import sys
+import time
 
-from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
-
+from IPython.core.magic import Magics, line_cell_magic, line_magic, magics_class
+from IPython.display import HTML, display
 
 from ..core.options import Options, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
-
-from IPython.display import display, HTML
 from ..operation import Compositor
 
 #========#
@@ -20,14 +18,14 @@ try:
 except ImportError:
     pyparsing = None
 else:
-    from holoviews.util.parser import CompositorSpec
-    from holoviews.util.parser import OptsSpec
+    from holoviews.util.parser import CompositorSpec, OptsSpec
 
 
 # Set to True to automatically run notebooks.
 STORE_HISTORY = False
 
 from IPython.core import page
+
 InfoPrinter.store = Store
 
 

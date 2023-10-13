@@ -1,4 +1,5 @@
-from bokeh.models import LinearScale, LogScale, LinearAxis, LogAxis
+from bokeh.models import LinearAxis, LinearScale, LogAxis, LogScale
+
 from holoviews.element import Curve
 
 from ...utils import LoggingComparisonTestCase

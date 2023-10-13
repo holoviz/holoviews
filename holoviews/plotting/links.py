@@ -1,5 +1,4 @@
 import weakref
-
 from collections import defaultdict
 
 import param

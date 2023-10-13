@@ -2,8 +2,7 @@ import sys
 
 import numpy as np
 import param
-
-from bokeh.models import DatetimeAxis, CustomJSHover
+from bokeh.models import CustomJSHover, DatetimeAxis
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster

@@ -7,9 +7,9 @@ except ImportError:
 
 import numpy as np
 
-from holoviews import Distribution, Bivariate, Area, Image, Contours, Polygons
+from holoviews import Area, Bivariate, Contours, Distribution, Image, Polygons
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation.stats import (univariate_kde, bivariate_kde)
+from holoviews.operation.stats import bivariate_kde, univariate_kde
 
 
 class KDEOperationTests(ComparisonTestCase):

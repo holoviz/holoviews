@@ -1,13 +1,12 @@
 import datetime as dt
 
 import numpy as np
+from bokeh.models import CategoricalColorMapper, ColumnDataSource, LinearColorMapper
 
 from holoviews.element import BoxWhisker
 from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import ColumnDataSource, CategoricalColorMapper, LinearColorMapper
 
 
 class TestBoxWhiskerPlot(TestBokehPlot):

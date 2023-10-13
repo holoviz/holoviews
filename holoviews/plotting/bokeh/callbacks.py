@@ -1,32 +1,61 @@
 import asyncio
 import base64
 import time
-
 from collections import defaultdict
 
 import numpy as np
-
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
-    PolyDrawTool, PolyEditTool, FreehandDrawTool,
-    PointDrawTool, BoxEditTool
+    BoxEditTool,
+    CustomJS,
+    DataRange1d,
+    DatetimeAxis,
+    FactorRange,
+    FreehandDrawTool,
+    PointDrawTool,
+    PolyDrawTool,
+    PolyEditTool,
+    Range1d,
 )
 from panel.io.state import state
 
 from ...core.options import CallbackError
-from ...core.util import (
-    datetime_types, dimension_sanitizer, dt64_to_dt, isequal
-)
+from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
 from ...element import Table
 from ...streams import (
-    Stream, PointerXY, RangeXY, Selection1D, RangeX, RangeY, PointerX,
-    PointerY, BoundsX, BoundsY, Tap, SingleTap, DoubleTap, MouseEnter,
-    MouseLeave, PressUp, PanEnd, PlotSize, Draw, BoundsXY, PlotReset,
-    BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
-    CurveEdit, SelectionXY, Lasso, SelectMode
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    BoxEdit,
+    CDSStream,
+    CurveEdit,
+    DoubleTap,
+    Draw,
+    FreehandDraw,
+    Lasso,
+    MouseEnter,
+    MouseLeave,
+    PanEnd,
+    PlotReset,
+    PlotSize,
+    PointDraw,
+    PointerX,
+    PointerXY,
+    PointerY,
+    PolyDraw,
+    PolyEdit,
+    PressUp,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
+    SelectionXY,
+    SelectMode,
+    SingleTap,
+    Stream,
+    Tap,
 )
-from .util import bokeh33, convert_timestamp
 from ...util.warnings import warn
+from .util import bokeh33, convert_timestamp
 
 
 class Callback:

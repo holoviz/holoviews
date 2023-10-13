@@ -1,7 +1,8 @@
+import logging
 import os
 import sys
+
 import param
-import logging
 
 from holoviews.element.comparison import ComparisonTestCase
 

@@ -4,15 +4,30 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.element import (
-    HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope,
-    HLines, VLines, HSpans, VSpans,
+    Arrow,
+    HLine,
+    HLines,
+    HSpan,
+    HSpans,
+    Labels,
+    Slope,
+    Text,
+    VLine,
+    VLines,
+    VSpan,
+    VSpans,
 )
 from holoviews.plotting.bokeh.util import bokeh32, bokeh33
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 if bokeh32:
-    from bokeh.models import VSpan as BkVSpan, HSpan as BkHSpan, VStrip as BkVStrip, HStrip as BkHStrip
+    from bokeh.models import (
+        HSpan as BkHSpan,
+        HStrip as BkHStrip,
+        VSpan as BkVSpan,
+        VStrip as BkVStrip,
+    )
 
 if bokeh33:
     from bokeh.models.coordinates import Node

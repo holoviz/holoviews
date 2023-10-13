@@ -3,8 +3,10 @@ Unit tests of Raster elements
 """
 
 import numpy as np
-from holoviews.element import Raster, Image, Curve, QuadMesh, RGB, HSV
+
+from holoviews.element import HSV, RGB, Curve, Image, QuadMesh, Raster
 from holoviews.element.comparison import ComparisonTestCase
+
 
 class TestRaster(ComparisonTestCase):
 

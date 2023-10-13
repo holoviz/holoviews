@@ -1,8 +1,13 @@
 import contextlib
 
 import pytest
-
-from panel.tests.conftest import server_cleanup, port, pytest_addoption, pytest_configure, optional_markers  # noqa
+from panel.tests.conftest import (  # noqa
+    optional_markers,
+    port,
+    pytest_addoption,
+    pytest_configure,
+    server_cleanup,
+)
 
 
 def pytest_collection_modifyitems(config, items):

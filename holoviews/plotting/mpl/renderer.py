@@ -1,22 +1,20 @@
-import os
 import base64
-
-from io import BytesIO
-from tempfile import NamedTemporaryFile
+import os
 from contextlib import contextmanager
+from io import BytesIO
 from itertools import chain
-
-import param
+from tempfile import NamedTemporaryFile
 
 import matplotlib as mpl
-
+import param
 from matplotlib import pyplot as plt
 from param.parameterized import bothmethod
 
 from ...core import HoloMap
 from ...core.options import Store
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import get_tight_bbox, get_old_rcparams
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
+from .util import get_old_rcparams, get_tight_bbox
+
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')

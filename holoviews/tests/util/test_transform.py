@@ -3,18 +3,17 @@ Unit tests for dim transforms
 """
 import pickle
 import warnings
-
-import holoviews as hv
-
 from unittest import skipIf
 
 import numpy as np
 import pandas as pd
 import param
 
+import holoviews as hv
+
 try:
-    import dask.dataframe as dd
     import dask.array as da
+    import dask.dataframe as dd
 except ImportError:
     da, dd = None, None
 
