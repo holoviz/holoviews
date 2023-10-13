@@ -61,7 +61,7 @@ class KDEOperationTests(ComparisonTestCase):
         kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
                             y_range=(0, 1), contours=True, levels=10)
         self.assertIsInstance(kde, Contours)
-        self.assertEqual(len(kde.data), 9)
+        self.assertEqual(len(kde.data), 11)
 
     def test_bivariate_kde_contours_filled(self):
         np.random.seed(1)

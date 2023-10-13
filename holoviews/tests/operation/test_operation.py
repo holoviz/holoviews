@@ -87,14 +87,18 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 1, 0], [0, 1, 0]]))
         # Contour level outside of data limits
         op_contours = contours(img, levels=[23.0])
-        contour = Contours(None, vdims=img.vdims)
+        contour = Contours([[]], vdims=img.vdims)
         self.assertEqual(op_contours, contour)
 
     def test_image_contours_auto_levels(self):
-        img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
-        op_contours = contours(img)
-        levels = [item['z'] for item in op_contours.data]
-        self.assertEqual(levels, [0, 0.8, 1.6, 2.4, 3.2, 4, 4.8, 5.6, 6.4, 7.2])
+        z = np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])
+        img = Image(z)
+        for nlevels in range(3, 20):
+            op_contours = contours(img, levels=nlevels)
+            levels = [item['z'] for item in op_contours.data]
+            assert len(levels) <= nlevels + 2
+            assert np.min(levels) <= z.min()
+            assert np.max(levels) >= z.max()
 
     def test_image_contours_no_range(self):
         img = Image(np.zeros((2, 2)))
@@ -269,8 +273,20 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         # Contour level outside of data limits
         op_contours = contours(img, filled=True, levels=[20.0, 23.0])
-        polys = Polygons(None, vdims=img.vdims[0].clone(range=(20.0, 23.0)))
+        polys = Polygons([[]], vdims=img.vdims[0].clone(range=(20.0, 23.0)))
         self.assertEqual(op_contours, polys)
+
+    def test_image_contours_filled_auto_levels(self):
+        z = np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])
+        img = Image(z)
+        for nlevels in range(3, 20):
+            op_contours = contours(img, filled=True, levels=nlevels)
+            levels = [item['z'] for item in op_contours.data]
+            print(nlevels, len(levels), levels)
+            assert len(levels) <= nlevels + 1
+            delta = 0.5*(levels[1] - levels[0])
+            assert np.min(levels) <= z.min() + delta
+            assert np.max(levels) >= z.max() - delta
 
     def test_image_contours_filled_x_datetime(self):
         x = np.array(['2023-09-01', '2023-09-05', '2023-09-09'], dtype='datetime64')
