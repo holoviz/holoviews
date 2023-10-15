@@ -4,7 +4,7 @@ import inspect
 import re
 import time
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from itertools import permutations
 from types import FunctionType
 
@@ -1192,14 +1192,15 @@ def dtype_fix_hook(plot, element):
     # Work-around for problems seen in:
     # https://github.com/holoviz/holoviews/issues/5722
     # https://github.com/holoviz/holoviews/issues/5726
-    # Should be fixed in Bokeh 3.2
+    # https://github.com/holoviz/holoviews/issues/5941
+    # Should be fixed in Bokeh:
+    # https://github.com/bokeh/bokeh/issues/13155
 
-    try:
+    with suppress(Exception):
         renderers = plot.handles["plot"].renderers
         for renderer in renderers:
-            data = renderer.data_source.data
-            for k, v in data.items():
-                if hasattr(v, "dtype") and v.dtype.kind == "U":
-                    data[k] = v.tolist()
-    except Exception:
-        pass
+            with suppress(Exception):
+                data = renderer.data_source.data
+                for k, v in data.items():
+                    if hasattr(v, "dtype") and v.dtype.kind == "U":
+                        data[k] = v.tolist()
