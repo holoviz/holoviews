@@ -2,7 +2,6 @@ import calendar
 import datetime as dt
 import re
 import time
-
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import permutations
@@ -10,41 +9,60 @@ from itertools import permutations
 import bokeh
 import numpy as np
 import pandas as pd
-
-from bokeh.core.json_encoder import serialize_json # noqa (API import)
+from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
-from bokeh.layouts import Row, Column
-from bokeh.models import tools
+from bokeh.layouts import Column, Row, group_tools
 from bokeh.models import (
-    Model, DataRange1d, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis, LinearAxis, LogAxis, MercatorAxis
+    CategoricalAxis,
+    CopyTool,
+    CustomJS,
+    DataRange1d,
+    DatetimeAxis,
+    ExamineTool,
+    FactorRange,
+    FullscreenTool,
+    GridBox,
+    GridPlot,
+    LayoutDOM,
+    LinearAxis,
+    LogAxis,
+    MercatorAxis,
+    Model,
+    Plot,
+    Range1d,
+    SaveTool,
+    Spacer,
+    Tabs,
+    Toolbar,
+    tools,
 )
-from bokeh.models.formatters import (
-    TickFormatter, PrintfTickFormatter
-)
+from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.widgets import DataTable, Div
-from bokeh.themes.theme import Theme
-from bokeh.themes import built_in_themes
-from bokeh.layouts import group_tools
-from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
 from bokeh.plotting import figure
+from bokeh.themes import built_in_themes
+from bokeh.themes.theme import Theme
 from packaging.version import Version
 
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
-from ...core.overlay import Overlay, NdOverlay
+from ...core.overlay import NdOverlay, Overlay
+from ...core.spaces import DynamicMap, get_nested_dmaps
 from ...core.util import (
-    arraylike_types, callable_name, cftime_types,
-    cftime_to_timestamp, isnumeric, unique_array
+    arraylike_types,
+    callable_name,
+    cftime_to_timestamp,
+    cftime_types,
+    isnumeric,
+    unique_array,
 )
-from ...core.spaces import get_nested_dmaps, DynamicMap
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
 bokeh32 = bokeh_version >= Version("3.2")
+bokeh33 = bokeh_version >= Version("3.3")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -826,7 +844,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             expected = source_cols[id(source)]
             found = [c for c in expected if c in source.data]
-            empty = np.full_like(source.data[found[0]], np.NaN) if found else []
+            empty = np.full_like(source.data[found[0]], np.nan) if found else []
             patch = {c: empty for c in expected if c not in source.data}
             source.data.update(patch)
         return ret

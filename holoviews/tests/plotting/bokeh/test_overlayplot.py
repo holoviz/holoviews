@@ -1,17 +1,26 @@
 import numpy as np
 import panel as pn
+from bokeh.models import FactorRange, FixedTicker, HoverTool, Range1d, Span
 
-from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
+from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.options import Cycle
-from holoviews.element import Bars, Box, Curve, ErrorBars, HLine, Points, Scatter, Text, VLine
+from holoviews.element import (
+    Bars,
+    Box,
+    Curve,
+    ErrorBars,
+    HLine,
+    Points,
+    Scatter,
+    Text,
+    VLine,
+)
+from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import Stream, Tap
 from holoviews.util import Dynamic
-from holoviews.plotting.bokeh.util import property_to_dict
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import FixedTicker, HoverTool, FactorRange, Span, Range1d
 
 
 class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):

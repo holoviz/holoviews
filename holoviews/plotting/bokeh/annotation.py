@@ -2,23 +2,20 @@ import itertools
 from collections import defaultdict
 from html import escape
 
-import param
 import numpy as np
-
-from bokeh.models import BoxAnnotation, Span, Arrow, Slope
+import param
+from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
+from bokeh.transform import dodge
 from panel.models import HTML
 
-from bokeh.models import TeeHead, NormalHead
-from bokeh.transform import dodge
-
 from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, VLine, VSpan, HLines, VLines, HSpans, VSpans
+from ...element import HLine, HLines, HSpans, VLine, VLines, VSpan, VSpans
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
+from .plot import BokehPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
-from .plot import BokehPlot
-from .util import date_to_integer, bokeh32
+from .util import bokeh32, date_to_integer
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
 arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
@@ -263,7 +260,8 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
     selection_display = None
 
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
+        mapping = {k: None for k in ('left', 'right', 'bottom', 'top')}
         kwd_dim1 = 'left' if isinstance(element, VSpan) else 'bottom'
         kwd_dim2 = 'right' if isinstance(element, VSpan) else 'top'
         if self.invert_axes:

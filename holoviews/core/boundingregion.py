@@ -8,6 +8,7 @@ File originally part of the Topographica project.
 ### translated, etc. easily.
 ###
 from param.parameterized import get_occupied_slots
+
 from .util import datetime_types
 
 

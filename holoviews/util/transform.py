@@ -1,6 +1,5 @@
 import operator
 import sys
-
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np

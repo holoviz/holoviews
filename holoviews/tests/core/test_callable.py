@@ -6,14 +6,15 @@ from functools import partial
 
 import param
 
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import Scatter
 from holoviews import streams
-from holoviews.core.spaces import Callable, Generator, DynamicMap
 from holoviews.core.operation import OperationCallable
+from holoviews.core.spaces import Callable, DynamicMap, Generator
+from holoviews.element import Scatter
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import contours
 
 from ..utils import LoggingComparisonTestCase
+
 
 class CallableClass:
 
@@ -218,21 +219,21 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
     def test_dynamic_kdims_only(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_kdims_only_by_position(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['A-dim','B-dim'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_kdims_swapped_by_name(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['B','A'])
         self.assertEqual(dmap[1,'Test'], Scatter([(1, 2)], label='Test'))
@@ -240,7 +241,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
     def test_dynamic_kdims_only_invalid(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         regexp="Callable 'fn' accepts more positional arguments than there are kdims and stream parameters"
         with self.assertRaisesRegex(KeyError, regexp):
@@ -250,7 +251,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
     def test_dynamic_kdims_args_only(self):
         def fn(*args):
             (A,B) = args
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))

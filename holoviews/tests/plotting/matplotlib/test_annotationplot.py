@@ -1,5 +1,6 @@
 import numpy as np
-from holoviews.element import HLines, VLines, HSpans, VSpans
+
+from holoviews.element import HLines, HSpans, VLines, VSpans
 
 from .test_plot import TestMPLPlot, mpl_renderer
 

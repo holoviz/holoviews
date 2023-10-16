@@ -2,7 +2,7 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.element import Raster, Image, RGB, ImageStack
+from holoviews.element import RGB, Image, ImageStack, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -30,7 +30,7 @@ class TestRasterPlot(TestBokehPlot):
         assert cmapper.low == 1
         assert cmapper.high == 2
         np.testing.assert_equal(
-            source.data["image"][0], np.array([[2, np.NaN], [np.NaN, 1]])
+            source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]])
         )
 
     def test_nodata_array_uint(self):
@@ -41,7 +41,7 @@ class TestRasterPlot(TestBokehPlot):
         assert cmapper.low == 1
         assert cmapper.high == 2
         np.testing.assert_equal(
-            source.data["image"][0], np.array([[2, np.NaN], [np.NaN, 1]])
+            source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]])
         )
 
     def test_nodata_rgb(self):

@@ -1,6 +1,13 @@
-import pytest
+import contextlib
 
-from panel.tests.conftest import server_cleanup, port, pytest_addoption, pytest_configure, optional_markers  # noqa
+import pytest
+from panel.tests.conftest import (  # noqa
+    optional_markers,
+    port,
+    pytest_addoption,
+    pytest_configure,
+    server_cleanup,
+)
 
 
 def pytest_collection_modifyitems(config, items):
@@ -21,13 +28,16 @@ def pytest_collection_modifyitems(config, items):
     items[:] = selected
 
 
-try:
+with contextlib.suppress(ImportError):
+    import matplotlib as mpl
+    mpl.use('agg')
+
+
+with contextlib.suppress(Exception):
     # From Dask 2023.7,1 they now automatic convert strings
     # https://docs.dask.org/en/stable/changelog.html#v2023-7-1
     import dask
     dask.config.set({"dataframe.convert-string": False})
-except Exception:
-    pass
 
 
 @pytest.fixture

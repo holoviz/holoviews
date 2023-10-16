@@ -1,8 +1,10 @@
-from holoviews.element import RGB, Tiles, Points, Bounds
-from holoviews.element.tiles import StamenTerrain, _ATTRIBUTIONS
-from .test_plot import TestPlotlyPlot, plotly_renderer
 import numpy as np
 import pytest
+
+from holoviews.element import RGB, Bounds, Points, Tiles
+from holoviews.element.tiles import _ATTRIBUTIONS, StamenTerrain
+
+from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
 class TestMapboxTilesPlot(TestPlotlyPlot):

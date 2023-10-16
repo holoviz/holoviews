@@ -1,8 +1,8 @@
 import numpy as np
 
-from holoviews.element import Labels, Tiles
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
+from holoviews.element import Labels, Tiles
 
 from .test_plot import TestPlotlyPlot
 

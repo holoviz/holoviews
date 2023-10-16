@@ -1,9 +1,10 @@
-import sys
 import math
+import sys
 import time
-from IPython.core.display import clear_output
 
 import param
+from IPython.core.display import clear_output
+
 from ..core.util import ProgressIndicator
 
 

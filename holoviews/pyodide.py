@@ -1,7 +1,6 @@
 import asyncio
 import sys
 
-
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
@@ -12,7 +11,6 @@ from panel.pane import panel as as_panel
 from .core.dimension import LabelledData
 from .core.options import Store
 from .util import extension as _extension
-
 
 #-----------------------------------------------------------------------------
 # Private API

@@ -1,30 +1,25 @@
 import plotly
-
-from param import concrete_descendents
 from packaging.version import Version
+from param import concrete_descendents
 
-from ...core import (
-    Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
-)
-from ...core.options import Store, Cycle, Options
+from ...core import GridMatrix, GridSpace, Layout, NdLayout, NdOverlay, Overlay, config
+from ...core.options import Cycle, Options, Store
 from ...core.util import VersionError
 from ...element import *
-
-from .element import ElementPlot
-from .renderer import PlotlyRenderer
-
 from .annotation import *
-from .tiles import *
-from .element import *
+from .callbacks import *
 from .chart import *
 from .chart3d import *
-from .raster import *
+from .element import *
+from .element import ElementPlot
+from .images import *
 from .plot import *
+from .raster import *
+from .renderer import PlotlyRenderer
+from .shapes import *
 from .stats import *
 from .tabular import *
-from .callbacks import *
-from .shapes import *
-from .images import *
+from .tiles import *
 
 if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(

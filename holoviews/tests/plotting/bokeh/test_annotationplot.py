@@ -4,15 +4,33 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.element import (
-    HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope,
-    HLines, VLines, HSpans, VSpans,
+    Arrow,
+    HLine,
+    HLines,
+    HSpan,
+    HSpans,
+    Labels,
+    Slope,
+    Text,
+    VLine,
+    VLines,
+    VSpan,
+    VSpans,
 )
-from holoviews.plotting.bokeh.util import bokeh32
+from holoviews.plotting.bokeh.util import bokeh32, bokeh33
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 if bokeh32:
-    from bokeh.models import VSpan as BkVSpan, HSpan as BkHSpan, VStrip as BkVStrip, HStrip as BkHStrip
+    from bokeh.models import (
+        HSpan as BkHSpan,
+        HStrip as BkHStrip,
+        VSpan as BkVSpan,
+        VStrip as BkVStrip,
+    )
+
+if bokeh33:
+    from bokeh.models.coordinates import Node
 
 
 class TestHVLinePlot(TestBokehPlot):
@@ -53,21 +71,29 @@ class TestHVSpanPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
 
-        self.assertEqual(span.left, 1.1)
-        self.assertEqual(span.right, 1.5)
-        self.assertEqual(span.bottom, None)
-        self.assertEqual(span.top, None)
-        self.assertEqual(span.visible, True)
+        assert span.left == 1.1
+        assert span.right == 1.5
+        if bokeh33:
+            assert isinstance(span.bottom, Node)
+            assert isinstance(span.top, Node)
+        else:
+            assert span.bottom is None
+            assert span.top is None
+        assert span.visible
 
     def test_hspan_plot(self):
         hspan = HSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, None)
-        self.assertEqual(span.right, None)
-        self.assertEqual(span.bottom, 1.1)
-        self.assertEqual(span.top, 1.5)
-        self.assertEqual(span.visible, True)
+        if bokeh33:
+            assert isinstance(span.left, Node)
+            assert isinstance(span.right, Node)
+        else:
+            assert span.left is None
+            assert span.right is None
+        assert span.bottom == 1.1
+        assert span.top == 1.5
+        assert span.visible
 
     def test_hspan_empty(self):
         vline = HSpan(None)
@@ -79,21 +105,29 @@ class TestHVSpanPlot(TestBokehPlot):
         vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, None)
-        self.assertEqual(span.right, None)
-        self.assertEqual(span.bottom, 1.1)
-        self.assertEqual(span.top, 1.5)
-        self.assertEqual(span.visible, True)
+        if bokeh33:
+            assert isinstance(span.left, Node)
+            assert isinstance(span.right, Node)
+        else:
+            assert span.left is None
+            assert span.right is None
+        assert span.bottom == 1.1
+        assert span.top == 1.5
+        assert span.visible
 
     def test_vspan_plot(self):
         vspan = VSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        self.assertEqual(span.left, 1.1)
-        self.assertEqual(span.right, 1.5)
-        self.assertEqual(span.bottom, None)
-        self.assertEqual(span.top, None)
-        self.assertEqual(span.visible, True)
+        assert span.left == 1.1
+        assert span.right == 1.5
+        if bokeh33:
+            assert isinstance(span.bottom, Node)
+            assert isinstance(span.top, Node)
+        else:
+            assert span.bottom is None
+            assert span.top is None
+        assert span.visible
 
     def test_vspan_empty(self):
         vline = VSpan(None)

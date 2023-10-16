@@ -1,15 +1,14 @@
-import param
-import numpy as np
 import matplotlib as mpl
-
+import numpy as np
+import param
 from matplotlib import patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec
 from ...core.options import abbreviated_exception
-from .element import ElementPlot, ColorbarPlot
+from ...core.util import match_spec
+from ...element import HLines, HSpans, VLines, VSpans
+from .element import ColorbarPlot, ElementPlot
 from .plot import mpl_rc_context
-from ...element import HLines, VLines, HSpans, VSpans
 
 
 class ABLine2D(Line2D):
@@ -229,7 +228,7 @@ class LabelsPlot(ColorbarPlot):
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:
-                    color = colors.index(color) if color in colors else np.NaN
+                    color = colors.index(color) if color in colors else np.nan
                     plot_kwargs['color'] = cmap(color)
             kwargs = dict(plot_kwargs, **{k: v[i] for k, v in vectorized.items()})
             texts.append(ax.text(x, y, text, **kwargs))

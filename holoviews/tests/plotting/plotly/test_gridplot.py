@@ -1,7 +1,7 @@
 import numpy as np
 
 from holoviews.core.spaces import GridSpace
-from holoviews.element import Scatter, Curve
+from holoviews.element import Curve, Scatter
 
 from .test_plot import TestPlotlyPlot
 
