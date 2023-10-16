@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import HeatMap, Image
 
-from .test_plot import TestMPLPlot, mpl_renderer, mpl38
+from .test_plot import TestMPLPlot, mpl38, mpl_renderer
 
 
 class TestHeatMapPlot(TestMPLPlot):
