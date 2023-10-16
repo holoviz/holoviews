@@ -562,6 +562,18 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["other0"] == [0, 3, 5.5]).all()
         assert (source.data["other1"] == [1, 4, 6.5]).all()
 
+    def test_dynamicmap_overlay_vspans(self):
+        el = hv.VSpans(data=[[1, 3], [2, 4]])
+        dmap = hv.DynamicMap(lambda: hv.Overlay([el]))
+
+        plot_el = bokeh_renderer.get_plot(el)
+        plot_dmap = bokeh_renderer.get_plot(dmap)
+
+        assert plot_el.handles["x_range"].start == plot_dmap.handles["x_range"].start
+        assert plot_el.handles["x_range"].end == plot_dmap.handles["x_range"].end
+        assert plot_el.handles["y_range"].start == plot_dmap.handles["y_range"].start
+        assert plot_el.handles["y_range"].end == plot_dmap.handles["y_range"].end
+
     def test_vspans_hspans_overlay(self):
         hspans = HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
@@ -603,3 +615,15 @@ class TestHVSpansPlot(TestBokehPlot):
         data = plot.handles["glyph_renderer"].data_source.data
         np.testing.assert_allclose(data["alpha"], [0, 0.5, 1])
         assert data["line_dash"] == ["dashed", "solid", "solid"]
+
+    def test_dynamicmap_overlay_hspans(self):
+        el = hv.HSpans(data=[[1, 3], [2, 4]])
+        dmap = hv.DynamicMap(lambda: hv.Overlay([el]))
+
+        plot_el = bokeh_renderer.get_plot(el)
+        plot_dmap = bokeh_renderer.get_plot(dmap)
+
+        assert plot_el.handles["x_range"].start == plot_dmap.handles["x_range"].start
+        assert plot_el.handles["x_range"].end == plot_dmap.handles["x_range"].end
+        assert plot_el.handles["y_range"].start == plot_dmap.handles["y_range"].start
+        assert plot_el.handles["y_range"].end == plot_dmap.handles["y_range"].end

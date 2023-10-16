@@ -3,6 +3,7 @@ from collections import defaultdict
 from html import escape
 
 import numpy as np
+import pandas as pd
 import param
 from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
 from bokeh.transform import dodge
@@ -65,9 +66,11 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         elif isinstance(element, VLines):
             extents = extents[0], np.nan, extents[2], np.nan
         elif isinstance(element, HSpans):
-            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
+            extents = pd.array(extents)
+            extents = np.nan, extents[:2].min(), np.nan, extents[2:].max()
         elif isinstance(element, VSpans):
-            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
+            extents = pd.array(extents)
+            extents = extents[:2].min(), np.nan, extents[2:].max(), np.nan
         return extents
 
 class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
