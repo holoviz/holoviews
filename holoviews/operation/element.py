@@ -645,25 +645,26 @@ class contours(Operation):
             for lower_level, upper_level in zip(levels[:-1], levels[1:]):
                 filled = cont_gen.filled(lower_level, upper_level)
                 # Only have to consider last index 0 as we are using contourpy without chunking
-                points = filled[0][0]
+                if (points := filled[0][0]) is None:
+                    continue
+
                 exteriors = []
                 interiors = []
-                if points is not None:
-                    if any(data_is_datetime[0:2]):
-                        points = points_to_datetime(points)
+                if any(data_is_datetime[0:2]):
+                    points = points_to_datetime(points)
 
-                    offsets = filled[1][0]
-                    outer_offsets = filled[2][0]
+                offsets = filled[1][0]
+                outer_offsets = filled[2][0]
 
-                    # Loop through exterior polygon boundaries.
-                    for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
-                        if exteriors:
-                            exteriors.append(empty)
-                        exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])
+                # Loop through exterior polygon boundaries.
+                for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
+                    if exteriors:
+                        exteriors.append(empty)
+                    exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])
 
-                        # Loop over the (jend-jstart-1) interior boundaries.
-                        interior = [points[offsets[j]:offsets[j + 1]] for j in range(jstart+1, jend)]
-                        interiors.append(interior)
+                    # Loop over the (jend-jstart-1) interior boundaries.
+                    interior = [points[offsets[j]:offsets[j + 1]] for j in range(jstart+1, jend)]
+                    interiors.append(interior)
                 level = (lower_level + upper_level) / 2
                 geom = {
                     element.vdims[0].name:
@@ -677,16 +678,17 @@ class contours(Operation):
             for level in levels:
                 lines = cont_gen.lines(level)
                 # Only have to consider last index 0 as we are using contourpy without chunking
-                points = lines[0][0]
-                if points is not None:
-                    if any(data_is_datetime[0:2]):
-                        points = points_to_datetime(points)
+                if (points := lines[0][0]) is None:
+                    continue
 
-                    offsets = lines[1][0]
-                    if offsets is not None and len(offsets) > 2:
-                        # Casting offsets to int64 to avoid possible numpy UFuncOutputCastingError
-                        offsets = offsets[1:-1].astype(np.int64)
-                        points = np.insert(points, offsets, np.nan, axis=0)
+                if any(data_is_datetime[0:2]):
+                    points = points_to_datetime(points)
+
+                offsets = lines[1][0]
+                if offsets is not None and len(offsets) > 2:
+                    # Casting offsets to int64 to avoid possible numpy UFuncOutputCastingError
+                    offsets = offsets[1:-1].astype(np.int64)
+                    points = np.insert(points, offsets, np.nan, axis=0)
                 geom = {
                     element.vdims[0].name:
                     num2date(level) if data_is_datetime[2] else level,

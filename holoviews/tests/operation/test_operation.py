@@ -107,7 +107,7 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 1, 0], [0, 1, 0]]))
         # Contour level outside of data limits
         op_contours = contours(img, levels=[23.0])
-        contour = Contours([[]], vdims=img.vdims)
+        contour = Contours([], vdims=img.vdims)
         self.assertEqual(op_contours, contour)
 
     def test_image_contours_auto_levels(self):
@@ -118,7 +118,7 @@ class OperationTests(ComparisonTestCase):
             levels = [item['z'] for item in op_contours.data]
             assert len(levels) <= nlevels + 2
             assert np.min(levels) <= z.min()
-            assert np.max(levels) >= z.max()
+            assert np.max(levels) < z.max()
 
     def test_image_contours_no_range(self):
         img = Image(np.zeros((2, 2)))
@@ -293,7 +293,7 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         # Contour level outside of data limits
         op_contours = contours(img, filled=True, levels=[20.0, 23.0])
-        polys = Polygons([[]], vdims=img.vdims[0].clone(range=(20.0, 23.0)))
+        polys = Polygons([], vdims=img.vdims[0].clone(range=(20.0, 23.0)))
         self.assertEqual(op_contours, polys)
 
     def test_image_contours_filled_auto_levels(self):
