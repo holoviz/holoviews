@@ -1,26 +1,38 @@
+import bisect
 import re
 import traceback
 import warnings
-import bisect
-
 from collections import defaultdict, namedtuple
-from packaging.version import Version
 
 import numpy as np
 import param
+from packaging.version import Version
 
 from ..core import (
-    HoloMap, DynamicMap, CompositeOverlay, Layout, Overlay, GridSpace,
-    NdLayout, NdOverlay, AdjointLayout
+    AdjointLayout,
+    CompositeOverlay,
+    DynamicMap,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
 )
-from ..core.options import CallbackError, Cycle
-from ..core.operation import Operation
 from ..core.ndmapping import item_check
+from ..core.operation import Operation
+from ..core.options import CallbackError, Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (
-    match_spec, wrap_tuple, get_overlay_spec, unique_iterator,
-    closest_match, is_number, isfinite, disable_constant,
-    arraylike_types
+    arraylike_types,
+    closest_match,
+    disable_constant,
+    get_overlay_spec,
+    is_number,
+    isfinite,
+    match_spec,
+    unique_iterator,
+    wrap_tuple,
 )
 from ..element import Points
 from ..streams import LinkedStream, Params
@@ -404,7 +416,7 @@ def get_range(element, ranges, dimension):
             srange = dimension.soft_range
             hrange = dimension.range
     else:
-        drange = srange = hrange = (np.NaN, np.NaN)
+        drange = srange = hrange = (np.nan, np.nan)
     return drange, srange, hrange
 
 
@@ -724,7 +736,7 @@ def _list_cmaps(provider=None, records=False):
             pass
     if 'colorcet' in provider:
         try:
-            from colorcet import palette_n, glasbey_hv
+            from colorcet import glasbey_hv, palette_n
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
             cmaps += info('colorcet', cet_maps)
@@ -1127,8 +1139,8 @@ class apply_nodata(Operation):
         data = data.astype('float64')
         mask = data!=self.p.nodata
         if hasattr(data, 'where'):
-            return data.where(mask, np.NaN)
-        return np.where(mask, data, np.NaN)
+            return data.where(mask, np.nan)
+        return np.where(mask, data, np.nan)
 
     def _process(self, element, key=None):
         if self.p.nodata is None:
@@ -1312,7 +1324,8 @@ class categorical_legend(Operation):
 
     def _process(self, element, key=None):
         import datashader as ds
-        from ..operation.datashader import shade, rasterize, datashade
+
+        from ..operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
         if isinstance(rasterize_op, datashade):
             shade_op = rasterize_op

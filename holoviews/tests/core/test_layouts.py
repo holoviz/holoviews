@@ -1,8 +1,16 @@
 """
 Tests of Layout and related classes
 """
-from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
-from holoviews.element import HLine, Curve
+from holoviews import (
+    AdjointLayout,
+    Element,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    Overlay,
+)
+from holoviews.element import Curve, HLine
 from holoviews.element.comparison import ComparisonTestCase
 
 

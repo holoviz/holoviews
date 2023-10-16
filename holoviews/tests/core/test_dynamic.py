@@ -1,19 +1,29 @@
-import uuid
 import time
+import uuid
 from collections import deque
 
-import pytest
-import param
 import numpy as np
-from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
-from holoviews.core.spaces import DynamicMap, HoloMap, Callable
+import param
+import pytest
+
+from holoviews import Dimension, GridSpace, Layout, NdLayout, NdOverlay
 from holoviews.core.options import Store
-from holoviews.element import Image, Scatter, Curve, Text, Points
+from holoviews.core.spaces import Callable, DynamicMap, HoloMap
+from holoviews.element import Curve, Image, Points, Scatter, Text
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
-from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer, pointer_types
+from holoviews.streams import (
+    Buffer,
+    LinkedStream,
+    PointerX,
+    PointerXY,
+    PointerY,
+    RangeX,
+    Stream,
+    pointer_types,
+)
 from holoviews.util import Dynamic
-from holoviews.element.comparison import ComparisonTestCase
 
 from ..utils import LoggingComparisonTestCase
 from .test_dimensioned import CustomBackendTestCase, ExampleElement

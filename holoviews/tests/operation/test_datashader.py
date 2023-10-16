@@ -1,31 +1,60 @@
 import datetime as dt
-
 from unittest import SkipTest, skipIf
 
 import numpy as np
 import pandas as pd
 import pytest
-
-from holoviews import (
-    Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
-    QuadMesh, NdOverlay, Contours, Spikes, Spread, Area, Rectangles,
-    Segments, Polygons, Nodes, DynamicMap, Overlay, ImageStack
-)
-from holoviews.util import render
-from holoviews.streams import Tap
-from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
-from holoviews.operation import apply_when
 from packaging.version import Version
 
+from holoviews import (
+    RGB,
+    Area,
+    Contours,
+    Curve,
+    Dataset,
+    Dimension,
+    DynamicMap,
+    Graph,
+    Image,
+    ImageStack,
+    NdOverlay,
+    Nodes,
+    Overlay,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Segments,
+    Spikes,
+    Spread,
+    TriMesh,
+)
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.operation import apply_when
+from holoviews.streams import Tap
+from holoviews.util import render
+
 try:
-    import datashader as ds
     import dask.dataframe as dd
+    import datashader as ds
     import xarray as xr
+
     from holoviews.operation.datashader import (
-        aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, spread, rasterize, datashade, AggregationOperation,
-        inspect, inspect_points, inspect_polygons
+        AggregationOperation,
+        aggregate,
+        datashade,
+        directly_connect_edges,
+        ds_version,
+        inspect,
+        inspect_points,
+        inspect_polygons,
+        rasterize,
+        regrid,
+        shade,
+        spread,
+        stack,
     )
 except ImportError:
     raise SkipTest('Datashader not available')
@@ -98,7 +127,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(img, expected)
 
     def test_aggregate_points_count_column(self):
-        points = Points([(0.2, 0.3, np.NaN), (0.4, 0.7, 22), (0, 0.99,np.NaN)], vdims='z')
+        points = Points([(0.2, 0.3, np.nan), (0.4, 0.7, 22), (0, 0.99,np.nan)], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count('z'))
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [1, 0]]),

@@ -1,12 +1,11 @@
 import numpy as np
+from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Patches
+from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core.data import Dataset
-from holoviews.element import Graph, Nodes, TriMesh, Chord, VLine, circular_layout
-from holoviews.util.transform import dim
+from holoviews.element import Chord, Graph, Nodes, TriMesh, VLine, circular_layout
 from holoviews.plotting.bokeh.util import property_to_dict
-
-from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, NodesOnly, Patches)
-from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
+from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

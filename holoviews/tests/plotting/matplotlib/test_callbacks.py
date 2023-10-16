@@ -3,9 +3,8 @@ from collections import deque
 import numpy as np
 
 from holoviews.core import DynamicMap
-from holoviews.element import Points, Curve
-from holoviews.streams import PointerXY, PointerX
-
+from holoviews.element import Curve, Points
+from holoviews.streams import PointerX, PointerXY
 
 from .test_plot import TestMPLPlot, mpl_renderer
 

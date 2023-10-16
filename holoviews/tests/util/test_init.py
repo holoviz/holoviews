@@ -1,6 +1,6 @@
-from textwrap import dedent
-from subprocess import check_output
 from shutil import which
+from subprocess import check_output
+from textwrap import dedent
 
 
 def test_no_blocklist_imports():

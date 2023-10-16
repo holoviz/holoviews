@@ -1,12 +1,11 @@
 import sys
-
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
 from ..dimension import dimension_name
-from ..util import isscalar, unique_iterator, unique_array
+from ..util import isscalar, unique_array, unique_iterator
 from .interface import DataError, Interface
 from .multipath import MultiInterface, ensure_ring
 from .pandas import PandasInterface
@@ -142,7 +141,10 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def has_holes(cls, dataset):
         from spatialpandas.geometry import (
-            MultiPolygonDtype, PolygonDtype, Polygon, MultiPolygon
+            MultiPolygon,
+            MultiPolygonDtype,
+            Polygon,
+            PolygonDtype,
         )
         col = cls.geo_column(dataset.data)
         series = dataset.data[col]
@@ -391,6 +393,7 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
         from spatialpandas import GeoDataFrame, GeoSeries
+
         from ...element import Polygons
 
         objs = []
@@ -463,8 +466,13 @@ def get_geom_type(gdf, col):
         A string representing the type of geometry
     """
     from spatialpandas.geometry import (
-        PointDtype, MultiPointDtype, LineDtype, MultiLineDtype,
-        PolygonDtype, MultiPolygonDtype, RingDtype
+        LineDtype,
+        MultiLineDtype,
+        MultiPointDtype,
+        MultiPolygonDtype,
+        PointDtype,
+        PolygonDtype,
+        RingDtype,
     )
 
     column = gdf[col]
@@ -490,7 +498,12 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
         Array or list of arrays.
     """
     from spatialpandas.geometry import (
-        Point, Polygon, Line, Ring, MultiPolygon, MultiPoint
+        Line,
+        MultiPoint,
+        MultiPolygon,
+        Point,
+        Polygon,
+        Ring,
     )
     if isinstance(geom, Point):
         if index is None:
@@ -537,7 +550,7 @@ def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
     Returns:
         Flattened array
     """
-    from spatialpandas.geometry import PointArray, MultiPointArray
+    from spatialpandas.geometry import MultiPointArray, PointArray
     if isinstance(geom_array, PointArray):
         return geom_array.y if index else geom_array.x
     arrays = []
@@ -561,7 +574,7 @@ def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
 
 
 def geom_length(geom):
-    from spatialpandas.geometry import Polygon, Ring, MultiPolygon, MultiLine
+    from spatialpandas.geometry import MultiLine, MultiPolygon, Polygon, Ring
     if isinstance(geom, Polygon):
         offset = 0
         exterior = geom.data[0]
@@ -625,7 +638,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
         elif scalar:
             arrays.append(np.full(length, val))
         if expanded and not is_points and not i == (len(data[geom_col])-1):
-            arrays.append(np.array([np.NaN]))
+            arrays.append(np.array([np.nan]))
 
     if not len(data):
         return np.array([])
@@ -648,7 +661,7 @@ def geom_to_holes(geom):
     Returns:
         List of arrays representing holes
     """
-    from spatialpandas.geometry import Polygon, MultiPolygon
+    from spatialpandas.geometry import MultiPolygon, Polygon
     if isinstance(geom, Polygon):
         holes = []
         for i, hole in enumerate(geom.data):
@@ -687,14 +700,25 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
     Returns:
         A spatialpandas.GeoDataFrame version of the data
     """
+    from spatialpandas import GeoDataFrame, GeoSeries
+    from spatialpandas.geometry import (
+        Line,
+        LineArray,
+        MultiLineArray,
+        MultiPointArray,
+        MultiPolygonArray,
+        Point,
+        PointArray,
+        Polygon,
+        PolygonArray,
+        Ring,
+        RingArray,
+    )
+
+    from ...element import Polygons
+
     if columns is None:
         columns = []
-    from spatialpandas import GeoSeries, GeoDataFrame
-    from spatialpandas.geometry import (
-        Point, Line, Polygon, Ring, LineArray, PolygonArray, PointArray,
-        MultiLineArray, MultiPolygonArray, MultiPointArray, RingArray
-    )
-    from ...element import Polygons
     poly = any(Polygons._hole_key in d for d in data) or geom == 'Polygon'
     if poly:
         geom_type = Polygon
@@ -876,8 +900,8 @@ def from_shapely(data):
         A GeoDataFrame containing the shapely geometry data.
     """
 
-    from spatialpandas import GeoDataFrame, GeoSeries
     from shapely.geometry.base import BaseGeometry
+    from spatialpandas import GeoDataFrame, GeoSeries
 
     if not data:
         pass

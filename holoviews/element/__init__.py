@@ -1,9 +1,9 @@
 from ..core import HoloMap
-from ..core.data import Dataset, DataConversion
+from ..core.data import DataConversion, Dataset
 from .annotation import *
 from .chart import *
-from .geom import *
 from .chart3d import *
+from .geom import *
 from .graphs import *
 from .path import *
 from .raster import *

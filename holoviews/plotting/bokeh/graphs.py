@@ -1,10 +1,15 @@
 from collections import defaultdict
 
-import param
 import numpy as np
+import param
 from bokeh.models import (
-    StaticLayoutProvider, NodesAndLinkedEdges, EdgesAndLinkedNodes,
-    Patches, Bezier, ColumnDataSource, NodesOnly
+    Bezier,
+    ColumnDataSource,
+    EdgesAndLinkedNodes,
+    NodesAndLinkedEdges,
+    NodesOnly,
+    Patches,
+    StaticLayoutProvider,
 )
 
 from ...core.data import Dataset
@@ -12,12 +17,15 @@ from ...core.options import Cycle, abbreviated_exception
 from ...core.util import dimension_sanitizer, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..util import get_directed_graph_paths, process_cmap
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
 from .styles import (
-    base_properties, line_properties, fill_properties, text_properties,
-    rgba_tuple
+    base_properties,
+    fill_properties,
+    line_properties,
+    rgba_tuple,
+    text_properties,
 )
 
 

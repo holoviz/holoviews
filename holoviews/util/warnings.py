@@ -3,7 +3,6 @@ import os
 import warnings
 
 import param
-
 from packaging.version import Version
 
 __all__ = (

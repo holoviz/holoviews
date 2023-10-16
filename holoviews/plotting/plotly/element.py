@@ -1,7 +1,8 @@
+import re
 import uuid
+
 import numpy as np
 import param
-import re
 
 from ... import Tiles
 from ...core import util
@@ -13,7 +14,12 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key
 from .plot import PlotlyPlot
 from .util import (
-    STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types, merge_layout)
+    STYLE_ALIASES,
+    get_colorscale,
+    legend_trace_types,
+    merge_figure,
+    merge_layout,
+)
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):

@@ -2,8 +2,7 @@ import sys
 
 import numpy as np
 import param
-
-from bokeh.models import DatetimeAxis, CustomJSHover
+from bokeh.models import CustomJSHover, DatetimeAxis
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
@@ -111,7 +110,7 @@ class RasterPlot(ColorbarPlot):
             if img.dtype.kind == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
-                img = np.array([[np.NaN]])
+                img = np.array([[np.nan]])
             if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)

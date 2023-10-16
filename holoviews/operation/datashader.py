@@ -1,41 +1,69 @@
 import warnings
-
 from collections.abc import Callable, Iterable
 from functools import partial
 
-import param
-import numpy as np
-import pandas as pd
-import xarray as xr
+import dask.dataframe as dd
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
-import dask.dataframe as dd
-
+import numpy as np
+import pandas as pd
+import param
+import xarray as xr
 from datashader.colors import color_lookup
-from param.parameterized import bothmethod
 from packaging.version import Version
+from param.parameterized import bothmethod
 
 try:
-    from datashader.bundling import (directly_connect_edges as connect_edges,
-                                     hammer_bundle)
+    from datashader.bundling import (
+        directly_connect_edges as connect_edges,
+        hammer_bundle,
+    )
 except ImportError:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (
-    CompositeOverlay, Dimension, Element, Operation, Overlay, NdOverlay, Store
+    CompositeOverlay,
+    Dimension,
+    Element,
+    NdOverlay,
+    Operation,
+    Overlay,
+    Store,
 )
 from ..core.data import (
-    Dataset, PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
+    DaskInterface,
+    Dataset,
+    PandasInterface,
+    XArrayInterface,
+    cuDFInterface,
 )
 from ..core.util import (
-    cast_array_to_int64, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, get_param_values
+    cast_array_to_int64,
+    cftime_to_timestamp,
+    cftime_types,
+    datetime_types,
+    dt_to_int,
+    get_param_values,
 )
 from ..element import (
-    Image, ImageStack, Path, Curve, RGB, Graph, TriMesh, QuadMesh,
-    Contours, Spikes, Area, Rectangles, Spread, Segments, Scatter,
-    Points, Polygons
+    RGB,
+    Area,
+    Contours,
+    Curve,
+    Graph,
+    Image,
+    ImageStack,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Scatter,
+    Segments,
+    Spikes,
+    Spread,
+    TriMesh,
 )
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
@@ -133,7 +161,7 @@ class AggregationOperation(ResampleOperation2D):
     def _empty_agg(self, element, x, y, width, height, xs, ys, agg_fn, **params):
         x = x.name if x else 'x'
         y = y.name if x else 'y'
-        xarray = xr.DataArray(np.full((height, width), np.NaN),
+        xarray = xr.DataArray(np.full((height, width), np.nan),
                               dims=[y, x], coords={x: xs, y: ys})
         if width == 0:
             params['xdensity'] = 1
@@ -285,7 +313,7 @@ class aggregate(LineAggregationOperation):
                 if isinstance(path, dd.DataFrame):
                     path = path.compute()
                 empty = path.copy()
-                empty.iloc[0, :] = (np.NaN,) * empty.shape[1]
+                empty.iloc[0, :] = (np.nan,) * empty.shape[1]
                 paths = [elem for p in paths for elem in (p, empty)][:-1]
             if all(isinstance(path, dd.DataFrame) for path in paths):
                 df = dd.concat(paths)
@@ -348,7 +376,7 @@ class aggregate(LineAggregationOperation):
         if x is None or y is None or width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
         elif getattr(data, "interface", None) is not DaskInterface and not len(data):
-            empty_val = 0 if isinstance(agg_fn, ds.count) else np.NaN
+            empty_val = 0 if isinstance(agg_fn, ds.count) else np.nan
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
             return self.p.element_type(xarray, **params)
@@ -535,7 +563,7 @@ class overlay_aggregate(aggregate):
 
         # Fill masked with with NaNs
         if is_sum:
-            agg.data[column].values[mask] = np.NaN
+            agg.data[column].values[mask] = np.nan
 
         return agg.clone(bounds=bbox)
 

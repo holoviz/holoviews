@@ -9,8 +9,9 @@ File originally part of the Topographica project.
 ###
 import param
 from param.parameterized import get_occupied_slots
-from .util import datetime_types
+
 from ..util.warnings import deprecated
+from .util import datetime_types
 
 
 class BoundingRegion:
