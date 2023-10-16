@@ -1,17 +1,14 @@
 import calendar
 import datetime as dt
-import inspect
 import re
 import time
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import permutations
-from types import FunctionType
 
 import bokeh
 import numpy as np
 import pandas as pd
-import param
 from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
@@ -40,11 +37,7 @@ from bokeh.models import (
     Toolbar,
     tools,
 )
-from bokeh.models.formatters import (
-    CustomJSTickFormatter,
-    PrintfTickFormatter,
-    TickFormatter,
-)
+from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
@@ -64,7 +57,7 @@ from ...core.util import (
     isnumeric,
     unique_array,
 )
-from ...util.warnings import deprecated, warn
+from ...util.warnings import warn
 from ..util import dim_axis_label
 
 bokeh_version = Version(bokeh.__version__)
@@ -713,34 +706,6 @@ def filter_toolboxes(plots):
     return plots
 
 
-def py2js_tickformatter(formatter, msg=''):
-    """
-    Uses py2js to compile a python tick formatter to JS code
-    """
-    deprecated("1.18", "py2js_tickformatter")
-    try:
-        from pscript import py2js
-    except ImportError:
-        param.main.param.warning(
-            msg+'Ensure pscript is installed ("conda install pscript" '
-            'or "pip install pscript")')
-        return
-    try:
-        jscode = py2js(formatter, 'formatter')
-    except Exception as e:
-        error = f'Pyscript raised an error: {e}'
-        error = error.replace('%', '%%')
-        param.main.param.warning(msg+error)
-        return
-
-    args = inspect.getfullargspec(formatter).args
-    arg_define = f'var {args[0]} = tick;' if args else ''
-    return_js = 'return formatter();\n'
-    jsfunc = f"{arg_define}\n{jscode}\n{return_js}"
-    match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
-    return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
-
-
 def get_tab_title(key, frame, overlay):
     """
     Computes a title for bokeh tabs from the key in the overlay, the
@@ -1160,13 +1125,6 @@ def wrap_formatter(formatter, axis):
     """
     if isinstance(formatter, TickFormatter):
         pass
-    elif isinstance(formatter, FunctionType):
-        msg = f'{axis}formatter could not be converted to tick formatter. '
-        jsfunc = py2js_tickformatter(formatter, msg)
-        if jsfunc:
-            formatter = CustomJSTickFormatter(code=jsfunc)
-        else:
-            formatter = None
     else:
         formatter = PrintfTickFormatter(format=formatter)
     return formatter

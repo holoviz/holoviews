@@ -82,7 +82,6 @@ from .util import (
     match_yaxis_type_to_range,
     prop_is_none,
     property_to_dict,
-    py2js_tickformatter,
     recursive_model_update,
     remove_legend,
     theme_attr_json,
@@ -908,13 +907,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 formatter = dimension.value_format
             elif dimension.type in dimension.type_formatters:
                 formatter = dimension.type_formatters[dimension.type]
-            if formatter:
-                msg = ('%s dimension formatter could not be '
-                       'converted to tick formatter. ' % dimension.name)
-                jsfunc = py2js_tickformatter(formatter, msg)
-                if jsfunc:
-                    formatter = CustomJSTickFormatter(code=jsfunc)
-                    axis_props['formatter'] = formatter
 
         if axis == 'x':
             axis_obj = plot.xaxis[0]
