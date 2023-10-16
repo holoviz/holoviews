@@ -6,17 +6,22 @@ also enables slicing over multiple dimension ranges.
 
 from itertools import cycle
 from operator import itemgetter
+
 import numpy as np
 import pandas as pd
-
 import param
 
 from . import util
 from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
-    unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
-    process_ellipses, get_ndmapping_label
+    dimension_sort,
+    get_ndmapping_label,
+    process_ellipses,
+    sanitize_identifier,
+    unique_iterator,
+    wrap_tuple,
 )
+
 
 class item_check:
     """
@@ -401,7 +406,7 @@ class MultiDimensionalMapping(Dimensioned):
             return super().dimension_values(dimension, expanded, flat)
 
 
-    def reindex(self, kdims=[], force=False):
+    def reindex(self, kdims=None, force=False):
         """Reindexes object dropping static or supplied kdims
 
         Creates a new object with a reordered or reduced set of key
@@ -419,6 +424,8 @@ class MultiDimensionalMapping(Dimensioned):
         Returns:
             Reindexed object
         """
+        if kdims is None:
+            kdims = []
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
             kdims = [kdims]

@@ -1,10 +1,9 @@
 import numpy as np
+from bokeh.models import CategoricalColorMapper, LinearAxis, LinearColorMapper
 
 from holoviews.core.overlay import NdOverlay, Overlay
 from holoviews.element import Bars
 from holoviews.plotting.bokeh.util import property_to_dict
-
-from bokeh.models import CategoricalColorMapper, LinearColorMapper, LinearAxis
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer

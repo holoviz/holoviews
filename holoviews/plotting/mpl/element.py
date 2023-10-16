@@ -3,24 +3,29 @@ import math
 import warnings
 from types import FunctionType
 
-import param
-import numpy as np
 import matplotlib.colors as mpl_colors
-
+import numpy as np
+import param
 from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
 from packaging.version import Version
 
-from ...core import util
-from ...core import (NdOverlay, DynamicMap, Dataset,
-                     CompositeOverlay, Element3D, Element)
-from ...core.options import abbreviated_exception, Keywords
+from ...core import (
+    CompositeOverlay,
+    Dataset,
+    DynamicMap,
+    Element,
+    Element3D,
+    NdOverlay,
+    util,
+)
+from ...core.options import Keywords, abbreviated_exception
 from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import process_cmap, color_intervals, dim_range_key
+from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import MPLPlot, mpl_rc_context
 from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
 
@@ -369,7 +374,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             return
 
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
-        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.NaN for coord in extents]
+        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.nan for coord in extents]
         coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
                   for c in coords]
         if (isinstance(self.projection, str) and self.projection == '3d') or len(extents) == 6:
@@ -938,14 +943,14 @@ class ColorbarPlot(ElementPlot):
                     if values.dtype.kind == 'M':
                         clim = values.min(), values.max()
                     elif len(values) == 0:
-                        clim = np.NaN, np.NaN
+                        clim = np.nan, np.nan
                     else:
                         try:
                             with warnings.catch_warnings():
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 clim = (np.nanmin(values), np.nanmax(values))
                         except Exception:
-                            clim = np.NaN, np.NaN
+                            clim = np.nan, np.nan
                 else:
                     clim = element.range(vdim)
                 if self.logz:

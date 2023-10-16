@@ -20,7 +20,7 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-      PKG_TEST_PYTHON: "--test-python=py38"
+      PKG_TEST_PYTHON: "--test-python=py39"
       PYTHON_VERSION: "3.9"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
@@ -51,10 +51,16 @@ jobs:
           bash ./scripts/build_conda.sh
       - name: conda dev upload
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
+        run: |
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev $FILE
       - name: conda main upload
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
+        run: |
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $FILE
   pip_build:
     name: Build PyPI Packages
     runs-on: 'ubuntu-latest'
@@ -63,8 +69,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-      PKG_TEST_PYTHON: "--test-python=py38"
-      PYTHON_VERSION: "3.8"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       PPU: ${{ secrets.PPU }}

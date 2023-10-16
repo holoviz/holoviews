@@ -1,8 +1,7 @@
 from holoviews import Overlay
-from holoviews.annotators import annotate, PointAnnotator, PathAnnotator
-from holoviews.element import Points, Path, Table
+from holoviews.annotators import PathAnnotator, PointAnnotator, annotate
+from holoviews.element import Path, Points, Table
 from holoviews.element.tiles import EsriStreet, Tiles
-
 from holoviews.tests.plotting.bokeh.test_plot import TestBokehPlot
 
 

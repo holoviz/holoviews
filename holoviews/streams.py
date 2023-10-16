@@ -6,17 +6,17 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 import sys
 import weakref
-from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
+from numbers import Number
 from types import FunctionType
-from packaging.version import Version
 
-import param
-import pandas as pd
 import numpy as np
+import pandas as pd
+import param
+from packaging.version import Version
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
@@ -251,7 +251,7 @@ class Stream(param.Parameterized):
         return valid, invalid
 
 
-    def __init__(self, rename={}, source=None, subscribers=[], linked=False,
+    def __init__(self, rename=None, source=None, subscribers=None, linked=False,
                  transient=False, **params):
         """
         The rename argument allows multiple streams with similar event
@@ -266,6 +266,10 @@ class Stream(param.Parameterized):
         """
 
         # Source is stored as a weakref to allow it to be garbage collected
+        if subscribers is None:
+            subscribers = []
+        if rename is None:
+            rename = {}
         self._source = None if source is None else weakref.ref(source)
 
         self._subscribers = []
@@ -554,7 +558,10 @@ class Buffer(Pipe):
                 loaded = True
             except ImportError:
                 try:
-                    from streamz.dataframe import DataFrame as StreamingDataFrame, Series as StreamingSeries
+                    from streamz.dataframe import (
+                        DataFrame as StreamingDataFrame,
+                        Series as StreamingSeries,
+                    )
                     loaded = True
                 except ImportError:
                     loaded = False
@@ -988,8 +995,8 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
-        from .element import Element
         from .core.spaces import DynamicMap
+        from .element import Element
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)
@@ -1613,7 +1620,9 @@ class PointDraw(CDSStream):
         path-like data).""")
 
     def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
-                 styles={}, tooltip=None, **params):
+                 styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.add = add
         self.drag = drag
         self.empty_value = empty_value
@@ -1656,7 +1665,9 @@ class CurveEdit(PointDraw):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, style={}, tooltip=None, **params):
+    def __init__(self, style=None, tooltip=None, **params):
+        if style is None:
+            style = {}
         self.style = style or {'size': 10}
         self.tooltip = tooltip
         super(PointDraw, self).__init__(**params)
@@ -1700,8 +1711,12 @@ class PolyDraw(CDSStream):
         path-like data).""")
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style={}, styles={},
+                 show_vertices=False, vertex_style=None, styles=None,
                  tooltip=None, **params):
+        if styles is None:
+            styles = {}
+        if vertex_style is None:
+            vertex_style = {}
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
@@ -1758,7 +1773,9 @@ class FreehandDraw(CDSStream):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
@@ -1812,7 +1829,9 @@ class BoxEdit(CDSStream):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
@@ -1821,7 +1840,7 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Rectangles, Polygons
+        from .element import Polygons, Rectangles
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1874,6 +1893,8 @@ class PolyEdit(PolyDraw):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, vertex_style={}, shared=True, **params):
+    def __init__(self, vertex_style=None, shared=True, **params):
+        if vertex_style is None:
+            vertex_style = {}
         self.shared = shared
         super().__init__(vertex_style=vertex_style, **params)

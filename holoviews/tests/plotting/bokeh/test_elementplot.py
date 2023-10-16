@@ -1,33 +1,30 @@
 import datetime as dt
-
 from unittest import SkipTest
 
 import numpy as np
+import panel as pn
 import pytest
+from bokeh.document import Document
+from bokeh.models import (
+    EqHistColorMapper,
+    FixedTicker,
+    LinearColorMapper,
+    LogColorMapper,
+    LogTicker,
+    NumeralTickFormatter,
+    PrintfTickFormatter,
+    tools,
+)
 
-from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
+from holoviews.core import DynamicMap, HoloMap, NdOverlay
 from holoviews.core.util import dt_to_int
-from holoviews.element import Curve, Image, Scatter, Labels, HeatMap
-from holoviews.streams import Stream, PointDraw
+from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.util import process_cmap
-from holoviews.plotting.bokeh.util import bokeh3
+from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
 
-from .test_plot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
-
-import panel as pn
-
-from bokeh.document import Document
-from bokeh.models import tools
-from bokeh.models import (PrintfTickFormatter, FixedTicker,
-                            NumeralTickFormatter, LogTicker,
-                            LinearColorMapper, LogColorMapper, EqHistColorMapper)
-
-if bokeh3:
-    from bokeh.models.formatters import CustomJSTickFormatter
-else:
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
@@ -189,30 +186,6 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertIsInstance(yaxis.formatter, PrintfTickFormatter)
         self.assertEqual(yaxis.formatter.format, '%d')
 
-    def test_element_xformatter_function(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest('Test requires pscript')
-        def formatter(value):
-            return str(value) + ' %'
-        curve = Curve(range(10)).opts(xformatter=formatter)
-        plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
-        self.assertIsInstance(xaxis.formatter, CustomJSTickFormatter)
-
-    def test_element_yformatter_function(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest('Test requires pscript')
-        def formatter(value):
-            return str(value) + ' %'
-        curve = Curve(range(10)).opts(yformatter=formatter)
-        plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
-        self.assertIsInstance(yaxis.formatter, CustomJSTickFormatter)
-
     def test_element_xformatter_instance(self):
         formatter = NumeralTickFormatter()
         curve = Curve(range(10)).opts(xformatter=formatter)
@@ -307,28 +280,6 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertTrue(bool(stream._subscribers))
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
-
-    def test_element_formatter_xaxis(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest('Test requires pscript')
-        def formatter(x):
-            return f'{x}'
-        curve = Curve(range(10), kdims=[Dimension('x', value_format=formatter)])
-        plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.xaxis[0].formatter, CustomJSTickFormatter)
-
-    def test_element_formatter_yaxis(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest('Test requires pscript')
-        def formatter(x):
-            return f'{x}'
-        curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
-        plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.yaxis[0].formatter, CustomJSTickFormatter)
 
     def test_element_xticks_datetime(self):
         dates = [(dt.datetime(2016, 1, i), i) for i in range(1, 4)]

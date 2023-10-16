@@ -1,8 +1,8 @@
 import sys
 import warnings
 
-import param
 import numpy as np
+import param
 
 from .. import util
 from ..element import Element
@@ -24,8 +24,8 @@ class Accessor:
         self.dataset = dataset
 
     def __getitem__(self, index):
-        from ..data import Dataset
         from ...operation.element import method
+        from ..data import Dataset
         in_method = self.dataset._in_method
         if not in_method:
             self.dataset._in_method = True
@@ -330,8 +330,8 @@ class Interface(param.Parameterized):
         data = data.astype('float64')
         mask = data != nodata
         if hasattr(data, 'where'):
-            return data.where(mask, np.NaN)
-        return np.where(mask, data, np.NaN)
+            return data.where(mask, np.nan)
+        return np.where(mask, data, np.nan)
 
     @classmethod
     def select_mask(cls, dataset, selection):
@@ -397,7 +397,7 @@ class Interface(param.Parameterized):
         if column.dtype.kind == 'M':
             return column.min(), column.max()
         elif len(column) == 0:
-            return np.NaN, np.NaN
+            return np.nan, np.nan
         else:
             try:
                 assert column.dtype.kind not in 'SUO'
@@ -407,7 +407,7 @@ class Interface(param.Parameterized):
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):
-                    return np.NaN, np.NaN
+                    return np.nan, np.nan
                 return column[0], column[-1]
 
     @classmethod

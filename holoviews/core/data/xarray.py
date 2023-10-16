@@ -1,16 +1,15 @@
 import sys
 import types
 
-
 import numpy as np
 import pandas as pd
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
-from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .grid import GridInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
 
 
@@ -295,7 +294,7 @@ class XArrayInterface(GridInterface):
                 data = cls.replace_value(data, dimension.nodata)
 
         if not len(data):
-            dmin, dmax = np.NaN, np.NaN
+            dmin, dmax = np.nan, np.nan
         elif data.dtype.kind == 'M' or not edges:
             dmin, dmax = data.min(), data.max()
             if not edges:
@@ -536,7 +535,9 @@ class XArrayInterface(GridInterface):
         return dataset.data
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         return dataset
 
     @classmethod
@@ -604,7 +605,7 @@ class XArrayInterface(GridInterface):
         if dropped and not indexed:
             data = data.expand_dims(dropped)
             # see https://github.com/pydata/xarray/issues/2891
-            # since we only exapanded on dimnesions of size 1
+            # since we only expanded on dimensions of size 1
             # we can monkeypatch the dataarray back to writeable.
             for d in data.values():
                 if hasattr(d.data, 'flags'):
@@ -646,7 +647,9 @@ class XArrayInterface(GridInterface):
         return data
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         names = [kd.name for kd in dataset.kdims]
         samples = [dataset.data.sel(**{k: [v] for k, v in zip(names, s)}).to_dataframe().reset_index()
                    for s in samples]

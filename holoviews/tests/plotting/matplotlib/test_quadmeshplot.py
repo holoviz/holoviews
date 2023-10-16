@@ -1,8 +1,8 @@
 import numpy as np
 
-from holoviews.element import QuadMesh, Image, Dataset
+from holoviews.element import Dataset, Image, QuadMesh
 
-from .test_plot import TestMPLPlot, mpl_renderer, mpl38
+from .test_plot import TestMPLPlot, mpl38, mpl_renderer
 
 
 class TestQuadMeshPlot(TestMPLPlot):

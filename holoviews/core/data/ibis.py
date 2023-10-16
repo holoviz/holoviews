@@ -1,14 +1,15 @@
 import sys
-import numpy as np
 from collections.abc import Iterable
 from functools import lru_cache
+
+import numpy as np
 from packaging.version import Version
 
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .interface import Interface
 from . import pandas
+from .interface import Interface
 from .util import cached
 
 
@@ -21,6 +22,11 @@ def ibis_version():
 @lru_cache
 def ibis4():
     return ibis_version() >= Version("4.0")
+
+
+@lru_cache
+def ibis5():
+    return ibis_version() >= Version("5.0")
 
 
 class IbisInterface(Interface):
@@ -163,8 +169,8 @@ class IbisInterface(Interface):
         else:
             # sort_by will be removed in Ibis 5.0
             hist_bins = binned.value_counts().sort_by('bucket').execute()
-
-        for b, v in zip(hist_bins['bucket'], hist_bins['count']):
+        metric_name = 'bucket_count' if ibis5() else 'count'
+        for b, v in zip(hist_bins['bucket'], hist_bins[metric_name]):
             if np.isnan(b):
                 continue
             hist[int(b)] = v
@@ -172,7 +178,7 @@ class IbisInterface(Interface):
             raise NotImplementedError("Weighted histograms currently "
                                       "not implemented for IbisInterface.")
         if density:
-            hist = hist/expr.count().execute()
+            hist = hist/expr.count().execute()/np.diff(bins)
         return hist, bins
 
     @classmethod
@@ -189,7 +195,9 @@ class IbisInterface(Interface):
     dimension_type = dtype
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         if ibis_version() >= Version("6.0"):
             import ibis
             order = ibis.desc if reverse else ibis.asc
@@ -420,8 +428,10 @@ class IbisInterface(Interface):
         return predicates
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
         import ibis
+        if samples is None:
+            samples = []
         dims = dataset.dimensions()
         data = dataset.data
         if all(util.isscalar(s) or len(s) == 1 for s in samples):

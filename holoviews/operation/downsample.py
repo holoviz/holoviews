@@ -34,9 +34,9 @@ from functools import partial
 import numpy as np
 import param
 
-from .resample import ResampleOperation1D
 from ..core import NdOverlay, Overlay
 from ..element.chart import Area
+from .resample import ResampleOperation1D
 
 
 def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):

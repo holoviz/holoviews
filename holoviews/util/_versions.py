@@ -1,5 +1,5 @@
-import sys
 import platform
+import sys
 
 __all__ = ("show_versions",)
 

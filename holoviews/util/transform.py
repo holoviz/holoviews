@@ -1,6 +1,5 @@
 import operator
 import sys
-
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -690,7 +689,7 @@ class dim:
         """
         return data
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+    def apply(self, dataset, flat=False, expanded=None, ranges=None, all_values=False,
               keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
@@ -714,6 +713,9 @@ class dim:
             values: NumPy array computed by evaluating the expression
         """
         from ..element import Graph
+
+        if ranges is None:
+            ranges = {}
 
         dimension = self.dimension
         if expanded is None:

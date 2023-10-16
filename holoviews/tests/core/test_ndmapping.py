@@ -1,14 +1,17 @@
 
 import numpy as np
 
+from holoviews import Dataset, HoloMap
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import (
-    MultiDimensionalMapping, NdMapping, UniformNdMapping
+    MultiDimensionalMapping,
+    NdMapping,
+    UniformNdMapping,
 )
 from holoviews.core.overlay import Overlay
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import HoloMap, Dataset
+
 
 class DimensionTest(ComparisonTestCase):
 

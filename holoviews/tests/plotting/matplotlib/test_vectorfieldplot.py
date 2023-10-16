@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.spaces import HoloMap
 from holoviews.element import VectorField
-from holoviews.core.options import AbbreviatedException
 
-from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestVectorFieldPlot(TestMPLPlot):

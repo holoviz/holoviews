@@ -2,14 +2,13 @@ from collections import defaultdict
 
 import numpy as np
 
-from .dictionary import DictInterface
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
-from .util import finite_range, is_dask, dask_array_module, get_array_types
-
+from .dictionary import DictInterface
+from .interface import DataError, Interface
+from .util import dask_array_module, finite_range, get_array_types, is_dask
 
 
 class GridInterface(DictInterface):
@@ -298,7 +297,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=[]):
+    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=None):
         """
         Canonicalize takes an array of values as input and reorients
         and transposes it to match the canonical format expected by
@@ -313,6 +312,8 @@ class GridInterface(DictInterface):
         with a virtual integer index. This ensures these coordinates
         are not simply dropped.
         """
+        if virtual_coords is None:
+            virtual_coords = []
         if data_coords is None:
             data_coords = dataset.dimensions('key', label='name')[::-1]
 
@@ -641,10 +642,12 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
         """
         Samples the gridded data into dataset of samples.
         """
+        if samples is None:
+            samples = []
         ndims = dataset.ndims
         dimensions = dataset.dimensions(label='name')
         arrays = [dataset.data[vdim.name] for vdim in dataset.vdims]
@@ -742,7 +745,9 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         if not by or by in [dataset.kdims, dataset.dimensions()]:
             return dataset.data
         else:
@@ -789,7 +794,7 @@ class GridInterface(DictInterface):
 
         da = dask_array_module()
         if len(array) == 0:
-            return np.NaN, np.NaN
+            return np.nan, np.nan
 
         if array.dtype.kind == 'M':
             dmin, dmax = array.min(), array.max()
@@ -797,7 +802,7 @@ class GridInterface(DictInterface):
             try:
                 dmin, dmax = (np.nanmin(array), np.nanmax(array))
             except TypeError:
-                return np.NaN, np.NaN
+                return np.nan, np.nan
         if da and isinstance(array, da.Array):
             return finite_range(array, *da.compute(dmin, dmax))
         return finite_range(array, dmin, dmax)

@@ -2,8 +2,7 @@ import sys
 
 import numpy as np
 import param
-
-from bokeh.models import DatetimeAxis, CustomJSHover
+from bokeh.models import CustomJSHover, DatetimeAxis
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
@@ -12,7 +11,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import bokeh3, colormesh
+from .util import colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -102,10 +101,6 @@ class RasterPlot(ColorbarPlot):
                 l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis and not bokeh3:
-            l, r = r, l
-        if self.invert_yaxis and not bokeh3:
-            b, t = t, b
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
         for i, vdim in enumerate(element.vdims, 2):
@@ -115,13 +110,9 @@ class RasterPlot(ColorbarPlot):
             if img.dtype.kind == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
-                img = np.array([[np.NaN]])
+                img = np.array([[np.nan]])
             if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
-            if self.invert_xaxis and not bokeh3:
-                img = img[:, ::-1]
-            if self.invert_yaxis and not bokeh3:
-                img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
 
@@ -212,12 +203,6 @@ class RGBPlot(LegendPlot):
             l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis and not bokeh3:
-            l, r = r, l
-            img = img[:, ::-1]
-        if self.invert_yaxis and not bokeh3:
-            img = img[::-1]
-            b, t = t, b
 
         if 0 in img.shape:
             img = np.zeros((1, 1), dtype=np.uint32)

@@ -25,14 +25,14 @@ class TestImagePlot(TestPlotlyPlot):
         img = Image(([1, 2, 3], [0, 1], np.array([[0, 1, 2], [2, 3, 4]]))).opts(nodata=0)
         state = self._get_plot_state(img)
         self.assertEqual(state['data'][0]['type'], 'heatmap')
-        self.assertEqual(state['data'][0]['z'], np.array([[np.NaN, 1, 2], [2, 3, 4]]))
+        self.assertEqual(state['data'][0]['z'], np.array([[np.nan, 1, 2], [2, 3, 4]]))
 
     def test_image_nodata_unint(self):
         img = Image(([1, 2, 3], [0, 1], np.array([[0, 1, 2], [2, 3, 4]],
                                                  dtype='uint32'))).opts(nodata=0)
         state = self._get_plot_state(img)
         self.assertEqual(state['data'][0]['type'], 'heatmap')
-        self.assertEqual(state['data'][0]['z'], np.array([[np.NaN, 1, 2], [2, 3, 4]]))
+        self.assertEqual(state['data'][0]['z'], np.array([[np.nan, 1, 2], [2, 3, 4]]))
 
     def test_image_state_inverted(self):
         img = Image(([1, 2, 3], [0, 1], np.array([[0, 1, 2], [2, 3, 4]]))).opts(

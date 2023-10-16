@@ -1,29 +1,28 @@
 import builtins
-import sys
-import warnings
-import operator
+import datetime as dt
 import hashlib
-import json
-import time
-import types
-import numbers
-import pickle
 import inspect
 import itertools
+import json
+import numbers
+import operator
+import pickle
 import string
+import sys
+import time
+import types
 import unicodedata
-import datetime as dt
-
+import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-from packaging.version import Version
 from functools import partial
-from threading import Thread, Event
+from threading import Event, Thread
 from types import FunctionType
 
 import numpy as np
 import pandas as pd
 import param
+from packaging.version import Version
 
 # Python 2 builtins
 basestring = str
@@ -57,16 +56,19 @@ pandas_version = Version(pd.__version__)
 try:
     if pandas_version >= Version('1.3.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
+        from pandas.core.dtypes.generic import (
+            ABCIndex as ABCIndexClass,
+            ABCSeries,
+        )
     elif pandas_version >= Version('0.24.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+        from pandas.core.dtypes.generic import ABCIndexClass, ABCSeries
     elif pandas_version > Version('0.20.0'):
         from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+        from pandas.core.dtypes.generic import ABCIndexClass, ABCSeries
     else:
         from pandas.types.dtypes import DatetimeTZDtypeType
-        from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
+        from pandas.types.dtypes.generic import ABCIndexClass, ABCSeries
     pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
     pandas_timedelta_types = (pd.Timedelta,)
     datetime_types = datetime_types + pandas_datetime_types
@@ -732,12 +734,18 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return chars
 
     @param.parameterized.bothmethod
-    def shortened_character_name(self_or_cls, c, eliminations=[], substitutions={}, transforms=[]):
+    def shortened_character_name(self_or_cls, c, eliminations=None, substitutions=None, transforms=None):
         """
         Given a unicode character c, return the shortened unicode name
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
         """
+        if transforms is None:
+            transforms = []
+        if substitutions is None:
+            substitutions = {}
+        if eliminations is None:
+            eliminations = []
         name = unicodedata.name(c).lower()
         # Filtering
         for elim in eliminations:
@@ -929,7 +937,7 @@ def isfinite(val):
     if pandas_version >= Version('1.0.0'):
         if finite is pd.NA:
             return False
-        return finite & (~pd.isna(val))
+        return finite & ~pd.isna(np.asarray(val))
     return finite
 
 
@@ -955,16 +963,18 @@ def find_minmax(lims, olims):
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except Exception:
-        limits = (np.NaN, np.NaN)
+        limits = (np.nan, np.nan)
     return limits
 
 
-def find_range(values, soft_range=[]):
+def find_range(values, soft_range=None):
     """
     Safely finds either the numerical min and max of
     a set of values, falling back to the first and
     the last value in the sorted list of values.
     """
+    if soft_range is None:
+        soft_range = []
     try:
         values = np.array(values)
         values = np.squeeze(values) if len(values.shape) > 1 else values
@@ -999,7 +1009,7 @@ def max_range(ranges, combined=True):
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
+            values = [tuple(np.nan if v is None else v for v in r) for r in ranges]
             if any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
@@ -1015,7 +1025,7 @@ def max_range(ranges, combined=True):
 
             arr = np.array(values)
             if not len(arr):
-                return np.NaN, np.NaN
+                return np.nan, np.nan
             elif arr.dtype.kind in 'OSU':
                 arr = list(python2sort([
                     v for r in values for v in r
@@ -1031,7 +1041,7 @@ def max_range(ranges, combined=True):
             else:
                 return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except Exception:
-        return (np.NaN, np.NaN)
+        return (np.nan, np.nan)
 
 
 def range_pad(lower, upper, padding=None, log=False):
@@ -1101,7 +1111,7 @@ def max_extents(extents, zrange=False):
         num = 4
         inds = [(0, 2), (1, 3)]
     arr = list(zip(*extents)) if extents else []
-    extents = [np.NaN] * num
+    extents = [np.nan] * num
     if len(arr) == 0:
         return extents
     with warnings.catch_warnings():
@@ -1238,7 +1248,7 @@ def python2sort(x,key=None):
             try:
                 item_precedence = item if key is None else key(item)
                 group_precedence = group[0] if key is None else key(group[0])
-                item_precedence < group_precedence  # exception if not comparable
+                item_precedence < group_precedence  # noqa: B015, TypeError if not comparable
                 group.append(item)
                 break
             except TypeError:
@@ -1698,7 +1708,7 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
-def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
+def stream_name_mapping(stream, exclude_params=None, reverse=False):
     """
     Return a complete dictionary mapping between stream parameter names
     to their applicable renames, excluding parameters listed in
@@ -1707,6 +1717,8 @@ def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
     If reverse is True, the mapping is from the renamed strings to the
     original stream parameter names.
     """
+    if exclude_params is None:
+        exclude_params = ['name']
     from ..streams import Params
     if isinstance(stream, Params):
         mapping = {}
@@ -1743,7 +1755,7 @@ def rename_stream_kwargs(stream, kwargs, reverse=False):
     return mapped_kwargs
 
 
-def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_key']):
+def stream_parameters(streams, no_duplicates=True, exclude=None):
     """
     Given a list of streams, return a flat list of parameter name,
     excluding those listed in the exclude list.
@@ -1751,6 +1763,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_ke
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
+    if exclude is None:
+        exclude = ['name', '_memoize_key']
     from ..streams import Params
     param_groups = {}
     for s in streams:

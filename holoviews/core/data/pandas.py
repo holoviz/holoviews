@@ -1,14 +1,13 @@
-from packaging.version import Version
-
 import numpy as np
 import pandas as pd
+from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
 
-from .interface import Interface, DataError
-from ..dimension import dimension_name, Dimension
+from .. import util
+from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
+from .interface import DataError, Interface
 from .util import finite_range
 
 
@@ -184,7 +183,7 @@ class PandasInterface(Interface, PandasAPI):
             except Exception:
                 pass
             if not len(column):
-                return np.NaN, np.NaN
+                return np.nan, np.nan
             return column.iloc[0], column.iloc[-1]
         else:
             if dimension.nodata is not None:
@@ -318,7 +317,9 @@ class PandasInterface(Interface, PandasAPI):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(dataset.data, pd.DataFrame) or
@@ -365,7 +366,9 @@ class PandasInterface(Interface, PandasAPI):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         mask = None
         for sample in samples:

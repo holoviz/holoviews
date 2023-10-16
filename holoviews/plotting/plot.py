@@ -5,7 +5,6 @@ of this Plot baseclass.
 """
 import uuid
 import warnings
-
 from ast import literal_eval
 from collections import Counter, defaultdict
 from functools import partial
@@ -13,32 +12,42 @@ from itertools import groupby, product
 
 import numpy as np
 import param
-
 from panel.config import config
 from panel.io.document import unlocked
 from panel.io.notebook import push
 from panel.io.state import state
 from pyviz_comms import JupyterComm
-from ..selection import NoOpSelectionDisplay
-from ..core import util, traversal
+
+from ..core import traversal, util
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
-from ..core.overlay import Overlay, CompositeOverlay
-from ..core.layout import Empty, NdLayout, Layout
-from ..core.options import Store, Compositor, SkipRendering, lookup_options
-from ..core.overlay import NdOverlay
-from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph
-from ..streams import Stream, RangeXY, RangeX, RangeY
+from ..core.layout import Empty, Layout, NdLayout
+from ..core.options import Compositor, SkipRendering, Store, lookup_options
+from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
+from ..core.spaces import DynamicMap, HoloMap
+from ..core.util import isfinite, stream_parameters
+from ..element import Graph, Table
+from ..selection import NoOpSelectionDisplay
+from ..streams import RangeX, RangeXY, RangeY, Stream
 from ..util.transform import dim
 from .util import (
-    get_dynamic_mode, initialize_unbounded, dim_axis_label,
-    attach_streams, traverse_setter, get_nested_streams,
-    compute_overlayable_zorders, get_nested_plot_frame,
-    split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
-    get_plot_frame, scale_fontsize, dynamic_update
+    attach_streams,
+    compute_overlayable_zorders,
+    dim_axis_label,
+    dynamic_update,
+    get_axis_padding,
+    get_dynamic_mode,
+    get_minimum_span,
+    get_nested_plot_frame,
+    get_nested_streams,
+    get_plot_frame,
+    get_range,
+    initialize_unbounded,
+    scale_fontsize,
+    split_dmap_overlay,
+    traverse_setter,
 )
+
 
 class Plot(param.Parameterized):
     """
@@ -752,7 +761,7 @@ class DimensionedPlot(Plot):
                     elif values.dtype.kind in 'US':
                         factors = util.unique_array(values)
                     elif len(values) == 0:
-                        drange = np.NaN, np.NaN
+                        drange = np.nan, np.nan
                     else:
                         try:
                             with warnings.catch_warnings():
@@ -1170,7 +1179,11 @@ class GenericElementPlot(DimensionedPlot):
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
-                 overlay_dims={}, stream_sources={}, streams=None, **params):
+                 overlay_dims=None, stream_sources=None, streams=None, **params):
+        if stream_sources is None:
+            stream_sources = {}
+        if overlay_dims is None:
+            overlay_dims = {}
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
@@ -1384,7 +1397,7 @@ class GenericElementPlot(DimensionedPlot):
         elif ydim == 'categorical':
             y0, y1 = '', ''
         elif ydim is None:
-            y0, y1 = np.NaN, np.NaN
+            y0, y1 = np.nan, np.nan
 
         if isinstance(self.projection, str) and self.projection == '3d':
             if range_type == 'soft':
@@ -1396,7 +1409,7 @@ class GenericElementPlot(DimensionedPlot):
             elif zdim == 'categorical':
                 z0, z1 = '', ''
             elif zdim is None:
-                z0, z1 = np.NaN, np.NaN
+                z0, z1 = np.nan, np.nan
             return (x0, y0, z0, x1, y1, z1)
 
         if not self.drawn:
@@ -1441,7 +1454,7 @@ class GenericElementPlot(DimensionedPlot):
                     isinstance(self.projection, str) and self.projection == '3d'
                 )
         else:
-            extents = (np.NaN,) * num
+            extents = (np.nan,) * num
 
         if range_type == 'extents':
             return extents
@@ -1449,7 +1462,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.apply_ranges:
             range_extents = self._get_range_extents(element, ranges, range_type, xdim, ydim, zdim)
         else:
-            range_extents = (np.NaN,) * num
+            range_extents = (np.nan,) * num
 
         if getattr(self, 'shared_axes', False) and self.subplot:
             combined = util.max_extents(
@@ -1982,7 +1995,7 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, x1, y1 = extents['data']
             sx0, sy0, sx1, sy1 = extents['soft']
             hx0, hy0, hx1, hy1 = extents['hard']
-            z0, z1 = np.NaN, np.NaN
+            z0, z1 = np.nan, np.nan
 
         # Apply minimum span
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))

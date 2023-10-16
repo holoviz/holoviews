@@ -1,69 +1,92 @@
 import warnings
-
 from itertools import chain
 from types import FunctionType
 
-import param
-import numpy as np
 import bokeh
 import bokeh.plotting
+import numpy as np
+import param
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
-    BinnedTicker, ColorBar, ColorMapper, CustomJS, EqHistColorMapper,
-    GlyphRenderer, Legend, Renderer, Title, tools,
+    BinnedTicker,
+    ColorBar,
+    ColorMapper,
+    CustomJS,
+    EqHistColorMapper,
+    GlyphRenderer,
+    Legend,
+    Renderer,
+    Title,
+    tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    TickFormatter, MercatorTickFormatter
+    CustomJSTickFormatter,
+    MercatorTickFormatter,
+    TickFormatter,
 )
-from bokeh.models.layouts import Tabs
+from bokeh.models.layouts import TabPanel, Tabs
 from bokeh.models.mappers import (
-    LinearColorMapper, LogColorMapper, CategoricalColorMapper
+    CategoricalColorMapper,
+    LinearColorMapper,
+    LogColorMapper,
 )
+from bokeh.models.ranges import DataRange1d, FactorRange, Range1d
 from bokeh.models.scales import LogScale
-from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
-    Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
+    BasicTicker,
+    FixedTicker,
+    LogTicker,
+    MercatorTicker,
+    Ticker,
 )
 from bokeh.models.tools import Tool
-
 from packaging.version import Version
 
-from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
-from ...core.options import abbreviated_exception, Keywords, SkipRendering
-from ...core import util
-from ...element import (
-    Annotation, Contours, Graph, Path, Tiles, VectorField
-)
-from ...streams import Buffer, RangeXY, PlotSize
+from ...core import CompositeOverlay, Dataset, Dimension, DynamicMap, Element, util
+from ...core.options import Keywords, SkipRendering, abbreviated_exception
+from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
+from ...streams import Buffer, PlotSize, RangeXY
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import (
-    dim_axis_label, process_cmap, color_intervals, dim_range_key
-)
+from ..util import color_intervals, dim_axis_label, dim_range_key, process_cmap
 from .plot import BokehPlot
 from .styles import (
-    base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
-    property_prefixes, rgba_tuple, text_properties, validate
+    base_properties,
+    legend_dimensions,
+    line_properties,
+    mpl_to_bokeh,
+    property_prefixes,
+    rgba_tuple,
+    text_properties,
+    validate,
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES, bokeh_version, bokeh3, bokeh32, date_to_integer,
-    decode_bytes, get_tab_title, glyph_order, py2js_tickformatter,
-    recursive_model_update, theme_attr_json, cds_column_replace,
-    hold_policy, match_dim_specs, compute_layout_properties,
-    wrap_formatter, match_ax_type, match_yaxis_type_to_range,
-    prop_is_none, remove_legend, property_to_dict, dtype_fix_hook,
-    get_scale, get_axis_class
+    TOOL_TYPES,
+    bokeh32,
+    bokeh_version,
+    cds_column_replace,
+    compute_layout_properties,
+    date_to_integer,
+    decode_bytes,
+    dtype_fix_hook,
+    get_axis_class,
+    get_scale,
+    get_tab_title,
+    glyph_order,
+    hold_policy,
+    match_ax_type,
+    match_dim_specs,
+    match_yaxis_type_to_range,
+    prop_is_none,
+    property_to_dict,
+    recursive_model_update,
+    remove_legend,
+    theme_attr_json,
+    wrap_formatter,
 )
-
-if bokeh3:
-    from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models.layouts import TabPanel
-else:
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
-    from bokeh.models.layouts import Panel as TabPanel
 
 try:
     TOOLS_MAP = Tool._known_aliases
@@ -264,10 +287,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
-    def _init_tools(self, element, callbacks=[]):
+    def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
         """
+        if callbacks is None:
+            callbacks = []
         tooltips, hover_opts = self._hover_opts(element)
         tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
                     if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
@@ -426,8 +451,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return self._subcoord_standalone_
 
     def _axis_props(self, plots, subplots, element, ranges, pos, *, dim=None,
-                    range_tags_extras=[], extra_range_name=None):
+                    range_tags_extras=None, extra_range_name=None):
 
+        if range_tags_extras is None:
+            range_tags_extras = []
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
         if isinstance(el, Graph):
@@ -528,6 +555,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else not util.isfinite(el) for el in [v0, v1]
         ):
             dim_range = range_type()
+        elif issubclass(range_type, FactorRange):
+            dim_range = range_type(name=dim.name if dim else None)
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
 
@@ -683,10 +712,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties.update(**self._plot_properties(key, element))
 
-        if bokeh3:
-            figure = bokeh.plotting.figure
-        else:
-            figure = bokeh.plotting.Figure
+        figure = bokeh.plotting.figure
 
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
@@ -815,12 +841,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['extra_y_scales'] = plot.extra_y_scales
 
     def _axis_properties(self, axis, key, plot, dimension=None,
-                         ax_mapping={'x': 0, 'y': 1}):
+                         ax_mapping=None):
         """
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
         # need to copy dictionary by calling dict() on it
+        if ax_mapping is None:
+            ax_mapping = {'x': 0, 'y': 1}
         axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
@@ -885,13 +913,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 formatter = dimension.value_format
             elif dimension.type in dimension.type_formatters:
                 formatter = dimension.type_formatters[dimension.type]
-            if formatter:
-                msg = ('%s dimension formatter could not be '
-                       'converted to tick formatter. ' % dimension.name)
-                jsfunc = py2js_tickformatter(formatter, msg)
-                if jsfunc:
-                    formatter = CustomJSTickFormatter(code=jsfunc)
-                    axis_props['formatter'] = formatter
 
         if axis == 'x':
             axis_obj = plot.xaxis[0]
@@ -1719,18 +1740,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
                 empty_data = {c: [] for c in columns}
-                if bokeh3:
-                    event = ModelChangedEvent(
-                        document=self.document,
-                        model=source,
-                        attr='data',
-                        new=empty_data,
-                        setter='empty'
-                    )
-                else:
-                    event = ModelChangedEvent(
-                        self.document, source, 'data', source.data, empty_data, empty_data, setter='empty'
-                    )
+                event = ModelChangedEvent(
+                    document=self.document,
+                    model=source,
+                    attr='data',
+                    new=empty_data,
+                    setter='empty'
+                )
                 self.document.callbacks._held_events.append(event)
 
         if legend is not None:
@@ -2563,7 +2579,7 @@ class LegendPlot(ElementPlot):
             or not self.show_legend):
             legend.items[:] = []
         else:
-            if bokeh3 and self.legend_cols:
+            if self.legend_cols:
                 plot.legend.nrows = self.legend_cols
             else:
                 plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
@@ -2666,8 +2682,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             options[k] = v
 
         pos = self.legend_position
-        if not bokeh3:
-            options['orientation'] = 'horizontal' if self.legend_cols else 'vertical'
         if pos in ['top', 'bottom'] and not self.legend_cols:
             options['orientation'] = 'horizontal'
 
@@ -2677,7 +2691,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         options.update(self._fontsize('legend', 'label_text_font_size'))
         options.update(self._fontsize('legend_title', 'title_text_font_size'))
-        if bokeh3 and self.legend_cols:
+        if self.legend_cols:
             options.update({"ncols": self.legend_cols})
         legend.update(**options)
 
@@ -2754,10 +2768,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     r.muted = self.legend_muted or r.muted
 
 
-    def _init_tools(self, element, callbacks=[]):
+    def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
         """
+        if callbacks is None:
+            callbacks = []
         hover_tools = {}
         init_tools, tool_types = [], []
         for key, subplot in self.subplots.items():

@@ -1,21 +1,24 @@
 import sys
-
 from inspect import getmro
 
 import param
-
-from panel.pane import PaneBase
 from panel.layout import Row, Tabs
+from panel.pane import PaneBase
 from panel.util import param_name
 
-from .core import DynamicMap, HoloMap, ViewableElement, Element, Layout, Overlay, Store
+from .core import DynamicMap, Element, HoloMap, Layout, Overlay, Store, ViewableElement
 from .core.util import isscalar
-from .element import Rectangles, Path, Polygons, Points, Table, Curve
-from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw, CurveEdit
+from .element import Curve, Path, Points, Polygons, Rectangles, Table
+from .plotting.links import (
+    DataLink,
+    RectanglesTableLink,
+    SelectionLink,
+    VertexTableLink,
+)
+from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
 
 
-def preprocess(function, current=[]):
+def preprocess(function, current=None):
     """
     Turns a param.depends watch call into a preprocessor method, i.e.
     skips all downstream events triggered by it.
@@ -24,6 +27,8 @@ def preprocess(function, current=[]):
           method which depends on a particular parameter.
           (see https://github.com/pyviz/param/issues/332)
     """
+    if current is None:
+        current = []
     def inner(*args, **kwargs):
         self = args[0]
         self.param._BATCH_WATCH = True

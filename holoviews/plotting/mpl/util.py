@@ -2,39 +2,38 @@ import inspect
 import re
 import warnings
 
-import numpy as np
 import matplotlib as mpl
-
-from matplotlib import units as munits
-from matplotlib import ticker
+import numpy as np
+from matplotlib import (
+    ticker,
+    units as munits,
+)
 from matplotlib.colors import Normalize, cnames
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
-from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-from matplotlib.rcsetup import (
-    validate_fontsize, validate_fonttype, validate_hatch)
+from matplotlib.rcsetup import validate_fontsize, validate_fonttype, validate_hatch
+from matplotlib.transforms import Affine2D, Bbox, TransformedBbox
 from packaging.version import Version
 
 try:  # starting Matplotlib 3.4.0
-    from matplotlib._enums import CapStyle as validate_capstyle
-    from matplotlib._enums import JoinStyle as validate_joinstyle
+    from matplotlib._enums import (
+        CapStyle as validate_capstyle,
+        JoinStyle as validate_joinstyle,
+    )
 except ImportError:  # before Matplotlib 3.4.0
-    from matplotlib.rcsetup import (
-    validate_capstyle, validate_joinstyle)
+    from matplotlib.rcsetup import validate_capstyle, validate_joinstyle
 
 try:
-    from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
+    from nc_time_axis import CalendarDateTime, NetCDFTimeConverter
     nc_axis_available = True
 except ImportError:
     from matplotlib.dates import DateConverter
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
-from ...core.util import (
-    arraylike_types, cftime_types, is_number
-)
-from ...element import Raster, RGB, Polygons
+from ...core.util import arraylike_types, cftime_types, is_number
+from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 mpl_version = Version(mpl.__version__)
@@ -128,7 +127,7 @@ def validate(style, value, vectorized=True):
         return False
 
 
-def filter_styles(style, group, other_groups, blacklist=[]):
+def filter_styles(style, group, other_groups, blacklist=None):
     """
     Filters styles which are specific to a particular artist, e.g.
     for a GraphPlot this will filter options specific to the nodes and
@@ -150,6 +149,8 @@ def filter_styles(style, group, other_groups, blacklist=[]):
     filtered: dict
         Filtered dictionary of styles
     """
+    if blacklist is None:
+        blacklist = []
     group = group+'_'
     filtered = {}
     for k, v in style.items():
@@ -248,12 +249,14 @@ def resolve_rows(rows):
         return resolve_rows(merged_rows)
 
 
-def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
+def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
                vspace=0.2, hspace=0.2):
     """
     Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
     """
+    if extra_artists is None:
+        extra_artists = []
     fig.canvas.draw()
     w, h = fig.get_size_inches()
 
@@ -288,10 +291,12 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
             title.set_y(top/(w*aspect))
 
 
-def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
+def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
     """
     Compute a tight bounding box around all the artists in the figure.
     """
+    if bbox_extra_artists is None:
+        bbox_extra_artists = []
     renderer = fig.canvas.get_renderer()
     bbox_inches = fig.get_tightbbox(renderer)
     bbox_artists = bbox_extra_artists[:]

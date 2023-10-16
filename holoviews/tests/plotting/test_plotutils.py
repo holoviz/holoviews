@@ -1,22 +1,36 @@
-from unittest import SkipTest
 
 import numpy as np
 
-from holoviews import NdOverlay, Overlay, Dimension
+from holoviews import Dimension, NdOverlay, Overlay
+from holoviews.core.options import Cycle, Store
 from holoviews.core.spaces import DynamicMap, HoloMap
-from holoviews.core.options import Store, Cycle
+from holoviews.element import (
+    Area,
+    Curve,
+    HLine,
+    Image,
+    Path,
+    Points,
+    Scatter,
+    VectorField,
+)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import (Image, Scatter, Curve, Points,
-                               Area, VectorField, HLine, Path)
 from holoviews.operation import operation
 from holoviews.plotting.util import (
-    compute_overlayable_zorders, get_min_distance, process_cmap,
-    initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy,
-    bokeh_palette_to_palette, mplcmap_to_palette, color_intervals,
-    get_range, get_axis_padding)
+    _get_min_distance_numpy,
+    bokeh_palette_to_palette,
+    color_intervals,
+    compute_overlayable_zorders,
+    get_axis_padding,
+    get_min_distance,
+    get_range,
+    initialize_dynamic,
+    mplcmap_to_palette,
+    process_cmap,
+    split_dmap_overlay,
+)
 from holoviews.streams import PointerX
 
-from holoviews.plotting.bokeh import util
 bokeh_renderer = Store.renderers['bokeh']
 
 
@@ -656,38 +670,3 @@ class TestRangeUtilities(ComparisonTestCase):
         self.assertEqual(drange, (-0.5, 2.5))
         self.assertEqual(srange, (-1, 4))
         self.assertEqual(hrange, (-1, 3))
-
-
-
-class TestBokehUtils(ComparisonTestCase):
-
-    def setUp(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest("Flexx required to test transpiling formatter functions.")
-
-
-    def test_py2js_funcformatter_single_arg(self):
-        def test(x):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_two_args(self):
-        def test(x, pos):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_arg_and_kwarg(self):
-        def test(x, pos=None):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    pos = (pos === undefined) ? null: pos;\n    return "" '
-                   '+ x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)

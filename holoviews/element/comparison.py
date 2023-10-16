@@ -17,20 +17,33 @@ methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
+import contextlib
 from functools import partial
+from unittest import TestCase
+from unittest.util import safe_repr
+
 import numpy as np
 import pandas as pd
-from unittest.util import safe_repr
-from unittest import TestCase
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from . import *    # noqa (All Elements need to support comparison)
-from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
-                    HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix)
-from ..core.options import Options, Cycle
-from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
-                         is_float)
+from ..core import (
+    AdjointLayout,
+    Dimension,
+    Dimensioned,
+    DynamicMap,
+    Element,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
+)
+from ..core.options import Cycle, Options
+from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
+from . import *  # noqa (All Elements need to support comparison)
 
 
 class ComparisonInterface:
@@ -522,12 +535,20 @@ class Comparison(ComparisonInterface):
             raise AssertionError("%s not of matching length, %d vs. %d."
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
+            with contextlib.suppress(Exception):
+                np.testing.assert_equal(d1, d2)
+                continue  # if equal, no need to check further
+
             if d1.dtype != d2.dtype:
-                cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                     + f" First has type {d1}, and second has type {d2}.")
+                failure_msg = (
+                    f"{msg} {dim.pprint_label} columns have different type. "
+                    f"First has type {d1}, and second has type {d2}."
+                )
+                raise cls.failureException(failure_msg)
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
-                    cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
+                    failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
+                    raise cls.failureException(failure_msg)
             else:
                 cls.compare_arrays(d1, d2, msg)
 

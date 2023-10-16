@@ -1,6 +1,5 @@
 import sys
 import warnings
-
 from itertools import product
 
 import numpy as np
@@ -122,7 +121,7 @@ class cuDFInterface(PandasInterface):
         if dimension.nodata is not None:
             column = cls.replace_value(column, dimension.nodata)
         if column.dtype.kind == 'O':
-            return np.NaN, np.NaN
+            return np.nan, np.nan
         else:
             return finite_range(column, column.min(), column.max())
 
@@ -326,7 +325,9 @@ class cuDFInterface(PandasInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 

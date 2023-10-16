@@ -1,15 +1,17 @@
 from unittest.mock import Mock
 
-import holoviews as hv
-import panel as pn
 import numpy as np
-
-from holoviews.streams import (
-    Stream, Selection1D, RangeXY, BoundsXY,
-)
-
+import panel as pn
 from bokeh.document import Document
 from pyviz_comms import Comm
+
+import holoviews as hv
+from holoviews.streams import (
+    BoundsXY,
+    RangeXY,
+    Selection1D,
+    Stream,
+)
 
 from .test_plot import TestPlotlyPlot
 
@@ -135,7 +137,7 @@ class TestInteractiveStream(TestPlotlyPlot):
         self.assertEqual(boundsxy2a.bounds, (10, 11, 20, 22))
         self.assertEqual(boundsxy2b.bounds, (10, 11, 20, 22))
 
-        # Box selecrt on third subplot
+        # Box select on third subplot
         plotly_pane.selected_data = {
             'points': [
                 {'curveNumber': 2, 'pointNumber': 0},

@@ -15,12 +15,10 @@ import re
 import textwrap
 
 import param
-
 from param.ipython import ParamPager
 from param.parameterized import bothmethod
 
 from .util import group_sanitizer, label_sanitizer
-
 
 
 class ParamFilter(param.ParameterizedFunction):
@@ -132,11 +130,13 @@ class InfoPrinter:
 
     @classmethod
     def info(cls, obj, ansi=False, backend='matplotlib', visualization=True,
-             pattern=None, elements=[]):
+             pattern=None, elements=None):
         """
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
         """
+        if elements is None:
+            elements = []
         cls.elements = elements
         ansi_escape = re.compile(r'\x1b[^m]*m')
 
@@ -296,11 +296,15 @@ class PrettyPrinter(param.Parameterized):
         return cls_or_slf.type_formatter.format(type=str(type(node).__name__))
 
     @bothmethod
-    def recurse(cls_or_slf, node, attrpath=None, attrpaths=[], siblings=[], level=0, value_dims=True):
+    def recurse(cls_or_slf, node, attrpath=None, attrpaths=None, siblings=None, level=0, value_dims=True):
         """
         Recursive function that builds up an ASCII tree given an
         AttrTree node.
         """
+        if siblings is None:
+            siblings = []
+        if attrpaths is None:
+            attrpaths = []
         level, lines = cls_or_slf.node_info(node, attrpath, attrpaths, siblings, level, value_dims)
         attrpaths = ['.'.join(k) for k in node.keys()] if  hasattr(node, 'children') else []
         siblings = [node.get(child) for child in attrpaths]
@@ -358,7 +362,7 @@ class PrettyPrinter(param.Parameterized):
     def option_info(cls_or_slf, node):
         if not cls_or_slf.show_options:
             return None
-        from .options import Store, Options
+        from .options import Options, Store
         options = {}
         for g in Options._option_groups:
             gopts = Store.lookup_options(Store.current_backend, node, g,

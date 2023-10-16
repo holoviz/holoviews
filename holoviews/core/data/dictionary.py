@@ -1,14 +1,13 @@
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 
 import numpy as np
 
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import isscalar
-from .. import util
-
+from .interface import DataError, Interface
 
 
 class DictInterface(Interface):
@@ -18,7 +17,7 @@ class DictInterface(Interface):
     are collections representing the values in that column.
     """
 
-    types = (dict,)
+    types = (dict, OrderedDict)
 
     datatype = 'dictionary'
 
@@ -109,10 +108,11 @@ class DictInterface(Interface):
 
         if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
             raise ValueError('DictInterface expects data to be of uniform shape.')
-        if isinstance(data, dict):
+        # OrderedDict can't be replaced with dict: https://github.com/holoviz/holoviews/pull/5925
+        if isinstance(data, OrderedDict):
             data.update(unpacked)
         else:
-            data = dict(unpacked)
+            data = OrderedDict(unpacked)
 
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
@@ -229,7 +229,9 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
@@ -338,7 +340,9 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         mask = False
         for sample in samples:
             sample_mask = True

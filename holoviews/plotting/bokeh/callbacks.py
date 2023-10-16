@@ -1,31 +1,61 @@
 import asyncio
 import base64
 import time
-
 from collections import defaultdict
 
 import numpy as np
-
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
-    PolyDrawTool, PolyEditTool, FreehandDrawTool,
-    PointDrawTool
+    BoxEditTool,
+    CustomJS,
+    DataRange1d,
+    DatetimeAxis,
+    FactorRange,
+    FreehandDrawTool,
+    PointDrawTool,
+    PolyDrawTool,
+    PolyEditTool,
+    Range1d,
 )
 from panel.io.state import state
 
 from ...core.options import CallbackError
-from ...core.util import (
-    datetime_types, dimension_sanitizer, dt64_to_dt, isequal
-)
+from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
 from ...element import Table
 from ...streams import (
-    Stream, PointerXY, RangeXY, Selection1D, RangeX, RangeY, PointerX,
-    PointerY, BoundsX, BoundsY, Tap, SingleTap, DoubleTap, MouseEnter,
-    MouseLeave, PressUp, PanEnd, PlotSize, Draw, BoundsXY, PlotReset,
-    BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
-    CurveEdit, SelectionXY, Lasso, SelectMode
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    BoxEdit,
+    CDSStream,
+    CurveEdit,
+    DoubleTap,
+    Draw,
+    FreehandDraw,
+    Lasso,
+    MouseEnter,
+    MouseLeave,
+    PanEnd,
+    PlotReset,
+    PlotSize,
+    PointDraw,
+    PointerX,
+    PointerXY,
+    PointerY,
+    PolyDraw,
+    PolyEdit,
+    PressUp,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
+    SelectionXY,
+    SelectMode,
+    SingleTap,
+    Stream,
+    Tap,
 )
-from .util import bokeh3, convert_timestamp
+from ...util.warnings import warn
+from .util import bokeh33, convert_timestamp
 
 
 class Callback:
@@ -616,23 +646,6 @@ class RangeXYCallback(Callback):
         'x1': 'cb_obj.x1',
         'y1': 'cb_obj.y1',
     }
-
-    _js_on_event = """
-    if (this._updating)
-        return
-    const plot = this.origin
-    const plots = plot.x_range.plots.concat(plot.y_range.plots)
-    for (const p of plots) {
-      const event = new this.constructor(p.x_range.start, p.x_range.end, p.y_range.start, p.y_range.end)
-      event._updating = true
-      p.trigger_event(event)
-    }
-    """
-
-    def set_callback(self, handle):
-        super().set_callback(handle)
-        if not bokeh3:
-            handle.js_on_event('rangesupdate', CustomJS(code=self._js_on_event))
 
     def _process_msg(self, msg):
         if self.plot.state.x_range is not self.plot.handles['x_range']:
@@ -1229,9 +1242,12 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        # BoxEditTool does not support Quad type only Rect
-        # box_tool = BoxEditTool(renderers=[renderer], **kwargs)
-        # self.plot.state.tools.append(box_tool)
+        if bokeh33:
+            # First version with Quad support
+            box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+            self.plot.state.tools.append(box_tool)
+        else:
+            warn("BoxEditTool requires Bokeh >= 3.3")
         self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 

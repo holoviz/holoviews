@@ -10,12 +10,13 @@ except ImportError:
 
 pytestmark = pytest.mark.ui
 
-from holoviews import Curve, Scatter
-from holoviews.streams import BoundsXY, Lasso, RangeXY
-from holoviews.plotting.bokeh import BokehRenderer
-from panel.pane.holoviews import HoloViews
 from panel.io.server import serve
+from panel.pane.holoviews import HoloViews
 from panel.tests.util import wait_until
+
+from holoviews import Curve, Scatter
+from holoviews.plotting.bokeh import BokehRenderer
+from holoviews.streams import BoundsXY, Lasso, RangeXY
 
 
 def test_box_select(page, port):

@@ -4,7 +4,7 @@ from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .dictionary import DictInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 
 
 class MultiInterface(Interface):
@@ -31,7 +31,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        from ...element import Polygons, Path
+        from ...element import Path, Polygons
 
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
@@ -101,7 +101,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def geom_type(cls, dataset):
-        from holoviews.element import Polygons, Path, Points
+        from holoviews.element import Path, Points, Polygons
         if isinstance(dataset, type):
             eltype = dataset
         else:
@@ -300,7 +300,9 @@ class MultiInterface(Interface):
             return container_type(grouped_data)
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         raise NotImplementedError('Sampling operation on subpaths not supported')
 
     @classmethod
@@ -348,7 +350,9 @@ class MultiInterface(Interface):
         return ds.interface.dtype(ds, dimension)
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0], False).argsort()
@@ -421,7 +425,7 @@ class MultiInterface(Interface):
                 continue
             values.append(dvals)
             if not is_points and expanded:
-                values.append([np.NaN])
+                values.append([np.nan])
 
         if not values:
             return np.array([])

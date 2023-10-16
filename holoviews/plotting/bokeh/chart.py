@@ -2,27 +2,26 @@ from collections import defaultdict
 
 import numpy as np
 import param
-
-from bokeh.models import (
-    CategoricalColorMapper, CustomJS, FactorRange, Range1d, Whisker
-)
+from bokeh.models import CategoricalColorMapper, CustomJS, FactorRange, Range1d, Whisker
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
-from ...core.util import (
-    dimension_sanitizer, isfinite
-)
+from ...core.util import dimension_sanitizer, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
-from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
+from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
-    expand_batched_style, base_properties, line_properties, fill_properties,
-    mpl_to_bokeh, rgb2hex
+    base_properties,
+    expand_batched_style,
+    fill_properties,
+    line_properties,
+    mpl_to_bokeh,
+    rgb2hex,
 )
 from .util import categorize_array
 
@@ -786,7 +785,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     _y_range_type = Range1d
 
     def _axis_properties(self, axis, key, plot, dimension=None,
-                         ax_mapping={'x': 0, 'y': 1}):
+                         ax_mapping=None):
+        if ax_mapping is None:
+            ax_mapping = {"x": 0, "y": 1}
         props = super()._axis_properties(axis, key, plot, dimension, ax_mapping)
         if (not self.multi_level and not self.stacked and self.current_frame.ndims > 1 and
             ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):

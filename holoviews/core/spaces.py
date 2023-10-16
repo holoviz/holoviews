@@ -1,25 +1,23 @@
 import itertools
 import types
-
-from numbers import Number
-from itertools import groupby
-from functools import partial
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import partial
+from itertools import groupby
+from numbers import Number
 from types import FunctionType
 
 import numpy as np
 import param
 
+from ..streams import Params, Stream, streams_list_from_dict
 from . import traversal, util
 from .accessors import Opts, Redim
 from .dimension import Dimension, ViewableElement
-from .layout import Layout, AdjointLayout, NdLayout, Empty, Layoutable
-from .ndmapping import UniformNdMapping, NdMapping, item_check
-from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
+from .layout import AdjointLayout, Empty, Layout, Layoutable, NdLayout
+from .ndmapping import NdMapping, UniformNdMapping, item_check
 from .options import Store, StoreOptions
-from ..streams import Stream, Params, streams_list_from_dict
-
+from .overlay import CompositeOverlay, NdOverlay, Overlay, Overlayable
 
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):
@@ -304,7 +302,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
 
-    def collate(self, merge_type=None, drop=[], drop_constant=False):
+    def collate(self, merge_type=None, drop=None, drop_constant=False):
         """Collate allows reordering nested containers
 
         Collation allows collapsing nested mapping types by merging
@@ -328,6 +326,8 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         Returns:
             Collated Layout or HoloMap
         """
+        if drop is None:
+            drop = []
         from .element import Collator
         merge_type=merge_type if merge_type else self.__class__
         return Collator(self, merge_type=merge_type, drop=drop,
@@ -1685,7 +1685,7 @@ class DynamicMap(HoloMap):
             return hist
 
 
-    def reindex(self, kdims=[], force=False):
+    def reindex(self, kdims=None, force=False):
         """Reorders key dimensions on DynamicMap
 
         Create a new object with a reordered set of key dimensions.
@@ -1698,6 +1698,8 @@ class DynamicMap(HoloMap):
         Returns:
             Reindexed DynamicMap
         """
+        if kdims is None:
+            kdims = []
         if not isinstance(kdims, list):
             kdims = [kdims]
         kdims = [self.get_dimension(kd, strict=True) for kd in kdims]

@@ -2,22 +2,20 @@
 Test cases for rendering exporters
 """
 import subprocess
-
 from unittest import SkipTest
 
 import numpy as np
-import param
 import panel as pn
+import param
 from matplotlib import style
-
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
-                       GridSpace, Table, Curve)
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream
-from holoviews.plotting.mpl import MPLRenderer, CurvePlot
-from holoviews.plotting.renderer import Renderer
-from panel.widgets import DiscreteSlider, Player, FloatSlider
+from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
+
+from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, ItemTable, Table
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.mpl import CurvePlot, MPLRenderer
+from holoviews.plotting.renderer import Renderer
+from holoviews.streams import Stream
 
 
 class MPLRendererTest(ComparisonTestCase):
@@ -56,13 +54,15 @@ class MPLRendererTest(ComparisonTestCase):
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 257))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (576, 257) or (w, h) == (576, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 509))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
