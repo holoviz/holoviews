@@ -33,7 +33,7 @@ extras_require['tests_core'] = [
     'pytest-cov',
     'pytest-xdist',
     'flaky',
-    'matplotlib >=3, <3.8',  # 3.8 breaks tests
+    'matplotlib >=3',
     'nbconvert',
     'bokeh >=3.1',
     'pillow',
