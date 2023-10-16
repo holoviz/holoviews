@@ -2,9 +2,8 @@ import base64
 import logging
 from io import BytesIO
 
-import param
 import bokeh
-
+import param
 from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.models import Model
@@ -13,11 +12,10 @@ from panel.io.notebook import render_mimebundle
 from panel.io.state import state
 from param.parameterized import bothmethod
 
-from ...core import Store, HoloMap
+from ...core import HoloMap, Store
 from ..plot import Plot
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .util import compute_plot_size
-
 
 default_theme = Theme(json={
     'attrs': {

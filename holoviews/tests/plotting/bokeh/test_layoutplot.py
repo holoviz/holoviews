@@ -2,23 +2,28 @@ import datetime as dt
 import re
 
 import numpy as np
+from bokeh.models import Div, GlyphRenderer, GridPlot, Spacer, Tabs, Title, Toolbar
+from bokeh.models.layouts import TabPanel
+from bokeh.plotting import figure
 
-from holoviews.core import (HoloMap, GridSpace, Layout, Empty, Dataset,
-                            NdOverlay, NdLayout, DynamicMap, Dimension)
-from holoviews.element import Curve, Image, Points, Histogram, Scatter
+from holoviews.core import (
+    Dataset,
+    Dimension,
+    DynamicMap,
+    Empty,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+)
+from holoviews.element import Curve, Histogram, Image, Points, Scatter
 from holoviews.streams import Stream
-from holoviews.util import render, opts
+from holoviews.util import opts, render
 from holoviews.util.transform import dim
-
-from bokeh.models import Div, GlyphRenderer, Tabs, Spacer, Title
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models.layouts import TabPanel
-from bokeh.plotting import figure
-from bokeh.models import GridPlot
-from bokeh.models import Toolbar
 
 
 class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
@@ -287,8 +292,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot.update((1,))
         self.assertEqual(data['A'], hmap1[1].dimension_values(0))
         self.assertEqual(data['B'], hmap1[1].dimension_values(1))
-        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
-        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.nan))
+        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
     def test_shared_axes(self):
         curve = Curve(range(10))

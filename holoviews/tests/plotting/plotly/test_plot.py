@@ -1,7 +1,6 @@
-from param import concrete_descendents
-
 import plotly.graph_objs as go
 import pyviz_comms as comms
+from param import concrete_descendents
 
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase

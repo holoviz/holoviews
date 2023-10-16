@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import param
 import pytest
-
 from panel.widgets import IntSlider, RadioButtonGroup, TextInput
 
 from holoviews import Dataset, util

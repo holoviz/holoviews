@@ -3,9 +3,11 @@ Unit test of the (non-rendering) exporters and importers.
 """
 
 import os
+
 import numpy as np
+
 from holoviews import Image, Layout
-from holoviews.core.io import Serializer, Pickler, Unpickler, Deserializer
+from holoviews.core.io import Deserializer, Pickler, Serializer, Unpickler
 from holoviews.element.comparison import ComparisonTestCase
 
 

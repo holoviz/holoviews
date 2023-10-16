@@ -1,10 +1,10 @@
 import numpy as np
 
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
+from .interface import DataError, Interface
 
 
 class ArrayInterface(Interface):

@@ -1,9 +1,9 @@
 import datetime as dt
 from unittest import skipIf
-import pytest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 try:
     import dask.array as da
@@ -15,14 +15,34 @@ try:
 except ImportError:
     ibis = None
 
-from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
-                       Contours, Polygons, Points, Histogram, Curve, Area,
-                       QuadMesh, Dataset, renderer)
+from holoviews import (
+    Area,
+    Contours,
+    Curve,
+    Dataset,
+    GridSpace,
+    Histogram,
+    HoloMap,
+    Image,
+    NdLayout,
+    NdOverlay,
+    Points,
+    Polygons,
+    QuadMesh,
+    renderer,
+)
 from holoviews.core.data.grid import GridInterface
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation.element import (operation, transform, threshold,
-                                         gradient, contours, histogram,
-                                         interpolate_curve, decimate)
+from holoviews.operation.element import (
+    contours,
+    decimate,
+    gradient,
+    histogram,
+    interpolate_curve,
+    operation,
+    threshold,
+    transform,
+)
 
 da_skip = skipIf(da is None, "dask.array is not available")
 ibis_skip = skipIf(ibis is None, "ibis is not available")
@@ -77,7 +97,7 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, levels=[0.5])
         contour = Contours([[(-0.166667,  0.333333, 0.5), (-0.333333, 0.277778, 0.5),
-                             (np.NaN, np.NaN, 0.5), (0.333333, 0.3, 0.5),
+                             (np.nan, np.nan, 0.5), (0.333333, 0.3, 0.5),
                              (0.166667, 0.333333, 0.5)]],
                             vdims=img.vdims)
         self.assertEqual(op_contours, contour)
@@ -92,7 +112,7 @@ class OperationTests(ComparisonTestCase):
         qmesh = QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])))
         op_contours = contours(qmesh, levels=[0.5])
         contour = Contours([[(0,  1.166667, 0.5), (0.5, 1., 0.5),
-                             (np.NaN, np.NaN, 0.5), (1.5, 1., 0.5),
+                             (np.nan, np.nan, 0.5), (1.5, 1., 0.5),
                              (2, 1.1, 0.5)]],
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
@@ -104,7 +124,7 @@ class OperationTests(ComparisonTestCase):
         qmesh = QuadMesh((xs, ys+0.1, zs))
         op_contours = contours(qmesh, levels=[0.5])
         contour = Contours([[(0,  0.266667, 0.5), (0.5, 0.1, 0.5),
-                             (np.NaN, np.NaN, 0.5), (1.5, 0.1, 0.5),
+                             (np.nan, np.nan, 0.5), (1.5, 0.1, 0.5),
                              (2, 0.2, 0.5)]],
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
@@ -120,7 +140,7 @@ class OperationTests(ComparisonTestCase):
         qmesh = QuadMesh((xs, ys+0.1, zs))
         op_contours = contours(qmesh, levels=[0.5])
         contour = Contours([[(0,  0.266667, 0.5), (0.5, 0.1, 0.5),
-                             (np.NaN, np.NaN, 0.5), (1.5, 0.1, 0.5),
+                             (np.nan, np.nan, 0.5), (1.5, 0.1, 0.5),
                              (2, 0.2, 0.5)]],
                             vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)

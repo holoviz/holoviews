@@ -1,13 +1,13 @@
 import os
 
-from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from param import concrete_descendents
 from colorcet import kbc, register_cmap
+from matplotlib import rc_params_from_file
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from packaging.version import Version
+from param import concrete_descendents
 
-from ...core import Layout, Collator, GridMatrix, config
-from ...core.options import Cycle, Palette, Options
+from ...core import Collator, GridMatrix, Layout, config
+from ...core.options import Cycle, Options, Palette
 from ...core.overlay import NdOverlay, Overlay
 from ...element import *
 from ..plot import PlotSelector
@@ -23,12 +23,10 @@ from .hex_tiles import *
 from .path import *
 from .plot import *
 from .raster import *
+from .renderer import MPLRenderer
 from .sankey import *
 from .stats import *
 from .tabular import *
-
-from .renderer import MPLRenderer
-
 
 mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
 

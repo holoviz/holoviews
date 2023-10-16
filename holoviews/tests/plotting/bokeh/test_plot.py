@@ -1,16 +1,18 @@
 import numpy as np
 import pyviz_comms as comms
-
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    HoverTool,
+    LinearColorMapper,
+    LogColorMapper,
+)
 from param import concrete_descendents
 
+from holoviews import Curve
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import Curve
-
-from bokeh.models import (
-    ColumnDataSource, CustomJS, LinearColorMapper, LogColorMapper, HoverTool
-)
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
 

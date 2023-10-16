@@ -3,13 +3,18 @@ Defines valid style options, validation and utilities
 """
 
 import numpy as np
-
 from bokeh.core.properties import (
-    Angle, Color, DashPattern, FontSize, MarkerType, Percent, Size
+    Angle,
+    Color,
+    DashPattern,
+    FontSize,
+    MarkerType,
+    Percent,
+    Size,
 )
 
 try:
-    from matplotlib import colors, cm
+    from matplotlib import cm, colors
 except ImportError:
     cm, colors = None, None
 

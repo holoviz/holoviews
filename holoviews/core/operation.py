@@ -4,13 +4,13 @@ the purposes of analysis or visualization.
 """
 import param
 
+from . import Dataset, util
 from .dimension import ViewableElement
 from .element import Element
 from .layout import Layout
 from .options import Store
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, HoloMap
-from . import util, Dataset
 
 
 class Operation(param.ParameterizedFunction):

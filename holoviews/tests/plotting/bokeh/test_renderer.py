@@ -2,22 +2,19 @@ from io import BytesIO
 from unittest import SkipTest
 
 import numpy as np
+import panel as pn
 import param
-
-from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve
-from holoviews.streams import Stream
-from holoviews.plotting import Renderer
-from holoviews.element.comparison import ComparisonTestCase
-
+from bokeh.io import curdoc
+from bokeh.themes.theme import Theme
+from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
-import panel as pn
-
-from bokeh.io import curdoc
+from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, Table
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh import BokehRenderer
-from bokeh.themes.theme import Theme
+from holoviews.streams import Stream
 
-from panel.widgets import DiscreteSlider, Player, FloatSlider
 
 class BokehRendererTest(ComparisonTestCase):
 

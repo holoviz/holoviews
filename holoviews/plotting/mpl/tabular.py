@@ -1,13 +1,11 @@
 from collections import defaultdict
 
 import param
-
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
 from .element import ElementPlot
 from .plot import mpl_rc_context
-
 
 
 class TablePlot(ElementPlot):
