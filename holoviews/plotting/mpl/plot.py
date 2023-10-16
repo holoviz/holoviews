@@ -1036,7 +1036,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
         return start, inds
 
-    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}, num=1, create=True):
+    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes=None, num=1, create=True):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -1044,6 +1044,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
+        if axes is None:
+            axes = {}
         subplots = {}
         projections = []
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)

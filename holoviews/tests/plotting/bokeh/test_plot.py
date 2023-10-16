@@ -59,7 +59,9 @@ class TestBokehPlot(ComparisonTestCase):
         mapper_type = LogColorMapper if log else LinearColorMapper
         self.assertTrue(isinstance(cmapper, mapper_type))
 
-    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters={}):
+    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters=None):
+        if formatters is None:
+            formatters = {}
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state

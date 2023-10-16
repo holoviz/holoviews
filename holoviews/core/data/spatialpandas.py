@@ -240,7 +240,9 @@ class SpatialPandasInterface(MultiInterface):
         raise NotImplementedError
 
     @classmethod
-    def sample(cls, columns, samples=[]):
+    def sample(cls, columns, samples=None):
+        if samples is None:
+            samples = []
         raise NotImplementedError
 
     @classmethod
@@ -252,7 +254,9 @@ class SpatialPandasInterface(MultiInterface):
         return (cls.length(dataset), len(dataset.dimensions()))
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         geo_dims = cls.geom_dims(dataset)
         if any(d in geo_dims for d in by):
             raise DataError("SpatialPandasInterface does not allow sorting "
@@ -683,7 +687,7 @@ def geom_to_holes(geom):
         return [[]]
 
 
-def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
+def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
     """Converts list of dictionary format geometries to spatialpandas line geometries.
 
     Args:
@@ -712,6 +716,9 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
     )
 
     from ...element import Polygons
+
+    if columns is None:
+        columns = []
     poly = any(Polygons._hole_key in d for d in data) or geom == 'Polygon'
     if poly:
         geom_type = Polygon

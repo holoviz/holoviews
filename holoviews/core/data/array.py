@@ -106,7 +106,9 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         data = dataset.data
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
@@ -210,7 +212,9 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         mask = False
         for sample in samples:

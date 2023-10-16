@@ -592,7 +592,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         return subplots, collapsed_layout
 
 
-    def initialize_plot(self, ranges=None, plots=[]):
+    def initialize_plot(self, ranges=None, plots=None):
+        if plots is None:
+            plots = []
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         passed_plots = list(plots)
         plots = [[None for c in range(self.cols)] for r in range(self.rows)]
@@ -1069,7 +1071,7 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         # The supplied (axes, view) objects as indexed by position
         super().__init__(subplots=subplots, **params)
 
-    def initialize_plot(self, ranges=None, plots=[]):
+    def initialize_plot(self, ranges=None, plots=None):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -1077,6 +1079,8 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
+        if plots is None:
+            plots = []
         if plots is None: plots = []
         adjoined_plots = []
         for pos in self.view_positions:

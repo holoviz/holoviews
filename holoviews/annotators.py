@@ -18,7 +18,7 @@ from .plotting.links import (
 from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
 
 
-def preprocess(function, current=[]):
+def preprocess(function, current=None):
     """
     Turns a param.depends watch call into a preprocessor method, i.e.
     skips all downstream events triggered by it.
@@ -27,6 +27,8 @@ def preprocess(function, current=[]):
           method which depends on a particular parameter.
           (see https://github.com/pyviz/param/issues/332)
     """
+    if current is None:
+        current = []
     def inner(*args, **kwargs):
         self = args[0]
         self.param._BATCH_WATCH = True

@@ -317,7 +317,9 @@ class PandasInterface(Interface, PandasAPI):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(dataset.data, pd.DataFrame) or
@@ -364,7 +366,9 @@ class PandasInterface(Interface, PandasAPI):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         mask = None
         for sample in samples:

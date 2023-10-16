@@ -1,3 +1,5 @@
+import pytest
+
 from holoviews.core.element import AttrTree
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -24,8 +26,9 @@ class AttrTreeTest(ComparisonTestCase):
         self.assertEqual(self.tree.C.I, 3)
 
     def test_lowercase_attribute_error(self):
-        with self.assertRaises(AttributeError):
-            self.tree.c
+        msg = r"'AttrTree' object has no attribute c\."
+        with pytest.raises(AttributeError, match=msg):
+            self.tree.c  # noqa: B018
 
     def test_number_getitem_key_error(self):
         with self.assertRaises(KeyError):

@@ -229,7 +229,9 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
@@ -338,7 +340,9 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         mask = False
         for sample in samples:
             sample_mask = True

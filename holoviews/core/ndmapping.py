@@ -406,7 +406,7 @@ class MultiDimensionalMapping(Dimensioned):
             return super().dimension_values(dimension, expanded, flat)
 
 
-    def reindex(self, kdims=[], force=False):
+    def reindex(self, kdims=None, force=False):
         """Reindexes object dropping static or supplied kdims
 
         Creates a new object with a reordered or reduced set of key
@@ -424,6 +424,8 @@ class MultiDimensionalMapping(Dimensioned):
         Returns:
             Reindexed object
         """
+        if kdims is None:
+            kdims = []
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
             kdims = [kdims]

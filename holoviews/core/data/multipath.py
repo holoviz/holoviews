@@ -300,7 +300,9 @@ class MultiInterface(Interface):
             return container_type(grouped_data)
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         raise NotImplementedError('Sampling operation on subpaths not supported')
 
     @classmethod
@@ -348,7 +350,9 @@ class MultiInterface(Interface):
         return ds.interface.dtype(ds, dimension)
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0], False).argsort()

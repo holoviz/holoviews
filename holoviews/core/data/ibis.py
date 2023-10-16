@@ -195,7 +195,9 @@ class IbisInterface(Interface):
     dimension_type = dtype
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         if ibis_version() >= Version("6.0"):
             import ibis
             order = ibis.desc if reverse else ibis.asc
@@ -426,8 +428,10 @@ class IbisInterface(Interface):
         return predicates
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
         import ibis
+        if samples is None:
+            samples = []
         dims = dataset.dimensions()
         data = dataset.data
         if all(util.isscalar(s) or len(s) == 1 for s in samples):

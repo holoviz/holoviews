@@ -101,7 +101,7 @@ class Raster(Element2D):
         else:
             return super().dimension_values(dim)
 
-    def sample(self, samples=[], bounds=None, **sample_values):
+    def sample(self, samples=None, bounds=None, **sample_values):
         """
         Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -110,6 +110,8 @@ class Raster(Element2D):
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
         """
+        if samples is None:
+            samples = []
         if isinstance(samples, tuple):
             X, Y = samples
             samples = zip(X, Y)
@@ -452,13 +454,15 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                               ydensity=self.ydensity, bounds=bounds)
 
 
-    def closest(self, coords=[], **kwargs):
+    def closest(self, coords=None, **kwargs):
         """
         Given a single coordinate or multiple coordinates as
         a tuple or list of tuples or keyword arguments matching
         the dimension closest will find the closest actual x/y
         coordinates.
         """
+        if coords is None:
+            coords = []
         if kwargs and coords:
             raise ValueError("Specify coordinate using as either a list "
                              "keyword arguments not both")

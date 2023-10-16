@@ -78,7 +78,7 @@ class Parser:
         return tokens
 
     @classmethod
-    def todict(cls, parseresult, mode='parens', ns={}):
+    def todict(cls, parseresult, mode='parens', ns=None):
         """
         Helper function to return dictionary given the parse results
         from a pyparsing.nestedExpr object (containing keywords).
@@ -86,6 +86,8 @@ class Parser:
         The ns is a dynamic namespace (typically the IPython Notebook
         namespace) used to update the class-level namespace.
         """
+        if ns is None:
+            ns = {}
         grouped, kwargs = [], {}
         tokens = cls.collect_tokens(parseresult, mode)
         # Group tokens without '=' and append to last token containing '='
@@ -299,11 +301,13 @@ class OptsSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line, ns={}):
+    def parse(cls, line, ns=None):
         """
         Parse an options specification, returning a dictionary with
         path keys and {'plot':<options>, 'style':<options>} values.
         """
+        if ns is None:
+            ns = {}
         parses  = [p for p in cls.opts_spec.scanString(line)]
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
@@ -344,11 +348,13 @@ class OptsSpec(Parser):
         }
 
     @classmethod
-    def parse_options(cls, line, ns={}):
+    def parse_options(cls, line, ns=None):
         """
         Similar to parse but returns a list of Options objects instead
         of the dictionary format.
         """
+        if ns is None:
+            ns = {}
         parsed = cls.parse(line, ns=ns)
         options_list = []
         for spec in sorted(parsed.keys()):
@@ -400,10 +406,12 @@ class CompositorSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line, ns={}):
+    def parse(cls, line, ns=None):
         """
         Parse compositor specifications, returning a list Compositors
         """
+        if ns is None:
+            ns = {}
         definitions = []
         parses  = [p for p in cls.compositor_spec.scanString(line)]
         if len(parses) != 1:
