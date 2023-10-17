@@ -2,12 +2,11 @@
 
 import json
 import os
-import sys
 import shutil
-
-from setuptools import setup, find_packages
+import sys
 
 import pyct.build
+from setuptools import find_packages, setup
 
 setup_args = {}
 install_requires = [
@@ -208,7 +207,7 @@ if __name__ == "__main__":
 
         extras = "\n".join("holoviews[%s]" % e for e in setup_args["extras_require"])
 
-        print("%s\n%s\n%s" % (bars, header, bars))
+        print(f"{bars}\n{header}\n{bars}")
 
         print("\nHoloViews supports the following installation types:\n")
         print("%s\n" % extras)
