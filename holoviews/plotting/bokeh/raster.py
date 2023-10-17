@@ -11,7 +11,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import colormesh
+from .util import bokeh33, colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -287,11 +287,16 @@ class ImageStackPlot(RasterPlot):
         return (data, mapping, style)
 
     def _hover_opts(self, element):
-        xdim, ydim = element.kdims
-        # TODO: Bokeh 3.3 not yet released; it has support for multi hover
+        # Bokeh 3.3 has simple support for multi hover in a tuple.
         # https://github.com/bokeh/bokeh/pull/13193
         # https://github.com/bokeh/bokeh/pull/13366
-        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
+        if bokeh33:
+            xdim, ydim = element.kdims
+            vdim = ", ".join([d.pprint_label for d in element.vdims])
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}
+        else:
+            xdim, ydim = element.kdims
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
 
 
 class HSVPlot(RGBPlot):
