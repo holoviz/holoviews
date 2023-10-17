@@ -1790,8 +1790,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
         clashes = sorted(clashes)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
-            raise Exception('The supplied stream objects {} and {} '
-                            'clash on the following parameters: {!r}'.format(clashing, clash_streams[-1], clashes))
+            raise Exception(f'The supplied stream objects {clashing} and {clash_streams[-1]} '
+                            f'clash on the following parameters: {clashes!r}')
     return [name for group in param_groups.values() for name in group
             if name not in exclude]
 

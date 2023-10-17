@@ -161,8 +161,8 @@ class GridInterface(DictInterface):
             shapes = {arr.shape for arr in arrays}
             if len(shapes) > 1:
                 raise DataError('When concatenating gridded data the shape '
-                                'of arrays must match. {} found that arrays '
-                                'along the {} dimension do not match.'.format(cls.__name__, vdim.name))
+                                f'of arrays must match. {cls.__name__} found that arrays '
+                                f'along the {vdim.name} dimension do not match.')
             stack = dask_array_module().stack if any(is_dask(arr) for arr in arrays) else np.stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
@@ -570,8 +570,8 @@ class GridInterface(DictInterface):
                         raise IndexError(f"Index {ind} less than lower bound "
                                          f"of {emin} for {dim} dimension.")
                     elif ind >= emax:
-                        raise IndexError("Index {} more than or equal to upper bound "
-                                         "of {} for {} dimension.".format(ind, emax, dim))
+                        raise IndexError(f"Index {ind} more than or equal to upper bound "
+                                         f"of {emax} for {dim} dimension.")
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
                     mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True

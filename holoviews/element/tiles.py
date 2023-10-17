@@ -39,8 +39,8 @@ class Tiles(Element2D):
         if isinstance(data, MercatorTileSource):
             data = data.url
         elif data is not None and not isinstance(data, (str, dict)):
-            raise TypeError('{} data should be a tile service URL or '
-                            'xyzservices.TileProvider not a {} type.'.format(type(self).__name__, type(data).__name__) )
+            raise TypeError(f'{type(self).__name__} data should be a tile service URL or '
+                            f'xyzservices.TileProvider not a {type(data).__name__} type.' )
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def range(self, dim, data_range=True, dimension_range=True):
