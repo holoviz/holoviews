@@ -404,9 +404,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             return
 
         if matches:
-            raise ValueError('Unexpected option {!r} for {} type '
+            raise ValueError(f'Unexpected option {opt!r} for {objtype} type '
                              'across all extensions. Similar options '
-                             'for current extension ({!r}) are: {}.'.format(opt, objtype, current_backend, matches))
+                             f'for current extension ({current_backend!r}) are: {matches}.')
         else:
             raise ValueError(f'Unexpected option {opt!r} for {objtype} type '
                              'across all extensions. No similar options found.')

@@ -729,13 +729,13 @@ class dim:
                            "present on the supplied object.")
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
-                raise ValueError("The expression {!r} assumes a {}-like "
-                                 "API but the dataset contains {} data "
-                                 "and cannot be coerced.".format(self, self.namespace, dataset.interface.datatype))
+                raise ValueError(f"The expression {self!r} assumes a {self.namespace}-like "
+                                 f"API but the dataset contains {dataset.interface.datatype} data "
+                                 "and cannot be coerced.")
             else:
-                raise ValueError("The expression {!r} assumes a {}-like "
-                                 "API but the dataset contains {} data "
-                                 "and coercion is disabled.".format(self, self.namespace, dataset.interface.datatype))
+                raise ValueError(f"The expression {self!r} assumes a {self.namespace}-like "
+                                 f"API but the dataset contains {dataset.interface.datatype} data "
+                                 "and coercion is disabled.")
 
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
