@@ -321,3 +321,43 @@ class TestRasterPlot(TestBokehPlot):
         assert source.data["y"][0] == -0.5
         assert source.data["dw"][0] == 3
         assert source.data["dh"][0] == 3
+
+    def test_image_stack_array(self):
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        data = np.dstack((a, b, c))
+
+        img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][0], a.T)
+        np.testing.assert_equal(source.data["image"][0][1], b.T)
+        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        assert source.data["x"][0] == -0.5
+        assert source.data["y"][0] == -0.5
+        assert source.data["dw"][0] == 3
+        assert source.data["dh"][0] == 3
+        assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_tuple_single_3darray(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        data = (x, y, np.dstack((a, b, c)))
+
+        img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][0], a.T)
+        np.testing.assert_equal(source.data["image"][0][1], b.T)
+        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        assert source.data["x"][0] == -0.5
+        assert source.data["y"][0] == 4.5
+        assert source.data["dw"][0] == 3
+        assert source.data["dh"][0] == 3
+        assert isinstance(plot, ImageStackPlot)
