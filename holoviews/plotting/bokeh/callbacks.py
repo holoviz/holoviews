@@ -201,11 +201,13 @@ class Callback:
             ids = list(handle_ids.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
+            print(processed_msg)
             if not processed_msg:
                 continue
             stream.update(**processed_msg)
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
                                 for h, hid in handle_ids.items()}
+            print(stream._metadata)
             streams.append(stream)
 
         try:
@@ -255,7 +257,7 @@ class Callback:
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
-            for h in self.models:
+            for h in self.models+self.extra_handles:
                 if h in handles:
                     handle_id = handles[h].ref['id']
                     stream_handle_ids[stream][h] = handle_id
@@ -687,8 +689,6 @@ class RangeXCallback(RangeXYCallback):
 
     models = ['plot']
 
-    extra_handles = ['x_range']
-
     attributes = {
         'x0': 'cb_obj.x0',
         'x1': 'cb_obj.x1',
@@ -703,8 +703,6 @@ class RangeYCallback(RangeXYCallback):
     on_events = ['rangesupdate']
 
     models = ['plot']
-
-    extra_handles = ['y_range']
 
     attributes = {
         'y0': 'cb_obj.y0',
