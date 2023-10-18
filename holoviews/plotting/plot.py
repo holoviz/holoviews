@@ -214,15 +214,17 @@ class Plot(param.Parameterized):
         """
         if self.renderer.mode == 'server' and not state._unblocked(self.document):
             # If we do not have the Document lock, schedule refresh as callback
-            self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
+            self._triggering += [(s, dict(s._metadata)) for p in self.traverse(lambda x: x, [Plot])
                                  for s in getattr(p, 'streams', []) if s._triggering]
+
             if self.document and self.document.session_context:
                 self.document.add_next_tick_callback(self.refresh)
                 return
 
         # Ensure that server based tick callbacks maintain stream triggering state
-        for s in self._triggering:
+        for s, metadata in self._triggering:
             s._triggering = True
+            s._metadata.update(metadata)
         try:
             traverse_setter(self, '_force', True)
             key = self.current_key if self.current_key else self.keys[0]
@@ -241,8 +243,9 @@ class Plot(param.Parameterized):
             raise e
         finally:
             # Reset triggering state
-            for s in self._triggering:
+            for s, _ in self._triggering:
                 s._triggering = False
+                s._metadata.clear()
             self._triggering = []
 
 

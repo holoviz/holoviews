@@ -238,13 +238,10 @@ class Callback:
         self.plot_handles = handles
 
         requested = {}
-        for h in self.models:
+        for h in self.models+self.extra_handles:
             if h in self.plot_handles:
                 requested[h] = handles[h]
         self.handle_ids.update(self._get_stream_handle_ids(requested))
-        for h in self.extra_handles:
-            if h in self.plot_handles:
-                requested[h] = handles[h]
         return requested
 
     def _get_stream_handle_ids(self, handles):
