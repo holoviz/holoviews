@@ -49,13 +49,16 @@ class ResampleOperation1D(LinkableOperation):
     height = param.Integer(default=400, doc="""
        The height of the output image in pixels.""")
 
-    pixel_ratio = param.Number(default=1, bounds=(0,None),
+    pixel_ratio = param.Number(default=None, bounds=(0,None),
                                inclusive_bounds=(False,False), doc="""
        Pixel ratio applied to the height and width. Useful for higher
        resolution screens where the PlotSize stream reports 'nominal'
        dimensions in pixels that do not match the physical pixels. For
        instance, setting pixel_ratio=2 can give better results on Retina
-       displays. Also useful for using lower resolution for speed.""")
+       displays. Also useful for using lower resolution for speed.
+       If not set explicitly, the zoom level of the browsers will be used,
+       if available.""")
+
 
 class ResampleOperation2D(ResampleOperation1D):
     """
@@ -198,9 +201,20 @@ class ResampleOperation2D(ResampleOperation1D):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        width = int(width * self.p.pixel_ratio)
-        height = int(height * self.p.pixel_ratio)
+        pixel_ratio = self._get_pixel_ratio()
+        width = int(width * pixel_ratio)
+        height = int(height * pixel_ratio)
         return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
+
+    def _get_pixel_ratio(self):
+        if self.p.pixel_ratio is None:
+            from panel import state
+            if state.browser_info and isinstance(state.browser_info.device_pixel_ratio, (int, float)):
+                return state.browser_info.device_pixel_ratio
+            else:
+                return 1
+        else:
+            return self.p.pixel_ratio
 
     def _dt_transform(self, x_range, y_range, xs, ys, xtype, ytype):
         (xstart, xend), (ystart, yend) = x_range, y_range
