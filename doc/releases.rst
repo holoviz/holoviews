@@ -25,7 +25,8 @@ and @Hoxbro.
 New features:
 
 -  Implementation of ``ImageStack``
-   (`#5751 <https://github.com/holoviz/holoviews/pull/5751>`__)
+   (`#5751 <https://github.com/holoviz/holoviews/pull/5751>`__,
+   `#5945 <https://github.com/holoviz/holoviews/pull/5945>`__)
 -  Adding vectorized ``VLines``, ``HLines``, ``VSpans``, and ``HSpans``
    elements (`#5845 <https://github.com/holoviz/holoviews/pull/5845>`__,
    `#5911 <https://github.com/holoviz/holoviews/pull/5911>`__,
@@ -35,15 +36,15 @@ New features:
 
 Enhancements:
 
--  Cycle through \`text_color`\` when overlaying Labels
+-  Cycle through ``text_color`` when overlaying Labels
    (`#5888 <https://github.com/holoviz/holoviews/pull/5888>`__)
--  Drop requirements for \`OrderedDict`\`
+-  Drop requirements for ``OrderedDict``
    (`#5867 <https://github.com/holoviz/holoviews/pull/5867>`__,
    `#5890 <https://github.com/holoviz/holoviews/pull/5890>`__,
    `#5925 <https://github.com/holoviz/holoviews/pull/5925>`__)
 -  Allow to link to an ``Overlay``
    (`#5881 <https://github.com/holoviz/holoviews/pull/5881>`__)
--  Use ``contourpy`` for contour calculations
+-  Use contourpy for contour calculations
    (`#5910 <https://github.com/holoviz/holoviews/pull/5910>`__)
 
 Bug fixes:
@@ -52,7 +53,7 @@ Bug fixes:
    (`#5864 <https://github.com/holoviz/holoviews/pull/5864>`__)
 -  Ensure the ``PlotSize`` stream works with undefined width/height
    (`#5868 <https://github.com/holoviz/holoviews/pull/5868>`__)
--  Fix test which only has ``python3`` command
+-  Fix test when only ``python3`` command is available
    (`#5874 <https://github.com/holoviz/holoviews/pull/5874>`__)
 -  Try and except ``get_extents`` without the ``dimension`` argument and
    add kwargs to all ``get_extents``
@@ -68,8 +69,8 @@ Bug fixes:
 
 Compatibility:
 
--  Param 2.0
-   support(`#5865 <https://github.com/holoviz/holoviews/pull/5865>`__,
+-  Param 2.0 support
+   (`#5865 <https://github.com/holoviz/holoviews/pull/5865>`__,
    `#5897 <https://github.com/holoviz/holoviews/pull/5897>`__,
    `#5906 <https://github.com/holoviz/holoviews/pull/5906>`__,
    `#5918 <https://github.com/holoviz/holoviews/pull/5918>`__)
@@ -79,9 +80,9 @@ Compatibility:
    `#5880 <https://github.com/holoviz/holoviews/pull/5880>`__)
 -  Numpy 1.25 support
    (`#5870 <https://github.com/holoviz/holoviews/pull/5870>`__)
--  Replace np.NaN with np.nan for Numpy 2.0
+-  Replace ``np.NaN`` with ``np.nan`` for Numpy 2.0
    (`#5938 <https://github.com/holoviz/holoviews/pull/5938>`__)
--  Bokeh 3.3
+-  Bokeh 3.3 support
    (`#5873 <https://github.com/holoviz/holoviews/pull/5873>`__,
    `#5923 <https://github.com/holoviz/holoviews/pull/5923>`__,
    `#5935 <https://github.com/holoviz/holoviews/pull/5935>`__)
@@ -99,7 +100,7 @@ Compatibility:
 
 Documentation:
 
--  Add *Linking Bokeh plots* guide to the toc
+-  Add *Linking Bokeh plots* guide to the table of contents
    (`#5900 <https://github.com/holoviz/holoviews/pull/5900>`__)
 
 Maintenance:
