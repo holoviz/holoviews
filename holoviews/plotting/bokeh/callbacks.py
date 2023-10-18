@@ -238,13 +238,10 @@ class Callback:
         self.plot_handles = handles
 
         requested = {}
-        for h in self.models:
+        for h in self.models+self.extra_handles:
             if h in self.plot_handles:
                 requested[h] = handles[h]
         self.handle_ids.update(self._get_stream_handle_ids(requested))
-        for h in self.extra_handles:
-            if h in self.plot_handles:
-                requested[h] = handles[h]
         return requested
 
     def _get_stream_handle_ids(self, handles):
@@ -255,7 +252,7 @@ class Callback:
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
-            for h in self.models:
+            for h in self.models+self.extra_handles:
                 if h in handles:
                     handle_id = handles[h].ref['id']
                     stream_handle_ids[stream][h] = handle_id
@@ -687,8 +684,6 @@ class RangeXCallback(RangeXYCallback):
 
     models = ['plot']
 
-    extra_handles = ['x_range']
-
     attributes = {
         'x0': 'cb_obj.x0',
         'x1': 'cb_obj.x1',
@@ -703,8 +698,6 @@ class RangeYCallback(RangeXYCallback):
     on_events = ['rangesupdate']
 
     models = ['plot']
-
-    extra_handles = ['y_range']
 
     attributes = {
         'y0': 'cb_obj.y0',
