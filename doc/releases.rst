@@ -46,6 +46,9 @@ Enhancements:
    (`#5881 <https://github.com/holoviz/holoviews/pull/5881>`__)
 -  Use contourpy for contour calculations
    (`#5910 <https://github.com/holoviz/holoviews/pull/5910>`__)
+-  Use browser information to set ``pixel_density`` in
+   ``ResampleOperation2D``
+   (`#5947 <https://github.com/holoviz/holoviews/pull/5947>`__)
 
 Bug fixes:
 
