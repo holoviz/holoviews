@@ -99,7 +99,6 @@ unfixable = [
 
 [tool.ruff.isort]
 known-first-party = ["holoviews"]
-force-wrap-aliases = true
 combine-as-imports = true
 
 [tool.codespell]

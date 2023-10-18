@@ -177,14 +177,17 @@ class notebook_extension(extension):
         resources = list(resources)
         if len(resources) == 0: return
 
-        from panel import config
+        from panel import config, extension as panel_extension
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
-        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
+        same_cell_execution = published = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
         Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
+
+        if not published and hasattr(panel_extension, "_display_globals"):
+            panel_extension._display_globals()
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
