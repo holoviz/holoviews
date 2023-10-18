@@ -49,6 +49,8 @@ Enhancements:
 -  Use browser information to set ``pixel_density`` in
    ``ResampleOperation2D``
    (`#5947 <https://github.com/holoviz/holoviews/pull/5947>`__)
+-  Avoid bounce back of events for ``Range{X,Y,XY}`` streams
+   (`#5946 <https://github.com/holoviz/holoviews/pull/5946>`__)
 
 Bug fixes:
 
