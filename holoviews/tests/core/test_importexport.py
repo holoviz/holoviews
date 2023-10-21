@@ -8,65 +8,60 @@ import numpy as np
 
 from holoviews import Image, Layout
 from holoviews.core.io import Deserializer, Pickler, Serializer, Unpickler
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element.comparison import ComparisonTestCase, assert_element_equal
 
 
-class TestSerialization(ComparisonTestCase):
+class TestSerialization:
     """
     Test the basic serializer and deserializer (i.e. using pickle),
     including metadata access.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.image1 = Image(np.array([[1,2],[4,5]]))
         self.image2 = Image(np.array([[5,4],[3,2]]))
 
-    def tearDown(self):
-        for f in os.listdir('.'):
-            if f.endswith('.pkl'):
-                os.remove(f)
-
-    def test_serializer_save(self):
-        Serializer.save(self.image1, 'test_serializer_save.pkl',
+    def test_serializer_save(self, tmp_path):
+        Serializer.save(self.image1, tmp_path / 'test_serializer_save.pkl',
                         info={'info':'example'}, key={1:2})
 
-    def test_serializer_save_no_file_extension(self):
-        Serializer.save(self.image1, 'test_serializer_save_no_ext',
+    def test_serializer_save_no_file_extension(self, tmp_path):
+        Serializer.save(self.image1, tmp_path / 'test_serializer_save_no_ext',
                         info={'info':'example'}, key={1:2})
-        if 'test_serializer_save_no_ext.pkl' not in os.listdir('.'):
+        if tmp_path / 'test_serializer_save_no_ext.pkl' not in tmp_path.iterdir():
             raise AssertionError('File test_serializer_save_no_ext.pkl not found')
 
-    def test_serializer_save_and_load_data_1(self):
-        Serializer.save(self.image1, 'test_serializer_save_and_load_data_1.pkl')
-        loaded = Deserializer.load('test_serializer_save_and_load_data_1.pkl')
-        self.assertEqual(loaded, self.image1)
+    def test_serializer_save_and_load_data_1(self, tmp_path):
+        Serializer.save(self.image1, tmp_path / 'test_serializer_save_and_load_data_1.pkl')
+        loaded = Deserializer.load(tmp_path / 'test_serializer_save_and_load_data_1.pkl')
+        assert_element_equal(loaded, self.image1)
 
-    def test_serializer_save_and_load_data_2(self):
-        Serializer.save(self.image2, 'test_serializer_save_and_load_data_2.pkl')
-        loaded = Deserializer.load('test_serializer_save_and_load_data_2.pkl')
-        self.assertEqual(loaded, self.image2)
+    def test_serializer_save_and_load_data_2(self, tmp_path):
+        Serializer.save(self.image2, tmp_path / 'test_serializer_save_and_load_data_2.pkl')
+        loaded = Deserializer.load(tmp_path / 'test_serializer_save_and_load_data_2.pkl')
+        assert_element_equal(loaded, self.image2)
 
-    def test_serializer_save_and_load_key(self):
+    def test_serializer_save_and_load_key(self, tmp_path):
         input_key = {'test_key':'key_val'}
-        Serializer.save(self.image1, 'test_serializer_save_and_load_data.pkl', key=input_key)
-        key = Deserializer.key('test_serializer_save_and_load_data.pkl')
-        self.assertEqual(key, input_key)
+        Serializer.save(self.image1, tmp_path / 'test_serializer_save_and_load_data.pkl', key=input_key)
+        key = Deserializer.key(tmp_path / 'test_serializer_save_and_load_data.pkl')
+        assert key == input_key
 
-    def test_serializer_save_and_load_info(self):
+    def test_serializer_save_and_load_info(self, tmp_path):
         input_info = {'info':'example'}
-        Serializer.save(self.image1, 'test_serializer_save_and_load_data.pkl', info=input_info)
-        info = Deserializer.info('test_serializer_save_and_load_data.pkl')
-        self.assertEqual(info['info'], input_info['info'])
+        Serializer.save(self.image1, tmp_path / 'test_serializer_save_and_load_data.pkl', info=input_info)
+        info = Deserializer.info(tmp_path / 'test_serializer_save_and_load_data.pkl')
+        assert info['info'] == input_info['info']
 
-    def test_serialize_deserialize_1(self):
+    def test_serialize_deserialize_1(self, tmp_path):
         data,_ = Serializer(self.image1)
         obj =   Deserializer(data)
-        self.assertEqual(obj, self.image1)
+        assert_element_equal(obj, self.image1)
 
-    def test_serialize_deserialize_2(self):
+    def test_serialize_deserialize_2(self, tmp_path):
         data,_ = Serializer(self.image2)
-        obj =   Deserializer(data)
-        self.assertEqual(obj, self.image2)
+        obj =  Deserializer(data)
+        assert_element_equal(obj, self.image2)
 
 
 

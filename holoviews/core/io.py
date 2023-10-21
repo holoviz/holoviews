@@ -24,6 +24,7 @@ import zipfile
 from collections import defaultdict
 from hashlib import sha256
 from io import BytesIO
+from pathlib import Path
 
 import param
 from param.parameterized import bothmethod
@@ -264,6 +265,9 @@ class Serializer(Exporter):
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         metadata, _ = self_or_cls({'info':info, 'key':key}, **kwargs)
+        if isinstance(filename, Path):
+            filename = str(filename)
+
         filename = self_or_cls._filename(filename)
         with open(filename, 'ab') as f:
             f.write(metadata)
