@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import holoviews as hv
 from holoviews.core.dimension import Dimension
 from holoviews.core.options import Compositor, Store
 from holoviews.element import (
@@ -112,15 +111,11 @@ class TestStatisticalElement:
         assert dist.kdims == points.kdims
 
 
+@pytest.mark.usefixtures("mpl_backend")
 class TestStatisticalCompositor:
 
     def setup_method(self):
-        try:
-            import scipy # noqa F401
-        except ImportError:
-            pytest.skip('SciPy not available')
-        self.renderer = hv.renderer('matplotlib')
-        np.random.seed(42)
+        pytest.importorskip('scipy')
 
     def test_distribution_composite(self):
         dist = Distribution(np.array([0, 1, 2]))
