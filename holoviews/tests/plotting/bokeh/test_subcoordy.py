@@ -76,6 +76,20 @@ class TestSubcoordinateY(TestBokehPlot):
         with_span = overlay * VSpan(1, 2)
         bokeh_renderer.get_plot(with_span)
 
+    def test_underlaid_ytick_alignment(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = VSpan(1, 2) * overlay
+        plot = bokeh_renderer.get_plot(with_span)
+        # the yticks are aligned with their subcoordinate_y axis
+        assert plot.state.yaxis.ticker.ticks == [0, 1]
+
+    def test_overlaid_ytick_alignment(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = overlay * VSpan(1, 2)
+        plot = bokeh_renderer.get_plot(with_span)
+        # the yticks are aligned with their subcoordinate_y axis
+        assert plot.state.yaxis.ticker.ticks == [0, 1]
+
     def test_custom_ylabel(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         overlay.opts(ylabel='Y label')
