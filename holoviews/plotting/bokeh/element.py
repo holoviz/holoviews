@@ -488,7 +488,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     # This sum() is equal to n+1, n being the number of elements contained
                     # in the overlay with subcoordinate_y=True, as the traversal goes through
                     # the root overlay that has subcoordinate_y=True too since it's propagated.
-                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
+                    subcoords = self.traverse(lambda p: p.subcoordinate_y)
+                    start = next(i for i, s in enumerate(subcoords[1:]) if s)
+                    end = start + sum(s for s in subcoords[(1 + start):]) - 1
+                    v0, v1 = start-offset, end+offset
                 else:
                     v0, v1 = 0, 1
             else:
@@ -575,8 +578,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axpos0, axpos1 = 'left', 'right'
 
         ax_specs, yaxes, dimensions = {}, {}, {}
-        subcoordinate_axes = 0
-        for el, sp in zip(element, self.subplots.values()):
+        for i, (el, sp) in enumerate(zip(element, self.subplots.values())):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
                 ax_dims[::-1]
@@ -588,7 +590,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if opts.get('subcoordinate_y') is None:
                     continue
                 ax_name = el.label
-                subcoordinate_axes += 1
+                subcoordinate_axes = i
             else:
                 ax_name = yd.name
             dimensions[ax_name] = yd
@@ -605,7 +607,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     'axis_label_text_font_size': sp._fontsize('ylabel').get('fontsize'),
                     'major_label_text_font_size': sp._fontsize('yticks').get('fontsize')
                 },
-                'subcoordinate_y': subcoordinate_axes-1 if self._subcoord_overlaid else None
+                'subcoordinate_y': subcoordinate_axes if self._subcoord_overlaid else None
             }
 
         for ydim, info in yaxes.items():
