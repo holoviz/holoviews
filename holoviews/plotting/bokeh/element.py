@@ -605,7 +605,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     'axis_label_text_font_size': sp._fontsize('ylabel').get('fontsize'),
                     'major_label_text_font_size': sp._fontsize('yticks').get('fontsize')
                 },
-                'subcoordinate_y': subcoordinate_axes-1 if self._subcoord_overlaid else None
+                'subcoordinate_y': (subcoordinate_axes - 1) if self._subcoord_overlaid else None
             }
 
         for ydim, info in yaxes.items():
@@ -893,10 +893,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
             elif self._subcoord_overlaid and axis == 'y':
                 ticks, labels = [], []
-                for i, (el, sp) in enumerate(zip(self.current_frame, self.subplots.values())):
+                idx = 0
+                for el, sp in zip(self.current_frame, self.subplots.values()):
                     if not sp.subcoordinate_y:
                         continue
-                    ycenter = i if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
+                    ycenter = idx if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
+                    idx += 1
                     ticks.append(ycenter)
                     labels.append(el.label)
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
