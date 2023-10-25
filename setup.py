@@ -103,18 +103,11 @@ extras_require["examples"] = extras_require["recommended"] + [
 
 extras_require["examples_tests"] = extras_require["examples"] + extras_require['tests_nb']
 
-# Extra third-party libraries
-extras_require["extras"] = extras_require["examples"] + [
-    "pscript ==0.7.1",
-]
-
 # Not used in tox.ini or elsewhere, kept for backwards compatibility.
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
     'nbsite >=0.8.2,<0.9.0',
-    'mpl_sample_data >=3.1.3',
-    'pscript',
     'graphviz',
     'bokeh >=3.1',
     'pooch',
