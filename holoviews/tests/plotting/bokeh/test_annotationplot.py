@@ -262,9 +262,8 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
-        assert list(source.data) == ["y", "extra"]
+        assert list(source.data) == ["y"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
     def test_hlines_xlabel_ylabel(self):
         hlines = HLines(
@@ -306,9 +305,8 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data) == ["y", "extra"]
+        assert list(source.data) == ["y"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
     def test_hlines_nondefault_kdim(self):
         hlines = HLines(
@@ -343,9 +341,8 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data) == ["x", "extra"]
+        assert list(source.data) == ["x"]
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
     def test_vlines_plot_invert_axes(self):
         vlines = VLines(
@@ -362,9 +359,8 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 5.5
 
         source = plot.handles["source"]
-        assert list(source.data) == ["x", "extra"]
+        assert list(source.data) == ["x"]
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3, -44]).all()
 
     def test_vlines_nondefault_kdim(self):
         vlines = VLines(
@@ -450,10 +446,9 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 6.5
 
         source = plot.handles["source"]
-        assert list(source.data) == ["y0", "y1", "extra"]
+        assert list(source.data) == ["y0", "y1"]
         assert (source.data["y0"] == [0, 3, 5.5]).all()
         assert (source.data["y1"] == [1, 4, 6.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3]).all()
 
     def test_hspans_plot_xlabel_ylabel(self):
         hspans = HSpans(
@@ -479,10 +474,9 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data) == ["y0", "y1", "extra"]
+        assert list(source.data) == ["y0", "y1"]
         assert (source.data["y0"] == [0, 3, 5.5]).all()
         assert (source.data["y1"] == [1, 4, 6.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3]).all()
 
     def test_hspans_nondefault_kdims(self):
         hspans = HSpans(
@@ -518,10 +512,9 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 1
 
         source = plot.handles["source"]
-        assert list(source.data) == ["x0", "x1", "extra"]
+        assert list(source.data) == ["x0", "x1"]
         assert (source.data["x0"] == [0, 3, 5.5]).all()
         assert (source.data["x1"] == [1, 4, 6.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3]).all()
 
     def test_vspans_plot_invert_axes(self):
         vspans = VSpans(
@@ -538,10 +531,9 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["y_range"].end == 6.5
 
         source = plot.handles["source"]
-        assert list(source.data) == ["x0", "x1", "extra"]
+        assert list(source.data) == ["x0", "x1"]
         assert (source.data["x0"] == [0, 3, 5.5]).all()
         assert (source.data["x1"] == [1, 4, 6.5]).all()
-        assert (source.data["extra"] == [-1, -2, -3]).all()
 
     def test_vspans_nondefault_kdims(self):
         vspans = VSpans(
