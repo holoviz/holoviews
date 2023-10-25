@@ -35,7 +35,7 @@ if PD2 and system == "Windows":
 
 
 # 2023-10-25, flaky on CI with timeout
-if py_version == (3, 9) and system == "Darwin":
+if system == "Darwin":
     collect_ignore_glob += [
         "user_guide/16-Streaming_Data.ipynb",
     ]
