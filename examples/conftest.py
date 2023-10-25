@@ -5,6 +5,8 @@ import bokeh
 import pandas as pd
 from packaging.version import Version
 
+system = platform.system()
+py_version = sys.version_info[:2]
 PD2 = Version(pd.__version__) >= Version("2.0")
 
 # Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
@@ -24,7 +26,7 @@ collect_ignore_glob = [
 
 # 2023-07-14 with following error:
 # ValueError: Buffer dtype mismatch, expected 'const int64_t' but got 'int'
-if PD2 and platform.system() == "Windows":
+if PD2 and system == "Windows":
     collect_ignore_glob += [
         "gallery/demos/bokeh/point_draw_triangulate.ipynb",
         "reference/elements/*/TriMesh.ipynb",
@@ -32,12 +34,10 @@ if PD2 and platform.system() == "Windows":
     ]
 
 
-# 2023-07-14 with following error:
-# 'from matplotlib.cbook import get_sample_data' cannot find file
-if sys.version_info[:2] == (3, 8) and platform.system() == "Linux":
+# 2023-10-25, flaky on CI with timeout
+if system == "Darwin":
     collect_ignore_glob += [
-        "gallery/demos/*/bachelors_degrees_by_gender.ipynb",
-        "gallery/demos/*/topographic_hillshading.ipynb",
+        "user_guide/16-Streaming_Data.ipynb",
     ]
 
 
