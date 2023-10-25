@@ -43,7 +43,8 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         return super()._init_glyph(plot, mapping, properties)
 
     def get_data(self, element, ranges, style):
-        data = {str(k): v for k, v in element.dataset.data.items()}
+        data = element.columns(element.kdims)
+        self._get_hover_data(data, element)
         default = self._element_default[self.invert_axes].kdims
         mapping = {str(d): str(k) for d, k in zip(default, element.kdims)}
         return data, mapping, style
