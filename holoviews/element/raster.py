@@ -533,12 +533,12 @@ class ImageStack(Image):
         if isinstance(data, np.ndarray) and data.ndim == 3:
             x = np.arange(data.shape[0])
             y = np.arange(data.shape[1])
-            data = (x, y, *(data[:, :, n] for n in range(data.shape[2])))
+            data = (x, y, *(data[:, :, n].T for n in range(data.shape[2])))
         elif (
             isinstance(data, tuple) and len(data) == 3
             and isinstance(data[2], np.ndarray) and data[2].ndim == 3
         ):
-            data = (data[0], data[1], *(data[2][:, :,n] for n in range(data[2].shape[2])))
+            data = (data[0], data[1], *(data[2][:, :,n].T for n in range(data[2].shape[2])))
         if vdims is None:
             if isinstance(data, tuple):
                 vdims = [Dimension(f"level_{i}") for i in range(len(data[2:]))]

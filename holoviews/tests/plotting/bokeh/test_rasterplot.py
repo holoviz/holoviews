@@ -332,9 +332,9 @@ class TestRasterPlot(TestBokehPlot):
         img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], a.T)
-        np.testing.assert_equal(source.data["image"][0][1], b.T)
-        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0].T, a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1].T, b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2].T, c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == -0.5
         assert source.data["dw"][0] == 3
@@ -353,9 +353,9 @@ class TestRasterPlot(TestBokehPlot):
         img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], a.T)
-        np.testing.assert_equal(source.data["image"][0][1], b.T)
-        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0].T, a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1].T, b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2].T, c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
         assert source.data["dw"][0] == 3
