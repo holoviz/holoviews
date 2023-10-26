@@ -515,7 +515,7 @@ class ImageStack(Image):
 
     Type of data inputs:
     - 3D ndarray (x,y,level)
-    - A list of 2D ndarrays
+    - A list of 2D ndarrays with identical shape
     - A dict of 2D ndarrays (key=level: value=2D ndarray)
     - xarray with all the whistles
     """
@@ -530,21 +530,35 @@ class ImageStack(Image):
     _vdim_reductions = {1: Image}
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, np.ndarray) and data.ndim == 3:
+        if isinstance(data, list):
+            x = np.arange(data[0].shape[0])
+            y = np.arange(data[0].shape[1])
+            data_tuple = (x, y, *(d.T for d in data))
+        elif isinstance(data, dict):
+            _kdims = kdims or self.kdims
+            first = next(v for k, v in data.items() if k not in _kdims)
+            # TODO: Make it work with dict which hv.Dimension key
+            x = data.get(str(_kdims[0]), np.arange(first.shape[0]))
+            y = data.get(str(_kdims[1]), np.arange(first.shape[1]))
+            iter_data = (v for k, v in data.items() if k not in _kdims)
+            data_tuple = (x, y, *(d.T for d in iter_data))
+        elif isinstance(data, np.ndarray) and data.ndim == 3:
             x = np.arange(data.shape[0])
             y = np.arange(data.shape[1])
-            data = (x, y, *(data[:, :, n].T for n in range(data.shape[2])))
+            data_tuple = (x, y, *(data[:, :, n].T for n in range(data.shape[2])))
         elif (
             isinstance(data, tuple) and len(data) == 3
             and isinstance(data[2], np.ndarray) and data[2].ndim == 3
         ):
-            data = (data[0], data[1], *(data[2][:, :,n].T for n in range(data[2].shape[2])))
+            data_tuple = (data[0], data[1], *(data[2][:, :,n].T for n in range(data[2].shape[2])))
+        else:
+            data_tuple = data
         if vdims is None:
-            if isinstance(data, tuple):
-                vdims = [Dimension(f"level_{i}") for i in range(len(data[2:]))]
+            if isinstance(data_tuple, tuple):
+                vdims = [Dimension(f"level_{i}") for i in range(len(data_tuple[2:]))]
             elif isinstance(data, dict):
-                vdims = [Dimension(key) for key in data.keys() if key not in self.kdims]
-        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+                vdims = [Dimension(key) for key in data.keys() if key not in kdims]
+        super().__init__(data_tuple, kdims=kdims, vdims=vdims, **params)
 
 
 class RGB(Image):
