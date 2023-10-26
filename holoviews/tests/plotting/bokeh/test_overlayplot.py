@@ -3,7 +3,6 @@ import panel as pn
 from bokeh.models import FactorRange, FixedTicker, HoverTool, Range1d, Span
 
 from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
-from holoviews.core.options import Cycle
 from holoviews.element import (
     Bars,
     Box,
