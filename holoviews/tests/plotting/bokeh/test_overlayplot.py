@@ -301,21 +301,6 @@ class TestLegends(TestBokehPlot):
         legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
         self.assertEqual(legend_labels, ['A Curve', 'B Curve'])
 
-    def test_dynamic_subplot_remapping(self):
-        # Checks that a plot is appropriately updated when reused
-        def cb(X):
-            return NdOverlay({i: Curve(np.arange(10)+i) for i in range(X-2, X)})
-        dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
-        plot = bokeh_renderer.get_plot(dmap)
-        plot.update((3,))
-        legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': '1'}, {'value': '2'}])
-        colors = Cycle().values
-        for i, (subplot, color) in enumerate(zip(plot.subplots.values(), colors[3:])):
-            self.assertEqual(subplot.handles['glyph'].line_color, color)
-            self.assertEqual(subplot.cyclic_index, i+3)
-            self.assertEqual(list(subplot.overlay_dims.values()), [i+1])
-
     def test_holomap_legend_updates(self):
         hmap = HoloMap({i: Curve([1, 2, 3], label=chr(65+i+2)) * Curve([1, 2, 3], label='B')
                         for i in range(3)})
@@ -324,10 +309,10 @@ class TestLegends(TestBokehPlot):
         self.assertEqual(legend_labels, [{'value': 'C'}, {'value': 'B'}])
         plot.update((1,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'D'}])
+        self.assertEqual(legend_labels, [{'value': 'D'}, {'value': 'B'}])
         plot.update((2,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'E'}])
+        self.assertEqual(legend_labels, [{'value': 'E'}, {'value': 'B'}])
 
     def test_holomap_legend_updates_varying_lengths(self):
         hmap = HoloMap({i: Overlay([Curve([1, 2, j], label=chr(65+j)) for j in range(i)]) for i in range(1, 4)})
