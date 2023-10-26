@@ -23,7 +23,7 @@ class TestFileArchive:
         FileArchive()
 
     def test_filearchive_image_pickle(self, tmp_path):
-        export_name = str(tmp_path / 'archive_image')
+        export_name = os.fspath(tmp_path / 'archive_image')
         filenames = ['Group1-Im1.hvz', 'Group2-Im2.hvz']
         archive = FileArchive(export_name=export_name, pack=False)
         archive.add(self.image1)
@@ -36,7 +36,7 @@ class TestFileArchive:
         assert archive.listing() == []
 
     def test_filearchive_image_pickle_zip(self, tmp_path):
-        export_name = str(tmp_path / 'archive_image')
+        export_name = os.fspath(tmp_path / 'archive_image')
         filenames = ['Group1-Im1.hvz', 'Group2-Im2.hvz']
         archive = FileArchive(export_name=export_name,
                               pack=True, archive_format='zip')
@@ -55,7 +55,7 @@ class TestFileArchive:
 
 
     def test_filearchive_image_pickle_tar(self, tmp_path):
-        export_name = str(tmp_path / 'archive_image')
+        export_name = os.fspath(tmp_path / 'archive_image')
         filenames = ['Group1-Im1.hvz', 'Group2-Im2.hvz']
         archive = FileArchive(export_name=export_name,
                               pack=True, archive_format='tar')
@@ -74,7 +74,7 @@ class TestFileArchive:
 
 
     def test_filearchive_image_serialize(self, tmp_path):
-        export_name = str(tmp_path / 'archive_image_serizalize')
+        export_name = os.fspath(tmp_path / 'archive_image_serizalize')
         filenames = ['Group1-Im1.pkl', 'Group2-Im2.pkl']
         archive = FileArchive(export_name=export_name, exporters=[Serializer], pack=False)
         archive.add(self.image1)
@@ -88,7 +88,7 @@ class TestFileArchive:
         assert archive.listing() == []
 
     def test_filearchive_image_pickle_name_clash(self, tmp_path):
-        export_name = str(tmp_path / 'archive_image_test_clash')
+        export_name = os.fspath(tmp_path / 'archive_image_test_clash')
         filenames = ['Group1-Im1.hvz', 'Group1-Im1-1.hvz']
         archive = FileArchive(export_name=export_name, pack=False)
         archive.add(self.image1)
@@ -102,7 +102,7 @@ class TestFileArchive:
         assert archive.listing() == []
 
     def test_filearchive_json_single_file(self, tmp_path):
-        export_name = str(tmp_path / "archive_json")
+        export_name = os.fspath(tmp_path / "archive_json")
         data = {'meta':'test'}
         archive = FileArchive(export_name=export_name, pack=False)
         archive.add(filename='metadata.json', data=json.dumps(data),
@@ -122,7 +122,7 @@ class TestFileArchive:
     """
     def test_filearchive_clear_file(self, tmp_path):
         export_name = "archive_for_clear"
-        export_name = str(tmp_path / "archive_for_clear")
+        export_name = os.fspath(tmp_path / "archive_for_clear")
         archive = FileArchive(export_name=export_name, pack=False)
         archive.add(self.image1)
         archive.add(self.image2)

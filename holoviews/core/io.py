@@ -132,7 +132,7 @@ class Exporter(param.ParameterizedFunction):
     def _filename(self_or_cls, filename):
         "Add the file extension if not already present"
         if isinstance(filename, Path):
-            filename = str(filename)
+            filename = os.fspath(filename)
         if not filename.endswith(self_or_cls.file_ext):
             return f'{filename}.{self_or_cls.file_ext}'
         else:
@@ -268,7 +268,7 @@ class Serializer(Exporter):
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         metadata, _ = self_or_cls({'info':info, 'key':key}, **kwargs)
         if isinstance(filename, Path):
-            filename = str(filename)
+            filename = os.fspath(filename)
 
         filename = self_or_cls._filename(filename)
         with open(filename, 'ab') as f:
