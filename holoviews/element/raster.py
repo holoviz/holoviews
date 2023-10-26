@@ -557,7 +557,7 @@ class ImageStack(Image):
             if isinstance(data_tuple, tuple):
                 vdims = [Dimension(f"level_{i}") for i in range(len(data_tuple[2:]))]
             elif isinstance(data, dict):
-                vdims = [Dimension(key) for key in data.keys() if key not in kdims]
+                vdims = [Dimension(key) for key in data.keys() if key not in (kdims or self.kdims)]
         super().__init__(data_tuple, kdims=kdims, vdims=vdims, **params)
 
 
