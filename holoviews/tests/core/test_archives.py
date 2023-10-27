@@ -50,7 +50,9 @@ class TestFileArchive:
 
         namelist = [f'{export_name}/{f}' for f in filenames]
         with zipfile.ZipFile(export_name+'.zip', 'r') as f:
-            assert sorted(namelist) == sorted(f.namelist())
+            expected = sorted(map(os.path.abspath, namelist))
+            output = sorted(map(os.path.abspath, f.namelist()))
+            assert expected == output
         assert archive.listing() == []
 
 
