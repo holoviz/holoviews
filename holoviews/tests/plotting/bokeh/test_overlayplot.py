@@ -308,10 +308,10 @@ class TestLegends(TestBokehPlot):
         self.assertEqual(legend_labels, [{'value': 'C'}, {'value': 'B'}])
         plot.update((1,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'D'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'D'}])
         plot.update((2,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'E'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'E'}])
 
     def test_holomap_legend_updates_varying_lengths(self):
         hmap = HoloMap({i: Overlay([Curve([1, 2, j], label=chr(65+j)) for j in range(i)]) for i in range(1, 4)})
@@ -334,10 +334,10 @@ class TestLegends(TestBokehPlot):
         self.assertEqual(legend_labels, [{'value': 'C'}, {'value': 'B'}])
         plot.update((1,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'D'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'D'}])
         plot.update((2,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'E'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'E'}])
 
     def test_dynamicmap_legend_updates_add_dynamic_plots(self):
         hmap = HoloMap({i: Overlay([Curve([1, 2, j], label=chr(65+j)) for j in range(i)]) for i in range(1, 4)})
