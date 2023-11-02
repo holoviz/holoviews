@@ -129,6 +129,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["dw"] == [1.0]
         assert cdata["y"] == [-0.5]
 
+
+class TestImageStack(TestRasterPlot):
     def test_image_stack_tuple(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
@@ -204,6 +206,42 @@ class TestRasterPlot(TestBokehPlot):
         np.testing.assert_equal(source.data["image"][0][2].T, c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
+        assert source.data["dw"][0] == 3
+        assert source.data["dh"][0] == 3
+        assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_dict_no_kdims(self):
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = {"a": a, "b": b, "c": c}
+        img_stack = ImageStack(ds)
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][0].T, a)
+        np.testing.assert_equal(source.data["image"][0][1].T, b)
+        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        assert source.data["x"][0] == -0.5
+        assert source.data["y"][0] == -0.5
+        assert source.data["dw"][0] == 3
+        assert source.data["dh"][0] == 3
+        assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_list(self):
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = [a, b, c]
+        img_stack = ImageStack(ds)
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][0].T, a)
+        np.testing.assert_equal(source.data["image"][0][1].T, b)
+        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        assert source.data["x"][0] == -0.5
+        assert source.data["y"][0] == -0.5
         assert source.data["dw"][0] == 3
         assert source.data["dh"][0] == 3
         assert isinstance(plot, ImageStackPlot)
