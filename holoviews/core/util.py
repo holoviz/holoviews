@@ -1219,7 +1219,7 @@ def unique_array(arr):
             not isinstance(v, cftime_types)):
             v = pd.Timestamp(v).to_datetime64()
         values.append(v)
-    return pd.unique(np.asarray(values))
+    return pd.unique(np.asarray(values).ravel())
 
 
 def match_spec(element, specification):
