@@ -530,7 +530,7 @@ class ImageStack(Image):
     _vdim_reductions = {1: Image}
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, list):
+        if isinstance(data, list) and len(data) > 0:
             x = np.arange(data[0].shape[1])
             y = np.arange(data[0].shape[0])
             data_tuple = (x, y, *(d for d in data))
