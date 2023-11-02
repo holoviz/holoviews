@@ -531,26 +531,26 @@ class ImageStack(Image):
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, list):
-            x = np.arange(data[0].shape[0])
-            y = np.arange(data[0].shape[1])
-            data_tuple = (x, y, *(d.T for d in data))
+            x = np.arange(data[0].shape[1])
+            y = np.arange(data[0].shape[0])
+            data_tuple = (x, y, *(d for d in data))
         elif isinstance(data, dict):
             _kdims = kdims or self.kdims
             first = next(v for k, v in data.items() if k not in _kdims)
             # TODO: Make it work with dict which hv.Dimension key
-            x = data.get(str(_kdims[0]), np.arange(first.shape[0]))
-            y = data.get(str(_kdims[1]), np.arange(first.shape[1]))
+            x = data.get(str(_kdims[0]), np.arange(first.shape[1]))
+            y = data.get(str(_kdims[1]), np.arange(first.shape[0]))
             iter_data = (v for k, v in data.items() if k not in _kdims)
-            data_tuple = (x, y, *(d.T for d in iter_data))
+            data_tuple = (x, y, *(d for d in iter_data))
         elif isinstance(data, np.ndarray) and data.ndim == 3:
-            x = np.arange(data.shape[0])
-            y = np.arange(data.shape[1])
-            data_tuple = (x, y, *(data[:, :, n].T for n in range(data.shape[2])))
+            x = np.arange(data.shape[1])
+            y = np.arange(data.shape[0])
+            data_tuple = (x, y, *(data[:, :, n] for n in range(data.shape[2])))
         elif (
             isinstance(data, tuple) and len(data) == 3
             and isinstance(data[2], np.ndarray) and data[2].ndim == 3
         ):
-            data_tuple = (data[0], data[1], *(data[2][:, :,n].T for n in range(data[2].shape[2])))
+            data_tuple = (data[0], data[1], *(data[2][:, :,n] for n in range(data[2].shape[2])))
         else:
             data_tuple = data
         if vdims is None:

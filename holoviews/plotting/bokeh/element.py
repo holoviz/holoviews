@@ -2054,7 +2054,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return any(md['id'] == model.ref['id'] for models in stream_metadata
                    for md in models.values())
 
-
     @property
     def framewise(self):
         """
@@ -2989,10 +2988,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 # If not batched get the Element matching the subplot
                 elif element is not None:
                     idx, spec, exact = self._match_subplot(k, subplot, items, element)
-                    if idx is not None:
+                    if idx is not None and exact:
                         _, el = items.pop(idx)
-                        if not exact:
-                            self._update_subplot(subplot, spec)
 
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
