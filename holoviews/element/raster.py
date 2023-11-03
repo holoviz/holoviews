@@ -522,7 +522,7 @@ class ImageStack(Image):
             they need to be 1D arrays.
         4) A tuple containing (x, y, level_0, level_1, ...),
             where the level is a 2D Numpy array in the shape of (y, x).
-        5) An xarray.Dataset where its `coords` contain the kdims.
+        5) An xarray DataArray or Dataset where its `coords` contain the kdims.
 
     If no kdims are supplied, x and y are used.
 

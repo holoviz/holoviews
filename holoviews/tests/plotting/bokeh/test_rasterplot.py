@@ -134,8 +134,8 @@ class _ImageStackBase(TestRasterPlot):
     __test__ = False
 
     def test_image_stack_tuple(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
@@ -150,8 +150,8 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_tuple_unspecified_dims(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"])
@@ -168,8 +168,8 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_dict(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
@@ -186,8 +186,8 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_dict_unspecified_dims(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
@@ -241,8 +241,8 @@ class _ImageStackBase(TestRasterPlot):
         except ImportError:
             raise SkipTest("xarray not available for core tests")
 
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         ds = xr.Dataset(
@@ -267,15 +267,15 @@ class _ImageStackBase(TestRasterPlot):
         except ImportError:
             raise SkipTest("xarray not available for core tests")
 
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
-        ds = xr.Dataset(
+        da = xr.Dataset(
             {"a": (["y", "x"], a), "b": (["y", "x"], b), "c": (["y", "x"], c)},
             coords={"x": x, "y": y},
         ).to_array("level")
-        img_stack = ImageStack(ds, vdims=["level"])
+        img_stack = ImageStack(da, vdims=["level"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -288,8 +288,8 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_invert_xaxis(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
@@ -304,8 +304,8 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dh"][0] == self.ysize
 
     def test_image_stack_invert_yaxis(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
@@ -320,8 +320,8 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dh"][0] == self.ysize
 
     def test_image_stack_invert_axes(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
@@ -354,8 +354,8 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_tuple_single_3darray(self):
-        x = np.arange(0, self.xsize)
-        y = np.arange(5, 5 + self.ysize)
+        x = np.arange(self.xsize)
+        y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
         data = (x, y, np.dstack((a, b, c)))
