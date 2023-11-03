@@ -508,16 +508,26 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
 class ImageStack(Image):
     """
-    Supports the same constructor RGB and HSV elements, but without the
-    limit of 3/4 channels (one of more channels).
+    ImageStack expands the capabilities of Image to by supporting
+    multiple layers of images.
 
-    If only one channel it should behave the same as an Image.
+    As there is many ways to represent multiple layers of images,
+    the following options are supported:
 
-    Type of data inputs:
-    - 3D ndarray (x,y,level)
-    - A list of 2D ndarrays with identical shape
-    - A dict of 2D ndarrays (key=level: value=2D ndarray)
-    - xarray with all the whistles
+        1) A 3D Numpy array with the shape (y, x, level)
+        2) A list of 2D Numpy arrays with identical shape (y, x)
+        3) A dictionary where the keys will be set as the vdims and the
+            values are 2D Numpy arrays with identical shapes (y, x).
+            If the dictionary's keys matches the kdims of the element,
+            they need to be 1D arrays.
+        4) A tuple containing (x, y, level_0, level_1, ...),
+            where the level is a 2D Numpy array in the shape of (y, x).
+        5) An xarray.Dataset where its `coords` contain the kdims.
+
+    If no kdims are supplied, x and y are used.
+
+    If no vdims are supplied, and the naming can be inferred like with a dictionary
+    the levels will be named level_0, level_1, etc.
     """
 
     vdims = param.List(doc="""
