@@ -130,14 +130,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["y"] == [-0.5]
 
 
-class TestImageStack(TestRasterPlot):
-    def setUp(self):
-        self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
-        self.ysize = 3
-        self.xsize = 3
-        super().setUp()
+class _ImageStackBase(TestRasterPlot):
+    __test__ = False
 
     def test_image_stack_tuple(self):
         x = np.arange(0, self.xsize)
@@ -377,3 +371,41 @@ class TestImageStack(TestRasterPlot):
         assert source.data["dw"][0] == self.xsize
         assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
+
+
+class TestImageStackEven(_ImageStackBase):
+    __test__ = True
+
+    def setUp(self):
+        self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        self.ysize = 3
+        self.xsize = 3
+        super().setUp()
+
+
+class TestImageStackUneven1(_ImageStackBase):
+    __test__ = True
+
+    def setUp(self):
+        self.a = np.array(
+            [[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3, [np.nan] * 3]
+        )
+        self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3, [np.nan] * 3])
+        self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1], [np.nan] * 3])
+        self.ysize = 4
+        self.xsize = 3
+        super().setUp()
+
+
+class TestImageStackUneven2(_ImageStackBase):
+    __test__ = True
+
+    def setUp(self):
+        self.a = np.array([[np.nan, np.nan, 1, np.nan], [np.nan] * 4, [np.nan] * 4])
+        self.b = np.array([[np.nan] * 4, [1, 1, np.nan, np.nan], [np.nan] * 4])
+        self.c = np.array([[np.nan] * 4, [np.nan] * 4, [1, 1, 1, 1]])
+        self.ysize = 3
+        self.xsize = 4
+        super().setUp()
