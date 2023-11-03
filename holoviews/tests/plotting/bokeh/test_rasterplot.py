@@ -131,13 +131,16 @@ class TestRasterPlot(TestBokehPlot):
 
 
 class TestImageStack(TestRasterPlot):
+    def setUp(self):
+        self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        super().setUp()
+
     def test_image_stack_tuple(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
-
+        a, b, c = self.a, self.b, self.c
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
@@ -153,9 +156,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_tuple_unspecified_dims(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"])
         assert img_stack.vdims == ["level_0", "level_1", "level_2"]
@@ -173,9 +174,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_dict(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
         img_stack = ImageStack(ds, kdims=["x", "y"], vdims=["a", "b", "c"])
@@ -193,9 +192,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_dict_unspecified_dims(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
         img_stack = ImageStack(ds)
@@ -211,9 +208,7 @@ class TestImageStack(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_dict_no_kdims(self):
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         ds = {"a": a, "b": b, "c": c}
         img_stack = ImageStack(ds)
@@ -229,9 +224,7 @@ class TestImageStack(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_list(self):
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         ds = [a, b, c]
         img_stack = ImageStack(ds)
@@ -254,9 +247,7 @@ class TestImageStack(TestRasterPlot):
 
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         ds = xr.Dataset(
             {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
@@ -283,9 +274,7 @@ class TestImageStack(TestRasterPlot):
 
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         ds = xr.Dataset(
             {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
@@ -307,9 +296,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_invert_xaxis(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_xaxis=True))
@@ -325,9 +312,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_invert_yaxis(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_yaxis=True))
@@ -343,9 +328,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_invert_axes(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_axes=True))
@@ -361,9 +344,7 @@ class TestImageStack(TestRasterPlot):
         assert source.data["dh"][0] == 3
 
     def test_image_stack_array(self):
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         data = np.dstack((a, b, c))
 
@@ -382,9 +363,7 @@ class TestImageStack(TestRasterPlot):
     def test_image_stack_tuple_single_3darray(self):
         x = np.arange(0, 3)
         y = np.arange(5, 8)
-        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
-        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
-        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        a, b, c = self.a, self.b, self.c
 
         data = (x, y, np.dstack((a, b, c)))
 
