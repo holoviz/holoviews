@@ -135,76 +135,78 @@ class TestImageStack(TestRasterPlot):
         self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
         self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
         self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+        self.ysize = 3
+        self.xsize = 3
         super().setUp()
 
     def test_image_stack_tuple(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], a.T)
-        np.testing.assert_equal(source.data["image"][0][1], b.T)
-        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_tuple_unspecified_dims(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"])
         assert img_stack.vdims == ["level_0", "level_1", "level_2"]
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], a.T)
-        np.testing.assert_equal(source.data["image"][0][1], b.T)
-        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_dict(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
         img_stack = ImageStack(ds, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0].T, a)
-        np.testing.assert_equal(source.data["image"][0][1].T, b)
-        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_dict_unspecified_dims(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
         img_stack = ImageStack(ds)
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0].T, a)
-        np.testing.assert_equal(source.data["image"][0][1].T, b)
-        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_dict_no_kdims(self):
@@ -214,13 +216,13 @@ class TestImageStack(TestRasterPlot):
         img_stack = ImageStack(ds)
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0].T, a)
-        np.testing.assert_equal(source.data["image"][0][1].T, b)
-        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == -0.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_list(self):
@@ -230,13 +232,13 @@ class TestImageStack(TestRasterPlot):
         img_stack = ImageStack(ds)
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0].T, a)
-        np.testing.assert_equal(source.data["image"][0][1].T, b)
-        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == -0.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_xarray_dataset(self):
@@ -245,25 +247,24 @@ class TestImageStack(TestRasterPlot):
         except ImportError:
             raise SkipTest("xarray not available for core tests")
 
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         ds = xr.Dataset(
-            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            {"a": (["y", "x"], a), "b": (["y", "x"], b), "c": (["y", "x"], c)},
             coords={"x": x, "y": y},
         )
-        at, bt, ct = np.dstack([a, b, c]).reshape(3, 9).T.reshape(3, 3, 3)
         img_stack = ImageStack(ds, kdims=["x", "y"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], at)
-        np.testing.assert_equal(source.data["image"][0][1], bt)
-        np.testing.assert_equal(source.data["image"][0][2], ct)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_xarray_dataarray(self):
@@ -272,76 +273,74 @@ class TestImageStack(TestRasterPlot):
         except ImportError:
             raise SkipTest("xarray not available for core tests")
 
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         ds = xr.Dataset(
-            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            {"a": (["y", "x"], a), "b": (["y", "x"], b), "c": (["y", "x"], c)},
             coords={"x": x, "y": y},
         ).to_array("level")
-        at, bt, ct = np.dstack([a, b, c]).reshape(3, 9).T.reshape(3, 3, 3)
         img_stack = ImageStack(ds, vdims=["level"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], at)
-        np.testing.assert_equal(source.data["image"][0][1], bt)
-        np.testing.assert_equal(source.data["image"][0][2], ct)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_invert_xaxis(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_xaxis=True))
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], a.T)
-        np.testing.assert_equal(source.data["image"][0][1], b.T)
-        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
 
     def test_image_stack_invert_yaxis(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_yaxis=True))
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0], a.T)
-        np.testing.assert_equal(source.data["image"][0][1], b.T)
-        np.testing.assert_equal(source.data["image"][0][2], c.T)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
 
     def test_image_stack_invert_axes(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_axes=True))
         source = plot.handles["source"]
 
-        at, bt, ct = np.dstack([a, b, c]).reshape(3, 9).T.reshape(3, 3, 3)
-        np.testing.assert_equal(source.data["image"][0][0], at)
-        np.testing.assert_equal(source.data["image"][0][1], bt)
-        np.testing.assert_equal(source.data["image"][0][2], ct)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0].T, a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1].T, b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2].T, c)
         assert source.data["x"][0] == 4.5
         assert source.data["y"][0] == -0.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.ysize
+        assert source.data["dh"][0] == self.xsize
 
     def test_image_stack_array(self):
         a, b, c = self.a, self.b, self.c
@@ -351,18 +350,18 @@ class TestImageStack(TestRasterPlot):
         img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0].T, a)
-        np.testing.assert_equal(source.data["image"][0][1].T, b)
-        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == -0.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_tuple_single_3darray(self):
-        x = np.arange(0, 3)
-        y = np.arange(5, 8)
+        x = np.arange(0, self.xsize)
+        y = np.arange(5, 5 + self.ysize)
         a, b, c = self.a, self.b, self.c
 
         data = (x, y, np.dstack((a, b, c)))
@@ -370,11 +369,11 @@ class TestImageStack(TestRasterPlot):
         img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["image"][0][0].T, a)
-        np.testing.assert_equal(source.data["image"][0][1].T, b)
-        np.testing.assert_equal(source.data["image"][0][2].T, c)
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert source.data["x"][0] == -0.5
         assert source.data["y"][0] == 4.5
-        assert source.data["dw"][0] == 3
-        assert source.data["dh"][0] == 3
+        assert source.data["dw"][0] == self.xsize
+        assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
