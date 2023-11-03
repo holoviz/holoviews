@@ -160,4 +160,5 @@ _all_tile_sources = {k: v for k, v in locals().items() if isinstance(v, Function
                 ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat',
                  'deprecation_warning', 'wikimedia_replacement']}
 
-tile_sources = {k: v for k, v in _all_tile_sources.items()}
+tile_sources = {k: v for k, v in _all_tile_sources.items() if "Stamen" not in k}
+stamen_sources = {k: v for k, v in _all_tile_sources.items() if "Stamen" in k}
