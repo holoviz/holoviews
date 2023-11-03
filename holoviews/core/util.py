@@ -1218,8 +1218,10 @@ def unique_array(arr):
         if (isinstance(v, datetime_types) and
             not isinstance(v, cftime_types)):
             v = pd.Timestamp(v).to_datetime64()
+        elif isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
+            v = v.dtype.categories
         values.append(v)
-    return pd.unique(np.asarray(values))
+    return pd.unique(np.asarray(values).ravel())
 
 
 def match_spec(element, specification):

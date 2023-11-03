@@ -102,6 +102,6 @@ known-first-party = ["holoviews"]
 combine-as-imports = true
 
 [tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser"
 skip = "doc/generate_modules.py"
 write-changes = true

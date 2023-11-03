@@ -28,6 +28,7 @@ from holoviews.core.util import (
     sanitize_identifier_fn,
     search_indices,
     tree_attribute,
+    unique_array,
     wrap_tuple_streams,
 )
 from holoviews.element.comparison import ComparisonTestCase
@@ -799,3 +800,9 @@ def test_seach_indices_dtype_object():
     values = np.array(["c0", "c0", np.nan], dtype=object)
     source = np.array(["c0", np.nan], dtype=object)
     search_indices(values, source)
+
+
+def test_unique_array_categorial():
+    ser = pd.Series(np.random.choice(["a", "b", "c"], 100)).astype("category")
+    res = unique_array([ser])
+    assert sorted(res) == ["a", "b", "c"]
