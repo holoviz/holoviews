@@ -102,7 +102,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(layer["sourcetype"], "raster")
         self.assertEqual(layer["minzoom"], 3)
         self.assertEqual(layer["maxzoom"], 7)
-        self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'net/t')])
+        self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'png')])
 
     # xyzservices input
     def test_xyzservices_tileprovider(self):
