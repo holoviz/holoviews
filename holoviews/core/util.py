@@ -1312,7 +1312,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
     elif isinstance(obj, np.str_): return False
-    elif np.__version__[0] != "2" and isinstance(obj, np.unicode_): return False
+    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_): return False
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
