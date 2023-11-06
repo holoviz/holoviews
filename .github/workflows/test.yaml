@@ -149,7 +149,7 @@ jobs:
           envs: "-o tests_core -o tests_ci"
           cache: true
           conda-update: true
-          id: install
+        id: install
       - name: bokeh sampledata
         run: |
           conda activate test-environment
@@ -157,7 +157,7 @@ jobs:
       - name: Check packages latest version
         run: |
           conda activate test-environment
-          # python scripts/check_latest_packages.py
+          python scripts/check_latest_packages.py
       - name: doit test_unit
         run: |
           conda activate test-environment
