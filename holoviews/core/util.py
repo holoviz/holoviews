@@ -2274,9 +2274,9 @@ def numpy_scalar_to_python(scalar):
     Converts a NumPy scalar to a regular python type.
     """
     scalar_type = type(scalar)
-    if np.issubclass_(scalar_type, np.float_):
+    if issubclass(scalar_type, np.float64):
         return float(scalar)
-    elif np.issubclass_(scalar_type, np.int_):
+    elif issubclass(scalar_type, np.int_):
         return int(scalar)
     return scalar
 
