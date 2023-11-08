@@ -4,6 +4,40 @@ Releases
 Version 1.18
 ~~~~~~~~~~~~
 
+Version 1.18.1
+**************
+
+**November 8, 2023**
+
+This release contains a small number of bug fixes and compatibility
+updates — many thanks to @philippjfr and @Hoxbro for their
+contributions.
+
+Bug fixes:
+
+-  Account for overlaid elements when using ``subcoordinates_y``
+   (`#5950 <https://github.com/holoviz/holoviews/pull/5950>`__)
+-  Fix ``groupby`` option for vectorized annotations
+   (`#5956 <https://github.com/holoviz/holoviews/pull/5956>`__)
+-  Fix and improvements to ``ImageStack``
+   (`#5961 <https://github.com/holoviz/holoviews/pull/5961>`__)
+-  Do not allow partial matches when updating ``OverlayPlot``
+   (`#5962 <https://github.com/holoviz/holoviews/pull/5962>`__)
+-  Always ravel array in ``unique_array``
+   (`#5969 <https://github.com/holoviz/holoviews/pull/5969>`__)
+
+Compatibility:
+
+-  Update Stamen maps with new URL
+   (`#5967 <https://github.com/holoviz/holoviews/pull/5967>`__)
+-  Compatibility updates for Numpy 2.0
+   (`#5979 <https://github.com/holoviz/holoviews/pull/5979>`__)
+
+Maintenance:
+
+-  General maintenance
+   (`#5955 <https://github.com/holoviz/holoviews/pull/5955>`__)
+
 Version 1.18.0
 **************
 
