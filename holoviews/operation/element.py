@@ -561,7 +561,7 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from contourpy import FillType, LineType, contour_generator
+            from contourpy import FillType, LineType, contour_generator, __version__ as contourpy_version
         except ImportError:
             raise ImportError("contours operation requires contourpy.")
 
@@ -624,19 +624,36 @@ class contours(Operation):
         if self.p.filled:
             vdims = [vdims[0].clone(range=crange)]
 
+        if Version(contourpy_version) >= Version('1.2'):
+            line_type = LineType.ChunkCombinedNan
+        else:
+            line_type = LineType.ChunkCombinedOffset
+
         cont_gen = contour_generator(
             *data,
-            line_type=LineType.ChunkCombinedOffset,
+            line_type=line_type,
             fill_type=FillType.ChunkCombinedOffsetOffset,
         )
+
+        def coords_to_datetime(coords):
+            # coords is a 1D numpy array containing floats and possibly nans.
+            # Cannot pass nans to matplotlib's num2date.
+            nan_mask = np.isnan(coords)
+            any_nan = np.any(nan_mask)
+            if any_nan:
+                coords[nan_mask] = 0
+            coords = np.array(num2date(coords))
+            if any_nan:
+                coords[nan_mask] = np.nan
+            return coords
 
         def points_to_datetime(points):
             # transform x/y coordinates back to datetimes
             xs, ys = np.split(points, 2, axis=1)
             if data_is_datetime[0]:
-                xs = np.array(num2date(xs))
+                xs = coords_to_datetime(xs)
             if data_is_datetime[1]:
-                ys = np.array(num2date(ys))
+                ys = coords_to_datetime(ys)
             return np.concatenate((xs, ys), axis=1)
 
         paths = []
@@ -684,11 +701,14 @@ class contours(Operation):
                 if any(data_is_datetime[0:2]):
                     points = points_to_datetime(points)
 
-                offsets = lines[1][0]
-                if offsets is not None and len(offsets) > 2:
-                    # Casting offsets to int64 to avoid possible numpy UFuncOutputCastingError
-                    offsets = offsets[1:-1].astype(np.int64)
-                    points = np.insert(points, offsets, np.nan, axis=0)
+                # If line_type == LineType.ChunkCombinedNan then points are already in
+                # the correct nan-separated format.
+                if line_type == LineType.ChunkCombinedOffset:
+                    offsets = lines[1][0]
+                    if offsets is not None and len(offsets) > 2:
+                        # Casting offsets to int64 to avoid possible numpy UFuncOutputCastingError
+                        offsets = offsets[1:-1].astype(np.int64)
+                        points = np.insert(points, offsets, np.nan, axis=0)
                 geom = {
                     element.vdims[0].name:
                     num2date(level) if data_is_datetime[2] else level,
