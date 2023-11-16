@@ -561,7 +561,12 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from contourpy import FillType, LineType, contour_generator, __version__ as contourpy_version
+            from contourpy import (
+                FillType,
+                LineType,
+                __version__ as contourpy_version,
+                contour_generator,
+            )
         except ImportError:
             raise ImportError("contours operation requires contourpy.")
 
