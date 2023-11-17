@@ -6,7 +6,7 @@ requires = [
 ]
 
 [tool.pytest.ini_options]
-addopts = ["--strict-config", "--strict-markers"]
+addopts = ["--strict-config", "--strict-markers", "--color=yes"]
 minversion = "7"
 xfail_strict = true
 filterwarnings = [
