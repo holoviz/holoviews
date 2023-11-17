@@ -6,7 +6,9 @@ requires = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-p no:dash"
+addopts = ["--strict-config", "--strict-markers"]
+minversion = "7"
+xfail_strict = true
 filterwarnings = [
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
     "ignore:elementwise comparison failed:DeprecationWarning:bokeh.core.property.bases",
