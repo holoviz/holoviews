@@ -11,7 +11,7 @@ HoloViews is maintained by a core development team who coordinate contributions 
    - Re-implement HoloViews layouts using Panel where feasible, to allow more powerful and flexible arrangements
 
 3. **Separate packages into holoviews-core and extensions**:
-   HoloViews has always been designed with a backend-independent core that helps you describe and work with your data, along with plotting-library-specific backends that generate visualizations. To make this separation explicit and to make it simpler to generate objects in contexts where no backend is available, the holoviews package needs to be split into a core (probably to be called `holoviews-core`) along with packages per extension and possibly a `holoviews` metapackage that installs all of them as the single current package does.
+   HoloViews has always been designed with a backend-independent core that helps you describe and work with your data, along with plotting-library-specific backends that generate visualizations. To make this separation explicit and to make it simpler to generate objects in contexts where no backend is available, the holoviews package needs to be split into a core (probably to be called ``holoviews-core``) along with packages per extension and possibly a ``holoviews`` metapackage that installs all of them as the single current package does.
 
 4. **Improved developer docs**:
    Because HoloViews includes both JavaScript and Python code and both core data-description features and optional backend-specific plotting support, it can be difficult to understand how to contribute to HoloViews development. We need much better developer docs to make it simpler to join the HoloViews team!
