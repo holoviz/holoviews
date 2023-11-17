@@ -10,6 +10,7 @@ addopts = ["--strict-config", "--strict-markers", "--color=yes"]
 minversion = "7"
 xfail_strict = true
 filterwarnings = [
+    "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
     "ignore:elementwise comparison failed:DeprecationWarning:bokeh.core.property.bases",
     "ignore:dropping variables using `drop` will be deprecated; using drop_vars is encouraged:PendingDeprecationWarning:xarray.core.dataarray",
