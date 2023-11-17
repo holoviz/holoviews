@@ -23,7 +23,6 @@ repos:
     rev: v0.1.5
     hooks:
       - id: ruff
-        args: [holoviews]
         files: holoviews/|scripts/
   - repo: https://github.com/hoxbro/clean_notebook
     rev: v0.1.13
