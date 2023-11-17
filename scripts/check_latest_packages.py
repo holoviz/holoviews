@@ -11,7 +11,7 @@ def main(*packages):
     all_latest = True
     for package in sorted(packages):
         url = f"https://pypi.org/pypi/{package}/json"
-        resp = requests.get(url).json()
+        resp = requests.get(url, timeout=20).json()
         latest = resp["info"]["version"]
         current = __import__(package).__version__
 
