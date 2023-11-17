@@ -1,7 +1,7 @@
 import sys
-import requests
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 
+import requests
 from packaging.version import Version
 
 

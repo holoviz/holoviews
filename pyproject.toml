@@ -48,6 +48,9 @@ filterwarnings = [
 [tool.coverage]
 run.concurrency = ["greenlet"]
 
+[tool.ruff]
+fix = true
+
 [tool.ruff.lint]
 select = [
     "B",
@@ -84,10 +87,9 @@ ignore = [
     "RUF005",   # Consider {expr} instead of concatenation
     "RUF012",   # Mutable class attributes should use `typing.ClassVar`
 ]
-
-fix = true
 unfixable = [
     "F401",     # Unused imports
+    "F841",     # Unused variables
 ]
 
 [tool.ruff.lint.per-file-ignores]
