@@ -48,9 +48,7 @@ filterwarnings = [
 [tool.coverage]
 run.concurrency = ["greenlet"]
 
-[tool.ruff]
-target-version = "py39"
-
+[tool.ruff.lint]
 select = [
     "B",
     "E",
@@ -92,14 +90,14 @@ unfixable = [
     "F401",     # Unused imports
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = [
     "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
     "NPY002",  # Replace legacy `np.random.rand` call with Generator
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
 
