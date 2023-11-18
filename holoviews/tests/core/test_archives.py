@@ -46,9 +46,7 @@ class TestFileArchive:
         assert archive.listing() == filenames
         archive.export()
         export_folder = os.fspath(tmp_path / export_name) + '.zip'
-        if not os.path.isfile(export_folder):
-            raise AssertionError(f"No zip file {export_name!r} created on export.")
-
+        assert os.path.isfile(export_folder)
         namelist = [f'{export_name}/{f}' for f in filenames]
         with zipfile.ZipFile(export_folder, 'r') as f:
             expected = sorted(map(os.path.abspath, namelist))
@@ -68,9 +66,7 @@ class TestFileArchive:
         assert archive.listing() == filenames
         archive.export()
         export_folder = os.fspath(tmp_path / export_name) + '.tar'
-        if not os.path.isfile(export_folder):
-            raise AssertionError(f"No tar file {export_name!r} created on export.")
-
+        assert os.path.isfile(export_folder)
         namelist = [f'{export_name}/{f}' for f in filenames]
         with tarfile.TarFile(export_folder, 'r') as f:
             assert sorted(namelist) == sorted([el.path for el in f.getmembers()])
@@ -86,8 +82,7 @@ class TestFileArchive:
         assert len(archive) == 2
         assert archive.listing() == filenames
         archive.export()
-        if not os.path.isdir(tmp_path / export_name):
-            raise AssertionError(f"No directory {export_name!r} created on export.")
+        assert os.path.isdir(tmp_path / export_name)
         assert sorted(filenames) == sorted(os.listdir(tmp_path / export_name))
         assert archive.listing() == []
 
@@ -100,8 +95,7 @@ class TestFileArchive:
         assert len(archive) == 2
         assert archive.listing() == filenames
         archive.export()
-        if not os.path.isdir(tmp_path / export_name):
-            raise AssertionError(f"No directory {export_name!r} created on export.")
+        assert os.path.isdir(tmp_path / export_name)
         assert sorted(filenames) == sorted(os.listdir(tmp_path / export_name))
         assert archive.listing() == []
 
@@ -115,8 +109,7 @@ class TestFileArchive:
         assert archive.listing() == ['metadata.json']
         archive.export()
         fname = os.fspath(tmp_path / f"{export_name}_metadata.json")
-        if not os.path.isfile(fname):
-            raise AssertionError(f"No file {fname!r} created on export.")
+        assert os.path.isfile(fname)
         with open(fname) as f:
             assert json.load(f) == data
         assert archive.listing() == []
