@@ -6,8 +6,11 @@ requires = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-p no:dash"
+addopts = ["--strict-config", "--strict-markers", "--color=yes"]
+minversion = "7"
+xfail_strict = true
 filterwarnings = [
+    "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
     "ignore:elementwise comparison failed:DeprecationWarning:bokeh.core.property.bases",
     "ignore:dropping variables using `drop` will be deprecated; using drop_vars is encouraged:PendingDeprecationWarning:xarray.core.dataarray",
@@ -47,8 +50,9 @@ filterwarnings = [
 run.concurrency = ["greenlet"]
 
 [tool.ruff]
-target-version = "py39"
+fix = true
 
+[tool.ruff.lint]
 select = [
     "B",
     "E",
@@ -84,24 +88,23 @@ ignore = [
     "RUF005",   # Consider {expr} instead of concatenation
     "RUF012",   # Mutable class attributes should use `typing.ClassVar`
 ]
-
-fix = true
 unfixable = [
     "F401",     # Unused imports
+    "F841",     # Unused variables
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = [
     "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
     "NPY002",  # Replace legacy `np.random.rand` call with Generator
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
 
 [tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser"
 skip = "doc/generate_modules.py"
 write-changes = true

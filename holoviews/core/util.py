@@ -1218,8 +1218,10 @@ def unique_array(arr):
         if (isinstance(v, datetime_types) and
             not isinstance(v, cftime_types)):
             v = pd.Timestamp(v).to_datetime64()
+        elif isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
+            v = v.dtype.categories
         values.append(v)
-    return pd.unique(np.asarray(values))
+    return pd.unique(np.asarray(values).ravel())
 
 
 def match_spec(element, specification):
@@ -1309,7 +1311,8 @@ def dimension_sort(odict, kdims, vdims, key_index):
 # Copied from param should make param version public
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
-    elif isinstance(obj, (np.str_, np.unicode_)): return False
+    elif isinstance(obj, np.str_): return False
+    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_): return False
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
@@ -2272,9 +2275,9 @@ def numpy_scalar_to_python(scalar):
     Converts a NumPy scalar to a regular python type.
     """
     scalar_type = type(scalar)
-    if np.issubclass_(scalar_type, np.float_):
+    if issubclass(scalar_type, np.float64):
         return float(scalar)
-    elif np.issubclass_(scalar_type, np.int_):
+    elif issubclass(scalar_type, np.int_):
         return int(scalar)
     return scalar
 

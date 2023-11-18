@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import param
@@ -93,6 +94,13 @@ class TestBokehServer(ComparisonTestCase):
         time.sleep(1)
 
     def _launcher(self, obj, threaded=True, port=6001):
+        try:
+            # In Python 3.12 this will raise a:
+            # `DeprecationWarning: There is no current event loop`
+            asyncio.get_event_loop()
+        except Exception:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+
         self._port = port
         server = serve(obj, threaded=threaded, show=False, port=port)
         time.sleep(0.5)
@@ -120,7 +128,7 @@ class TestBokehServer(ComparisonTestCase):
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in plot.state._event_callbacks
 
-    @pytest.mark.flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=3)
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
         overlay = dmap * HLine(0)

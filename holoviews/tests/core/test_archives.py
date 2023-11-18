@@ -117,7 +117,8 @@ class TestFileArchive:
         fname = os.fspath(tmp_path / f"{export_name}_metadata.json")
         if not os.path.isfile(fname):
             raise AssertionError(f"No file {fname!r} created on export.")
-        assert json.load(open(fname)) == data
+        with open(fname) as f:
+            assert json.load(f) == data
         assert archive.listing() == []
 
     """
