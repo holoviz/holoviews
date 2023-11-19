@@ -9,5 +9,5 @@ python -m build .
 
 git diff --exit-code
 
-export VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+export VERSION=$(ls dist/*.whl | cut -d- -f2)
 conda build conda.recipe/ --no-test --no-anaconda-upload --no-verify
