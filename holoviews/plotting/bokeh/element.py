@@ -403,34 +403,51 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dimensions. Returns None if there is no such axis.
         """
         dim_range = None
+        ax = 'x' if pos == 0 else 'y'
         categorical = range_type is FactorRange
         for plot in plots:
             if plot is None or specs is None:
                 continue
-            ax = 'x' if pos == 0 else 'y'
-            plot_range = getattr(plot, f'{ax}_range', None)
-            axes = getattr(plot, f'{ax}axis', None)
-            extra_ranges = getattr(plot, f'extra_{ax}_ranges', {})
 
-            if (
-                plot_range and plot_range.tags and
-                match_dim_specs(plot_range.tags[0], specs) and
-                match_ax_type(axes[0], axis_type) and
-                not (categorical and not isinstance(dim_range, FactorRange))
-            ):
-                dim_range = plot_range
+            for pax in 'xy':
+                plot_range = getattr(plot, f'{pax}_range', None)
+                axes = getattr(plot, f'{pax}axis', None)
+                extra_ranges = getattr(plot, f'extra_{pax}_ranges', {})
 
-            if dim_range is not None:
-                break
-
-            for extra_range in extra_ranges.values():
                 if (
-                    extra_range.tags and match_dim_specs(extra_range.tags[0], specs) and
-                    match_yaxis_type_to_range(axes, axis_type, extra_range.name) and
-                    not (categorical and not isinstance(dim_range, FactorRange))
+                        plot_range and plot_range.tags and
+                        match_dim_specs(plot_range.tags[0], specs) and
+                        match_ax_type(axes[0], axis_type) and
+                        not (categorical and not isinstance(dim_range, FactorRange))
                 ):
-                    dim_range = extra_range
-                    break
+                    dim_range = plot_range
+
+                    if dim_range is not None:
+                        break
+
+                    for extra_range in extra_ranges.values():
+                        if (
+                                extra_range.tags and match_dim_specs(extra_range.tags[0], specs) and
+                                match_yaxis_type_to_range(axes, axis_type, extra_range.name) and
+                                not (categorical and not isinstance(dim_range, FactorRange))
+                        ):
+                            dim_range = extra_range
+                            break
+
+        inverted = self.invert_xaxis if ax == 'x' else self.invert_yaxis
+
+        if isinstance(dim_range, Range1d) and ((inverted and dim_range.start <= dim_range.end) or (not inverted and dim_range.start >= dim_range.end)):
+            old = dim_range
+            dim_range = dim_range.clone()
+            print(dim_range.tags)
+            # Avoid
+            name, label, unit = old.tags[0][0]
+            dim_range.tags[0] = ((f'{name}-invert', label, unit),)
+            dim_range.start, dim_range.end = dim_range.end, dim_range.start
+            old.js_link('start', dim_range, 'end')
+            old.js_link('end', dim_range, 'start')
+            dim_range.js_link('start', old, 'end')
+            dim_range.js_link('end', old, 'start')
 
         return dim_range
 
@@ -558,6 +575,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim_range = range_type(name=dim.name if dim else None)
         else:
             dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
+
+        print(dim_range)
 
         if not dim_range.tags and specs is not None:
             dim_range.tags.append(specs)
@@ -718,6 +737,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
             fig = figure(title=title, **properties)
+
         fig.xaxis[0].update(**axis_props['x'])
         fig.yaxis[0].update(**axis_props['y'])
 
@@ -1210,7 +1230,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                self._shared['x-main-range'], self.logx, streaming)
         if not (self.drawn or self.subcoordinate_y) or yupdate:
             self._update_range(
-                y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
+                y_range, b, t, yfactors, self.invert_yaxis or self._get_tag(y_range, 'invert_yaxis'),
                 self._shared['y-main-range'], self.logy, streaming
             )
 
@@ -1250,7 +1270,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 offset = abs(low*0.1 if low else 0.5)
                 low -= offset
                 high += offset
-        if shared:
+        if False:#shared:
             shared = (axis_range.start, axis_range.end)
             low, high = util.max_range([(low, high), shared])
         if invert: low, high = high, low
