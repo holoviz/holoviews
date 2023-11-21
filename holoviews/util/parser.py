@@ -115,7 +115,7 @@ class Parser:
                                    dict(cls.namespace, **ns)))
             except Exception:
                 if cls.abort_on_eval_failure:
-                    raise SyntaxError(f"Could not evaluate keyword: {keyword!r}")
+                    raise SyntaxError(f"Could not evaluate keyword: {keyword!r}") from None
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"
                 parsewarning.warning(msg % keyword)
 

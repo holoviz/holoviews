@@ -117,7 +117,7 @@ class Normalization(Operation):
                 index = keys.index(key)
                 specs = ranges[index]
             except Exception:
-                raise KeyError("Could not match element key to defined keys")
+                raise KeyError("Could not match element key to defined keys") from None
         else:
             raise ValueError("Key list length must match length of supplied ranges")
 

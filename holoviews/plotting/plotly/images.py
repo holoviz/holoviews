@@ -55,7 +55,7 @@ class RGBPlot(ElementPlot):
             import PIL.Image
         except ImportError:
             raise VersionError("""\
-Rendering RGB elements with the plotly backend requires the Pillow package""")
+Rendering RGB elements with the plotly backend requires the Pillow package""") from None
 
         img = np.flip(
             np.dstack([element.dimension_values(d, flat=False)

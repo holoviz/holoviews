@@ -68,7 +68,7 @@ class univariate_kde(Operation):
             from scipy import stats
             from scipy.linalg import LinAlgError
         except ImportError:
-            raise ImportError(f'{type(self).__name__} operation requires SciPy to be installed.')
+            raise ImportError(f'{type(self).__name__} operation requires SciPy to be installed.') from None
 
         params = {}
         if isinstance(element, Distribution):
@@ -172,7 +172,7 @@ class bivariate_kde(Operation):
         try:
             from scipy import stats
         except ImportError:
-            raise ImportError(f'{type(self).__name__} operation requires SciPy to be installed.')
+            raise ImportError(f'{type(self).__name__} operation requires SciPy to be installed.') from None
 
         if len(element.dimensions()) < 2:
             raise ValueError("bivariate_kde can only be computed on elements "
