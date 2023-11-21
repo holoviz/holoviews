@@ -1,6 +1,7 @@
 import datetime as dt
 from unittest import SkipTest, skipIf
 
+import colorcet as cc
 import numpy as np
 import pandas as pd
 import pytest
@@ -1530,3 +1531,17 @@ def test_uint64_dtype():
     curve = Curve(df)
     with pytest.raises(TypeError, match="Dtype of uint64 for column A is not supported."):
         rasterize(curve, dynamic=False, height=10, width=10)
+
+
+def test_imagestack_datashader_color_key():
+    d = np.arange(23)
+    df = pd.DataFrame({"x": d, "y": d, "language": list(map(str, d))})
+    points = Points(df, ["x", "y"], ["language"])
+
+    # This will run rasterize which outputs an ImageStack
+    op = datashade(
+        points,
+        aggregator=ds.by("language", ds.count()),
+        color_key=cc.glasbey_light,
+    )
+    render(op)  # should not error out
