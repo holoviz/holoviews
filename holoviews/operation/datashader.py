@@ -1288,15 +1288,15 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        if element.ndims > 2:
-            kdims = element.kdims[1:]
+        if element.ndims > 2 or isinstance(element, ImageStack):
+            kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
             if not self.p.color_key:
                 pass
             elif isinstance(self.p.color_key, dict):
                 shade_opts['color_key'] = self.p.color_key
             elif isinstance(self.p.color_key, Iterable):
-                shade_opts['color_key'] = [c for i, c in
+                shade_opts['color_key'] = [c for _, c in
                                            zip(range(categories), self.p.color_key)]
             else:
                 colors = [self.p.color_key(s) for s in np.linspace(0, 1, categories)]
