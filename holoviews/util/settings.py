@@ -95,7 +95,7 @@ class KeywordSettings:
             try:
                 items.update(eval(f'dict({keyword})'))
             except Exception:
-                raise SyntaxError(f"Could not evaluate keyword: {keyword}")
+                raise SyntaxError(f"Could not evaluate keyword: {keyword}") from None
         return items
 
 
@@ -321,7 +321,7 @@ class OutputSettings(KeywordSettings):
                 raise ValueError(f"The selected plotting extension {backend!r} "
                                  "has not been loaded, ensure you load it "
                                  f"with hv.extension({backend!r}) before using "
-                                 "hv.output.")
+                                 "hv.output.") from e
             print(f'Error: {e}')
             if help_prompt:
                 print(help_prompt)

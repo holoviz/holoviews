@@ -241,8 +241,8 @@ class Comparison(ComparisonInterface):
             cls.assertEqual(len(l1), len(l2))
             for v1, v2 in zip(l1, l2):
                 cls.assertEqual(v1, v2)
-        except AssertionError:
-            raise AssertionError(msg or f'{l1!r} != {l2!r}')
+        except AssertionError as e:
+            raise AssertionError(msg or f'{l1!r} != {l2!r}') from e
 
 
     @classmethod
@@ -251,8 +251,8 @@ class Comparison(ComparisonInterface):
             cls.assertEqual(len(t1), len(t2))
             for i1, i2 in zip(t1, t2):
                 cls.assertEqual(i1, i2)
-        except AssertionError:
-            raise AssertionError(msg or f'{t1!r} != {t2!r}')
+        except AssertionError as e:
+            raise AssertionError(msg or f'{t1!r} != {t2!r}') from e
 
 
     #=====================#
@@ -275,7 +275,7 @@ class Comparison(ComparisonInterface):
             try:
                 cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:
-                raise cls.failureException(msg + str(e)[11:])
+                raise cls.failureException(msg + str(e)[11:]) from e
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
@@ -288,8 +288,8 @@ class Comparison(ComparisonInterface):
                 if isinstance(v2, datetime_types):
                     v2 = dt_to_int(v2)
                 cls.assert_array_almost_equal_fn(v1, v2)
-        except AssertionError:
-            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.")
+        except AssertionError as e:
+            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.") from e
 
 
     #=======================================#
@@ -321,7 +321,7 @@ class Comparison(ComparisonInterface):
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
                 msg = f'Dimension parameter {k!r} mismatched: '
-                raise cls.failureException(f"{msg}{e!s}")
+                raise cls.failureException(f"{msg}{e!s}") from e
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -712,7 +712,7 @@ class Comparison(ComparisonInterface):
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:
-            raise cls.failureException(msg+': '+str(e))
+            raise cls.failureException(f'{msg}: {e}') from e
 
     #============#
     # Statistics #

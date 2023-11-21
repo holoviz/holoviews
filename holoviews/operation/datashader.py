@@ -1570,9 +1570,9 @@ class stack(Operation):
 
         try:
             imgs = xr.align(*imgs, join='exact')
-        except ValueError:
+        except ValueError as e:
             raise ValueError('RGB inputs to the stack operation could not be aligned; '
-                             'ensure they share the same grid sampling.')
+                             'ensure they share the same grid sampling.') from e
 
         stacked = tf.stack(*imgs, how=self.p.compositor)
         arr = shade.uint32_to_uint8(stacked.data)[::-1]

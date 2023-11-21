@@ -568,7 +568,7 @@ class contours(Operation):
                 contour_generator,
             )
         except ImportError:
-            raise ImportError("contours operation requires contourpy.")
+            raise ImportError("contours operation requires contourpy.") from None
 
         xs = element.dimension_values(0, True, flat=False)
         ys = element.dimension_values(1, True, flat=False)
