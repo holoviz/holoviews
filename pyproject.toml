@@ -9,6 +9,7 @@ requires = [
 addopts = ["--strict-config", "--strict-markers", "--color=yes"]
 minversion = "7"
 xfail_strict = true
+log_cli_level = "INFO"
 filterwarnings = [
     "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
@@ -72,7 +73,6 @@ select = [
 ]
 
 ignore = [
-    "B904",     # Within an `except` clause, raise exceptions with from err or None
     "E402",     # Module level import not at top of file
     "E501",     # Line too long
     "E701",     # Multiple statements on one line
@@ -98,6 +98,7 @@ unfixable = [
 "holoviews/tests/*" = [
     "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
     "NPY002",  # Replace legacy `np.random.rand` call with Generator
+    "B904",  # Within an `except` clause, raise exceptions with from err or None
 ]
 
 [tool.ruff.lint.isort]

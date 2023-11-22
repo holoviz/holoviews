@@ -998,7 +998,7 @@ class Dimensioned(LabelledData):
             dimensions = self.kdims+self.vdims
             return next(i for i, d in enumerate(dimensions) if d == dim)
         except StopIteration:
-            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.")
+            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 
 
     def get_dimension_type(self, dim):
