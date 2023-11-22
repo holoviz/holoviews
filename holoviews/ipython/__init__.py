@@ -44,6 +44,7 @@ class IPTestCase(ComparisonTestCase):
         except Exception as e:
             raise SkipTest("IPython could not be started") from e
 
+        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
         self.addTypeEqualityFunc(HTML, self.skip_comparison)
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
 

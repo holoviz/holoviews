@@ -130,6 +130,7 @@ class Exporter(param.ParameterizedFunction):
     @bothmethod
     def _filename(self_or_cls, filename):
         "Add the file extension if not already present"
+        filename = os.fspath(filename)
         if not filename.endswith(self_or_cls.file_ext):
             return f'{filename}.{self_or_cls.file_ext}'
         else:
@@ -361,7 +362,7 @@ class Pickler(Exporter):
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         compression = zipfile.ZIP_STORED if self_or_cls.compress else zipfile.ZIP_DEFLATED
 
-        filename = self_or_cls._filename(filename) if isinstance(filename, str) else filename
+        filename = self_or_cls._filename(filename) if isinstance(filename, (str, os.PathLike)) else filename
         with zipfile.ZipFile(filename, 'w', compression=compression) as f:
 
             if isinstance(obj, Layout) and not isinstance(obj, Overlay):

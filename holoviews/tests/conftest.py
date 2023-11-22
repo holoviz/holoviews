@@ -50,3 +50,33 @@ def ibis_sqlite_backend():
         ibis.set_backend('sqlite')
         yield
         ibis.set_backend(None)
+
+
+@pytest.fixture
+def bokeh_backend():
+    import holoviews as hv
+    hv.renderer('bokeh')
+    prev_backend = hv.Store.current_backend
+    hv.Store.current_backend = 'bokeh'
+    yield
+    hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
+def mpl_backend():
+    import holoviews as hv
+    hv.renderer('matplotlib')
+    prev_backend = hv.Store.current_backend
+    hv.Store.current_backend = 'matplotlib'
+    yield
+    hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
+def plotly_backend():
+    import holoviews as hv
+    hv.renderer('plotly')
+    prev_backend = hv.Store.current_backend
+    hv.Store.current_backend = 'plotly'
+    yield
+    hv.Store.current_backend = prev_backend

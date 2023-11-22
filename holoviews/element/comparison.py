@@ -777,3 +777,16 @@ class ComparisonTestCase(Comparison, TestCase):
         registry = Comparison.register()
         for k, v in registry.items():
             self.addTypeEqualityFunc(k, v)
+
+
+_assert_element_equal = ComparisonTestCase().assertEqual
+
+def assert_element_equal(element1, element2):
+    # Filter non-holoviews elements
+    hv_types = (Element, Layout)
+    if not isinstance(element1, hv_types):
+        raise TypeError(f"First argument is not an allowed type but a {type(element1).__name__!r}.")
+    if not isinstance(element2, hv_types):
+        raise TypeError(f"Second argument is not an allowed type but a {type(element2).__name__!r}.")
+
+    _assert_element_equal(element1, element2)
