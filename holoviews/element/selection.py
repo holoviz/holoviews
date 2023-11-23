@@ -69,7 +69,7 @@ def spatial_select_gridded(xvals, yvals, geometry):
             from ..operation.datashader import rasterize
         except ImportError:
             raise ImportError("Lasso selection on gridded data requires "
-                              "datashader to be available.")
+                              "datashader to be available.") from None
         xs, ys = xvals[0], yvals[:, 0]
         target = Image((xs, ys, np.empty(ys.shape+xs.shape)))
         poly = Polygons([geometry])
@@ -132,7 +132,7 @@ def spatial_select_columnar(xvals, yvals, geometry):
             geom_mask = np.array([poly.contains(p) for p in points])
         except ImportError:
             raise ImportError("Lasso selection on tabular data requires "
-                              "either spatialpandas or shapely to be available.")
+                              "either spatialpandas or shapely to be available.") from None
     if isinstance(xvals, pd.Series):
         sel_mask[sel_mask.index[np.where(sel_mask)[0]]] = geom_mask
     else:
@@ -155,7 +155,7 @@ def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
         return np.array([poly.contains(p) for p in boxes])
     except ImportError:
         raise ImportError("Lasso selection on geometry data requires "
-                          "shapely to be available.")
+                          "shapely to be available.") from None
 
 def spatial_poly_select(xvals, yvals, geometry):
     try:
@@ -165,7 +165,7 @@ def spatial_poly_select(xvals, yvals, geometry):
         return np.array([poly.contains(p) for p in boxes])
     except ImportError:
         raise ImportError("Lasso selection on geometry data requires "
-                          "shapely to be available.")
+                          "shapely to be available.") from None
 
 def spatial_bounds_select(xvals, yvals, bounds):
     x0, y0, x1, y1 = bounds

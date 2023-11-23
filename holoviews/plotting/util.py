@@ -104,8 +104,8 @@ def collate(obj):
                     collated_layout = Layout(el.collate())
                     expanded.extend(collated_layout.values())
             return Layout(expanded)
-        except Exception:
-            raise Exception(undisplayable_info(obj))
+        except Exception as e:
+            raise Exception(undisplayable_info(obj)) from e
     else:
         raise Exception(undisplayable_info(obj))
 

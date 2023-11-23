@@ -341,7 +341,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
-            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.')
+            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.') from None
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)
@@ -645,10 +645,10 @@ def renderer(name):
             if prev_backend:
                 Store.set_current_backend(prev_backend)
         return Store.renderers[name]
-    except ImportError:
+    except ImportError as e:
         msg = ('Could not find a {name!r} renderer, available renderers are: {available}.')
         available = ', '.join(repr(k) for k in Store.renderers)
-        raise ImportError(msg.format(name=name, available=available))
+        raise ImportError(msg.format(name=name, available=available)) from e
 
 
 class extension(_pyviz_extension):

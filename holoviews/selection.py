@@ -520,10 +520,10 @@ class SelectionDisplay:
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
-                                    f"display selection for all elements: {key_error} on '{element!r}'.")
+                                    f"display selection for all elements: {key_error} on '{element!r}'.") from e
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s." % e)
+                                    "display selection for all elements: %s." % e) from e
             ds_cache[selection_expr] = mask
         else:
             selection = element

@@ -508,16 +508,26 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
 class ImageStack(Image):
     """
-    Supports the same constructor RGB and HSV elements, but without the
-    limit of 3/4 channels (one of more channels).
+    ImageStack expands the capabilities of Image to by supporting
+    multiple layers of images.
 
-    If only one channel it should behave the same as an Image.
+    As there is many ways to represent multiple layers of images,
+    the following options are supported:
 
-    Type of data inputs:
-    - 3D ndarray (x,y,level)
-    - A list of 2D ndarrays
-    - A dict of 2D ndarrays (key=level: value=2D ndarray)
-    - xarray with all the whistles
+        1) A 3D Numpy array with the shape (y, x, level)
+        2) A list of 2D Numpy arrays with identical shape (y, x)
+        3) A dictionary where the keys will be set as the vdims and the
+            values are 2D Numpy arrays with identical shapes (y, x).
+            If the dictionary's keys matches the kdims of the element,
+            they need to be 1D arrays.
+        4) A tuple containing (x, y, level_0, level_1, ...),
+            where the level is a 2D Numpy array in the shape of (y, x).
+        5) An xarray DataArray or Dataset where its `coords` contain the kdims.
+
+    If no kdims are supplied, x and y are used.
+
+    If no vdims are supplied, and the naming can be inferred like with a dictionary
+    the levels will be named level_0, level_1, etc.
     """
 
     vdims = param.List(doc="""
@@ -530,20 +540,35 @@ class ImageStack(Image):
     _vdim_reductions = {1: Image}
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, np.ndarray) and data.ndim == 3:
-            x = np.arange(data.shape[0])
-            y = np.arange(data.shape[1])
-            data = (x, y, *(data[:, :, n] for n in range(data.shape[2])))
+        _kdims = kdims or self.kdims
+        if isinstance(data, list) and len(data):
+            x = np.arange(data[0].shape[1])
+            y = np.arange(data[0].shape[0])
+            data = (x, y, *data)
+        elif isinstance(data, dict):
+            first = next(v for k, v in data.items() if k not in _kdims)
+            xdim, ydim = map(str, _kdims)
+            if xdim not in data:
+                data[xdim] = np.arange(first.shape[1])
+            if ydim not in data:
+                data[ydim] = np.arange(first.shape[0])
+        elif isinstance(data, np.ndarray) and data.ndim == 3:
+            x = np.arange(data.shape[1])
+            y = np.arange(data.shape[0])
+            arr = (data[:, :, n] for n in range(data.shape[2]))
+            data = (x, y, *arr)
         elif (
             isinstance(data, tuple) and len(data) == 3
             and isinstance(data[2], np.ndarray) and data[2].ndim == 3
         ):
-            data = (data[0], data[1], *(data[2][:, :,n] for n in range(data[2].shape[2])))
+            arr = (data[2][:, :, n] for n in range(data[2].shape[2]))
+            data = (data[0], data[1], *arr)
+
         if vdims is None:
             if isinstance(data, tuple):
                 vdims = [Dimension(f"level_{i}") for i in range(len(data[2:]))]
             elif isinstance(data, dict):
-                vdims = [Dimension(key) for key in data.keys() if key not in self.kdims]
+                vdims = [Dimension(key) for key in data.keys() if key not in _kdims]
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
@@ -623,7 +648,7 @@ class RGB(Image):
         try:
             from PIL import Image
         except ImportError:
-            raise ImportError("RGB.load_image requires PIL (or Pillow).")
+            raise ImportError("RGB.load_image requires PIL (or Pillow).") from None
 
         with open(filename, 'rb') as f:
             data = np.array(Image.open(f))
