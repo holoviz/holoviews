@@ -1,6 +1,9 @@
 """
 Tests of Layout and related classes
 """
+import numpy as np
+import pytest
+
 from holoviews import (
     AdjointLayout,
     Element,
@@ -10,7 +13,7 @@ from holoviews import (
     NdLayout,
     Overlay,
 )
-from holoviews.element import Curve, HLine
+from holoviews.element import Curve, HLine, Image
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -129,7 +132,14 @@ class AdjointLayoutTest(CompositeTest):
         with self.assertRaises(ValueError):
             (self.view1 << self.view2 << self.view3) * (self.hmap << dim_view)
 
+    @pytest.mark.usefixtures("mpl_backend")
+    def test_histogram_image_hline_overlay(self):
+        image = Image(np.arange(100).reshape(10, 10))
+        overlay = image * HLine(y=0)
+        element = overlay.hist()
 
+        assert isinstance(element, AdjointLayout)
+        assert element.main == overlay
 
 class NdLayoutTest(CompositeTest):
 

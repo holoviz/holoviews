@@ -908,7 +908,7 @@ class histogram(Operation):
             if normed == 'height':
                 hist /= hist.max()
         else:
-            hist, edges = np.histogram(data, normed=normed, weights=weights, bins=edges)
+            hist, edges = np.histogram(data, density=normed, weights=weights, bins=edges)
             if self.p.weight_dimension and self.p.mean_weighted:
                 hist_mean, _ = np.histogram(data, density=False, bins=self.p.num_bins)
                 hist /= hist_mean
