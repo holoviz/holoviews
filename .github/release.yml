@@ -1,0 +1,24 @@
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes#configuring-automatically-generated-release-notes
+changelog:
+  categories:
+    - title: New features
+      labels:
+        - "type: feature"
+    - title: Enhancements
+      labels:
+        - "type: enhancement"
+    - title: Bug fixes
+      labels:
+        - "type: bug"
+    - title: Compatibility
+      labels:
+        - "type: compatibility"
+    - title: Documentation
+      labels:
+        - "type: doc"
+    - title: Maintenance
+      labels:
+        - "type: maintenance"
+    - title: Other Changes
+      labels:
+        - "*"
