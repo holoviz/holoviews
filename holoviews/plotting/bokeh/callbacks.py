@@ -16,7 +16,7 @@ from bokeh.models import (
     PolyEditTool,
     Range1d,
 )
-from panel.io.state import state, set_curdoc
+from panel.io.state import set_curdoc, state
 
 from ...core.options import CallbackError
 from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
