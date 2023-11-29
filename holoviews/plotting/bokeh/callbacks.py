@@ -16,7 +16,7 @@ from bokeh.models import (
     PolyEditTool,
     Range1d,
 )
-from panel.io.state import state
+from panel.io.state import set_curdoc, state
 
 from ...core.options import CallbackError
 from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
@@ -209,7 +209,8 @@ class Callback:
             streams.append(stream)
 
         try:
-            Stream.trigger(streams)
+            with set_curdoc(self.plot.document):
+                Stream.trigger(streams)
         except CallbackError as e:
             if self.plot.root and self.plot.root.ref['id'] in state._handles:
                 handle, _ = state._handles[self.plot.root.ref['id']]
