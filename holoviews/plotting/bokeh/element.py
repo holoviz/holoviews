@@ -2609,9 +2609,11 @@ class ScalebarPlot(ElementPlot):
     )
 
     scale_unit = param.String(
-        default="mm",
+        default=None,
         doc="""
-        Unit of the scalebar. Where one unit is equal to the width/height of the figure""",
+        Unit of the scalebar. The order of how this will be done is with:
+
+        scale_unit > The elements kdim unit (if exist) > meter""",
     )
 
     scale_location = param.ObjectSelector(
@@ -2663,12 +2665,16 @@ class ScalebarPlot(ElementPlot):
 
         from bokeh.models import ScaleBar
 
+        kdims = self.hmap.last.kdims
+        unit = self.scale_unit or kdims[0].unit or "m"
+
         _default_scale_opts = {
             "background_fill_alpha": 0.8,
         }
         opts = dict(_default_scale_opts, **self.scale_opts)
+
         scale_bar = ScaleBar(
-            unit=self.scale_unit,
+            unit=unit,
             location=self.scale_location,
             label=self.scale_label,
             **opts,
