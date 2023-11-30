@@ -8,7 +8,7 @@ from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
 from ..util import categorical_legend
 from .chart import PointPlot
-from .element import ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, LegendPlot, ScalebarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import bokeh33, colormesh
@@ -119,7 +119,7 @@ class RasterPlot(ColorbarPlot):
         return (data, mapping, style)
 
 
-class RGBPlot(LegendPlot):
+class RGBPlot(LegendPlot, ScalebarPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 

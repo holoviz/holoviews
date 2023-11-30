@@ -66,7 +66,7 @@ from .tabular import TablePlot
 from .util import (
     TOOL_TYPES,
     bokeh32,
-    bokeh_version,
+    bokeh33,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,
@@ -2602,6 +2602,89 @@ class LegendPlot(ElementPlot):
                     for r in item.renderers:
                         r.muted = self.legend_muted
 
+
+class ScalebarPlot(ElementPlot):
+    scalebar = param.Boolean(
+        default=False,
+        doc="""
+        Whether to display a scalebar.""",
+    )
+
+    scale_unit = param.String(
+        default="mm",
+        doc="""
+        Unit of the scalebar. Where one unit is equal to the width/height of the figure""",
+    )
+
+    scale_location = param.ObjectSelector(
+        default="bottom_right",
+        objects=[
+            "top_left",
+            "top_center",
+            "top_right",
+            "center_left",
+            "center_center",
+            "center_right",
+            "bottom_left",
+            "bottom_center",
+            "bottom_right",
+            "top",
+            "left",
+            "center",
+            "right",
+            "bottom"
+        ],
+        doc="""
+        Location anchor for positioning scale bar."""
+    )
+
+    scale_label = param.String(
+        default="@{value} @{unit}", doc="""
+        The label template.
+
+        This can use special variables:
+        * ``@{value}`` The current value. Optionally can provide a number
+            formatter with e.g. ``@{value}{%.2f}``.
+        * ``@{unit}`` The unit of measure, by default in the short form.
+            Optionally can provide a format ``@{unit}{short}`` or
+            ``@{unit}{long}``.""",
+    )
+
+    scale_opts = param.Dict(
+        default={},
+        doc="""
+        Allows setting specific styling options for the scalebar.
+        See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.ScaleBar
+        for more information.
+        """,
+    )
+
+    def _draw_scalebar(self, plot):
+        if not bokeh33:
+            raise RuntimeError("Scalebar requires Bokeh >= 3.3.0")
+
+        from bokeh.models import ScaleBar
+
+        _default_scale_opts = {
+            "background_fill_alpha": 0.8,
+        }
+        opts = dict(_default_scale_opts, **self.scale_opts)
+        scale_bar = ScaleBar(
+            unit=self.scale_unit,
+            location=self.scale_location,
+            label=self.scale_label,
+            **opts,
+        )
+        plot.add_layout(scale_bar)
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object and optionally creates a colorbar.
+        """
+        ret = super()._init_glyph(plot, mapping, properties)
+        if self.scalebar:
+            self._draw_scalebar(plot)
+        return ret
 
 
 class AnnotationPlot:
