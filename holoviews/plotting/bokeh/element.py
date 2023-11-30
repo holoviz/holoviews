@@ -42,7 +42,6 @@ from bokeh.models.tickers import (
     Ticker,
 )
 from bokeh.models.tools import Tool
-from packaging.version import Version
 
 from ...core import CompositeOverlay, Dataset, Dimension, DynamicMap, Element, util
 from ...core.options import Keywords, SkipRendering, abbreviated_exception
@@ -2497,8 +2496,7 @@ class ColorbarPlot(ElementPlot):
                     )
             elif self.cnorm == 'eq_hist':
                 colormapper = EqHistColorMapper
-                if bokeh_version > Version('2.4.2'):
-                    opts['rescale_discrete_levels'] = self.rescale_discrete_levels
+                opts['rescale_discrete_levels'] = self.rescale_discrete_levels
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
@@ -2679,7 +2677,7 @@ class ScalebarPlot(ElementPlot):
 
     def _init_glyph(self, plot, mapping, properties):
         """
-        Returns a Bokeh glyph object and optionally creates a colorbar.
+        Returns a Bokeh glyph object and optionally creates a scalebar.
         """
         ret = super()._init_glyph(plot, mapping, properties)
         if self.scalebar:
