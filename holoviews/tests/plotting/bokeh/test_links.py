@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, RangeTool
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Image, Path, Points, Polygons, Scatter, Table
@@ -12,7 +12,6 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 class TestLinkCallbacks(TestBokehPlot):
 
     def test_range_tool_link_callback_single_axis(self):
-        from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
         target = Scatter(array)
@@ -26,7 +25,6 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertIs(range_tool.y_range, None)
 
     def test_range_tool_link_callback_single_axis_overlay_target(self):
-        from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
         target = Scatter(array, label='a') * Scatter(array, label='b')
@@ -40,7 +38,6 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertIs(range_tool.y_range, None)
 
     def test_range_tool_link_callback_single_axis_overlay_target_image_source(self):
-        from bokeh.models import RangeTool
         data = np.random.rand(50, 50)
         target = Curve(data) * Curve(data)
         source = Image(np.random.rand(50, 50), bounds=(0, 0, 1, 1))
@@ -53,8 +50,41 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
         self.assertIs(range_tool.y_range, None)
 
+    def test_range_tool_link_callback_single_axis_curve_target_image_dmap_source(self):
+        # Choosing Image to exert the apply_nodata compositor
+        src = DynamicMap(
+            lambda a: Image(a*np.random.random((20, 20)), bounds=[0, 0, 9, 9]),
+            kdims=['a']
+        ).redim.range(a=(0.1,1))
+        target = Curve(np.arange(10))
+        RangeToolLink(src, target)
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        src_plot = plot.subplots[(0, 1)].subplots['main']
+        range_tool = src_plot.state.select_one({'type': RangeTool})
+        self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
+        self.assertIs(range_tool.y_range, None)
+
+    def test_range_tool_link_callback_single_axis_overlay_target_image_dmap_source(self):
+        # Choosing Image to exert the apply_nodata compositor
+        src = DynamicMap(
+            lambda a: Image(a*np.random.random((20, 20)), bounds=[0, 0, 9, 9]),
+            kdims=['a']
+        ).redim.range(a=(0.1,1))
+        data = np.random.rand(50, 50)
+        target = Curve(data) * Curve(data)
+        RangeToolLink(src, target)
+        layout = target + src
+        plot = bokeh_renderer.get_plot(layout)
+        tgt_plot = plot.subplots[(0, 0)].subplots['main']
+        src_plot = plot.subplots[(0, 1)].subplots['main']
+        range_tool = src_plot.state.select_one({'type': RangeTool})
+        self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
+        self.assertIs(range_tool.y_range, None)
+
+
     def test_range_tool_link_callback_both_axes(self):
-        from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
         target = Scatter(array)
