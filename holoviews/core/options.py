@@ -1004,8 +1004,6 @@ class Compositor(param.Parameterized):
                           [CompositeOverlay])
         element_patterns = [c.pattern for c in element_compositors]
         if element_compositors and obj.traverse(lambda x: x, element_patterns):
-            # If obj is a Layout that contains a DynamicMap, the _plot_id of the DynamicMap is changed as long as the obj's _plot_id
-
             obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
                           element_patterns)
 
