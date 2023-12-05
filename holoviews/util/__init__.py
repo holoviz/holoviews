@@ -872,7 +872,7 @@ class Dynamic(param.ParameterizedFunction):
 
     link_inputs = param.Boolean(default=True, doc="""
          If Dynamic is applied to another DynamicMap, determines whether
-         linked streams attached to its Callable inputs are
+         linked streams and links attached to its Callable inputs are
          transferred to the output of the utility.
 
          For example if the Dynamic utility is applied to a DynamicMap
@@ -900,8 +900,10 @@ class Dynamic(param.ParameterizedFunction):
         callback = self._dynamic_operation(map_obj)
         streams = self._get_streams(map_obj, watch)
         if isinstance(map_obj, DynamicMap):
-            dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
-                                 streams=streams)
+            params = {'shared_data': self.p.shared_data}
+            if self.p.link_inputs:
+                params['plot_id'] = map_obj._plot_id
+            dmap = map_obj.clone(callback=callback, streams=streams, **params)
             if self.p.shared_data:
                 dmap.data = dict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
