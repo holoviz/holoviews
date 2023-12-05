@@ -77,7 +77,7 @@ def render_svg(element):
 
 def in_jupyterlite():
     import js
-    return hasattr(js, "_JUPYTERLAB")
+    return hasattr(js, "_JUPYTERLAB") or hasattr(js, "webpackChunk_jupyterlite_pyodide_kernel_extension")
 
 #-----------------------------------------------------------------------------
 # Public API
