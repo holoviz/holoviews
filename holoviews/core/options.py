@@ -993,10 +993,6 @@ class Compositor(param.Parameterized):
         using the map method.
         """
         from .overlay import CompositeOverlay
-
-        # Gather _plot_id values to reset them later
-        plot_ids = obj.traverse(lambda o: o._plot_id)
-
         element_compositors = [c for c in cls.definitions if len(c._pattern_spec) == 1]
         overlay_compositors = [c for c in cls.definitions if len(c._pattern_spec) > 1]
         if overlay_compositors:
@@ -1006,12 +1002,6 @@ class Compositor(param.Parameterized):
         if element_compositors and obj.traverse(lambda x: x, element_patterns):
             obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
                           element_patterns)
-
-        # Reset _plot_id for links not to be lost.
-        plot_ids = iter(plot_ids)
-        def reset_plot_id(o):
-            o._plot_id = next(plot_ids)
-        obj.traverse(reset_plot_id)
         return obj
 
     @classmethod
