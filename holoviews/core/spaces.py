@@ -1,7 +1,7 @@
 import itertools
 import types
 from collections import defaultdict
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
 from numbers import Number
@@ -546,11 +546,6 @@ class Callable(param.Parameterized):
         # Nothing to do for callbacks that accept no arguments
         kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
-        if hasattr(self.callable, 'rx'):
-            with suppress(TypeError):
-                # If param.bind is used and not all arguments are set
-                # it will raise TypeError
-                return self.callable.rx.value
         if not args and not kwargs and not any(kwarg_hash): return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
