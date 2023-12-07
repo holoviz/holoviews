@@ -63,8 +63,8 @@ class TestLinkCallbacks(TestBokehPlot):
         tgt_plot = plot.subplots[(0, 0)].subplots['main']
         src_plot = plot.subplots[(0, 1)].subplots['main']
         range_tool = src_plot.state.select_one({'type': RangeTool})
-        self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
-        self.assertIs(range_tool.y_range, None)
+        assert range_tool.x_range == tgt_plot.handles['x_range']
+        assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_overlay_target_image_dmap_source(self):
         # Choosing Image to exert the apply_nodata compositor
@@ -80,9 +80,8 @@ class TestLinkCallbacks(TestBokehPlot):
         tgt_plot = plot.subplots[(0, 0)].subplots['main']
         src_plot = plot.subplots[(0, 1)].subplots['main']
         range_tool = src_plot.state.select_one({'type': RangeTool})
-        self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
-        self.assertIs(range_tool.y_range, None)
-
+        assert range_tool.x_range == tgt_plot.handles['x_range']
+        assert range_tool.y_range is None
 
     def test_range_tool_link_callback_both_axes(self):
         array = np.random.rand(100, 2)
