@@ -900,10 +900,12 @@ class Dynamic(param.ParameterizedFunction):
         callback = self._dynamic_operation(map_obj)
         streams = self._get_streams(map_obj, watch)
         if isinstance(map_obj, DynamicMap):
-            params = {'shared_data': self.p.shared_data}
+            kwargs = dict(
+                shared_data=self.p.shared_data, callback=callback, streams=streams
+            )
             if self.p.link_inputs:
-                params['plot_id'] = map_obj._plot_id
-            dmap = map_obj.clone(callback=callback, streams=streams, **params)
+                kwargs['plot_id'] = map_obj._plot_id
+            dmap = map_obj.clone(**kwargs)
             if self.p.shared_data:
                 dmap.data = dict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
