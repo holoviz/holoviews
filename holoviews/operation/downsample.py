@@ -147,10 +147,14 @@ def _nth_point(x, y, n_out):
     n_samples = len(x)
     return np.arange(0, n_samples, max(1, math.ceil(n_samples / n_out)))
 
+def _viewport(x, y, n_out):
+    return slice(0, len(x))
+
 
 _ALGORITHMS = {
     'lttb': _lttb,
-    'nth': _nth_point
+    'nth': _nth_point,
+    'viewport': _viewport,
 }
 
 
@@ -164,7 +168,7 @@ class downsample1d(ResampleOperation1D):
         - `nth`: Selects every n-th point.
     """
 
-    algorithm = param.Selector(default='lttb', objects=['lttb', 'nth'])
+    algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS))
 
     def _process(self, element, key=None):
         if isinstance(element, (Overlay, NdOverlay)):
@@ -176,7 +180,7 @@ class downsample1d(ResampleOperation1D):
             return element.clone(elements)
 
         if self.p.x_range:
-            element = element[slice(*self.p.x_range)]
+            element = element[slice(self.p.x_range[0], self.p.x_range[1] + 1)]
         if len(element) <= self.p.width:
             return element
         xs, ys = (element.dimension_values(i) for i in range(2))
