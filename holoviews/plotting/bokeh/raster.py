@@ -258,13 +258,28 @@ class ImageStackPlot(RasterPlot):
 
     def _get_colormapper(self, eldim, element, ranges, style, factors=None,
                          colors=None, group=None, name='color_mapper'):
+        dict_cmap = False
+        if isinstance(style.get("cmap"), dict):
+            dict_cmap = style["cmap"]
+            style["cmap"] = list(dict_cmap.values())
+            missing = set(map(str, element.vdims)) - dict_cmap.keys()
+            if missing:
+                missing_str = "', '".join(sorted(missing))
+                raise ValueError(
+                    "The supplied cmap dictionary must have the same "
+                    f"value dimensions as the element. Missing: '{missing_str}'"
+                )
+
         cmapper = super()._get_colormapper(
             eldim, element, ranges, style, factors=factors,
             colors=colors, group=group, name=name
         )
-        num_elements = len(element.vdims)
-        step_size = len(cmapper.palette) // num_elements
-        indices = np.arange(num_elements) * step_size
+        if dict_cmap:
+            indices = [list(dict_cmap).index(vd.name) for vd in element.vdims]
+        else:
+            num_elements = len(element.vdims)
+            step_size = len(cmapper.palette) // num_elements
+            indices = np.arange(num_elements) * step_size
         cmapper.palette = np.array(cmapper.palette)[indices].tolist()
         return cmapper
 
