@@ -6,7 +6,6 @@ import bokeh
 import bokeh.plotting
 import numpy as np
 import param
-from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
     BinnedTicker,
