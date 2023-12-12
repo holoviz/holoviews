@@ -1785,7 +1785,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for k, values in source.data.items():
                 key = '@{%s}' % k
                 if (
-                    (isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
                     (len(values) and isinstance(values[0], util.datetime_types)) or
                     (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
                 ):
