@@ -592,8 +592,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         plot_fn = getattr(ax, plot_method)
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
-             plot_kwargs.pop('vmin', None)
-             plot_kwargs.pop('vmax', None)
+            plot_kwargs.pop('vmin', None)
+            plot_kwargs.pop('vmax', None)
         with warnings.catch_warnings():
             # scatter have a default cmap and with an empty array will emit this warning
             warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
