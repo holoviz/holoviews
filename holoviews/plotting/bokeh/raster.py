@@ -275,7 +275,8 @@ class ImageStackPlot(RasterPlot):
             colors=colors, group=group, name=name
         )
         if dict_cmap:
-            indices = [list(dict_cmap).index(vd.name) for vd in element.vdims]
+            keys_cmap = list(dict_cmap)
+            indices = [keys_cmap.index(vd.name) for vd in element.vdims]
         else:
             num_elements = len(element.vdims)
             step_size = len(cmapper.palette) // num_elements
