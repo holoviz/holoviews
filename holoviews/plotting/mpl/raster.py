@@ -191,8 +191,8 @@ class QuadMeshPlot(ColorbarPlot):
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
-             plot_kwargs.pop('vmin', None)
-             plot_kwargs.pop('vmax', None)
+            plot_kwargs.pop('vmin', None)
+            plot_kwargs.pop('vmax', None)
         if colorbar and mpl_version < Version('3.1'):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
