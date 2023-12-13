@@ -447,7 +447,8 @@ class aggregate(LineAggregationOperation):
 class curve_aggregate(aggregate):
     """
     Optimized aggregation for Curve objects by setting the default
-    of the aggregator to self-intersect=False.
+    of the aggregator to self_intersect=False to be more consistent
+    with the appearance of non-aggregated curves.
     """
     aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default=rd.count(self_intersect=False), doc="""
