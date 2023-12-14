@@ -69,14 +69,9 @@ jobs:
         with:
           name: conda_build
           path: ${{ env.CONDA_PATH }}
-      - run: |
-          file ${{ env.CONDA_FILE }}
-          ls $CONDA_PREFIX/conda-bld/noarch
-          ls $CONDA_PATH
       - name: conda setup
         run: |
-          conda install python=$PYTHON_VERSION -y
-          conda install -y $CONDA_FILE
+          conda install python=$PYTHON_VERSION $CONDA_FILE -y
       - name: Test package
         run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
 
