@@ -18,7 +18,7 @@ env:
 
 jobs:
   conda_build:
-    name: Build Conda Packages
+    name: Build Conda Package
     runs-on: 'ubuntu-latest'
     defaults:
       run:
@@ -63,7 +63,7 @@ jobs:
         run: |
           anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $CONDA_FILE
   pip_build:
-    name: Build PyPI Packages
+    name: Build PyPI Package
     runs-on: 'ubuntu-latest'
     defaults:
       run:
