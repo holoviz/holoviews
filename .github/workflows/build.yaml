@@ -23,6 +23,8 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
+    outputs:
+      conda_file: ${{ steps.vars.outputs.conda_file }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -38,14 +40,15 @@ jobs:
           # pyct is for running setup.py
           conda install -y conda-build build pyct -c pyviz/label/dev
       - name: conda build
+        id: vars
         run: |
           source ./scripts/build_conda.sh
-          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
+          echo "conda_file="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: conda_build
-          path: ${{ env.CONDA_FILE }}
+          path: ${{ steps.vars.outputs.conda_file }}
           if-no-files-found: error
 
   conda_publish:
@@ -59,14 +62,13 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - name: Testing
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Set environment variables
         run: |
-          echo "Testing ${{ github.ref }}"
-      - name: Testing
-        if: (!startsWith(github.ref, 'refs/tags/'))
+          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "CONDA_FILE=${{ needs.conda_build.outputs.conda_file }}" >> $GITHUB_ENV
+      - name: Check environment variables
         run: |
-          echo "Testing ${{ github.ref }}"
+          echo $TAG $CONDA_FILE
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
@@ -77,16 +79,16 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: conda_build
-          path: ${{ needs.conda_build.env.CONDA_FILE }}
+          path: ${{ env.CONDA_FILE }}
       - name: conda dev upload
-        if: contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc')
+        if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev ${{ needs.conda_build.env.CONDA_FILE }}
+          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev ${{ env.CONDA_FILE }}
           echo "conda dev upload"
       - name: conda main upload
-        if: (!(contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc')))
+        if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main ${{ needs.conda_build.env.CONDA_FILE }}
+          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main ${{ env.CONDA_FILE }}
           echo conda main upload
 
   pip_build:
