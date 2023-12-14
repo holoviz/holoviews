@@ -11,6 +11,11 @@ on:
   schedule:
     - cron: '0 14 * * SUN'
 
+env:
+  PYTHON_VERSION: "3.9"
+  MPLBACKEND: "Agg"
+  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+
 jobs:
   conda_build:
     name: Build Conda Packages
@@ -19,13 +24,7 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-      PKG_TEST_PYTHON: "--test-python=py39"
-      PYTHON_VERSION: "3.9"
-      CHANS: "-c pyviz"
-      MPLBACKEND: "Agg"
       CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
       - uses: actions/checkout@v3
         with:
@@ -69,9 +68,7 @@ jobs:
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       PKG_TEST_PYTHON: "--test-python=py39"
-      PYTHON_VERSION: "3.9"
       CHANS: "-c pyviz"
-      MPLBACKEND: "Agg"
       PPU: ${{ secrets.PPU }}
       PPP: ${{ secrets.PPP }}
       PYPI: "https://upload.pypi.org/legacy/"
