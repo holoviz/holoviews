@@ -42,6 +42,7 @@ jobs:
         run: |
           source ./scripts/build_conda.sh
           echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
+          ls $CONDA_PREFIX/conda-bld/noarch
       - uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -65,6 +66,9 @@ jobs:
         with:
           name: conda_build
           path: ${{ env.CONDA_FILE }}
+      - run: |
+          file ${{ env.CONDA_FILE }}
+          ls $CONDA_PREFIX/conda-bld/noarch
       - name: conda setup
         run: |
           conda install -y $CONDA_FILE
