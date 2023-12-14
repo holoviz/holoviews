@@ -63,9 +63,6 @@ jobs:
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           echo "CONDA_FILE=${{ needs.conda_build.outputs.conda_file }}" >> $GITHUB_ENV
-      - name: Check environment variables
-        run: |
-          echo $TAG $CONDA_FILE
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
@@ -130,7 +127,7 @@ jobs:
       - name: Install package
         run: python -m pip install dist/*.whl
       - name: Test package
-        run: python -c "import $PACKAGE"
+        run: python -c "import $PACKAGE; print($PACKAGE.__version__))"
 
   pip_publish:
     name: Publish PyPI Package
