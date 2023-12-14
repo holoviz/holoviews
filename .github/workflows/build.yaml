@@ -78,12 +78,11 @@ jobs:
       - name: conda dev upload
         if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev ${{ env.CONDA_FILE }}
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev $CONDA_FILE
       - name: conda main upload
         if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main ${{ env.CONDA_FILE }}
-          echo conda main upload
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $CONDA_FILE
 
   pip_build:
     name: Build PyPI Package
