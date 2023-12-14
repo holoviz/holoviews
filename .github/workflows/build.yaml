@@ -26,6 +26,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     outputs:
       conda_file: ${{ env.CONDA_FILE }}
+      conda_path: ${{ env.CONDA_PATH }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -41,6 +42,7 @@ jobs:
       - name: conda build
         run: |
           source ./scripts/build_conda.sh
+          echo "CONDA_PATH="$CONDA_PREFIX/conda-bld/noarch/"" >> $GITHUB_ENV
           echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
           ls $CONDA_PREFIX/conda-bld/noarch
       - uses: actions/upload-artifact@v3
@@ -59,16 +61,18 @@ jobs:
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           echo "CONDA_FILE=${{ needs.conda_build.outputs.conda_file }}" >> $GITHUB_ENV
+          echo "CONDA_PATH=${{ needs.conda_build.outputs.conda_path }}" >> $GITHUB_ENV
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
       - uses: actions/download-artifact@v3
         with:
           name: conda_build
-          path: ${{ env.CONDA_FILE }}
+          path: ${{ env.CONDA_PATH }}
       - run: |
           file ${{ env.CONDA_FILE }}
           ls $CONDA_PREFIX/conda-bld/noarch
+          ls $CONDA_PATH
       - name: conda setup
         run: |
           conda install -y $CONDA_FILE
@@ -87,13 +91,14 @@ jobs:
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           echo "CONDA_FILE=${{ needs.conda_build.outputs.conda_file }}" >> $GITHUB_ENV
+          echo "CONDA_PATH=${{ needs.conda_build.outputs.conda_path }}" >> $GITHUB_ENV
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
       - uses: actions/download-artifact@v3
         with:
           name: conda_build
-          path: ${{ env.CONDA_FILE }}
+          path: ${{ env.CONDA_PATH }}
       - name: conda setup
         run: |
           conda install -y anaconda-client
