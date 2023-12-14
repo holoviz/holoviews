@@ -14,7 +14,7 @@ on:
 env:
   SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
   PYTHON_VERSION: "3.10"
-
+  PACKAGE: "holoviews"
 
 jobs:
   conda_build:
@@ -40,7 +40,7 @@ jobs:
       - name: conda build
         run: |
           source ./scripts/build_conda.sh
-          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
+          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -79,8 +79,7 @@ jobs:
       - name: conda dev upload
         if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev ${{ env.CONDA_FILE }}
-          echo "conda dev upload"
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev ${{ env.CONDA_FILE }}
       - name: conda main upload
         if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
