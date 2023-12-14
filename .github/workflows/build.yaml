@@ -93,7 +93,7 @@ jobs:
     environment:
       name: publish
     steps:
-      - run: echo "All builds has finished and ready to publish"
+      - run: echo "All builds has finished, have been approved, and ready to publish"
 
   pip_build:
     name: Build PyPI Package
