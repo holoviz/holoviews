@@ -43,7 +43,6 @@ jobs:
         run: |
           conda config --set always_yes True
           conda config --append channels pyviz/label/dev
-          conda config --append channels conda-forge
           # pyct is for running setup.py
           conda install -y conda-build anaconda-client build pyct
       - name: conda build
