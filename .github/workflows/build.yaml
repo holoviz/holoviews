@@ -22,9 +22,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     defaults:
       run:
-        shell: bash -l {0}
-    env:
-      CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -35,15 +33,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: conda setup
         run: |
-          conda config --set always_yes True
-          conda config --append channels pyviz/label/dev
           # pyct is for running setup.py
-          conda install -y conda-build anaconda-client build pyct
+          conda install -y conda-build build pyct -c pyviz/label/dev
       - name: conda build
         run: |
           source ./scripts/build_conda.sh
@@ -54,14 +47,40 @@ jobs:
           name: conda_build
           path: ${{ env.CONDA_FILE }}
           if-no-files-found: error
+
+  conda_publish:
+    name: Publish Conda Package
+    runs-on: ubuntu-latest
+    needs: conda_build
+    if: startsWith(github.ref, 'refs/tags/')
+    env:
+      CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: conda setup
+        run: |
+          conda install -y anaconda-client
+      - uses: actions/download-artifact@v3
+        with:
+          name: conda_build
+          path: ${{ needs.conda_build.env.CONDA_FILE }}
       - name: conda dev upload
-        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc'))
         run: |
-          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev $CONDA_FILE
+          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev ${{ needs.conda_build.env.CONDA_FILE }}
+          echo "conda dev upload"
       - name: conda main upload
-        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: (!(contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc'))))
         run: |
-          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $CONDA_FILE
+          # anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main ${{ needs.conda_build.env.CONDA_FILE }}
+          echo conda main upload
+
   pip_build:
     name: Build PyPI Package
     runs-on: 'ubuntu-latest'
