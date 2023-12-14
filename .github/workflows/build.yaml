@@ -24,7 +24,7 @@ jobs:
       run:
         shell: bash -el {0}
     outputs:
-      conda_file: ${{ steps.vars.outputs.conda_file }}
+      conda_file: ${{ env.CONDA_FILE }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -40,15 +40,14 @@ jobs:
           # pyct is for running setup.py
           conda install -y conda-build build pyct -c pyviz/label/dev
       - name: conda build
-        id: vars
         run: |
           source ./scripts/build_conda.sh
-          echo "conda_file="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"" >> $GITHUB_OUTPUT
+          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/holoviews-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: conda_build
-          path: ${{ steps.vars.outputs.conda_file }}
+          path: ${{ env.CONDA_FILE }}
           if-no-files-found: error
 
   conda_publish:
