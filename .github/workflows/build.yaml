@@ -75,6 +75,7 @@ jobs:
           ls $CONDA_PATH
       - name: conda setup
         run: |
+          conda install python=$PYTHON_VERSION -y
           conda install -y $CONDA_FILE
       - name: Test package
         run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
