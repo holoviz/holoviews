@@ -162,3 +162,41 @@ def test_multi_axis_rangexy(page, port):
         s1.y_range == expected_yrange1 and
         s2.y_range == expected_yrange2
     ), page)
+
+
+def test_bind_trigger(page, port):
+    # Regression test for https://github.com/holoviz/holoviews/issues/6013
+
+    BOUND_COUNT, RANGE_COUNT = [0], [0]
+
+    def bound_function():
+        BOUND_COUNT[0] += 1
+        return Curve([]).opts(backend='bokeh')
+
+
+    def range_function(x_range, y_range):
+        RANGE_COUNT[0] += 1
+        return Curve([]).opts(backend='bokeh')
+
+    range_dmap = DynamicMap(range_function, streams=[hv.streams.RangeXY()])
+    bind_dmap = DynamicMap(pn.bind(bound_function))
+    widget = pn.pane.HoloViews(bind_dmap * range_dmap, backend="bokeh")
+
+    serve_and_wait(widget, port=port)
+    page.goto(f"http://localhost:{port}")
+
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
+    page.mouse.up()
+
+    wait_until(lambda: RANGE_COUNT[0] > 2, page)
+
+    assert BOUND_COUNT[0] == 1
