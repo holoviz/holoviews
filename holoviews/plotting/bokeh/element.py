@@ -6,7 +6,6 @@ import bokeh
 import bokeh.plotting
 import numpy as np
 import param
-from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (
     BinnedTicker,
@@ -1784,8 +1783,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
                 key = '@{%s}' % k
-                if ((isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
-                    (len(values) and isinstance(values[0], util.datetime_types))):
+                if (
+                    (len(values) and isinstance(values[0], util.datetime_types)) or
+                    (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
+                ):
                     hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
                     hover.formatters[key] = "datetime"
 

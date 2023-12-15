@@ -438,6 +438,8 @@ class aggregate(LineAggregationOperation):
                     val[neg1] = "-"
                 elif val.dtype.kind == "O":
                     val[neg1] = "-"
+                elif val.dtype.kind == "M":
+                    val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
