@@ -72,10 +72,10 @@ class RasterPlot(ColorbarPlot):
                 formatter += '{custom}'
             tooltips.append((name, formatter))
 
+        # https://github.com/bokeh/bokeh/issues/13598
         datetime_code = """
         if (value === -9223372036854776) {
-            // NaN value
-            return "-"
+            return "NaT"
         } else {
             const date = new Date(value);
             return date.toISOString().slice(0, 19).replace('T', ' ')
