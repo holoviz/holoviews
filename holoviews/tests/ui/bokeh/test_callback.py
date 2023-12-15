@@ -10,11 +10,12 @@ except ImportError:
 
 pytestmark = pytest.mark.ui
 
-from panel.io.server import serve
+import panel as pn
 from panel.pane.holoviews import HoloViews
-from panel.tests.util import wait_until
+from panel.tests.util import serve_and_wait, wait_until
 
-from holoviews import Curve, Scatter
+import holoviews as hv
+from holoviews import Curve, DynamicMap, Scatter
 from holoviews.plotting.bokeh import BokehRenderer
 from holoviews.streams import BoundsXY, Lasso, RangeXY
 
@@ -28,10 +29,7 @@ def test_box_select(page, port):
 
     pn_scatter = HoloViews(hv_scatter, renderer=BokehRenderer)
 
-    serve(pn_scatter, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
+    serve_and_wait(pn_scatter, port=port)
     page.goto(f"http://localhost:{port}")
 
     hv_plot = page.locator('.bk-events')
@@ -60,10 +58,7 @@ def test_lasso_select(page, port):
 
     pn_scatter = HoloViews(hv_scatter, renderer=BokehRenderer)
 
-    serve(pn_scatter, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
+    serve_and_wait(pn_scatter, port=port)
     page.goto(f"http://localhost:{port}")
 
     hv_plot = page.locator('.bk-events')
@@ -104,10 +99,7 @@ def test_rangexy(page, port):
 
     pn_scatter = HoloViews(hv_scatter, renderer=BokehRenderer)
 
-    serve(pn_scatter, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
+    serve_and_wait(pn_scatter, port=port)
     page.goto(f"http://localhost:{port}")
 
     hv_plot = page.locator('.bk-events')
@@ -136,10 +128,7 @@ def test_multi_axis_rangexy(page, port):
 
     pn_scatter = HoloViews(overlay, renderer=BokehRenderer)
 
-    serve(pn_scatter, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
+    serve_and_wait(pn_scatter, port=port)
     page.goto(f"http://localhost:{port}")
 
     hv_plot = page.locator('.bk-events')
