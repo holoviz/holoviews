@@ -34,9 +34,31 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a17
 
+  changes:
+    name: Check for code changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v3
+        if: github.event_name != 'pull_request'
+      - uses: dorny/paths-filter@v2.11.1
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'holoviews/**'
+              - 'examples/**'
+              - 'setup.py'
+              - 'pyproject.toml'
+              - '.github/workflows/test.yaml'
+
   unit_test_suite:
     name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit]
+    needs: [pre_commit, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -80,9 +102,11 @@ jobs:
         run: |
           conda activate test-environment
           codecov
+
   ui_test_suite:
     name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit]
+    needs: [pre_commit, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -124,9 +148,11 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
+
   core_test_suite:
     name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit]
+    needs: [pre_commit, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
