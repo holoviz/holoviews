@@ -59,16 +59,16 @@ Installation
 ============
 
 HoloViews works with
-[Python 3](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest)
+[Python](https://github.com/holoviz/holoviews/actions/workflows/test.yaml)
 on Linux, Windows, or Mac, and works seamlessly with
 [Jupyter Notebook and JupyterLab](https://jupyter.org).
 
 The recommended way to install HoloViews is using the
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) command provided by
-[Anaconda](https://docs.anaconda.com/anaconda/install/) or
+[Anaconda](https://docs.anaconda.com/free/anaconda/install/) or
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html):
 
-    conda install -c pyviz holoviews bokeh
+    conda install holoviews
 
 This command will install the typical packages most useful with
 HoloViews, though HoloViews itself depends only on
@@ -96,14 +96,9 @@ Now you can launch Jupyter Notebook or JupyterLab to explore them:
 
     jupyter lab
 
-If you are working with a JupyterLab version <2.0 you will also need the PyViz JupyterLab
-extension:
-
-    jupyter labextension install @pyviz/jupyterlab_pyviz
-
 For more details on setup and configuration see [our website](https://holoviews.org/user_guide/Installing_and_Configuring.html).
 
-For general discussion, we have a [gitter channel](https://gitter.im/pyviz/pyviz).
+For general discussion, we have a [discord channel](https://discord.gg/AXRHnJU6sP).
 If you find any bugs or have any feature suggestions please file a GitHub
 [issue](https://github.com/holoviz/holoviews/issues)
 or submit a [pull request](https://help.github.com/articles/about-pull-requests).
