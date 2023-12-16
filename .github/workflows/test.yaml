@@ -136,10 +136,6 @@ jobs:
           cache: true
           playwright: true
         id: install
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
       - name: doit test_ui
         if: needs.changes.outputs.code == 'true'
         run: |
@@ -180,6 +176,7 @@ jobs:
       #     conda-update: true
       #     id: install
       - uses: actions/checkout@v3
+        if: needs.changes.outputs.code == 'true'
         with:
           fetch-depth: "100"
       - name: Fetch unshallow
@@ -189,7 +186,9 @@ jobs:
         if: needs.changes.outputs.code == 'true'
         with:
           python-version: 3.12
-      - run: |
+      - name: install
+        if: needs.changes.outputs.code == 'true'
+        run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
       - name: bokeh sampledata
         if: needs.changes.outputs.code == 'true'
