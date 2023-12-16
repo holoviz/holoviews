@@ -5,10 +5,10 @@ on:
       - main
   pull_request:
     branches:
-      - '*'
+      - "*"
   workflow_dispatch:
   schedule:
-    - cron: '0 14 * * SUN'
+    - cron: "0 14 * * SUN"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -34,7 +34,7 @@ env:
 jobs:
   pre_commit:
     name: Run pre-commit
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a17
 
@@ -66,11 +66,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.9', '3.11']
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.9", "3.11"]
         include:
-          - os: 'ubuntu-latest'
-            python-version: '3.10'
+          - os: "ubuntu-latest"
+            python-version: "3.10"
     timeout-minutes: 120
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
@@ -115,8 +115,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
-        python-version: ['3.9']
+        os: ["ubuntu-latest"]
+        python-version: ["3.9"]
     timeout-minutes: 60
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
@@ -160,8 +160,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
-        python-version: ['3.12']
+        os: ["ubuntu-latest"]
+        python-version: ["3.12"]
     timeout-minutes: 120
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
