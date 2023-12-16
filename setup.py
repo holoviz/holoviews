@@ -52,7 +52,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'shapely',
     'ffmpeg',
     'cftime',
-    'scipy',
+    'scipy >=1.10',  # Python 3.9 + Windows downloads 1.9
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',

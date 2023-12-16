@@ -43,7 +43,7 @@ class RasterPlot(ColorbarPlot):
         tooltips.append((vdims[0].pprint_label, '@image'))
         for vdim in vdims[1:]:
             vname = dimension_sanitizer(vdim.name)
-            tooltips.append((vdim.pprint_label, f'@{vname}'))
+            tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
@@ -52,8 +52,6 @@ class RasterPlot(ColorbarPlot):
         if not (hover and isinstance(hover.tooltips, list)):
             return
 
-        element = self.current_frame
-        xdim, ydim = (dimension_sanitizer(kd.name) for kd in element.kdims)
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
@@ -73,6 +71,20 @@ class RasterPlot(ColorbarPlot):
                 formatters['$y'] = yhover
                 formatter += '{custom}'
             tooltips.append((name, formatter))
+
+        # https://github.com/bokeh/bokeh/issues/13598
+        datetime_code = """
+        if (value === -9223372036854776) {
+            return "NaT"
+        } else {
+            const date = new Date(value);
+            return date.toISOString().slice(0, 19).replace('T', ' ')
+        }
+        """
+        for key in formatters:
+            if formatters[key].lower() == "datetime":
+                formatters[key] = CustomJSHover(code=datetime_code)
+
         hover.tooltips = tooltips
         hover.formatters = formatters
 
