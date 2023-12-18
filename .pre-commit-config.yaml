@@ -52,5 +52,4 @@ repos:
         exclude: conda.recipe/meta.yaml
         types_or:
           - markdown
-          - toml
           - yaml
