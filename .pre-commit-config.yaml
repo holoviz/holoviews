@@ -44,3 +44,12 @@ repos:
     rev: v0.9.0.6
     hooks:
       - id: shellcheck
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.3
+    hooks:
+      - id: prettier
+        exclude: conda.recipe/meta.yaml
+        types_or:
+          - markdown
+          - toml
+          - yaml
