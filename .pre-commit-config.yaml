@@ -28,6 +28,7 @@ repos:
     rev: v0.1.14
     hooks:
       - id: clean-notebook
+        args: [--strip-trailing-newlines]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
