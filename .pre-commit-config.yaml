@@ -31,9 +31,9 @@ repos:
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
-    - id: codespell
-      additional_dependencies:
-        - tomli
+      - id: codespell
+        additional_dependencies:
+          - tomli
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
