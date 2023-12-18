@@ -7,6 +7,7 @@ from bokeh.models import CustomJSHover
 
 from holoviews.element import RGB, Image, ImageStack, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
+from holoviews.plotting.bokeh.util import bokeh34
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -148,8 +149,11 @@ class TestRasterPlot(TestBokehPlot):
         hover = plot.handles["hover"]
         assert hover.tooltips[-1] == ("Timestamp", "@{Timestamp}{%F %T}")
         assert "@{Timestamp}" in hover.formatters
-        assert isinstance(hover.formatters["@{Timestamp}"], CustomJSHover)
-        # assert hover.formatters["@{Timestamp}"] == "datetime"  # https://github.com/bokeh/bokeh/issues/13598
+
+        if bokeh34:  # https://github.com/bokeh/bokeh/issues/13598
+            assert hover.formatters["@{Timestamp}"] == "datetime"
+        else:
+            assert isinstance(hover.formatters["@{Timestamp}"], CustomJSHover)
 
 class _ImageStackBase(TestRasterPlot):
     __test__ = False
