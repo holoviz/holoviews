@@ -171,6 +171,7 @@ class downsample1d(ResampleOperation1D):
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS))
 
     def _process(self, element, key=None):
+        self.p.x_range = self.p.x_range or element.opts.get().kwargs.get("xlim")  # hack
         if isinstance(element, (Overlay, NdOverlay)):
             _process = partial(self._process, key=key)
             if isinstance(element, Overlay):
