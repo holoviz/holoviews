@@ -11,7 +11,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import bokeh33, colormesh
+from .util import bokeh33, bokeh34, colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -72,18 +72,18 @@ class RasterPlot(ColorbarPlot):
                 formatter += '{custom}'
             tooltips.append((name, formatter))
 
-        # https://github.com/bokeh/bokeh/issues/13598
-        datetime_code = """
-        if (value === -9223372036854776) {
-            return "NaT"
-        } else {
-            const date = new Date(value);
-            return date.toISOString().slice(0, 19).replace('T', ' ')
-        }
-        """
-        for key in formatters:
-            if formatters[key].lower() == "datetime":
-                formatters[key] = CustomJSHover(code=datetime_code)
+        if not bokeh34:  # https://github.com/bokeh/bokeh/issues/13598
+            datetime_code = """
+            if (value === -9223372036854776) {
+                return "NaN"
+            } else {
+                const date = new Date(value);
+                return date.toISOString().slice(0, 19).replace('T', ' ')
+            }
+            """
+            for key in formatters:
+                if formatters[key].lower() == "datetime":
+                    formatters[key] = CustomJSHover(code=datetime_code)
 
         hover.tooltips = tooltips
         hover.formatters = formatters
