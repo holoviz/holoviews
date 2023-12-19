@@ -148,7 +148,7 @@ def _nth_point(x, y, n_out):
     return np.arange(0, n_samples, max(1, math.ceil(n_samples / n_out)))
 
 def _viewport(x, y, n_out):
-    return slice(0, len(x))
+    return slice(len(x))
 
 
 _ALGORITHMS = {
