@@ -142,10 +142,10 @@ def _nth_point(x, y, n_out):
         y (np.ndarray): The y-values of the data.
         n_out (int): The number of output points.
     Returns:
-        np.array: The indexes of the selected datapoints.
+        slice: The slice of selected datapoints.
     """
     n_samples = len(x)
-    return np.arange(0, n_samples, max(1, math.ceil(n_samples / n_out)))
+    return slice(0, n_samples, max(1, math.ceil(n_samples / n_out)))
 
 def _viewport(x, y, n_out):
     return slice(len(x))
