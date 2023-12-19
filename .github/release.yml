@@ -15,7 +15,7 @@ changelog:
         - "type: compatibility"
     - title: Documentation
       labels:
-        - "type: doc"
+        - "type: docs"
     - title: Maintenance
       labels:
         - "type: maintenance"

@@ -1129,6 +1129,8 @@ def hex2rgb(hex):
 
 class apply_nodata(Operation):
 
+    link_inputs = param.Boolean(default=True)
+
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
