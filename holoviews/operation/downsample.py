@@ -180,7 +180,8 @@ class downsample1d(ResampleOperation1D):
             return element.clone(elements)
 
         if self.p.x_range:
-            element = element[slice(self.p.x_range[0], self.p.x_range[1] + 1)]
+            # TODO: find a better way to get the first value outside the range
+            element = element[slice(0.95 * self.p.x_range[0], self.p.x_range[1] * 1.05)]
         if len(element) <= self.p.width:
             return element
         xs, ys = (element.dimension_values(i) for i in range(2))
