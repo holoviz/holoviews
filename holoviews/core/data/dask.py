@@ -163,6 +163,18 @@ class DaskInterface(PandasInterface):
         return df
 
     @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        raise NotImplementedError
+
+    @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         index_dims = [dataset.get_dimension(d) for d in dimensions]
         element_dims = [kdim for kdim in dataset.kdims

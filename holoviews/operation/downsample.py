@@ -181,10 +181,15 @@ class downsample1d(ResampleOperation1D):
             return element.clone(elements)
 
         if self.p.x_range:
-            mask = element.dataset.interface.select_mask(element.dataset, {element.kdims[0]: self.p.x_range})
-            extra = mask[1:] ^ mask[:-1]
-            mask[1:] |= extra
-            mask[:-1] |= extra
+            try:
+                mask = element.dataset.interface._select_mask_neighbor(
+                    element.dataset, {element.kdims[0]: self.p.x_range}
+                )
+            except NotImplementedError:
+                mask = slice(*self.p.x_range)
+            except Exception:
+                self.param.warning("Could not apply neighbor mask to downsample1d.")
+                mask = slice(*self.p.x_range)
             element = element[mask]
 
         if len(element) <= self.p.width:
