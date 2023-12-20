@@ -181,9 +181,12 @@ class downsample1d(ResampleOperation1D):
             return element.clone(elements)
 
         if self.p.x_range:
-            xs = element.dimension_values(0)
-            x0, x1 = (np.argmin(np.abs(xs-coord)) for coord in self.p.x_range)
-            element = element.iloc[max(x0 - 1, 0):(x1 + 2)]
+            mask = element.dataset.interface.select_mask(element.dataset, {element.kdims[0]: self.p.x_range})
+            extra = mask[1:] ^ mask[:-1]
+            mask[1:] |= extra
+            mask[:-1] |= extra
+            element = element[mask]
+
         if len(element) <= self.p.width:
             return element
         xs, ys = (element.dimension_values(i) for i in range(2))
