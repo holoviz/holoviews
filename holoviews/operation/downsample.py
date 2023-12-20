@@ -171,11 +171,6 @@ class downsample1d(ResampleOperation1D):
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS))
 
     def _process(self, element, key=None):
-        if not self.p.x_range:
-            # We don't want to send all the data to the frontend on the first pass
-            # if we have set xlims. Therefore we return the element without any data,
-            # this will render the plot and trigger a second pass with the x_range set.
-            return element[()]
         if isinstance(element, (Overlay, NdOverlay)):
             _process = partial(self._process, key=key)
             if isinstance(element, Overlay):
@@ -195,6 +190,11 @@ class downsample1d(ResampleOperation1D):
                 self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
                 mask = slice(*self.p.x_range)
             element = element[mask]
+        else:
+            # We don't want to send all the data to the frontend on the first pass
+            # if we have set xlims. Therefore we return the element without any data,
+            # this will render the plot and trigger a second pass with the x_range set.
+            return element[()]
 
         if len(element) <= self.p.width:
             return element
