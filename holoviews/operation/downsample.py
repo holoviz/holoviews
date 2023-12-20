@@ -171,7 +171,11 @@ class downsample1d(ResampleOperation1D):
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS))
 
     def _process(self, element, key=None):
-        self.p.x_range = self.p.x_range or element.opts.get().kwargs.get("xlim")  # hack
+        if not self.p.x_range:
+            # We don't want to send all the data to the frontend on the first pass
+            # if we have set xlims. Therefore we return the element without any data,
+            # this will render the plot and trigger a second pass with the x_range set.
+            return element[()]
         if isinstance(element, (Overlay, NdOverlay)):
             _process = partial(self._process, key=key)
             if isinstance(element, Overlay):
