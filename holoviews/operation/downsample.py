@@ -194,7 +194,7 @@ class downsample1d(ResampleOperation1D):
             # We don't want to send all the data to the frontend on the first pass
             # if we have set xlims. Therefore we return the element without any data,
             # this will render the plot and trigger a second pass with the x_range set.
-            return element[()]
+            return element.clone(data=[])
 
         if len(element) <= self.p.width:
             return element
