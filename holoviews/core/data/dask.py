@@ -177,7 +177,7 @@ class DaskInterface(PandasInterface):
         """
         mask = cls.select_mask(dataset, selection)
         mask = mask.to_dask_array().compute_chunk_sizes()
-        extra = (mask[1:] ^ mask[:-1])
+        extra = mask[1:] ^ mask[:-1]
         mask[1:] |= extra
         mask[:-1] |= extra
         return mask
