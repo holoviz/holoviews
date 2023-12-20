@@ -187,8 +187,8 @@ class downsample1d(ResampleOperation1D):
                 )
             except NotImplementedError:
                 mask = slice(*self.p.x_range)
-            except Exception:
-                self.param.warning("Could not apply neighbor mask to downsample1d.")
+            except Exception as e:
+                self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
                 mask = slice(*self.p.x_range)
             element = element[mask]
 
