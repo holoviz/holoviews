@@ -154,7 +154,8 @@ class DaskInterface(PandasInterface):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is not None:
-            if hasattr(df, "__array__"):
+            import dask.array as da
+            if isinstance(selection_mask, da.Array):
                 return df.loc[selection_mask]
             return df[selection_mask]
         selection_mask = cls.select_mask(dataset, selection)
