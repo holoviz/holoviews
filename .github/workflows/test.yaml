@@ -11,6 +11,7 @@ on:
       target:
         description: "How much of the test suite to run"
         type: choice
+        default: default
         options:
           - default
           - full
