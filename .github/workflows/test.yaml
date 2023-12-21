@@ -16,6 +16,10 @@ on:
           - default
           - full
           - downstream
+      cache:
+        description: "Use cache"
+        type: boolean
+        default: true
 
   schedule:
     - cron: "0 14 * * SUN"
@@ -118,7 +122,7 @@ jobs:
           channel-priority: strict
           channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests -o tests_ci"
-          cache: true
+          cache: ${{ github.event.inputs.cache }}
           conda-update: true
         id: install
       - name: bokeh sampledata
@@ -167,7 +171,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build -o tests_ci"
-          cache: true
+          cache: ${{ github.event.inputs.cache }}
           playwright: true
         id: install
       - name: doit test_ui
@@ -206,7 +210,7 @@ jobs:
       #     # channel-priority: strict
       #     channels: pyviz/label/dev,conda-forge,nodefaults
       #     envs: "-o tests_core -o tests_ci"
-      #     cache: true
+      #     cache: ${{ github.event.inputs.cache }}
       #     conda-update: true
       #     id: install
       - uses: actions/checkout@v3
