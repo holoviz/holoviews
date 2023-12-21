@@ -7,13 +7,14 @@ on:
     branches:
       - "*"
   workflow_dispatch:
-    target:
-      description: "How much of the test suite to run"
-      type: choice
-      options:
-        - default
-        - full
-        - downstream
+    inputs:
+      target:
+        description: "How much of the test suite to run"
+        type: choice
+        options:
+          - default
+          - full
+          - downstream
 
   schedule:
     - cron: "0 14 * * SUN"
