@@ -76,18 +76,14 @@ jobs:
               - '.github/workflows/test.yaml'
       - name: Set matrix option
         run: |
-          if [[ -z "${{ github.event_name.workflow_dispatch }}" ]]; then
-            OPTION = ${{ github.event.inputs.target }}
-          elseif [[ -z "${{ github.event_name.schedule }}" ]]; then
-            OPTION = "full"
-          elseif [[ -z github.event_name == 'push' ]]; then
-            if [[ -z github.ref_type == 'tag' ]]; then
-              OPTION = "full"
-            else
-              OPTION = "default"
-            fi
+          if [[ "${{ github.event_name }}" == 'workflow_dispatch' ]]; then
+            OPTION=${{ github.event.inputs.target }}
+          elif [[ "${{ github.event_name }}" == 'schedule' ]]; then
+            OPTION="full"
+          elif [[ "${{ github.event_name }}" == 'push' && "${{ github.ref_type }}" == 'tag' ]]; then
+            OPTION="full"
           else
-            OPTION = "default"
+            OPTION="default"
           fi
           echo "MATRIX_OPTION=$OPTION" >> $GITHUB_ENV
       - name: Set test matrix with 'default' option
