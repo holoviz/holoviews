@@ -76,11 +76,11 @@ jobs:
               - '.github/workflows/test.yaml'
       - name: Set matrix option
         run: |
-          if [[ "${{ github.event_name }}" == 'workflow_dispatch' ]]; then
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
             OPTION=${{ github.event.inputs.target }}
-          elif [[ "${{ github.event_name }}" == 'schedule' ]]; then
+          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
             OPTION="full"
-          elif [[ "${{ github.event_name }}" == 'push' && "${{ github.ref_type }}" == 'tag' ]]; then
+          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
             OPTION="full"
           else
             OPTION="default"
