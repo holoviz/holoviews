@@ -49,6 +49,11 @@ jobs:
           envs: "-o doc"
           cache: true
           conda-update: true
+      - name: Install nbsite from specific branch
+        run: |
+          conda activate test-environment
+          python -m pip install git+https://github.com/holoviz-dev/nbsite.git@dr/source-gh#egg=nbsite
+          python -c "import nbsite; print('Installed nbsite version:', nbsite.__version__)"
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
