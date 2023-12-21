@@ -1,5 +1,5 @@
 import warnings
-from itertools import chain
+from itertools import chain, product
 from types import FunctionType
 
 import bokeh
@@ -2658,6 +2658,9 @@ class ScalebarPlot(ElementPlot):
         for more information.
         """,
     )
+    # From https://github.com/bokeh/bokeh/blob/50cf46c76006472706a83866cfac6651e12a0634/bokehjs/src/lib/models/annotations/dimensional.ts#L159-L183
+    # Likely to be loosened in Bokeh 3.4
+    _supported_units = ("m", *map("".join, product("QRYZEPTGMkhdcmµnpfazyrq", "m")))
 
     def _draw_scalebar(self, plot):
         if not bokeh33:
@@ -2665,8 +2668,12 @@ class ScalebarPlot(ElementPlot):
 
         from bokeh.models import ScaleBar
 
-        kdims = self.hmap.last.kdims
+        kdims = self.current_frame.kdims
         unit = self.scale_unit or kdims[0].unit or "m"
+        if unit not in self._supported_units:
+            str_units = "', '".join(self._supported_units)
+            msg = f"Only the following units are supported: '{str_units}'"
+            raise ValueError(msg)
 
         _default_scale_opts = {
             "background_fill_alpha": 0.8,
