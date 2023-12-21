@@ -7,14 +7,6 @@ on:
     branches:
       - "*"
   workflow_dispatch:
-    target:
-      description: "How much of the test suite to run"
-      type: choice
-      options:
-        - default
-        - full
-        - downstream
-
   schedule:
     - cron: "0 14 * * SUN"
 
@@ -46,19 +38,17 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
 
-  setup:
-    name: Setup workflow
+  changes:
+    name: Check for code changes
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
     outputs:
-      code_change: ${{ steps.filter.outputs.code }}
-      matrix: ${{ env.MATRIX }}
+      code: ${{ steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@v3
         if: github.event_name != 'pull_request'
-      - name: Check for code changes
-        uses: dorny/paths-filter@v2.11.1
+      - uses: dorny/paths-filter@v2.11.1
         id: filter
         with:
           filters: |
@@ -68,48 +58,26 @@ jobs:
               - 'setup.py'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
-      - name: Set test matrix with 'default' option
-        if: github.event_name != 'workflow_dispatch' || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'default')
-        run: |
-          MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.11"],
-              "include": [
-                  {"os": "ubuntu-latest", "python-version": "3.10"}
-              ]
-          }')
-          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
-      - name: Set test matrix with 'full' option
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'full'
-        run: |
-          MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.10", "3.11"]
-          }')
-          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
-      - name: Set test matrix with 'downstream' option
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'downstream'
-        run: |
-          MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest"],
-              "python-version": ["3.10"]
-          }')
-          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
   unit_test_suite:
     name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    needs: [pre_commit, changes]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.9", "3.11"]
+        include:
+          - os: "ubuntu-latest"
+            python-version: "3.10"
     timeout-minutes: 120
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -120,29 +88,29 @@ jobs:
           conda-update: true
         id: install
       - name: bokeh sampledata
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           conda activate test-environment
           bokeh sampledata
       - name: doit test_unit
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           conda activate test-environment
           doit test_unit
       - name: test examples
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           conda activate test-environment
           doit test_examples
       - name: codecov
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           conda activate test-environment
           codecov
 
   ui_test_suite:
     name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    needs: [pre_commit, changes]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -159,7 +127,7 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         with:
           name: ui_test_suite
           python-version: ${{ matrix.python-version }}
@@ -169,12 +137,12 @@ jobs:
           playwright: true
         id: install
       - name: doit test_ui
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           conda activate test-environment
           doit test_ui
       - name: Upload coverage to Codecov
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
@@ -183,7 +151,7 @@ jobs:
 
   core_test_suite:
     name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    needs: [pre_commit, changes]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -197,7 +165,7 @@ jobs:
     steps:
       # Add back when this works on Python 3.12
       # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
-      #   if: needs.setup.outputs.code_change == 'true'
+      #   if: needs.changes.outputs.code == 'true'
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
@@ -208,32 +176,32 @@ jobs:
       #     conda-update: true
       #     id: install
       - uses: actions/checkout@v3
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         with:
           fetch-depth: "100"
       - name: Fetch unshallow
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: git fetch --prune --tags --unshallow -f
       - uses: actions/setup-python@v4
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         with:
           python-version: 3.12
       - name: install
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
       - name: bokeh sampledata
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           # conda activate test-environment
           bokeh sampledata
       - name: Check packages latest version
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           # conda activate test-environment
           python scripts/check_latest_packages.py
       - name: doit test_unit
-        if: needs.setup.outputs.code_change == 'true'
+        if: needs.changes.outputs.code == 'true'
         run: |
           # conda activate test-environment
           pytest holoviews
