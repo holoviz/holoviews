@@ -194,12 +194,12 @@ class downsample1d(ResampleOperation1D):
                 mask = slice(*self.p.x_range)
             element = element[mask]
         elif self.p.algorithm == "viewport-xlim":
-            # We don't want to send all the data to the frontend on the first pass
-            # if we have set xlims. Therefore we send the element without any data,
-            # this will render the plot and trigger a second pass with the x_range set.
-            # This will not work with the matplotlib backend, because it does not update
-            # the x_range after the first pass, but that is not a problem because
-            # the matplotlib backend with the viewport algorithm does not make any sense.
+            # We only want to send some of the data to the browser on the
+            # first pass if we have set xlim. This will render the plot and
+            # trigger a second pass with the x_range set. This will not work
+            # with the matplotlib backend because it does not update the x_range
+            # after the first pass, but that is not a problem because the matplotlib
+            # backend with the viewport algorithm does not make any sense.
             # This is not very elegant.
             size = element.dataset.shape[0]
             mask1 = element.dataset.interface.select_mask(
