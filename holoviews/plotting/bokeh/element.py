@@ -1855,6 +1855,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         zooms_subcoordy = self.handles.get('zooms_subcoordy')
         if zooms_subcoordy is not None:
             for zoom in zooms_subcoordy.values():
+                # The default renderer is 'auto', instead we want to
+                # store the subplot renderer to aggregate them and set
+                # the final tool with a list of all the renderers.
                 zoom.renderers = [renderer]
 
         # Update plot, source and glyph
