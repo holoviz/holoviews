@@ -51,7 +51,6 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
-    "analytics": {"google_analytics_id": 'G-91EZMMHSF7'}
 }
 
 nbbuild_cell_timeout = 360
