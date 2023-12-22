@@ -176,6 +176,42 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        elements and the overlay container, allowing customization on a
        per-axis basis.""")
 
+    scalebar = param.Boolean(default=False, doc="""
+        Whether to display a scalebar.""")
+
+    scale_unit = param.String(default=None, doc="""
+        Unit of the scalebar. The order of how this will be done is with:
+
+        scale_unit > The elements kdim unit (if exist) > meter""")
+
+    scale_location = param.ObjectSelector(
+        default="bottom_right",
+        objects=[
+            "top_left", "top_center", "top_right",
+            "center_left", "center_center", "center_right",
+            "bottom_left", "bottom_center", "bottom_right",
+            "top", "left", "center", "right","bottom"
+        ],
+        doc="Location anchor for positioning scale bar."
+    )
+
+    scale_label = param.String(
+        default="@{value} @{unit}", doc="""
+        The label template.
+
+        This can use special variables:
+        * ``@{value}`` The current value. Optionally can provide a number
+            formatter with e.g. ``@{value}{%.2f}``.
+        * ``@{unit}`` The unit of measure, by default in the short form.
+            Optionally can provide a format ``@{unit}{short}`` or
+            ``@{unit}{long}``.""")
+
+    scale_opts = param.Dict(
+        default={}, doc="""
+        Allows setting specific styling options for the scalebar.
+        See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.ScaleBar
+        for more information.""")
+
     subcoordinate_y = param.ClassSelector(default=False, class_=(bool, tuple), doc="""
        Enables sub-coordinate systems for this plot. Accepts also a numerical
        two-tuple that must be a range between 0 and 1, the plot will be
@@ -1826,6 +1862,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._postprocess_hover(renderer, source)
 
+        if self.scalebar:
+            self._draw_scalebar(plot)
+
         # Update plot, source and glyph
         with abbreviated_exception():
             self._update_glyph(renderer, properties, mapping, glyph, source, source.data)
@@ -2068,6 +2107,33 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return any(self.lookup_options(frame, 'norm').options.get('framewise')
                    for frame in current_frames)
 
+    def _draw_scalebar(self, plot):
+        if not bokeh33:
+            raise RuntimeError("Scalebar requires Bokeh >= 3.3.0")
+
+        from bokeh.models import ScaleBar
+
+        kdims = self.current_frame.kdims
+        unit = self.scale_unit or kdims[0].unit or "m"
+
+        # From https://github.com/bokeh/bokeh/blob/50cf46c76006472706a83866cfac6651e12a0634/bokehjs/src/lib/models/annotations/dimensional.ts#L159-L183
+        # Likely to be loosened with Bokeh 3.4 release
+        _supported_units = ("m", *map("".join, product("QRYZEPTGMkhdcmµnpfazyrq", "m")))
+        if unit not in _supported_units:
+            str_units = "', '".join(_supported_units)
+            msg = f"Only the following units are supported: '{str_units}'"
+            raise ValueError(msg)
+
+        _default_scale_opts = {"background_fill_alpha": 0.8}
+        opts = dict(_default_scale_opts, **self.scale_opts)
+
+        scale_bar = ScaleBar(
+            unit=unit,
+            location=self.scale_location,
+            label=self.scale_label,
+            **opts,
+        )
+        plot.add_layout(scale_bar)
 
 class CompositeElementPlot(ElementPlot):
     """
@@ -2599,103 +2665,6 @@ class LegendPlot(ElementPlot):
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
-
-
-class ScalebarPlot(ElementPlot):
-    scalebar = param.Boolean(
-        default=False,
-        doc="""
-        Whether to display a scalebar.""",
-    )
-
-    scale_unit = param.String(
-        default=None,
-        doc="""
-        Unit of the scalebar. The order of how this will be done is with:
-
-        scale_unit > The elements kdim unit (if exist) > meter""",
-    )
-
-    scale_location = param.ObjectSelector(
-        default="bottom_right",
-        objects=[
-            "top_left",
-            "top_center",
-            "top_right",
-            "center_left",
-            "center_center",
-            "center_right",
-            "bottom_left",
-            "bottom_center",
-            "bottom_right",
-            "top",
-            "left",
-            "center",
-            "right",
-            "bottom"
-        ],
-        doc="""
-        Location anchor for positioning scale bar."""
-    )
-
-    scale_label = param.String(
-        default="@{value} @{unit}", doc="""
-        The label template.
-
-        This can use special variables:
-        * ``@{value}`` The current value. Optionally can provide a number
-            formatter with e.g. ``@{value}{%.2f}``.
-        * ``@{unit}`` The unit of measure, by default in the short form.
-            Optionally can provide a format ``@{unit}{short}`` or
-            ``@{unit}{long}``.""",
-    )
-
-    scale_opts = param.Dict(
-        default={},
-        doc="""
-        Allows setting specific styling options for the scalebar.
-        See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.ScaleBar
-        for more information.
-        """,
-    )
-    # From https://github.com/bokeh/bokeh/blob/50cf46c76006472706a83866cfac6651e12a0634/bokehjs/src/lib/models/annotations/dimensional.ts#L159-L183
-    # Likely to be loosened in Bokeh 3.4
-    _supported_units = ("m", *map("".join, product("QRYZEPTGMkhdcmµnpfazyrq", "m")))
-
-    def _draw_scalebar(self, plot):
-        if not bokeh33:
-            raise RuntimeError("Scalebar requires Bokeh >= 3.3.0")
-
-        from bokeh.models import ScaleBar
-
-        kdims = self.current_frame.kdims
-        unit = self.scale_unit or kdims[0].unit or "m"
-        if unit not in self._supported_units:
-            str_units = "', '".join(self._supported_units)
-            msg = f"Only the following units are supported: '{str_units}'"
-            raise ValueError(msg)
-
-        _default_scale_opts = {
-            "background_fill_alpha": 0.8,
-        }
-        opts = dict(_default_scale_opts, **self.scale_opts)
-
-        scale_bar = ScaleBar(
-            unit=unit,
-            location=self.scale_location,
-            label=self.scale_label,
-            **opts,
-        )
-        plot.add_layout(scale_bar)
-
-    def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object and optionally creates a scalebar.
-        """
-        ret = super()._init_glyph(plot, mapping, properties)
-        if self.scalebar:
-            self._draw_scalebar(plot)
-        return ret
 
 
 class AnnotationPlot:
