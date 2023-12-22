@@ -167,6 +167,8 @@ class downsample1d(ResampleOperation1D):
 
         - `lttb`: Largest Triangle Three Buckets downsample algorithm
         - `nth`: Selects every n-th point.
+        - `viewport`: Selects all points in a given viewport
+        - `viewport-xlim`: Selects all points in a given viewport, when xlim is set
     """
 
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS))
