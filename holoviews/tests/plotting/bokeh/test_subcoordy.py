@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from bokeh.models.tools import WheelZoomTool, ZoomInTool, ZoomOutTool
 
 from holoviews.core import Overlay
 from holoviews.element import Curve
@@ -202,3 +203,50 @@ class TestSubcoordinateY(TestBokehPlot):
             match='Elements wrapped in a subcoordinate_y overlay must all have a unique label',
         ):
             bokeh_renderer.get_plot(overlay)
+
+    def test_tools_default_wheel_zoom_configured(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+        zoom_subcoordy = plot.handles['zooms_subcoordy']['wheel_zoom']
+        assert len(zoom_subcoordy.renderers) == 2
+        assert len(set(zoom_subcoordy.renderers)) == 2
+        assert zoom_subcoordy.dimensions == 'height'
+        assert zoom_subcoordy.level == 1
+
+    def test_tools_string_zoom_in_out_configured(self):
+        for zoom in ['zoom_in', 'zoom_out', 'yzoom_in', 'yzoom_out', 'ywheel_zoom']:
+            overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
+            plot = bokeh_renderer.get_plot(overlay)
+            zoom_subcoordy = plot.handles['zooms_subcoordy'][zoom]
+            assert len(zoom_subcoordy.renderers) == 2
+            assert len(set(zoom_subcoordy.renderers)) == 2
+            assert zoom_subcoordy.dimensions == 'height'
+            assert zoom_subcoordy.level == 1
+
+    def test_tools_string_x_zoom_untouched(self):
+        for zoom, zoom_type in [
+            ('xzoom_in', ZoomInTool),
+            ('xzoom_out', ZoomOutTool),
+            ('xwheel_zoom', WheelZoomTool),
+        ]:
+            overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
+            plot = bokeh_renderer.get_plot(overlay)
+            for tool in plot.state.tools:
+                if isinstance(tool, zoom_type) and tool.tags == ['hv_created']:
+                    assert tool.level == 0
+                    assert tool.dimensions == 'width'
+                    break
+            else:
+                raise AssertionError('Provided zoom not found.')
+
+    def test_tools_instance_zoom_untouched(self):
+        for zoom in [WheelZoomTool(), ZoomInTool(), ZoomOutTool()]:
+            overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
+            plot = bokeh_renderer.get_plot(overlay)
+            for tool in plot.state.tools:
+                if isinstance(tool, type(zoom)) and 'hv_created' not in tool.tags:
+                    assert tool.level == 0
+                    assert tool.dimensions == 'both'
+                    break
+            else:
+                raise AssertionError('Provided zoom not found.')
