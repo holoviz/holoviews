@@ -179,12 +179,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     scalebar = param.Boolean(default=False, doc="""
         Whether to display a scalebar.""")
 
-    scale_unit = param.String(default=None, doc="""
-        Unit of the scalebar. The order of how this will be done is with:
+    scalebar_unit = param.String(default=None, doc="""
+        Unit of the scalebar. The order of how this will be done is by:
 
-        scale_unit > The elements kdim unit (if exist) > meter""")
+        1. This value if it is set.
+        2. The elements kdim unit (if exist).
+        3. Meter
 
-    scale_location = param.ObjectSelector(
+        As of Bokeh 3.3 only meter with or without a metric prefix is supported.
+
+        The scalebar_unit is only used if scalebar is True.""")
+
+    scalebar_location = param.ObjectSelector(
         default="bottom_right",
         objects=[
             "top_left", "top_center", "top_right",
@@ -192,10 +198,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             "bottom_left", "bottom_center", "bottom_right",
             "top", "left", "center", "right","bottom"
         ],
-        doc="Location anchor for positioning scale bar."
-    )
+        doc="""
+            Location anchor for positioning scale bar.
 
-    scale_label = param.String(
+            The scalebar_location is only used if scalebar is True.""")
+
+    scalebar_label = param.String(
         default="@{value} @{unit}", doc="""
         The label template.
 
@@ -204,13 +212,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             formatter with e.g. ``@{value}{%.2f}``.
         * ``@{unit}`` The unit of measure, by default in the short form.
             Optionally can provide a format ``@{unit}{short}`` or
-            ``@{unit}{long}``.""")
+            ``@{unit}{long}``.
 
-    scale_opts = param.Dict(
+        The scalebar_label is only used if scalebar is True.""")
+
+    scalebar_opts = param.Dict(
         default={}, doc="""
         Allows setting specific styling options for the scalebar.
         See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.ScaleBar
-        for more information.""")
+        for more information.
+
+        The scalebar_opts is only used if scalebar is True.""")
 
     subcoordinate_y = param.ClassSelector(default=False, class_=(bool, tuple), doc="""
        Enables sub-coordinate systems for this plot. Accepts also a numerical
@@ -2108,13 +2120,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    for frame in current_frames)
 
     def _draw_scalebar(self, plot):
+        """Draw scalebar on the plot
+
+        This will draw a scalebar on the plot. See the documentation for
+        the parameters: `scalebar`, `scalebar_location`, `scalebar_label`,
+        `scalebar_opts`, and `scalebar_unit` for more information.
+
+        Requires Bokeh 3.3
+        """
+
         if not bokeh33:
             raise RuntimeError("Scalebar requires Bokeh >= 3.3.0")
 
         from bokeh.models import ScaleBar
 
         kdims = self.current_frame.kdims
-        unit = self.scale_unit or kdims[0].unit or "m"
+        unit = self.scalebar_unit or kdims[0].unit or "m"
 
         # From https://github.com/bokeh/bokeh/blob/50cf46c76006472706a83866cfac6651e12a0634/bokehjs/src/lib/models/annotations/dimensional.ts#L159-L183
         # Likely to be loosened with Bokeh 3.4 release
@@ -2124,13 +2145,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             msg = f"Only the following units are supported: '{str_units}'"
             raise ValueError(msg)
 
-        _default_scale_opts = {"background_fill_alpha": 0.8}
-        opts = dict(_default_scale_opts, **self.scale_opts)
+        _default_scalebar_opts = {"background_fill_alpha": 0.8}
+        opts = dict(_default_scalebar_opts, **self.scalebar_opts)
 
         scale_bar = ScaleBar(
             unit=unit,
-            location=self.scale_location,
-            label=self.scale_label,
+            location=self.scalebar_location,
+            label=self.scalebar_label,
             **opts,
         )
         plot.add_layout(scale_bar)
