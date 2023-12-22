@@ -198,8 +198,15 @@ class downsample1d(ResampleOperation1D):
             # This will not work with the matplotlib backend, because it does not update
             # the x_range after the first pass, but that is not a problem because
             # the matplotlib backend with the viewport algorithm does not make any sense.
-            # This is not very elegant, but it works.
-            return element.clone(data=[])
+            # This is not very elegant.
+            size = element.dataset.shape[0]
+            mask1 = element.dataset.interface.select_mask(
+                element.dataset, {element.kdims[0]: slice(self.p.width // 2)},
+            )
+            mask2 = element.dataset.interface.select_mask(
+                element.dataset, {element.kdims[0]: slice(size - self.p.width // 2, size)},
+            )
+            element = element[mask1 | mask2]
 
         if len(element) <= self.p.width:
             return element
