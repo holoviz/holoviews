@@ -155,6 +155,7 @@ _ALGORITHMS = {
     'lttb': _lttb,
     'nth': _nth_point,
     'viewport': _viewport,
+    'viewport-xlim': _viewport,
 }
 
 
@@ -190,10 +191,14 @@ class downsample1d(ResampleOperation1D):
                 self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
                 mask = slice(*self.p.x_range)
             element = element[mask]
-        else:
+        elif self.p.algorithm == "viewport-xlim":
             # We don't want to send all the data to the frontend on the first pass
-            # if we have set xlims. Therefore we return the element without any data,
+            # if we have set xlims. Therefore we send the element without any data,
             # this will render the plot and trigger a second pass with the x_range set.
+            # This will not work with the matplotlib backend, because it does not update
+            # the x_range after the first pass, but that is not a problem because
+            # the matplotlib backend with the viewport algorithm does not make any sense.
+            # This is not very elegant, but it works.
             return element.clone(data=[])
 
         if len(element) <= self.p.width:
