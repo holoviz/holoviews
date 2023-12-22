@@ -16,9 +16,10 @@ from bokeh.models import (
     tools,
 )
 
-from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
+from holoviews.plotting.bokeh.util import bokeh33
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
@@ -792,6 +793,61 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains(
             "WARNING", "cb model could not be"
         )
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.skipif(not bokeh33, reason="requires Bokeh >= 3.3")
+class TestScalebarPlot:
+
+    def get_scalebar(self, element):
+        plot = bokeh_renderer.get_plot(element)
+        return plot.handles.get('scalebar')
+
+    def test_scalebar(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True)
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.location == 'bottom_right'
+        assert scalebar.background_fill_alpha == 0.8
+        assert scalebar.unit == "m"
+
+    def test_no_scalebar(self):
+        curve = Curve([1, 2, 3])
+        scalebar = self.get_scalebar(curve)
+        assert scalebar is None
+
+    def test_scalebar_unit(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit='cm')
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.unit == "cm"
+
+    def test_dim_unit(self):
+        dim = Dimension("dim", unit="cm")
+        curve = Curve([1, 2, 3], kdims=dim).opts(scalebar=True)
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.unit == "cm"
+
+    def test_scalebar_wrong_unit(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit='xx')
+
+        msg = "Only the following units are supported"
+        with pytest.raises(ValueError, match=msg):
+            self.get_scalebar(curve)
+
+    def test_scalebar_custom_opts(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_opts={'background_fill_alpha': 1})
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.background_fill_alpha == 1
+
+    def test_scalebar_label(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_label='Test')
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.label == 'Test'
+
 
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
 

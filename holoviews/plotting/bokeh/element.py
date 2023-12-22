@@ -2154,6 +2154,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             label=self.scalebar_label,
             **opts,
         )
+        self.handles['scalebar'] = scale_bar
         plot.add_layout(scale_bar)
 
 class CompositeElementPlot(ElementPlot):
