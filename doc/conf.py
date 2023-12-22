@@ -59,7 +59,12 @@ nbbuild_cell_timeout = 360
 extensions += [
     'nbsite.gallery',
     'sphinx_copybutton',
+    'nbsite.analytics',
 ]
+
+nbsite_analytics = {
+    'goatcounter_holoviz': True,
+}
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
