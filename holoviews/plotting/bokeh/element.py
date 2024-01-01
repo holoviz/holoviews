@@ -105,6 +105,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
+    apply_hard_bounds = param.Boolean(default=True, doc="""
+        If True, the navigable bounds of the plot will be set based
+        on the extents of the data. If False, the bounds will not be set.""")
+
     autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
         when panning or zooming along the orthogonal axis it will
@@ -1894,6 +1898,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self._subcoord_overlaid:
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
+
+        if self.apply_hard_bounds:
+            self._apply_hard_bound(element, ranges)
+
         self.handles['plot'] = plot
 
         if self.autorange:
@@ -1918,6 +1926,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.drawn = True
 
         return plot
+
+    def _apply_hard_bound(self, element, ranges):
+        # Set the navigable bounds
+        xmin, ymin, xmax, ymax = self.get_extents(element, ranges)
+        if not all(np.isnan([xmin, ymin, xmax, ymax])):
+            self.handles['x_range'].bounds = (xmin, xmax)
+            self.handles['y_range'].bounds = (ymin, ymax)
 
     def _setup_data_callbacks(self, plot):
         if not self._js_on_data_callbacks:
