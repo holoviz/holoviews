@@ -2809,6 +2809,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if callbacks is None:
             callbacks = []
         hover_tools = {}
+        zooms_subcoordy = {}
         _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
         init_tools, tool_types = [], []
         for key, subplot in self.subplots.items():
@@ -2830,10 +2831,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         self.subcoordinate_y and isinstance(tool, _zoom_types)
                         and 'hv_created' in tool.tags and len(tool.tags) == 2
                     ):
-                        if 'zooms_subcoordy' in self.handles:
+                        if tool.tags[1] in zooms_subcoordy:
                             continue
                         else:
-                            self.handles['zooms_subcoordy'] = subplot.handles['zooms_subcoordy']
+                            zooms_subcoordy[tool.tags[1]] = tool
+                            self.handles['zooms_subcoordy'] = zooms_subcoordy
                     elif tool_type in tool_types:
                         continue
                     else:
