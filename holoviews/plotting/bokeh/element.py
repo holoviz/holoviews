@@ -1928,11 +1928,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
     def _apply_hard_bound(self, element, ranges):
-        # Set the navigable bounds
-        xmin, ymin, xmax, ymax = self.get_extents(element, ranges)
-        if not all(np.isnan([xmin, ymin, xmax, ymax])):
-            self.handles['x_range'].bounds = (xmin, xmax)
-            self.handles['y_range'].bounds = (ymin, ymax)
+        """
+        Apply hard bounds to the x and y ranges of the plot.
+
+        Sets the navigable bounds of the plot based on the extents
+        of the given element and ranges. If an extend is numeric and not NaN, it is
+        used as is. Otherwise, it is set to None, which means that end of the axis
+        is unbounded.
+        """
+
+        # Skip if the element doesn't have an 'extents' attribute
+        if not hasattr(element, 'extents'):
+            return
+
+        def validate_bound(bound):
+            """Validate a single bound, returning None if it is not a valid number"""
+            return bound if isinstance(bound, (int, float)) and not np.isnan(bound) else None
+
+        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(validate_bound, self.get_extents(element, ranges))
+
+        def set_bounds(axis, min_extent, max_extent):
+            """Set the bounds for a given axis, using None if both extents are None or identical"""
+            if min_extent == max_extent:
+                self.handles[axis].bounds = None
+            else:
+                self.handles[axis].bounds = (min_extent, max_extent) if min_extent is not None or max_extent is not None else None
+
+        set_bounds('x_range', min_extent_x, max_extent_x)
+        set_bounds('y_range', min_extent_y, max_extent_y)
 
     def _setup_data_callbacks(self, plot):
         if not self._js_on_data_callbacks:
