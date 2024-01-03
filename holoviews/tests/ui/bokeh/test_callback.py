@@ -120,8 +120,8 @@ def test_rangexy(page, port):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_multi_axis_rangexy(page, port):
-    c1 = Curve(np.arange(100).cumsum(), vdims='y')
-    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+    c1 = Curve(np.arange(100).cumsum(), vdims='y').opts(apply_hard_bounds=False)
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2').opts(apply_hard_bounds=False)
     s1 = RangeXY(source=c1)
     s2 = RangeXY(source=c2)
 
