@@ -127,9 +127,9 @@ def test_rangexy(serve_hv):
     wait_until(lambda: rangexy.x_range == expected_xrange and rangexy.y_range == expected_yrange, page)
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_multi_axis_rangexy(serve_hv):
-    c1 = Curve(np.arange(100).cumsum(), vdims='y')
-    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+def test_multi_axis_rangexy(page, port):
+    c1 = Curve(np.arange(100).cumsum(), vdims='y').opts(apply_hard_bounds=False)
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2').opts(apply_hard_bounds=False)
     s1 = RangeXY(source=c1)
     s2 = RangeXY(source=c2)
 
