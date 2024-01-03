@@ -1,5 +1,6 @@
 import platform
 import sys
+from importlib.metadata import version
 
 __all__ = ("show_versions",)
 
@@ -52,8 +53,7 @@ def show_versions():
 
 def _package_version(p):
     try:
-        __import__(p)
-        print(f"{p:20}:  {sys.modules[p].__version__}")
+        print(f"{p:20}:  {version(p)}")
     except ImportError:
         print(f"{p:20}:  -")
 
