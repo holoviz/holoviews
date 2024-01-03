@@ -37,6 +37,7 @@ PACKAGES = [
     # Misc
     "panel",
     "param",
+    "pyviz_comms",
 ]
 
 
