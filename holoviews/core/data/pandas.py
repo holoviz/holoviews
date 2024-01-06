@@ -32,9 +32,10 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim, strict=True).name
-        if name in cls.indexes(dataset.data):
+        dim = dataset.get_dimension(dim, strict=True)
+        if cls.is_index(dataset, dim):
             return cls.index_values(dataset, dim).dtype.type
+        name = dim.name
         idx = list(dataset.data.columns).index(name)
         return dataset.data.dtypes.iloc[idx].type
 
@@ -157,20 +158,19 @@ class PandasInterface(Interface, PandasAPI):
         name = dataset.get_dimension(dim, strict=True).name
         return len(dataset.data[name].unique()) == 1
 
-
     @classmethod
     def dtype(cls, dataset, dimension):
-        name = dataset.get_dimension(dimension, strict=True).name
-        indexes = cls.indexes(dataset.data)
-        if name in indexes:
-            data = dataset.data.index if len(indexes) == 1 else dataset.data.index.get_level(name)
+        dim = dataset.get_dimension(dimension, strict=True)
+        name = dim.name
+        df = dataset.data
+        if cls.is_index(df, dim):
+            data = df.index if isinstance(df.index, pd.MultiIndex) else df.index.get_level(name)
         else:
-            data = dataset.data[name]
+            data = df[name]
         if util.isscalar(data):
             return np.array([data]).dtype
         else:
             return data.dtype
-
 
     @classmethod
     def indexes(cls, data):
@@ -178,6 +178,13 @@ class PandasInterface(Interface, PandasAPI):
         if index_names == [None]:
             index_names = ['index']
         return index_names
+
+    @classmethod
+    def is_index(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension, strict=True)
+        if dimension.name in dataset.data.columns:
+            return False
+        return dimension.name in cls.indexes(dataset.data)
 
     @classmethod
     def index_values(cls, dataset, dimension):
@@ -201,8 +208,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        indexes = cls.indexes(dataset.data)
-        if dimension.name in indexes:
+        if cls.is_index(dataset, dimension):
             column = cls.index_values(dataset, dimension)
         else:
             column = dataset.data[dimension.name]
@@ -389,7 +395,7 @@ class PandasInterface(Interface, PandasAPI):
             keep_index=False,
     ):
         dim = dataset.get_dimension(dim, strict=True)
-        is_index = dim.name in cls.indexes(dataset.data)
+        is_index = cls.is_index(dataset, dim)
         if is_index:
             data = cls.index_values(dataset, dim)
         else:
