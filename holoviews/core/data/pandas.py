@@ -164,7 +164,7 @@ class PandasInterface(Interface, PandasAPI):
         name = dim.name
         df = dataset.data
         if cls.is_index(dataset, dim):
-            data = df.index if isinstance(df.index, pd.MultiIndex) else df.index.get_level(name)
+            data = df.index.get_level(name) if isinstance(df.index, pd.MultiIndex) else df.index
         else:
             data = df[name]
         if util.isscalar(data):
@@ -449,6 +449,8 @@ class PandasInterface(Interface, PandasAPI):
         if it already a dataframe type.
         """
         if issubclass(dataset.interface, PandasInterface):
+            if any(cls.is_index(dataset, dim) for dim in dataset.dimensions()):
+                return dataset.data.reset_index()
             return dataset.data
         else:
             return dataset.dframe()
@@ -485,6 +487,11 @@ class PandasInterface(Interface, PandasAPI):
         cols = [columns.index(c) for c in cols]
         if np.isscalar(rows):
             rows = [rows]
+        if not cols:
+            if scalar:
+                return data.index.values[rows[0]]
+            else:
+                return data.index[rows]
         if scalar:
             return data.iloc[rows[0], cols[0]]
         return data.iloc[rows, cols]
