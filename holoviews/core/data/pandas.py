@@ -163,7 +163,7 @@ class PandasInterface(Interface, PandasAPI):
         dim = dataset.get_dimension(dimension, strict=True)
         name = dim.name
         df = dataset.data
-        if cls.is_index(df, dim):
+        if cls.is_index(dataset, dim):
             data = df.index if isinstance(df.index, pd.MultiIndex) else df.index.get_level(name)
         else:
             data = df[name]
