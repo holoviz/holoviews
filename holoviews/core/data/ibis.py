@@ -9,7 +9,7 @@ from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from . import pandas
-from .interface import Interface
+from .interface import DataError, Interface
 from .util import cached
 
 
@@ -93,6 +93,17 @@ class IbisInterface(Interface):
         elif keys == [] and values is None:
             values = list(data.columns[: nvdim if nvdim else None])
         return data, dict(kdims=keys, vdims=values), {}
+
+    @classmethod
+    def validate(cls, dataset, vdims=True):
+        dim_types = 'all' if vdims else 'key'
+        dimensions = dataset.dimensions(dim_types, label='name')
+        cols = list(dataset.data.columns)
+        not_found = [d for d in dimensions if d not in cols]
+        if not_found:
+            raise DataError("Supplied data does not contain specified "
+                            "dimensions, the following dimensions were "
+                            "not found: %s" % repr(not_found), cls)
 
     @classmethod
     def compute(cls, dataset):
@@ -216,7 +227,6 @@ class IbisInterface(Interface):
             **{v.name: dataset.data[k] for k, v in dimensions.items()}
         )
 
-    validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
 
     @classmethod
