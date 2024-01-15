@@ -16,6 +16,7 @@ from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import (
     Buffer,
     LinkedStream,
+    Params,
     PointerX,
     PointerXY,
     PointerY,
@@ -844,6 +845,24 @@ class DynamicCallableMemoize(ComparisonTestCase):
         x.event(x=2)
         x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+
+
+class DynamicMapRX(ComparisonTestCase):
+
+    def test_dynamic_rx(self):
+        freq = param.rx(1)
+        rx_curve = param.rx(sine_array)(0, freq).rx.pipe(Curve)
+        dmap = DynamicMap(rx_curve)
+        assert len(dmap.streams) == 1
+        pstream = dmap.streams[0]
+        assert isinstance(pstream, Params)
+        assert len(pstream.parameters) == 2
+        fn_param, freq_param = pstream.parameters
+        assert getattr(fn_param.owner, fn_param.name) == sine_array
+        assert getattr(freq_param.owner, freq_param.name) == 1
+        self.assertEqual(dmap[()], Curve(sine_array(0, 1)))
+        freq.rx.value = 2
+        self.assertEqual(dmap[()], Curve(sine_array(0, 2)))
 
 
 class StreamSubscribersAddandClear(ComparisonTestCase):
