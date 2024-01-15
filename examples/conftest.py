@@ -40,6 +40,11 @@ if system == "Darwin":
         "user_guide/16-Streaming_Data.ipynb",
     ]
 
+# 2024-01-15: See https://github.com/holoviz/holoviews/issues/6069
+if system == "Windows":
+    collect_ignore_glob += [
+        "examples/user_guide/Deploying_Bokeh_Apps.ipynb",
+    ]
 
 # First available in Bokeh 3.2.0
 if Version(bokeh.__version__) < Version("3.2.0"):
