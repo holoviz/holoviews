@@ -102,7 +102,9 @@ def _lttb_inner(x, y, n_out, sampled_x, offset):
 
 def _lttb(x, y, n_out, **kwargs):
     """
-    Downsample the data using the LTTB algorithm (python implementation).
+    Downsample the data using the LTTB algorithm.
+
+    Will use a Python/Numpy implementation if tsdownsample is not available.
 
     Args:
         x (np.ndarray): The x-values of the data.
@@ -114,10 +116,10 @@ def _lttb(x, y, n_out, **kwargs):
     try:
         from tsdownsample import LTTBDownsampler
         return LTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
-    except Exception as e:
-        raise e
     except ModuleNotFoundError:
         pass
+    except Exception as e:
+        raise e
 
     # Bucket size. Leave room for start and end data points
     block_size = (y.shape[0] - 2) / (n_out - 2)
@@ -158,37 +160,31 @@ def _nth_point(x, y, n_out, **kwargs):
 def _min_max(x, y, n_out, **kwargs):
     try:
         from tsdownsample import MinMaxDownsampler
-    except Exception as e:
-        raise e
-    except ModuleNotFoundError as e:
+    except ModuleNotFoundError:
         raise NotImplementedError(
             'The min-max downsampling algorithm requires the tsdownsampler '
             'library to be installed.'
-        ) from e
+        ) from None
     return MinMaxDownsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 def _min_max_lttb(x, y, n_out, **kwargs):
     try:
         from tsdownsample import MinMaxLTTBDownsampler
-    except Exception as e:
-        raise e
-    except ModuleNotFoundError as e:
+    except ModuleNotFoundError:
         raise NotImplementedError(
             'The minmax-lttb downsampling algorithm requires the tsdownsampler '
             'library to be installed.'
-        ) from e
+        ) from None
     return MinMaxLTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 def _m4(x, y, n_out, **kwargs):
     try:
         from tsdownsample import M4Downsampler
-    except Exception as e:
-        raise e
-    except ModuleNotFoundError as e:
+    except ModuleNotFoundError:
         raise NotImplementedError(
             'The m4 downsampling algorithm requires the tsdownsampler '
             'library to be installed.'
-        ) from e
+        ) from None
     return M4Downsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 
