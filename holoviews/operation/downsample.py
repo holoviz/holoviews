@@ -194,7 +194,6 @@ _ALGORITHMS = {
     'minmax': _min_max,
     'minmax-lttb': _min_max_lttb,
     'm4': _m4,
-
 }
 
 class downsample1d(ResampleOperation1D):
