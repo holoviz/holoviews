@@ -142,6 +142,7 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
+          python -m pip install --upgrade --pre pandas==2.2.0rc0
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -240,16 +241,17 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
+          python -m pip install --upgrade --pre pandas==2.2.0rc0
       - name: bokeh sampledata
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
           bokeh sampledata
-      - name: Check packages latest version
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          # conda activate test-environment
-          python scripts/check_latest_packages.py
+      # - name: Check packages latest version
+      #   if: needs.setup.outputs.code_change == 'true'
+      #   run: |
+      #     # conda activate test-environment
+      #     python scripts/check_latest_packages.py
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
