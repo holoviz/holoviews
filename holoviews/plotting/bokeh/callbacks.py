@@ -645,6 +645,12 @@ class RangeXYCallback(Callback):
         'y1': 'cb_obj.y1',
     }
 
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id)
+        for stream in self.streams:
+            msg = self._process_msg({})
+            stream.update(**msg)
+
     def _process_msg(self, msg):
         if self.plot.state.x_range is not self.plot.handles['x_range']:
             x_range = self.plot.handles['x_range']

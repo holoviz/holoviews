@@ -155,7 +155,6 @@ _ALGORITHMS = {
     'lttb': _lttb,
     'nth': _nth_point,
     'viewport': _viewport,
-    'viewport-xlim': _viewport,
 }
 
 
@@ -168,7 +167,6 @@ class downsample1d(ResampleOperation1D):
         - `lttb`: Largest Triangle Three Buckets downsample algorithm
         - `nth`: Selects every n-th point.
         - `viewport`: Selects all points in a given viewport
-        - `viewport-xlim`: Selects all points in a given viewport, when xlim is set
     """
 
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS))
@@ -193,23 +191,6 @@ class downsample1d(ResampleOperation1D):
                 self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
                 mask = slice(*self.p.x_range)
             element = element[mask]
-        elif self.p.algorithm == "viewport-xlim":
-            # We only want to send some of the data to the browser on the
-            # first pass if we have set xlim. This will render the plot and
-            # trigger a second pass with the x_range set. This will not work
-            # with the matplotlib backend because it does not update the x_range
-            # after the first pass, but that is not a problem because the matplotlib
-            # backend with the viewport algorithm does not make any sense.
-            # This is not very elegant.
-            size = element.dataset.shape[0]
-            mask1 = element.dataset.interface.select_mask(
-                element.dataset, {element.kdims[0]: slice(self.p.width // 2)},
-            )
-            mask2 = element.dataset.interface.select_mask(
-                element.dataset, {element.kdims[0]: slice(size - self.p.width // 2, size)},
-            )
-            element = element[mask1 | mask2]
-
         if len(element) <= self.p.width:
             return element
         xs, ys = (element.dimension_values(i) for i in range(2))
