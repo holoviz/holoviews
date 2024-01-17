@@ -241,7 +241,7 @@ class downsample1d(ResampleOperation1D):
             ys = ys.astype(np.int8)
         downsample = _ALGORITHMS[self.p.algorithm]
         kwargs = {}
-        if self.p.algorithm == "lttb" and isinstance(element, Area):
+        if "lttb" in self.p.algorithm and isinstance(element, Area):
             raise NotImplementedError(
                 "LTTB algorithm is not implemented for hv.Area"
             )
