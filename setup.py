@@ -107,7 +107,7 @@ extras_require["examples_tests"] = extras_require["examples"] + extras_require['
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.8.2,<0.9.0',
+    'nbsite >=0.8.4,<0.9.0',
     'myst-nb <1',
     'graphviz',
     'bokeh >=3.1',
