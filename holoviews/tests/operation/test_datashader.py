@@ -221,7 +221,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_aggregate_curve_datetimes_dask(self):
         df = pd.DataFrame(
             data=np.arange(1000), columns=['a'],
-            index=pd.date_range('2019-01-01', freq='1T', periods=1000),
+            index=pd.date_range('2019-01-01', freq='1min', periods=1000),
         )
         ddf = dd.from_pandas(df, npartitions=4)
         curve = Curve(ddf, kdims=['index'], vdims=['a'])
@@ -270,7 +270,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(imgs[1], expected2)
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
-        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
         img = rasterize(Curve(df), dynamic=False, width=3)
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
@@ -868,7 +868,7 @@ class DatashaderShadeTests(ComparisonTestCase):
         self.assertEqual(shaded, expected)
 
     def test_shade_dt_xaxis_constant_yaxis(self):
-        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
         rgb = shade(rasterize(Curve(df), dynamic=False, width=3))
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
