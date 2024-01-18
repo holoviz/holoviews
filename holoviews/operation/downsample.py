@@ -223,16 +223,24 @@ class downsample1d(ResampleOperation1D):
        values to generate with the minmax algorithm before further
        downsampling with LTTB.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element, key=None, sliced=None):
         if isinstance(element, (Overlay, NdOverlay)):
-            _process = partial(self._process, key=key)
+            # If all elements are views into the same data we can
+            # optimize downsampling significantly by slicing the data
+            # just once
+            kwargs = {'key': key}
+            if len(set((id(el.data), tuple(el.kdims)) for el in element)) == 1 and self.p.x_range:
+                kwargs['sliced'] = next(iter(element))[slice(*self.p.x_range)]
+            _process = partial(self._process, **kwargs)
             if isinstance(element, Overlay):
                 elements = [v.map(_process) for v in element]
             else:
                 elements = {k: v.map(_process) for k, v in element.items()}
             return element.clone(elements)
 
-        if self.p.x_range:
+        if sliced is not None:
+            element = element.clone(sliced.data)
+        elif self.p.x_range:
             element = element[slice(*self.p.x_range)]
         if len(element) <= self.p.width:
             return element
