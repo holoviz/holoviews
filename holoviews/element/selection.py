@@ -148,7 +148,7 @@ def _mask_shapely(masked_xvals, masked_yvals, geometry):
     from shapely.geometry import Point, Polygon
     points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
     poly = Polygon(geometry)
-    return np.array([poly.contains(p) for p in points])
+    return np.array([poly.contains(p) for p in points], dtype=bool)
 
 
 def spatial_select(xvals, yvals, geometry):
