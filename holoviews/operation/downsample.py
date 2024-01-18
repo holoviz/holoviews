@@ -225,10 +225,8 @@ class downsample1d(ResampleOperation1D):
 
     def _process(self, element, key=None, shared_data=None):
         if isinstance(element, (Overlay, NdOverlay)):
-            kwargs = {'key': key}
-            if self.p.x_range:
-                # Shared data is so we only slice the given data once
-                kwargs['shared_data'] = {}
+            # Shared data is so we only slice the given data once
+            kwargs = {'key': key, 'shared_data': {}}
             _process = partial(self._process, **kwargs)
             if isinstance(element, Overlay):
                 elements = [v.map(_process) for v in element]
