@@ -54,7 +54,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'cftime',
     'scipy >=1.10',  # Python 3.9 + Windows downloads 1.9
     'selenium',
-    # 'spatialpandas',  # Temp. start outputting warning with pandas 2.2
+    'spatialpandas',
     'datashader >=0.11.1',
     'dash >=1.16',
 ]
