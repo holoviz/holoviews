@@ -408,7 +408,8 @@ class Renderer(Exporter):
         client_comm = self.comm_manager.get_client_comm(
             on_msg=partial(plot._on_msg, ref, manager),
             on_error=partial(plot._on_error, ref),
-            on_stdout=partial(plot._on_stdout, ref)
+            on_stdout=partial(plot._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         manager.client_comm_id = client_comm.id
         return render_mimebundle(model, doc, comm, manager)
