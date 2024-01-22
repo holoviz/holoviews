@@ -113,10 +113,10 @@ warnings.filterwarnings("ignore",
 
 if "IPython" in sys.modules:
     from .ipython import notebook_extension
-    extension = notebook_extension # noqa (name remapping)
+    extension = notebook_extension
 else:
     class notebook_extension(param.ParameterizedFunction):
-        def __call__(self, *args, **opts): # noqa (dummy signature)
+        def __call__(self, *args, **kwargs):
             raise Exception("Jupyter notebook not available: use hv.extension instead.")
 
 if '_pyodide' in sys.modules:
