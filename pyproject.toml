@@ -45,8 +45,10 @@ filterwarnings = [
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",  # https://github.com/dateutil/dateutil/pull/1285
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
     "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
-    # 2024-01: Pandas 2.2 problems in Dask
+    # 2024-01: Pandas 2.2
     "ignore:When grouping with a length-1 list::dask.dataframe.groupby",  # https://github.com/dask/dask/issues/10572
+    "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # Will go away by itself in Pandas 3.0
+    "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning",  # https://github.com/holoviz/spatialpandas/issues/137
 ]
 
 [tool.coverage]

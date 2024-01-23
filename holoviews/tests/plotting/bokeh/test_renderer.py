@@ -4,6 +4,7 @@ from unittest import SkipTest
 import numpy as np
 import panel as pn
 import param
+import pytest
 from bokeh.io import curdoc
 from bokeh.themes.theme import Theme
 from panel.widgets import DiscreteSlider, FloatSlider, Player
@@ -154,6 +155,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
@@ -166,6 +168,7 @@ class BokehRendererTest(ComparisonTestCase):
         slider.value = 3.1
         self.assertEqual(cds.data['y'][2], 3.1)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
@@ -178,6 +181,7 @@ class BokehRendererTest(ComparisonTestCase):
         stream.event(y=3)
         self.assertEqual(cds.data['y'][2], 3)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
