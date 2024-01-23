@@ -159,7 +159,7 @@ class TestCallableArgspec(ComparisonTestCase):
         self.assertEqual(Callable(CallableClass().someinstancemethod).argspec.args, ['x', 'y'])
         self.assertEqual(Callable(CallableClass().someinstancemethod).argspec.keywords, None)
 
-    def testè_callable_partial_instance_method(self):
+    def test_callable_partial_instance_method(self):
         self.assertEqual(Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.args, ['y'])
         self.assertEqual(Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.keywords, None)
 
