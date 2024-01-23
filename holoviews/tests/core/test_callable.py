@@ -70,7 +70,7 @@ class TestCallableName(ComparisonTestCase):
         self.assertEqual(Callable(CallableClass().__call__).name, 'CallableClass')
 
     def test_callable_instance_method(self):
-        self.assertEqual(Callable(CallableClass().someinstancemethod).name, 'CallableClass.someinstancemethod')
+        assert Callable(CallableClass().someinstancemethod).name == 'CallableClass.someinstancemethod'
 
     def test_classmethod_name(self):
         self.assertEqual(Callable(CallableClass().someclsmethod).name,
@@ -123,10 +123,10 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
         self.assertEqual(Callable(CallableClass())(1,2,3,4), 10)
 
     def test_callable_instance_method(self):
-        self.assertEqual(Callable(CallableClass().someinstancemethod)(1, 2), 3)
+        assert Callable(CallableClass().someinstancemethod)(1, 2) == 3
 
     def test_callable_partial_instance_method(self):
-        self.assertEqual(Callable(partial(CallableClass().someinstancemethod, x=1))(2), 3)
+        assert Callable(partial(CallableClass().someinstancemethod, x=1))(2) == 3
 
     def test_callable_paramfunc(self):
         self.assertEqual(Callable(ParamFunc)(3,b=5), 15)
@@ -156,12 +156,12 @@ class TestCallableArgspec(ComparisonTestCase):
         self.assertEqual(Callable(CallableClass()).argspec.varargs, 'testargs')
 
     def test_callable_instance_method(self):
-        self.assertEqual(Callable(CallableClass().someinstancemethod).argspec.args, ['x', 'y'])
-        self.assertEqual(Callable(CallableClass().someinstancemethod).argspec.keywords, None)
+        assert Callable(CallableClass().someinstancemethod).argspec.args == ['x', 'y']
+        assert Callable(CallableClass().someinstancemethod).argspec.keywords is None
 
     def test_callable_partial_instance_method(self):
-        self.assertEqual(Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.args, ['y'])
-        self.assertEqual(Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.keywords, None)
+        assert Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.args == ['y']
+        assert Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.keywords is None
 
     def test_callable_paramfunc_argspec(self):
         self.assertEqual(Callable(ParamFunc).argspec.args, ['a'])
@@ -191,10 +191,10 @@ class TestKwargCallableInvocation(ComparisonTestCase):
         self.assertEqual(Callable(partial(lambda x,y: x+y,x=4))(y=5), 9)
 
     def test_callable_instance_method(self):
-        self.assertEqual(Callable(CallableClass().someinstancemethod)(x=1, y=2), 3)
+        assert Callable(CallableClass().someinstancemethod)(x=1, y=2) == 3
 
     def test_callable_partial_instance_method(self):
-        self.assertEqual(Callable(partial(CallableClass().someinstancemethod, x=1))(y=2), 3)
+        assert Callable(partial(CallableClass().someinstancemethod, x=1))(y=2) == 3
 
     def test_callable_paramfunc(self):
         self.assertEqual(Callable(ParamFunc)(a=3,b=5), 15)
