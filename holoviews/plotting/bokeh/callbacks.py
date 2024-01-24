@@ -404,6 +404,7 @@ class Callback:
         if self.on_changes:
             change_handler = lambda attr, old, new: (
                 asyncio.create_task(self.on_change(attr, old, new))
+                 if self.plot.document else None
             )
             for change in self.on_changes:
                 if change in ['patching', 'streaming']:
