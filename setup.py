@@ -57,8 +57,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'spatialpandas',
     'datashader >=0.11.1',
     'dash >=1.16',
-    'tsdownsample',
 ]
+
+if os.name != "nt":
+    extras_require['tests'] += ['tsdownsample']
 
 extras_require['tests_ci'] = [
     'codecov',
