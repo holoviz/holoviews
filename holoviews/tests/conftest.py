@@ -1,4 +1,6 @@
 import contextlib
+import sys
+from collections.abc import Callable
 
 import pytest
 from panel.tests.conftest import (  # noqa
@@ -80,3 +82,17 @@ def plotly_backend():
     hv.Store.current_backend = 'plotly'
     yield
     hv.Store.current_backend = prev_backend
+
+@pytest.fixture
+def unimport(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], None]:
+    """
+    Return a function for unimporting modules and preventing reimport.
+    """
+
+    def unimport_module(modname: str) -> None:
+        # Remove if already imported
+        monkeypatch.delitem(sys.modules, modname, raising=False)
+        # Prevent import:
+        monkeypatch.setattr(sys, "path", [])
+
+    return unimport_module
