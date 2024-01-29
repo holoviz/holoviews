@@ -9,6 +9,8 @@ try:
 except ImportError:
     tsdownsample = None
 
+algorithms = _ALGORITHMS.copy()
+algorithms.pop('viewport', None)  # viewport return slice(len(data)) no matter the width
 
 @pytest.mark.parametrize("plottype", ["overlay", "ndoverlay"])
 def test_downsample1d_multi(plottype):
@@ -26,7 +28,7 @@ def test_downsample1d_multi(plottype):
             assert value.size == downsample1d.width
 
 
-@pytest.mark.parametrize("algorithm", _ALGORITHMS.values(), ids=_ALGORITHMS)
+@pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
 def test_downsample_algorithm(algorithm, unimport):
     unimport("tsdownsample")
     x = np.arange(1000)
@@ -37,14 +39,18 @@ def test_downsample_algorithm(algorithm, unimport):
     except NotImplementedError:
         pytest.skip("not testing tsdownsample algorithms")
     else:
+        if isinstance(result, slice):
+            result = x[result]
         assert result.size == width
 
 
 @pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
-@pytest.mark.parametrize("algorithm", _ALGORITHMS.values(), ids=_ALGORITHMS)
+@pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
 def test_downsample_algorithm_with_tsdownsample(algorithm):
     x = np.arange(1000)
     y = np.random.rand(1000)
     width = 20
     result = algorithm(x, y, width)
+    if isinstance(result, slice):
+        result = x[result]
     assert result.size == width
