@@ -81,7 +81,3 @@ class HoloviewsUserWarning(UserWarning):
     """A Holoviews-specific ``UserWarning`` subclass.
     Used to selectively filter Holoviews warnings for unconditional display.
     """
-
-
-warnings.simplefilter("always", HoloviewsDeprecationWarning)
-warnings.simplefilter("always", HoloviewsUserWarning)

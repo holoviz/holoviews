@@ -8,7 +8,7 @@ PACKAGES = [
     # Data
     "cudf",
     "dask",
-    "ibis",
+    "ibis-framework",
     "networkx",
     "numpy",
     "pandas",
@@ -18,8 +18,9 @@ PACKAGES = [
     "xarray",
     # Processing
     "numba",
-    "skimage",
+    "scikit-image",
     "scipy",
+    "tsdownsample",
     # Plotting
     "bokeh",
     "colorcet",
@@ -27,7 +28,7 @@ PACKAGES = [
     "geoviews",
     "hvplot",
     "matplotlib",
-    "PIL",
+    "pillow",
     "plotly",
     # Jupyter
     "IPython",
@@ -63,3 +64,7 @@ def _panel_comms():
     import panel as pn
 
     print(f"{'Panel comms':20}:  {pn.config.comms}")
+
+
+if __name__ == "__main__":
+    show_versions()

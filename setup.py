@@ -59,6 +59,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'dash >=1.16',
 ]
 
+if os.name != "nt":
+    # Currently not available on Windows on conda-forge
+    extras_require['tests'] += ['tsdownsample']
+
 extras_require['tests_ci'] = [
     'codecov',
     "pytest-github-actions-annotate-failures",
