@@ -87,6 +87,8 @@ def plotly_backend():
 def unimport(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], None]:
     """
     Return a function for unimporting modules and preventing reimport.
+
+    This will block any new modules from being imported.
     """
 
     def unimport_module(modname: str) -> None:

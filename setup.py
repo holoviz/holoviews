@@ -60,6 +60,7 @@ extras_require['tests'] = extras_require['tests_core'] + [
 ]
 
 if os.name != "nt":
+    # Currently not available on Windows on conda-forge
     extras_require['tests'] += ['tsdownsample']
 
 extras_require['tests_ci'] = [
