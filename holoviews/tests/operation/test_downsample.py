@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 import holoviews as hv
@@ -10,7 +11,8 @@ except ImportError:
     tsdownsample = None
 
 algorithms = _ALGORITHMS.copy()
-algorithms.pop('viewport', None)  # viewport return slice(len(data)) no matter the width
+algorithms.pop("viewport", None)  # viewport return slice(len(data)) no matter the width
+
 
 @pytest.mark.parametrize("plottype", ["overlay", "ndoverlay"])
 def test_downsample1d_multi(plottype):
@@ -26,6 +28,46 @@ def test_downsample1d_multi(plottype):
     for n in figure_values:
         for value in n.data.values():
             assert value.size == downsample1d.width
+
+
+def test_downsample1d_shared_data():
+    runs = [0]
+
+    class mocksample(downsample1d):
+        def _compute_mask(self, element):
+            # Use _compute_mask as this should only be called once
+            # and then it should be cloned.
+            runs[0] += 1
+            return super()._compute_mask(element)
+
+    N = 1000
+    df = pd.DataFrame({c: range(N) for c in "xyz"})
+    figure = hv.Overlay([hv.Curve(df, kdims="x", vdims=c) for c in "yz"])
+
+    # We set x_range to trigger _compute_mask
+    mocksample(figure, dynamic=False, x_range=(0, 500))
+    assert runs[0] == 1
+
+
+# Should be fixed when https://github.com/holoviz/holoviews/pull/6061 is merged
+@pytest.mark.xfail(reason="This will make a copy of the data")
+def test_downsample1d_shared_data_index():
+    runs = [0]
+
+    class mocksample(downsample1d):
+        def _compute_mask(self, element):
+            # Use _compute_mask as this should only be called once
+            # and then it should be cloned.
+            runs[0] += 1
+            return super()._compute_mask(element)
+
+    N = 1000
+    df = pd.DataFrame({c: range(N) for c in "xyz"})
+    figure = hv.Overlay([hv.Curve(df, kdims="index", vdims=c) for c in "xyz"])
+
+    # We set x_range to trigger _compute_mask
+    mocksample(figure, dynamic=False, x_range=(0, 500))
+    assert runs[0] == 1
 
 
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)

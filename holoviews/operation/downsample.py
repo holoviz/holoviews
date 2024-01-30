@@ -232,9 +232,11 @@ class downsample1d(ResampleOperation1D):
         Whether to add the neighbor points to the range before downsampling.
         By default this is only enabled for the viewport algorithm.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element, key=None, shared_data=None):
         if isinstance(element, (Overlay, NdOverlay)):
-            _process = partial(self._process, key=key)
+            # Shared data is so we only slice the given data once
+            kwargs = {'key': key, 'shared_data': {}}
+            _process = partial(self._process, **kwargs)
             if isinstance(element, Overlay):
                 elements = [v.map(_process) for v in element]
             else:
@@ -242,8 +244,15 @@ class downsample1d(ResampleOperation1D):
             return element.clone(elements)
 
         if self.p.x_range:
-            mask = self._compute_mask(element)
-            element = element[mask]
+            key = (id(element.data), str(element.kdims[0]))
+            if shared_data is not None and key in shared_data:
+                element = element.clone(shared_data[key])
+            else:
+                mask = self._compute_mask(element)
+                element = element[mask]
+                if shared_data is not None:
+                    shared_data[key] = element.data
+
         if len(element) <= self.p.width:
             return element
         xs, ys = (element.dimension_values(i) for i in range(2))
