@@ -59,6 +59,10 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'dash >=1.16',
 ]
 
+if os.name != "nt":
+    # Currently not available on Windows on conda-forge
+    extras_require['tests'] += ['tsdownsample']
+
 extras_require['tests_ci'] = [
     'codecov',
     "pytest-github-actions-annotate-failures",
@@ -72,7 +76,7 @@ extras_require['tests_nb'] = ['nbval']
 extras_require['ui'] = ['playwright', 'pytest-playwright']
 
 # Notebook dependencies
-extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
+extras_require["notebook"] = ["ipython >=5.4.0", "notebook >=7.0"]
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [

@@ -1480,6 +1480,10 @@ class RangeX(LinkedStream):
     x_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
+    def _set_stream_parameters(self, **kwargs):
+        kwargs.pop("y_range", None)
+        super()._set_stream_parameters(**kwargs)
+
 
 class RangeY(LinkedStream):
     """
@@ -1488,6 +1492,10 @@ class RangeY(LinkedStream):
 
     y_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
+
+    def _set_stream_parameters(self, **kwargs):
+        kwargs.pop("x_range", None)
+        super()._set_stream_parameters(**kwargs)
 
 
 class BoundsXY(LinkedStream):

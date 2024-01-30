@@ -173,9 +173,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         """
         Update datasource with data for a new frame.
         """
-        if not self.document:
-            return
-
         data = self._postprocess_data(data)
         empty = all(len(v) == 0 for v in data.values())
         if (self.streaming and self.streaming[0].data is self.current_frame.data

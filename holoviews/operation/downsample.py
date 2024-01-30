@@ -152,10 +152,13 @@ def _nth_point(x, y, n_out, **kwargs):
         y (np.ndarray): The y-values of the data.
         n_out (int): The number of output points.
     Returns:
-        np.array: The indexes of the selected datapoints.
+        slice: The slice of selected datapoints.
     """
     n_samples = len(x)
-    return np.arange(0, n_samples, max(1, math.ceil(n_samples / n_out)))
+    return slice(0, n_samples, max(1, math.ceil(n_samples / n_out)))
+
+def _viewport(x, y, n_out, **kwargs):
+    return slice(len(x))
 
 def _min_max(x, y, n_out, **kwargs):
     try:
@@ -191,6 +194,7 @@ def _m4(x, y, n_out, **kwargs):
 _ALGORITHMS = {
     'lttb': _lttb,
     'nth': _nth_point,
+    'viewport': _viewport,
     'minmax': _min_max,
     'minmax-lttb': _min_max_lttb,
     'm4': _m4,
@@ -207,13 +211,14 @@ class downsample1d(ResampleOperation1D):
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS), doc="""
         The algorithm to use for downsampling:
 
-        - `lttb`: Largest Triangle Three Buckets downsample algorithm
+        - `lttb`: Largest Triangle Three Buckets downsample algorithm.
         - `nth`: Selects every n-th point.
+        - `viewport`: Selects all points in a given viewport.
         - `minmax`: Selects the min and max value in each bin (requires tsdownsampler).
         - `m4`: Selects the min, max, first and last value in each bin (requires tsdownsampler).
         - `minmax-lttb`: First selects n_out * minmax_ratio min and max values,
                          then further reduces these to n_out values using the
-                         Largest Triangle Three Buckets algorithm. (requires tsdownsampler)""")
+                         Largest Triangle Three Buckets algorithm (requires tsdownsampler).""")
 
     parallel = param.Boolean(default=False, doc="""
        The number of threads to use (if tsdownsampler is available).""")
@@ -222,6 +227,10 @@ class downsample1d(ResampleOperation1D):
        For the minmax-lttb algorithm determines the ratio of candidate
        values to generate with the minmax algorithm before further
        downsampling with LTTB.""")
+
+    neighbor_points = param.Boolean(default=None, doc="""
+        Whether to add the neighbor points to the range before downsampling.
+        By default this is only enabled for the viewport algorithm.""")
 
     def _process(self, element, key=None, shared_data=None):
         if isinstance(element, (Overlay, NdOverlay)):
@@ -239,7 +248,8 @@ class downsample1d(ResampleOperation1D):
             if shared_data is not None and key in shared_data:
                 element = element.clone(shared_data[key])
             else:
-                element = element[slice(*self.p.x_range)]
+                mask = self._compute_mask(element)
+                element = element[mask]
                 if shared_data is not None:
                     shared_data[key] = element.data
 
@@ -258,3 +268,25 @@ class downsample1d(ResampleOperation1D):
             kwargs['minmax_ratio'] = self.p.minmax_ratio
         samples = downsample(xs, ys, self.p.width, parallel=self.p.parallel, **kwargs)
         return element.iloc[samples]
+
+    def _compute_mask(self, element):
+        """
+        Computes the mask to apply to the element before downsampling.
+        """
+        neighbor_enabled = (
+            self.p.neighbor_points
+            if self.p.neighbor_points is not None
+            else self.p.algorithm == "viewport"
+        )
+        if not neighbor_enabled:
+            return slice(*self.p.x_range)
+        try:
+            mask = element.dataset.interface._select_mask_neighbor(
+                element.dataset, {element.kdims[0]: self.p.x_range}
+            )
+        except NotImplementedError:
+            mask = slice(*self.p.x_range)
+        except Exception as e:
+            self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
+            mask = slice(*self.p.x_range)
+        return mask
