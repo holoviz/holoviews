@@ -5,6 +5,7 @@ itself.**
 
 |    |    |
 | --- | --- |
+| Downloads | ![https://pypistats.org/packages/holoviews](https://img.shields.io/pypi/dm/holoviews?label=pypi) ![https://anaconda.org/pyviz/holoviews](https://pyviz.org/_static/cache/holoviews_conda_downloads_badge.svg)
 | Build Status | [![Build Status](https://github.com/holoviz/holoviews/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/holoviz/holoviews/actions/workflows/test.yaml?query=branch%3Amain) |
 | Coverage | [![codecov](https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg)](https://codecov.io/gh/holoviz/holoviews) |
 | Latest dev release | [![Github tag](https://img.shields.io/github/tag/holoviz/holoviews.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/holoviews/tags) [![dev-site](https://img.shields.io/website-up-down-green-red/http/dev.holoviews.org.svg?label=dev%20website)](http://dev.holoviews.org) |
