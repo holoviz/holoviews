@@ -228,6 +228,10 @@ class downsample1d(ResampleOperation1D):
        values to generate with the minmax algorithm before further
        downsampling with LTTB.""")
 
+    neighbor_points = param.Boolean(default=None, doc="""
+        Whether to add the neighbor points to the range before downsampling.
+        By default this is only enabled for the viewport algorithm.""")
+
     def _process(self, element, key=None):
         if isinstance(element, (Overlay, NdOverlay)):
             _process = partial(self._process, key=key)
@@ -238,15 +242,7 @@ class downsample1d(ResampleOperation1D):
             return element.clone(elements)
 
         if self.p.x_range:
-            try:
-                mask = element.dataset.interface._select_mask_neighbor(
-                    element.dataset, {element.kdims[0]: self.p.x_range}
-                )
-            except NotImplementedError:
-                mask = slice(*self.p.x_range)
-            except Exception as e:
-                self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
-                mask = slice(*self.p.x_range)
+            mask = self._compute_mask(element)
             element = element[mask]
         if len(element) <= self.p.width:
             return element
@@ -263,3 +259,25 @@ class downsample1d(ResampleOperation1D):
             kwargs['minmax_ratio'] = self.p.minmax_ratio
         samples = downsample(xs, ys, self.p.width, parallel=self.p.parallel, **kwargs)
         return element.iloc[samples]
+
+    def _compute_mask(self, element):
+        """
+        Computes the mask to apply to the element before downsampling.
+        """
+        neighbor_enabled = (
+            self.p.neighbor_points
+            if self.p.neighbor_points is not None
+            else self.p.algorithm == "viewport"
+        )
+        if not neighbor_enabled:
+            return slice(*self.p.x_range)
+        try:
+            mask = element.dataset.interface._select_mask_neighbor(
+                element.dataset, {element.kdims[0]: self.p.x_range}
+            )
+        except NotImplementedError:
+            mask = slice(*self.p.x_range)
+        except Exception as e:
+            self.param.warning(f"Could not apply neighbor mask to downsample1d: {e}")
+            mask = slice(*self.p.x_range)
+        return mask
