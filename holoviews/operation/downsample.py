@@ -157,7 +157,7 @@ def _nth_point(x, y, n_out, **kwargs):
     n_samples = len(x)
     return slice(0, n_samples, max(1, math.ceil(n_samples / n_out)))
 
-def _viewport(x, y, n_out):
+def _viewport(x, y, n_out, **kwargs):
     return slice(len(x))
 
 def _min_max(x, y, n_out, **kwargs):
@@ -211,14 +211,14 @@ class downsample1d(ResampleOperation1D):
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS), doc="""
         The algorithm to use for downsampling:
 
-        - `lttb`: Largest Triangle Three Buckets downsample algorithm
+        - `lttb`: Largest Triangle Three Buckets downsample algorithm.
         - `nth`: Selects every n-th point.
-        - `viewport`: Selects all points in a given viewport
+        - `viewport`: Selects all points in a given viewport.
         - `minmax`: Selects the min and max value in each bin (requires tsdownsampler).
         - `m4`: Selects the min, max, first and last value in each bin (requires tsdownsampler).
         - `minmax-lttb`: First selects n_out * minmax_ratio min and max values,
-          then further reduces these to n_out values using the
-          Largest Triangle Three Buckets algorithm. (requires tsdownsampler)""")
+                         then further reduces these to n_out values using the
+                         Largest Triangle Three Buckets algorithm (requires tsdownsampler).""")
 
     parallel = param.Boolean(default=False, doc="""
        The number of threads to use (if tsdownsampler is available).""")
