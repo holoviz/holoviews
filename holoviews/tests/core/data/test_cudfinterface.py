@@ -104,3 +104,10 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_dataset_aggregate_string_types_size(self):
         raise SkipTest("cuDF does not support variance aggregation")
+
+    def test_select_with_neighbor(self):
+        try:
+            # Not currently supported by CuDF
+            super().test_select_with_neighbor()
+        except NotImplementedError:
+            raise SkipTest("Not supported")
