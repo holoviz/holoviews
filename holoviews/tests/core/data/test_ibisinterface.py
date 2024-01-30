@@ -256,6 +256,13 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
             self.compare_dataset(expected, result, msg=str(agg))
 
+    def test_select_with_neighbor(self):
+        try:
+            # Not currently supported by Ibis
+            super().test_select_with_neighbor()
+        except NotImplementedError:
+            raise SkipTest("Not supported")
+
     if not IbisInterface.has_rowid():
 
         def test_dataset_iloc_slice_rows_slice_cols(self):
