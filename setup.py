@@ -72,7 +72,7 @@ extras_require['tests_nb'] = ['nbval']
 extras_require['ui'] = ['playwright', 'pytest-playwright']
 
 # Notebook dependencies
-extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
+extras_require["notebook"] = ["ipython >=5.4.0", "notebook >=7.0"]
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
