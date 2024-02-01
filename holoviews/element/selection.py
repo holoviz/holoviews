@@ -4,6 +4,7 @@ elements.
 """
 
 import sys
+from importlib.util import find_spec
 
 import numpy as np
 import pandas as pd
@@ -79,7 +80,7 @@ def spatial_select_gridded(xvals, yvals, geometry):
         sel_mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
         return sel_mask.reshape(xvals.shape)
 
-def spatial_select_columnar(xvals, yvals, geometry):
+def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
     if 'cudf' in sys.modules:
         import cudf
         if isinstance(xvals, cudf.Series):
@@ -119,25 +120,35 @@ def spatial_select_columnar(xvals, yvals, geometry):
     sel_mask = (xvals>=x0) & (xvals<=x1) & (yvals>=y0) & (yvals<=y1)
     masked_xvals = xvals[sel_mask]
     masked_yvals = yvals[sel_mask]
-    try:
-        from spatialpandas.geometry import PointArray, Polygon
-        points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
-        poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
-        geom_mask = points.intersects(poly)
-    except ImportError:
-        try:
-            from shapely.geometry import Point, Polygon
-            points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
-            poly = Polygon(geometry)
-            geom_mask = np.array([poly.contains(p) for p in points])
-        except ImportError:
-            raise ImportError("Lasso selection on tabular data requires "
-                              "either spatialpandas or shapely to be available.") from None
+    if geom_method is None:
+        if find_spec("spatialpandas") is not None:
+            geom_method = "spatialpandas"
+        elif find_spec("shapely") is not None:
+            geom_method = "shapely"
+        else:
+            msg = "Lasso selection on tabular data requires either spatialpandas or shapely to be available."
+            raise ImportError(msg) from None
+    geom_function = {"spatialpandas": _mask_spatialpandas, "shapely": _mask_shapely}[geom_method]
+    geom_mask = geom_function(masked_xvals, masked_yvals, geometry)
     if isinstance(xvals, pd.Series):
         sel_mask[sel_mask.index[np.where(sel_mask)[0]]] = geom_mask
     else:
         sel_mask[np.where(sel_mask)[0]] = geom_mask
     return sel_mask
+
+
+def _mask_spatialpandas(masked_xvals, masked_yvals, geometry):
+    from spatialpandas.geometry import PointArray, Polygon
+    points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
+    poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
+    return points.intersects(poly)
+
+
+def _mask_shapely(masked_xvals, masked_yvals, geometry):
+    from shapely.geometry import Point, Polygon
+    points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
+    poly = Polygon(geometry)
+    return np.array([poly.contains(p) for p in points], dtype=bool)
 
 
 def spatial_select(xvals, yvals, geometry):

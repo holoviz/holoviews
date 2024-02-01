@@ -11,6 +11,10 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import ParamMethod, Params
 
 
+def makeDataFrame():
+    data = np.random.default_rng(2).standard_normal((30, 4))
+    return pd.DataFrame(data, columns=list('ABCD'))
+
 class ParamClass(param.Parameterized):
 
     label = param.String(default='Test')
@@ -280,7 +284,7 @@ class TestApplyDynamicMap(ComparisonTestCase):
 
 
 def test_nested_widgets():
-    df = pd._testing.makeDataFrame()
+    df = makeDataFrame()
     column = RadioButtonGroup(value="A", options=list("ABC"))
     ds = Dataset(df)
     transform = util.transform.df_dim("*").groupby(["D", column]).mean()
@@ -295,7 +299,7 @@ def test_nested_widgets():
 
 
 def test_slice_iloc():
-    df = pd._testing.makeDataFrame()
+    df = makeDataFrame()
     column = IntSlider(start=10, end=40)
     ds = Dataset(df)
     transform = util.transform.df_dim("*").iloc[:column].mean(axis=0)
@@ -310,7 +314,7 @@ def test_slice_iloc():
 
 
 def test_slice_loc():
-    df = pd._testing.makeDataFrame()
+    df = makeDataFrame()
     df.index = np.arange(5, len(df) + 5)
     column = IntSlider(start=10, end=40)
     ds = Dataset(df)
@@ -330,7 +334,7 @@ def test_slice_loc():
 
 
 def test_int_iloc():
-    df = pd._testing.makeDataFrame()
+    df = makeDataFrame()
     column = IntSlider(start=10, end=40)
     ds = Dataset(df)
     transform = util.transform.df_dim("*").iloc[column]
@@ -345,7 +349,7 @@ def test_int_iloc():
 
 
 def test_int_loc():
-    df = pd._testing.makeDataFrame()
+    df = makeDataFrame()
     df.index = np.arange(5, len(df) + 5)
     column = IntSlider(start=10, end=40)
     ds = Dataset(df)

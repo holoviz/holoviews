@@ -438,6 +438,18 @@ class IbisInterface(Interface):
         return predicates
 
     @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        raise NotImplementedError
+
+    @classmethod
     def sample(cls, dataset, samples=None):
         import ibis
         if samples is None:

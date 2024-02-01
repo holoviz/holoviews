@@ -445,6 +445,8 @@ def argspec(callable_obj):
         arglen = len(callable_obj.args)
         spec = inspect.getfullargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
+        if inspect.ismethod(callable_obj.func):
+            args = args[1:]
     elif inspect.ismethod(callable_obj):    # instance and class methods
         spec = inspect.getfullargspec(callable_obj)
         args = spec.args[1:]

@@ -343,7 +343,7 @@ class XArrayInterface(GridInterface):
         group_by = [d.name for d in index_dims]
         data = []
         if len(dimensions) == 1:
-            for k, v in dataset.data.groupby(index_dims[0].name):
+            for k, v in dataset.data.groupby(index_dims[0].name, squeeze=False):
                 if drop_dim:
                     v = v.to_dataframe().reset_index()
                 data.append((k, group_type(v, **group_kwargs)))

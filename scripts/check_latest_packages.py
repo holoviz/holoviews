@@ -1,5 +1,6 @@
 import sys
 from datetime import date, datetime, timedelta
+from importlib.metadata import version
 
 import requests
 from packaging.version import Version
@@ -13,7 +14,7 @@ def main(*packages):
         url = f"https://pypi.org/pypi/{package}/json"
         resp = requests.get(url, timeout=20).json()
         latest = resp["info"]["version"]
-        current = __import__(package).__version__
+        current = version(package)
 
         latest_release_date = datetime.fromisoformat(
             resp["releases"][latest][0]["upload_time_iso_8601"]

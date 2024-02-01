@@ -154,6 +154,9 @@ class DaskInterface(PandasInterface):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is not None:
+            import dask.array as da
+            if isinstance(selection_mask, da.Array):
+                return df.loc[selection_mask]
             return df[selection_mask]
         selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
@@ -161,6 +164,23 @@ class DaskInterface(PandasInterface):
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].compute().iloc[0]
         return df
+
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection)
+        mask = mask.to_dask_array().compute_chunk_sizes()
+        extra = mask[1:] ^ mask[:-1]
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):

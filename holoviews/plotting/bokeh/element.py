@@ -322,16 +322,32 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tool = tools.HoverTool(
                     tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts
                 )
-            elif bokeh32 and tool in ['wheel_zoom', 'xwheel_zoom', 'ywheel_zoom']:
-                if tool.startswith('x'):
+            elif bokeh32 and isinstance(tool, str) and tool.endswith(
+                ('wheel_zoom', 'zoom_in', 'zoom_out')
+            ):
+                zoom_kwargs = {}
+                tags = ['hv_created']
+                if self.subcoordinate_y and not tool.startswith('x'):
+                    zoom_dims = 'height'
+                    zoom_kwargs['level'] = 1
+                    tags.append(tool)
+                elif tool.startswith('x'):
                     zoom_dims = 'width'
                 elif tool.startswith('y'):
                     zoom_dims = 'height'
                 else:
                     zoom_dims = 'both'
-                tool = tools.WheelZoomTool(
-                    zoom_together='none', dimensions=zoom_dims, tags=['hv_created']
-                )
+                zoom_kwargs['dimensions'] = zoom_dims
+                zoom_kwargs['tags'] = tags
+                if tool.endswith('wheel_zoom'):
+                    # Setting `zoom_together` for multi-y axis support.
+                    zoom_kwargs['zoom_together'] = 'none'
+                    zoom_type = tools.WheelZoomTool
+                elif tool.endswith('zoom_in'):
+                    zoom_type = tools.ZoomInTool
+                elif tool.endswith('zoom_out'):
+                    zoom_type = tools.ZoomOutTool
+                tool = zoom_type(**zoom_kwargs)
             tool_list.append(tool)
 
         copied_tools = []
@@ -349,6 +365,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
+
+        if self.subcoordinate_y:
+            zoom_tools = {}
+            _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
+            for t in copied_tools:
+                if isinstance(t, _zoom_types) and 'hv_created' in t.tags and len(t.tags) == 2:
+                    zoom_tools[t.tags[1]] = t
+            if zoom_tools:
+                self.handles['zooms_subcoordy'] = zoom_tools
 
         box_tools = [t for t in copied_tools if isinstance(t, tools.BoxSelectTool)]
         if box_tools:
@@ -1828,6 +1853,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._postprocess_hover(renderer, source)
 
+        zooms_subcoordy = self.handles.get('zooms_subcoordy')
+        if zooms_subcoordy is not None:
+            for zoom in zooms_subcoordy.values():
+                # The default renderer is 'auto', instead we want to
+                # store the subplot renderer to aggregate them and set
+                # the final tool with a list of all the renderers.
+                zoom.renderers = [renderer]
+
         # Update plot, source and glyph
         with abbreviated_exception():
             self._update_glyph(renderer, properties, mapping, glyph, source, source.data)
@@ -2777,6 +2810,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if callbacks is None:
             callbacks = []
         hover_tools = {}
+        zooms_subcoordy = {}
+        _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
         init_tools, tool_types = [], []
         for key, subplot in self.subplots.items():
             el = element.get(key)
@@ -2793,6 +2828,15 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                             continue
                         else:
                             hover_tools[tooltips] = tool
+                    elif (
+                        self.subcoordinate_y and isinstance(tool, _zoom_types)
+                        and 'hv_created' in tool.tags and len(tool.tags) == 2
+                    ):
+                        if tool.tags[1] in zooms_subcoordy:
+                            continue
+                        else:
+                            zooms_subcoordy[tool.tags[1]] = tool
+                            self.handles['zooms_subcoordy'] = zooms_subcoordy
                     elif tool_type in tool_types:
                         continue
                     else:
@@ -2822,6 +2866,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 tool.renderers = list(util.unique_iterator(renderers))
                 if 'hover' not in self.handles:
                     self.handles['hover'] = tool
+        if 'zooms_subcoordy' in subplot.handles and 'zooms_subcoordy' in self.handles:
+            for subplot_zoom, overlay_zoom in zip(
+                subplot.handles['zooms_subcoordy'].values(),
+                self.handles['zooms_subcoordy'].values(),
+            ):
+                renderers = list(util.unique_iterator(subplot_zoom.renderers + overlay_zoom.renderers))
+                overlay_zoom.renderers = renderers
 
     def _get_dimension_factors(self, overlay, ranges, dimension):
         factors = []

@@ -172,7 +172,7 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
     __test__ = True
 
     def test_data_with_tz(self):
-        dates = pd.date_range("2018-01-01", periods=3, freq="H")
+        dates = pd.date_range("2018-01-01", periods=3, freq="h")
         dates_tz = dates.tz_localize("UTC")
         df = pd.DataFrame({"dates": dates_tz})
         data = Dataset(df).dimension_values("dates")
