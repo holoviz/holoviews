@@ -1,10 +1,63 @@
-Version 1.18.1
-==============
+# Version 1.18.2
+
+**February 5, 2024**
+
+This minor release includes a number of bug fixes and documentation updates, as well as compatibility updates for xarray 2023.12 and Pandas 2.2.
+Many thanks to the new contributors @junietoc, @JulianGiles, and @magic-lantern, as well as the returning contributors @ianthomas23, @maximlt, @TheoMathurin, @philippjfr, @ahuang11, and @Hoxbro.
+
+Enhancements:
+
+- Update contour line calculations to use ContourPy's `LineType.ChunkCombinedNan` ([#5985](https://github.com/holoviz/holoviews/pull/5985))
+- Use sys.executable for `check_output` ([#5983](https://github.com/holoviz/holoviews/pull/5983))
+- Updates to `show_versions` ([(#6072)](https://github.com/holoviz/holoviews/pull/6072), [(#6081)](https://github.com/holoviz/holoviews/pull/6081))
+
+Bug fixes:
+
+- Support `color_key` in `datashade` when intermediate step is an `ImageStack` ([#5994](https://github.com/holoviz/holoviews/pull/5994))
+- Fix hist on overlay ([#5995](https://github.com/holoviz/holoviews/pull/5995))
+- Set proper context before triggering streams ([#6000](https://github.com/holoviz/holoviews/pull/6000))
+- Support partial bound function ([#6009](https://github.com/holoviz/holoviews/pull/6009))
+- Add `norm` in `init_artists` in holoviews/plotting/mpl/raster.py ([#6029](https://github.com/holoviz/holoviews/pull/6029))
+- Fix linking elements that are transformed by a Compositor ([#6003](https://github.com/holoviz/holoviews/pull/6003))
+- Add datetime hover information for selector ([#6023](https://github.com/holoviz/holoviews/pull/6023), [(#6039)](https://github.com/holoviz/holoviews/pull/6039))
+- Only evaluate `rx` if it is an Reactive Expression ([(#6014)](https://github.com/holoviz/holoviews/pull/6014))
+- Ensure partial methods can be used as dmap callables ([(#6063)](https://github.com/holoviz/holoviews/pull/6063))
+- Del frame after stack level is found in `deprecated` ([(#6085)](https://github.com/holoviz/holoviews/pull/6085))
+
+Compatibility:
+
+- Compatibility updates with xarray 2023.12 ([#6026](https://github.com/holoviz/holoviews/pull/6026))
+- Add extra check to detect if we are in jupyterlite ([#6007](https://github.com/holoviz/holoviews/pull/6007))
+- Compatibility updates with Pandas 2.2 ([(#6074)](https://github.com/holoviz/holoviews/pull/6074), [(#6078)](https://github.com/holoviz/holoviews/pull/6078))
+- Add Comm `on_open` handler to initialize the server comm ([(#6076)](https://github.com/holoviz/holoviews/pull/6076))
+
+Documentation:
+
+- Fix docs ([#5996](https://github.com/holoviz/holoviews/pull/5996))
+- Fix Param usage in the Plot and Renderers guide ([#6001](https://github.com/holoviz/holoviews/pull/6001))
+- Fixing URLs to bokeh project ([#6005](https://github.com/holoviz/holoviews/pull/6005))
+- Fix to broken urls in example gallery pages ([(#6038)](https://github.com/holoviz/holoviews/pull/6038))
+- Replace Google Analytics with GoatCounter ([(#6048)](https://github.com/holoviz/holoviews/pull/6048))
+- Add downloads badges ([(#6088)](https://github.com/holoviz/holoviews/pull/6088))
+
+Maintenance:
+
+- Change to pytest-rerunfailures ([#5984](https://github.com/holoviz/holoviews/pull/5984))
+- Holoviews maintenance ([#5987](https://github.com/holoviz/holoviews/pull/5987))
+- Add `log_cli_level = "INFO"` to pytest ([#5989](https://github.com/holoviz/holoviews/pull/5989))
+- Add shell pre-commit hook ([#5991](https://github.com/holoviz/holoviews/pull/5991))
+- Enable Bugbear 904 ([#5992](https://github.com/holoviz/holoviews/pull/5992))
+- Part 1, modernize test suite ([#5954](https://github.com/holoviz/holoviews/pull/5954))
+- Enforce labels ([#5996](https://github.com/holoviz/holoviews/pull/5997))
+- Add lower pin to scipy ([#6032](https://github.com/holoviz/holoviews/pull/6032))
+- Skip Deploying_Bokeh_Apps.ipynb on Windows ([(#6070)](https://github.com/holoviz/holoviews/pull/6070))
+- Fix failing Windows tests ([(#6087)](https://github.com/holoviz/holoviews/pull/6087))
+
+# Version 1.18.1
+
 **November 8, 2023**
 
-
 This release contains a small number of bug fixes and compatibility updates — many thanks to @philippjfr and @Hoxbro for their contributions.
-
 
 Bug fixes:
 
