@@ -657,7 +657,6 @@ class TestSpatialSelectColumnar:
                   -1,-1,-1]
         }, dtype=float)
 
-    @dd_available
     @pytest.fixture(scope="function")
     def dask_df(self, pandas_df):
         return dd.from_pandas(pandas_df, npartitions=2)
