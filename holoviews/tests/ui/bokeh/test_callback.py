@@ -16,16 +16,24 @@ from panel.tests.util import serve_and_wait, wait_until
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
-from holoviews.streams import BoundsXY, Lasso, RangeXY
+from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_box_select(page, port):
+@pytest.mark.parametrize(
+    ["BoundsTool", "bound_slice", "bound_attr"],
+    [
+        (BoundsXY, slice(None), "bounds"),
+        (BoundsX, slice(0, None, 2), "boundsx"),
+        (BoundsY, slice(1, None, 2), "boundsy"),
+    ],
+)
+def test_box_select(page, port, BoundsTool, bound_slice, bound_attr):
     hv_scatter = Scatter([1, 2, 3]).opts(
         tools=['box_select'], active_tools=['box_select']
     )
 
-    bounds = BoundsXY(source=hv_scatter)
+    bounds = BoundsTool(source=hv_scatter)
 
     pn_scatter = HoloViews(hv_scatter)
 
@@ -45,7 +53,7 @@ def test_box_select(page, port):
     page.mouse.up()
 
     expected_bounds = (0.32844036697247725, 1.8285714285714285, 0.8788990825688077, 2.3183673469387758)
-    wait_until(lambda: bounds.bounds == expected_bounds, page)
+    wait_until(lambda: getattr(bounds, bound_attr) == expected_bounds[bound_slice], page)
 
 
 @pytest.mark.usefixtures("bokeh_backend")

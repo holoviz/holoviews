@@ -826,7 +826,7 @@ class BoundsXCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'quad',
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -849,7 +849,7 @@ class BoundsYCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'quad',
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
