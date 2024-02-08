@@ -76,7 +76,7 @@ class PandasInterface(Interface, PandasAPI):
                 )
 
             # Handle reset of index if kdims reference index by name
-            if len(kdims) == len(index_names) and [dimension_name(kd) for kd in kdims] == index_names:
+            if len(kdims) == len(index_names) and {dimension_name(kd) for kd in kdims} == set(index_names):
                 pass
             else:
                 for kd in kdims:
@@ -163,8 +163,8 @@ class PandasInterface(Interface, PandasAPI):
         dim = dataset.get_dimension(dimension, strict=True)
         name = dim.name
         df = dataset.data
-        if cls.is_index(dataset, dim):
-            data = df.index.get_level(name) if isinstance(df.index, pd.MultiIndex) else df.index
+        if cls.isindex(dataset, dim):
+            data = df.index.get_level_values(name) if isinstance(df.index, pd.MultiIndex) else df.index
         else:
             data = df[name]
         if util.isscalar(data):
