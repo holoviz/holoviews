@@ -33,7 +33,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def dimension_type(cls, dataset, dim):
         dim = dataset.get_dimension(dim, strict=True)
-        if cls.is_index(dataset, dim):
+        if cls.isindex(dataset, dim):
             return cls.index_values(dataset, dim).dtype.type
         name = dim.name
         idx = list(dataset.data.columns).index(name)
@@ -180,7 +180,7 @@ class PandasInterface(Interface, PandasAPI):
         return index_names
 
     @classmethod
-    def is_index(cls, dataset, dimension):
+    def isindex(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         if dimension.name in dataset.data.columns:
             return False
@@ -208,7 +208,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.is_index(dataset, dimension):
+        if cls.isindex(dataset, dimension):
             column = cls.index_values(dataset, dimension)
         else:
             column = dataset.data[dimension.name]
@@ -395,15 +395,15 @@ class PandasInterface(Interface, PandasAPI):
             keep_index=False,
     ):
         dim = dataset.get_dimension(dim, strict=True)
-        is_index = cls.is_index(dataset, dim)
-        if is_index:
+        isindex = cls.isindex(dataset, dim)
+        if isindex:
             data = cls.index_values(dataset, dim)
         else:
             data = dataset.data[dim.name]
         if keep_index:
             return data
         if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
-            data = (data if is_index else data.dt).tz_localize(None)
+            data = (data if isindex else data.dt).tz_localize(None)
         if not expanded:
             return pd.unique(data)
         return data.values if hasattr(data, 'values') else data
@@ -449,7 +449,7 @@ class PandasInterface(Interface, PandasAPI):
         if it already a dataframe type.
         """
         if issubclass(dataset.interface, PandasInterface):
-            if any(cls.is_index(dataset, dim) for dim in dataset.dimensions()):
+            if any(cls.isindex(dataset, dim) for dim in dataset.dimensions()):
                 return dataset.data.reset_index()
             return dataset.data
         else:
