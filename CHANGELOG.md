@@ -1,8 +1,21 @@
+# Version 1.18.3
+
+**February 12, 2024**
+
+This micro release includes bug fixes.
+
+Bug fixes:
+
+- Fix BoundsX and BoundsY regression ([#6099](https://github.com/holoviz/holoviews/pull/6099))
+- Fix rasterize regression ([#6102](https://github.com/holoviz/holoviews/pull/6102))
+- Fix link selection for empty Layout ([#6110](https://github.com/holoviz/holoviews/pull/6110))
+- Don't pin notebook in conda recipe for pyviz channel ([#6108](https://github.com/holoviz/holoviews/pull/6108))
+
 # Version 1.18.2
 
 **February 5, 2024**
 
-This minor release includes a number of bug fixes and documentation updates, as well as compatibility updates for xarray 2023.12 and Pandas 2.2.
+This micro release includes a number of bug fixes and documentation updates, as well as compatibility updates for xarray 2023.12 and Pandas 2.2.
 Many thanks to the new contributors @junietoc, @JulianGiles, and @magic-lantern, as well as the returning contributors @ianthomas23, @maximlt, @TheoMathurin, @philippjfr, @ahuang11, and @Hoxbro.
 
 Enhancements:
