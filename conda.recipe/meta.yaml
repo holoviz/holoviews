@@ -28,9 +28,6 @@ requirements:
     {% for dep in sdata.get('install_requires',{}) %}
     - {{ dep }}
     {% endfor %}
-    {% for dep in sdata['extras_require']['recommended'] %}
-    - {{ dep }}
-    {% endfor %}
 
 
 about:
