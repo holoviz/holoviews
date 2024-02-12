@@ -4,6 +4,25 @@ Releases
 Version 1.18
 ~~~~~~~~~~~~
 
+Version 1.18.3
+**************
+
+**February 12, 2024**
+
+This micro release includes bug fixes.
+
+Bug fixes:
+
+-  Fix BoundsX and BoundsY regression
+   (`#6099 <https://github.com/holoviz/holoviews/pull/6099>`__)
+-  Fix rasterize regression
+   (`#6102 <https://github.com/holoviz/holoviews/pull/6102>`__)
+-  Fix link selection for empty Layout
+   (`#6110 <https://github.com/holoviz/holoviews/pull/6110>`__)
+-  Don’t pin notebook in conda recipe for pyviz channel
+   (`#6108 <https://github.com/holoviz/holoviews/pull/6108>`__)
+
+
 Version 1.18.2
 **************
 
