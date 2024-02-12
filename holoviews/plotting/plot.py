@@ -859,7 +859,7 @@ class DimensionedPlot(Plot):
                 # Filter out ranges of updated elements and append new ranges
                 merged = {}
                 for g, drange in dranges['values'].items():
-                    filtered = [r for i, r in zip(ids, values[g]) if i not in prev_ids]
+                    filtered = [r for i, r in zip(ids, values.get(g, [])) if i not in prev_ids]
                     filtered += drange
                     merged[g] = filtered
                 prev_ranges[d] = cls._merge_group_ranges(merged)
