@@ -78,15 +78,15 @@ class PandasInterface(Interface, PandasAPI):
             # Handle reset of index if kdims reference index by name
             if len(kdims) == len(index_names) and {dimension_name(kd) for kd in kdims} == set(index_names):
                 pass
-            else:
-                for kd in kdims:
-                    kd = dimension_name(kd)
-                    if kd in data.columns:
-                        continue
-                    if any(kd == ('index' if name is None else name)
-                           for name in index_names):
-                        data = data.reset_index()
-                        break
+            else:  # noqa: PLR5501
+                # for kd in kdims:  # TODO: Remove this if statement?
+                #     kd = dimension_name(kd)
+                #     if kd in data.columns:
+                #         continue
+                #     if any(kd == ('index' if name is None else name)
+                #            for name in index_names):
+                #         data = data.reset_index()
+                #         break
 
                 if kdims:
                     kdim = dimension_name(kdims[0])
