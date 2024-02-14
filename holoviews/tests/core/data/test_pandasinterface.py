@@ -177,3 +177,33 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         df = pd.DataFrame({"dates": dates_tz})
         data = Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
+
+
+class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
+    datatype = 'dataframe'
+    data_type = pd.DataFrame
+
+    __test__ = True
+
+    def setUp(self):
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
+        index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
+        self.df = pd.DataFrame(range(4), index=index, columns=["a"])
+        super().setUp()
+
+    def test_multi_index_dataset(self):
+        ds = Dataset(self.df)
+        assert ds.kdims == [Dimension("a")]
+        assert isinstance(ds.data.index, pd.MultiIndex)
+
+    def test_multi_index_dataset_index_kdims(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        assert ds.kdims == [Dimension("number"), Dimension("color")]
+        assert ds.vdims == [Dimension("a")]
+        assert isinstance(ds.data.index, pd.MultiIndex)
+
+    def test_multi_index_dataset_index_aggregate(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        expected = pd.DataFrame({'number': {0: 1, 1: 2}, 'a': {0: 0.5, 1: 2.5}, 'a_var': {0: 0.25, 1: 0.25}})
+        agg = ds.aggregate("number", function=np.mean, spreadfn=np.var)
+        pd.testing.assert_frame_equal(agg.data, expected)

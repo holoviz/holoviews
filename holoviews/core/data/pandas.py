@@ -164,7 +164,7 @@ class PandasInterface(Interface, PandasAPI):
         name = dim.name
         df = dataset.data
         if cls.isindex(dataset, dim):
-            data = df.index.get_level_values(name) if isinstance(df.index, pd.MultiIndex) else df.index
+            data = cls.index_values(dataset, dim)
         else:
             data = df[name]
         if util.isscalar(data):
@@ -286,10 +286,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        data = dataset.data
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions('value', label='name')
-        reindexed = data[cols+vdims]
+        reindexed = cls.dframe(dataset, dimensions=cols+vdims)
         if function in [np.std, np.var]:
             # Fix for consistency with other backend
             # pandas uses ddof=1 for std and var
@@ -457,10 +456,13 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def dframe(cls, dataset, dimensions):
+        data = dataset.data
         if dimensions:
-            return dataset.data[dimensions]
+            if any(cls.isindex(dataset, d) for d in dimensions):
+                data = data.reset_index()
+            return data[dimensions]
         else:
-            return dataset.data.copy()
+            return data.copy()
 
     @classmethod
     def iloc(cls, dataset, index):
