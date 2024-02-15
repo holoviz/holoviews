@@ -477,7 +477,7 @@ class PandasInterface(Interface, PandasAPI):
         else:
             cols = [dataset.get_dimension(d).name for d in cols]
         indexes = cls.indexes(dataset.data)
-        dropped_indexes = [cols for index in indexes if index not in cols]
+        dropped_indexes = [index for index in indexes if index not in cols]
         cols = [col for col in cols if col not in indexes]
         if dropped_indexes:
             if len(indexes) == 1:

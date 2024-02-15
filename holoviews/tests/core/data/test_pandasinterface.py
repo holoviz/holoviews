@@ -214,3 +214,9 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_index_iloc_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, 0]
+        expected = self.df.reset_index()[["number"]]
+        pd.testing.assert_frame_equal(selected.data, expected)
