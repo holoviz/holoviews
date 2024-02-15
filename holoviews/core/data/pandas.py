@@ -32,6 +32,7 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
+        return cls.dtype(dataset, dim).type
         dim = dataset.get_dimension(dim, strict=True)
         if cls.isindex(dataset, dim):
             return cls.index_values(dataset, dim).dtype.type
@@ -224,6 +225,8 @@ class PandasInterface(Interface, PandasAPI):
                 pass
             if not len(column):
                 return np.nan, np.nan
+            if isinstance(column, pd.Index):
+                return column[0], column[-1]
             return column.iloc[0], column.iloc[-1]
         else:
             if dimension.nodata is not None:
