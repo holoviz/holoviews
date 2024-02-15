@@ -468,7 +468,6 @@ class PandasInterface(Interface, PandasAPI):
     def iloc(cls, dataset, index):
         rows, cols = index
         scalar = False
-        columns = list(dataset.data.columns)
         if isinstance(cols, slice):
             cols = [d.name for d in dataset.dimensions()][cols]
         elif np.isscalar(cols):
@@ -476,27 +475,23 @@ class PandasInterface(Interface, PandasAPI):
             cols = [dataset.get_dimension(cols).name]
         else:
             cols = [dataset.get_dimension(d).name for d in cols]
-        indexes = cls.indexes(dataset.data)
-        dropped_indexes = [index for index in indexes if index not in cols]
-        cols = [col for col in cols if col not in indexes]
-        if dropped_indexes:
-            if len(indexes) == 1:
-                data = dataset.data.reset_index(drop=True)
-            else:
-                data = dataset.data.reset_index(dropped_indexes, drop=True)
-        else:
-            data = dataset.data
-        cols = [columns.index(c) for c in cols]
         if np.isscalar(rows):
             rows = [rows]
-        if not cols:
+
+        data = dataset.data
+        indexes = cls.indexes(data)
+        columns = list(data.columns)
+        id_cols = [columns.index(c) for c in cols if c not in indexes]
+        if not id_cols:
             if scalar:
                 return data.index.values[rows[0]]
+            elif len(indexes) > 1:
+                return data.index.to_frame()[cols].reset_index(drop=True)
             else:
                 return data.index[rows]
         if scalar:
-            return data.iloc[rows[0], cols[0]]
-        return data.iloc[rows, cols]
+            return data.iloc[rows[0], id_cols[0]]
+        return data.iloc[rows, id_cols]
 
 
 Interface.register(PandasInterface)

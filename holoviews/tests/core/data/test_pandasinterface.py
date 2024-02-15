@@ -220,3 +220,9 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         selected = ds.iloc[:, 0]
         expected = self.df.reset_index()[["number"]]
         pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_index_iloc_slice_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, :2]
+        expected = self.df.reset_index()[["number", "color"]]
+        pd.testing.assert_frame_equal(selected.data, expected)
