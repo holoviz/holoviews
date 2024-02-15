@@ -163,6 +163,11 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(df)
         self.assertEqual(list(ds.data.columns), ['interface'])
 
+    def test_dataset_range_with_object_index(self):
+        df = pd.DataFrame(range(4), columns=["values"], index=list("BADC"))
+        ds = Dataset(df, kdims='index')
+        assert ds.range('index') == ('A', 'D')
+
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
 
