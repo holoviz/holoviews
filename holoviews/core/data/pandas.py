@@ -486,7 +486,7 @@ class PandasInterface(Interface, PandasAPI):
             if scalar:
                 return data.index.values[rows[0]]
             elif len(indexes) > 1:
-                return data.index.to_frame()[cols].reset_index(drop=True)
+                return data.index.to_frame()[cols].iloc[rows].reset_index(drop=True)
             else:
                 return data.index[rows]
         if scalar:
