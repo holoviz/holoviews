@@ -250,3 +250,109 @@ class TestSubcoordinateY(TestBokehPlot):
                     break
             else:
                 raise AssertionError('Provided zoom not found.')
+
+    def test_single_group(self):
+        # Same as test_bool_base, to check nothing is affected by defining
+        # a single group.
+
+        overlay = Overlay([Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
+        plot = bokeh_renderer.get_plot(overlay)
+        # subcoordinate_y is propagated to the overlay
+        assert plot.subcoordinate_y is True
+        # the figure has only one yaxis
+        assert len(plot.state.yaxis) == 1
+        # the overlay has two subplots
+        assert len(plot.subplots) == 2
+        assert ('Group', 'Data_0') in plot.subplots
+        assert ('Group', 'Data_1') in plot.subplots
+        # the range per subplots are correctly computed
+        sp1 = plot.subplots[('Group', 'Data_0')]
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.start == -0.5
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.end == 0.5
+        sp2 = plot.subplots[('Group', 'Data_1')]
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.start == 0.5
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.end == 1.5
+        # y_range is correctly computed
+        assert plot.handles['y_range'].start == -0.5
+        assert plot.handles['y_range'].end == 1.5
+        # extra_y_range is empty
+        assert plot.handles['extra_y_ranges'] == {}
+        # the ticks show the labels
+        assert plot.state.yaxis.ticker.ticks == [0, 1]
+        assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
+
+    def test_multiple_groups(self):
+        overlay = Overlay([
+            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+            for group in ['A', 'B']
+            for i in range(2)
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+        # subcoordinate_y is propagated to the overlay
+        assert plot.subcoordinate_y is True
+        # the figure has only one yaxis
+        assert len(plot.state.yaxis) == 1
+        # the overlay has two subplots
+        assert len(plot.subplots) == 4
+        assert ('A', 'A_over_0') in plot.subplots
+        assert ('A', 'A_over_1') in plot.subplots
+        assert ('B', 'B_over_0') in plot.subplots
+        assert ('B', 'B_over_1') in plot.subplots
+        # the range per subplots are correctly computed
+        sp1 = plot.subplots[('A', 'A_over_0')]
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.start == -0.5
+        assert sp1.handles['glyph_renderer'].coordinates.y_target.end == 0.5
+        sp2 = plot.subplots[('A', 'A_over_1')]
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.start == 0.5
+        assert sp2.handles['glyph_renderer'].coordinates.y_target.end == 1.5
+        sp3 = plot.subplots[('B', 'B_over_0')]
+        assert sp3.handles['glyph_renderer'].coordinates.y_target.start == 1.5
+        assert sp3.handles['glyph_renderer'].coordinates.y_target.end == 2.5
+        sp4 = plot.subplots[('B', 'B_over_1')]
+        assert sp4.handles['glyph_renderer'].coordinates.y_target.start == 2.5
+        assert sp4.handles['glyph_renderer'].coordinates.y_target.end == 3.5
+        # y_range is correctly computed
+        assert plot.handles['y_range'].start == -0.5
+        assert plot.handles['y_range'].end == 3.5
+        # extra_y_range is empty
+        assert plot.handles['extra_y_ranges'] == {}
+        # the ticks show the labels
+        assert plot.state.yaxis.ticker.ticks == [0, 1, 2, 3]
+        assert plot.state.yaxis.major_label_overrides == {
+            0: 'A / 0', 1: 'A / 1',
+            2: 'B / 0', 3: 'B / 1',
+        }
+
+    def test_multiple_groups_wheel_zoom_configured(self):
+        # Same as test_tools_default_wheel_zoom_configured
+
+        groups = ['A', 'B']
+        overlay = Overlay([
+            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+            for group in groups
+            for i in range(2)
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+        zoom_tools = [tool for tool in plot.state.tools if isinstance(tool, WheelZoomTool)]
+        assert zoom_tools == plot.handles['zooms_subcoordy']['wheel_zoom']
+        assert len(zoom_tools) == len(groups)
+        for zoom_tool, group in zip(zoom_tools, reversed(groups)):
+            assert len(zoom_tool.renderers) == 2
+            assert len(set(zoom_tool.renderers)) == 2
+            assert zoom_tool.dimensions == 'height'
+            assert zoom_tool.level == 1
+            assert zoom_tool.description == f'Wheel Zoom ({group})'
+
+    def test_single_group_overlaid_no_error(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = VSpan(1, 2) * overlay * VSpan(3, 4)
+        bokeh_renderer.get_plot(with_span)
+
+    def test_multiple_groups_overlaid_no_error(self):
+        overlay = Overlay([
+            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+            for group in ['A', 'B']
+            for i in range(2)
+        ])
+        with_span = VSpan(1, 2) * overlay * VSpan(3, 4)
+        bokeh_renderer.get_plot(with_span)
