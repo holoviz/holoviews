@@ -286,7 +286,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
-    def _group_label(self, element):
+    def _add_element_group_and_label_hover_tooltips(self, element):
         # return group and label if present
         group_label = []
         # group is the element type by default (e.g. Curve)
@@ -305,7 +305,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips, hover_opts = self._hover_opts(element)
         tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
                     if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
-        tooltips += self._group_label(element)
+        tooltips += self._add_element_group_and_label_hover_tooltips(element)
         if not tooltips: tooltips = None
 
         callbacks = callbacks+self.callbacks
