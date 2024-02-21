@@ -290,10 +290,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # return group and label if present
         group_label = []
         # group is the element type by default (e.g. Curve)
-        # skip if 'group' and 'label' are sanitized data dims that are already in tooltips
-        if hasattr(element, 'group') and element.group != element.param.group.default and 'group' not in [t[0] for t in tooltips]:
+        # skip if 'group' and 'label' are data dims that are already in tooltips
+        if hasattr(element, 'group') and element.group != element.param.group.default and 'group' not in [t[0].lower() for t in tooltips]:
             group_label.append(('Group', element.group))
-        if hasattr(element, 'label') and element.label and 'label' not in [t[0] for t in tooltips]:
+        if hasattr(element, 'label') and element.label and 'label' not in [t[0].lower() for t in tooltips]:
             group_label.append(('Label', element.label))
         return group_label + tooltips
 
