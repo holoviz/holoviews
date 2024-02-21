@@ -290,7 +290,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # return group and label if present
         group_label = []
         # group is the element type by default (e.g. Curve)
-        if hasattr(element, 'group') and element.group != type(element).__name__:
+        if hasattr(element, 'group') and element.group != element.param.group.default:
             group_label.append(('Group', element.group))
         if hasattr(element, 'label') and element.label:
             group_label.append(('Label', element.label))
