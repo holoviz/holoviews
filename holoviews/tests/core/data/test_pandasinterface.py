@@ -220,20 +220,50 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
 
-    def test_index_iloc_slice_scalar(self):
+    def test_iloc_scalar_scalar_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, 0]
+        expected = 1
+        assert selected == expected
+
+    def test_iloc_slice_scalar_only_index(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         selected = ds.iloc[:, 0]
         expected = self.df.reset_index()[["number"]]
         pd.testing.assert_frame_equal(selected.data, expected)
 
-    def test_index_iloc_slice_slice_only_index(self):
+    def test_iloc_slice_slice_only_index(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         selected = ds.iloc[:, :2]
         expected = self.df.reset_index()[["number", "color"]]
         pd.testing.assert_frame_equal(selected.data, expected)
 
-    def test_index_iloc_scalar_slice_only_index(self):
+    def test_iloc_scalar_slice_only_index(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         selected = ds.iloc[0, :2]
         expected = pd.DataFrame({"number": 1, "color": "red"}, index=[0])
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, 2]
+        expected = 0
+        assert selected == expected
+
+    def test_iloc_slice_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, 2]
+        expected = self.df.iloc[:, [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_slice_slice(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, :3]
+        expected = self.df.iloc[:, [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_slice(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, :3]
+        expected = self.df.iloc[[0], [0]]
         pd.testing.assert_frame_equal(selected.data, expected)

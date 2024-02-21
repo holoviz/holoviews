@@ -486,12 +486,12 @@ class PandasInterface(Interface, PandasAPI):
         columns = list(data.columns)
         id_cols = [columns.index(c) for c in cols if c not in indexes]
         if not id_cols:
-            if scalar:
-                return data.index.values[rows[0]]
-            elif len(indexes) > 1:
-                return data.index.to_frame()[cols].iloc[rows].reset_index(drop=True)
+            if len(indexes) > 1:
+                data = data.index.to_frame()[cols].iloc[rows].reset_index(drop=True)
+                data = data.values.ravel()[0] if scalar else data
             else:
-                return data.index[rows]
+                data = data.index.values[rows[0]] if scalar else data.index[rows]
+            return data
         if scalar:
             return data.iloc[rows[0], id_cols[0]]
         return data.iloc[rows, id_cols]
