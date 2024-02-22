@@ -399,6 +399,8 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, toolbar_location='
                     tools.extend(p.toolbar.tools)
             if toolbar_location != 'null':
                 item.toolbar_location = toolbar_location
+            if isinstance(item, GridPlot):
+                item.toolbar_location = None
 
     def merge(tool, group):
         if issubclass(tool, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
