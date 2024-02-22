@@ -287,15 +287,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return list(util.unique_iterator(dims)), {}
 
     def _add_element_group_and_label_hover_tooltips(self, element, tooltips):
-        # return group and label if present
-        group_label = []
-        # group is the element type by default (e.g. Curve)
-        # skip if 'group' and 'label' are data dims that are already in tooltips
-        if hasattr(element, 'group') and element.group != element.param.group.default and 'group' not in [t[0].lower() for t in tooltips]:
-            group_label.append(('Group', element.group))
-        if hasattr(element, 'label') and element.label and 'label' not in [t[0].lower() for t in tooltips]:
-            group_label.append(('Label', element.label))
-        return group_label + tooltips
+        """
+        Prepend the element's group and label to the hover tooltip if they have changed from default.
+        Will not prepend element's group or label if 'group' or 'label' exist as data dimensions
+        """
+        if hasattr(element, 'label') and element.label and not any('label' == t[0].lower() for t in tooltips):
+            tooltips.insert(0, ('Label', element.label))
+        if hasattr(element, 'group') and element.group != element.param.group.default and not any('group' == t[0].lower() for t in tooltips):
+            tooltips.insert(0, ('Group', element.group))
 
     def _init_tools(self, element, callbacks=None):
         """
@@ -306,7 +305,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips, hover_opts = self._hover_opts(element)
         tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
                     if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
-        tooltips = self._add_element_group_and_label_hover_tooltips(element, tooltips)
+        self._add_element_group_and_label_hover_tooltips(element, tooltips)
         if not tooltips: tooltips = None
 
         callbacks = callbacks+self.callbacks
