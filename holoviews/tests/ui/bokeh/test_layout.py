@@ -7,7 +7,11 @@ import holoviews as hv
 pytestmark = pytest.mark.ui
 
 from panel.tests.util import serve_and_wait
-from playwright.sync_api import expect
+
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pass
 
 
 @pytest.mark.usefixtures("bokeh_backend")
