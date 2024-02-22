@@ -278,7 +278,7 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(self.df, kdims=["number", "color"])
         sorted_ds = ds.sort("color")
         np.testing.assert_array_equal(sorted_ds.dimension_values("values"), [1, 3, 0, 2])
-        np.testing.assert_array_equal(sorted_ds.dimension_values("number"), [1, 3, 0, 2])
+        np.testing.assert_array_equal(sorted_ds.dimension_values("number"), [1, 2, 1, 2])
 
     def test_select(self):
         ds = Dataset(self.df, kdims=["number", "color"])
