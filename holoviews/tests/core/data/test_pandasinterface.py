@@ -267,3 +267,9 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         selected = ds.iloc[0, :3]
         expected = self.df.iloc[[0], [0]]
         pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_sort(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sorted_ds = ds.sort("color")
+        np.testing.assert_array_equal(sorted_ds.dimension_values("values"), [1, 3, 0, 2])
+        np.testing.assert_array_equal(sorted_ds.dimension_values("number"), [1, 3, 0, 2])
