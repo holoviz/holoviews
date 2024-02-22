@@ -397,7 +397,7 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, toolbar_location='
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
-            if toolbar_location != 'null':
+            if toolbar_location != 'null' and hasattr(item, 'toolbar_location'):
                 item.toolbar_location = toolbar_location
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
