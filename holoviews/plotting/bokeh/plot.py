@@ -614,8 +614,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             sync_legends(plot)
         plot = self._make_axes(plot)
         if hasattr(plot, "toolbar") and self.merge_tools:
-            plot.toolbar = merge_tools(plots)
-
+            plot.toolbar = merge_tools(plots, toolbar_location=None)
         title = self._get_title_div(self.keys[-1])
         if title:
             plot = Column(title, plot)
