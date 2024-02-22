@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
@@ -267,6 +268,11 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         selected = ds.iloc[0, :3]
         expected = self.df.iloc[[0], [0]]
         pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_out_of_bounds(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        with pytest.raises(ValueError, match="column is out of bounds"):
+            ds.iloc[0, 3]
 
     def test_sort(self):
         ds = Dataset(self.df, kdims=["number", "color"])

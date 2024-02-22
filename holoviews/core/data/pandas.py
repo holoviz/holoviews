@@ -475,7 +475,10 @@ class PandasInterface(Interface, PandasAPI):
             cols = [d.name for d in dataset.dimensions()][cols]
         elif np.isscalar(cols):
             scalar = np.isscalar(rows)
-            cols = [dataset.get_dimension(cols).name]
+            dim = dataset.get_dimension(cols)
+            if dim is None:
+                raise ValueError('column is out of bounds')
+            cols = [dim.name]
         else:
             cols = [dataset.get_dimension(d).name for d in cols]
         if np.isscalar(rows):
