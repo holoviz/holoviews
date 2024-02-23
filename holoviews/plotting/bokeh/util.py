@@ -384,7 +384,7 @@ def compute_layout_properties(
     return aspect_info, dimension_info
 
 
-def merge_tools(plot_grid, *, disambiguation_properties=None, toolbar_location='null'):
+def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False):
     """
     Merges tools defined on a grid of plots into a single toolbar.
     All tools of the same type are merged unless they define one
@@ -397,8 +397,8 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, toolbar_location='
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
-            if toolbar_location != 'null' and hasattr(item, 'toolbar_location'):
-                item.toolbar_location = toolbar_location
+            if hide_toolbar and hasattr(item, 'toolbar_location'):
+                item.toolbar_location = None
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
 
