@@ -1,22 +1,16 @@
 import time
 
 import numpy as np
-import pytest
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
-pytestmark = pytest.mark.ui
-
 import panel as pn
-from panel.pane.holoviews import HoloViews
-from panel.tests.util import serve_and_wait, wait_until
+import pytest
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
 from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
+
+from .. import expect, wait_until
+
+pytestmark = pytest.mark.ui
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -28,18 +22,14 @@ from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
         (BoundsY, slice(1, None, 2), "boundsy"),
     ],
 )
-def test_box_select(page, port, BoundsTool, bound_slice, bound_attr):
+def test_box_select(serve_hv, BoundsTool, bound_slice, bound_attr):
     hv_scatter = Scatter([1, 2, 3]).opts(
         tools=['box_select'], active_tools=['box_select']
     )
 
     bounds = BoundsTool(source=hv_scatter)
 
-    pn_scatter = HoloViews(hv_scatter)
-
-    serve_and_wait(pn_scatter, port=port)
-    page.goto(f"http://localhost:{port}")
-
+    page = serve_hv(hv_scatter)
     hv_plot = page.locator('.bk-events')
 
     expect(hv_plot).to_have_count(1)
@@ -57,18 +47,14 @@ def test_box_select(page, port, BoundsTool, bound_slice, bound_attr):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_lasso_select(page, port):
+def test_lasso_select(serve_hv):
     hv_scatter = Scatter([1, 2, 3]).opts(
         tools=['lasso_select'], active_tools=['lasso_select']
     )
 
     lasso = Lasso(source=hv_scatter)
 
-    pn_scatter = HoloViews(hv_scatter)
-
-    serve_and_wait(pn_scatter, port=port)
-    page.goto(f"http://localhost:{port}")
-
+    page = serve_hv(hv_scatter)
     hv_plot = page.locator('.bk-events')
 
     expect(hv_plot).to_have_count(1)
@@ -100,16 +86,12 @@ def test_lasso_select(page, port):
     np.testing.assert_almost_equal(lasso.geometry, expected_array)
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_rangexy(page, port):
+def test_rangexy(serve_hv):
     hv_scatter = Scatter([1, 2, 3]).opts(active_tools=['box_zoom'])
 
     rangexy = RangeXY(source=hv_scatter)
 
-    pn_scatter = HoloViews(hv_scatter)
-
-    serve_and_wait(pn_scatter, port=port)
-    page.goto(f"http://localhost:{port}")
-
+    page = serve_hv(hv_scatter)
     hv_plot = page.locator('.bk-events')
 
     expect(hv_plot).to_have_count(1)
@@ -127,7 +109,7 @@ def test_rangexy(page, port):
     wait_until(lambda: rangexy.x_range == expected_xrange and rangexy.y_range == expected_yrange, page)
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_multi_axis_rangexy(page, port):
+def test_multi_axis_rangexy(serve_hv):
     c1 = Curve(np.arange(100).cumsum(), vdims='y')
     c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
     s1 = RangeXY(source=c1)
@@ -135,11 +117,7 @@ def test_multi_axis_rangexy(page, port):
 
     overlay = (c1 * c2).opts(multi_y=True)
 
-    pn_scatter = HoloViews(overlay)
-
-    serve_and_wait(pn_scatter, port=port)
-    page.goto(f"http://localhost:{port}")
-
+    page = serve_hv(overlay)
     hv_plot = page.locator('.bk-events')
 
     expect(hv_plot).to_have_count(1)
@@ -163,7 +141,7 @@ def test_multi_axis_rangexy(page, port):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_bind_trigger(page, port):
+def test_bind_trigger(serve_hv):
     # Regression test for https://github.com/holoviz/holoviews/issues/6013
 
     BOUND_COUNT, RANGE_COUNT = [0], [0]
@@ -179,11 +157,8 @@ def test_bind_trigger(page, port):
 
     range_dmap = DynamicMap(range_function, streams=[hv.streams.RangeXY()])
     bind_dmap = DynamicMap(pn.bind(bound_function))
-    widget = pn.pane.HoloViews(bind_dmap * range_dmap)
 
-    serve_and_wait(widget, port=port)
-    page.goto(f"http://localhost:{port}")
-
+    page = serve_hv(bind_dmap * range_dmap)
     hv_plot = page.locator('.bk-events')
     expect(hv_plot).to_have_count(1)
 
