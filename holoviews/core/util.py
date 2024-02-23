@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import param
 from packaging.version import Version
+from panel.io.cache import _generate_hash
 
 # Python 2 builtins
 basestring = str
@@ -404,7 +405,9 @@ def deephash(obj):
     architecture, Python version or platform independent.
     """
     try:
-        return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
+        hasher = hashlib.new("md5")
+        hasher.update(_generate_hash(obj))
+        return hasher.hexdigest()
     except Exception:
         return None
 
