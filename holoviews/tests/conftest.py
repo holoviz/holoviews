@@ -1,7 +1,6 @@
 import contextlib
 import sys
 from collections.abc import Callable
-from pathlib import Path
 
 import panel as pn
 import pytest
@@ -22,10 +21,6 @@ def pytest_collection_modifyitems(config, items):
     markers = [m for m in optional_markers if config.getoption(f"--{m}")]
     empty = not markers
     for item in items:
-        if any("ui" == p.name for p in Path(item.fspath).parents):
-            # automatic set ui marker on ui tests
-            item.add_marker(pytest.mark.ui)
-
         if empty and any(m in item.keywords for m in optional_markers):
             skipped.append(item)
         elif empty:

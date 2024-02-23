@@ -11,6 +11,8 @@ from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
 
 from . import expect
 
+pytestmark = pytest.mark.ui
+
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
