@@ -5,8 +5,6 @@ import holoviews as hv
 
 from . import expect
 
-pytestmark = pytest.mark.ui
-
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_gridspace_toolbar(serve_hv):
