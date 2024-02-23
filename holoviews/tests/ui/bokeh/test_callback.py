@@ -3,13 +3,12 @@ import time
 import numpy as np
 import panel as pn
 import pytest
-from panel.tests.util import wait_until
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
 from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
 
-from . import expect
+from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 

@@ -3,7 +3,9 @@ import pytest
 
 import holoviews as hv
 
-from . import expect
+from .. import expect
+
+pytestmark = pytest.mark.ui
 
 
 @pytest.mark.usefixtures("bokeh_backend")
