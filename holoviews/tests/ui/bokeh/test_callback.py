@@ -1,11 +1,10 @@
-import time
-
 import numpy as np
 import panel as pn
 import pytest
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
+from holoviews.plotting.bokeh.util import bokeh34
 from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
 
 from .. import expect, wait_until
@@ -68,22 +67,41 @@ def test_lasso_select(serve_hv):
     page.mouse.move(bbox['x']+50, bbox['y']+150, steps=5)
     page.mouse.up()
 
-    time.sleep(1)
+    if bokeh34:
+        expected_array = np.array([
+            [3.28440367e-01, 2.31836735e00],
+            [4.38532110e-01, 2.22040816e00],
+            [5.48623853e-01, 2.12244898e00],
+            [6.58715596e-01, 2.02448980e00],
+            [7.68807339e-01, 1.92653061e00],
+            [8.78899083e-01, 1.82857143e00],
+            [6.58715596e-01, 1.82857143e00],
+            [4.38532110e-01, 1.82857143e00],
+            [2.18348624e-01, 1.82857143e00],
+            [-1.83486239e-03, 1.82857143e00],
+            [-2.00000000e-01, 1.82857143e00],
+        ])
+    else:
+        expected_array = np.array([
+            [ 3.28440367e-01,  2.31836735e+00],
+            [ 5.48623853e-01,  2.12244898e+00],
+            [ 6.58715596e-01,  2.02448980e+00],
+            [ 7.68807339e-01,  1.92653061e+00],
+            [ 8.78899083e-01,  1.82857143e+00],
+            [ 6.58715596e-01,  1.82857143e+00],
+            [ 4.38532110e-01,  1.82857143e+00],
+            [ 2.18348624e-01,  1.82857143e+00],
+            [-1.83486239e-03,  1.82857143e+00],
+            [-2.00000000e-01,  1.82857143e+00],
+            [-2.00000000e-01,  1.82857143e+00]
+        ])
 
-    expected_array = np.array([
-        [ 3.28440367e-01,  2.31836735e+00],
-        [ 5.48623853e-01,  2.12244898e+00],
-        [ 6.58715596e-01,  2.02448980e+00],
-        [ 7.68807339e-01,  1.92653061e+00],
-        [ 8.78899083e-01,  1.82857143e+00],
-        [ 6.58715596e-01,  1.82857143e+00],
-        [ 4.38532110e-01,  1.82857143e+00],
-        [ 2.18348624e-01,  1.82857143e+00],
-        [-1.83486239e-03,  1.82857143e+00],
-        [-2.00000000e-01,  1.82857143e+00],
-        [-2.00000000e-01,  1.82857143e+00]
-    ])
-    np.testing.assert_almost_equal(lasso.geometry, expected_array)
+    def compare_array():
+        if lasso.geometry is None:
+            return False
+        np.testing.assert_almost_equal(lasso.geometry, expected_array)
+
+    wait_until(compare_array, page)
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_rangexy(serve_hv):
