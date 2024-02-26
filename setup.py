@@ -45,6 +45,7 @@ extras_require['tests_core'] = [
 # to run and pass the test suite without installing any
 # of those.
 extras_require['tests'] = extras_require['tests_core'] + [
+    'panel >=1.4',
     'dask',
     'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
     'xarray >=0.10.4',
