@@ -170,7 +170,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def irregular(cls, dataset, dim):
-        return dataset.data[dimension_name(dim)].ndim > 1
+        return dataset.data[dimension_name(dim)].ndim > 1 or dimension_name(dim) not in dataset.data.dims
 
 
     @classmethod
