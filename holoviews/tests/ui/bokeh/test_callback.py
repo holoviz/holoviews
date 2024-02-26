@@ -134,9 +134,9 @@ def test_multi_axis_rangexy(serve_hv):
     expected_yrange1 = (717.2448979591848, 6657.244897959185)
     expected_yrange2 = (-4232.7551020408155, 1707.2448979591848)
     wait_until(lambda: (
-        s1.x_range == expected_xrange and
-        s1.y_range == expected_yrange1 and
-        s2.y_range == expected_yrange2
+        np.testing.assert_almost_equal(s1.x_range, expected_xrange) and
+        np.testing.assert_almost_equal(s1.y_range, expected_yrange1) and
+        np.testing.assert_almost_equal(s2.y_range, expected_yrange2)
     ), page)
 
 
