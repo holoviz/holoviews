@@ -137,6 +137,12 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
+      - name: Dev releases of Bokeh = Panel
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          conda install panel=1.4 bokeh=3.4 -c bokeh/label/dev -y
+          echo "Installing dev releases of Panel and Bokeh" >> $GITHUB_STEP_SUMMARY
       - name: bokeh sampledata
         if: needs.setup.outputs.code_change == 'true'
         run: |
