@@ -810,6 +810,20 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         ]
         self._test_hover_info(obj, tooltips, "nearest")
 
+    def test_group_label_whitespace_and_special_chars(self):
+        """test if the group and label args have whitespace and special chars"""
+        data = np.random.rand(10, 2)
+        group = "test ing"
+        label = "{hello"
+        obj = Points(data, kdims=["Dim1", "Dim2"], group=group, label=label).opts(tools=["hover"])
+        tooltips = [
+            ("Group", group),
+            ("Label", label),
+            ("Dim1", "@{Dim1}"),
+            ("Dim2", "@{Dim2}"),
+        ]
+        self._test_hover_info(obj, tooltips, "nearest")
+
     def test_label_tooltip_from_arg(self):
         """test if the label arg will be added to the tooltips if not present in the data"""
         data = np.random.rand(10, 2)
