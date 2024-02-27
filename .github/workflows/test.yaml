@@ -131,18 +131,12 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channel-priority: "flexible"
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channel-priority: flexible
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
-      - name: Dev releases of Bokeh = Panel
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          conda install panel=1.4 bokeh=3.4 -c bokeh/label/dev -y
-          echo "Installing dev releases of Panel and Bokeh" >> $GITHUB_STEP_SUMMARY
       - name: bokeh sampledata
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -192,6 +186,11 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
         id: install
+      - name: Check packages latest version
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          python scripts/check_latest_packages.py panel bokeh
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -255,7 +254,7 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          python scripts/check_latest_packages.py
+          python scripts/check_latest_packages.py numpy pandas
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |

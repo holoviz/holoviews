@@ -38,4 +38,4 @@ def main(*packages):
 
 
 if __name__ == "__main__":
-    main("numpy", "pandas")
+    main(*sys.argv[1:])
