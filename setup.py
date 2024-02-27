@@ -103,7 +103,6 @@ extras_require["examples"] = extras_require["recommended"] + [
     "pooch",
     "datashader >=0.11.1",
     "notebook >=7.0",
-    "jupyterlab >=3.0",
 ]
 
 
