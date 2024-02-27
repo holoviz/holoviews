@@ -12,6 +12,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .util import bokeh34
 
 
 class LinkCallback:
@@ -142,16 +143,22 @@ class RangeToolLinkCallback(LinkCallback):
 
             axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
             bounds = getattr(link, f'bounds{axis}', None)
-            if bounds is None:
-                continue
+            if bounds is not None:
+                start, end = bounds
+                if start is not None:
+                    axes[f'{axis}_range'].start = start
+                    axes[f'{axis}_range'].reset_start = start
+                if end is not None:
+                    axes[f'{axis}_range'].end = end
+                    axes[f'{axis}_range'].reset_end = end
 
-            start, end = bounds
-            if start is not None:
-                axes[f'{axis}_range'].start = start
-                axes[f'{axis}_range'].reset_start = start
-            if end is not None:
-                axes[f'{axis}_range'].end = end
-                axes[f'{axis}_range'].reset_end = end
+            interval = getattr(link, f'intervals{axis}', None)
+            if interval is not None and bokeh34:
+                min, max = interval
+                if min is not None:
+                    axes[f'{axis}_range'].min_interval = min
+                if max is not None:
+                    axes[f'{axis}_range'].max_interval = max
 
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
