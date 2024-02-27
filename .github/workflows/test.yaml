@@ -131,12 +131,17 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channel-priority: strict
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channel-priority: flexible
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
+      # - name: Check packages latest version
+      #   if: needs.setup.outputs.code_change == 'true'
+      #   run: |
+      #     conda activate test-environment
+      #     python scripts/check_latest_packages.py panel bokeh
       - name: bokeh sampledata
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -181,7 +186,7 @@ jobs:
         with:
           name: ui_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
@@ -249,7 +254,7 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          python scripts/check_latest_packages.py
+          python scripts/check_latest_packages.py numpy pandas
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
