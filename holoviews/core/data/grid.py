@@ -172,6 +172,7 @@ class GridInterface(DictInterface):
     def irregular(cls, dataset, dim):
         return dataset.data[dimension_name(dim)].ndim > 1
 
+
     @classmethod
     def isscalar(cls, dataset, dim):
         values = cls.values(dataset, dim, expanded=False)
