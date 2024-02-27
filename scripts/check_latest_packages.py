@@ -5,10 +5,13 @@ from importlib.metadata import version
 import requests
 from packaging.version import Version
 
+if sys.stdout.isatty():
+    GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
+else:
+    GREEN = RED = RESET = ""
 
 def main(*packages):
     allowed_date = date.today() - timedelta(days=5)
-    GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
     all_latest = True
     for package in sorted(packages):
         url = f"https://pypi.org/pypi/{package}/json"
@@ -38,4 +41,4 @@ def main(*packages):
 
 
 if __name__ == "__main__":
-    main("numpy", "pandas")
+    main(*sys.argv[1:])
