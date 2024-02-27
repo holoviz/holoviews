@@ -410,7 +410,8 @@ class XArrayInterface(GridInterface):
                 data = data.data
         irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
         irregular_kdims = [d for d in dataset.kdims if cls.irregular(dataset, d)]
-        if irregular_kdims:
+        non_dimensinal_dim = hasattr(dataset.data, 'dims') and dimension_name(dim) not in dataset.data.dims
+        if irregular_kdims or non_dimensinal_dim:
             virtual_coords = list(dataset.data[irregular_kdims[0].name].coords.dims)
         else:
             virtual_coords = []
