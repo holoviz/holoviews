@@ -60,7 +60,7 @@ from ...core.util import (
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
-bokeh_version = Version(bokeh.__version__)
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 bokeh32 = bokeh_version >= Version("3.2")
 bokeh33 = bokeh_version >= Version("3.3")
 bokeh34 = bokeh_version >= Version("3.4")

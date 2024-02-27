@@ -17,7 +17,7 @@ from holoviews.element import (
     VSpan,
     VSpans,
 )
-from holoviews.plotting.bokeh.util import bokeh32, bokeh33
+from holoviews.plotting.bokeh.util import bokeh32, bokeh33, bokeh34
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -29,7 +29,9 @@ if bokeh32:
         VStrip as BkVStrip,
     )
 
-if bokeh33:
+if bokeh34:
+    from bokeh.models import Node
+elif bokeh33:
     from bokeh.models.coordinates import Node
 
 
