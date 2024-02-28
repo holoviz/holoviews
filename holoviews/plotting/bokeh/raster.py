@@ -136,6 +136,11 @@ class RGBPlot(LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
+
     style_opts = ['alpha'] + base_properties
 
     _nonvectorized_styles = style_opts
@@ -180,6 +185,14 @@ class RGBPlot(LegendPlot):
 
         img = np.dstack([element.dimension_values(d, flat=False)
                          for d in element.vdims])
+
+        if self.clim_percentile:
+            if isinstance(self.clim_percentile, (int, float)):
+                low, high = np.percentile(img, (self.clim_percentile, 100 - self.clim_percentile))
+            else:  # True
+                low, high = np.percentile(img, (2, 98))
+            img = np.clip(img, low, high)
+            img = img / img.max((0, 1)) * 255
 
         nan_mask = np.isnan(img)
         img[nan_mask] = 0
