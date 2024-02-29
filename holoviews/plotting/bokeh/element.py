@@ -65,6 +65,7 @@ from .tabular import TablePlot
 from .util import (
     TOOL_TYPES,
     bokeh32,
+    bokeh34,
     bokeh_version,
     cds_column_replace,
     compute_layout_properties,
@@ -91,6 +92,13 @@ try:
     TOOLS_MAP = Tool._known_aliases
 except Exception:
     TOOLS_MAP = TOOL_TYPES
+
+if bokeh34:
+    from bokeh.models import Menu as bkMenu
+else:
+    class bkMenu:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError('Menu is first available in Bokeh 3.4')
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -244,6 +252,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     yformatter = param.ClassSelector(
         default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
+
+    menu = param.ClassSelector(
+        default=None, class_=(bkMenu, FunctionType), doc="""
+        A custom Bokeh model to use for the plot.""")
 
     _categorical = False
     _allow_implicit_categories = True
@@ -982,6 +994,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
         self._update_grid(plot)
+
+        if self.menu:
+            menu = self.menu
+            renderer = self.handles.get('glyph_renderer')
+            print(renderer)
+            for item in menu.items:
+                if hasattr(item, "action") and item.action:
+                    args = item.action.args
+                    for k, _v in item.action.args.items():
+                        if k == 'renderer':
+                            args[k] = renderer
+                        if k == 'box_select':
+                            args[k] = self.handles['box_select']
+                        # if k == 'plot':
+
+            plot.context_menu = menu
+            # plot.handles['context_menu'] = menu
 
     def _update_labels(self, key, plot, element):
         el = element.traverse(lambda x: x, [Element])
