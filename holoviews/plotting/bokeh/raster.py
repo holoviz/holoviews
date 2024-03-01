@@ -187,12 +187,12 @@ class RGBPlot(LegendPlot):
                          for d in element.vdims])
 
         if self.clim_percentile:
-            if isinstance(self.clim_percentile, (int, float)):
-                low, high = np.percentile(img, (self.clim_percentile, 100 - self.clim_percentile))
-            else:  # True
+            if isinstance(self.clim_percentile, bool):
                 low, high = np.percentile(img, (2, 98))
+            else:  # True
+                low, high = np.percentile(img, (self.clim_percentile, 100 - self.clim_percentile))
             img = np.clip(img, low, high)
-            img = img / img.max((0, 1)) * 255
+            img = img / high * 255
 
         nan_mask = np.isnan(img)
         img[nan_mask] = 0
