@@ -91,10 +91,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.11"],
-              "include": [
-                  {"os": "ubuntu-latest", "python-version": "3.10"}
-              ]
+              "python-version": ["3.9", "3.11"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -137,16 +134,21 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
-      # - name: Check packages latest version
-      #   if: needs.setup.outputs.code_change == 'true'
-      #   run: |
-      #     conda activate test-environment
-      #     python scripts/check_latest_packages.py panel bokeh
-      - name: bokeh sampledata
+      - name: suppress warning
         if: needs.setup.outputs.code_change == 'true'
         run: |
           conda activate test-environment
-          bokeh sampledata
+          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
+      - name: Check packages latest version
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          python scripts/check_latest_packages.py bokeh # panel
+      - name: Download data
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          bash scripts/download_data.sh
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -191,6 +193,11 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
         id: install
+      - name: suppress warning
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -245,16 +252,16 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
-      - name: bokeh sampledata
+      - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          bokeh sampledata
+          bash scripts/download_data.sh
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          python scripts/check_latest_packages.py numpy pandas
+          python scripts/check_latest_packages.py numpy pandas bokeh panel
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |

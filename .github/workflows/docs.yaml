@@ -52,10 +52,10 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: bokeh sampledata
+      - name: Download data
         run: |
           conda activate test-environment
-          bokeh sampledata
+          bash scripts/download_data.sh
       - name: generate rst
         run: |
           conda activate test-environment
