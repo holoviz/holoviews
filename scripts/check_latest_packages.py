@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import date, datetime, timedelta
 from importlib.metadata import version
@@ -5,10 +6,11 @@ from importlib.metadata import version
 import requests
 from packaging.version import Version
 
-if sys.stdout.isatty():
+if sys.stdout.isatty() or os.environ.get("GITHUB_ACTIONS"):
     GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
 else:
     GREEN = RED = RESET = ""
+
 
 def main(*packages):
     allowed_date = date.today() - timedelta(days=5)
