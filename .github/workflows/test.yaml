@@ -144,11 +144,11 @@ jobs:
         run: |
           conda activate test-environment
           python scripts/check_latest_packages.py bokeh # panel
-      - name: bokeh sampledata
+      - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
           conda activate test-environment
-          bokeh sampledata
+          bash scripts/download_data.sh
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -252,11 +252,11 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
-      - name: bokeh sampledata
+      - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          bokeh sampledata
+          bash scripts/download_data.sh
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
