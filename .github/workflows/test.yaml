@@ -134,10 +134,14 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
+      - name: suppress warning
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
           conda activate test-environment
           python scripts/check_latest_packages.py bokeh # panel
       - name: bokeh sampledata
@@ -189,10 +193,14 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
         id: install
+      - name: suppress warning
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
           conda activate test-environment
           doit test_ui
       - name: Upload coverage to Codecov
