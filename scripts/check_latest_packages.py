@@ -23,10 +23,10 @@ def main(*packages):
 
         # Remove suffix because older Python versions does not support it
         latest_release_date = datetime.fromisoformat(
-            resp["releases"][latest][0]["upload_time_iso_8601"].removesuffix("z")
+            resp["releases"][latest][0]["upload_time_iso_8601"].removesuffix("Z")
         ).date()
         current_release_date = datetime.fromisoformat(
-            resp["releases"][current][0]["upload_time_iso_8601"].removesuffix("z")
+            resp["releases"][current][0]["upload_time_iso_8601"].removesuffix("Z")
         ).date()
 
         version_check = Version(current) >= Version(latest)
