@@ -251,7 +251,7 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          python scripts/check_latest_packages.py numpy pandas
+          python scripts/check_latest_packages.py numpy pandas bokeh panel
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
