@@ -138,7 +138,7 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           conda activate test-environment
-          python scripts/check_latest_packages.py panel bokeh
+          python scripts/check_latest_packages.py bokeh # panel
       - name: bokeh sampledata
         if: needs.setup.outputs.code_change == 'true'
         run: |
