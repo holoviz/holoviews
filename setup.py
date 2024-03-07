@@ -28,7 +28,7 @@ extras_require['lint'] = [
 
 # Test requirements
 extras_require['tests_core'] = [
-    'pytest <8.1',  # https://github.com/computationalmodelling/nbval/issues/202
+    'pytest',
     'pytest-cov',
     'pytest-xdist',
     'pytest-rerunfailures',
