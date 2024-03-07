@@ -139,6 +139,13 @@ jobs:
         run: |
           conda activate test-environment
           touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
+      - name: Force latest Panel and Bokeh dev releases
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          conda uninstall panel bokeh --force --offline -y || true
+          pip install 'bokeh>=3.4.0rc1' 'panel>=1.4.0b1'
+          echo "Installing dev releases of Panel and Bokeh" >> $GITHUB_STEP_SUMMARY
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -198,6 +205,13 @@ jobs:
         run: |
           conda activate test-environment
           touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
+      - name: Force latest Panel and Bokeh dev releases
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          conda uninstall panel bokeh --force --offline -y || true
+          pip install 'bokeh>=3.4.0rc1' 'panel>=1.4.0b1'
+          echo "Installing dev releases of Panel and Bokeh" >> $GITHUB_STEP_SUMMARY
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
         run: |
