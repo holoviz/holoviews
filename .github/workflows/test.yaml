@@ -143,7 +143,7 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           conda activate test-environment
-          python scripts/check_latest_packages.py bokeh # panel
+          python scripts/check_latest_packages.py bokeh panel param datashader
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -261,7 +261,7 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           # conda activate test-environment
-          python scripts/check_latest_packages.py numpy pandas bokeh panel
+          python scripts/check_latest_packages.py numpy pandas bokeh panel param
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
