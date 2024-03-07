@@ -44,7 +44,7 @@ jobs:
         with:
           name: Documentation
           python-version: "3.10"
-          channel-priority: strict
+          channel-priority: flexible
           channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o doc"
           cache: true
