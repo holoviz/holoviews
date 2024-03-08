@@ -144,7 +144,7 @@ jobs:
         run: |
           conda activate test-environment
           conda uninstall panel bokeh --force --offline -y || true
-          pip install 'bokeh>=3.4.0rc1' 'panel>=1.4.0b1'
+          pip install bokeh panel --pre
           echo "Installing dev releases of Panel and Bokeh" >> $GITHUB_STEP_SUMMARY
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
@@ -210,7 +210,7 @@ jobs:
         run: |
           conda activate test-environment
           conda uninstall panel bokeh --force --offline -y || true
-          pip install 'bokeh>=3.4.0rc1' 'panel>=1.4.0b1'
+          pip install bokeh panel --pre
           echo "Installing dev releases of Panel and Bokeh" >> $GITHUB_STEP_SUMMARY
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
