@@ -53,9 +53,13 @@ jobs:
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Download data
-        run: |
-          conda activate test-environment
-          bash scripts/download_data.sh
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 30
+          max_attempts: 5
+          command: |
+            conda activate test-environment
+            bash scripts/download_data.sh
       - name: generate rst
         run: |
           conda activate test-environment
