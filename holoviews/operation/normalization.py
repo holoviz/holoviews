@@ -21,7 +21,6 @@ from ..core import Overlay
 from ..core.operation import Operation
 from ..core.util import match_spec
 from ..element import Raster
-from ..util.transform import dim
 
 
 class Normalization(Operation):
@@ -199,7 +198,8 @@ class normalize_group(Operation):
         }
         new = []
         for el in overlay:
-            dim_name = el.dimensions()[1].name
-            expr = (dim(dim_name) - minmax[el.group][0]) / (minmax[el.group][1] - minmax[el.group][0])
-            new.append(el.transform(**{dim_name: expr}))
+            y_dimension = el.vdims[0]
+            y_dimension = y_dimension.clone(range=minmax[el.group])
+            el = el.redim(**{y_dimension.name: y_dimension})
+            new.append(el)
         return overlay.clone(data=new)
