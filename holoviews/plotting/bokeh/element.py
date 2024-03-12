@@ -2846,7 +2846,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         self.handles['hover_tools'] = hover_tools
         return init_tools
 
-
     def _merge_tools(self, subplot):
         """
         Merges tools on the overlay with those on the subplots.
@@ -2900,7 +2899,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
                 raise ValueError(
                     f"All elements in group {el.group!r} must set the option "
-                    "'subcoordinate_y=True'. Not found for: {el}"
+                    f"'subcoordinate_y=True'. Not found for: {el}"
                 )
             groups[el.group].append(el)
 
