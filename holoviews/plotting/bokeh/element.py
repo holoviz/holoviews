@@ -2881,6 +2881,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         """
         # First, just process and validate the groups and their content.
         groups = defaultdict(list)
+
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            raise ValueError(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
         for el in overlay:
             # group is the Element type per default (e.g. Curve, Spike).
             if el.group == type(el).__name__:

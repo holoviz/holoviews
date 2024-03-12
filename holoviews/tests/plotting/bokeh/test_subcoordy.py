@@ -356,3 +356,27 @@ class TestSubcoordinateY(TestBokehPlot):
         ])
         with_span = VSpan(1, 2) * overlay * VSpan(3, 4)
         bokeh_renderer.get_plot(with_span)
+
+    def test_missing_group_error(self):
+        curves = []
+        for i, group in enumerate(['A', 'B', 'C']):
+            for i in range(2):
+                label = f'{group}{i}'
+                if group == "B":
+                    curve = Curve(range(10), label=label, group=group).opts(
+                        subcoordinate_y=True
+                    )
+                else:
+                    curve = Curve(range(10), label=label).opts(
+                        subcoordinate_y=True
+                    )
+                curves.append(curve)
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+        ):
+            bokeh_renderer.get_plot(Overlay(curves))
