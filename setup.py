@@ -13,7 +13,7 @@ install_requires = [
     "param >=1.12.0,<3.0",
     "numpy >=1.0",
     "pyviz_comms >=2.1",
-    "panel >=1.0",
+    "panel ==1.4.0b2",
     "colorcet",
     "packaging",
     "pandas >=0.20.0",
@@ -45,7 +45,7 @@ extras_require['tests_core'] = [
 # to run and pass the test suite without installing any
 # of those.
 extras_require['tests'] = extras_require['tests_core'] + [
-    'dask <2024.3',
+    'dask',
     'ibis-framework',  # Mapped to ibis-sqlite in setup.cfg for conda
     'xarray >=0.10.4',
     'networkx',
