@@ -43,9 +43,12 @@ with contextlib.suppress(ImportError):
 with contextlib.suppress(Exception):
     # From Dask 2023.7,1 they now automatic convert strings
     # https://docs.dask.org/en/stable/changelog.html#v2023-7-1
+    # From Dask 2024.3,1 they now use a query planning
+    # https://github.com/dask/dask/issues/10995
     import dask
 
     dask.config.set({"dataframe.convert-string": False})
+    dask.config.set({"dataframe.query-planning": False})
 
 
 @pytest.fixture
