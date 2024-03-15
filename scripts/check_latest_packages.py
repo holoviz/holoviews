@@ -30,7 +30,7 @@ def main(*packages):
         ).date()
 
         version_check = Version(current) >= Version(latest)
-        date_check = current_release_date >= allowed_date
+        date_check = latest_release_date >= allowed_date
         is_latest = version_check or date_check
         all_latest &= is_latest
 
