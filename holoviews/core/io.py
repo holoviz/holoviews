@@ -370,8 +370,7 @@ class Pickler(Exporter):
                 components = list(obj.data.values())
                 entries = entries if len(entries) > 1 else [entries[0]+'(L)']
             else:
-                entries = ['{}.{}'.format(group_sanitizer(obj.group, False),
-                                      label_sanitizer(obj.label, False))]
+                entries = [f'{group_sanitizer(obj.group, False)}.{label_sanitizer(obj.label, False)}']
                 components = [obj]
 
             for component, entry in zip(components, entries):
