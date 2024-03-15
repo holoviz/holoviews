@@ -9,6 +9,7 @@ from holoviews.element import RGB, Image, ImageStack, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import bokeh34
 
+from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -423,6 +424,36 @@ class _ImageStackBase(TestRasterPlot):
         np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
         np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
         assert plot.handles["color_mapper"].palette == ["green", "red", "yellow"]
+
+    def test_image_stack_dict_cmap_missing(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        with pytest.raises(ValueError, match="must have the same value dimensions"):
+            img_stack.opts(cmap={"c": "yellow", "a": "red"})
+
+    def test_image_stack_dict_cmap_extra(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        with ParamLogStream() as log:
+            img_stack.opts(cmap={"c": "yellow", "a": "red", "b": "green", "d": "blue"})
+            plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
+        assert plot.handles["color_mapper"].palette == ["red", "green", "yellow"]
+        log_msg = log.stream.read()
+        assert "extra value dimensions: 'd'" in log_msg
 
 
 class TestImageStackEven(_ImageStackBase):
