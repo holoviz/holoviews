@@ -173,9 +173,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         """
         Update datasource with data for a new frame.
         """
-        if not self.document:
-            return
-
         data = self._postprocess_data(data)
         empty = all(len(v) == 0 for v in data.values())
         if (self.streaming and self.streaming[0].data is self.current_frame.data
@@ -617,8 +614,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             sync_legends(plot)
         plot = self._make_axes(plot)
         if hasattr(plot, "toolbar") and self.merge_tools:
-            plot.toolbar = merge_tools(plots)
-
+            plot.toolbar = merge_tools(plots, hide_toolbar=True)
         title = self._get_title_div(self.keys[-1])
         if title:
             plot = Column(title, plot)

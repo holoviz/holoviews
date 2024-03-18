@@ -377,6 +377,21 @@ class Interface(param.Parameterized):
                     mask &= index_mask
         return mask
 
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection)
+        extra = mask[1:] ^ mask[:-1]
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def indexed(cls, dataset, selection):

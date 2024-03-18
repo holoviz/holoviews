@@ -1,13 +1,19 @@
 import contextlib
+import sys
+from collections.abc import Callable
 
+import panel as pn
 import pytest
-from panel.tests.conftest import (  # noqa
+from panel.tests.conftest import (  # noqa: F401
     optional_markers,
     port,
     pytest_addoption,
     pytest_configure,
     server_cleanup,
 )
+from panel.tests.util import serve_and_wait
+
+import holoviews as hv
 
 
 def pytest_collection_modifyitems(config, items):
@@ -30,14 +36,19 @@ def pytest_collection_modifyitems(config, items):
 
 with contextlib.suppress(ImportError):
     import matplotlib as mpl
-    mpl.use('agg')
+
+    mpl.use("agg")
 
 
 with contextlib.suppress(Exception):
-    # From Dask 2023.7,1 they now automatic convert strings
+    # From Dask 2023.7.1 they now automatically convert strings
     # https://docs.dask.org/en/stable/changelog.html#v2023-7-1
+    # From Dask 2024.3.0 they now use `dask_expr` by default
+    # https://github.com/dask/dask/issues/10995
     import dask
+
     dask.config.set({"dataframe.convert-string": False})
+    dask.config.set({"dataframe.query-planning": False})
 
 
 @pytest.fixture
@@ -47,36 +58,60 @@ def ibis_sqlite_backend():
     except ImportError:
         yield None
     else:
-        ibis.set_backend('sqlite')
+        ibis.set_backend("sqlite")
         yield
         ibis.set_backend(None)
 
 
 @pytest.fixture
 def bokeh_backend():
-    import holoviews as hv
-    hv.renderer('bokeh')
+    hv.renderer("bokeh")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'bokeh'
+    hv.Store.current_backend = "bokeh"
     yield
     hv.Store.current_backend = prev_backend
 
 
 @pytest.fixture
 def mpl_backend():
-    import holoviews as hv
-    hv.renderer('matplotlib')
+    hv.renderer("matplotlib")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'matplotlib'
+    hv.Store.current_backend = "matplotlib"
     yield
     hv.Store.current_backend = prev_backend
 
 
 @pytest.fixture
 def plotly_backend():
-    import holoviews as hv
-    hv.renderer('plotly')
+    hv.renderer("plotly")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'plotly'
+    hv.Store.current_backend = "plotly"
     yield
     hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
+def unimport(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], None]:
+    """
+    Return a function for unimporting modules and preventing reimport.
+
+    This will block any new modules from being imported.
+    """
+
+    def unimport_module(modname: str) -> None:
+        # Remove if already imported
+        monkeypatch.delitem(sys.modules, modname, raising=False)
+        # Prevent import:
+        monkeypatch.setattr(sys, "path", [])
+
+    return unimport_module
+
+
+@pytest.fixture
+def serve_hv(page, port):  # noqa: F811
+    def serve_and_return_page(hv_obj):
+        serve_and_wait(pn.pane.HoloViews(hv_obj), port=port)
+        page.goto(f"http://localhost:{port}")
+        return page
+
+    return serve_and_return_page

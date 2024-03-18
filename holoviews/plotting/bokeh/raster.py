@@ -82,7 +82,8 @@ class RasterPlot(ColorbarPlot):
             }
             """
             for key in formatters:
-                if formatters[key].lower() == "datetime":
+                formatter = formatters[key]
+                if isinstance(formatter, str) and formatter.lower() == "datetime":
                     formatters[key] = CustomJSHover(code=datetime_code)
 
         hover.tooltips = tooltips
