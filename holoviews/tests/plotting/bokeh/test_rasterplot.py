@@ -435,6 +435,7 @@ class _ImageStackBase(TestRasterPlot):
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
         with pytest.raises(ValueError, match="must have the same value dimensions"):
             img_stack.opts(cmap={"c": "yellow", "a": "red"})
+            bokeh_renderer.get_plot(img_stack)
 
     def test_image_stack_dict_cmap_extra(self):
         x = np.arange(0, 3)
