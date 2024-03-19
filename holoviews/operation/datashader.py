@@ -406,7 +406,7 @@ class aggregate(LineAggregationOperation):
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
-            params['vdims'] = list(agg.coords[agg_fn.column].data)
+            params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
