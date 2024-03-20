@@ -925,7 +925,7 @@ class DimensionedPlot(Plot):
             for opt, v in opts.items():
                 if opt not in options[key]:
                     options[key][opt] = v
-        return options if keyfn else options[None]
+        return options if keyfn else options.get(None, {})
 
     def _get_projection(cls, obj):
         """
