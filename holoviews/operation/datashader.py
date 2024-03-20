@@ -1643,6 +1643,8 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
+        elif isinstance(element, ImageStack):
+            data = element.data
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
