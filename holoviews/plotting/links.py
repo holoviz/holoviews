@@ -109,6 +109,12 @@ class RangeToolLink(Link):
     boundsy = param.Tuple(default=None, length=2, doc="""
         (start, end) bounds for the y-axis""")
 
+    intervalsx = param.Tuple(default=None, length=2, doc="""
+        (min, max) intervals for the x-axis""")
+
+    intervalsy = param.Tuple(default=None, length=2, doc="""
+        (min, max) intervals for the y-axis""")
+
     _requires_target = True
 
 
