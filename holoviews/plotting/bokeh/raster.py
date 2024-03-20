@@ -263,18 +263,11 @@ class ImageStackPlot(RasterPlot):
         if isinstance(style.get("cmap"), dict):
             dict_cmap = style["cmap"]
             missing = [vd.name for vd in vdims if vd.name not in dict_cmap]
-            extra = [k for k in dict_cmap if k not in vdims]
             if missing:
                 missing_str = "', '".join(sorted(missing))
                 raise ValueError(
                     "The supplied cmap dictionary must have the same "
                     f"value dimensions as the element. Missing: '{missing_str}'"
-                )
-            elif extra:
-                extra_str = "', '".join(sorted(extra))
-                self.param.warning(
-                    f"The supplied cmap dictionary has extra value dimensions: "
-                    f"'{extra_str}'. Ignoring these value dimensions."
                 )
             keys, values = zip(*dict_cmap.items())
             style["cmap"] = list(values)
