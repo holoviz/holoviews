@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v3
         if: github.event_name != 'pull_request'
       - name: Check for code changes
-        uses: dorny/paths-filter@v2.11.1
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -134,12 +134,6 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
-      - name: suppress warning
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
-          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -194,11 +188,6 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
         id: install
-      - name: suppress warning
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          touch ${CONDA_PREFIX}/etc/OpenCL/vendors/mute || true  # https://github.com/conda-forge/ocl-icd-feedstock/issues/29
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
         run: |
