@@ -12,7 +12,9 @@ operations per element type. Unlike display normalization, data
 normalizations result in transformations to the stored data within
 each element.
 """
+from collections import defaultdict
 
+import numpy as np
 import param
 
 from ..core import Overlay
@@ -175,3 +177,29 @@ class raster_normalization(Normalization):
                 if range:
                     norm_raster.data[:,:,depth] /= range
         return norm_raster
+
+
+class normalize_group(Operation):
+    """
+    Group-wise min-max normalisation.
+    """
+
+    def _process(self, overlay, key=None):
+        vmins = defaultdict(list)
+        vmaxs = defaultdict(list)
+        for el in overlay:
+            vmin, vmax = el.range(1)
+            vmins[el.group].append(vmin)
+            vmaxs[el.group].append(vmax)
+
+        minmax = {
+            group: (np.min(vmins[group]), np.max(vmaxs[group]))
+            for group in vmins
+        }
+        new = []
+        for el in overlay:
+            y_dimension = el.vdims[0]
+            y_dimension = y_dimension.clone(range=minmax[el.group])
+            el = el.redim(**{y_dimension.name: y_dimension})
+            new.append(el)
+        return overlay.clone(data=new)
