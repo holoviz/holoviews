@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
@@ -163,6 +164,11 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(df)
         self.assertEqual(list(ds.data.columns), ['interface'])
 
+    def test_dataset_range_with_object_index(self):
+        df = pd.DataFrame(range(4), columns=["values"], index=list("BADC"))
+        ds = Dataset(df, kdims='index')
+        assert ds.range('index') == ('A', 'D')
+
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
 
@@ -177,3 +183,107 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         df = pd.DataFrame({"dates": dates_tz})
         data = Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
+
+
+class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
+    datatype = 'dataframe'
+    data_type = pd.DataFrame
+
+    __test__ = True
+
+    def setUp(self):
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
+        index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
+        self.df = pd.DataFrame(range(4), index=index, columns=["values"])
+        super().setUp()
+
+    def test_no_kdims(self):
+        ds = Dataset(self.df)
+        assert ds.kdims == [Dimension("values")]
+        assert isinstance(ds.data.index, pd.MultiIndex)
+
+    def test_index_kdims(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        assert ds.kdims == [Dimension("number"), Dimension("color")]
+        assert ds.vdims == [Dimension("values")]
+        assert isinstance(ds.data.index, pd.MultiIndex)
+
+    def test_index_aggregate(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        expected = pd.DataFrame({'number': [1, 2], 'values': [0.5, 2.5], 'values_var': [0.25, 0.25]})
+        agg = ds.aggregate("number", function=np.mean, spreadfn=np.var)
+        pd.testing.assert_frame_equal(agg.data, expected)
+
+    def test_index_select(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=1)
+        expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_scalar_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, 0]
+        expected = 1
+        assert selected == expected
+
+    def test_iloc_slice_scalar_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, 0]
+        expected = self.df.reset_index()[["number"]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_slice_slice_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, :2]
+        expected = self.df.reset_index()[["number", "color"]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_slice_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, :2]
+        expected = pd.DataFrame({"number": 1, "color": "red"}, index=[0])
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, 2]
+        expected = 0
+        assert selected == expected
+
+    def test_iloc_slice_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, 2]
+        expected = self.df.iloc[:, [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_slice_slice(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, :3]
+        expected = self.df.iloc[:, [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_slice(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, :3]
+        expected = self.df.iloc[[0], [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_out_of_bounds(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        with pytest.raises(ValueError, match="column is out of bounds"):
+            ds.iloc[0, 3]
+
+    def test_sort(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sorted_ds = ds.sort("color")
+        np.testing.assert_array_equal(sorted_ds.dimension_values("values"), [1, 3, 0, 2])
+        np.testing.assert_array_equal(sorted_ds.dimension_values("number"), [1, 2, 1, 2])
+
+    def test_select(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(color="red")
+        pd.testing.assert_frame_equal(selected.data, self.df.iloc[[0, 2], :])
+
+        selected = ds.select(number=1, color='red')
+        assert selected == 0

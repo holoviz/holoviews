@@ -32,7 +32,11 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim, strict=True).name
+        return cls.dtype(dataset, dim).type
+        dim = dataset.get_dimension(dim, strict=True)
+        if cls.isindex(dataset, dim):
+            return cls.index_values(dataset, dim).dtype.type
+        name = dim.name
         idx = list(dataset.data.columns).index(name)
         return dataset.data.dtypes.iloc[idx].type
 
@@ -46,9 +50,7 @@ class PandasInterface(Interface, PandasAPI):
             data = data.to_frame(name=name)
         if util.is_dataframe(data):
             ncols = len(data.columns)
-            index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
-            if index_names == [None]:
-                index_names = ['index']
+            index_names = cls.indexes(data)
             if eltype._auto_indexable_1d and ncols == 1 and kdims is None:
                 kdims = list(index_names)
 
@@ -75,20 +77,23 @@ class PandasInterface(Interface, PandasAPI):
                 )
 
             # Handle reset of index if kdims reference index by name
-            for kd in kdims:
-                kd = dimension_name(kd)
-                if kd in data.columns:
-                    continue
-                if any(kd == ('index' if name is None else name)
-                       for name in index_names):
-                    data = data.reset_index()
-                    break
+            if len(kdims) == len(index_names) and {dimension_name(kd) for kd in kdims} == set(index_names):
+                pass
+            else:  # noqa: PLR5501
+                # for kd in kdims:  # TODO: Remove this if statement?
+                #     kd = dimension_name(kd)
+                #     if kd in data.columns:
+                #         continue
+                #     if any(kd == ('index' if name is None else name)
+                #            for name in index_names):
+                #         data = data.reset_index()
+                #         break
 
-            if kdims:
-                kdim = dimension_name(kdims[0])
-                if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
-                    data = data.copy()
-                    data.insert(0, kdim, np.arange(len(data)))
+                if kdims:
+                    kdim = dimension_name(kdims[0])
+                    if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
+                        data = data.copy()
+                        data.insert(0, kdim, np.arange(len(data)))
 
             for d in kdims+vdims:
                 d = dimension_name(d)
@@ -147,31 +152,67 @@ class PandasInterface(Interface, PandasAPI):
                 raise ValueError('PandasInterface could not find specified dimensions in the data.')
             else:
                 data = pd.DataFrame(data, columns=columns)
-        return data, {'kdims':kdims, 'vdims':vdims}, {}
-
+        return data, {'kdims': kdims, 'vdims': vdims}, {}
 
     @classmethod
     def isscalar(cls, dataset, dim):
         name = dataset.get_dimension(dim, strict=True).name
         return len(dataset.data[name].unique()) == 1
 
+    @classmethod
+    def dtype(cls, dataset, dimension):
+        dim = dataset.get_dimension(dimension, strict=True)
+        name = dim.name
+        df = dataset.data
+        if cls.isindex(dataset, dim):
+            data = cls.index_values(dataset, dim)
+        else:
+            data = df[name]
+        if util.isscalar(data):
+            return np.array([data]).dtype
+        else:
+            return data.dtype
+
+    @classmethod
+    def indexes(cls, data):
+        index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
+        if index_names == [None]:
+            index_names = ['index']
+        return index_names
+
+    @classmethod
+    def isindex(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension, strict=True)
+        if dimension.name in dataset.data.columns:
+            return False
+        return dimension.name in cls.indexes(dataset.data)
+
+    @classmethod
+    def index_values(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension, strict=True)
+        index = dataset.data.index
+        if isinstance(index, pd.MultiIndex):
+            return index.get_level_values(dimension.name)
+        return index
 
     @classmethod
     def validate(cls, dataset, vdims=True):
         dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
-        cols = list(dataset.data.columns)
+        cols = list(dataset.data.columns) + cls.indexes(dataset.data)
         not_found = [d for d in dimensions if d not in cols]
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
-
     @classmethod
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        column = dataset.data[dimension.name]
+        if cls.isindex(dataset, dimension):
+            column = cls.index_values(dataset, dimension)
+        else:
+            column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
                 util.pandas_version < Version('0.17.0')):
@@ -184,6 +225,8 @@ class PandasInterface(Interface, PandasAPI):
                 pass
             if not len(column):
                 return np.nan, np.nan
+            if isinstance(column, pd.Index):
+                return column[0], column[-1]
             return column.iloc[0], column.iloc[-1]
         else:
             if dimension.nodata is not None:
@@ -246,10 +289,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        data = dataset.data
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions('value', label='name')
-        reindexed = data[cols+vdims]
+        reindexed = cls.dframe(dataset, dimensions=cols+vdims)
         if function in [np.std, np.var]:
             # Fix for consistency with other backend
             # pandas uses ddof=1 for std and var
@@ -355,11 +397,15 @@ class PandasInterface(Interface, PandasAPI):
             keep_index=False,
     ):
         dim = dataset.get_dimension(dim, strict=True)
-        data = dataset.data[dim.name]
+        isindex = cls.isindex(dataset, dim)
+        if isindex:
+            data = cls.index_values(dataset, dim)
+        else:
+            data = dataset.data[dim.name]
         if keep_index:
             return data
         if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
-            data = data.dt.tz_localize(None)
+            data = (data if isindex else data.dt).tz_localize(None)
         if not expanded:
             return pd.unique(data)
         return data.values if hasattr(data, 'values') else data
@@ -405,38 +451,53 @@ class PandasInterface(Interface, PandasAPI):
         if it already a dataframe type.
         """
         if issubclass(dataset.interface, PandasInterface):
+            if any(cls.isindex(dataset, dim) for dim in dataset.dimensions()):
+                return dataset.data.reset_index()
             return dataset.data
         else:
             return dataset.dframe()
 
-
     @classmethod
     def dframe(cls, dataset, dimensions):
+        data = dataset.data
         if dimensions:
-            return dataset.data[dimensions]
+            if any(cls.isindex(dataset, d) for d in dimensions):
+                data = data.reset_index()
+            return data[dimensions]
         else:
-            return dataset.data.copy()
-
+            return data.copy()
 
     @classmethod
     def iloc(cls, dataset, index):
         rows, cols = index
         scalar = False
-        columns = list(dataset.data.columns)
         if isinstance(cols, slice):
             cols = [d.name for d in dataset.dimensions()][cols]
         elif np.isscalar(cols):
             scalar = np.isscalar(rows)
-            cols = [dataset.get_dimension(cols).name]
+            dim = dataset.get_dimension(cols)
+            if dim is None:
+                raise ValueError('column is out of bounds')
+            cols = [dim.name]
         else:
-            cols = [dataset.get_dimension(d).name for d in index[1]]
-        cols = [columns.index(c) for c in cols]
+            cols = [dataset.get_dimension(d).name for d in cols]
         if np.isscalar(rows):
             rows = [rows]
 
+        data = dataset.data
+        indexes = cls.indexes(data)
+        columns = list(data.columns)
+        id_cols = [columns.index(c) for c in cols if c not in indexes]
+        if not id_cols:
+            if len(indexes) > 1:
+                data = data.index.to_frame()[cols].iloc[rows].reset_index(drop=True)
+                data = data.values.ravel()[0] if scalar else data
+            else:
+                data = data.index.values[rows[0]] if scalar else data.index[rows]
+            return data
         if scalar:
-            return dataset.data.iloc[rows[0], cols[0]]
-        return dataset.data.iloc[rows, cols]
+            return data.iloc[rows[0], id_cols[0]]
+        return data.iloc[rows, id_cols]
 
 
 Interface.register(PandasInterface)

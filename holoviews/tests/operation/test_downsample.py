@@ -49,8 +49,6 @@ def test_downsample1d_shared_data():
     assert runs[0] == 1
 
 
-# Should be fixed when https://github.com/holoviz/holoviews/pull/6061 is merged
-@pytest.mark.xfail(reason="This will make a copy of the data")
 def test_downsample1d_shared_data_index():
     runs = [0]
 
