@@ -1,12 +1,15 @@
 """
 Test cases for rendering exporters
 """
+import os
 import subprocess
+import sys
 from unittest import SkipTest
 
 import numpy as np
 import panel as pn
 import param
+import pytest
 from matplotlib import style
 from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
@@ -80,6 +83,7 @@ class MPLRendererTest(ComparisonTestCase):
         data, metadata = self.renderer.components(self.map1, 'gif')
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
+    @pytest.mark.skipif(sys.platform == 'win32' and os.environ.get('GITHUB_RUN_ID'), reason='Skip on Windows CI')
     def test_render_mp4(self):
         devnull = subprocess.DEVNULL
         try:
