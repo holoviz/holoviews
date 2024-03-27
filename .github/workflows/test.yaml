@@ -50,7 +50,7 @@ jobs:
     name: Run pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
 
   setup:
     name: Setup workflow
@@ -123,7 +123,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         if: needs.setup.outputs.code_change == 'true'
         with:
           name: unit_test_suite
@@ -178,7 +178,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         if: needs.setup.outputs.code_change == 'true'
         with:
           name: ui_test_suite
@@ -216,7 +216,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
       # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      # - uses: holoviz-dev/holoviz_tasks/install@v0
       #   if: needs.setup.outputs.code_change == 'true'
       #   with:
       #     name: core_test_suite
