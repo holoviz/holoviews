@@ -1932,7 +1932,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Apply hard bounds to the x and y ranges of the plot.
 
         Sets the navigable bounds of the plot based on the extents
-        of the given element and ranges. If an extend is numeric and not NaN, it is
+        of the given element and ranges. If an extent is numeric and not NaN, it is
         used as is. Otherwise, it is set to None, which means that end of the axis
         is unbounded.
         """
