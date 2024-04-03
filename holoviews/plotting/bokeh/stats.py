@@ -72,6 +72,9 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
+    outlier_radius = param.Number(default=0.01, doc="""
+        The radius of the circle marker for the outliers.""")
+
     # Deprecated options
 
     color_index = param.ClassSelector(default=None, class_=(str, int),
@@ -191,11 +194,11 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
-            out_map = {'y': 'index', 'x': vdim, 'radius': 0.01}
+            out_map = {'y': 'index', 'x': vdim, 'radius': self.outlier_radius}
         else:
             vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-            out_map = {'x': 'index', 'y': vdim, 'radius': 0.01}
+            out_map = {'x': 'index', 'y': vdim, 'radius': self.outlier_radius}
         vbar2_map = dict(vbar_map)
 
         # Get color values
