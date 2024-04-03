@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import math
 import time
 from collections import defaultdict
 
@@ -16,7 +17,14 @@ from bokeh.models import (
     PolyEditTool,
     Range1d,
 )
+from panel.io.notebook import push_on_root
 from panel.io.state import set_curdoc, state
+from panel.pane import panel
+
+try:
+    from bokeh.models import XY, Panel
+except Exception:
+    Panel = XY = None
 
 from ...core.options import CallbackError
 from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
@@ -547,7 +555,79 @@ class DrawCallback(PointerXYCallback):
         return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
-class TapCallback(PointerXYCallback):
+class PopupMixin:
+
+    position = {}
+
+    geom_type = None
+
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id=plot_id)
+        self._popup = None
+        stream = self.streams[0]
+        if not hasattr(stream, 'popup'):
+            return
+        elif Panel is None:
+            warn("Popup requires Bokeh >= 3.4")
+            return
+        self._panel = Panel(
+            position=XY(x=math.nan, y=math.nan),
+            anchor="top_left",
+            stylesheets=[
+                """
+                :host {
+                    background-color: white;
+                    padding: 1em;
+                    border-radius: 0.5em;
+                    border: 1px solid lightgrey;
+                }
+                """,
+            ],
+            elements=[],
+        )
+        geom_type = self.geom_type
+        position = ','.join([f'{k!r}: {v}' for k, v in self.position.items()])
+        self.plot.state.on_event('selectiongeometry', self._populate)
+        self.plot.state.js_on_event('selectiongeometry', CustomJS(
+            args=dict(panel=self._panel),
+            code=f"""
+            export default ({{panel}}, cb_obj, _) => {{
+              if (cb_obj.geometry.type === {geom_type!r} && (!panel.elements.length || panel.elements[0].visible)) {{
+                panel.position.setv({{ {position} }})
+              }}
+            }}""",
+        ))
+        self.plot.state.elements.append(self._panel)
+
+    def _get_position(self, event):
+        return {}
+
+    def _populate(self, event):
+        if self._popup:
+            position = self._get_position(event)
+            if position:
+                self._popup.visible = True
+                self._panel.position = XY(**position)
+                if self.plot.comm:
+                    push_on_root(self.plot.root.ref['id'])
+            return
+        self._popup = panel(self.streams[0].popup)
+        model = self._popup.get_root(self.plot.document, self.plot.comm)
+        model.js_on_change('visible', CustomJS(
+            args=dict(panel=self._panel),
+            code="""
+            export default ({panel}, event, _) => {
+              if (!event.visible) {
+                panel.position.setv({x: NaN, y: NaN})
+              }
+            }""",
+        ))
+        self._panel.elements = [model]
+        if self.plot.comm:
+            push_on_root(self.plot.root.ref['id'])
+
+
+class TapCallback(PopupMixin, PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
 
@@ -555,7 +635,15 @@ class TapCallback(PointerXYCallback):
     individual tap events within a doubletap event.
     """
 
+    geom_type = 'point'
+
     on_events = ['tap', 'doubletap']
+
+    position = {'x': 'cb_obj.geometry.x', 'y': 'cb_obj.geometry.y'}
+
+    def _get_position(self, event):
+        if event.geometry['type'] == self.geom_type:
+            return dict(x=event.geometry['x'], y=event.geometry['y'])
 
     def _process_out_of_bounds(self, value, start, end):
         "Sets out of bounds values to None"
@@ -576,6 +664,7 @@ class TapCallback(PointerXYCallback):
         if v < s or v > e:
             value = None
         return value
+
 
 
 class SingleTapCallback(TapCallback):
@@ -751,7 +840,7 @@ class SelectModeCallback(Callback):
         return msg
 
 
-class BoundsCallback(Callback):
+class BoundsCallback(PopupMixin, Callback):
     """
     Returns the bounds of a box_select tool.
     """
@@ -759,11 +848,18 @@ class BoundsCallback(Callback):
                   'x1': 'cb_obj.geometry.x1',
                   'y0': 'cb_obj.geometry.y0',
                   'y1': 'cb_obj.geometry.y1'}
+    geom_type = 'rect'
     models = ['plot']
     on_events = ['selectiongeometry']
 
+    position = {'x': 'cb_obj.geometry.x1', 'y': 'cb_obj.geometry.y1'}
+
     skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
+
+    def _get_position(self, event):
+        if event.geometry['type'] == self.geom_type and event.final:
+            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -870,13 +966,20 @@ class BoundsYCallback(Callback):
             return {}
 
 
-class LassoCallback(Callback):
+class LassoCallback(PopupMixin, Callback):
 
     attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
+    geom_type = 'poly'
     models = ['plot']
     on_events = ['selectiongeometry']
+    position = {'x': 'Math.max(cb_obj.geometry.x)', 'y': 'Math.max(cb_obj.geometry.y)'}
+
     skip_events = [lambda event: event.geometry['type'] != 'poly',
                    lambda event: not event.final]
+
+    def _get_position(self, event):
+        if event.geometry['type'] == self.geom_type and event.final:
+            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
     def _process_msg(self, msg):
         if not all(c in msg for c in ('xs', 'ys')):
