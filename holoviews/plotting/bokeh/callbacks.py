@@ -399,26 +399,31 @@ class Callback:
         self._background_task.add(task)
         task.add_done_callback(self._background_task.discard)
 
+    def _schedule_event(self, event):
+        task = asyncio.create_task(self.on_event(event))
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
+
+    def _schedule_change(self, attr, old, new):
+        if not self.plot.document:
+            return
+        task = asyncio.create_task(self.on_change(attr, old, new))
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
+
     def set_callback(self, handle):
         """
         Set up on_change events for bokeh server interactions.
         """
         if self.on_events:
-            event_handler = lambda event: (
-                asyncio.create_task(self.on_event(event))
-            )
             for event in self.on_events:
-                handle.on_event(event, event_handler)
+                handle.on_event(event, self._schedule_event)
         if self.on_changes:
-            change_handler = lambda attr, old, new: (
-                asyncio.create_task(self.on_change(attr, old, new))
-                if self.plot.document else None
-            )
             for change in self.on_changes:
                 if change in ['patching', 'streaming']:
                     # Patch and stream events do not need handling on server
                     continue
-                handle.on_change(change, change_handler)
+                handle.on_change(change, self._schedule_change)
 
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
@@ -557,15 +562,13 @@ class DrawCallback(PointerXYCallback):
 
 class PopupMixin:
 
-    position = {}
-
-    geom_type = None
+    geom_type = 'any'
 
     def initialize(self, plot_id=None):
         super().initialize(plot_id=plot_id)
         self._popup = None
         stream = self.streams[0]
-        if not hasattr(stream, 'popup'):
+        if not getattr(stream, 'popup', None):
             return
         elif Panel is None:
             warn("Popup requires Bokeh >= 3.4")
@@ -586,32 +589,68 @@ class PopupMixin:
             elements=[],
         )
         geom_type = self.geom_type
-        position = ','.join([f'{k!r}: {v}' for k, v in self.position.items()])
-        self.plot.state.on_event('selectiongeometry', self._populate)
+        self.plot.state.on_event('selectiongeometry', self._schedule_populate)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
             args=dict(panel=self._panel),
             code=f"""
             export default ({{panel}}, cb_obj, _) => {{
-              if (cb_obj.geometry.type === {geom_type!r} && (!panel.elements.length || panel.elements[0].visible)) {{
-                panel.position.setv({{ {position} }})
+              const el = panel.elements[0]
+              if ((el && !el.visible) || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                 return
+              }}
+              let pos;
+              if (cb_obj.geometry.type === 'point') {{
+                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
+              }} else if (cb_obj.geometry.type === 'rect') {{
+                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
+              }} else if (cb_obj.geometry.type === 'poly') {{
+                pos = {{x: Math.max(cb_obj.geometry.x), y: Math.max(cb_obj.geometry.y)}}
+              }}
+              if (pos) {{
+                panel.position.setv(pos)
               }}
             }}""",
         ))
         self.plot.state.elements.append(self._panel)
 
-    def _get_position(self, event):
-        return {}
+    def _schedule_populate(self, event):
+        task = asyncio.create_task(self._populate(event))
+        self._background_task.add(task)
+        task.add_done_callback(self._background_task.discard)
 
-    def _populate(self, event):
-        if self._popup:
-            position = self._get_position(event)
+    def _get_position(self, event):
+        if self.geom_type not in ('any', event.geometry['type']):
+            return
+        elif event.geometry['type'] == 'point':
+            return dict(x=event.geometry['x'], y=event.geometry['y'])
+        elif event.geometry['type'] == 'rect' and event.final:
+            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
+        elif event.geometry['type'] == 'poly' and event.final:
+            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
+
+    async def _populate(self, event):
+        popup = self.streams[0].popup
+        position = self._get_position(event)
+        if callable(popup):
+            await asyncio.sleep(0.05)
+            data = self.streams[0].contents
+            popup_obj = popup(**data) if data else None
+            if popup_obj is None:
+                self._popup.visible = False
+                self._panel.position = XY(x=math.nan, y=math.nan)
+                return
+            elif position:
+                self._panel.position = XY(**position)
+            self._popup = panel(popup_obj)
+        elif self._popup:
             if position:
                 self._popup.visible = True
                 self._panel.position = XY(**position)
                 if self.plot.comm:
                     push_on_root(self.plot.root.ref['id'])
             return
-        self._popup = panel(self.streams[0].popup)
+        else:
+            self._popup = panel(popup)
         model = self._popup.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
             args=dict(panel=self._panel),
@@ -638,12 +677,6 @@ class TapCallback(PopupMixin, PointerXYCallback):
     geom_type = 'point'
 
     on_events = ['tap', 'doubletap']
-
-    position = {'x': 'cb_obj.geometry.x', 'y': 'cb_obj.geometry.y'}
-
-    def _get_position(self, event):
-        if event.geometry['type'] == self.geom_type:
-            return dict(x=event.geometry['x'], y=event.geometry['y'])
 
     def _process_out_of_bounds(self, value, start, end):
         "Sets out of bounds values to None"
@@ -852,14 +885,8 @@ class BoundsCallback(PopupMixin, Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    position = {'x': 'cb_obj.geometry.x1', 'y': 'cb_obj.geometry.y1'}
-
     skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
-
-    def _get_position(self, event):
-        if event.geometry['type'] == self.geom_type and event.final:
-            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -972,14 +999,9 @@ class LassoCallback(PopupMixin, Callback):
     geom_type = 'poly'
     models = ['plot']
     on_events = ['selectiongeometry']
-    position = {'x': 'Math.max(cb_obj.geometry.x)', 'y': 'Math.max(cb_obj.geometry.y)'}
 
     skip_events = [lambda event: event.geometry['type'] != 'poly',
                    lambda event: not event.final]
-
-    def _get_position(self, event):
-        if event.geometry['type'] == self.geom_type and event.final:
-            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
     def _process_msg(self, msg):
         if not all(c in msg for c in ('xs', 'ys')):
@@ -996,7 +1018,7 @@ class LassoCallback(PopupMixin, Callback):
         return {'geometry': np.column_stack([xs, ys])}
 
 
-class Selection1DCallback(Callback):
+class Selection1DCallback(PopupMixin, Callback):
     """
     Returns the current selection on a ColumnDataSource.
     """
