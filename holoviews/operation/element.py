@@ -755,7 +755,7 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
-    groupby_range = param.Selector(default="joined", objects=["joined", "separated"], doc="""
+    groupby_range = param.Selector(default="shared", objects=["shared", "separated"], doc="""
         Whether to group the histograms along the same range or separate them.""")
 
     log = param.Boolean(default=False, doc="""
@@ -803,7 +803,7 @@ class histogram(Operation):
             if not isinstance(element, Dataset):
                 raise ValueError('Cannot use histogram groupby on non-Dataset Element')
             grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
-            if self.p.groupby_range == 'joined' and not self.p.bin_range:
+            if self.p.groupby_range == 'shared' and not self.p.bin_range:
                 _, data = self._get_dim_and_data(element)
                 self.bin_range = (data.min(), data.max())
             self.p.groupby = None
