@@ -191,11 +191,11 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
-            out_map = {'y': 'index', 'x': vdim}
+            out_map = {'y': 'index', 'x': vdim, 'radius': 0.01}
         else:
             vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-            out_map = {'x': 'index', 'y': vdim}
+            out_map = {'x': 'index', 'y': vdim, 'radius': 0.01}
         vbar2_map = dict(vbar_map)
 
         # Get color values
