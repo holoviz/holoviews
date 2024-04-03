@@ -206,7 +206,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             cdim, cidx = None, None
 
         factors = []
-        vdim = element.vdims[0].name
+        vdim = dimension_sanitizer(element.vdims[0].name)
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
