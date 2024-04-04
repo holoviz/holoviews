@@ -297,3 +297,9 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(self.df, kdims=["number", "color"])
         sample = ds.interface.sample(ds, [1])
         assert sample.to_dict() == {'values': {(1, 'red'): 1, (1, 'blue'): 1}}
+
+    def test_values(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        assert (ds.interface.values(ds, 'color') == ['red', 'blue', 'red', 'blue']).all()
+        assert (ds.interface.values(ds, 'number') == [1, 1, 2, 2]).all()
+        assert (ds.interface.values(ds, 'values') == [0, 1, 2, 3]).all()
