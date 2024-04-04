@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 
@@ -40,6 +41,11 @@ if system == "Darwin":
         "user_guide/16-Streaming_Data.ipynb",
     ]
 
+# 2024-01-15: See https://github.com/holoviz/holoviews/issues/6069
+if system == "Windows":
+    collect_ignore_glob += [
+        "user_guide/Deploying_Bokeh_Apps.ipynb",
+    ]
 
 # First available in Bokeh 3.2.0
 if Version(bokeh.__version__) < Version("3.2.0"):
@@ -48,6 +54,12 @@ if Version(bokeh.__version__) < Version("3.2.0"):
         "reference/elements/bokeh/HSpans.ipynb",
         "reference/elements/bokeh/VLines.ipynb",
         "reference/elements/bokeh/VSpans.ipynb",
+    ]
+
+# 2024-03-27: ffmpeg errors on Windows CI
+if system == "Windows" and os.environ.get("GITHUB_RUN_ID"):
+    collect_ignore_glob += [
+        "user_guide/Plotting_with_Matplotlib.ipynb",
     ]
 
 

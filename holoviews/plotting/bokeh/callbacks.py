@@ -16,7 +16,7 @@ from bokeh.models import (
     PolyEditTool,
     Range1d,
 )
-from panel.io.state import state
+from panel.io.state import set_curdoc, state
 
 from ...core.options import CallbackError
 from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
@@ -209,7 +209,8 @@ class Callback:
             streams.append(stream)
 
         try:
-            Stream.trigger(streams)
+            with set_curdoc(self.plot.document):
+                Stream.trigger(streams)
         except CallbackError as e:
             if self.plot.root and self.plot.root.ref['id'] in state._handles:
                 handle, _ = state._handles[self.plot.root.ref['id']]
@@ -403,6 +404,7 @@ class Callback:
         if self.on_changes:
             change_handler = lambda attr, old, new: (
                 asyncio.create_task(self.on_change(attr, old, new))
+                if self.plot.document else None
             )
             for change in self.on_changes:
                 if change in ['patching', 'streaming']:
@@ -644,6 +646,12 @@ class RangeXYCallback(Callback):
         'y1': 'cb_obj.y1',
     }
 
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id)
+        for stream in self.streams:
+            msg = self._process_msg({})
+            stream.update(**msg)
+
     def _process_msg(self, msg):
         if self.plot.state.x_range is not self.plot.handles['x_range']:
             x_range = self.plot.handles['x_range']
@@ -825,7 +833,7 @@ class BoundsXCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'quad',
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):
@@ -848,7 +856,7 @@ class BoundsYCallback(Callback):
     models = ['plot']
     on_events = ['selectiongeometry']
 
-    skip_events = [lambda event: event.geometry['type'] != 'quad',
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
     def _process_msg(self, msg):

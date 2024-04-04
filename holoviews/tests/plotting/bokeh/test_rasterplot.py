@@ -1,9 +1,13 @@
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
+import pytest
+from bokeh.models import CustomJSHover, HoverTool
 
 from holoviews.element import RGB, Image, ImageStack, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
+from holoviews.plotting.bokeh.util import bokeh34
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -129,6 +133,38 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["dw"] == [1.0]
         assert cdata["y"] == [-0.5]
 
+    def test_image_datetime_hover(self):
+        xr = pytest.importorskip("xarray")
+        ts = pd.Timestamp("2020-01-01")
+        data = xr.Dataset(
+            coords={"x": [-0.5, 0.5], "y": [-0.5, 0.5]},
+            data_vars={
+                "Count": (["y", "x"], [[0, 1], [2, 3]]),
+                "Timestamp": (["y", "x"], [[ts, pd.NaT], [ts, ts]]),
+            },
+        )
+        img = Image(data).opts(tools=["hover"])
+        plot = bokeh_renderer.get_plot(img)
+
+        hover = plot.handles["hover"]
+        assert hover.tooltips[-1] == ("Timestamp", "@{Timestamp}{%F %T}")
+        assert "@{Timestamp}" in hover.formatters
+
+        if bokeh34:  # https://github.com/bokeh/bokeh/issues/13598
+            assert hover.formatters["@{Timestamp}"] == "datetime"
+        else:
+            assert isinstance(hover.formatters["@{Timestamp}"], CustomJSHover)
+
+    def test_image_hover_with_custom_js(self):
+        # Regression for https://github.com/holoviz/holoviews/issues/6101
+        hover_tool = HoverTool(
+            tooltips=[("x", "$x{custom}")], formatters={"x": CustomJSHover(code="return value + '2'")}
+        )
+        img = Image(np.ones(100).reshape(10, 10)).opts(tools=[hover_tool])
+        plot = bokeh_renderer.get_plot(img)
+
+        hover = plot.handles["hover"]
+        assert hover.formatters == hover_tool.formatters
 
 class _ImageStackBase(TestRasterPlot):
     __test__ = False
@@ -371,6 +407,34 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dw"][0] == self.xsize
         assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
+
+    def test_image_stack_dict_cmap(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        img_stack.opts(cmap={"c": "yellow", "a": "red", "b": "green"})
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
+        assert plot.handles["color_mapper"].palette == ["green", "red", "yellow"]
+
+    def test_image_stack_dict_cmap_missing(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        with pytest.raises(ValueError, match="must have the same value dimensions"):
+            img_stack.opts(cmap={"c": "yellow", "a": "red"})
+            bokeh_renderer.get_plot(img_stack)
 
 
 class TestImageStackEven(_ImageStackBase):

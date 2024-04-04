@@ -20,18 +20,36 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.2
+    rev: v0.3.4
     hooks:
       - id: ruff
-        args: [holoviews]
-        files: holoviews/
+        files: holoviews/|scripts/
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.13
+    rev: v0.1.14
     hooks:
       - id: clean-notebook
+        args: [--strip-trailing-newlines]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
-    - id: codespell
-      additional_dependencies:
-        - tomli
+      - id: codespell
+        additional_dependencies:
+          - tomli
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        exclude: conda.recipe/meta.yaml
+        types_or:
+          - markdown
+          - yaml

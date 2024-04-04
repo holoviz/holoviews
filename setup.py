@@ -12,7 +12,7 @@ setup_args = {}
 install_requires = [
     "param >=1.12.0,<3.0",
     "numpy >=1.0",
-    "pyviz_comms >=0.7.4",
+    "pyviz_comms >=2.1",
     "panel >=1.0",
     "colorcet",
     "packaging",
@@ -31,7 +31,7 @@ extras_require['tests_core'] = [
     'pytest',
     'pytest-cov',
     'pytest-xdist',
-    'flaky',
+    'pytest-rerunfailures',
     'matplotlib >=3',
     'nbconvert',
     'bokeh >=3.1',
@@ -52,12 +52,16 @@ extras_require['tests'] = extras_require['tests_core'] + [
     'shapely',
     'ffmpeg',
     'cftime',
-    'scipy',
+    'scipy >=1.10',  # Python 3.9 + Windows downloads 1.9
     'selenium',
     'spatialpandas',
     'datashader >=0.11.1',
     'dash >=1.16',
 ]
+
+if os.name != "nt":
+    # Currently not available on Windows on conda-forge
+    extras_require['tests'] += ['tsdownsample']
 
 extras_require['tests_ci'] = [
     'codecov',
@@ -98,6 +102,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "pyarrow",
     "pooch",
     "datashader >=0.11.1",
+    "notebook >=7.0",
 ]
 
 
@@ -107,7 +112,8 @@ extras_require["examples_tests"] = extras_require["examples"] + extras_require['
 extras_require["unit_tests"] = extras_require["examples"] + extras_require["tests"] + extras_require['lint']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.8.2,<0.9.0',
+    'nbsite >=0.8.4,<0.9.0',
+    'myst-nb <1',
     'graphviz',
     'bokeh >=3.1',
     'pooch',

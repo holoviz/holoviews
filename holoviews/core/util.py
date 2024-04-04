@@ -445,6 +445,8 @@ def argspec(callable_obj):
         arglen = len(callable_obj.args)
         spec = inspect.getfullargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
+        if inspect.ismethod(callable_obj.func):
+            args = args[1:]
     elif inspect.ismethod(callable_obj):    # instance and class methods
         spec = inspect.getfullargspec(callable_obj)
         args = spec.args[1:]
@@ -1311,7 +1313,8 @@ def dimension_sort(odict, kdims, vdims, key_index):
 # Copied from param should make param version public
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
-    elif isinstance(obj, (np.str_, np.unicode_)): return False
+    elif isinstance(obj, np.str_): return False
+    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_): return False  # noqa: NPY201
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
@@ -2274,9 +2277,9 @@ def numpy_scalar_to_python(scalar):
     Converts a NumPy scalar to a regular python type.
     """
     scalar_type = type(scalar)
-    if np.issubclass_(scalar_type, np.float_):
+    if issubclass(scalar_type, np.float64):
         return float(scalar)
-    elif np.issubclass_(scalar_type, np.int_):
+    elif issubclass(scalar_type, np.int_):
         return int(scalar)
     return scalar
 

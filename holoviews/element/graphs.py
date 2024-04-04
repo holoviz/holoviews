@@ -269,7 +269,7 @@ argument to specify a selection specification""")
 
         index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims+self.vdims
-        node_selection = {index_dim: v for k, v in selection.items()
+        node_selection = {index_dim: v for k, v in selection.items()  # noqa: RUF011
                           if k in self.kdims}
         if selection_expr:
             mask = selection_expr.apply(self.nodes, compute=False, keep_index=True)
@@ -528,11 +528,11 @@ class TriMesh(Graph):
                     points = self.point_type(nodes)
                     ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
                     nodes = self.node_type(ds)
-                except Exception:
+                except Exception as e:
                     raise ValueError(
                         "Nodes argument could not be interpreted, expected "
                         "data with two or three columns representing the "
-                        "x/y positions and optionally the node indices.")
+                        "x/y positions and optionally the node indices.") from e
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
 
@@ -549,7 +549,7 @@ class TriMesh(Graph):
             from scipy.spatial import Delaunay
         except ImportError:
             raise ImportError("Generating triangles from points requires "
-                              "SciPy to be installed.")
+                              "SciPy to be installed.") from None
         if not isinstance(data, Points):
             data = Points(data)
         if not len(data):

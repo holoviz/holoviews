@@ -34,14 +34,18 @@ def find_stack_level():
     param_dir = os.path.dirname(param.__file__)
 
     frame = inspect.currentframe()
-    stacklevel = 0
-    while frame:
-        fname = inspect.getfile(frame)
-        if fname.startswith((pkg_dir, param_dir)) and not fname.startswith(test_dir):
-            frame = frame.f_back
-            stacklevel += 1
-        else:
-            break
+    try:
+        stacklevel = 0
+        while frame:
+            fname = inspect.getfile(frame)
+            if fname.startswith((pkg_dir, param_dir)) and not fname.startswith(test_dir):
+                frame = frame.f_back
+                stacklevel += 1
+            else:
+                break
+    finally:
+        # See: https://docs.python.org/3/library/inspect.html#inspect.Traceback
+        del frame
 
     return stacklevel
 
@@ -81,7 +85,3 @@ class HoloviewsUserWarning(UserWarning):
     """A Holoviews-specific ``UserWarning`` subclass.
     Used to selectively filter Holoviews warnings for unconditional display.
     """
-
-
-warnings.simplefilter("always", HoloviewsDeprecationWarning)
-warnings.simplefilter("always", HoloviewsUserWarning)

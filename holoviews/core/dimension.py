@@ -109,10 +109,12 @@ def process_dimensions(kdims, vdims):
         elif isinstance(dims, (tuple, str, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
-            raise ValueError("{} argument expects a Dimension or list of dimensions, "
-                             "specified as tuples, strings, dictionaries or Dimension "
-                             "instances, not a {} type. Ensure you passed the data as the "
-                             "first argument.".format(group, type(dims).__name__))
+            raise ValueError(
+                f"{group} argument expects a Dimension or list of dimensions, "
+                "specified as tuples, strings, dictionaries or Dimension "
+                f"instances, not a {type(dims).__name__} type. "
+                "Ensure you passed the data as the first argument."
+            )
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 
@@ -998,7 +1000,7 @@ class Dimensioned(LabelledData):
             dimensions = self.kdims+self.vdims
             return next(i for i, d in enumerate(dimensions) if d == dim)
         except StopIteration:
-            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.")
+            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 
 
     def get_dimension_type(self, dim):

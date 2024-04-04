@@ -249,8 +249,16 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             coords=dict(chain=range(d.shape[0]), value=range(d.shape[1])))
         ds = Dataset(da)
         t = ds.select(chain=0)
-        self.assertEqual(t.data.dims , dict(chain=1,value=8))
-        self.assertEqual(t.data.stuff.shape , (1,8))
+        if hasattr(t.data, "sizes"):
+            # Started to warn in xarray 2023.12.0:
+            # The return type of `Dataset.dims` will be changed to return a
+            # set of dimension names in future, in order to be more consistent
+            # with `DataArray.dims`. To access a mapping from dimension names to
+            # lengths, please use `Dataset.sizes`.
+            assert t.data.sizes == dict(chain=1, value=8)
+        else:
+            assert t.data.dims == dict(chain=1, value=8)
+        assert t.data.stuff.shape == (1, 8)
 
     def test_mask_2d_array_transposed(self):
         array = np.random.rand(4, 3)

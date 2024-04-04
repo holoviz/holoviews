@@ -6,8 +6,12 @@ requires = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-p no:dash"
+addopts = ["--strict-config", "--strict-markers", "--color=yes"]
+minversion = "7"
+xfail_strict = true
+log_cli_level = "INFO"
 filterwarnings = [
+    "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
     "ignore:elementwise comparison failed:DeprecationWarning:bokeh.core.property.bases",
     "ignore:dropping variables using `drop` will be deprecated; using drop_vars is encouraged:PendingDeprecationWarning:xarray.core.dataarray",
@@ -41,14 +45,21 @@ filterwarnings = [
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz",  # https://github.com/dateutil/dateutil/pull/1285
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
     "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/issues/13125
+    # 2024-01: Pandas 2.2
+    "ignore:When grouping with a length-1 list::dask.dataframe.groupby",  # https://github.com/dask/dask/issues/10572
+    "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # Will go away by itself in Pandas 3.0
+    "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning",  # https://github.com/holoviz/spatialpandas/issues/137
+    # 2024-02
+    "ignore:The current Dask DataFrame implementation is deprecated:DeprecationWarning",  # https://github.com/dask/dask/issues/10917
 ]
 
 [tool.coverage]
 run.concurrency = ["greenlet"]
 
 [tool.ruff]
-target-version = "py39"
+fix = true
 
+[tool.ruff.lint]
 select = [
     "B",
     "E",
@@ -68,7 +79,6 @@ select = [
 ]
 
 ignore = [
-    "B904",     # Within an `except` clause, raise exceptions with from err or None
     "E402",     # Module level import not at top of file
     "E501",     # Line too long
     "E701",     # Multiple statements on one line
@@ -84,20 +94,20 @@ ignore = [
     "RUF005",   # Consider {expr} instead of concatenation
     "RUF012",   # Mutable class attributes should use `typing.ClassVar`
 ]
-
-fix = true
 unfixable = [
     "F401",     # Unused imports
+    "F841",     # Unused variables
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = [
     "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
     "NPY002",  # Replace legacy `np.random.rand` call with Generator
+    "B904",  # Within an `except` clause, raise exceptions with from err or None
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
 

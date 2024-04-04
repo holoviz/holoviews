@@ -858,6 +858,12 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                              kdims=self.kdims, vdims=self.vdims+['combined'])
         self.assertEqual(transformed, expected)
 
+    def test_select_with_neighbor(self):
+        select = self.table.interface.select_mask(self.table.dataset, {"Weight": 18})
+        select_neighbor = self.table.interface._select_mask_neighbor(self.table.dataset, dict(Weight=18))
+
+        np.testing.assert_almost_equal(select, [False, True, False])
+        np.testing.assert_almost_equal(select_neighbor, [True, True, True])
 
 
 class ScalarColumnTests:

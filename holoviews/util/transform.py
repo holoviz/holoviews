@@ -930,7 +930,7 @@ class xr_dim(dim):
             import xarray as xr
         except ImportError:
             raise ImportError("XArray could not be imported, dim().xr "
-                              "requires the xarray to be available.")
+                              "requires the xarray to be available.") from None
         super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 

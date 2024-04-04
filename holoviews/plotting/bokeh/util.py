@@ -60,9 +60,10 @@ from ...core.util import (
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
-bokeh_version = Version(bokeh.__version__)
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 bokeh32 = bokeh_version >= Version("3.2")
 bokeh33 = bokeh_version >= Version("3.3")
+bokeh34 = bokeh_version >= Version("3.4")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -383,7 +384,7 @@ def compute_layout_properties(
     return aspect_info, dimension_info
 
 
-def merge_tools(plot_grid, disambiguation_properties=None):
+def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False):
     """
     Merges tools defined on a grid of plots into a single toolbar.
     All tools of the same type are merged unless they define one
@@ -396,6 +397,8 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
+            if hide_toolbar and hasattr(item, 'toolbar_location'):
+                item.toolbar_location = None
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
 
@@ -414,7 +417,7 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if p not in disambiguation_properties:
                 ignore.add(p)
 
-    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore)) if tools else Toolbar()
 
 
 def sync_legends(bokeh_layout):

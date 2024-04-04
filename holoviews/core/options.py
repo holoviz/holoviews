@@ -78,7 +78,7 @@ def cleanup_custom_options(id, weakref=None):
             f"Cleanup of custom options tree with id '{id}' failed "
             f"with the following exception: {e}, an unreferenced "
             "orphan tree may persist in memory."
-        )
+        ) from e
 
 
 def lookup_options(obj, group, backend):
@@ -660,7 +660,7 @@ class OptionTree(AttrTree):
             raise OptionError(e.invalid_keyword,
                               e.allowed_keywords,
                               group_name=group_name,
-                              path = self.path)
+                              path = self.path) from e
 
     def __getitem__(self, item):
         if item in self.groups:

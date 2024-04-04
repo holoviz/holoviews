@@ -302,7 +302,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
-    @pytest.mark.flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=3)
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
@@ -422,7 +422,12 @@ class TestServerCallbacks(CallbackTestCase):
                                     'value': points.columns()})
 
     def test_rangexy_datetime(self):
-        curve = Curve(pd._testing.makeTimeDataFrame(), 'index', 'C')
+        df = pd.DataFrame(
+            data = np.random.default_rng(2).standard_normal((30, 4)),
+            columns=list('ABCD'),
+            index=pd.date_range('2018-01-01', freq='D', periods=30),
+        )
+        curve = Curve(df, 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]
@@ -442,6 +447,10 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(stream.y_range, None)
 
     def test_rangexy_framewise_not_reset_if_triggering(self):
+        import panel as pn
+        from packaging.version import Version
+        if Version(pn.__version__) == Version("1.4.0rc3"):
+            raise SkipTest('This test fails with Panel 1.4.0rc3')
         stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
         curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
                            kdims=['z'], streams=[stream]).redim.range(z=(0, 3))

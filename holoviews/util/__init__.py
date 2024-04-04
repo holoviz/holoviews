@@ -139,9 +139,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('{}.{}.{}'.format(
-                    obj.__class__.__name__, sanitized_group,
-                    util.label_sanitizer(obj.label)))
+                identifier = (f'{obj.__class__.__name__}.{sanitized_group}.{util.label_sanitizer(obj.label)}')
             elif  sanitized_group != obj.__class__.__name__:
                 identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
@@ -333,15 +331,15 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              "holoviews.plotting before applying any "
                              "options.")
         elif current_backend not in Store.renderers:
-            raise ValueError("Currently selected plotting extension {ext} "
+            raise ValueError(f"Currently selected plotting extension {current_backend!r} "
                              "has not been loaded, ensure you load it "
-                             "with hv.extension({ext}) before setting "
-                             "options".format(ext=repr(current_backend)))
+                             f"with hv.extension({current_backend!r}) before setting "
+                             "options")
 
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
-            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.')
+            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.') from None
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)
@@ -645,10 +643,10 @@ def renderer(name):
             if prev_backend:
                 Store.set_current_backend(prev_backend)
         return Store.renderers[name]
-    except ImportError:
+    except ImportError as e:
         msg = ('Could not find a {name!r} renderer, available renderers are: {available}.')
         available = ', '.join(repr(k) for k in Store.renderers)
-        raise ImportError(msg.format(name=name, available=available))
+        raise ImportError(msg.format(name=name, available=available)) from e
 
 
 class extension(_pyviz_extension):
@@ -872,7 +870,7 @@ class Dynamic(param.ParameterizedFunction):
 
     link_inputs = param.Boolean(default=True, doc="""
          If Dynamic is applied to another DynamicMap, determines whether
-         linked streams attached to its Callable inputs are
+         linked streams and links attached to its Callable inputs are
          transferred to the output of the utility.
 
          For example if the Dynamic utility is applied to a DynamicMap
@@ -900,8 +898,12 @@ class Dynamic(param.ParameterizedFunction):
         callback = self._dynamic_operation(map_obj)
         streams = self._get_streams(map_obj, watch)
         if isinstance(map_obj, DynamicMap):
-            dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
-                                 streams=streams)
+            kwargs = dict(
+                shared_data=self.p.shared_data, callback=callback, streams=streams
+            )
+            if self.p.link_inputs:
+                kwargs['plot_id'] = map_obj._plot_id
+            dmap = map_obj.clone(**kwargs)
             if self.p.shared_data:
                 dmap.data = dict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
