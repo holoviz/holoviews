@@ -184,6 +184,13 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         data = Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
 
+    def test_reindex(self):
+        ds = Dataset(pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)}))
+        df = ds.interface.reindex(ds, ['x'])
+        assert df.index.names == ['x']
+        df = ds.interface.reindex(ds, ['y'])
+        assert df.index.names == ['y']
+
 
 class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
     datatype = 'dataframe'
@@ -303,3 +310,14 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         assert (ds.interface.values(ds, 'color') == ['red', 'blue', 'red', 'blue']).all()
         assert (ds.interface.values(ds, 'number') == [1, 1, 2, 2]).all()
         assert (ds.interface.values(ds, 'values') == [0, 1, 2, 3]).all()
+
+    def test_reindex(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        df = ds.interface.reindex(ds, ['number', 'color'])
+        assert df.index.names == ['number', 'color']
+
+        df = ds.interface.reindex(ds, ['number'])
+        assert df.index.names == ['number']
+
+        df = ds.interface.reindex(ds, ['values'])
+        assert df.index.names == ['values']

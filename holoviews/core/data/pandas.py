@@ -340,9 +340,10 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
-        # DataFrame based tables don't need to be reindexed
-        return dataset.data
-
+        data = dataset.data
+        if isinstance(data.index, pd.MultiIndex):
+            data = data.reset_index()
+        return data.set_index(kdims, drop=True)
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
@@ -350,7 +351,6 @@ class PandasInterface(Interface, PandasAPI):
         cols = [vd.name for vd in dataset.vdims]
         masked.loc[mask, cols] = mask_value
         return masked
-
 
     @classmethod
     def redim(cls, dataset, dimensions):
