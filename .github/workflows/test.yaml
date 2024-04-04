@@ -224,7 +224,6 @@ jobs:
           channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o tests_core -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          conda-update: true
           id: install
       - uses: actions/checkout@v3
         if: needs.setup.outputs.code_change == 'true'
@@ -233,30 +232,20 @@ jobs:
       - name: Fetch unshallow
         if: needs.setup.outputs.code_change == 'true'
         run: git fetch --prune --tags --unshallow -f
-      - uses: actions/setup-python@v4
-        if: needs.setup.outputs.code_change == 'true'
-        with:
-          python-version: 3.12
       - name: install
         if: needs.setup.outputs.code_change == 'true'
         run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
-      - name: install panel pre
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          python -m pip install panel --pre --upgrade
-          python -m pip install bokeh --upgrade
-          echo "Installing dev release of Panel" >> $GITHUB_STEP_SUMMARY
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          # conda activate test-environment
+          conda activate test-environment
           bash scripts/download_data.sh
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
           conda activate test-environment
-          python scripts/check_latest_packages.py
+          python scripts/check_latest_packages.py numpy pandas bokeh panel param
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
