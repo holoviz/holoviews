@@ -287,3 +287,13 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
 
         selected = ds.select(number=1, color='red')
         assert selected == 0
+
+    def test_sample(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sample = ds.interface.sample(ds, [1])
+        assert sample.to_dict() == {'values': {(1, 'blue'): 1}}
+
+        self.df.iloc[0, 0] = 1
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sample = ds.interface.sample(ds, [1])
+        assert sample.to_dict() == {'values': {(1, 'red'): 1, (1, 'blue'): 1}}
