@@ -33,12 +33,6 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def dimension_type(cls, dataset, dim):
         return cls.dtype(dataset, dim).type
-        dim = dataset.get_dimension(dim, strict=True)
-        if cls.isindex(dataset, dim):
-            return cls.index_values(dataset, dim).dtype.type
-        name = dim.name
-        idx = list(dataset.data.columns).index(name)
-        return dataset.data.dtypes.iloc[idx].type
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -79,21 +73,11 @@ class PandasInterface(Interface, PandasAPI):
             # Handle reset of index if kdims reference index by name
             if len(kdims) == len(index_names) and {dimension_name(kd) for kd in kdims} == set(index_names):
                 pass
-            else:  # noqa: PLR5501
-                # for kd in kdims:  # TODO: Remove this if statement?
-                #     kd = dimension_name(kd)
-                #     if kd in data.columns:
-                #         continue
-                #     if any(kd == ('index' if name is None else name)
-                #            for name in index_names):
-                #         data = data.reset_index()
-                #         break
-
-                if kdims:
-                    kdim = dimension_name(kdims[0])
-                    if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
-                        data = data.copy()
-                        data.insert(0, kdim, np.arange(len(data)))
+            elif kdims:
+                kdim = dimension_name(kdims[0])
+                if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
+                    data = data.copy()
+                    data.insert(0, kdim, np.arange(len(data)))
 
             for d in kdims+vdims:
                 d = dimension_name(d)
