@@ -184,6 +184,7 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         data = Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
 
+    @pytest.mark.xfail(reason="Breaks hvplot")
     def test_reindex(self):
         ds = Dataset(pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)}))
         df = ds.interface.reindex(ds, ['x'])

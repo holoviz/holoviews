@@ -342,8 +342,9 @@ class PandasInterface(Interface, PandasAPI):
     def reindex(cls, dataset, kdims=None, vdims=None):
         data = dataset.data
         if isinstance(data.index, pd.MultiIndex):
-            data = data.reset_index()
-        return data.set_index(kdims, drop=True)
+            kdims = [kdims] if isinstance(kdims, (str, Dimension)) else kdims
+            data = data.reset_index().set_index(list(map(str, kdims)), drop=True)
+        return data
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
