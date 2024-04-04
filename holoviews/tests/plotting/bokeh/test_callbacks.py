@@ -447,6 +447,10 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(stream.y_range, None)
 
     def test_rangexy_framewise_not_reset_if_triggering(self):
+        import panel as pn
+        from packaging.version import Version
+        if Version(pn.__version__) == Version("1.4.0rc3"):
+            raise SkipTest('This test fails with Panel 1.4.0rc3')
         stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
         curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
                            kdims=['z'], streams=[stream]).redim.range(z=(0, 3))

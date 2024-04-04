@@ -12,7 +12,7 @@ setup_args = {}
 install_requires = [
     "param >=1.12.0,<3.0",
     "numpy >=1.0",
-    "pyviz_comms >=0.7.4",
+    "pyviz_comms >=2.1",
     "panel >=1.0",
     "colorcet",
     "packaging",
@@ -76,7 +76,7 @@ extras_require['tests_nb'] = ['nbval']
 extras_require['ui'] = ['playwright', 'pytest-playwright']
 
 # Notebook dependencies
-extras_require["notebook"] = ["ipython >=5.4.0", "notebook >=7.0"]
+extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
@@ -102,6 +102,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "pyarrow",
     "pooch",
     "datashader >=0.11.1",
+    "notebook >=7.0",
 ]
 
 

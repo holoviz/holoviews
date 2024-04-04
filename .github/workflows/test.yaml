@@ -50,7 +50,7 @@ jobs:
     name: Run pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
 
   setup:
     name: Setup workflow
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v3
         if: github.event_name != 'pull_request'
       - name: Check for code changes
-        uses: dorny/paths-filter@v2.11.1
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -91,10 +91,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.11"],
-              "include": [
-                  {"os": "ubuntu-latest", "python-version": "3.10"}
-              ]
+              "python-version": ["3.9", "3.12"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -102,7 +99,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.10", "3.11"]
+              "python-version": ["3.9", "3.10", "3.11", "3.12"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -126,22 +123,27 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         if: needs.setup.outputs.code_change == 'true'
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channel-priority: strict
+          channel-priority: flexible
           channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o flakes -o tests -o examples_tests -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           conda-update: true
         id: install
-      - name: bokeh sampledata
+      - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
           conda activate test-environment
-          bokeh sampledata
+          python scripts/check_latest_packages.py bokeh panel param datashader
+      - name: Download data
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          bash scripts/download_data.sh
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -176,12 +178,12 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         if: needs.setup.outputs.code_change == 'true'
         with:
           name: ui_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
@@ -213,18 +215,16 @@ jobs:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
-      #   if: needs.setup.outputs.code_change == 'true'
-      #   with:
-      #     name: core_test_suite
-      #     python-version: ${{ matrix.python-version }}
-      #     # channel-priority: strict
-      #     channels: pyviz/label/dev,conda-forge,nodefaults
-      #     envs: "-o tests_core -o tests_ci"
-      #     cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-      #     conda-update: true
-      #     id: install
+      - uses: holoviz-dev/holoviz_tasks/install@v0
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          name: core_test_suite
+          python-version: ${{ matrix.python-version }}
+          # channel-priority: strict
+          channels: pyviz/label/dev,conda-forge,nodefaults
+          envs: "-o tests_core -o tests_ci"
+          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
+          id: install
       - uses: actions/checkout@v3
         if: needs.setup.outputs.code_change == 'true'
         with:
@@ -232,26 +232,22 @@ jobs:
       - name: Fetch unshallow
         if: needs.setup.outputs.code_change == 'true'
         run: git fetch --prune --tags --unshallow -f
-      - uses: actions/setup-python@v4
-        if: needs.setup.outputs.code_change == 'true'
-        with:
-          python-version: 3.12
       - name: install
         if: needs.setup.outputs.code_change == 'true'
         run: |
           python -m pip install -ve '.[tests_core, tests_ci]'
-      - name: bokeh sampledata
+      - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          # conda activate test-environment
-          bokeh sampledata
+          conda activate test-environment
+          bash scripts/download_data.sh
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          # conda activate test-environment
-          python scripts/check_latest_packages.py
+          conda activate test-environment
+          python scripts/check_latest_packages.py numpy pandas bokeh panel param
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          # conda activate test-environment
+          conda activate test-environment
           pytest holoviews

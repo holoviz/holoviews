@@ -4,12 +4,31 @@ Releases
 Version 1.18
 ~~~~~~~~~~~~
 
+Version 1.18.3
+**************
+
+**February 12, 2024**
+
+This micro release includes bug fixes.
+
+Bug fixes:
+
+-  Fix BoundsX and BoundsY regression
+   (`#6099 <https://github.com/holoviz/holoviews/pull/6099>`__)
+-  Fix rasterize regression
+   (`#6102 <https://github.com/holoviz/holoviews/pull/6102>`__)
+-  Fix link selection for empty Layout
+   (`#6110 <https://github.com/holoviz/holoviews/pull/6110>`__)
+-  Don’t pin notebook in conda recipe for pyviz channel
+   (`#6108 <https://github.com/holoviz/holoviews/pull/6108>`__)
+
+
 Version 1.18.2
 **************
 
 **February 5, 2024**
 
-This minor release includes a number of bug fixes and documentation
+This micro release includes a number of bug fixes and documentation
 updates, as well as compatibility updates for xarray 2023.12 and Pandas
 2.2. Many thanks to the new contributors @junietoc, @JulianGiles, and
 @magic-lantern, as well as the returning contributors @ianthomas23,
@@ -23,8 +42,8 @@ Enhancements:
 -  Use sys.executable for ``check_output``
    (`#5983 <https://github.com/holoviz/holoviews/pull/5983>`__)
 -  Updates to ``show_versions``
-   (`(#6072) <https://github.com/holoviz/holoviews/pull/6072>`__,
-   `(#6081) <https://github.com/holoviz/holoviews/pull/6081>`__)
+   (`#6072 <https://github.com/holoviz/holoviews/pull/6072>`__,
+   `#6081 <https://github.com/holoviz/holoviews/pull/6081>`__)
 
 Bug fixes:
 
@@ -43,13 +62,13 @@ Bug fixes:
    (`#6003 <https://github.com/holoviz/holoviews/pull/6003>`__)
 -  Add datetime hover information for selector
    (`#6023 <https://github.com/holoviz/holoviews/pull/6023>`__,
-   `(#6039) <https://github.com/holoviz/holoviews/pull/6039>`__)
--  Only evaluate ``rx`` if it is an Reactive Expression
-   (`(#6014) <https://github.com/holoviz/holoviews/pull/6014>`__)
+   `#6039 <https://github.com/holoviz/holoviews/pull/6039>`__)
+-  Only evaluate ``rx`` if it is a Reactive Expression
+   (`#6014 <https://github.com/holoviz/holoviews/pull/6014>`__)
 -  Ensure partial methods can be used as dmap callables
-   (`(#6063) <https://github.com/holoviz/holoviews/pull/6063>`__)
+   (`#6063 <https://github.com/holoviz/holoviews/pull/6063>`__)
 -  Del frame after stack level is found in ``deprecated``
-   (`(#6085) <https://github.com/holoviz/holoviews/pull/6085>`__)
+   (`#6085 <https://github.com/holoviz/holoviews/pull/6085>`__)
 
 Compatibility:
 
@@ -58,10 +77,10 @@ Compatibility:
 -  Add extra check to detect if we are in jupyterlite
    (`#6007 <https://github.com/holoviz/holoviews/pull/6007>`__)
 -  Compatibility updates with Pandas 2.2
-   (`(#6074) <https://github.com/holoviz/holoviews/pull/6074>`__,
-   `(#6078) <https://github.com/holoviz/holoviews/pull/6078>`__)
+   (`#6074 <https://github.com/holoviz/holoviews/pull/6074>`__,
+   `#6078 <https://github.com/holoviz/holoviews/pull/6078>`__)
 -  Add Comm ``on_open`` handler to initialize the server comm
-   (`(#6076) <https://github.com/holoviz/holoviews/pull/6076>`__)
+   (`#6076 <https://github.com/holoviz/holoviews/pull/6076>`__)
 
 Documentation:
 
@@ -71,11 +90,11 @@ Documentation:
 -  Fixing URLs to bokeh project
    (`#6005 <https://github.com/holoviz/holoviews/pull/6005>`__)
 -  Fix to broken urls in example gallery pages
-   (`(#6038) <https://github.com/holoviz/holoviews/pull/6038>`__)
+   (`#6038 <https://github.com/holoviz/holoviews/pull/6038>`__)
 -  Replace Google Analytics with GoatCounter
-   (`(#6048) <https://github.com/holoviz/holoviews/pull/6048>`__)
+   (`#6048 <https://github.com/holoviz/holoviews/pull/6048>`__)
 -  Add downloads badges
-   (`(#6088) <https://github.com/holoviz/holoviews/pull/6088>`__)
+   (`#6088 <https://github.com/holoviz/holoviews/pull/6088>`__)
 
 Maintenance:
 
@@ -96,9 +115,9 @@ Maintenance:
 -  Add lower pin to scipy
    (`#6032 <https://github.com/holoviz/holoviews/pull/6032>`__)
 -  Skip Deploying_Bokeh_Apps.ipynb on Windows
-   (`(#6070) <https://github.com/holoviz/holoviews/pull/6070>`__)
+   (`#6070 <https://github.com/holoviz/holoviews/pull/6070>`__)
 -  Fix failing Windows tests
-   (`(#6087) <https://github.com/holoviz/holoviews/pull/6087>`__)
+   (`#6087 <https://github.com/holoviz/holoviews/pull/6087>`__)
 
 
 Version 1.18.1
