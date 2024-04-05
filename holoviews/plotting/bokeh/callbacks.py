@@ -642,7 +642,7 @@ class PopupMixin:
             elif position:
                 self._panel.position = XY(**position)
             self._popup = panel(popup_obj)
-        elif self._popup:
+        elif self._popup and not self._popup.visible:  # for after visible=False
             if position:
                 self._popup.visible = True
                 self._panel.position = XY(**position)
