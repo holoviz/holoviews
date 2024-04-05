@@ -589,7 +589,7 @@ class PopupMixin:
             elements=[],
         )
         geom_type = self.geom_type
-        self.plot.state.on_event('selectiongeometry', self._schedule_populate)
+        self.plot.state.on_event('selectiongeometry', self._populate)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
             args=dict(panel=self._panel),
             code=f"""
@@ -613,11 +613,6 @@ class PopupMixin:
         ))
         self.plot.state.elements.append(self._panel)
 
-    def _schedule_populate(self, event):
-        task = asyncio.create_task(self._populate(event))
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
-
     def _get_position(self, event):
         if self.geom_type not in ('any', event.geometry['type']):
             return
@@ -628,11 +623,10 @@ class PopupMixin:
         elif event.geometry['type'] == 'poly' and event.final:
             return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
-    async def _populate(self, event):
+    def _populate(self, event):
         popup = self.streams[0].popup
         position = self._get_position(event)
         if callable(popup):
-            await asyncio.sleep(0.05)
             data = self.streams[0].contents
             popup_obj = popup(**data) if data else None
             if popup_obj is None:
