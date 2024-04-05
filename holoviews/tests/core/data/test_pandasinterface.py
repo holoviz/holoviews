@@ -322,3 +322,24 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
 
         df = ds.interface.reindex(ds, ['values'])
         assert df.index.names == ['values']
+
+    def test_groupby_one_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        grouped = ds.groupby("number")
+        assert list(grouped.keys()) == [1, 2]
+        for k, v in grouped.items():
+            pd.testing.assert_frame_equal(v.data, ds.select(number=k).data)
+
+    def test_groupby_two_indexes(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        grouped = ds.groupby(["number", "color"])
+        assert list(grouped.keys()) == list(self.df.index)
+        for k, v in grouped.items():
+            pd.testing.assert_frame_equal(v.data, ds.select(number=[k[0]], color=[k[1]]).data)
+
+    def test_groupby_one_index_one_column(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        grouped = ds.groupby('values')
+        assert list(grouped.keys()) == [0, 1, 2, 3]
+        for k, v in grouped.items():
+            pd.testing.assert_frame_equal(v.data, ds.select(values=k).data)
