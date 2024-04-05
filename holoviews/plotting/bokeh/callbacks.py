@@ -642,6 +642,7 @@ class PopupMixin:
             if self._existing_popup and not self._existing_popup.visible:
                 self._existing_popup.visible = False
             return
+        self._panel.visible = True
 
         position = self._get_position(event)
         popup_pane = panel(popup)

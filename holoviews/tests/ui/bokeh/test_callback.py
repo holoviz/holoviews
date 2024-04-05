@@ -191,3 +191,88 @@ def test_bind_trigger(serve_hv):
     wait_until(lambda: RANGE_COUNT[0] > 2, page)
 
     assert BOUND_COUNT[0] == 1
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup(serve_hv):
+    def popup_form(name):
+        return f"# {name}"
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form("Tap"))
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_none(serve_hv):
+    def popup_form(name):
+        return
+
+    points = hv.Points(np.random.randn(10, 2))
+    hv.streams.Tap(source=points, popup=popup_form("Tap"))
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
+    page.mouse.up()
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(0)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_callbacks(serve_hv):
+    def popup_form(x, y):
+        return pn.widgets.Button(name=f"{x},{y}")
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(1)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_visible(serve_hv):
+    def popup_form(x, y):
+        def hide(_):
+            col.visible = False
+        button = pn.widgets.Button(name=f"{x},{y}", on_click=hide)
+        col = pn.Column(button)
+        return col
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    # initial appearance
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(1)
+
+    # click button to hide
+    locator.click()
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(0)
