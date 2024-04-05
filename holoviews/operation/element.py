@@ -805,7 +805,7 @@ class histogram(Operation):
             grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
             if self.p.groupby_range == 'shared' and not self.p.bin_range:
                 _, data = self._get_dim_and_data(element)
-                self.bin_range = (data.min(), data.max())
+                self.p.bin_range = (data.min(), data.max())
             self.p.groupby = None
             return grouped.map(partial(self._process, groupby=True), Dataset)
 
