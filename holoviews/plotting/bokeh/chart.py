@@ -35,9 +35,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
         The current selection as a list of integers corresponding
         to the selected items.""")
 
-    hit_dilation = param.Integer(default=1, bounds=(1, None), doc="""
-        The amount of additional padding to apply to the hit area when hovering""")
-
     # Deprecated parameters
 
     color_index = param.ClassSelector(default=None, class_=(str, int),
@@ -64,7 +61,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle', 'hit_dilation'] +
                   base_properties + line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
@@ -129,7 +126,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
             else:
                 mapping['x'] = jitter(dims[xidx], self.jitter,
                                       range=self.handles['x_range'])
-        style['hit_dilation'] = self.hit_dilation
 
         self._get_hover_data(data, element)
         return data, mapping, style
