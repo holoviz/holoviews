@@ -618,33 +618,50 @@ class PopupMixin:
             return
         elif event.geometry['type'] == 'point':
             return dict(x=event.geometry['x'], y=event.geometry['y'])
-        elif event.geometry['type'] == 'rect' and event.final:
+        elif event.geometry['type'] == 'rect':
             return dict(x=event.geometry['x1'], y=event.geometry['y1'])
-        elif event.geometry['type'] == 'poly' and event.final:
+        elif event.geometry['type'] == 'poly':
             return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
     def _populate(self, event):
+        # ^ can't be async or else server doesn't work
+
+        if not event.final:
+            return
         popup = self.streams[0].popup
         position = self._get_position(event)
+
         if callable(popup):
             data = self.streams[0].contents
-            popup_obj = popup(**data) if data else None
-            if popup_obj is None:
+            popup = popup(**data) if data else None
+
+        self._popup = panel(popup)
+
+        # If no popup is defined, hide the panel
+        if popup is None:
+            self._panel.position = XY(x=math.nan, y=math.nan)
+            if not self._popup.visible:
                 self._popup.visible = False
-                self._panel.position = XY(x=math.nan, y=math.nan)
-                return
-            elif position:
-                self._panel.position = XY(**position)
-            self._popup = panel(popup_obj)
-        elif self._popup and not self._popup.visible:  # for after visible=False
+            return
+
+        # for existing popups; important to check if they're visible
+        # otherwise, UnknownReferenceError: can't resolve reference 'p...'
+        # meaning the popup has already been removed; we need to regenerate
+        if self._popup and not self._popup.visible:
             if position:
                 self._popup.visible = True
                 self._panel.position = XY(**position)
                 if self.plot.comm:
                     push_on_root(self.plot.root.ref['id'])
             return
-        else:
-            self._popup = panel(popup)
+
+        # lasso is wonky; can't explain this
+        # without this, the panel will not show upon completion
+        elif event.geometry["type"] == "poly":
+            if position:
+                self._popup.visible = True
+                self._panel.position = XY(**position)
+
         model = self._popup.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
             args=dict(panel=self._panel),
