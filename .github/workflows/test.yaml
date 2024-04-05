@@ -225,17 +225,6 @@ jobs:
           envs: "-o tests_core -o tests_ci"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           id: install
-      - uses: actions/checkout@v3
-        if: needs.setup.outputs.code_change == 'true'
-        with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        if: needs.setup.outputs.code_change == 'true'
-        run: git fetch --prune --tags --unshallow -f
-      - name: install
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          python -m pip install -ve '.[tests_core, tests_ci]'
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
