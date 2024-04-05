@@ -343,6 +343,7 @@ class OperationTests(ComparisonTestCase):
         for k, v in hist.items():
             np.testing.assert_equal(exp, v.data["xy"])
             sel = np.asarray(label) == k
+            assert sel.sum() == 10
             assert (v.data["xy_count"][sel] == 1).all()
             assert (v.data["xy_count"][~sel] == 0).all()
 
