@@ -566,7 +566,7 @@ class PopupMixin:
 
     def initialize(self, plot_id=None):
         super().initialize(plot_id=plot_id)
-        self._popup = None
+        self._existing_popup = None
         stream = self.streams[0]
         if not getattr(stream, 'popup', None):
             return
@@ -587,6 +587,7 @@ class PopupMixin:
                 """,
             ],
             elements=[],
+            visible=False
         )
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._populate)
@@ -629,28 +630,29 @@ class PopupMixin:
         if not event.final:
             return
         popup = self.streams[0].popup
-        position = self._get_position(event)
 
         if callable(popup):
             data = self.streams[0].contents
             popup = popup(**data) if data else None
 
-        self._popup = panel(popup)
-
         # If no popup is defined, hide the panel
         if popup is None:
-            self._panel.position = XY(x=math.nan, y=math.nan)
-            if not self._popup.visible:
-                self._popup.visible = False
+            if self._panel.visible:
+                self._panel.visible = False
+            if self._existing_popup and not self._existing_popup.visible:
+                self._existing_popup.visible = False
             return
 
-        # for existing popups; important to check if they're visible
+        position = self._get_position(event)
+        popup_pane = panel(popup)
+
+        # for existing popup, important to check if they're visible
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
-        if self._popup and not self._popup.visible:
+        if self._existing_popup and not self._existing_popup.visible:
             if position:
-                self._popup.visible = True
                 self._panel.position = XY(**position)
+                self._existing_popup.visible = True
                 if self.plot.comm:
                     push_on_root(self.plot.root.ref['id'])
             return
@@ -659,10 +661,10 @@ class PopupMixin:
         # without this, the panel will not show upon completion
         elif event.geometry["type"] == "poly":
             if position:
-                self._popup.visible = True
                 self._panel.position = XY(**position)
+                popup_pane.visible = True
 
-        model = self._popup.get_root(self.plot.document, self.plot.comm)
+        model = popup_pane.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
             args=dict(panel=self._panel),
             code="""
@@ -675,6 +677,7 @@ class PopupMixin:
         self._panel.elements = [model]
         if self.plot.comm:
             push_on_root(self.plot.root.ref['id'])
+        self._existing_popup = popup_pane
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
