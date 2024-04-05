@@ -325,7 +325,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
         data = dataset.data
-        if isinstance(data.index, pd.MultiIndex):
+        if hasattr(data, 'index') and isinstance(data.index, pd.MultiIndex):
             kdims = [kdims] if isinstance(kdims, (str, Dimension)) else kdims
             data = data.reset_index().set_index(list(map(str, kdims)), drop=True)
         return data
