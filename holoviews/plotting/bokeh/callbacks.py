@@ -566,6 +566,9 @@ class PopupMixin:
 
     def initialize(self, plot_id=None):
         super().initialize(plot_id=plot_id)
+        if not self.streams:
+            return
+
         self._existing_popup = None
         stream = self.streams[0]
         if not getattr(stream, 'popup', None):
