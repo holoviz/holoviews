@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 
@@ -53,6 +54,12 @@ if Version(bokeh.__version__) < Version("3.2.0"):
         "reference/elements/bokeh/HSpans.ipynb",
         "reference/elements/bokeh/VLines.ipynb",
         "reference/elements/bokeh/VSpans.ipynb",
+    ]
+
+# 2024-03-27: ffmpeg errors on Windows CI
+if system == "Windows" and os.environ.get("GITHUB_RUN_ID"):
+    collect_ignore_glob += [
+        "user_guide/Plotting_with_Matplotlib.ipynb",
     ]
 
 

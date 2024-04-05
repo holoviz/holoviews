@@ -40,11 +40,11 @@ jobs:
       PANEL_EMBED_JSON: "true"
       PANEL_EMBED_JSON_PREFIX: "json"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
           name: Documentation
           python-version: "3.10"
-          channel-priority: strict
+          channel-priority: flexible
           channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o doc"
           cache: true
@@ -52,10 +52,10 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: bokeh sampledata
+      - name: Download data
         run: |
           conda activate test-environment
-          bokeh sampledata
+          bash scripts/download_data.sh
       - name: generate rst
         run: |
           conda activate test-environment

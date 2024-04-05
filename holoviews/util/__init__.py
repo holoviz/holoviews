@@ -139,9 +139,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('{}.{}.{}'.format(
-                    obj.__class__.__name__, sanitized_group,
-                    util.label_sanitizer(obj.label)))
+                identifier = (f'{obj.__class__.__name__}.{sanitized_group}.{util.label_sanitizer(obj.label)}')
             elif  sanitized_group != obj.__class__.__name__:
                 identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
@@ -333,10 +331,10 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              "holoviews.plotting before applying any "
                              "options.")
         elif current_backend not in Store.renderers:
-            raise ValueError("Currently selected plotting extension {ext} "
+            raise ValueError(f"Currently selected plotting extension {current_backend!r} "
                              "has not been loaded, ensure you load it "
-                             "with hv.extension({ext}) before setting "
-                             "options".format(ext=repr(current_backend)))
+                             f"with hv.extension({current_backend!r}) before setting "
+                             "options")
 
         try:
             backend_options = Store.options(backend=backend or current_backend)
