@@ -200,6 +200,5 @@ class normalize_group(Operation):
         for el in overlay:
             y_dimension = el.vdims[0]
             y_dimension = y_dimension.clone(range=minmax[el.group])
-            el = el.redim(**{y_dimension.name: y_dimension})
-            new.append(el)
+            new.append(el.redim(**{y_dimension.name: y_dimension}))
         return overlay.clone(data=new)
