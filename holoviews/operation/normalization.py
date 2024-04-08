@@ -20,7 +20,7 @@ import param
 from ..core import Overlay
 from ..core.operation import Operation
 from ..core.util import match_spec
-from ..element import Raster
+from ..element import Chart, Raster
 
 
 class Normalization(Operation):
@@ -188,6 +188,8 @@ class normalize_group(Operation):
         vmins = defaultdict(list)
         vmaxs = defaultdict(list)
         for el in overlay:
+            if not isinstance(el, Chart):
+                continue
             vmin, vmax = el.range(1)
             vmins[el.group].append(vmin)
             vmaxs[el.group].append(vmax)
@@ -198,6 +200,8 @@ class normalize_group(Operation):
         }
         new = []
         for el in overlay:
+            if not isinstance(el, Chart):
+                continue
             y_dimension = el.vdims[0]
             y_dimension = y_dimension.clone(range=minmax[el.group])
             new.append(el.redim(**{y_dimension.name: y_dimension}))
