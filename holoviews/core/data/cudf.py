@@ -232,6 +232,18 @@ class cuDFInterface(PandasInterface):
         return mask
 
     @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        raise NotImplementedError
+
+    @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is None:

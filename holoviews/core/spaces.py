@@ -546,9 +546,10 @@ class Callable(param.Parameterized):
         # Nothing to do for callbacks that accept no arguments
         kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
-        if hasattr(self.callable, 'rx'):
+        if util.param_version >= util.Version('2.0.0') and isinstance(self.callable, param.rx):
             return self.callable.rx.value
-        if not args and not kwargs and not any(kwarg_hash): return self.callable()
+        elif not args and not kwargs and not any(kwarg_hash):
+            return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
         for stream in [s for i in inputs for s in get_nested_streams(i)]:

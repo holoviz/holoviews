@@ -2,28 +2,28 @@ name: docs
 on:
   push:
     tags:
-    - 'v[0-9]+.[0-9]+.[0-9]+'
-    - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
-    - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-    - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   workflow_dispatch:
     inputs:
       target:
-        description: 'Site to build and deploy, or dry-run'
+        description: "Site to build and deploy, or dry-run"
         type: choice
         options:
-        - dev
-        - main
-        - dryrun
+          - dev
+          - main
+          - dryrun
         required: true
         default: dryrun
   schedule:
-    - cron: '0 14 * * SUN'
+    - cron: "0 14 * * SUN"
 
 jobs:
   build_docs:
     name: Documentation
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     timeout-minutes: 120
     defaults:
       run:
@@ -40,11 +40,11 @@ jobs:
       PANEL_EMBED_JSON: "true"
       PANEL_EMBED_JSON_PREFIX: "json"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
           name: Documentation
           python-version: "3.10"
-          channel-priority: strict
+          channel-priority: flexible
           channels: pyviz/label/dev,conda-forge,nodefaults
           envs: "-o doc"
           cache: true
@@ -52,10 +52,10 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: bokeh sampledata
+      - name: Download data
         run: |
           conda activate test-environment
-          bokeh sampledata
+          bash scripts/download_data.sh
       - name: generate rst
         run: |
           conda activate test-environment

@@ -221,7 +221,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_aggregate_curve_datetimes_dask(self):
         df = pd.DataFrame(
             data=np.arange(1000), columns=['a'],
-            index=pd.date_range('2019-01-01', freq='1T', periods=1000),
+            index=pd.date_range('2019-01-01', freq='1min', periods=1000),
         )
         ddf = dd.from_pandas(df, npartitions=4)
         curve = Curve(ddf, kdims=['index'], vdims=['a'])
@@ -270,7 +270,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(imgs[1], expected2)
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
-        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
         img = rasterize(Curve(df), dynamic=False, width=3)
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
@@ -868,7 +868,7 @@ class DatashaderShadeTests(ComparisonTestCase):
         self.assertEqual(shaded, expected)
 
     def test_shade_dt_xaxis_constant_yaxis(self):
-        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
         rgb = shade(rasterize(Curve(df), dynamic=False, width=3))
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
@@ -1339,6 +1339,21 @@ def test_rasterize_selector(point_plot, sel_fn):
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
 
+def test_rasterize_with_datetime_column():
+    n = 4
+    df = pd.DataFrame({
+        "x": np.random.uniform(-180, 180, n),
+        "y": np.random.uniform(-90, 90, n),
+        "Timestamp": pd.date_range(start="2023-01-01", periods=n, freq="D"),
+        "Value": np.random.rand(n) * 100,
+    })
+    point_plot = Points(df)
+    rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
+    img_agg = rasterize(point_plot, selector=ds.first("Value"), **rast_input)
+
+    assert img_agg["Timestamp"].dtype == np.dtype("datetime64[ns]")
+
+
 
 class DatashaderSpreadTests(ComparisonTestCase):
 
@@ -1544,4 +1559,11 @@ def test_imagestack_datashader_color_key():
         aggregator=ds.by("language", ds.count()),
         color_key=cc.glasbey_light,
     )
+    render(op)  # should not error out
+
+
+def test_imagestack_datashade_count_cat():
+    # Test for https://github.com/holoviz/holoviews/issues/6154
+    df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
+    op = datashade(Points(df), aggregator=ds.count_cat("c"))
     render(op)  # should not error out

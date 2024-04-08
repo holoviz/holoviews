@@ -194,9 +194,10 @@ class AggregationOperation(ResampleOperation2D):
         elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
-                raise ValueError("Aggregation column '{}' not found on '{}' element. "
-                                 "Ensure the aggregator references an existing "
-                                 "dimension.".format(column,element))
+                raise ValueError(
+                    f"Aggregation column '{column}' not found on '{element}' element. "
+                    "Ensure the aggregator references an existing dimension."
+                )
             if isinstance(agg_fn, (ds.count, ds.count_cat)):
                 if vdim_prefix:
                     vdim_name = f'{vdim_prefix}{column} Count'
@@ -405,7 +406,7 @@ class aggregate(LineAggregationOperation):
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
-            params['vdims'] = list(agg.coords[agg_fn.column].data)
+            params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
@@ -438,12 +439,26 @@ class aggregate(LineAggregationOperation):
                     val[neg1] = "-"
                 elif val.dtype.kind == "O":
                     val[neg1] = "-"
+                elif val.dtype.kind == "M":
+                    val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
         return agg
 
+class curve_aggregate(aggregate):
+    """
+    Optimized aggregation for Curve objects by setting the default
+    of the aggregator to self_intersect=False to be more consistent
+    with the appearance of non-aggregated curves.
+    """
+    aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
+                                     default=rd.count(self_intersect=False), doc="""
+        Datashader reduction function used for aggregating the data.
+        The aggregator may also define a column to aggregate; if
+        no column is defined the first value dimension of the element
+        will be used. May also be defined as a string.""")
 
 class overlay_aggregate(aggregate):
     """
@@ -1457,7 +1472,7 @@ class rasterize(AggregationOperation):
                    (Graph, aggregate),
                    (Scatter, aggregate),
                    (Points, aggregate),
-                   (Curve, aggregate),
+                   (Curve, curve_aggregate),
                    (Path, aggregate),
                    (type(None), shade) # To handle parameters of datashade
     ]

@@ -178,12 +178,18 @@ class XArrayInterface(GridInterface):
                     arrays[vdim.name] = arr
                 data = xr.Dataset(arrays)
         else:
+            # Started to warn in xarray 2023.12.0:
+            # The return type of `Dataset.dims` will be changed to return a
+            # set of dimension names in future, in order to be more consistent
+            # with `DataArray.dims`. To access a mapping from dimension names to
+            # lengths, please use `Dataset.sizes`.
+            data_info =  data.sizes if hasattr(data, "sizes") else data.dims
             if not data.coords:
-                data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
+                data = data.assign_coords(**{k: range(v) for k, v in data_info.items()})
             if vdims is None:
                 vdims = list(data.data_vars)
             if kdims is None:
-                xrdims = list(data.dims)
+                xrdims = list(data_info)
                 xrcoords = list(data.coords)
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
@@ -337,7 +343,7 @@ class XArrayInterface(GridInterface):
         group_by = [d.name for d in index_dims]
         data = []
         if len(dimensions) == 1:
-            for k, v in dataset.data.groupby(index_dims[0].name):
+            for k, v in dataset.data.groupby(index_dims[0].name, squeeze=False):
                 if drop_dim:
                     v = v.to_dataframe().reset_index()
                 data.append((k, group_type(v, **group_kwargs)))
@@ -636,7 +642,7 @@ class XArrayInterface(GridInterface):
     def dframe(cls, dataset, dimensions):
         import xarray as xr
         if cls.packed(dataset):
-            bands = {vd.name: dataset.data[..., i].drop('band')
+            bands = {vd.name: dataset.data[..., i].drop_vars('band')
                      for i, vd in enumerate(dataset.vdims)}
             data = xr.Dataset(bands)
         else:

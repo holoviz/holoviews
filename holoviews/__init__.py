@@ -113,10 +113,10 @@ warnings.filterwarnings("ignore",
 
 if "IPython" in sys.modules:
     from .ipython import notebook_extension
-    extension = notebook_extension # noqa (name remapping)
+    extension = notebook_extension
 else:
     class notebook_extension(param.ParameterizedFunction):
-        def __call__(self, *args, **opts): # noqa (dummy signature)
+        def __call__(self, *args, **kwargs):
             raise Exception("Jupyter notebook not available: use hv.extension instead.")
 
 if '_pyodide' in sys.modules:
@@ -173,6 +173,8 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
+del os, rcfile, warnings
+
 def __getattr__(name):
     if name == "annotate":
         # Lazy loading Panel
@@ -180,5 +182,13 @@ def __getattr__(name):
         return annotate
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
+__all__ = [k for k in locals() if not k.startswith('_')]
+__all__ += ['annotate', '__version__']
 
-del os, rcfile, warnings
+def __dir__():
+    return __all__
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .annotators import annotate

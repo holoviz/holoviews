@@ -445,6 +445,8 @@ def argspec(callable_obj):
         arglen = len(callable_obj.args)
         spec = inspect.getfullargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
+        if inspect.ismethod(callable_obj.func):
+            args = args[1:]
     elif inspect.ismethod(callable_obj):    # instance and class methods
         spec = inspect.getfullargspec(callable_obj)
         args = spec.args[1:]
@@ -1312,7 +1314,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
     elif isinstance(obj, np.str_): return False
-    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_): return False
+    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_): return False  # noqa: NPY201
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
