@@ -359,12 +359,21 @@ class PandasInterface(Interface, PandasAPI):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is None:
-            selection_mask = cls.select_mask(dataset, selection)
+            indexes = {
+                idx or "index": v
+                for idx in df.index.names
+                if isinstance((v := selection.get(idx)), slice)
+            }
+            if selection.keys() - indexes.keys():
+                selection_mask = cls.select_mask(dataset, selection)
+            else:
+                for v in indexes.values():
+                    df = df[v]
 
         indexed = cls.indexed(dataset, selection)
         if isinstance(selection_mask, pd.Series):
             df = df[selection_mask]
-        else:
+        elif selection_mask is not None:
             df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
