@@ -105,7 +105,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
-    apply_hard_bounds = param.Boolean(default=True, doc="""
+    apply_hard_bounds = param.Boolean(default=True, allow_None=True, doc="""
         If True, the navigable bounds of the plot will be set based
         on the extents of the data. If False, the bounds will not be set.""")
 
