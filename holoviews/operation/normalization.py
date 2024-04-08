@@ -179,9 +179,14 @@ class raster_normalization(Normalization):
         return norm_raster
 
 
-class normalize_group(Operation):
+class subcoordinate_group_ranges(Operation):
     """
-    Group-wise min-max normalisation.
+    Compute the data range group-wise in a subcoordinate_y overlay,
+    and set the dimension range of each Chart element based on the
+    value computed for its group.
+
+    This operation is useful to visually apply a group-wise min-max
+    normalisation.
     """
 
     def _process(self, overlay, key=None):
