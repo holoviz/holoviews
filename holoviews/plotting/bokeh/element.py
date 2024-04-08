@@ -105,7 +105,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
-    apply_hard_bounds = param.Boolean(default=True, allow_None=True, doc="""
+    apply_hard_bounds = param.Boolean(default=None, allow_None=True, doc="""
         If True, the navigable bounds of the plot will be set based
         on the extents of the data. If False, the bounds will not be set.""")
 
@@ -1899,8 +1899,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
 
-        if self.apply_hard_bounds:
-            self._apply_hard_bound(element, ranges)
+        # If apply_hard_bound is not set but projection has been set, avoid applying hard bounds by default
+        # since a projection typically means that the plot is either geographic, polar, or 3d
+        if self.apply_hard_bounds or (self.projection is None and self.apply_hard_bounds is None):
+            self._apply_hard_bounds(element, ranges)
 
         self.handles['plot'] = plot
 
@@ -1927,7 +1929,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         return plot
 
-    def _apply_hard_bound(self, element, ranges):
+    def _apply_hard_bounds(self, element, ranges):
         """
         Apply hard bounds to the x and y ranges of the plot.
 
