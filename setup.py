@@ -39,7 +39,6 @@ extras_require['tests_core'] = [
     'plotly >=4.0',
     'ipython >=5.4.0',
     'contourpy',
-    'panel ==1.4.0',   # REMOVE BEFORE MERGE
 ]
 
 # Optional tests dependencies, i.e. one should be able

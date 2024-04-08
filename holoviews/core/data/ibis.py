@@ -8,7 +8,6 @@ from packaging.version import Version
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from . import pandas
 from .interface import DataError, Interface
 from .util import cached
 
@@ -227,7 +226,9 @@ class IbisInterface(Interface):
             **{v.name: dataset.data[k] for k, v in dimensions.items()}
         )
 
-    reindex = pandas.PandasInterface.reindex
+    @classmethod
+    def reindex(cls, dataset, kdims=None, vdims=None):
+        return dataset.data
 
     @classmethod
     def _index_ibis_table(cls, data):

@@ -325,7 +325,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
         data = dataset.data
-        if hasattr(data, 'index') and isinstance(data.index, pd.MultiIndex):
+        if isinstance(data.index, pd.MultiIndex):
             kdims = [kdims] if isinstance(kdims, (str, Dimension)) else kdims
             data = data.reset_index().set_index(list(map(str, kdims)), drop=True)
         return data
@@ -363,7 +363,7 @@ class PandasInterface(Interface, PandasAPI):
                 idx or "index": v
                 for idx in df.index.names
                 if isinstance((v := selection.get(idx)), slice)
-            }
+            } if not isinstance(df.index, pd.MultiIndex) else {}
             if selection.keys() - indexes.keys():
                 selection_mask = cls.select_mask(dataset, selection)
             else:
@@ -382,13 +382,13 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def values(
-            cls,
-            dataset,
-            dim,
-            expanded=True,
-            flat=True,
-            compute=True,
-            keep_index=False,
+        cls,
+        dataset,
+        dim,
+        expanded=True,
+        flat=True,
+        compute=True,
+        keep_index=False,
     ):
         dim = dataset.get_dimension(dim, strict=True)
         isindex = cls.isindex(dataset, dim)
