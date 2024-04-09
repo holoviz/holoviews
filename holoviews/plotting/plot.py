@@ -1423,7 +1423,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, **kwargs):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, lims_as_soft_ranges=False, **kwargs):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
@@ -1444,6 +1444,11 @@ class GenericElementPlot(DimensionedPlot):
 
         This allows Overlay plots to obtain each range and combine them
         appropriately for all the objects in the overlay.
+
+        If lims_as_soft_ranges is set to True, the xlim and ylim will be treated as
+        soft ranges instead of the default case as hard ranges while computing the extents.
+        This is useful when computing the maximum extents across data, padding, xlim/ylim,
+        and dimension ranges.
         """
         num = 6 if (isinstance(self.projection, str) and self.projection == '3d') else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
@@ -1486,8 +1491,12 @@ class GenericElementPlot(DimensionedPlot):
         else:
             x0, y0, x1, y1 = combined
 
-        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if lims_as_soft_ranges:
+            x0, x1 = util.dimension_range(x0, x1, (None, None), self.xlim)
+            y0, y1 = util.dimension_range(y0, y1, (None, None), self.ylim)
+        else:
+            x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+            y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
