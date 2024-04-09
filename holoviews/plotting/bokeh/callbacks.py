@@ -655,11 +655,11 @@ class PopupMixin:
         state.execute(partial(self._populate, event), schedule=True)
 
     def _populate(self, event):
-        if not event.final:
+        if not event.final or event.geometry["type"] not in self.geom_type:
             return
         for stream in self.streams:
-            if hasattr(stream, 'popup'):
-                popup = stream.popup
+            popup = stream.popup
+            if popup is not None:
                 break
 
         if callable(popup):
@@ -673,8 +673,6 @@ class PopupMixin:
             if self._existing_popup and not self._existing_popup.visible:
                 self._existing_popup.visible = False
             return
-
-        self._panel.visible = True
 
         position = self._get_position(event)
         popup_pane = panel(popup)
@@ -692,6 +690,7 @@ class PopupMixin:
         else:
             self._panel.stylesheets = []
 
+        self._panel.visible = True
         # for existing popup, important to check if they're visible
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
