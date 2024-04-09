@@ -1,7 +1,6 @@
 import numpy as np
 import panel as pn
 import pytest
-from playwright.async_api import Locator
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
@@ -303,7 +302,7 @@ def test_stream_popup_close_button(serve_hv):
     expect(hv_plot).to_have_count(1)
     hv_plot.click()
 
-    locator: Locator = page.locator(".bk-btn.bk-btn-default")
+    locator = page.locator(".bk-btn.bk-btn-default")
     expect(locator).to_have_count(1)
     locator.click()
 
