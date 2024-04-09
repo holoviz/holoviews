@@ -105,9 +105,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
-    apply_hard_bounds = param.Boolean(default=None, allow_None=True, doc="""
+    apply_hard_bounds = param.Boolean(default=False, doc="""
         If True, the navigable bounds of the plot will be set based
-        on the extents of the data. If False, the bounds will not be set.""")
+        on the larger of extents of the data+padding, xlim/ylim, dim ranges.""")
 
     autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
@@ -1939,15 +1939,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         is unbounded.
         """
 
-        # Skip if the element doesn't have an 'extents' attribute
-        if not hasattr(element, 'extents'):
-            return
-
         def validate_bound(bound):
             """Validate a single bound, returning None if it is not a valid number"""
-            return bound if isinstance(bound, (int, float)) and not np.isnan(bound) else None
+            return bound if util.isfinite(bound) else None
 
-        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(validate_bound, self.get_extents(element, ranges))
+        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(validate_bound, self.get_extents(element, ranges, lims_as_soft_ranges=True))
 
         def set_bounds(axis, min_extent, max_extent):
             """Set the bounds for a given axis, using None if both extents are None or identical"""
