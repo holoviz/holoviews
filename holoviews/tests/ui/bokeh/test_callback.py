@@ -1,6 +1,7 @@
 import numpy as np
 import panel as pn
 import pytest
+from playwright.async_api import Locator
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
@@ -283,4 +284,28 @@ def test_stream_popup_visible(serve_hv):
     locator = page.locator(".custom-button")
     locator.click()
     locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(0)
+
+
+
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_close_button(serve_hv):
+    def popup_form(x, y):
+        return "Hello"
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap", "box_select"])
+    hv.streams.Tap(source=points, popup=popup_form)
+    hv.streams.BoundsXY(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+    hv_plot.click()
+
+    locator: Locator = page.locator(".bk-btn.bk-btn-default")
+    expect(locator).to_have_count(1)
+    locator.click()
+
+    locator = page.locator(".bk-btn bk-btn-default")
     expect(locator).to_have_count(0)

@@ -583,7 +583,7 @@ class PopupMixin:
         elif Panel is None:
             raise VersionError("Popup requires Bokeh >= 3.4")
 
-        close_button = Button(label='', stylesheets=[r"""
+        close_button = Button(label="", stylesheets=[r"""
         :host(.bk-Button) {
             width: 100%;
             height: 100%;
@@ -594,7 +594,8 @@ class PopupMixin:
             border: none;
             color: inherit;
             cursor: pointer;
-            padding: 0;
+            padding: 0.5em;  # increase hit box or else playwright can't click
+            margin: -0.5em;
             outline: none;
             box-shadow: none;
             position: absolute;
@@ -604,7 +605,8 @@ class PopupMixin:
         .bk-btn::after {
             content: '\2715';
         }
-        """])
+        """],
+        css_classes=["popup-close-btn"])
         self._panel = Panel(
             position=XY(x=np.nan, y=np.nan),
             anchor="top_left",
