@@ -578,7 +578,7 @@ class PopupMixin:
             warn("Popup requires Bokeh >= 3.4")
             return
 
-        close_button = Button(label='X', stylesheets=["""
+        close_button = Button(label='', stylesheets=[r"""
         :host(.bk-Button) {
             width: 100%;
             height: 100%;
@@ -595,6 +595,9 @@ class PopupMixin:
             position: absolute;
             top: 0;
             right: 0;
+        }
+        .bk-btn::after {
+            content: '\2715';
         }
         """])
         self._panel = Panel(
