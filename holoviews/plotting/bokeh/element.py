@@ -1899,9 +1899,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
 
-        # If apply_hard_bound is not set but projection has been set, avoid applying hard bounds by default
-        # since a projection typically means that the plot is either geographic, polar, or 3d
-        if self.apply_hard_bounds or (self.projection is None and self.apply_hard_bounds is None):
+        if self.apply_hard_bounds:
             self._apply_hard_bounds(element, ranges)
 
         self.handles['plot'] = plot
