@@ -7,6 +7,7 @@ from collections import defaultdict
 import numpy as np
 from bokeh.models import (
     BoxEditTool,
+    Button,
     CustomJS,
     DataRange1d,
     DatetimeAxis,
@@ -576,6 +577,26 @@ class PopupMixin:
         elif Panel is None:
             warn("Popup requires Bokeh >= 3.4")
             return
+
+        close_button = Button(label='X', stylesheets=["""
+        :host(.bk-Button) {
+            width: 100%;
+            height: 100%;
+            top: -1em;
+        }
+        .bk-btn, .bk-btn:hover, .bk-btn:active, .bk-btn:focus {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+            box-shadow: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        """])
         self._panel = Panel(
             position=XY(x=math.nan, y=math.nan),
             anchor="top_left",
@@ -589,16 +610,18 @@ class PopupMixin:
                 }
                 """,
             ],
-            elements=[],
+            elements=[close_button],
             visible=False
         )
+        close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
+
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._populate)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
             args=dict(panel=self._panel),
             code=f"""
             export default ({{panel}}, cb_obj, _) => {{
-              const el = panel.elements[0]
+              const el = panel.elements[1]
               if ((el && !el.visible) || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
                  return
               }}
@@ -678,7 +701,8 @@ class PopupMixin:
               }
             }""",
         ))
-        self._panel.elements = [model]
+        # the first element is the close button
+        self._panel.elements = [self._panel.elements[0], model]
         if self.plot.comm:
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
