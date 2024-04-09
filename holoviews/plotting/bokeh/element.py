@@ -1,5 +1,5 @@
 import warnings
-from itertools import chain, product
+from itertools import chain
 from types import FunctionType
 
 import bokeh
@@ -64,7 +64,7 @@ from .tabular import TablePlot
 from .util import (
     TOOL_TYPES,
     bokeh32,
-    bokeh33,
+    bokeh34,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,
@@ -178,14 +178,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     scalebar = param.Boolean(default=False, doc="""
         Whether to display a scalebar.""")
 
-    scalebar_unit = param.String(default=None, doc="""
+    scalebar_unit = param.ClassSelector(default=None, class_=(str, tuple), doc="""
         Unit of the scalebar. The order of how this will be done is by:
 
         1. This value if it is set.
         2. The elements kdim unit (if exist).
         3. Meter
 
-        As of Bokeh 3.3 only meter with or without a metric prefix is supported.
+        If the value is a tuple, the first value will be the unit and the
+        second will be the base unit.
 
         The scalebar_unit is only used if scalebar is True.""")
 
@@ -2158,30 +2159,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         the parameters: `scalebar`, `scalebar_location`, `scalebar_label`,
         `scalebar_opts`, and `scalebar_unit` for more information.
 
-        Requires Bokeh 3.3
+        Requires Bokeh 3.4
         """
 
-        if not bokeh33:
-            raise RuntimeError("Scalebar requires Bokeh >= 3.3.0")
+        if not bokeh34:
+            raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
 
-        from bokeh.models import ScaleBar
+        from bokeh.models import Metric, ScaleBar
 
         kdims = self.current_frame.kdims
         unit = self.scalebar_unit or kdims[0].unit or "m"
-
-        # From https://github.com/bokeh/bokeh/blob/50cf46c76006472706a83866cfac6651e12a0634/bokehjs/src/lib/models/annotations/dimensional.ts#L159-L183
-        # Likely to be loosened with Bokeh 3.4 release
-        _supported_units = ("m", *map("".join, product("QRYZEPTGMkhdcmµnpfazyrq", "m")))
-        if unit not in _supported_units:
-            str_units = "', '".join(_supported_units)
-            msg = f"Only the following units are supported: '{str_units}'"
-            raise ValueError(msg)
+        if isinstance(unit, tuple):
+            unit, base_unit = unit[:2]
+        else:
+            base_unit = unit
 
         _default_scalebar_opts = {"background_fill_alpha": 0.8}
         opts = dict(_default_scalebar_opts, **self.scalebar_opts)
 
         scale_bar = ScaleBar(
             unit=unit,
+            dimensional=Metric(base_unit=base_unit),
             location=self.scalebar_location,
             label=self.scalebar_label,
             **opts,
