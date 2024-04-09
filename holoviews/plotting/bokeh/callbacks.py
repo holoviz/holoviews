@@ -594,7 +594,7 @@ class PopupMixin:
             border: none;
             color: inherit;
             cursor: pointer;
-            padding: 0.5em;  # increase hit box or else playwright can't click
+            padding: 0.5em;
             margin: -0.5em;
             outline: none;
             box-shadow: none;

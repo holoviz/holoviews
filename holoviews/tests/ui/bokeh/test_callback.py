@@ -304,7 +304,6 @@ def test_stream_popup_close_button(serve_hv):
 
     locator = page.locator(".bk-btn.bk-btn-default")
     expect(locator).to_have_count(1)
-    locator.click()
-
-    locator = page.locator(".bk-btn bk-btn-default")
-    expect(locator).to_have_count(0)
+    expect(locator).to_be_visible()
+    page.click(".bk-btn.bk-btn-default")
+    expect(locator).not_to_be_visible()
