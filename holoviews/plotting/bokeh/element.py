@@ -230,6 +230,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
+    hover_tooltips = param.ClassSelector(class_=(list, str), doc="""
+        A list of dimensions to be displayed in the hover tooltip.""")
+
+    hover_formatters = param.Dict(doc="""
+        A dict of formatting options for the hover tooltip.""")
+
+    hover_mode = param.ObjectSelector(default='mouse', objects=['mouse', 'vline', 'hline'], doc="""
+        The hover mode determines how the hover tool is activated.""")
+
     toolbar = param.ObjectSelector(default='right',
                                    objects=["above", "below",
                                             "left", "right", "disable", None],
@@ -286,6 +295,61 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
+    def _replace_label_group(self, element, tooltip):
+        if isinstance(tooltip, tuple):
+            has_label = hasattr(element, 'label') and element.label
+            has_group = hasattr(element, 'group') and element.group != element.param.group.default
+            if not has_label and not has_group:
+                return tooltip
+
+            if ("@hv_label" in tooltip or "@{hv_label}" in tooltip):
+                tooltip = ("Label", element.label)
+            elif ("@hv_group" in tooltip or "@{hv_group}" in tooltip):
+                tooltip = ("Group", element.group)
+        elif isinstance(tooltip, str):
+            if "@hv_label" in tooltip:
+                tooltip = tooltip.replace("@hv_label", element.label)
+            elif "@{hv_label}" in tooltip:
+                tooltip = tooltip.replace("@{hv_label}", element.label)
+
+            if "@hv_group" in tooltip:
+                tooltip = tooltip.replace("@hv_group", element.group)
+            elif "@{hv_group}" in tooltip:
+                tooltip = tooltip.replace("@{hv_group}", element.group)
+        return tooltip
+
+    def _apply_hover_params(self, element, tooltips, hover_opts):
+        if self.hover_tooltips:
+            # If hover tooltips are defined as a list of strings or tuples
+            if isinstance(self.hover_tooltips, list):
+                new_tooltips = []
+                for ttp in self.hover_tooltips:
+                    if isinstance(ttp, str):
+                        new_tooltips.append(tooltips.get(ttp) or (ttp, f"@{ttp}"))
+                    elif isinstance(ttp, tuple):
+                        new_tooltips.append(ttp)
+                    else:
+                        raise ValueError('Hover tooltips must be a list of strings or tuples.')
+                tooltips = new_tooltips
+            else:
+                # Likely HTML str
+                tooltips = self.hover_tooltips
+        elif isinstance(tooltips, dict):
+            tooltips = list(tooltips.values())
+
+        if isinstance(tooltips, list):
+            tooltips = [self._replace_label_group(element, ttp) for ttp in tooltips]
+        elif isinstance(tooltips, str):
+            tooltips = self._replace_label_group(element, tooltips)
+
+        if self.hover_formatters:
+            hover_opts['formatters'] = self.hover_formatters
+
+        if self.hover_mode:
+            hover_opts["mode"] = self.hover_mode
+
+        return tooltips, hover_opts
+
     def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
@@ -293,8 +357,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if callbacks is None:
             callbacks = []
         tooltips, hover_opts = self._hover_opts(element)
-        tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
-                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
+
+        # make dict so it's easy to get the tooltip for a given dimension; convert back to list below
+        tooltips = {ttp.name: (ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
+                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips}
+        tooltips, hover_opts = self._apply_hover_params(element, tooltips, hover_opts)
+
         if not tooltips: tooltips = None
 
         callbacks = callbacks+self.callbacks
@@ -314,8 +382,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
+        all_tools = list(cb_tools + self.default_tools + self.tools)
+        if self.hover_tooltips:
+            no_hover = (
+                "hover" not in all_tools and
+                not (any(isinstance(tool, tools.HoverTool) for tool in all_tools))
+            )
+            if no_hover:
+                all_tools.append("hover")
+
         tool_list = []
-        for tool in cb_tools + self.default_tools + self.tools:
+        for tool in all_tools:
             if tool in tool_names:
                 continue
             if tool in ['vline', 'hline']:
