@@ -192,7 +192,7 @@ def test_bind_trigger(serve_hv):
 
     assert BOUND_COUNT[0] == 1
 
-
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup(serve_hv):
     def popup_form(name):
@@ -210,6 +210,7 @@ def test_stream_popup(serve_hv):
     expect(locator).to_have_count(1)
 
 
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_none(serve_hv):
     def popup_form(name):
@@ -234,6 +235,7 @@ def test_stream_popup_none(serve_hv):
     expect(locator).to_have_count(0)
 
 
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_callbacks(serve_hv):
     def popup_form(x, y):
@@ -248,15 +250,20 @@ def test_stream_popup_callbacks(serve_hv):
     expect(hv_plot).to_have_count(1)
 
     locator = page.locator(".bk-btn")
-    expect(locator).to_have_count(1)
+    expect(locator).to_have_count(2)
 
 
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_visible(serve_hv):
     def popup_form(x, y):
         def hide(_):
             col.visible = False
-        button = pn.widgets.Button(name=f"{x},{y}", on_click=hide)
+        button = pn.widgets.Button(
+            name=f"{x},{y}",
+            on_click=hide,
+            css_classes=["custom-button"]
+        )
         col = pn.Column(button)
         return col
 
@@ -270,9 +277,10 @@ def test_stream_popup_visible(serve_hv):
 
     # initial appearance
     locator = page.locator(".bk-btn")
-    expect(locator).to_have_count(1)
+    expect(locator).to_have_count(2)
 
-    # click button to hide
+    # click custom button to hide
+    locator = page.locator(".custom-button")
     locator.click()
     locator = page.locator(".bk-btn")
     expect(locator).to_have_count(0)

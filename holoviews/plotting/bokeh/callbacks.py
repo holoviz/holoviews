@@ -1,8 +1,8 @@
 import asyncio
 import base64
-import math
 import time
 from collections import defaultdict
+from functools import partial
 
 import numpy as np
 from bokeh.models import (
@@ -28,7 +28,13 @@ except Exception:
     Panel = XY = None
 
 from ...core.options import CallbackError
-from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
+from ...core.util import (
+    VersionError,
+    datetime_types,
+    dimension_sanitizer,
+    dt64_to_dt,
+    isequal,
+)
 from ...element import Table
 from ...streams import (
     BoundsX,
@@ -575,8 +581,7 @@ class PopupMixin:
         if not getattr(stream, 'popup', None):
             return
         elif Panel is None:
-            warn("Popup requires Bokeh >= 3.4")
-            return
+            raise VersionError("Popup requires Bokeh >= 3.4")
 
         close_button = Button(label='', stylesheets=[r"""
         :host(.bk-Button) {
@@ -601,18 +606,8 @@ class PopupMixin:
         }
         """])
         self._panel = Panel(
-            position=XY(x=math.nan, y=math.nan),
+            position=XY(x=np.nan, y=np.nan),
             anchor="top_left",
-            stylesheets=[
-                """
-                :host {
-                    background-color: white;
-                    padding: 1em;
-                    border-radius: 0.5em;
-                    border: 1px solid lightgrey;
-                }
-                """,
-            ],
             elements=[close_button],
             visible=False
         )
@@ -653,12 +648,19 @@ class PopupMixin:
         elif event.geometry['type'] == 'poly':
             return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
-    def _populate(self, event):
-        # ^ can't be async or else server doesn't work
+    def _schedule_populate(self, event):
+        # IMPORTANT: NEED FIX BY PHILIPP
+        # - doesn't work on server; tap x/y updates late; so results in None, None
+        # - if pan is active, and tap, it gets dragged
+        state.execute(partial(self._populate, event), schedule=True)
 
+    def _populate(self, event):
         if not event.final:
             return
-        popup = self.streams[0].popup
+        for stream in self.streams:
+            if hasattr(stream, 'popup'):
+                popup = stream.popup
+                break
 
         if callable(popup):
             data = self.streams[0].contents
@@ -671,10 +673,24 @@ class PopupMixin:
             if self._existing_popup and not self._existing_popup.visible:
                 self._existing_popup.visible = False
             return
+
         self._panel.visible = True
 
         position = self._get_position(event)
         popup_pane = panel(popup)
+
+        if not popup_pane.stylesheets:
+            self._panel.stylesheets = [
+                """
+                :host {
+                    padding: 1em;
+                    border-radius: 0.5em;
+                    border: 1px solid lightgrey;
+                }
+                """,
+            ]
+        else:
+            self._panel.stylesheets = []
 
         # for existing popup, important to check if they're visible
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
