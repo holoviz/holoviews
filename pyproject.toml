@@ -79,7 +79,7 @@ packaging = "*"
 pandas = ">=0.20.0"
 ipython = ">=5.4.0"
 notebook = "*"
-matplotlib = ">=3"
+matplotlib-base = ">=3"
 bokeh = ">=3.1"
 
 [tool.pixi.pypi-dependencies]
