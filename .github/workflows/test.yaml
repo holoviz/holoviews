@@ -145,98 +145,99 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           pixi run -e ${{ matrix.python-version }} download-data
-      - name: doit test_unit
+      - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.python-version }} test
-      # - name: test examples
-      #   if: needs.setup.outputs.code_change == 'true'
-      #   run: |
-      #     conda activate test-environment
-      #     doit test_examples
-      # - name: codecov
-      #   if: needs.setup.outputs.code_change == 'true'
-      #   run: |
-      #     conda activate test-environment
-      #     codecov
+          pixi run -e ${{ matrix.python-version }} test-unit
+      - name: Test Examples
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} test-examples
+      - name: codecov
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} codecov
 
-  # ui_test_suite:
-  #   name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-  #   needs: [pre_commit, setup]
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: ["ubuntu-latest"]
-  #       python-version: ["3.9"]
-  #   timeout-minutes: 60
-  #   env:
-  #     DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
-  #     PANEL_LOG_LEVEL: info
-  #     # Without this env var `doit env_create ...` uses by default
-  #     # the `pyviz` channel, except that we don't want to configure
-  #     # it as one of the sources.
-  #     PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
-  #   steps:
-  #     - uses: holoviz-dev/holoviz_tasks/install@v0
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       with:
-  #         name: ui_test_suite
-  #         python-version: ${{ matrix.python-version }}
-  #         channels: pyviz/label/dev,conda-forge,nodefaults
-  #         envs: "-o recommended -o tests -o build -o tests_ci"
-  #         cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-  #         playwright: true
-  #       id: install
-  #     - name: doit test_ui
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       run: |
-  #         conda activate test-environment
-  #         doit test_ui
-  #     - name: Upload coverage to Codecov
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       uses: codecov/codecov-action@v3
-  #       with:
-  #         files: ./coverage.xml
-  #         flags: ui-tests
-  #         fail_ci_if_error: false # optional (default = false)
-  #
-  # core_test_suite:
-  #   name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-  #   needs: [pre_commit, setup]
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: ["ubuntu-latest"]
-  #       python-version: ["3.12"]
-  #   timeout-minutes: 120
-  #   env:
-  #     DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
-  #     PYTHON_VERSION: ${{ matrix.python-version }}
-  #   steps:
-  #     - uses: holoviz-dev/holoviz_tasks/install@v0
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       with:
-  #         name: core_test_suite
-  #         python-version: ${{ matrix.python-version }}
-  #         # channel-priority: strict
-  #         channels: pyviz/label/dev,conda-forge,nodefaults
-  #         envs: "-o tests_core -o tests_ci"
-  #         cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-  #         id: install
-  #     - name: Download data
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       run: |
-  #         conda activate test-environment
-  #         bash scripts/download_data.sh
-  #     - name: Check packages latest version
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       run: |
-  #         conda activate test-environment
-  #         python scripts/check_latest_packages.py numpy pandas bokeh panel param
-  #     - name: doit test_unit
-  #       if: needs.setup.outputs.code_change == 'true'
-  #       run: |
-  #         conda activate test-environment
-  #         pytest holoviews
+  ui_test_suite:
+    name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [pre_commit, setup]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["ui-test"]
+    timeout-minutes: 60
+    env:
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
+      PANEL_LOG_LEVEL: info
+    steps:
+      - uses: actions/checkout@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          fetch-depth: "100"
+      - name: Fetch
+        if: needs.setup.outputs.code_change == 'true'
+        run: git fetch --prune --tags -f
+      - uses: prefix-dev/setup-pixi@v0.5.1
+        if: needs.setup.outputs.code_change == 'true'
+        id: install
+        with:
+          pixi-version: v0.19.0
+          manifest-path: pyproject.toml
+          environments: ${{ matrix.python-version }}
+          # cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
+      - name: Download data
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} download-data
+      - name: Test UI
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} test-ui
+      - name: codecov
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} codecov
+
+  core_test_suite:
+    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [pre_commit, setup]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["test-core"]
+    timeout-minutes: 120
+    env:
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          fetch-depth: "100"
+      - name: Fetch
+        if: needs.setup.outputs.code_change == 'true'
+        run: git fetch --prune --tags -f
+      - uses: prefix-dev/setup-pixi@v0.5.1
+        if: needs.setup.outputs.code_change == 'true'
+        id: install
+        with:
+          pixi-version: v0.19.0
+          manifest-path: pyproject.toml
+          environments: ${{ matrix.python-version }}
+          # cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
+      - name: Check packages latest version
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} check-latest-packages numpy pandas bokeh panel param
+      - name: Download data
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} download-data
+      - name: Test Unit
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.python-version }} test-unit

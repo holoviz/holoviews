@@ -113,7 +113,8 @@ codecov = "*"
 pytest-github-actions-annotate-failures = "*"
 
 [tool.pixi.feature.test-core.tasks]
-test = 'pytest holoviews --cov=./holoviews'
+test-unit = 'pytest holoviews --cov=./holoviews'
+test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
 
 [tool.pixi.feature.test.dependencies]
 dask-core = "*"
@@ -127,6 +128,7 @@ scipy = ">=1.10"  # Python 3.9 + Windows downloads 1.9
 selenium = "*"
 spatialpandas = "*"
 datashader = ">=0.11.1"
+nbval = "*"
 # dash >=1.16
 # tsdownsample = "*"  # not windows
 
