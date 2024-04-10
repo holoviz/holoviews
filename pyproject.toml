@@ -1,8 +1,114 @@
 [build-system]
-requires = [
+requires = ["setuptools >=30.3.0", "setuptools_scm >=7"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "holoviews"
+dynamic = ["version"]
+description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
+    { name = "Philipp Rudiger", email = "developers@holoviz.org" },
+]
+maintainers = [
+    { name = "HoloViz developers", email = "developers@holoviz.org" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Framework :: Matplotlib",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+# urls = {
+#     Homepage = "https://holoviews.org",
+#     Source = "http://github.com/holoviz/holoviews",
+#     HoloViz = "https://holoviz.org/",
+# }
+# entry_points={console_scripts= ["holoviews = holoviews.util.command:main"]}
+dependencies = [
     "param >=1.12.0,<3.0",
-    "pyct >=0.4.4",
-    "setuptools >=30.3.0",
+    "numpy >=1.0",
+    "pyviz_comms >=2.1",
+    "panel >=1.0",
+    "colorcet",
+    "packaging",
+    "pandas >=0.20.0",
+]
+
+[project.optional-dependencies]
+recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
+examples = [
+    "holoviews[recommended]",
+    "networkx",
+    "pillow",
+    "xarray >=0.10.4",
+    "plotly >=4.0",
+    # "dash >=1.16",
+    "streamz >=0.5.0",
+    "ffmpeg",
+    "cftime",
+    "netcdf4",
+    "dask",
+    "scipy",
+    "shapely",
+    "scikit-image",
+    "pyarrow",
+    "pooch",
+    "datashader >=0.11.1",
+    "notebook >=7.0",
+]
+tests-core = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-rerunfailures",
+    "matplotlib >=3",
+    # "nbconvert",
+    "bokeh >=3.1",
+    "pillow",
+    "plotly >=4.0",
+    "ipython >=5.4.0",
+    "contourpy",
+]
+tests = [
+    "holoviews[tests-core]",
+    "dask",
+    "ibis-framework", # Mapped to ibis-sqlite in setup.cfg for conda
+    "xarray >=0.10.4",
+    "networkx",
+    "shapely",
+    "ffmpeg",
+    "cftime",
+    "scipy >=1.10", # Python 3.9 + Windows downloads 1.9
+    "selenium",
+    "spatialpandas",
+    "datashader >=0.11.1",
+    # "dash >=1.16",
+    "tsdownsample", # not windows
+]
+tests-ci = ["codecov", "pytest-github-actions-annotate-failures"]
+tests-ui = ["playwright", "pytest-playwright"]
+tests-examples = ["holoviews[examples]", "holoviews[tests]"]
+doc = [
+    "holoviews[examples]",
+    "nbsite >=0.8.4,<0.9.0",
+    "myst-nb <1",
+    "graphviz",
+    "bokeh >=3.1",
+    "pooch",
+    "selenium",
 ]
 
 [tool.pytest.ini_options]
