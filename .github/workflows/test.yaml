@@ -139,11 +139,11 @@ jobs:
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          python scripts/check_latest_packages.py bokeh panel param datashader
+          pixi run -e ${{ matrix.python-version }} check-latest-packages bokeh panel param datashader
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          bash scripts/download_data.sh
+          pixi run -e ${{ matrix.python-version }} download-data
       - name: doit test_unit
         if: needs.setup.outputs.code_change == 'true'
         run: |

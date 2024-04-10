@@ -55,6 +55,10 @@ channels = ["conda-forge", "pyviz/label/dev"]
 # platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 platforms = ["linux-64", "osx-64", "win-64"]
 
+[tool.pixi.tasks]
+check-latest-packages = 'python scripts/check_latest_packages.py'
+download-data = 'bash scripts/download_data.sh'
+
 [tool.pixi.environments]
 test-309 = ["py309", "test-core", "test", "examples"]
 test-310 = ["py310", "test-core", "test", "examples"]
