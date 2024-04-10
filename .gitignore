@@ -20,6 +20,7 @@
 .ipynb_checkpoints
 .coverage
 .pytest_cache
+.pixi
 
 /release
 /doc/Tutorials-WIP/*.ipynb
