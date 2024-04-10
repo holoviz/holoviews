@@ -657,7 +657,7 @@ class PopupMixin:
         state.execute(partial(self._populate, event), schedule=True)
 
     def _populate(self, event):
-        if not event.final or event.geometry["type"] not in self.geom_type:
+        if not event.final or not (event.geometry["type"] in self.geom_type or self.geom_type == "any"):
             return
         for stream in self.streams:
             popup = stream.popup
