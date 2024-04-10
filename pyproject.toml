@@ -31,11 +31,6 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Libraries",
 ]
-# urls = {
-#     Homepage = "https://holoviews.org",
-#     Source = "http://github.com/holoviz/holoviews",
-#     HoloViz = "https://holoviz.org/",
-# }
 # entry_points={console_scripts= ["holoviews = holoviews.util.command:main"]}
 dependencies = [
     "param >=1.12.0,<3.0",
@@ -46,6 +41,10 @@ dependencies = [
     "packaging",
     "pandas >=0.20.0",
 ]
+[project.urls]
+Homepage = "https://holoviews.org"
+Source = "http://github.com/holoviz/holoviews"
+HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
 recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
@@ -110,6 +109,15 @@ doc = [
     "pooch",
     "selenium",
 ]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["holoviews"]
+
+[tool.setuptools_scm]
+version_file = "holoviews/_version.py"
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers", "--color=yes"]
