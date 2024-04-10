@@ -90,7 +90,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["test-py309", "test-py312"]
+              "python-version": ["test-309", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -135,6 +135,7 @@ jobs:
         with:
           pixi-version: v0.19.0
           manifest-path: pyproject.toml
+          environments: ${{ matrix.python-version }}
           # cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
