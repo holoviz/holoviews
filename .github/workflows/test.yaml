@@ -33,7 +33,6 @@ defaults:
     shell: bash -el {0}
 
 env:
-  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
   DISPLAY: ":99.0"
   PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,7 +90,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["py309", "py312"]
+              "python-version": ["test-py309", "test-py312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -133,6 +132,10 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.5.1
         if: needs.setup.outputs.code_change == 'true'
         id: install
+        with:
+          pixi-version: v0.19.0
+          manifest-path: pyproject.toml
+          # cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
