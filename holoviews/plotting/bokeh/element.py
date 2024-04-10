@@ -318,7 +318,35 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tooltip = tooltip.replace("${group}", element.group)
         return tooltip
 
-    def _apply_hover_params(self, element, tooltips, hover_opts):
+    def _prepare_hover_kwargs(self, element):
+        tooltips, hover_opts = self._hover_opts(element)
+
+        dim_aliases = {
+            f"{dim.label} ({dim.unit})" if dim.unit else dim.label: dim.name
+            for dim in element.kdims + element.vdims
+        }
+
+        # make dict so it's easy to get the tooltip for a given dimension;
+        tooltips_dict = {}
+        for ttp in tooltips:
+            if isinstance(ttp, tuple):
+                key = ttp[0]
+                value = (ttp[0], ttp[1])
+            elif isinstance(ttp, Dimension):
+                key = ttp.name
+                value = (
+                    ttp.pprint_label,
+                    f"@{{{util.dimension_sanitizer(ttp.name)}}}"
+                )
+            elif isinstance(ttp, str):
+                key = ttp
+                value = f"@{{{ttp}}}"
+
+            if key in dim_aliases:
+                key = dim_aliases[key]
+            tooltips_dict[key] = value
+
+        # subset the tooltips to only the ones user wants
         if self.hover_tooltips:
             # If hover tooltips are defined as a list of strings or tuples
             if isinstance(self.hover_tooltips, list):
@@ -326,10 +354,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 for tooltip in self.hover_tooltips:
                     if isinstance(tooltip, str):
                         # make into a tuple
-                        new_tooltip = tooltips.get(tooltip)
+                        new_tooltip = tooltips_dict.get(tooltip)
                         if new_tooltip is None:
                             label = tooltip.lstrip("$").lstrip("@")
-                            value = tooltip if "$" in tooltip else f"@{tooltip.lstrip('@')}"
+                            value = tooltip if "$" in tooltip else f"@{{{tooltip.lstrip('@')}}}"
                             new_tooltip = (label, value)
                         new_tooltips.append(new_tooltip)
                     elif isinstance(tooltip, tuple):
@@ -340,9 +368,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 # Likely HTML str
                 tooltips = self.hover_tooltips
-        elif isinstance(tooltips, dict):
-            tooltips = list(tooltips.values())
 
+        # replace the label and group in the tooltips
         if isinstance(tooltips, list):
             tooltips = [self._replace_label_group(element, ttp) for ttp in tooltips]
         elif isinstance(tooltips, str):
@@ -362,14 +389,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         if callbacks is None:
             callbacks = []
-        tooltips, hover_opts = self._hover_opts(element)
 
-        # make dict so it's easy to get the tooltip for a given dimension; convert back to list below
-        tooltips = {ttp.name: (ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
-                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips}
-        tooltips, hover_opts = self._apply_hover_params(element, tooltips, hover_opts)
+        tooltips, hover_opts = self._prepare_hover_kwargs(element)
 
-        if not tooltips: tooltips = None
+        if not tooltips:
+            tooltips = None
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -475,9 +499,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _update_hover(self, element):
         tool = self.handles['hover']
         if 'hv_created' in tool.tags:
-            tooltips, hover_opts = self._hover_opts(element)
-            tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
-                        if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
+            tooltips, hover_opts = self._prepare_hover_kwargs(element)
             tool.tooltips = tooltips
         else:
             plot_opts = element.opts.get('plot', 'bokeh')
