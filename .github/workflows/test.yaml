@@ -166,7 +166,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["ui-test"]
+        python-version: ["test-ui"]
     timeout-minutes: 60
     env:
       DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
@@ -240,4 +240,4 @@ jobs:
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.python-version }} test-unit
+          pixi run -e ${{ matrix.python-version }} test-core

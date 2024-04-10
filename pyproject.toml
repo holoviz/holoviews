@@ -113,6 +113,7 @@ codecov = "*"
 pytest-github-actions-annotate-failures = "*"
 
 [tool.pixi.feature.test-core.tasks]
+test-core = 'pytest holoviews'
 test-unit = 'pytest holoviews --cov=./holoviews'
 test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
 
