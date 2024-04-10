@@ -323,11 +323,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # If hover tooltips are defined as a list of strings or tuples
             if isinstance(self.hover_tooltips, list):
                 new_tooltips = []
-                for ttp in self.hover_tooltips:
-                    if isinstance(ttp, str):
-                        new_tooltips.append(tooltips.get(ttp) or (ttp, f"@{ttp}"))
-                    elif isinstance(ttp, tuple):
-                        new_tooltips.append(ttp)
+                for tooltip in self.hover_tooltips:
+                    if isinstance(tooltip, str):
+                        # make into a tuple
+                        new_tooltip = tooltips.get(tooltip)
+                        if new_tooltip is None:
+                            label = tooltip.lstrip("$").lstrip("@")
+                            value = tooltip if "$" in tooltip else f"@{tooltip.lstrip('@')}"
+                            new_tooltip = (label, value)
+                        new_tooltips.append(new_tooltip)
+                    elif isinstance(tooltip, tuple):
+                        new_tooltips.append(tooltip)
                     else:
                         raise ValueError('Hover tooltips must be a list of strings or tuples.')
                 tooltips = new_tooltips
