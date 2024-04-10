@@ -303,9 +303,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 return tooltip
 
             if ("$label" in tooltip or "${label}" in tooltip):
-                tooltip = ("Label", element.label)
+                tooltip = (tooltip[0], element.label)
             elif ("$group" in tooltip or "${group}" in tooltip):
-                tooltip = ("Group", element.group)
+                tooltip = (tooltip[0], element.group)
         elif isinstance(tooltip, str):
             if "$label" in tooltip:
                 tooltip = tooltip.replace("$label", element.label)
@@ -334,12 +334,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 value = (ttp[0], ttp[1])
             elif isinstance(ttp, Dimension):
                 key = ttp.name
+                # three brackets means replacing variable,
+                # and then wrapping in brackets, like @{air}
                 value = (
                     ttp.pprint_label,
                     f"@{{{util.dimension_sanitizer(ttp.name)}}}"
                 )
             elif isinstance(ttp, str):
                 key = ttp
+                # three brackets means replacing variable,
+                # and then wrapping in brackets, like @{air}
                 value = f"@{{{ttp}}}"
 
             if key in dim_aliases:
@@ -368,6 +372,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 # Likely HTML str
                 tooltips = self.hover_tooltips
+        else:
+            tooltips = list(tooltips_dict.values())
 
         # replace the label and group in the tooltips
         if isinstance(tooltips, list):
@@ -426,8 +432,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if tool in tool_names:
                 continue
             if tool in ['vline', 'hline']:
+                hover_opts.update({'mode': tool})
                 tool = tools.HoverTool(
-                    tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts
+                    tooltips=tooltips, tags=['hv_created'], **hover_opts
                 )
             elif bokeh32 and isinstance(tool, str) and tool.endswith(
                 ('wheel_zoom', 'zoom_in', 'zoom_out')
