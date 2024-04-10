@@ -302,20 +302,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not has_label and not has_group:
                 return tooltip
 
-            if ("@hv_label" in tooltip or "@{hv_label}" in tooltip):
+            if ("$label" in tooltip or "${label}" in tooltip):
                 tooltip = ("Label", element.label)
-            elif ("@hv_group" in tooltip or "@{hv_group}" in tooltip):
+            elif ("$group" in tooltip or "${group}" in tooltip):
                 tooltip = ("Group", element.group)
         elif isinstance(tooltip, str):
-            if "@hv_label" in tooltip:
-                tooltip = tooltip.replace("@hv_label", element.label)
-            elif "@{hv_label}" in tooltip:
-                tooltip = tooltip.replace("@{hv_label}", element.label)
+            if "$label" in tooltip:
+                tooltip = tooltip.replace("$label", element.label)
+            elif "${label}" in tooltip:
+                tooltip = tooltip.replace("${label}", element.label)
 
-            if "@hv_group" in tooltip:
-                tooltip = tooltip.replace("@hv_group", element.group)
-            elif "@{hv_group}" in tooltip:
-                tooltip = tooltip.replace("@{hv_group}", element.group)
+            if "$group" in tooltip:
+                tooltip = tooltip.replace("$group", element.group)
+            elif "${group}" in tooltip:
+                tooltip = tooltip.replace("${group}", element.group)
         return tooltip
 
     def _apply_hover_params(self, element, tooltips, hover_opts):
