@@ -182,7 +182,7 @@ jobs:
       - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-examples
+          pixi run -e ${{ matrix.environment }} test-example
       - name: codecov
         if: needs.setup.outputs.code_change == 'true'
         run: |
