@@ -394,9 +394,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tooltips = new_tooltips
             else:
                 # Likely HTML str
-                print(tooltips_dict)
                 tooltips = self._replace_value_aliases(self.hover_tooltips, tooltips_dict)
-                print(tooltips)
         else:
             tooltips = list(tooltips_dict.values())
 
