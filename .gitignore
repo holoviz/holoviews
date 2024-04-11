@@ -21,6 +21,7 @@
 .coverage
 .pytest_cache
 .pixi
+holoviews/_version.py
 
 /release
 /doc/Tutorials-WIP/*.ipynb
