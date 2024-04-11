@@ -318,6 +318,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tooltip = tooltip.replace("${group}", element.group)
         return tooltip
 
+    def _replace_value_aliases(self, tooltip, tooltips_dict):
+        for name, tuple_ in tooltips_dict.items():
+            # some elements, like image, rename the tooltip, e.g. @y -> $y
+            # let's replace those, so the hover tooltip is discoverable
+            # ensure it works for `(@x, @y)` -> `($x, $y)` too
+
+            if isinstance(tooltip, tuple):
+                value_alias = tuple_[1]
+                if f"@{name}" in tooltip[1]:
+                    tooltip = (tooltip[0], tooltip[1].replace(f"@{name}", value_alias))
+                elif f"@{{{name}}}" in tooltip[1]:
+                    tooltip = (tooltip[0], tooltip[1].replace(f"@{{{name}}}", value_alias))
+            elif isinstance(tooltip, str):
+                if f"@{name}" in tooltip:
+                    tooltip = tooltip.replace(f"@{name}", tuple_[1])
+                elif f"@{{{name}}}" in tooltip:
+                    tooltip = tooltip.replace(f"@{{{name}}}", tuple_[1])
+        return tooltip
+
     def _prepare_hover_kwargs(self, element):
         tooltips, hover_opts = self._hover_opts(element)
 
@@ -330,25 +349,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips_dict = {}
         for ttp in tooltips:
             if isinstance(ttp, tuple):
-                key = ttp[0]
-                value = (ttp[0], ttp[1])
+                name = ttp[0]
+                tuple_ = (ttp[0], ttp[1])
             elif isinstance(ttp, Dimension):
-                key = ttp.name
+                name = ttp.name
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
-                value = (
+                tuple_ = (
                     ttp.pprint_label,
                     f"@{{{util.dimension_sanitizer(ttp.name)}}}"
                 )
             elif isinstance(ttp, str):
-                key = ttp
+                name = ttp
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
-                value = f"@{{{ttp}}}"
+                tuple_ = (ttp.name, f"@{{{ttp}}}")
 
-            if key in dim_aliases:
-                key = dim_aliases[key]
-            tooltips_dict[key] = value
+            if name in dim_aliases:
+                name = dim_aliases[name]
+
+            # key is the vanilla data column/dimension name
+            # value should always be a tuple (label, value)
+            tooltips_dict[name] = tuple_
 
         # subset the tooltips to only the ones user wants
         if self.hover_tooltips:
@@ -358,20 +380,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 for tooltip in self.hover_tooltips:
                     if isinstance(tooltip, str):
                         # make into a tuple
-                        new_tooltip = tooltips_dict.get(tooltip)
+                        new_tooltip = tooltips_dict.get(tooltip.lstrip("@"))
                         if new_tooltip is None:
                             label = tooltip.lstrip("$").lstrip("@")
                             value = tooltip if "$" in tooltip else f"@{{{tooltip.lstrip('@')}}}"
                             new_tooltip = (label, value)
                         new_tooltips.append(new_tooltip)
                     elif isinstance(tooltip, tuple):
+                        tooltip = self._replace_value_aliases(tooltip, tooltips_dict)
                         new_tooltips.append(tooltip)
                     else:
                         raise ValueError('Hover tooltips must be a list of strings or tuples.')
                 tooltips = new_tooltips
             else:
                 # Likely HTML str
-                tooltips = self.hover_tooltips
+                print(tooltips_dict)
+                tooltips = self._replace_value_aliases(self.hover_tooltips, tooltips_dict)
+                print(tooltips)
         else:
             tooltips = list(tooltips_dict.values())
 
