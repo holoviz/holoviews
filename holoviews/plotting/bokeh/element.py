@@ -323,7 +323,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # some elements, like image, rename the tooltip, e.g. @y -> $y
             # let's replace those, so the hover tooltip is discoverable
             # ensure it works for `(@x, @y)` -> `($x, $y)` too
-
             if isinstance(tooltip, tuple):
                 value_alias = tuple_[1]
                 if f"@{name}" in tooltip[1]:
@@ -347,6 +346,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # make dict so it's easy to get the tooltip for a given dimension;
         tooltips_dict = {}
+        units_dict = {}
         for ttp in tooltips:
             if isinstance(ttp, tuple):
                 name = ttp[0]
@@ -355,15 +355,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 name = ttp.name
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
+                unit = f" ({ttp.unit})" if ttp.unit else ""
                 tuple_ = (
                     ttp.pprint_label,
                     f"@{{{util.dimension_sanitizer(ttp.name)}}}"
                 )
+                units_dict[name] = unit
             elif isinstance(ttp, str):
                 name = ttp
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
-                tuple_ = (ttp.name, f"@{{{ttp}}}")
+                tuple_ = (ttp.name, f"@{{{util.dimension_sanitizer(ttp)}}}")
 
             if name in dim_aliases:
                 name = dim_aliases[name]
@@ -387,7 +389,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                             new_tooltip = (label, value)
                         new_tooltips.append(new_tooltip)
                     elif isinstance(tooltip, tuple):
+                        unit = units_dict.get(tooltip[0])
                         tooltip = self._replace_value_aliases(tooltip, tooltips_dict)
+                        if unit:
+                            tooltip = (f"{tooltip[0]}{unit}", tooltip[1])
                         new_tooltips.append(tooltip)
                     else:
                         raise ValueError('Hover tooltips must be a list of strings or tuples.')
