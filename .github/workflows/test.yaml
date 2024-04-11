@@ -114,12 +114,10 @@ jobs:
   pixi_lock:
     name: Pixi lock
     runs-on: ubuntu-latest
-    needs: [setup]
     steps:
       - name: Set TODAY
         run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
       - uses: actions/checkout@v4
-        if: needs.setup.outputs.code_change == 'true'
         with:
           fetch-depth: "1"
       - name: cache
@@ -130,23 +128,18 @@ jobs:
           path: pixi.lock
           key: ${{ hashFiles('pyproject.toml') }}-${{ env.TODAY }}
       - uses: prefix-dev/setup-pixi@v0.5.1
-        if: needs.setup.outputs.code_change == 'true' && steps.cache.outputs.cache-hit != 'true'
+        if: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }} != 'true' || steps.cache.outputs.cache-hit != 'true'
         id: install
         with:
           pixi-version: v0.19.0
           manifest-path: pyproject.toml
           environments: ${{ matrix.environment }}
       - uses: actions/upload-artifact@v4
-        if: needs.setup.outputs.code_change == 'true'
         with:
           name: pixi-lock
           path: pixi.lock
           if-no-files-found: error
-      - name: test
-        run: |
-          echo ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          echo ${{ steps.cache.outputs.cache-hit }}
-      - if: (${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true') && (${{ steps.cache.outputs.cache-hit }} != 'true')
+      - if: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true' && steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: pixi.lock
