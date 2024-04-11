@@ -118,6 +118,10 @@ jobs:
     steps:
       - name: Set TODAY
         run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          fetch-depth: "100"
       - name: cache
         if: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true'
         id: cache
@@ -125,10 +129,6 @@ jobs:
         with:
           path: pixi.lock
           key: ${{ hashFiles('pyproject.toml') }}-${{ env.TODAY }}
-      - uses: actions/checkout@v4
-        if: needs.setup.outputs.code_change == 'true' && steps.cache.outputs.cache-hit != 'true'
-        with:
-          fetch-depth: "100"
       - name: Fetch
         if: needs.setup.outputs.code_change == 'true' && steps.cache.outputs.cache-hit != 'true'
         run: git fetch --prune --tags -f
