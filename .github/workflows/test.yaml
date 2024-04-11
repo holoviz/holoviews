@@ -121,7 +121,7 @@ jobs:
         with:
           fetch-depth: "1"
       - name: cache
-        if: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true'
+        if: github.event.inputs.cache == 'true' || github.event.inputs.cache == ''
         id: cache
         uses: actions/cache/restore@v4
         with:
@@ -137,7 +137,7 @@ jobs:
           echo ${{ steps.cache.outputs.cache-hit != 'true' }}
       - uses: prefix-dev/setup-pixi@v0.5.1
         # if: ((${{ github.event.inputs.cache || github.event.inputs.cache == '' }} != 'true') || (steps.cache.outputs.cache-hit != 'true'))
-        if: ${{ (github.event.inputs.cache || github.event.inputs.cache == '') != 'true' || (steps.cache.outputs.cache-hit != 'true') }}
+        if: steps.cache.outputs.cache-hit != 'true'
         id: install
         with:
           pixi-version: v0.19.0
@@ -149,7 +149,7 @@ jobs:
           path: pixi.lock
           if-no-files-found: error
       # - if: ((${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true') && steps.cache.outputs.cache-hit != 'true')
-      - if: ${{ (github.event.inputs.cache || github.event.inputs.cache == '') && (steps.cache.outputs.cache-hit != 'true') }}
+      - if: ${{ (github.event.inputs.cache == 'true' || github.event.inputs.cache == '') && (steps.cache.outputs.cache-hit != 'true') }}
         uses: actions/cache/save@v4
         with:
           path: pixi.lock
