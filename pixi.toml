@@ -115,7 +115,7 @@ pytest-playwright = "*"
 install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest holoviews --ui --browser chromium'
+cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
 depends_on = ["install-ui"]
 
 # =============================================
