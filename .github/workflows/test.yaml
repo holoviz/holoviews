@@ -114,7 +114,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: ./pixi_lock@pixi_play
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
         with:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
