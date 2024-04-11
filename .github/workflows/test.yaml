@@ -190,10 +190,10 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           pixi run -e ${{ matrix.environment }} download-data
+          pixi run -e ${{ matrix.environment }} install-ui
       - name: Test UI
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} install-ui
           pixi run -e ${{ matrix.environment }} test-ui --cov=./holoviews --cov-report=xml
       - name: codecov
         if: needs.setup.outputs.code_change == 'true'
