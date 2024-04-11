@@ -52,8 +52,7 @@ recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
 [tool.pixi.project]
 name = "holoviews"
 channels = ["conda-forge", "pyviz/label/dev"]
-# platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
-platforms = ["linux-64", "osx-64", "win-64"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tool.pixi.tasks]
 check-latest-packages = 'python scripts/check_latest_packages.py'
@@ -64,7 +63,7 @@ test-309 = ["py309", "test-core", "test", "examples"]
 test-310 = ["py310", "test-core", "test", "examples"]
 test-311 = ["py311", "test-core", "test", "examples"]
 test-312 = ["py312", "test-core", "test", "examples"]
-test-ui = ["py311", "test-core", "test", "test-ui"]
+test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core"]
 docs = ["py311", "examples", "doc"]
 
