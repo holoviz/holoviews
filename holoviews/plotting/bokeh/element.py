@@ -1929,19 +1929,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _apply_hard_bounds(self, element, ranges):
         """
-        Apply hard bounds to the x and y ranges of the plot.
+        Apply hard bounds to the x and y ranges of the plot. If xlim/ylim is set, limit the
+        initial viewable range to xlim/ylim, but allow navigation up to the abs max between
+        the data + pad range and xlim/ylim. If dim range is set (e.g. via redim.range), use
+        it as the hard bounds.
 
-        Sets the navigable bounds of the plot based on the extents
-        of the given element and ranges. If an extent is numeric and not NaN, it is
-        used as is. Otherwise, it is set to None, which means that end of the axis
-        is unbounded.
         """
 
         def validate_bound(bound):
-            """Validate a single bound, returning None if it is not a valid number"""
             return bound if util.isfinite(bound) else None
 
-        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(validate_bound, self.get_extents(element, ranges, lims_as_soft_ranges=True))
+        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(validate_bound, self.get_extents(element, ranges, range_type='combined', lims_as_soft_ranges=True))
 
         def set_bounds(axis, min_extent, max_extent):
             """Set the bounds for a given axis, using None if both extents are None or identical"""

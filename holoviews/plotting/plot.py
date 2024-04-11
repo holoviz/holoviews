@@ -1447,8 +1447,9 @@ class GenericElementPlot(DimensionedPlot):
 
         If lims_as_soft_ranges is set to True, the xlim and ylim will be treated as
         soft ranges instead of the default case as hard ranges while computing the extents.
-        This is useful when computing the maximum extents across data, padding, xlim/ylim,
-        and dimension ranges.
+        This is used e.g. when apply_hard_bounds is True and xlim/ylim is set, in which
+        case we limit the initial viewable range to xlim/ylim, but allow navigation up to
+        the abs max between the data + pad range and xlim/ylim.
         """
         num = 6 if (isinstance(self.projection, str) and self.projection == '3d') else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
