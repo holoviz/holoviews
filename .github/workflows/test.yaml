@@ -114,35 +114,9 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - name: Set TODAY
-        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
+      - uses: ./pixi_lock@pixi_play
         with:
-          fetch-depth: "1"
-      - name: cache
-        if: github.event.inputs.cache == 'true' || github.event.inputs.cache == ''
-        id: cache
-        uses: actions/cache/restore@v4
-        with:
-          path: pixi.lock
-          key: pixi|${{ env.TODAY }}|${{ hashFiles('pixi.toml') }}
-      - uses: prefix-dev/setup-pixi@v0.5.1
-        if: steps.cache.outputs.cache-hit != 'true'
-        id: install
-        with:
-          pixi-version: v0.19.0
-          manifest-path: pixi.toml
-          environments: ${{ matrix.environment }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pixi-lock
-          path: pixi.lock
-          if-no-files-found: error
-      - if: (github.event.inputs.cache == 'true' || github.event.inputs.cache == '') && (steps.cache.outputs.cache-hit != 'true')
-        uses: actions/cache/save@v4
-        with:
-          path: pixi.lock
-          key: pixi|${{ env.TODAY }}|${{ hashFiles('pixi.toml') }}
+          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
   unit_test_suite:
     name: Unit tests on Python ${{ matrix.environment }}, ${{ matrix.os }}
