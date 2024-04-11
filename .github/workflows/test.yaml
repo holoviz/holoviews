@@ -136,10 +136,6 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
-      - name: Download data
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          pixi run -e ${{ matrix.environment }} download-data
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -170,10 +166,6 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         with:
           environments: ${{ matrix.environment }}
-      - name: Download data
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          pixi run -e ${{ matrix.environment }} download-data
       - name: Test UI
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -202,10 +194,6 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
-      - name: Download data
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          pixi run -e ${{ matrix.environment }} download-data
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |

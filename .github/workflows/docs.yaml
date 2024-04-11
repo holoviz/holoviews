@@ -53,8 +53,6 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Download data
-        run: pixi run -e docs download-data
       - name: Build documentation
         run: pixi run -e docs build
       - name: upload dev
