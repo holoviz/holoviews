@@ -32,7 +32,7 @@ matplotlib-base = ">=3"
 bokeh = ">=3.1"
 
 [pypi-dependencies]
-holoviews = { path = ".", editable = true }
+holoviews = { path = "."}
 
 [feature.py309.dependencies]
 python = "3.9.*"
