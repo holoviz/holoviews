@@ -142,7 +142,11 @@ jobs:
           name: pixi-lock
           path: pixi.lock
           if-no-files-found: error
-      - if: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true' && steps.cache.outputs.cache-hit != 'true'
+      - name: test
+        run: |
+          echo ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
+          echo ${{ steps.cache.outputs.cache-hit }}
+      - if: (${{ github.event.inputs.cache || github.event.inputs.cache == '' }} == 'true') && (${{ steps.cache.outputs.cache-hit }} != 'true')
         uses: actions/cache/save@v4
         with:
           path: pixi.lock
