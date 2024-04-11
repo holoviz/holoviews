@@ -120,7 +120,7 @@ jobs:
     timeout-minutes: 120
     env:
       DESC: "Python ${{ matrix.environment }}, ${{ matrix.os }} unit tests"
-      PYTHON_VERSION: ${{ matrix.environment }}
+      PIXI_ENVIRONMENT_NAME: ${{ matrix.environment }}
     steps:
       - uses: actions/checkout@v4
         if: needs.setup.outputs.code_change == 'true'
@@ -140,23 +140,23 @@ jobs:
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+          pixi run check-latest-packages bokeh panel param datashader
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} download-data
+          pixi run download-data
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit
+          pixi run test-unit --cov=./holoviews
       - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-examples
+          pixi run test-examples
       - name: codecov
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} codecov
+          pixi run codecov
 
   ui_test_suite:
     name: UI tests on Python ${{ matrix.environment }}, ${{ matrix.os }}
@@ -171,6 +171,7 @@ jobs:
     env:
       DESC: "Python ${{ matrix.environment }}, ${{ matrix.os }} UI tests"
       PANEL_LOG_LEVEL: info
+      PIXI_ENVIRONMENT_NAME: ${{ matrix.environment }}
     steps:
       - uses: actions/checkout@v4
         if: needs.setup.outputs.code_change == 'true'
@@ -190,15 +191,16 @@ jobs:
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} download-data
+          pixi run download-data
       - name: Test UI
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-ui
+          pixi run install-ui
+          pixi run test-ui --cov=./holoviews --cov-report=xml
       - name: codecov
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} codecov
+          pixi run codecov
 
   core_test_suite:
     name: Core tests on Python ${{ matrix.environment }}, ${{ matrix.os }}
@@ -212,7 +214,7 @@ jobs:
     timeout-minutes: 120
     env:
       DESC: "Python ${{ matrix.environment }}, ${{ matrix.os }} core tests"
-      PYTHON_VERSION: ${{ matrix.environment }}
+      PIXI_ENVIRONMENT_NAME: ${{ matrix.environment }}
     steps:
       - uses: actions/checkout@v4
         if: needs.setup.outputs.code_change == 'true'
@@ -232,12 +234,12 @@ jobs:
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
+          pixi run check-latest-packages numpy pandas bokeh panel param
       - name: Download data
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} download-data
+          pixi run download-data
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-core
+          pixi run test-unit

@@ -102,19 +102,17 @@ pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
 pytest-rerunfailures = "*"
-matplotlib = ">=3"
+matplotlib-base = ">=3"
 nbconvert = "*"
 bokeh = ">=3.1"
 pillow = "*"
 plotly = ">=4.0"
 ipython = ">=5.4.0"
 contourpy = "*"
-codecov = "*"
 pytest-github-actions-annotate-failures = "*"
 
 [tool.pixi.feature.test-core.tasks]
-test-core = 'pytest holoviews'
-test-unit = 'pytest holoviews --cov=./holoviews'
+test-unit = 'pytest holoviews'
 test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
 
 [tool.pixi.feature.test.dependencies]
@@ -130,6 +128,7 @@ selenium = "*"
 spatialpandas = "*"
 datashader = ">=0.11.1"
 nbval = "*"
+codecov = "*"
 # dash >=1.16
 # tsdownsample = "*"  # not windows
 
@@ -143,7 +142,7 @@ streamz = ">=0.5.0"
 ffmpeg = "*"
 cftime = "*"
 netcdf4 = "*"
-dask = "*"
+dask-core = "*"
 scipy = "*"
 shapely = "*"
 scikit-image = "*"
@@ -161,7 +160,7 @@ playwright = "*"
 pytest-playwright = "*"
 
 [tool.pixi.feature.test-ui.tasks]
-activate = 'playwright install chromium'
+install-ui = 'playwright install chromium'
 test-ui = 'pytest holoviews --cov=./holoviews --cov-report=xml --ui --browser chromium'
 # test-ui = {
 #     cmd = ['pytest holoviews --cov=./holoviews --cov-report=xml --ui --browser chromium'],
