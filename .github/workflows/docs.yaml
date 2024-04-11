@@ -21,8 +21,15 @@ on:
     - cron: "0 14 * * SUN"
 
 jobs:
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
   build_docs:
     name: Documentation
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     timeout-minutes: 120
     defaults:
