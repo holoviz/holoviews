@@ -162,7 +162,7 @@ pytest-playwright = "*"
 
 [tool.pixi.feature.test-ui.tasks]
 install-ui = 'playwright install chromium'
-test-ui = 'pytest holoviews --cov=./holoviews --cov-report=xml --ui --browser chromium'
+test-ui = 'pytest holoviews --ui --browser chromium'
 # test-ui = {
 #     cmd = ['pytest holoviews --cov=./holoviews --cov-report=xml --ui --browser chromium'],
 #     depends_on = ["activate"]
