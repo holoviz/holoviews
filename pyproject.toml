@@ -118,6 +118,7 @@ test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
 [tool.pixi.feature.test.dependencies]
 dask-core = "*"
 ibis-sqlite = "*"
+pyarrow = "14.*"
 xarray = ">=0.10.4"
 networkx = "*"
 shapely = "*"
