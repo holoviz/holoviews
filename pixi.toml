@@ -8,13 +8,13 @@ check-latest-packages = 'python scripts/check_latest_packages.py'
 download-data = 'bash scripts/download_data.sh'
 
 [environments]
-test-309 = ["py309", "test-core", "test", "examples"]
-test-310 = ["py310", "test-core", "test", "examples"]
-test-311 = ["py311", "test-core", "test", "examples"]
-test-312 = ["py312", "test-core", "test", "examples"]
+test-309 = ["py309", "test-core", "test", "example", "test-example"]
+test-310 = ["py310", "test-core", "test", "example", "test-example"]
+test-311 = ["py311", "test-core", "test", "example", "test-example"]
+test-312 = ["py312", "test-core", "test", "example", "test-example"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core"]
-docs = ["py311", "examples", "doc"]
+docs = ["py311", "example", "doc"]
 
 [dependencies]
 python = ">=3.9"
@@ -25,6 +25,7 @@ colorcet = "*"
 numpy = ">=1.0"
 packaging = "*"
 pandas = ">=0.20.0"
+# Recommended
 ipython = ">=5.4.0"
 notebook = "*"
 matplotlib-base = ">=3"
@@ -45,42 +46,7 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
-[feature.test-core.dependencies]
-pytest = "*"
-pytest-cov = "*"
-pytest-xdist = "*"
-pytest-rerunfailures = "*"
-matplotlib-base = ">=3"
-nbconvert = "*"
-bokeh = ">=3.1"
-pillow = "*"
-plotly = ">=4.0"
-ipython = ">=5.4.0"
-contourpy = "*"
-pytest-github-actions-annotate-failures = "*"
-
-[feature.test-core.tasks]
-test-unit = 'pytest holoviews'
-test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
-
-[feature.test.dependencies]
-dask-core = "*"
-ibis-sqlite = "*"
-xarray = ">=0.10.4"
-networkx = "*"
-shapely = "*"
-ffmpeg = "*"
-cftime = "*"
-scipy = ">=1.10"  # Python 3.9 + Windows downloads 1.9
-selenium = "*"
-spatialpandas = "*"
-datashader = ">=0.11.1"
-nbval = "*"
-codecov = "*"
-# dash >=1.16
-# tsdownsample = "*"  # not windows
-
-[feature.examples.dependencies]
+[feature.example.dependencies]
 networkx = "*"
 pillow = "*"
 xarray = ">=0.10.4"
@@ -99,6 +65,45 @@ pooch = "*"
 datashader = ">=0.11.1"
 notebook = ">=7.0"
 
+# =============================================
+# =================== TESTS ===================
+# =============================================
+[feature.test-core.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-rerunfailures = "*"
+nbconvert = "*"
+pillow = "*"
+plotly = ">=4.0"
+contourpy = "*"
+pytest-github-actions-annotate-failures = "*"
+
+[feature.test-core.tasks]
+test-unit = 'pytest holoviews'
+
+[feature.test.dependencies]
+dask-core = "*"
+ibis-sqlite = "*"
+xarray = ">=0.10.4"
+networkx = "*"
+shapely = "*"
+ffmpeg = "*"
+cftime = "*"
+scipy = ">=1.10"  # Python 3.9 + Windows downloads 1.9
+selenium = "*"
+spatialpandas = "*"
+datashader = ">=0.11.1"
+codecov = "*"
+# dash >=1.16
+# tsdownsample = "*"  # not windows
+
+[feature.test-example.tasks]
+test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
+
+[feature.test-example.dependencies]
+nbval = "*"
+pytest-xdist = "*"
+
 [feature.test-ui]
 channels = ["conda-forge", "pyviz/label/dev", "microsoft"]
 
@@ -113,6 +118,9 @@ install-ui = 'playwright install chromium'
 cmd = 'pytest holoviews --ui --browser chromium'
 depends_on = ["install-ui"]
 
+# =============================================
+# =================== DOCS ====================
+# =============================================
 [feature.doc.dependencies]
 nbsite = ">=0.8.4,<0.9.0"
 graphviz = "*"
