@@ -152,7 +152,6 @@ notebook = ">=7.0"
 
 [tool.pixi.feature.test-ui]
 channels = ["conda-forge", "pyviz/label/dev", "microsoft"]
-# dependencies = ["playwright", "pytest-playwright"]
 
 [tool.pixi.feature.test-ui.dependencies]
 playwright = "*"
@@ -160,11 +159,10 @@ pytest-playwright = "*"
 
 [tool.pixi.feature.test-ui.tasks]
 install-ui = 'playwright install chromium'
-test-ui = 'pytest holoviews --ui --browser chromium'
-# test-ui = {
-#     cmd = ['pytest holoviews --cov=./holoviews --cov-report=xml --ui --browser chromium'],
-#     depends_on = ["activate"]
-# }
+
+[tool.pixi.feature.test-ui.tasks.test-ui]
+cmd = 'pytest holoviews --ui --browser chromium'
+depends_on = ["install-ui"]
 
 [tool.pixi.feature.doc.dependencies]
 nbsite = ">=0.8.4,<0.9.0"
