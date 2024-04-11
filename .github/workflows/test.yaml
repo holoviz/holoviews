@@ -72,6 +72,7 @@ jobs:
               - 'holoviews/**'
               - 'examples/**'
               - 'pixi.toml'
+              - 'pyproject.toml'
               - '.github/workflows/test.yaml'
       - name: Set matrix option
         run: |
