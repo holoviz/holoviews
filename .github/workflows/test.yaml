@@ -110,9 +110,36 @@ jobs:
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    needs: [pre_commit, setup]
+    steps:
+      - uses: actions/checkout@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          fetch-depth: "100"
+      - name: Fetch
+        if: needs.setup.outputs.code_change == 'true'
+        run: git fetch --prune --tags -f
+      - uses: prefix-dev/setup-pixi@v0.5.1
+        if: needs.setup.outputs.code_change == 'true'
+        id: install
+        with:
+          pixi-version: v0.19.0
+          manifest-path: pyproject.toml
+          environments: ${{ matrix.environment }}
+          # cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
+      - uses: actions/upload-artifact@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          name: pixi-lock
+          path: pixi.lock
+          if-no-files-found: error
+
   unit_test_suite:
     name: Unit tests on Python ${{ matrix.environment }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -128,6 +155,10 @@ jobs:
       - name: Fetch
         if: needs.setup.outputs.code_change == 'true'
         run: git fetch --prune --tags -f
+      - uses: actions/download-artifact@v4
+        with:
+          name: pixi-lock
+          path: .
       - uses: prefix-dev/setup-pixi@v0.5.1
         if: needs.setup.outputs.code_change == 'true'
         id: install
@@ -159,7 +190,7 @@ jobs:
 
   ui_test_suite:
     name: UI tests on Python ${{ matrix.environment }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -178,6 +209,10 @@ jobs:
       - name: Fetch
         if: needs.setup.outputs.code_change == 'true'
         run: git fetch --prune --tags -f
+      - uses: actions/download-artifact@v4
+        with:
+          name: pixi-lock
+          path: .
       - uses: prefix-dev/setup-pixi@v0.5.1
         if: needs.setup.outputs.code_change == 'true'
         id: install
@@ -202,7 +237,7 @@ jobs:
 
   core_test_suite:
     name: Core tests on Python ${{ matrix.environment }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -220,6 +255,10 @@ jobs:
       - name: Fetch
         if: needs.setup.outputs.code_change == 'true'
         run: git fetch --prune --tags -f
+      - uses: actions/download-artifact@v4
+        with:
+          name: pixi-lock
+          path: .
       - uses: prefix-dev/setup-pixi@v0.5.1
         if: needs.setup.outputs.code_change == 'true'
         id: install
