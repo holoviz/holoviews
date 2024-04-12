@@ -15,6 +15,7 @@ test-312 = ["py312", "test-core", "test", "example", "test-example"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core"]
 docs = ["py311", "example", "doc"]
+build = ["py311", "build"]
 
 [dependencies]
 python = ">=3.9"
@@ -134,3 +135,14 @@ build-docs = 'nbsite build --what=html --output=builtdocs --org holoviz --projec
 
 [feature.doc.tasks.build]
 depends_on = ['generate-rst', 'refmanual', 'build-docs']
+
+# =============================================
+# ================== BUILD ====================
+# =============================================
+[feature.build.dependencies]
+build = "*"
+conda-build = "*"
+
+[feature.build.tasks]
+conda = 'bash scripts/build_conda.sh'
+pip = 'python -m build .'
