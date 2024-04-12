@@ -45,7 +45,7 @@ jobs:
           environments: "build"
           download-data: false
       - name: conda build
-        run: pixi run -e build conda
+        run: pixi run -e build build-conda
       - name: Save filename
         run: |
           ENV_PATH=$(pixi run -e build 'echo $CONDA_PREFIX')
@@ -97,7 +97,7 @@ jobs:
           environments: "build"
           download-data: false
       - name: Build package
-        run: pixi run -e build pip
+        run: pixi run -e build build-pip
       - uses: actions/upload-artifact@v4
         if: always()
         with:

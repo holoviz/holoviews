@@ -129,12 +129,12 @@ pooch = "*"
 selenium = "*"
 
 [feature.doc.tasks]
-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
-build-docs = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
+docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
+docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
+docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
 
-[feature.doc.tasks.build]
-depends_on = ['generate-rst', 'refmanual', 'build-docs']
+[feature.doc.tasks.docs-builddocs]
+depends_on = ['docs-generate-rst', 'docs-refmanual', 'docs-generate']
 
 # =============================================
 # ================== BUILD ====================
@@ -144,5 +144,5 @@ build = "*"
 conda-build = "*"
 
 [feature.build.tasks]
-conda = 'bash scripts/conda/build.sh'
-pip = 'python -m build .'
+build-conda = 'bash scripts/conda/build.sh'
+build-pip = 'python -m build .'

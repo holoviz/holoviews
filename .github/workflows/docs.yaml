@@ -54,7 +54,7 @@ jobs:
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Build documentation
-        run: pixi run -e docs build
+        run: pixi run -e docs docs-build
       - name: upload dev
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
