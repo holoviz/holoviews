@@ -31,7 +31,6 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Libraries",
 ]
-# entry_points={console_scripts= ["holoviews = holoviews.util.command:main"]}
 dependencies = [
     "param >=1.12.0,<3.0",
     "numpy >=1.0",
@@ -41,6 +40,7 @@ dependencies = [
     "packaging",
     "pandas >=0.20.0",
 ]
+
 [project.urls]
 Homepage = "https://holoviews.org"
 Source = "http://github.com/holoviz/holoviews"
@@ -48,6 +48,9 @@ HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
 recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
+
+[project.entry-points.console-scripts]
+holoviews = "holoviews.util.command:main"
 
 [tool.hatch.version]
 source = "vcs"
