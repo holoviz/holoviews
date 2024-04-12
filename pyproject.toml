@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools >=30.3.0", "setuptools_scm >=7"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "holoviews"
@@ -49,11 +49,20 @@ HoloViz = "https://holoviz.org/"
 [project.optional-dependencies]
 recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
 
-[tool.setuptools]
-include-package-data = true
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.packages.find]
+[tool.hatch.build.targets.wheel]
 include = ["holoviews"]
+
+[tool.hatch.build.targets.wheel.force-include]
+examples = "holoviews/examples"
+
+[tool.hatch.build.targets.sdist]
+include = ["holoviews", "examples"]
+
+[tool.hatch.build.hooks.vcs]
+version-file = "holoviews/_version.py"
 
 [tool.setuptools_scm]
 version_file = "holoviews/_version.py"

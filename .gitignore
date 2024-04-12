@@ -28,7 +28,6 @@ holoviews/_version.py
 .idea
 .vscode
 holoviews.rc
-/examples/assets/
 ghostdriver.log
 holoviews/.version
 .dir-locals.el
