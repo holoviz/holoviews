@@ -107,7 +107,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     apply_hard_bounds = param.Boolean(default=False, doc="""
         If True, the navigable bounds of the plot will be set based
-        on the larger of extents of the data+padding, xlim/ylim, dim ranges.""")
+        on the more extreme of extents between the data or xlim/ylim ranges.
+        If dim ranges are set, the hard bounds will be set to the dim ranges.""")
 
     autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
@@ -1931,8 +1932,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Apply hard bounds to the x and y ranges of the plot. If xlim/ylim is set, limit the
         initial viewable range to xlim/ylim, but allow navigation up to the abs max between
-        the data + pad range and xlim/ylim. If dim range is set (e.g. via redim.range), use
-        it as the hard bounds.
+        the data range and xlim/ylim. If dim range is set (e.g. via redim.range), enforce
+        as hard bounds.
 
         """
 
