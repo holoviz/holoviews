@@ -1141,13 +1141,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                'axes are %s, the option will '
                                'be ignored.' % ax_type)
         elif data_aspect:
-            if not options.get("responsive", False):
-                return
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
 
             if self.drawn or (fixed_width and fixed_height) or (constrained_width or constrained_height):
+                if not options.get("responsive", False):
+                    return
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
