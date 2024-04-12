@@ -67,8 +67,8 @@ include = ["holoviews", "examples"]
 [tool.hatch.build.hooks.vcs]
 version-file = "holoviews/_version.py"
 
-[tool.setuptools_scm]
-version_file = "holoviews/_version.py"
+[tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers", "--color=yes"]
