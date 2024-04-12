@@ -142,6 +142,15 @@ class RangeToolLinkCallback(LinkCallback):
                 continue
 
             axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
+            interval = getattr(link, f'intervals{axis}', None)
+            if interval is not None and bokeh34:
+                min, max = interval
+                if min is not None:
+                    axes[f'{axis}_range'].min_interval = min
+                if max is not None:
+                    axes[f'{axis}_range'].max_interval = max
+                    self._set_range_for_interval(axes[f'{axis}_range'], max)
+
             bounds = getattr(link, f'bounds{axis}', None)
             if bounds is not None:
                 start, end = bounds
@@ -152,18 +161,26 @@ class RangeToolLinkCallback(LinkCallback):
                     axes[f'{axis}_range'].end = end
                     axes[f'{axis}_range'].reset_end = end
 
-            interval = getattr(link, f'intervals{axis}', None)
-            if interval is not None and bokeh34:
-                min, max = interval
-                if min is not None:
-                    axes[f'{axis}_range'].min_interval = min
-                if max is not None:
-                    axes[f'{axis}_range'].max_interval = max
-
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if toolbars:
             toolbars[0].tools.append(tool)
+
+    def _set_range_for_interval(self, axis, max):
+        # Changes the existing Range1d axis range to be in the interval
+        for n in ("", "reset_"):
+            start = getattr(axis, f"{n}start")
+            try:
+                end = start + max
+            except Exception as e:
+                # Handle combinations of datetime axis and timedelta interval
+                # Likely a better way to do this
+                try:
+                    import pandas as pd
+                    end = (pd.array([start]) + pd.array([max]))[0]
+                except Exception:
+                    raise e from None
+            setattr(axis, f"{n}end", end)
 
 
 class DataLinkCallback(LinkCallback):
