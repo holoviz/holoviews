@@ -43,6 +43,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
           environments: "build"
+          download-data: false
       - name: conda build
         run: pixi run -e build conda
       - name: Save filename
@@ -93,6 +94,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
           environments: "build"
+          download-data: false
       - name: Build package
         run: pixi run -e build pip
       - uses: actions/upload-artifact@v4
