@@ -144,5 +144,5 @@ build = "*"
 conda-build = "*"
 
 [feature.build.tasks]
-conda = 'bash scripts/build_conda.sh'
+conda = 'bash scripts/conda/build.sh'
 pip = 'python -m build .'
