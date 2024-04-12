@@ -61,7 +61,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle', 'hit_dilation'] +
                   base_properties + line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')

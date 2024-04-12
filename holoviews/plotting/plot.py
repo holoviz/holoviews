@@ -925,7 +925,7 @@ class DimensionedPlot(Plot):
             for opt, v in opts.items():
                 if opt not in options[key]:
                     options[key][opt] = v
-        return options if keyfn else options[None]
+        return options if keyfn else options.get(None, {})
 
     def _get_projection(cls, obj):
         """
@@ -1828,8 +1828,9 @@ class GenericOverlayPlot(GenericElementPlot):
         plottype = registry.get(vtype, None)
         if plottype is None:
             self.param.warning(
-                "No plotting class for {} type and {} backend "
-                "found. ".format(vtype.__name__, self.renderer.backend))
+                f"No plotting class for {vtype.__name__} type "
+                f"and {self.renderer.backend} backend found. "
+            )
             return None
 
         # Get zorder and style counter

@@ -147,8 +147,7 @@ class NotebookArchive(FileArchive):
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':self.notebook_name})
-        print(('Export name: {!r}\nDirectory    {!r}'.format(export_name,
-                                                     os.path.join(os.path.abspath(self.root))))
+        print((f'Export name: {export_name!r}\nDirectory    {os.path.join(os.path.abspath(self.root))!r}')
                + '\n\nIf no output appears, please check holoviews.archive.last_export_status()')
         display(Javascript(cmd))
 

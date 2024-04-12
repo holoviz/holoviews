@@ -417,7 +417,7 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False
             if p not in disambiguation_properties:
                 ignore.add(p)
 
-    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore)) if tools else Toolbar()
 
 
 def sync_legends(bokeh_layout):
