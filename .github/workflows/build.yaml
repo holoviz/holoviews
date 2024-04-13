@@ -46,16 +46,11 @@ jobs:
           download-data: false
       - name: conda build
         run: pixi run -e build build-conda
-      - name: Save filename
-        run: |
-          ENV_PATH=$(pixi run -e build 'echo $CONDA_PREFIX')
-          VERSION=$(find dist -name "*.whl" -exec basename {} \; | cut -d- -f2)
-          echo "CONDA_FILE="$ENV_PATH/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: conda
-          path: ${{ env.CONDA_FILE }}
+          path: dist/
           if-no-files-found: error
 
   conda_publish:
