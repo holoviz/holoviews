@@ -59,7 +59,7 @@ source = "vcs"
 include = ["holoviews"]
 
 [tool.hatch.build.targets.sdist]
-include = ["holoviews"]
+include = ["holoviews", "CHANGELOG.md"]
 
 [tool.hatch.build.targets.sdist.force-include]
 examples = "holoviews/examples"
