@@ -58,17 +58,17 @@ source = "vcs"
 [tool.hatch.build.targets.wheel]
 include = ["holoviews"]
 
-[tool.hatch.build.targets.wheel.force-include]
-examples = "holoviews/examples"
-
 [tool.hatch.build.targets.sdist]
-include = ["holoviews", "examples"]
+include = ["holoviews"]
+
+[tool.hatch.build.targets.sdist.force-include]
+examples = "holoviews/examples"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "holoviews/_version.py"
 
-[tool.hatch.build.hooks.custom]
-path = "scripts/hatch_build.py"
+# [tool.hatch.build.hooks.custom]
+# path = "scripts/hatch_build.py"
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers", "--color=yes"]
