@@ -8,7 +8,7 @@ check-latest-packages = 'python scripts/check_latest_packages.py'
 download-data = 'python scripts/download_data.py'
 
 [environments]
-test-309 = ["py309", "test-core", "test", "example", "test-example"]
+test-39 = ["py39", "test-core", "test", "example", "test-example"]
 test-310 = ["py310", "test-core", "test", "example", "test-example"]
 test-311 = ["py311", "test-core", "test", "example", "test-example"]
 test-312 = ["py312", "test-core", "test", "example", "test-example"]
@@ -35,7 +35,7 @@ bokeh = ">=3.1"
 [pypi-dependencies]
 holoviews = { path = "." }
 
-[feature.py309.dependencies]
+[feature.py39.dependencies]
 python = "3.9.*"
 
 [feature.py310.dependencies]
