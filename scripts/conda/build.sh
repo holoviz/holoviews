@@ -12,7 +12,7 @@ for file in dist/*.whl dist/*.tar.bz2; do
 done
 
 git diff --exit-code
-python -m build -w .
+python -m build .
 git diff --exit-code
 
 VERSION=$(find dist -name "*.whl" -exec basename {} \; | cut -d- -f2)
