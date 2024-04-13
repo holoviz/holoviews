@@ -5,7 +5,7 @@ Called __version.py as setuptools_scm will create a _version.py
 
 import os.path
 
-NAME = "holoviews"
+PACKAGE = "holoviews"
 
 try:
     # For performance reasons on imports, avoid importing setuptools_scm
@@ -35,7 +35,7 @@ except (ImportError, LookupError, FileNotFoundError):
         from importlib.metadata import PackageNotFoundError, version
 
         try:
-            __version__ = version(NAME)
+            __version__ = version(PACKAGE)
         except PackageNotFoundError:
             # The user is probably trying to run this without having installed
             # the package.
