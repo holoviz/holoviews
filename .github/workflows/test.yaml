@@ -107,7 +107,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "environment": ["test3.11"]
+              "environment": ["test-311"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 

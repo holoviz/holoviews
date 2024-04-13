@@ -26,7 +26,7 @@ requirements:
     {% endfor %}
   run:
     - python {{ project['requires-python'] }}
-    {% for dep in project['dependencies'] %}
+    {% for dep in project.get('dependencies', []) %}
     - {{ dep }}
     {% endfor %}
     {% for dep in project['optional-dependencies']['recommended'] %}
