@@ -96,7 +96,9 @@ spatialpandas = "*"
 datashader = ">=0.11.1"
 codecov = "*"
 # dash >=1.16
-# tsdownsample = "*"  # not windows
+
+[feature.test.target.unix.dependencies]
+tsdownsample = "*"  # currently not available on Windows
 
 [feature.test-example.tasks]
 test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
