@@ -1046,6 +1046,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for m in models:
                 setattr(m, attr_accessor, val)
 
+
     def _update_grid(self, plot):
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
@@ -1449,6 +1450,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 (isinstance(column, list) or column.dtype.kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
+
     def get_aspect(self, xspan, yspan):
         """
         Computes the aspect ratio of the plot
@@ -1683,6 +1685,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         return new_style
 
+
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
         if self.show_legend:
@@ -1694,6 +1697,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if legend and self.overlaid:
                 properties['legend_label'] = legend
         return properties
+
 
     def _filter_properties(self, properties, glyph_type, allowed):
         glyph_props = dict(properties)
@@ -1712,6 +1716,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 glyph_props.update(props)
         return {k: v for k, v in glyph_props.items() if k in allowed}
+
 
     def _update_glyph(self, renderer, properties, mapping, glyph, source, data):
         allowed_properties = glyph.properties()
@@ -1791,6 +1796,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if data is not None and cds_replace and not self.static_source:
             self._update_datasource(source, data)
+
 
     def _postprocess_hover(self, renderer, source):
         """
@@ -1983,6 +1989,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif not self.static_source:
             self._update_datasource(source, data)
 
+
     def _reset_ranges(self):
         """
         Resets RangeXY streams if norm option is set to framewise
@@ -2061,10 +2068,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
 
+
     def _execute_hooks(self, element):
         dtype_fix_hook(self, element)
         super()._execute_hooks(element)
         self._update_backend_opts()
+
 
     def model_changed(self, model):
         """
@@ -2211,6 +2220,7 @@ class CompositeElementPlot(ElementPlot):
         plot_method = '_'.join(key.split('_')[:-1])
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
+
 
 
 class ColorbarPlot(ElementPlot):
@@ -2626,6 +2636,7 @@ class LegendPlot(ElementPlot):
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
+
 
 
 class AnnotationPlot:
