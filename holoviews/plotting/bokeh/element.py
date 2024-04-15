@@ -2941,6 +2941,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._update_ranges(element, ranges)
 
         panels = []
+        subcoord_y_glyph_renderers = []
         for key, subplot in self.subplots.items():
             frame = None
             if self.tabs:
@@ -2959,6 +2960,19 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     title = get_tab_title(key, frame, self.hmap.last)
                 panels.append(TabPanel(child=child, title=title))
             self._merge_tools(subplot)
+            if subplot.subcoordinate_y and (glyph_renderer := subplot.handles.get('glyph_renderer')):
+                subcoord_y_glyph_renderers.append(glyph_renderer)
+
+        if self.subcoordinate_y:
+            # Reverse the subcoord-y renderers only.
+            reversed_renderers = subcoord_y_glyph_renderers[::-1]
+            reordered = []
+            for item in plot.renderers:
+                if item not in subcoord_y_glyph_renderers:
+                    reordered.append(item)
+                else:
+                    reordered.append(reversed_renderers.pop(0))
+            plot.renderers = reordered
 
         if self.tabs:
             self.handles['plot'] = Tabs(

@@ -40,6 +40,17 @@ class TestSubcoordinateY(TestBokehPlot):
         assert plot.state.yaxis.ticker.ticks == [0, 1]
         assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
 
+    def test_renderers_reversed(self):
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = VSpan(0, 1, label='back') * overlay * VSpan(2, 3, label='front')
+        plot = bokeh_renderer.get_plot(overlay)
+        renderers = plot.handles['plot'].renderers
+        assert (renderers[0].left, renderers[0].right) == (0, 1)
+        # Only the subcoord-y renderers are reversed by default.
+        assert renderers[1].name == 'Data 1'
+        assert renderers[2].name == 'Data 0'
+        assert (renderers[3].left, renderers[3].right) == (2, 3)
+
     def test_bool_scale(self):
         test_data = [
             (0.5, (-0.25, 0.25), (0.75, 1.25), (-0.25, 1.25)),
