@@ -221,9 +221,10 @@ def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     )
 
     page = serve_hv(hv_curve)
+    wait_until(lambda: expect(page.locator(".bk-events")).to_have_count(1))
 
     hv_plot = page.locator(".bk-events")
-    wait_until(lambda: expect(hv_plot).to_have_count(1), timeout=10000)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
