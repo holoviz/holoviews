@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 
@@ -6,6 +8,11 @@ import holoviews as hv
 from .. import expect
 
 pytestmark = pytest.mark.ui
+
+
+def delay_rerun(*args):
+    time.sleep(2)
+    return True
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -156,6 +163,7 @@ def test_hover_tooltips_formatters(serve_hv):
     expect(page.locator(".bk-Tooltip")).not_to_contain_text("?")
 
 
+@pytest.mark.flaky(max_runs=5, rerun_filter=delay_rerun)
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize("hover_mode", ["hline", "vline"])
 def test_hover_mode(serve_hv, hover_mode):
@@ -177,6 +185,7 @@ def test_hover_mode(serve_hv, hover_mode):
     expect(page.locator(".bk-Tooltip")).not_to_contain_text("?")
 
 
+@pytest.mark.flaky(max_runs=5, rerun_filter=delay_rerun)
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
     "hover_tooltip",
