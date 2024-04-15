@@ -206,6 +206,7 @@ class subcoordinate_group_ranges(Operation):
         new = []
         for el in overlay:
             if not isinstance(el, Chart):
+                new.append(el)
                 continue
             y_dimension = el.vdims[0]
             y_dimension = y_dimension.clone(range=minmax[el.group])
