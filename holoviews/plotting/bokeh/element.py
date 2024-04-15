@@ -1327,7 +1327,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             p0, p1 = self.padding, self.padding
 
-        # Clean this up in bokeh 3.0 using View.find_one API
         callback = CustomJS(code=f"""
         const cb = function() {{
 
@@ -1349,30 +1348,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return invert ? [upper, lower] : [lower, upper]
           }}
 
-          const ref = plot.id
-
-          const find = (view) => {{
-            let iterable = view.child_views === undefined ? []  : view.child_views
-            for (const sv of iterable) {{
-              if (sv.model.id == ref)
-                return sv
-              const obj = find(sv)
-              if (obj !== null)
-                return obj
-            }}
-            return null
-          }}
-          let plot_view = null;
-          for (const root of plot.document.roots()) {{
-            const root_view = window.Bokeh.index[root.id]
-            if (root_view === undefined)
-              return
-            plot_view = find(root_view)
-            if (plot_view != null)
-              break
-          }}
-          if (plot_view == null)
+          let plot_view = Bokeh.index.find_one(plot)
+          if (plot_view == null) {{
             return
+          }}
 
           let range_limits = {{}}
           for (const dr of plot.data_renderers) {{
@@ -1393,20 +1372,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
               }}
             }}
 
-            if (y_range_name) {{
+            if (y_range_name in range_limits) {{
+              const [vmin_old, vmax_old] = range_limits[y_range_name]
+              range_limits[y_range_name] = [Math.min(vmin, vmin_old), Math.max(vmax, vmax_old)]
+            }} else {{
               range_limits[y_range_name] = [vmin, vmax]
             }}
           }}
 
-           let range_tags_extras = plot.{dim}_range.tags[1]
-           if (range_tags_extras['autorange']) {{
-             let lowerlim = range_tags_extras['y-lowerlim'] ?? null
-             let upperlim = range_tags_extras['y-upperlim'] ?? null
-             let [start, end] = get_padded_range('default', lowerlim, upperlim, range_tags_extras['invert_yaxis'])
-             if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
-               plot.{dim}_range.setv({{start, end}})
-             }}
-           }}
+          let range_tags_extras = plot.{dim}_range.tags[1]
+          if (range_tags_extras['autorange']) {{
+            let lowerlim = range_tags_extras['y-lowerlim'] ?? null
+            let upperlim = range_tags_extras['y-upperlim'] ?? null
+            let [start, end] = get_padded_range('default', lowerlim, upperlim, range_tags_extras['invert_yaxis'])
+            if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
+              plot.{dim}_range.setv({{start, end}})
+            }}
+          }}
 
           for (let key in plot.extra_{dim}_ranges) {{
             const extra_range = plot.extra_{dim}_ranges[key]
@@ -2665,7 +2647,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale']
+                          'subcoordinate_scale', 'autorange']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
@@ -2985,6 +2967,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if self.top_level:
             self.init_links()
+
+        if self.autorange:
+            self._setup_autorange()
 
         self._execute_hooks(element)
 
