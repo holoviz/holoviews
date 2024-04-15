@@ -2,7 +2,6 @@ import asyncio
 import base64
 import time
 from collections import defaultdict
-from functools import partial
 
 import numpy as np
 from bokeh.models import (
@@ -352,7 +351,7 @@ class Callback:
 
         # Get unique event types in the queue
         events = list(dict([(event.event_name, event)
-                                   for event, dt in self._queue]).values())
+                            for event, dt in self._queue]).values())
         self._queue = []
 
         # Process event types
@@ -616,13 +615,13 @@ class PopupMixin:
         close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
 
         geom_type = self.geom_type
-        self.plot.state.on_event('selectiongeometry', self._populate)
+        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
             args=dict(panel=self._panel),
             code=f"""
             export default ({{panel}}, cb_obj, _) => {{
               const el = panel.elements[1]
-              if ((el && !el.visible) || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
                  return
               }}
               let pos;
@@ -650,13 +649,12 @@ class PopupMixin:
         elif event.geometry['type'] == 'poly':
             return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
-    def _schedule_populate(self, event):
-        # IMPORTANT: NEED FIX BY PHILIPP
-        # - doesn't work on server; tap x/y updates late; so results in None, None
-        # - if pan is active, and tap, it gets dragged
-        state.execute(partial(self._populate, event), schedule=True)
+    def _update_selection_event(self, event):
+        self._selection_event = event
 
-    def _populate(self, event):
+    def on_msg(self, msg):
+        super().on_msg(msg)
+        event = self._selection_event
         if not event.final or not (event.geometry["type"] in self.geom_type or self.geom_type == "any"):
             return
         for stream in self.streams:
@@ -665,8 +663,7 @@ class PopupMixin:
                 break
 
         if callable(popup):
-            data = self.streams[0].contents
-            popup = popup(**data) if data else None
+            popup = popup(**stream.contents)
 
         # If no popup is defined, hide the panel
         if popup is None:
@@ -703,13 +700,6 @@ class PopupMixin:
                 if self.plot.comm:
                     push_on_root(self.plot.root.ref['id'])
             return
-
-        # lasso is wonky; can't explain this
-        # without this, the panel will not show upon completion
-        elif event.geometry["type"] == "poly":
-            if position:
-                self._panel.position = XY(**position)
-                popup_pane.visible = True
 
         model = popup_pane.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
