@@ -23,7 +23,7 @@ def test_hover_tooltips_list(serve_hv):
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -47,7 +47,7 @@ def test_hover_tooltips_list_mix_tuple_string(serve_hv):
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -81,7 +81,7 @@ def test_hover_tooltips_label_group(serve_hv):
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -105,7 +105,7 @@ def test_hover_tooltips_missing(serve_hv):
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -125,7 +125,7 @@ def test_hover_tooltips_html_string(serve_hv):
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -149,7 +149,7 @@ def test_hover_tooltips_formatters(serve_hv):
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -170,7 +170,7 @@ def test_hover_mode(serve_hv, hover_mode):
 
     page = serve_hv(hv_curve)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -201,7 +201,7 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
 
     page = serve_hv(hv_curve)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
@@ -221,7 +221,7 @@ def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
 
     page = serve_hv(hv_curve)
     hv_plot = page.locator(".bk-events")
-    expect(hv_plot).to_have_count(1)
+    wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
