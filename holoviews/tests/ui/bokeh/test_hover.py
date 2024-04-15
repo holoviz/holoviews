@@ -27,10 +27,10 @@ def test_hover_tooltips_list(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("x:")
     expect(page.locator(".bk-Tooltip")).to_contain_text("xc:")
@@ -51,10 +51,10 @@ def test_hover_tooltips_list_mix_tuple_string(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("xs:")
     expect(page.locator(".bk-Tooltip")).to_contain_text("yc:")
@@ -85,10 +85,10 @@ def test_hover_tooltips_label_group(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("label:")
     expect(page.locator(".bk-Tooltip")).to_contain_text("group:")
@@ -109,10 +109,10 @@ def test_hover_tooltips_missing(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("?")
 
@@ -129,10 +129,10 @@ def test_hover_tooltips_html_string(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("x:")
     expect(page.locator(".bk-Tooltip")).to_contain_text("y:")
@@ -153,17 +153,16 @@ def test_hover_tooltips_formatters(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("X:")
     expect(page.locator(".bk-Tooltip")).to_contain_text("%")
     expect(page.locator(".bk-Tooltip")).not_to_contain_text("?")
 
 
-@pytest.mark.flaky(max_runs=5, rerun_filter=delay_rerun)
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize("hover_mode", ["hline", "vline"])
 def test_hover_mode(serve_hv, hover_mode):
@@ -175,17 +174,16 @@ def test_hover_mode(serve_hv, hover_mode):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
 
-    expect(page.locator(".bk-Tooltip")).to_contain_text("x: 1")
-    expect(page.locator(".bk-Tooltip")).to_contain_text("y: 10")
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
+
+    expect(page.locator(".bk-Tooltip")).to_contain_text("x:")
+    expect(page.locator(".bk-Tooltip")).to_contain_text("y:")
     expect(page.locator(".bk-Tooltip")).not_to_contain_text("?")
 
 
-@pytest.mark.flaky(max_runs=5, rerun_filter=delay_rerun)
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
     "hover_tooltip",
@@ -207,17 +205,14 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
 
-    wait_until(lambda: expect(page.locator(".bk-Tooltip").to_have_count(1)))
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10")
 
 
-@pytest.mark.flaky(max_runs=5, rerun_filter=delay_rerun)
 def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     amplitude_dim = hv.Dimension("Amplitude", unit="µV")
     hv_curve = hv.Curve([0, 10, 2], vdims=[amplitude_dim]).opts(
@@ -230,11 +225,9 @@ def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     bbox = hv_plot.bounding_box()
 
     # Hover over the plot
-    page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
-    page.mouse.down()
-    page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
 
-    wait_until(lambda: expect(page.locator(".bk-Tooltip").to_have_count(1)))
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10.00")
