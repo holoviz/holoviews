@@ -144,10 +144,11 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           pixi run -e ${{ matrix.environment }} test-example
-      - name: codecov
+      - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
-        run: |
-          pixi run -e ${{ matrix.environment }} codecov
+        with:
+          # fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   ui_test_suite:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
@@ -170,10 +171,11 @@ jobs:
         if: needs.setup.outputs.code_change == 'true'
         run: |
           pixi run -e ${{ matrix.environment }} test-ui --cov=./holoviews --cov-report=xml
-      - name: codecov
+      - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
-        run: |
-          pixi run -e ${{ matrix.environment }} codecov
+        with:
+          # fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   core_test_suite:
     name: core:${{ matrix.environment }}:${{ matrix.os }}
