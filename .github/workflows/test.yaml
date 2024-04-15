@@ -139,7 +139,7 @@ jobs:
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit --cov=./holoviews
+          pixi run -e ${{ matrix.environment }} test-unit --cov=./holoviews --cov-report=xml
       - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
