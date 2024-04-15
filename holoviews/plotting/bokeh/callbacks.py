@@ -26,6 +26,7 @@ try:
 except Exception:
     Panel = XY = None
 
+from ...core.data import Dataset
 from ...core.options import CallbackError
 from ...core.util import (
     VersionError,
@@ -614,6 +615,10 @@ class PopupMixin:
         )
         close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
 
+        self.plot.state.elements.append(self._panel)
+        self._watch_position()
+
+    def _watch_position(self):
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
@@ -637,7 +642,6 @@ class PopupMixin:
               }}
             }}""",
         ))
-        self.plot.state.elements.append(self._panel)
 
     def _get_position(self, event):
         if self.geom_type not in ('any', event.geometry['type']):
@@ -1078,6 +1082,56 @@ class Selection1DCallback(PopupMixin, Callback):
     attributes = {'index': 'cb_obj.indices'}
     models = ['selected']
     on_changes = ['indices']
+
+    def _watch_position(self):
+        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
+        source = self.plot.handles['source']
+        renderer = self.plot.handles['glyph_renderer']
+        source.selected.js_on_change('indices', CustomJS(
+            args=dict(panel=self._panel, renderer=renderer),
+            code="""
+            export default ({panel, renderer}, cb_obj, _) => {
+              const el = panel.elements[1]
+              const ds = renderer.data_source
+              let x, y, xs, ys;
+              if (renderer.glyph.x && renderer.glyph.y) {
+                xs = ds.get_column(renderer.glyph.x.field)
+                ys = ds.get_column(renderer.glyph.y.field)
+              } else if (renderer.glyph.right && renderer.glyph.top) {
+                xs = ds.get_column(renderer.glyph.right.field)
+                ys = ds.get_column(renderer.glyph.top.field)
+              } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                xs = ds.get_column(renderer.glyph.x1.field)
+                ys = ds.get_column(renderer.glyph.y1.field)
+              } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                xs = ds.get_column(renderer.glyph.xs.field)
+                ys = ds.get_column(renderer.glyph.ys.field)
+              }
+              if (!xs || !ys) { return }
+              for (const i of cb_obj.indices) {
+                const tx = xs[i]
+                if (!x || (tx > x)) {
+                  x = xs[i]
+                }
+                const ty = ys[i]
+                if (!y || (ty > y)) {
+                  y = ys[i]
+                }
+              }
+              if (x && y) {
+                panel.position.setv({x, y})
+              }
+            }"""
+        ))
+
+    def _get_position(self, event):
+        el = self.plot.current_frame
+        if isinstance(el, Dataset):
+            s = self.streams[0]
+            sel = el.iloc[s.index]
+            (_, x1), (_, y1) = sel.range(0), sel.range(1)
+            return dict(x=x1, y=y1)
+        return super()._get_position(event)
 
     def _process_msg(self, msg):
         el = self.plot.current_frame
