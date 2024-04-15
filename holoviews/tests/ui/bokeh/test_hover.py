@@ -206,13 +206,13 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     expect(hv_plot).to_have_count(1)
     bbox = hv_plot.bounding_box()
 
-    wait_until(lambda: expect(page.locator(".bk-Tooltip").to_have_count(1)))
-
     # Hover over the plot
     page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
     page.mouse.down()
     page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip").to_have_count(1)))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10")
 
