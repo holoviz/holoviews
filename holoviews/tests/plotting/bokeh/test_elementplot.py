@@ -16,6 +16,7 @@ from bokeh.models import (
     tools,
 )
 
+from holoviews import opts
 from holoviews.core import DynamicMap, HoloMap, NdOverlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
@@ -994,14 +995,14 @@ class TestOverlayPlot(TestBokehPlot):
         assert low > 0
         assert high < 1
 
-class TestApplyHardBounds(LoggingComparisonTestCase, TestBokehPlot):
+class TestApplyHardBounds(TestBokehPlot):
 
     def test_apply_hard_bounds_with_xlim(self):
         """Test `apply_hard_bounds` with `xlim` set. Initial view should be within xlim but allow panning to data range."""
         x_values = np.linspace(10, 50, 5)
         y_values = np.array([10, 20, 30, 40, 50])
         curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True, xlim=(15, 35))
-        plot = self.bokeh_renderer.get_plot(curve)
+        plot = bokeh_renderer.get_plot(curve)
         initial_view_range = (plot.handles['x_range'].start, plot.handles['x_range'].end)
         self.assertEqual(initial_view_range, (15, 35))
         # Check if data beyond xlim can be navigated to
@@ -1012,7 +1013,7 @@ class TestApplyHardBounds(LoggingComparisonTestCase, TestBokehPlot):
         x_values = np.linspace(10, 50, 5)
         y_values = np.array([10, 20, 30, 40, 50])
         curve = Curve((x_values, y_values)).redim.range(x=(25, None)).opts(apply_hard_bounds=True)
-        plot = self.bokeh_renderer.get_plot(curve)
+        plot = bokeh_renderer.get_plot(curve)
         # Expected to strictly adhere to any redim.range bounds, otherwise the data range
         self.assertEqual((plot.handles['x_range'].start, plot.handles['x_range'].end), (25, 50))
         self.assertEqual(plot.handles['x_range'].bounds, (25, 50))
@@ -1027,9 +1028,9 @@ class TestApplyHardBounds(LoggingComparisonTestCase, TestBokehPlot):
             apply_hard_bounds=True,
             xlim=(target_xlim_l, target_xlim_h)
         )
-        plot = self.bokeh_renderer.get_plot(curve)
+        plot = bokeh_renderer.get_plot(curve)
         initial_view_range = (dt_to_int(plot.handles['x_range'].start), dt_to_int(plot.handles['x_range'].end))
-        self.assertEqual(initial_view_range, (dt_to_int(target_xlim_l), dt_to_int(target_xlim_l)))
+        self.assertEqual(initial_view_range, (dt_to_int(target_xlim_l), dt_to_int(target_xlim_h)))
         # Validate navigation bounds include entire data range
         hard_bounds = (dt_to_int(plot.handles['x_range'].bounds[0]), dt_to_int(plot.handles['x_range'].bounds[1]))
         self.assertEqual(hard_bounds, (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10))))
@@ -1052,9 +1053,9 @@ class TestApplyHardBounds(LoggingComparisonTestCase, TestBokehPlot):
         )
         choice_stream = ChoiceStream()
         dmap = DynamicMap(curve_data, kdims=[], streams=[choice_stream])
-        dmap = dmap.opts(apply_hard_bounds=True, xlim=(2,3), framewise=True)
+        dmap = dmap.opts(opts.Curve(apply_hard_bounds=True, xlim=(2,3), framewise=True))
         dmap = dmap.redim.values(choice=['set1', 'set2'])
-        plot = self.bokeh_renderer.get_plot(dmap)
+        plot = bokeh_renderer.get_plot(dmap)
 
         # Keeping the xlim consistent between updates, and change data range bounds
         # Initially select 'set1'
