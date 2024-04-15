@@ -17,7 +17,7 @@ from bokeh.models import (
 )
 
 from holoviews import opts
-from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.util import process_cmap
@@ -996,6 +996,25 @@ class TestOverlayPlot(TestBokehPlot):
         assert high < 1
 
 class TestApplyHardBounds(TestBokehPlot):
+    def test_apply_hard_bounds(self):
+        """Test `apply_hard_bounds` with a single element."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['x_range'].bounds, (10, 50))
+
+    def test_apply_hard_bounds_overlay(self):
+        """Test `apply_hard_bounds` with an overlay of curves."""
+        x1_values = np.linspace(10, 50, 5)
+        x2_values = np.linspace(10, 90, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve1 = Curve((x1_values, y_values))
+        curve2 = Curve((x2_values, y_values))
+        overlay = Overlay([curve1, curve2]).opts(opts.Curve(apply_hard_bounds=True))
+        plot = bokeh_renderer.get_plot(overlay)
+        # Check if the large of the data range can be navigated to
+        self.assertEqual(plot.handles['x_range'].bounds, (10, 90))
 
     def test_apply_hard_bounds_with_xlim(self):
         """Test `apply_hard_bounds` with `xlim` set. Initial view should be within xlim but allow panning to data range."""
@@ -1034,7 +1053,6 @@ class TestApplyHardBounds(TestBokehPlot):
         # Validate navigation bounds include entire data range
         hard_bounds = (dt_to_int(plot.handles['x_range'].bounds[0]), dt_to_int(plot.handles['x_range'].bounds[1]))
         self.assertEqual(hard_bounds, (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10))))
-
 
     def test_dynamic_map_bounds_update(self):
         """Test that `apply_hard_bounds` applies correctly when DynamicMap is updated."""
