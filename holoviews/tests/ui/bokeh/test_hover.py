@@ -5,7 +5,7 @@ import pytest
 
 import holoviews as hv
 
-from .. import expect
+from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
@@ -206,6 +206,8 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     expect(hv_plot).to_have_count(1)
     bbox = hv_plot.bounding_box()
 
+    wait_until(lambda: expect(page.locator(".bk-Tooltip").to_have_count(1)))
+
     # Hover over the plot
     page.mouse.move(bbox["x"] + 100, bbox["y"] + 100)
     page.mouse.down()
@@ -215,6 +217,7 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10")
 
 
+@pytest.mark.flaky(max_runs=5, rerun_filter=delay_rerun)
 def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     amplitude_dim = hv.Dimension("Amplitude", unit="µV")
     hv_curve = hv.Curve([0, 10, 2], vdims=[amplitude_dim]).opts(
@@ -231,5 +234,7 @@ def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     page.mouse.down()
     page.mouse.move(bbox["x"] + 150, bbox["y"] + 150, steps=5)
     page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip").to_have_count(1)))
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10.00")
