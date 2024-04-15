@@ -2968,6 +2968,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if self.top_level:
             self.init_links()
 
+        if self.autorange:
+            self._setup_autorange()
+
         self._execute_hooks(element)
 
         return self.handles['plot']

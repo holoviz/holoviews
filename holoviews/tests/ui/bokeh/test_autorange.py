@@ -83,5 +83,4 @@ def test_autorange_overlay(serve_hv):
     page.mouse.up()
 
     y_range = plot.handles['y_range']
-    expected = (-171.25714285714287, 318.0489795918367)
-    wait_until(lambda: np.allclose((y_range.start, y_range.end), expected) , page)
+    wait_until(lambda: y_range.start == -486 and y_range.end == 486, page)
