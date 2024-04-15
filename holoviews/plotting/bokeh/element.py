@@ -295,7 +295,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
-    def _replace_label_group(self, element, tooltip):
+    def _replace_hover_label_group(self, element, tooltip):
         if isinstance(tooltip, tuple):
             has_label = hasattr(element, 'label') and element.label
             has_group = hasattr(element, 'group') and element.group != element.param.group.default
@@ -318,7 +318,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tooltip = tooltip.replace("${group}", element.group)
         return tooltip
 
-    def _replace_value_aliases(self, tooltip, tooltips_dict):
+    def _replace_hover_value_aliases(self, tooltip, tooltips_dict):
         for name, tuple_ in tooltips_dict.items():
             # some elements, like image, rename the tooltip, e.g. @y -> $y
             # let's replace those, so the hover tooltip is discoverable
@@ -390,7 +390,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         new_tooltips.append(new_tooltip)
                     elif isinstance(tooltip, tuple):
                         unit = units_dict.get(tooltip[0])
-                        tooltip = self._replace_value_aliases(tooltip, tooltips_dict)
+                        tooltip = self._replace_hover_value_aliases(tooltip, tooltips_dict)
                         if unit:
                             tooltip = (f"{tooltip[0]}{unit}", tooltip[1])
                         new_tooltips.append(tooltip)
@@ -399,15 +399,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tooltips = new_tooltips
             else:
                 # Likely HTML str
-                tooltips = self._replace_value_aliases(self.hover_tooltips, tooltips_dict)
+                tooltips = self._replace_hover_value_aliases(self.hover_tooltips, tooltips_dict)
         else:
             tooltips = list(tooltips_dict.values())
 
         # replace the label and group in the tooltips
         if isinstance(tooltips, list):
-            tooltips = [self._replace_label_group(element, ttp) for ttp in tooltips]
+            tooltips = [self._replace_hover_label_group(element, ttp) for ttp in tooltips]
         elif isinstance(tooltips, str):
-            tooltips = self._replace_label_group(element, tooltips)
+            tooltips = self._replace_hover_label_group(element, tooltips)
 
         if self.hover_formatters:
             hover_opts['formatters'] = self.hover_formatters
@@ -446,7 +446,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        all_tools = list(cb_tools + self.default_tools + self.tools)
+        all_tools = cb_tools + self.default_tools + self.tools
         if self.hover_tooltips:
             no_hover = (
                 "hover" not in all_tools and
@@ -460,9 +460,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if tool in tool_names:
                 continue
             if tool in ['vline', 'hline']:
-                hover_opts.update({'mode': tool})
+                tool_opts = dict(hover_opts, mode=tool)
                 tool = tools.HoverTool(
-                    tooltips=tooltips, tags=['hv_created'], **hover_opts
+                    tooltips=tooltips, tags=['hv_created'], **tool_opts
                 )
             elif bokeh32 and isinstance(tool, str) and tool.endswith(
                 ('wheel_zoom', 'zoom_in', 'zoom_out')
