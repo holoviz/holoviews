@@ -127,6 +127,14 @@ class TestSubcoordinateY(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         assert not plot.state.yaxis.visible
 
+    def test_overlay_set_ylim(self):
+        ylim = (1, 2.5)
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay.opts(ylim=ylim)
+        plot = bokeh_renderer.get_plot(overlay)
+        y_range = plot.handles['y_range']
+        assert y_range.start, y_range.end == ylim
+
     def test_axis_labels(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
