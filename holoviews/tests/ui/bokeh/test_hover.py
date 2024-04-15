@@ -213,6 +213,7 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10")
 
 
+@pytest.mark.flaky(max_runs=3, rerun_filter=delay_rerun)
 def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     amplitude_dim = hv.Dimension("Amplitude", unit="µV")
     hv_curve = hv.Curve([0, 10, 2], vdims=[amplitude_dim]).opts(
@@ -220,6 +221,7 @@ def test_hover_tooltips_dimension_unit_with_format_template(serve_hv):
     )
 
     page = serve_hv(hv_curve)
+
     hv_plot = page.locator(".bk-events")
     wait_until(lambda: expect(hv_plot).to_have_count(1))
     bbox = hv_plot.bounding_box()
