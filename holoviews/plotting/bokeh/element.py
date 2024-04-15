@@ -2077,6 +2077,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cds = self.handles['cds']
                 self._postprocess_hover(renderer, cds)
 
+        if self.apply_hard_bounds:
+            self._apply_hard_bounds(element, ranges)
+
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
 
