@@ -40,6 +40,27 @@ def test_hover_tooltips_list(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+def test_hover_tooltips_unit_format(serve_hv):
+    dim = hv.Dimension("Test", unit="Unit")
+    hv_image = hv.Image(
+        np.zeros((10, 10)), bounds=(0, 0, 1, 1), kdims=["xc", "yc"], vdims=[dim]
+    ).opts(hover_tooltips=[("Test", "@Test{%0.2f}")])
+
+    page = serve_hv(hv_image)
+    hv_plot = page.locator(".bk-events")
+    wait_until(lambda: expect(hv_plot).to_have_count(1), page=page)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over the plot
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1), page=page)
+
+    expect(page.locator(".bk-Tooltip")).to_contain_text("Test: 0.00%")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_list_mix_tuple_string(serve_hv):
     hv_image = hv.Image(
         np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]
