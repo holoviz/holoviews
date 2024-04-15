@@ -34,9 +34,35 @@ def test_autorange_single(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_autorange_multiple(serve_hv):
-    c1 = Curve(np.arange(1000)).opts(autorange='y')
+def test_autorange_single_in_overlay(serve_hv):
+    c1 = Curve(np.arange(1000))
     c2 = Curve(-np.arange(1000)).opts(autorange='y')
+
+    overlay = (c1*c2).opts(active_tools=['box_zoom'])
+
+    plot = BokehRenderer.get_plot(overlay)
+
+    page = serve_hv(plot)
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
+    page.mouse.up()
+
+    y_range = plot.handles['y_range']
+    wait_until(lambda: y_range.start == -486 and y_range.end == 486, page)
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_autorange_overlay(serve_hv):
+    c1 = Curve(np.arange(1000))
+    c2 = Curve(-np.arange(1000))
 
     overlay = (c1*c2).opts(active_tools=['box_zoom'], autorange='y')
 
@@ -57,4 +83,5 @@ def test_autorange_multiple(serve_hv):
     page.mouse.up()
 
     y_range = plot.handles['y_range']
-    wait_until(lambda: y_range.start == -486 and y_range.end == 486, page)
+    expected = (-171.25714285714287, 318.0489795918367)
+    wait_until(lambda: np.allclose((y_range.start, y_range.end), expected) , page)

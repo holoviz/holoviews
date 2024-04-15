@@ -2647,7 +2647,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale']
+                          'subcoordinate_scale', 'autorange']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
