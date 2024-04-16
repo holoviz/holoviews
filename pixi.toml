@@ -71,12 +71,12 @@ notebook = ">=7.0"
 [feature.test-core.dependencies]
 pytest = "*"
 pytest-cov = "*"
+pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 nbconvert = "*"
 pillow = "*"
 plotly = ">=4.0"
 contourpy = "*"
-pytest-github-actions-annotate-failures = "*"
 
 [feature.test-core.tasks]
 test-unit = 'pytest holoviews'
@@ -93,6 +93,7 @@ scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
 selenium = "*"
 spatialpandas = "*"
 datashader = ">=0.11.1"
+xyzservices = "*"
 # dash >=1.16
 
 [feature.test.target.unix.dependencies]
