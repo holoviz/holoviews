@@ -1949,7 +1949,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if min_extent == max_extent:
                 self.handles[axis].bounds = None
             else:
-                self.handles[axis].bounds = (min_extent, max_extent) if min_extent is not None or max_extent is not None else None
+                self.handles[axis].bounds = (min_extent, max_extent)
 
         set_bounds('x_range', min_extent_x, max_extent_x)
         set_bounds('y_range', min_extent_y, max_extent_y)
