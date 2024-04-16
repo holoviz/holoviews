@@ -635,7 +635,7 @@ class PopupMixin:
               }} else if (cb_obj.geometry.type === 'rect') {{
                 pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
               }} else if (cb_obj.geometry.type === 'poly') {{
-                pos = {{x: Math.max(cb_obj.geometry.x), y: Math.max(cb_obj.geometry.y)}}
+                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
               }}
               if (pos) {{
                 panel.position.setv(pos)
@@ -660,7 +660,8 @@ class PopupMixin:
         super().on_msg(msg)
         event = self._selection_event
         if event is not None:
-            if not event.final and event.geometry["type"] not in (self.geom_type, "any"):
+            if self.geom_type not in (event.geometry["type"], "any"):
+                print("skipping")
                 return
 
         for stream in self.streams:
@@ -677,6 +678,7 @@ class PopupMixin:
                 self._panel.visible = False
             if self._existing_popup and not self._existing_popup.visible:
                 self._existing_popup.visible = False
+            print("skipping")
             return
 
         if event is not None:
@@ -716,6 +718,7 @@ class PopupMixin:
             code="""
             export default ({panel}, event, _) => {
               if (!event.visible) {
+                console.log('hiding)
                 panel.position.setv({x: NaN, y: NaN})
               }
             }""",
@@ -1125,6 +1128,7 @@ class Selection1DCallback(PopupMixin, Callback):
                   y = ys[i]
                 }
               }
+              console.log(x, y);
               if (x && y) {
                 panel.position.setv({x, y})
               }
