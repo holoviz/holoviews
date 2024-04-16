@@ -1946,10 +1946,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         def set_bounds(axis, min_extent, max_extent):
             """Set the bounds for a given axis, using None if both extents are None or identical"""
-            if min_extent == max_extent:
-                self.handles[axis].bounds = None
-            else:
-                self.handles[axis].bounds = (min_extent, max_extent)
+            self.handles[axis].bounds = None if min_extent == max_extent else (min_extent, max_extent)
 
         set_bounds('x_range', min_extent_x, max_extent_x)
         set_bounds('y_range', min_extent_y, max_extent_y)
