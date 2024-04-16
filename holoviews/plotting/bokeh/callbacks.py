@@ -660,8 +660,7 @@ class PopupMixin:
         super().on_msg(msg)
         event = self._selection_event
         if event is not None:
-            if self.geom_type not in (event.geometry["type"], "any"):
-                print("skipping")
+            if self.geom_type not in (event.geometry["type"], "any") or not event.final:
                 return
 
         for stream in self.streams:
@@ -678,7 +677,6 @@ class PopupMixin:
                 self._panel.visible = False
             if self._existing_popup and not self._existing_popup.visible:
                 self._existing_popup.visible = False
-            print("skipping")
             return
 
         if event is not None:
@@ -718,7 +716,6 @@ class PopupMixin:
             code="""
             export default ({panel}, event, _) => {
               if (!event.visible) {
-                console.log('hiding)
                 panel.position.setv({x: NaN, y: NaN})
               }
             }""",
@@ -1128,7 +1125,6 @@ class Selection1DCallback(PopupMixin, Callback):
                   y = ys[i]
                 }
               }
-              console.log(x, y);
               if (x && y) {
                 panel.position.setv({x, y})
               }
@@ -1140,6 +1136,7 @@ class Selection1DCallback(PopupMixin, Callback):
         if isinstance(el, Dataset):
             s = self.streams[0]
             sel = el.iloc[s.index]
+            # get the most top-right point
             (_, x1), (_, y1) = sel.range(0), sel.range(1)
             return dict(x=x1, y=y1)
         return super()._get_position(event)
