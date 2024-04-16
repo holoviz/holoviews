@@ -1002,7 +1002,7 @@ class TestApplyHardBounds(TestBokehPlot):
         y_values = np.array([10, 20, 30, 40, 50])
         curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['x_range'].bounds, (10, 50))
+        assert plot.handles['x_range'].bounds == (10, 50)
 
     def test_apply_hard_bounds_overlay(self):
         """Test `apply_hard_bounds` with an overlay of curves."""
@@ -1014,7 +1014,7 @@ class TestApplyHardBounds(TestBokehPlot):
         overlay = Overlay([curve1, curve2]).opts(opts.Curve(apply_hard_bounds=True))
         plot = bokeh_renderer.get_plot(overlay)
         # Check if the large of the data range can be navigated to
-        self.assertEqual(plot.handles['x_range'].bounds, (10, 90))
+        assert plot.handles['x_range'].bounds == (10, 90)
 
     def test_apply_hard_bounds_with_xlim(self):
         """Test `apply_hard_bounds` with `xlim` set. Initial view should be within xlim but allow panning to data range."""
@@ -1023,9 +1023,9 @@ class TestApplyHardBounds(TestBokehPlot):
         curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True, xlim=(15, 35))
         plot = bokeh_renderer.get_plot(curve)
         initial_view_range = (plot.handles['x_range'].start, plot.handles['x_range'].end)
-        self.assertEqual(initial_view_range, (15, 35))
+        assert initial_view_range == (15, 35)
         # Check if data beyond xlim can be navigated to
-        self.assertEqual(plot.handles['x_range'].bounds, (10, 50))
+        assert plot.handles['x_range'].bounds == (10, 50)
 
     def test_apply_hard_bounds_with_redim_range(self):
         """Test `apply_hard_bounds` with `.redim.range(x=...)`. Hard bounds should strictly apply."""
@@ -1034,8 +1034,8 @@ class TestApplyHardBounds(TestBokehPlot):
         curve = Curve((x_values, y_values)).redim.range(x=(25, None)).opts(apply_hard_bounds=True)
         plot = bokeh_renderer.get_plot(curve)
         # Expected to strictly adhere to any redim.range bounds, otherwise the data range
-        self.assertEqual((plot.handles['x_range'].start, plot.handles['x_range'].end), (25, 50))
-        self.assertEqual(plot.handles['x_range'].bounds, (25, 50))
+        assert (plot.handles['x_range'].start, plot.handles['x_range'].end)  == (25, 50)
+        assert plot.handles['x_range'].bounds == (25, 50)
 
     def test_apply_hard_bounds_datetime(self):
         """Test datetime axes with hard bounds."""
@@ -1049,10 +1049,10 @@ class TestApplyHardBounds(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(curve)
         initial_view_range = (dt_to_int(plot.handles['x_range'].start), dt_to_int(plot.handles['x_range'].end))
-        self.assertEqual(initial_view_range, (dt_to_int(target_xlim_l), dt_to_int(target_xlim_h)))
+        assert initial_view_range == (dt_to_int(target_xlim_l), dt_to_int(target_xlim_h))
         # Validate navigation bounds include entire data range
         hard_bounds = (dt_to_int(plot.handles['x_range'].bounds[0]), dt_to_int(plot.handles['x_range'].bounds[1]))
-        self.assertEqual(hard_bounds, (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10))))
+        assert hard_bounds == (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10)))
 
     def test_dynamic_map_bounds_update(self):
         """Test that `apply_hard_bounds` applies correctly when DynamicMap is updated."""
@@ -1078,12 +1078,12 @@ class TestApplyHardBounds(TestBokehPlot):
         # Keeping the xlim consistent between updates, and change data range bounds
         # Initially select 'set1'
         dmap.event(choice='set1')
-        self.assertEqual(plot.handles['x_range'].start, 2)
-        self.assertEqual(plot.handles['x_range'].end, 3)
-        self.assertEqual(plot.handles['x_range'].bounds, (0, 5))
+        assert plot.handles['x_range'].start == 2
+        assert plot.handles['x_range'].end == 3
+        assert plot.handles['x_range'].bounds == (0, 5)
 
         # Update to 'set2'
         dmap.event(choice='set2')
-        self.assertEqual(plot.handles['x_range'].start, 2)
-        self.assertEqual(plot.handles['x_range'].end, 3)
-        self.assertEqual(plot.handles['x_range'].bounds, (0, 20))
+        assert plot.handles['x_range'].start == 2
+        assert plot.handles['x_range'].end == 3
+        assert plot.handles['x_range'].bounds == (0, 20)
