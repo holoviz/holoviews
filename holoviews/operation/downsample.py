@@ -188,6 +188,7 @@ def _m4(x, y, n_out, **kwargs):
             'The m4 downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
+    n_out = n_out - (n_out % 4)  # n_out must be a multiple of 4
     return M4Downsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 
