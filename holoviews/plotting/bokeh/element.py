@@ -2219,7 +2219,6 @@ class CompositeElementPlot(ElementPlot):
         return renderer, renderer.glyph
 
 
-
 class ColorbarPlot(ElementPlot):
     """
     ColorbarPlot provides methods to create colormappers and colorbar
@@ -2635,7 +2634,6 @@ class LegendPlot(ElementPlot):
                         r.muted = self.legend_muted
 
 
-
 class AnnotationPlot:
     """
     Mix-in plotting subclass for AnnotationPlots which do not have a legend.
@@ -2800,7 +2798,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 for r in item.renderers:
                     r.muted = self.legend_muted or r.muted
 
-
     def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
@@ -2842,7 +2839,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     init_tools.append(tool)
         self.handles['hover_tools'] = hover_tools
         return init_tools
-
 
     def _merge_tools(self, subplot):
         """
@@ -2960,7 +2956,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     title = get_tab_title(key, frame, self.hmap.last)
                 panels.append(TabPanel(child=child, title=title))
             self._merge_tools(subplot)
-            if subplot.subcoordinate_y and (glyph_renderer := subplot.handles.get('glyph_renderer')):
+            if getattr(subplot, "subcoordinate_y", False) and (
+                glyph_renderer := subplot.handles.get("glyph_renderer")
+            ):
                 subcoord_y_glyph_renderers.append(glyph_renderer)
 
         if self.subcoordinate_y:
