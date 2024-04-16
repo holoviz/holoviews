@@ -1940,7 +1940,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         def validate_bound(bound):
             return bound if util.isfinite(bound) else None
 
-        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(validate_bound, self.get_extents(element, ranges, range_type='combined', lims_as_soft_ranges=True))
+        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(
+            validate_bound, self.get_extents(element, ranges, range_type='combined', lims_as_soft_ranges=True)
+        )
 
         def set_bounds(axis, min_extent, max_extent):
             """Set the bounds for a given axis, using None if both extents are None or identical"""
