@@ -6,7 +6,7 @@ platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 [tasks]
 check-latest-packages = 'python scripts/check_latest_packages.py'
 download-data = 'python scripts/download_data.py'
-install = 'python -m pip install --no-deps --disable-pip-version-check .'
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
 test-39 = ["py39", "test-core", "test", "example", "test-example"]
