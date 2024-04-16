@@ -2,6 +2,7 @@ import asyncio
 import base64
 import time
 from collections import defaultdict
+from functools import partial
 
 import numpy as np
 from bokeh.models import (
@@ -323,9 +324,7 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            task = asyncio.create_task(self.process_on_change())
-            self._background_task.add(task)
-            task.add_done_callback(self._background_task.discard)
+            await self.process_on_change()
 
     async def on_event(self, event):
         """
@@ -336,9 +335,7 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            task = asyncio.create_task(self.process_on_event())
-            self._background_task.add(task)
-            task.add_done_callback(self._background_task.discard)
+            await self.process_on_event()
 
     async def process_on_event(self, timeout=None):
         """
@@ -364,9 +361,7 @@ class Callback:
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        task = asyncio.create_task(self.process_on_event())
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
+        await self.process_on_event()
 
     async def process_on_change(self):
         # Give on_change time to process new events
@@ -402,21 +397,25 @@ class Callback:
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             self._prev_msg = msg
-        task = asyncio.create_task(self.process_on_change())
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
+        await self.process_on_change()
 
     def _schedule_event(self, event):
-        task = asyncio.create_task(self.on_event(event))
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
+        if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
+            task = asyncio.create_task(self.on_event(event))
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
+        else:
+            self.plot.document.add_next_tick_callback(partial(self.on_event, event))
 
     def _schedule_change(self, attr, old, new):
         if not self.plot.document:
             return
-        task = asyncio.create_task(self.on_change(attr, old, new))
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
+        if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
+            task = asyncio.create_task(self.on_change(attr, old, new))
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
+        else:
+            self.plot.document.add_next_tick_callback(partial(self.on_change, attr, old, new))
 
     def set_callback(self, handle):
         """
@@ -576,6 +575,7 @@ class PopupMixin:
         if not self.streams:
             return
 
+        self._selection_event = None
         self._existing_popup = None
         stream = self.streams[0]
         if not getattr(stream, 'popup', None):
@@ -659,7 +659,7 @@ class PopupMixin:
     def on_msg(self, msg):
         super().on_msg(msg)
         event = self._selection_event
-        if not event.final or not (event.geometry["type"] in self.geom_type or self.geom_type == "any"):
+        if event is not None and (not event.final or not (event.geometry["type"] in self.geom_type or self.geom_type == "any")):
             return
         for stream in self.streams:
             popup = stream.popup
@@ -677,7 +677,10 @@ class PopupMixin:
                 self._existing_popup.visible = False
             return
 
-        position = self._get_position(event)
+        if event is not None:
+            position = self._get_position(event)
+        else:
+            position = None
         popup_pane = panel(popup)
 
         if not popup_pane.stylesheets:
