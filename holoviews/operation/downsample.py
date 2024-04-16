@@ -165,7 +165,7 @@ def _min_max(x, y, n_out, **kwargs):
         from tsdownsample import MinMaxDownsampler
     except ModuleNotFoundError:
         raise NotImplementedError(
-            'The min-max downsampling algorithm requires the tsdownsampler '
+            'The min-max downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
     return MinMaxDownsampler().downsample(x, y, n_out=n_out, **kwargs)
@@ -175,7 +175,7 @@ def _min_max_lttb(x, y, n_out, **kwargs):
         from tsdownsample import MinMaxLTTBDownsampler
     except ModuleNotFoundError:
         raise NotImplementedError(
-            'The minmax-lttb downsampling algorithm requires the tsdownsampler '
+            'The minmax-lttb downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
     return MinMaxLTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
@@ -185,7 +185,7 @@ def _m4(x, y, n_out, **kwargs):
         from tsdownsample import M4Downsampler
     except ModuleNotFoundError:
         raise NotImplementedError(
-            'The m4 downsampling algorithm requires the tsdownsampler '
+            'The m4 downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
     return M4Downsampler().downsample(x, y, n_out=n_out, **kwargs)
@@ -204,7 +204,7 @@ class downsample1d(ResampleOperation1D):
     """
     Implements downsampling of a regularly sampled 1D dataset.
 
-    If available uses the `tsdownsampler` library to perform massively
+    If available uses the `tsdownsample` library to perform massively
     accelerated downsampling.
     """
 
@@ -214,14 +214,14 @@ class downsample1d(ResampleOperation1D):
         - `lttb`: Largest Triangle Three Buckets downsample algorithm.
         - `nth`: Selects every n-th point.
         - `viewport`: Selects all points in a given viewport.
-        - `minmax`: Selects the min and max value in each bin (requires tsdownsampler).
-        - `m4`: Selects the min, max, first and last value in each bin (requires tsdownsampler).
+        - `minmax`: Selects the min and max value in each bin (requires tsdownsample).
+        - `m4`: Selects the min, max, first and last value in each bin (requires tsdownsample).
         - `minmax-lttb`: First selects n_out * minmax_ratio min and max values,
                          then further reduces these to n_out values using the
-                         Largest Triangle Three Buckets algorithm (requires tsdownsampler).""")
+                         Largest Triangle Three Buckets algorithm (requires tsdownsample).""")
 
     parallel = param.Boolean(default=False, doc="""
-       The number of threads to use (if tsdownsampler is available).""")
+       The number of threads to use (if tsdownsample is available).""")
 
     minmax_ratio = param.Integer(default=4, bounds=(0, None), doc="""
        For the minmax-lttb algorithm determines the ratio of candidate
