@@ -105,6 +105,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
+    apply_hard_bounds = param.Boolean(default=False, doc="""
+        If True, the navigable bounds of the plot will be set based
+        on the more extreme of extents between the data or xlim/ylim ranges.
+        If dim ranges are set, the hard bounds will be set to the dim ranges.""")
+
     autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
         when panning or zooming along the orthogonal axis it will
@@ -2034,6 +2039,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self._subcoord_overlaid:
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
+
+        if self.apply_hard_bounds:
+            self._apply_hard_bounds(element, ranges)
+
         self.handles['plot'] = plot
 
         if self.autorange:
@@ -2058,6 +2067,32 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.drawn = True
 
         return plot
+
+    def _apply_hard_bounds(self, element, ranges):
+        """
+        Apply hard bounds to the x and y ranges of the plot. If xlim/ylim is set, limit the
+        initial viewable range to xlim/ylim, but allow navigation up to the abs max between
+        the data range and xlim/ylim. If dim range is set (e.g. via redim.range), enforce
+        as hard bounds.
+
+        """
+
+        def validate_bound(bound):
+            return bound if util.isfinite(bound) else None
+
+        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(
+            validate_bound, self.get_extents(element, ranges, range_type='combined', lims_as_soft_ranges=True)
+        )
+
+        def set_bounds(axis, min_extent, max_extent):
+            """Set the bounds for a given axis, using None if both extents are None or identical"""
+            try:
+                self.handles[axis].bounds = None if min_extent == max_extent else (min_extent, max_extent)
+            except ValueError:
+                self.handles[axis].bounds = None
+
+        set_bounds('x_range', min_extent_x, max_extent_x)
+        set_bounds('y_range', min_extent_y, max_extent_y)
 
     def _setup_data_callbacks(self, plot):
         if not self._js_on_data_callbacks:
@@ -2183,6 +2218,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'cds' in self.handles:
                 cds = self.handles['cds']
                 self._postprocess_hover(renderer, cds)
+
+        if self.apply_hard_bounds:
+            self._apply_hard_bounds(element, ranges)
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
