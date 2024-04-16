@@ -659,8 +659,10 @@ class PopupMixin:
     def on_msg(self, msg):
         super().on_msg(msg)
         event = self._selection_event
-        if event is not None and (not event.final or not (event.geometry["type"] in self.geom_type or self.geom_type == "any")):
-            return
+        if event is not None:
+            if not event.final and event.geometry["type"] not in (self.geom_type, "any"):
+                return
+
         for stream in self.streams:
             popup = stream.popup
             if popup is not None:
@@ -1097,9 +1099,11 @@ class Selection1DCallback(PopupMixin, Callback):
               const el = panel.elements[1]
               const ds = renderer.data_source
               let x, y, xs, ys;
+              let indices = cb_obj.indices;
               if (renderer.glyph.x && renderer.glyph.y) {
                 xs = ds.get_column(renderer.glyph.x.field)
                 ys = ds.get_column(renderer.glyph.y.field)
+                indices = cb_obj.indices.slice(-1)
               } else if (renderer.glyph.right && renderer.glyph.top) {
                 xs = ds.get_column(renderer.glyph.right.field)
                 ys = ds.get_column(renderer.glyph.top.field)
@@ -1111,7 +1115,7 @@ class Selection1DCallback(PopupMixin, Callback):
                 ys = ds.get_column(renderer.glyph.ys.field)
               }
               if (!xs || !ys) { return }
-              for (const i of cb_obj.indices) {
+              for (const i of indices) {
                 const tx = xs[i]
                 if (!x || (tx > x)) {
                   x = xs[i]
