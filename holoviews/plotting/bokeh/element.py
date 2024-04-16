@@ -395,7 +395,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                             tooltip = (f"{tooltip[0]}{unit}", tooltip[1])
                         new_tooltips.append(tooltip)
                     else:
-                        raise ValueError('Hover tooltips must be a list of strings or tuples.')
+                        raise ValueError('Hover tooltips must be a list with items of strings or tuples.')
                 tooltips = new_tooltips
             else:
                 # Likely HTML str
