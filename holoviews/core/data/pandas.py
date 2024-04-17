@@ -357,9 +357,10 @@ class PandasInterface(Interface, PandasAPI):
         df = dataset.data
         if selection_mask is None:
             indexes = {
-                idx or "index": v
-                for idx in df.index.names
-                if isinstance((v := selection.get(idx)), slice)
+                idx: v
+                for idx in cls.indexes(df)
+                if isinstance((v := selection.get(idx)), slice) or
+                isinstance(v, tuple) and len(v) < 4 and (v := slice(*v))
             } if not isinstance(df.index, pd.MultiIndex) else {}
             if selection.keys() - indexes.keys():
                 selection_mask = cls.select_mask(dataset, selection)
