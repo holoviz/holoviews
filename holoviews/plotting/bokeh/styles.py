@@ -29,14 +29,22 @@ property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
 base_properties = ['visible', 'muted']
 
-line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
-                   'line_join', 'line_cap', 'line_dash']
-line_properties += [f'{prefix}_{prop}' for prop in line_properties
-                    for prefix in property_prefixes]
+line_base_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
+                        'line_join', 'line_cap', 'line_dash', 'line_dash_offset']
+line_properties = line_base_properties + [f'{prefix}_{prop}'
+                                          for prop in line_base_properties
+                                          for prefix in property_prefixes]
 
-fill_properties = ['fill_color', 'fill_alpha']
-fill_properties += [f'{prefix}_{prop}' for prop in fill_properties
-                    for prefix in property_prefixes]
+fill_base_properties = ['fill_color', 'fill_alpha']
+fill_properties = fill_base_properties + [f'{prefix}_{prop}'
+                                          for prop in fill_base_properties
+                                          for prefix in property_prefixes]
+
+border_properties = ['border_' + prop for prop in line_base_properties + ['radius']]
+
+hatch_properties = ['hatch_color', 'hatch_scale', 'hatch_weight',
+                    'hatch_extra', 'hatch_pattern', 'hatch_alpha']
+background_properties = ['background_' + prop for prop in fill_base_properties + hatch_properties]
 
 text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
                    'text_alpha', 'text_align', 'text_baseline']
