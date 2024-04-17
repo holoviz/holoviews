@@ -15,8 +15,14 @@ from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
 from .plot import BokehPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import (base_properties, fill_properties, line_properties,
-                     text_properties, border_properties, background_properties)
+from .styles import (
+    background_properties,
+    base_properties,
+    border_properties,
+    fill_properties,
+    line_properties,
+    text_properties,
+)
 from .util import bokeh32, date_to_integer
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
@@ -105,7 +111,7 @@ class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
 
 class TextPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = (text_properties + background_properties 
+    style_opts = (text_properties + background_properties
                   + border_properties + ['color', 'angle', 'visible'])
     _plot_methods = dict(single='text', batched='text')
 
@@ -169,7 +175,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (base_properties + text_properties 
+    style_opts = (base_properties + text_properties
                   + background_properties + border_properties + ['cmap', 'angle'])
 
     _nonvectorized_styles = base_properties + ['cmap']
