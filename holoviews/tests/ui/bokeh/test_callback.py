@@ -325,7 +325,7 @@ def test_stream_popup_selection1d_undefined(serve_hv):
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_selection1d(serve_hv):
     def popup_form(index):
-        return "# Hello"
+        return "# Tap"
 
     points = hv.Points(np.random.randn(1000, 2))
     hv.streams.Selection1D(source=points, popup=popup_form)
