@@ -188,6 +188,11 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           playwright: true
         id: install
+      - name: Download data
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          conda activate test-environment
+          bash scripts/download_data.sh
       - name: doit test_ui
         if: needs.setup.outputs.code_change == 'true'
         run: |
