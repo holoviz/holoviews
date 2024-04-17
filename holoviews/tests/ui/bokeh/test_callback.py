@@ -307,3 +307,67 @@ def test_stream_popup_close_button(serve_hv):
     expect(locator).to_be_visible()
     page.click(".bk-btn.bk-btn-default")
     expect(locator).not_to_be_visible()
+
+
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_undefined(serve_hv):
+    points = hv.Points(np.random.randn(10, 2))
+    hv.streams.Selection1D(source=points)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+    hv_plot.click()  # should not raise any error; properly guarded
+
+
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d(serve_hv):
+    def popup_form(index):
+        return "# Hello"
+
+    points = hv.Points(np.random.randn(1000, 2))
+    hv.streams.Selection1D(source=points, popup=popup_form)
+    points.opts(tools=["tap"], active_tools=["tap"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+    hv_plot.click()
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+
+
+@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_lasso_select(serve_hv):
+    def popup_form(index):
+        if index:
+            return f"# lasso\n{len(index)}"
+
+    points = hv.Points(np.random.randn(1000, 2))
+    hv.streams.Selection1D(source=points, popup=popup_form)
+    points.opts(tools=["tap", "lasso_select"], active_tools=["lasso_select"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    box = hv_plot.bounding_box()
+    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
+    mid_x, mid_y = box['x'] + 10, box['y'] + 10
+    end_x, end_y = box['x'] + box['width'] - 10, box['y'] + 10
+
+    page.mouse.move(start_x, start_y)
+    hv_plot.click()
+    page.mouse.down()
+    page.mouse.move(mid_x, mid_y)
+    page.mouse.move(end_x, end_y)
+    page.mouse.up()
+
+    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
+    locator = page.locator("#lasso")
+    expect(locator).to_have_count(1)
+    expect(locator).not_to_have_text("lasso\n0")
