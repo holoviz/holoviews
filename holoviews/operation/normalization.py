@@ -192,12 +192,17 @@ class subcoordinate_group_ranges(Operation):
     def _process(self, overlay, key=None):
         vmins = defaultdict(list)
         vmaxs = defaultdict(list)
+        include_chart = False
         for el in overlay:
             if not isinstance(el, Chart):
                 continue
             vmin, vmax = el.range(1)
             vmins[el.group].append(vmin)
             vmaxs[el.group].append(vmax)
+            include_chart = True
+
+        if not include_chart:
+            return overlay
 
         minmax = {
             group: (np.min(vmins[group]), np.max(vmaxs[group]))
