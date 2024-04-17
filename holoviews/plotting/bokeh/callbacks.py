@@ -576,6 +576,8 @@ class PopupMixin:
             return
 
         self._selection_event = None
+        self._processed_event = True
+        self._skipped_partial_event = False
         self._existing_popup = None
         stream = self.streams[0]
         if not getattr(stream, 'popup', None):
@@ -654,15 +656,31 @@ class PopupMixin:
             return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
 
     def _update_selection_event(self, event):
+        if (((prev:= self._selection_event) and prev.final and not self._processed_event) or
+            self.geom_type not in (event.geometry["type"], "any")):
+            return
         self._selection_event = event
+        self._processed_event = not event.final
+        if event.final and self._skipped_partial_event:
+            self._process_selection_event()
+            self._skipped_partial_event = False
 
     def on_msg(self, msg):
         super().on_msg(msg)
+        if hasattr(self, '_panel'):
+            self._process_selection_event()
+
+    def _process_selection_event(self):
         event = self._selection_event
         if event is not None:
-            if self.geom_type not in (event.geometry["type"], "any") or not event.final:
+            if self.geom_type not in (event.geometry["type"], "any"):
+                return
+            elif not event.final:
+                self._skipped_partial_event = True
                 return
 
+        if event:
+            self._processed_event = True
         for stream in self.streams:
             popup = stream.popup
             if popup is not None:
@@ -1092,27 +1110,32 @@ class Selection1DCallback(PopupMixin, Callback):
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         source = self.plot.handles['source']
         renderer = self.plot.handles['glyph_renderer']
-        source.selected.js_on_change('indices', CustomJS(
-            args=dict(panel=self._panel, renderer=renderer),
+        selected = self.plot.handles['selected']
+        self.plot.state.js_on_event('selectiongeometry', CustomJS(
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
             code="""
-            export default ({panel, renderer}, cb_obj, _) => {
+            export default ({panel, renderer, source, selected}, cb_obj, _) => {
               const el = panel.elements[1]
-              const ds = renderer.data_source
+              if ((el && !el.visible) || !cb_obj.final) {
+                 return
+              }
               let x, y, xs, ys;
-              let indices = cb_obj.indices;
+              let indices = selected.indices;
+              if (cb_obj.geometry.type == 'point') {
+                indices = indices.slice(-1)
+              }
               if (renderer.glyph.x && renderer.glyph.y) {
-                xs = ds.get_column(renderer.glyph.x.field)
-                ys = ds.get_column(renderer.glyph.y.field)
-                indices = cb_obj.indices.slice(-1)
+                xs = source.get_column(renderer.glyph.x.field)
+                ys = source.get_column(renderer.glyph.y.field)
               } else if (renderer.glyph.right && renderer.glyph.top) {
-                xs = ds.get_column(renderer.glyph.right.field)
-                ys = ds.get_column(renderer.glyph.top.field)
+                xs = source.get_column(renderer.glyph.right.field)
+                ys = source.get_column(renderer.glyph.top.field)
               } else if (renderer.glyph.x1 && renderer.glyph.y1) {
-                xs = ds.get_column(renderer.glyph.x1.field)
-                ys = ds.get_column(renderer.glyph.y1.field)
+                xs = source.get_column(renderer.glyph.x1.field)
+                ys = source.get_column(renderer.glyph.y1.field)
               } else if (renderer.glyph.xs && renderer.glyph.ys) {
-                xs = ds.get_column(renderer.glyph.xs.field)
-                ys = ds.get_column(renderer.glyph.ys.field)
+                xs = source.get_column(renderer.glyph.xs.field)
+                ys = source.get_column(renderer.glyph.ys.field)
               }
               if (!xs || !ys) { return }
               for (const i of indices) {
@@ -1128,7 +1151,7 @@ class Selection1DCallback(PopupMixin, Callback):
               if (x && y) {
                 panel.position.setv({x, y})
               }
-            }"""
+            }""",
         ))
 
     def _get_position(self, event):
