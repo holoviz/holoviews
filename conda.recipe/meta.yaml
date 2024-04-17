@@ -32,6 +32,13 @@ requirements:
     - {{ dep }}
     {% endfor %}
 
+test:
+  imports:
+    - {{ sdata['name'] }}
+  commands:
+    - pip check
+  requires:
+    - pip
 
 about:
   home: https://holoviews.org
