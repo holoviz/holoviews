@@ -229,6 +229,25 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
 
+    def test_index_select_all_indexes(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=1, color='red')
+        assert selected == 0
+
+    def test_index_select_all_indexes_lists(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=[1], color=['red'])
+        expected = pd.DataFrame({'color': ['red'], 'values': [0], 'number': [1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_index_select_all_indexes_slice_and_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=(0, 1), color='red')
+        expected = pd.DataFrame({'color': ['red'], 'values': [0], 'number': [1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
     def test_iloc_scalar_scalar_only_index(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         selected = ds.iloc[0, 0]

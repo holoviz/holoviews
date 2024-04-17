@@ -351,22 +351,32 @@ class PandasInterface(Interface, PandasAPI):
             return dataset.data.sort(columns=cols, ascending=not reverse)
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 
+    @classmethod
+    def index_selection(cls, df, selection):
+        index_sel = {}
+        skip_index = True
+        for idx in cls.indexes(df):
+            if idx not in selection:
+                index_sel[idx] = slice(None, None)
+                continue
+            skip_index = False
+            sel = selection[idx]
+            if isinstance(sel, tuple) and len(sel) < 4:
+                sel = slice(*sel)
+            elif not isinstance(sel, (list, slice)):
+                sel = [sel]
+            index_sel[idx] = sel
+        return {} if skip_index else index_sel
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is None:
-            indexes = {
-                idx: v
-                for idx in cls.indexes(df)
-                if isinstance((v := selection.get(idx)), slice) or
-                isinstance(v, tuple) and len(v) < 4 and (v := slice(*v))
-            } if not isinstance(df.index, pd.MultiIndex) else {}
-            if selection.keys() - indexes.keys():
-                selection_mask = cls.select_mask(dataset, selection)
-            else:
-                for v in indexes.values():
-                    df = df[v]
+            if index_sel:= cls.index_selection(df, selection):
+                df = df.loc[tuple(index_sel.values()), :]
+            column_sel = {k: v for k, v in selection.items() if k not in index_sel}
+            if column_sel:
+                selection_mask = cls.select_mask(dataset, column_sel)
 
         indexed = cls.indexed(dataset, selection)
         if isinstance(selection_mask, pd.Series):
