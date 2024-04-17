@@ -373,7 +373,10 @@ class PandasInterface(Interface, PandasAPI):
         df = dataset.data
         if selection_mask is None:
             if index_sel:= cls.index_selection(df, selection):
-                df = df.loc[tuple(index_sel.values()), :]
+                if len(index_sel) == 1:
+                    df = df[next(iter(index_sel.values()))]
+                else:
+                    df = df.loc[tuple(index_sel.values()), :]
             column_sel = {k: v for k, v in selection.items() if k not in index_sel}
             if column_sel:
                 selection_mask = cls.select_mask(dataset, column_sel)
