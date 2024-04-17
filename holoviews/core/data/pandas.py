@@ -158,7 +158,7 @@ class PandasInterface(Interface, PandasAPI):
     def indexes(cls, data):
         index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
         if index_names == [None]:
-            index_names = ['index']
+            index_names = ['_index'] if 'index' in data.columns else ['index']
         return index_names
 
     @classmethod
