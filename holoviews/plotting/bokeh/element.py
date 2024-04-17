@@ -1,4 +1,5 @@
 import warnings
+from collections import defaultdict
 from itertools import chain
 from types import FunctionType
 
@@ -3025,8 +3026,76 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 subplot.handles['zooms_subcoordy'].values(),
                 self.handles['zooms_subcoordy'].values(),
             ):
-                renderers = list(util.unique_iterator(subplot_zoom.renderers + overlay_zoom.renderers))
+                renderers = list(util.unique_iterator(overlay_zoom.renderers + subplot_zoom.renderers))
                 overlay_zoom.renderers = renderers
+
+    def _postprocess_subcoordinate_y_groups(self, overlay, plot):
+        """
+        Add a zoom tool per group to the overlay.
+        """
+        # First, just process and validate the groups and their content.
+        groups = defaultdict(list)
+
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            raise ValueError(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
+        for el in overlay:
+            # group is the Element type per default (e.g. Curve, Spike).
+            if el.group == type(el).__name__:
+                continue
+            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
+                raise ValueError(
+                    f"All elements in group {el.group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
+            groups[el.group].append(el)
+
+        # No need to go any further if there's just one group.
+        if len(groups) <= 1:
+            return
+
+        # At this stage, there's only one zoom tool (e.g. 1 wheel_zoom) that
+        # has all the renderers (e.g. all the curves in the overlay).
+        # We want to create as many zoom tools as groups, for each group
+        # the zoom tool must have the renderers of the elements of the group.
+        zoom_tools = self.handles['zooms_subcoordy']
+        for zoom_tool_name, zoom_tool in zoom_tools.items():
+            renderers_per_group = defaultdict(list)
+            # We loop through each overlay sub-elements and empty the list of
+            # renderers of the initial tool.
+            for el in overlay:
+                if el.group not in groups:
+                    continue
+                renderers_per_group[el.group].append(zoom_tool.renderers.pop(0))
+
+            if zoom_tool.renderers:
+                raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
+
+            new_ztools = []
+            # Create a new tool per group with the right renderers and a custom description.
+            for grp, grp_renderers in renderers_per_group.items():
+                new_tool = zoom_tool.clone()
+                new_tool.renderers = grp_renderers
+                new_tool.description = f"{zoom_tool_name.replace('_', ' ').title()} ({grp})"
+                new_ztools.append(new_tool)
+            # Revert tool order so the upper tool in the toolbar corresponds to the
+            # upper group in the overlay.
+            new_ztools = new_ztools[::-1]
+
+            # Update the handle for good measure.
+            zoom_tools[zoom_tool_name] = new_ztools
+
+            # Replace the original tool by the new ones
+            idx = plot.tools.index(zoom_tool)
+            plot.tools[idx:idx+1] = new_ztools
 
     def _get_dimension_factors(self, overlay, ranges, dimension):
         factors = []
@@ -3131,6 +3200,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 else:
                     reordered.append(reversed_renderers.pop(0))
             plot.renderers = reordered
+
+        if self.subcoordinate_y:
+            self._postprocess_subcoordinate_y_groups(element, plot)
 
         if self.tabs:
             self.handles['plot'] = Tabs(
