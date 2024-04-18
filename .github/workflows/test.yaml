@@ -143,11 +143,10 @@ jobs:
       - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-example
+          pixi run -e ${{ matrix.environment }} test-example --cov=./holoviews --cov-report=xml --cov-append
       - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
         with:
-          # fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   ui_test_suite:
@@ -174,7 +173,6 @@ jobs:
       - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
         with:
-          # fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   core_test_suite:

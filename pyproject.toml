@@ -116,6 +116,8 @@ filterwarnings = [
     "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning",  # https://github.com/holoviz/spatialpandas/issues/137
     # 2024-02
     "ignore:The current Dask DataFrame implementation is deprecated:DeprecationWarning",  # https://github.com/dask/dask/issues/10917
+    # 2024-04
+    "ignore:No data was collected:coverage.exceptions.CoverageWarning",  # https://github.com/pytest-dev/pytest-cov/issues/627
 ]
 
 [tool.coverage]
