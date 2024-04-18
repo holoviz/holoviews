@@ -138,3 +138,11 @@ After you have successfully installed and configured HoloViews, please see `Gett
    FAQ
    Roadmap <roadmap>
    About <about>
+
+.. toctree::
+  :titlesonly:
+  :hidden:
+  :maxdepth: 2
+  :caption: FOR DEVELOPERS
+
+  developer_guide/index
