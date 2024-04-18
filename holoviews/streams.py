@@ -1274,8 +1274,9 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, **params):
+    def __init__(self, linked=True, popup=None, **params):
         super().__init__(linked=linked, **params)
+        self.popup = popup
 
 
 class PointerX(LinkedStream):
