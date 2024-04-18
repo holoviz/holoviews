@@ -119,6 +119,7 @@ filterwarnings = [
 
 [tool.coverage]
 run.concurrency = ["greenlet"]
+omit = ["holoviews/__version.py"]
 
 [tool.ruff]
 fix = true
