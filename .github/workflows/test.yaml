@@ -136,7 +136,7 @@ jobs:
       - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-example --cov=./holoviews --cov-report=xml --cov-append
+          pixi run -e ${{ matrix.environment }} test-example
       - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
         with:
