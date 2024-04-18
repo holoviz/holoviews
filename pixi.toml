@@ -9,12 +9,12 @@ download-data = 'python scripts/download_data.py'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-39 = ["py39", "test-core", "test", "example", "test-example"]
-test-310 = ["py310", "test-core", "test", "example", "test-example"]
-test-311 = ["py311", "test-core", "test", "example", "test-example"]
-test-312 = ["py312", "test-core", "test", "example", "test-example"]
+test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core"]
+test-core = ["py312", "test-core", "test-unit-task"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -79,8 +79,8 @@ pillow = "*"
 plotly = ">=4.0"
 contourpy = "*"
 
-[feature.test-core.tasks]
-test-unit = 'pytest holoviews'
+[feature.test-unit-task.tasks]
+test-unit = 'pytest holoviews'  # So it not showing up for UI tests
 
 [feature.test.dependencies]
 dask-core = "*"
