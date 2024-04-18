@@ -29,8 +29,19 @@ To contribute to HoloViews, you will also need [Github account](https://github.c
 
 Developing all aspects of HoloViews requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://prefix.dev/docs/pixi/overview#installation).
 
-TODO: Small explanation of environments and tasks.
-TODO: Inform that .pixi directory will have all the environments in it, and can be big.
+#### Glossary
+
+- Tasks: A task is what can be run with `pixi run <task-name>`. Tasks can be anything from installing packages to running tests.
+- Environments: An environment is a set of packages installed in a virtual environment. Each environment has a name; you can run tasks in a specific environment with the `-e` flag. For example, `pixi run -e test-core test-unit` will run the `test-unit` task in the `test-core` environment.
+- Lock-file: A lock-file is a file that contains all the information about the environments.
+
+For more information, see the [Pixi documentation](https://pixi.sh/latest/).
+
+:::{admonition} Note
+:class: info
+
+The first time you run `pixi`, it will create a `.pixi` directory in the source directory. This directory will contain all the files needed for the virtual environments. The `.pixi` directory can be large, so don't accidentally put it into a cloud-synced directory.
+:::
 
 ## Installing the Project
 
@@ -68,22 +79,24 @@ The first time you run it, it will create a `lock-file` with information for all
 pixi run download-data
 ```
 
-TODO: PIXI TASKS, PIXI ENVIRONMENTS
-
 ### Editable install
 
-It can be advantageous to install the HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs)
+It can be advantageous to install the HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
 ```
 
-TODO: ADMONITION
-Currently, this needs to be run for each environment. So, if you want to install in the `test-ui` environment, you can add `--environment`/`-e` to the command:
+:::{admonition} Note
+:class: info
+
+Currently, this needs to be run for each environment. So, if you want to install in the `test-ui` environment, you can add `--environment` / `-e` to the command:
 
 ```bash
 pixi run -e test-ui install
 ```
+
+:::
 
 ## Linting
 
@@ -141,7 +154,13 @@ pixi run test-ui
 
 ## Documentation
 
-The documentation can be built with the command `pixi run docs-build`. As HoloViews uses notebooks for much of the documentation, this will take significant time to run (around an hour). If you want to run it locally, you can temporarily move the notebooks outside the examples so you only build the documentation for what you need.
+The documentation can be built with the command:
+
+```bash
+pixi run docs-build
+```
+
+As HoloViews uses notebooks for much of the documentation, this will take significant time to run (around an hour). If you want to run it locally, you can temporarily move the notebooks outside the examples so you only build the documentation for what you need.
 
 A development version of HoloViews can be found [here](https://dev.holoviews.org/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
