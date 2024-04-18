@@ -46,6 +46,7 @@ jobs:
       PANEL_EMBED: "true"
       PANEL_EMBED_JSON: "true"
       PANEL_EMBED_JSON_PREFIX: "json"
+      DASK_DATAFRAME__QUERY_PLANNING: false
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
