@@ -160,7 +160,9 @@ The documentation can be built with the command:
 pixi run docs-build
 ```
 
-As HoloViews uses notebooks for much of the documentation, this will take significant time to run (around an hour). If you want to run it locally, you can temporarily move the notebooks outside the examples so you only build the documentation for what you need.
+As HoloViews uses notebooks for much of the documentation, this will take significant time to run (around an hour).
+If you want to run it locally, you can temporarily disable the gallery by setting the environment variable `export HV_DOC_GALLERY=False`.
+You can also disable the reference gallery by setting the environment variable `export HV_DOC_REF_GALLERY=False`.
 
 A development version of HoloViews can be found [here](https://dev.holoviews.org/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
