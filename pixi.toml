@@ -17,6 +17,7 @@ test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
+lint = ["py311", "lint"]
 
 [dependencies]
 python = ">=3.9"
@@ -147,3 +148,13 @@ conda-build = "*"
 [feature.build.tasks]
 build-conda = 'bash scripts/conda/build.sh'
 build-pip = 'python -m build .'
+
+# =============================================
+# =================== lint ====================
+# =============================================
+[feature.lint.dependencies]
+pre-commit = "*"
+
+[feature.lint.tasks]
+lint = 'pre-commit run --all-files'
+lint-install = 'pre-commit install'
