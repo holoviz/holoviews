@@ -120,6 +120,11 @@ filterwarnings = [
 [tool.coverage]
 run.concurrency = ["greenlet"]
 omit = ["holoviews/__version.py"]
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if .pyodide. in sys.modules:",
+    ]
 
 [tool.ruff]
 fix = true
