@@ -241,7 +241,7 @@ def test_stream_popup_none(serve_hv, points):
     expect(locator).to_have_count(0)
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_callbacks(serve_hv):
     def popup_form(x, y):
