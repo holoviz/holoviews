@@ -132,6 +132,7 @@ After you have successfully installed and configured HoloViews, please see `Gett
    User Guide <user_guide/index>
    Gallery <gallery/index>
    Reference Gallery <reference/index>
+   Developer Guide <developer_guide/index>
    Releases <releases>
    API <reference_manual/index>
    FAQ

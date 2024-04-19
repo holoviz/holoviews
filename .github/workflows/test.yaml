@@ -33,17 +33,10 @@ defaults:
     shell: bash -el {0}
 
 env:
-  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
   DISPLAY: ":99.0"
   PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  OMP_NUM_THREADS: 1
-  OPENBLAS_NUM_THREADS: 1
-  MKL_NUM_THREADS: 1
-  VECLIB_MAXIMUM_THREADS: 1
-  NUMEXPR_NUM_THREADS: 1
-  NUMBA_NUM_THREADS: 1
-  PYDEVD_DISABLE_FILE_VALIDATION: 1
+  DASK_DATAFRAME__QUERY_PLANNING: false
 
 jobs:
   pre_commit:
@@ -61,7 +54,7 @@ jobs:
       code_change: ${{ steps.filter.outputs.code }}
       matrix: ${{ env.MATRIX }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
       - name: Check for code changes
         uses: dorny/paths-filter@v3
@@ -71,7 +64,7 @@ jobs:
             code:
               - 'holoviews/**'
               - 'examples/**'
-              - 'setup.py'
+              - 'pixi.toml'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
       - name: Set matrix option
@@ -90,16 +83,16 @@ jobs:
         if: env.MATRIX_OPTION == 'default'
         run: |
           MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.12"]
+              "os": ["ubuntu-latest", "macos-14", "windows-latest"],
+              "environment": ["test-39", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
         if: env.MATRIX_OPTION == 'full'
         run: |
           MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.10", "3.11", "3.12"]
+              "os": ["ubuntu-latest", "macos-14", "windows-latest"],
+              "environment": ["test-39", "test-310", "test311", "test312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -107,141 +100,94 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "python-version": ["3.11"]
+              "environment": ["test-311"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+        with:
+          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
+
   unit_test_suite:
-    name: Unit tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    name: unit:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 120
-    env:
-      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} unit tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         if: needs.setup.outputs.code_change == 'true'
         with:
-          name: unit_test_suite
-          python-version: ${{ matrix.python-version }}
-          channel-priority: flexible
-          channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o flakes -o tests -o examples_tests -o tests_ci"
-          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          conda-update: true
-        id: install
+          environments: ${{ matrix.environment }}
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          conda activate test-environment
-          python scripts/check_latest_packages.py bokeh panel param datashader
-      - name: Download data
+          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+      - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          conda activate test-environment
-          bash scripts/download_data.sh
-      - name: doit test_unit
+          pixi run -e ${{ matrix.environment }} test-unit --cov=./holoviews --cov-report=xml
+      - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          conda activate test-environment
-          doit test_unit
-      - name: test examples
+          pixi run -e ${{ matrix.environment }} test-example
+      - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          doit test_examples
-      - name: codecov
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          codecov
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   ui_test_suite:
-    name: UI tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    name: ui:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.9"]
+        environment: ["test-ui"]
     timeout-minutes: 60
     env:
-      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} UI tests"
       PANEL_LOG_LEVEL: info
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         if: needs.setup.outputs.code_change == 'true'
         with:
-          name: ui_test_suite
-          python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o recommended -o tests -o build -o tests_ci"
-          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          playwright: true
-        id: install
-      - name: Download data
+          environments: ${{ matrix.environment }}
+      - name: Test UI
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          conda activate test-environment
-          bash scripts/download_data.sh
-      - name: doit test_ui
+          pixi run -e ${{ matrix.environment }} test-ui --cov=./holoviews --cov-report=xml
+      - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          doit test_ui
-      - name: Upload coverage to Codecov
-        if: needs.setup.outputs.code_change == 'true'
-        uses: codecov/codecov-action@v3
         with:
-          files: ./coverage.xml
-          flags: ui-tests
-          fail_ci_if_error: false # optional (default = false)
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   core_test_suite:
-    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    name: core:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.12"]
+        environment: ["test-core"]
     timeout-minutes: 120
-    env:
-      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         if: needs.setup.outputs.code_change == 'true'
         with:
-          name: core_test_suite
-          python-version: ${{ matrix.python-version }}
-          # channel-priority: strict
-          channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o tests_core -o tests_ci"
-          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          id: install
-      - name: Download data
-        if: needs.setup.outputs.code_change == 'true'
-        run: |
-          conda activate test-environment
-          bash scripts/download_data.sh
+          environments: ${{ matrix.environment }}
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          conda activate test-environment
-          python scripts/check_latest_packages.py numpy pandas bokeh panel param
-      - name: doit test_unit
+          pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
+      - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          conda activate test-environment
-          pytest holoviews
+          pixi run -e ${{ matrix.environment }} test-unit

@@ -1,9 +1,71 @@
 [build-system]
-requires = [
-    "param >=1.12.0,<3.0",
-    "pyct >=0.4.4",
-    "setuptools >=30.3.0",
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "holoviews"
+dynamic = ["version"]
+description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
+    { name = "Philipp Rudiger", email = "developers@holoviz.org" },
 ]
+maintainers = [
+    { name = "HoloViz developers", email = "developers@holoviz.org" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Framework :: Matplotlib",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "param >=1.12.0,<3.0",
+    "numpy >=1.0",
+    "pyviz_comms >=2.1",
+    "panel >=1.0",
+    "colorcet",
+    "packaging",
+    "pandas >=0.20.0",
+]
+
+[project.urls]
+Homepage = "https://holoviews.org"
+Source = "http://github.com/holoviz/holoviews"
+HoloViz = "https://holoviz.org/"
+
+[project.optional-dependencies]
+recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
+
+[project.scripts]
+holoviews = "holoviews.util.command:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+include = ["holoviews"]
+
+[tool.hatch.build.targets.sdist]
+include = ["holoviews", "CHANGELOG.md"]
+
+[tool.hatch.build.targets.sdist.force-include]
+examples = "holoviews/examples"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "holoviews/_version.py"
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers", "--color=yes"]
@@ -51,10 +113,18 @@ filterwarnings = [
     "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning",  # https://github.com/holoviz/spatialpandas/issues/137
     # 2024-02
     "ignore:The current Dask DataFrame implementation is deprecated:DeprecationWarning",  # https://github.com/dask/dask/issues/10917
+    # 2024-04
+    "ignore:No data was collected:coverage.exceptions.CoverageWarning",  # https://github.com/pytest-dev/pytest-cov/issues/627
 ]
 
 [tool.coverage]
 run.concurrency = ["greenlet"]
+omit = ["holoviews/__version.py"]
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if ._pyodide. in sys.modules:",
+]
 
 [tool.ruff]
 fix = true

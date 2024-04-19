@@ -3,6 +3,7 @@ from unittest import SkipTest
 
 import numpy as np
 import panel as pn
+import param
 import pytest
 from bokeh.document import Document
 from bokeh.models import (
@@ -16,7 +17,8 @@ from bokeh.models import (
     tools,
 )
 
-from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews import opts
+from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.util import process_cmap
@@ -993,3 +995,96 @@ class TestOverlayPlot(TestBokehPlot):
         low, high = plot.ranges[('Image',)]['z']['robust']
         assert low > 0
         assert high < 1
+
+class TestApplyHardBounds(TestBokehPlot):
+    def test_apply_hard_bounds(self):
+        """Test `apply_hard_bounds` with a single element."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True)
+        plot = bokeh_renderer.get_plot(curve)
+        assert plot.handles['x_range'].bounds == (10, 50)
+
+    def test_apply_hard_bounds_overlay(self):
+        """Test `apply_hard_bounds` with an overlay of curves."""
+        x1_values = np.linspace(10, 50, 5)
+        x2_values = np.linspace(10, 90, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve1 = Curve((x1_values, y_values))
+        curve2 = Curve((x2_values, y_values))
+        overlay = Overlay([curve1, curve2]).opts(opts.Curve(apply_hard_bounds=True))
+        plot = bokeh_renderer.get_plot(overlay)
+        # Check if the large of the data range can be navigated to
+        assert plot.handles['x_range'].bounds == (10, 90)
+
+    def test_apply_hard_bounds_with_xlim(self):
+        """Test `apply_hard_bounds` with `xlim` set. Initial view should be within xlim but allow panning to data range."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True, xlim=(15, 35))
+        plot = bokeh_renderer.get_plot(curve)
+        initial_view_range = (plot.handles['x_range'].start, plot.handles['x_range'].end)
+        assert initial_view_range == (15, 35)
+        # Check if data beyond xlim can be navigated to
+        assert plot.handles['x_range'].bounds == (10, 50)
+
+    def test_apply_hard_bounds_with_redim_range(self):
+        """Test `apply_hard_bounds` with `.redim.range(x=...)`. Hard bounds should strictly apply."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).redim.range(x=(25, None)).opts(apply_hard_bounds=True)
+        plot = bokeh_renderer.get_plot(curve)
+        # Expected to strictly adhere to any redim.range bounds, otherwise the data range
+        assert (plot.handles['x_range'].start, plot.handles['x_range'].end)  == (25, 50)
+        assert plot.handles['x_range'].bounds == (25, 50)
+
+    def test_apply_hard_bounds_datetime(self):
+        """Test datetime axes with hard bounds."""
+        target_xlim_l = dt.datetime(2020, 1, 3)
+        target_xlim_h = dt.datetime(2020, 1, 7)
+        dates = [dt.datetime(2020, 1, i) for i in range(1, 11)]
+        values = np.linspace(0, 100, 10)
+        curve = Curve((dates, values)).opts(
+            apply_hard_bounds=True,
+            xlim=(target_xlim_l, target_xlim_h)
+        )
+        plot = bokeh_renderer.get_plot(curve)
+        initial_view_range = (dt_to_int(plot.handles['x_range'].start), dt_to_int(plot.handles['x_range'].end))
+        assert initial_view_range == (dt_to_int(target_xlim_l), dt_to_int(target_xlim_h))
+        # Validate navigation bounds include entire data range
+        hard_bounds = (dt_to_int(plot.handles['x_range'].bounds[0]), dt_to_int(plot.handles['x_range'].bounds[1]))
+        assert hard_bounds == (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10)))
+
+    def test_dynamic_map_bounds_update(self):
+        """Test that `apply_hard_bounds` applies correctly when DynamicMap is updated."""
+
+        def curve_data(choice):
+            datasets = {
+                'set1': (np.linspace(0, 5, 100), np.random.rand(100)),
+                'set2': (np.linspace(0, 20, 100), np.random.rand(100)),
+            }
+            x, y = datasets[choice]
+            return Curve((x, y))
+
+        ChoiceStream = Stream.define(
+            'Choice',
+            choice=param.ObjectSelector(default='set1', objects=['set1', 'set2'])
+        )
+        choice_stream = ChoiceStream()
+        dmap = DynamicMap(curve_data, kdims=[], streams=[choice_stream])
+        dmap = dmap.opts(opts.Curve(apply_hard_bounds=True, xlim=(2,3), framewise=True))
+        dmap = dmap.redim.values(choice=['set1', 'set2'])
+        plot = bokeh_renderer.get_plot(dmap)
+
+        # Keeping the xlim consistent between updates, and change data range bounds
+        # Initially select 'set1'
+        dmap.event(choice='set1')
+        assert plot.handles['x_range'].start == 2
+        assert plot.handles['x_range'].end == 3
+        assert plot.handles['x_range'].bounds == (0, 5)
+
+        # Update to 'set2'
+        dmap.event(choice='set2')
+        assert plot.handles['x_range'].start == 2
+        assert plot.handles['x_range'].end == 3
+        assert plot.handles['x_range'].bounds == (0, 20)

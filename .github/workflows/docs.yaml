@@ -21,8 +21,15 @@ on:
     - cron: "0 14 * * SUN"
 
 jobs:
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
   build_docs:
     name: Documentation
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     timeout-minutes: 120
     defaults:
@@ -39,35 +46,16 @@ jobs:
       PANEL_EMBED: "true"
       PANEL_EMBED_JSON: "true"
       PANEL_EMBED_JSON_PREFIX: "json"
+      DASK_DATAFRAME__QUERY_PLANNING: false
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          name: Documentation
-          python-version: "3.10"
-          channel-priority: flexible
-          channels: pyviz/label/dev,conda-forge,nodefaults
-          envs: "-o doc"
-          cache: true
-          conda-update: true
+          environments: docs
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Download data
-        run: |
-          conda activate test-environment
-          bash scripts/download_data.sh
-      - name: generate rst
-        run: |
-          conda activate test-environment
-          nbsite generate-rst --org holoviz --project-name holoviews
-      - name: refmanual
-        run: |
-          conda activate test-environment
-          python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
-      - name: build docs
-        run: |
-          conda activate test-environment
-          nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews
+      - name: Build documentation
+        run: pixi run -e docs docs-build
       - name: upload dev
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||

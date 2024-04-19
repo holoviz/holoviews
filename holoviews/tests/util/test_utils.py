@@ -5,7 +5,7 @@ from unittest import SkipTest
 
 from pyviz_comms import CommManager
 
-from holoviews import Store, notebook_extension
+from holoviews import Store
 from holoviews.core.options import OptionTree
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import bokeh, mpl
@@ -26,6 +26,8 @@ class TestOutputUtil(ComparisonTestCase):
     def setUp(self):
         if notebook is None:
             raise SkipTest("Jupyter Notebook not available")
+        from holoviews.ipython import notebook_extension
+
         notebook_extension(*BACKENDS)
         Store.current_backend = 'matplotlib'
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
