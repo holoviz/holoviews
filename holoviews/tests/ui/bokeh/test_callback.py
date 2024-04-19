@@ -323,11 +323,11 @@ def test_stream_popup_selection1d_undefined(serve_hv):
 
 @pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d(serve_hv):
+def test_stream_popup_selection1d_tap(serve_hv):
     def popup_form(index):
         return "# Tap"
 
-    points = hv.Points(np.random.randn(1000, 2))
+    points = hv.Points(np.random.randn(1000, 2)).opts(hit_dilation=5)
     hv.streams.Selection1D(source=points, popup=popup_form)
     points.opts(tools=["tap"], active_tools=["tap"])
 
