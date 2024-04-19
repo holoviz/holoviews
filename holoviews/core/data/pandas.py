@@ -388,7 +388,8 @@ class PandasInterface(Interface, PandasAPI):
                 sel = [sel]
             if isinstance(sel, slice) and nindex > 1 and not sorted_index and level>depth:
                 # If the index is not monotonic we cannot slice
-                return {}
+                # so return indexer up to the point it is valid
+                return index_sel
             index_sel[idx] = sel
         return {} if skip_index else index_sel
 
