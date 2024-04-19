@@ -315,6 +315,24 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         selected = ds.select(number=1, color='red')
         assert selected == 0
 
+    @pytest.mark.xfail(reason="Not working")
+    def test_select_not_monotonic(self):
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": [2, 1, 2, 1]})
+        index = pd.MultiIndex.from_frame(frame, names=frame.columns)
+        df = pd.DataFrame(range(4), index=index, columns=["values"])
+        ds = Dataset(df, kdims=list(frame.columns))
+
+        data = ds.select(color=slice(2, 3)).data
+        expected = pd.DataFrame({"number": [1, 2], "color": [2, 2], "values": [1, 3]}).set_index(['number', 'color'])
+        pd.testing.assert_frame_equal(data, expected)
+
+    @pytest.mark.xfail(reason="Not working")
+    def test_select_not_in_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=[2, 3])
+        expected = ds.select(number=2)
+        pd.testing.assert_frame_equal(selected.data, expected.data)
+
     def test_sample(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         sample = ds.interface.sample(ds, [1])
