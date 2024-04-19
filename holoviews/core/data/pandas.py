@@ -395,7 +395,6 @@ class PandasInterface(Interface, PandasAPI):
                 # If the index is not monotonic we cannot slice
                 return {}
             index_sel[idx] = sel
-        print(index_sel)
         return {} if skip_index else index_sel
 
     @classmethod
