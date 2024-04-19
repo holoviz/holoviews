@@ -360,7 +360,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def sort_depth(cls, df):
         try:
-            from pandas.core.index.multi import _lexsort_depth
+            from pandas.core.indexes.multi import _lexsort_depth
         except Exception:
             return 0
         return _lexsort_depth(df.index.codes, df.index.nlevels)
