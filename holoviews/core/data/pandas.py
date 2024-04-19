@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
-from pandas.core.dtypes.common import ensure_int64
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -361,14 +360,10 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def sort_depth(cls, df):
         try:
-            from pandas._libs.algos import is_lexsorted
+            from pandas.core.index.multi import _lexsort_depth
         except Exception:
             return 0
-        int64_codes = [ensure_int64(level_codes) for level_codes in df.index.codes]
-        for k in range(df.index.nlevels, 0, -1):
-            if is_lexsorted(int64_codes[:k]):
-                return k
-        return 0
+        return _lexsort_depth(df.index.codes, df.index.nlevels)
 
     @classmethod
     def index_selection(cls, df, selection):
