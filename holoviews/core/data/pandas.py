@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
+from pandas.core.dtypes.common import ensure_int64
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -352,10 +353,35 @@ class PandasInterface(Interface, PandasAPI):
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 
     @classmethod
+    def sorted_index(cls, df):
+        if hasattr(df.index, 'is_lexsorted'):
+            return df.index.is_lexsorted()
+        return df.index.is_monotonic_increasing
+
+    @classmethod
+    def sort_depth(cls, df):
+        try:
+            from pandas._libs.algos import is_lexsorted
+        except Exception:
+            return 0
+        int64_codes = [ensure_int64(level_codes) for level_codes in df.index.codes]
+        for k in range(df.index.nlevels, 0, -1):
+            if is_lexsorted(int64_codes[:k]):
+                return k
+        return 0
+
+    @classmethod
     def index_selection(cls, df, selection):
+        indexes = cls.indexes(df)
+        nindex = len(indexes)
+        sorted_index = cls.sorted_index(df)
+        if sorted_index:
+            depth = df.index.nlevels
+        else:
+            depth = cls.sort_depth(df)
         index_sel = {}
         skip_index = True
-        for idx in cls.indexes(df):
+        for level, idx in enumerate(indexes):
             if idx not in selection:
                 index_sel[idx] = slice(None, None)
                 continue
@@ -365,7 +391,11 @@ class PandasInterface(Interface, PandasAPI):
                 sel = slice(*sel)
             elif not isinstance(sel, (list, slice)):
                 sel = [sel]
+            if isinstance(sel, slice) and nindex > 1 and not sorted_index and level>depth:
+                # If the index is not monotonic we cannot slice
+                return {}
             index_sel[idx] = sel
+        print(index_sel)
         return {} if skip_index else index_sel
 
     @classmethod
@@ -373,10 +403,14 @@ class PandasInterface(Interface, PandasAPI):
         df = dataset.data
         if selection_mask is None:
             if index_sel:= cls.index_selection(df, selection):
-                if len(index_sel) == 1:
-                    df = df[next(iter(index_sel.values()))]
-                else:
-                    df = df.loc[tuple(index_sel.values()), :]
+                try:
+                    if len(index_sel) == 1:
+                        df = df[next(iter(index_sel.values()))]
+                    else:
+                        df = df.loc[tuple(index_sel.values()), :]
+                except KeyError:
+                    # If index lookup fails we fall back to boolean indexing
+                    index_sel = {}
             column_sel = {k: v for k, v in selection.items() if k not in index_sel}
             if column_sel:
                 selection_mask = cls.select_mask(dataset, column_sel)

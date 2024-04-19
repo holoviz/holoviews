@@ -222,6 +222,13 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         agg = ds.aggregate("number", function=np.mean, spreadfn=np.var)
         pd.testing.assert_frame_equal(agg.data, expected)
 
+    def test_index_select_monotonic(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=1)
+        expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
     def test_index_select(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         selected = ds.select(number=1)
@@ -307,15 +314,14 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         np.testing.assert_array_equal(sorted_ds.dimension_values("values"), [1, 3, 0, 2])
         np.testing.assert_array_equal(sorted_ds.dimension_values("number"), [1, 2, 1, 2])
 
-    def test_select(self):
-        ds = Dataset(self.df, kdims=["number", "color"])
+    def test_select_monotonic(self):
+        ds = Dataset(self.df.sort_index(), kdims=["number", "color"])
         selected = ds.select(color="red")
         pd.testing.assert_frame_equal(selected.data, self.df.iloc[[0, 2], :])
 
         selected = ds.select(number=1, color='red')
         assert selected == 0
 
-    @pytest.mark.xfail(reason="Not working")
     def test_select_not_monotonic(self):
         frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": [2, 1, 2, 1]})
         index = pd.MultiIndex.from_frame(frame, names=frame.columns)
@@ -323,15 +329,14 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(df, kdims=list(frame.columns))
 
         data = ds.select(color=slice(2, 3)).data
-        expected = pd.DataFrame({"number": [1, 2], "color": [2, 2], "values": [1, 3]}).set_index(['number', 'color'])
+        expected = pd.DataFrame({"number": [1, 2], "color": [2, 2], "values": [0, 2]}).set_index(['number', 'color'])
         pd.testing.assert_frame_equal(data, expected)
 
-    @pytest.mark.xfail(reason="Not working")
     def test_select_not_in_index(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         selected = ds.select(number=[2, 3])
-        expected = ds.select(number=2)
-        pd.testing.assert_frame_equal(selected.data, expected.data)
+        expected = self.df.loc[[2]]
+        pd.testing.assert_frame_equal(selected.data, expected)
 
     def test_sample(self):
         ds = Dataset(self.df, kdims=["number", "color"])
