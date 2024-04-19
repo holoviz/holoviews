@@ -361,9 +361,9 @@ class PandasInterface(Interface, PandasAPI):
     def sort_depth(cls, df):
         try:
             from pandas.core.indexes.multi import _lexsort_depth
-        except Exception:
+            return _lexsort_depth(df.index.codes, df.index.nlevels)
+        except (ImportError, AttributeError):
             return 0
-        return _lexsort_depth(df.index.codes, df.index.nlevels)
 
     @classmethod
     def index_selection(cls, df, selection):
