@@ -61,6 +61,8 @@ extensions += [
     'nbsite.analytics',
 ]
 
+myst_enable_extensions = ["colon_fence", "deflist"]
+
 nbsite_analytics = {
     'goatcounter_holoviz': True,
 }
