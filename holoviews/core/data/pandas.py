@@ -419,7 +419,6 @@ class PandasInterface(Interface, PandasAPI):
             return df[dataset.vdims[0].name].iloc[0]
         return df
 
-
     @classmethod
     def values(
         cls,
