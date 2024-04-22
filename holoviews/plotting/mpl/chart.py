@@ -941,7 +941,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             style_map = {None: {}}
 
         # Compute widths
-        width = (1-(2.*self.bar_padding)) / len(values.get('category', [None]))
+        xvals = element.dimension_values(0)
+        if isdatetime(xvals):
+            width = np.min(np.diff(date2num(xvals)))
+        else:
+            width = len(values.get('category', [None]))
+        width = (1 - self.bar_padding) / width
+
         if self.invert_axes:
             plot_fn = 'barh'
             x, y, w, bottom = 'y', 'width', 'height', 'left'
@@ -952,6 +958,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Iterate over group, category and stack dimension values
         # computing xticks and drawing bars and applying styles
         xticks, labels, bar_data = [], [], {}
+        categories = values.get('category', [None])
+        num_categories = len(categories)
         for gidx, grp in enumerate(values.get('group', [None])):
             sel_key = {}
             label = None
@@ -959,14 +967,15 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 grp_label = gdim.pprint_value(grp)
                 sel_key[gdim.name] = [grp]
                 yalign = -0.04 if cdim and self.multi_level else 0
-                xticks.append((gidx+0.5, grp_label, yalign))
-            for cidx, cat in enumerate(values.get('category', [None])):
-                xpos = gidx+self.bar_padding+(cidx*width)
+                goffset = width * (num_categories / 2 - 0.5)
+                xticks.append(((gidx+goffset), grp_label, yalign))
+            for cidx, cat in enumerate(categories):
+                xpos = gidx+(cidx*width)
                 if cat is not None:
                     label = cdim.pprint_value(cat)
                     sel_key[cdim.name] = [cat]
                     if self.multi_level:
-                        xticks.append((xpos+width/2., label, 0))
+                        xticks.append((xpos, label, 0))
                 prev = 0
                 for stk in values.get('stack', [None]):
                     if stk is not None:
@@ -975,7 +984,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                     el = element.select(**sel_key)
                     vals = el.dimension_values(element.vdims[0].name)
                     val = float(vals[0]) if len(vals) else np.nan
-                    xval = xpos+width/2.
+                    xval = xpos
+
                     if label in bar_data:
                         group = bar_data[label]
                         group[x].append(xval)
@@ -1014,6 +1024,14 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             legend_opts.update(**leg_spec)
             axis.legend(title=title, **legend_opts)
 
+        x_range = ranges[gdim.name]["data"]
+        if not isinstance(x_range[0], str) and not isinstance(x_range[1], str):
+            if style.get("align", "center") == "center":
+                ranges["x"]["data"] = (x_range[0] - width * 1.5, x_range[1] - width / 1.5)
+            else:
+                ranges["x"]["data"] = (x_range[0] - width, x_range[1] - width / 4)
+        
+        print(xticks)
         return bars, xticks, ax_dims
 
 
