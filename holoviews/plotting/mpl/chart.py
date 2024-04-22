@@ -967,7 +967,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 grp_label = gdim.pprint_value(grp)
                 sel_key[gdim.name] = [grp]
                 yalign = -0.04 if cdim and self.multi_level else 0
-                goffset = width * (num_categories / 2 - 0.5)
+                # mini offset needed or else combines with categorical
+                goffset = width * (num_categories / 2 - 0.5) + 0.000001
                 xticks.append(((gidx+goffset), grp_label, yalign))
             for cidx, cat in enumerate(categories):
                 xpos = gidx+(cidx*width)
