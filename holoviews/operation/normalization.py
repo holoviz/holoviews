@@ -192,18 +192,37 @@ class subcoordinate_group_ranges(Operation):
     def _process(self, overlay, key=None):
         if not getattr(overlay, 'subcoordinate_y', False):
             return overlay
+
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            self.param.warning(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
         vmins = defaultdict(list)
         vmaxs = defaultdict(list)
         include_chart = False
         for el in overlay:
-            if not isinstance(el, Chart):
+            # Only applies to Charts.
+            # `group` is the Element type per default (e.g. Curve, Spike).
+            if not isinstance(el, Chart) or el.group == type(el).__name__:
                 continue
+            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
+                self.param.warning(
+                    f"All elements in group {el.group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
             vmin, vmax = el.range(1)
             vmins[el.group].append(vmin)
             vmaxs[el.group].append(vmax)
             include_chart = True
 
-        if not include_chart:
+        if not include_chart or not vmins:
             return overlay
 
         minmax = {
