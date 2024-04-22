@@ -190,9 +190,6 @@ class subcoordinate_group_ranges(Operation):
     """
 
     def _process(self, overlay, key=None):
-        if not getattr(overlay, 'subcoordinate_y', False):
-            return overlay
-
         # If there are groups AND there are subcoordinate_y elements without a group.
         if any(el.group != type(el).__name__ for el in overlay) and any(
             el.opts.get('plot').kwargs.get('subcoordinate_y', False)
