@@ -190,6 +190,8 @@ class subcoordinate_group_ranges(Operation):
     """
 
     def _process(self, overlay, key=None):
+        if not getattr(overlay, 'subcoordinate_y', False):
+            return overlay
         vmins = defaultdict(list)
         vmaxs = defaultdict(list)
         include_chart = False
