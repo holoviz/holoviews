@@ -79,8 +79,8 @@ pillow = "*"
 plotly = ">=4.0"
 contourpy = "*"
 
-[feature.test-unit-task.tasks]
-test-unit = 'pytest holoviews'  # So it not showing up for UI tests
+[feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
+test-unit = 'pytest holoviews/tests'
 
 [feature.test.dependencies]
 dask-core = "*"
@@ -142,7 +142,7 @@ depends_on = ['docs-generate-rst', 'docs-refmanual', 'docs-generate']
 # ================== BUILD ====================
 # =============================================
 [feature.build.dependencies]
-build = "*"
+python-build = "*"
 conda-build = "*"
 
 [feature.build.tasks]
@@ -150,7 +150,7 @@ build-conda = 'bash scripts/conda/build.sh'
 build-pip = 'python -m build .'
 
 # =============================================
-# =================== lint ====================
+# =================== LINT ====================
 # =============================================
 [feature.lint.dependencies]
 pre-commit = "*"
