@@ -926,6 +926,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     def _create_bars(self, axis, element, ranges, style):
         # Get values dimensions, and style information
         (gdim, cdim, sdim), values = self._get_values(element, ranges)
+
+        cats = None
         style_dim = None
         if sdim:
             cats = values['stack']
@@ -942,11 +944,23 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Compute widths
         xvals = element.dimension_values(0)
-        if isdatetime(xvals):
-            width = np.min(np.diff(date2num(xvals)))
-        else:
-            width = len(values.get('category', [None]))
-        width = (1 - self.bar_padding) / width
+
+        # check if string or datetime or numeric
+
+        continuous = True
+        try:
+            if isdatetime(xvals):
+                xvals = date2num(xvals)
+            xdiff = np.min(np.abs(np.diff(xvals)))
+            if len(np.unique(xvals)) == len(xvals):
+                # if all are same
+                xdiff = 1
+        except TypeError:
+            # fast way to check for categorical
+            # vs complicated dtype comparison
+            xdiff = len(values.get('category', [None]))
+            continuous = False
+        width = (1 - self.bar_padding) / xdiff
 
         if self.invert_axes:
             plot_fn = 'barh'
@@ -967,15 +981,20 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 grp_label = gdim.pprint_value(grp)
                 sel_key[gdim.name] = [grp]
                 yalign = -0.04 if cdim and self.multi_level else 0
-                # mini offset needed or else combines with categorical
-                goffset = width * (num_categories / 2 - 0.5) + 0.000001
-                xticks.append(((gidx+goffset), grp_label, yalign))
+                goffset = width * (num_categories / 2 - 0.5)
+                if num_categories > 1:
+                    # mini offset needed or else combines with non-continuous
+                    goffset += 0.000001
+
+                xpos = gidx+goffset if not continuous else xvals[gidx]
+                if not continuous:
+                    xticks.append(((xpos), grp_label, yalign))
             for cidx, cat in enumerate(categories):
-                xpos = gidx+(cidx*width)
+                xpos = gidx+(cidx*width) if not continuous else xvals[gidx]
                 if cat is not None:
                     label = cdim.pprint_value(cat)
                     sel_key[cdim.name] = [cat]
-                    if self.multi_level:
+                    if self.multi_level and not continuous:
                         xticks.append((xpos, label, 0))
                 prev = 0
                 for stk in values.get('stack', [None]):
@@ -1026,14 +1045,18 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             axis.legend(title=title, **legend_opts)
 
         x_range = ranges[gdim.name]["data"]
-        if not isinstance(x_range[0], str) and not isinstance(x_range[1], str):
-            if style.get("align", "center") == "center":
-                ranges["x"]["data"] = (x_range[0] - width * 1.5, x_range[1] - width / 1.5)
+        if continuous:
+            if style.get('align', 'center') == 'center':
+                left_multiplier = 1.5
+                right_multiplier = 1.5
             else:
-                ranges["x"]["data"] = (x_range[0] - width, x_range[1] - width / 4)
-        
-        print(xticks)
-        return bars, xticks, ax_dims
+                left_multiplier = 0
+                right_multiplier = 4
+            ranges["x"]["data"] = (
+                x_range[0] - self.bar_padding * left_multiplier,
+                x_range[1] + self.bar_padding * right_multiplier
+            )
+        return bars, xticks if not continuous else None, ax_dims
 
 
 
