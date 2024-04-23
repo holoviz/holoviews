@@ -670,11 +670,11 @@ class PopupMixin:
         if hasattr(self, '_panel'):
             self._process_selection_event()
 
-    def _reposition(self, position):
+    def _reposition_panel(self, position):
         if position:
+            self._existing_popup.visible = True
             self._panel.visible = True
             self._panel.position = XY(**position)
-            self._existing_popup.visible = True
             if self.plot.comm:
                 push_on_root(self.plot.root.ref['id'])
 
@@ -711,6 +711,9 @@ class PopupMixin:
             position = None
         popup_pane = panel(popup)
 
+        if not popup_pane.visible:
+            return
+
         if not popup_pane.stylesheets:
             self._panel.stylesheets = [
                 """
@@ -728,8 +731,11 @@ class PopupMixin:
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
         if self._existing_popup and not self._existing_popup.visible:
-            self._reposition(position)
+            self._reposition_panel(position)
             return
+
+        if popup_pane.visible:
+            popup_pane.visible = True
 
         model = popup_pane.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
@@ -744,7 +750,7 @@ class PopupMixin:
         # the first element is the close button
         self._panel.elements = [self._panel.elements[0], model]
         self._existing_popup = popup_pane
-        self._reposition(position)
+        self._reposition_panel(position)
 
 class TapCallback(PopupMixin, PointerXYCallback):
     """
