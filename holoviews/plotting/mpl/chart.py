@@ -944,17 +944,16 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Compute widths
         xvals = element.dimension_values(0)
-
-        # check if string or datetime or numeric
-
+        is_dt = isdatetime(xvals)
         continuous = True
         try:
-            if isdatetime(xvals):
-                xvals = date2num(xvals)
-            xdiff = np.min(np.abs(np.diff(xvals)))
-            if len(np.unique(xvals)) == len(xvals):
+            xdiff_vals = date2num(xvals) if is_dt else xvals
+            xdiff = np.abs(np.diff(xdiff_vals))
+            if len(np.unique(xdiff)) == 1:
                 # if all are same
                 xdiff = 1
+            else:
+                xdiff = np.min(xdiff)
         except TypeError:
             # fast way to check for categorical
             # vs complicated dtype comparison
@@ -1045,19 +1044,18 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             axis.legend(title=title, **legend_opts)
 
         x_range = ranges[gdim.name]["data"]
-        if continuous:
+        if continuous and not is_dt:
             if style.get('align', 'center') == 'center':
-                left_multiplier = 1.5
-                right_multiplier = 1.5
+                left_multiplier = 0.5
+                right_multiplier = 0.5
             else:
                 left_multiplier = 0
-                right_multiplier = 4
+                right_multiplier = 1
             ranges["x"]["data"] = (
-                x_range[0] - self.bar_padding * left_multiplier,
-                x_range[1] + self.bar_padding * right_multiplier
+                x_range[0] - width * left_multiplier,
+                x_range[1] + width * right_multiplier
             )
         return bars, xticks if not continuous else None, ax_dims
-
 
 
 class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
