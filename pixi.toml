@@ -20,20 +20,20 @@ build = ["py311", "build"]
 lint = ["py311", "lint"]
 
 [dependencies]
-python = ">=3.9"
-pip= "*"
-param = ">=1.12.0,<3.0"
-panel = ">=1.0"
-pyviz_comms = ">=2.1"
 colorcet = "*"
 numpy = ">=1.0"
 packaging = "*"
 pandas = ">=0.20.0"
+panel = ">=1.0"
+param = ">=1.12.0,<3.0"
+pip= "*"
+python = ">=3.9"
+pyviz_comms = ">=2.1"
 # Recommended
-ipython = ">=5.4.0"
-notebook = "*"
-matplotlib-base = ">=3"
 bokeh = ">=3.1"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+notebook = "*"
 
 [feature.py39.dependencies]
 python = "3.9.*"
@@ -48,23 +48,22 @@ python = "3.11.*"
 python = "3.12.*"
 
 [feature.example.dependencies]
-networkx = "*"
-pillow = "*"
-xarray = ">=0.10.4"
-plotly = ">=4.0"
-# dash >=1.16
-streamz = ">=0.5.0"
-ffmpeg = "*"
 cftime = "*"
-netcdf4 = "*"
 dask-core = "*"
+datashader = ">=0.11.1"
+ffmpeg = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = ">=7.0"
+pillow = "*"
+plotly = ">=4.0"
+pooch = "*"
+pyarrow = "*"
+scikit-image = "*"
 scipy = "*"
 shapely = "*"
-scikit-image = "*"
-pyarrow = "*"
-pooch = "*"
-datashader = ">=0.11.1"
-notebook = ">=7.0"
+streamz = ">=0.5.0"
+xarray = ">=0.10.4"
 
 # =============================================
 # =================== TESTS ===================
@@ -74,28 +73,28 @@ pytest = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
-nbconvert = "*"
-pillow = "*"
-plotly = ">=4.0"
-contourpy = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest holoviews/tests'
 
 [feature.test.dependencies]
-dask-core = "*"
-ibis-sqlite = "*"
-xarray = ">=0.10.4"
-networkx = "*"
-shapely = "*"
-ffmpeg = "*"
 cftime = "*"
+contourpy = "*"
+# dash >=1.16
+dask-core = "*"
+datashader = ">=0.11.1"
+ffmpeg = "*"
+ibis-sqlite = "*"
+nbconvert = "*"
+networkx = "*"
+pillow = "*"
+plotly = ">=4.0"
 scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
 selenium = "*"
+shapely = "*"
 spatialpandas = "*"
-datashader = ">=0.11.1"
+xarray = ">=0.10.4"
 xyzservices = "*"
-# dash >=1.16
 
 [feature.test.target.unix.dependencies]
 tsdownsample = "*"  # currently not available on Windows
@@ -125,8 +124,8 @@ depends_on = ["install-ui"]
 # =================== DOCS ====================
 # =============================================
 [feature.doc.dependencies]
-nbsite = ">=0.8.4,<0.9.0"
 graphviz = "*"
+nbsite = ">=0.8.4,<0.9.0"
 pooch = "*"
 selenium = "*"
 
