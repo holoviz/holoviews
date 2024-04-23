@@ -672,7 +672,6 @@ class PopupMixin:
 
     def _reposition_panel(self, position):
         if position:
-            self._existing_popup.visible = True
             self._panel.visible = True
             self._panel.position = XY(**position)
             if self.plot.comm:
@@ -701,8 +700,6 @@ class PopupMixin:
         if popup is None:
             if self._panel.visible:
                 self._panel.visible = False
-            if self._existing_popup and not self._existing_popup.visible:
-                self._existing_popup.visible = False
             return
 
         if event is not None:
@@ -733,9 +730,6 @@ class PopupMixin:
         if self._existing_popup and not self._existing_popup.visible:
             self._reposition_panel(position)
             return
-
-        if popup_pane.visible:
-            popup_pane.visible = True
 
         model = popup_pane.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
