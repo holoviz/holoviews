@@ -43,7 +43,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://holoviews.org"
-Source = "http://github.com/holoviz/holoviews"
+Source = "https://github.com/holoviz/holoviews"
 HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
