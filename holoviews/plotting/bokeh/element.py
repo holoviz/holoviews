@@ -632,10 +632,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
 
+        if pos == 1 and 'subcoordinate_y' in range_tags_extras and dim and dim.range != (None, None):
+            dims = [dim]
+            v0, v1 = dim.range
+            axis_label = str(dim)
+            specs = ((dim.name, dim.label, dim.unit),)
         # For y-axes check if we explicitly passed in a dimension.
         # This is used by certain plot types to create an axis from
         # a synthetic dimension and exclusively supported for y-axes.
-        if pos == 1 and dim:
+        elif pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([
                 elrange.get(dim.name, {'combined': (None, None)})['combined']
