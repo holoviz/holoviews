@@ -47,8 +47,9 @@ from bokeh.models.tickers import (
 )
 from bokeh.models.tools import Tool
 
-from ...core import CompositeOverlay, Dataset, Dimension, DynamicMap, Element, util
+from ...core import Dataset, Dimension, DynamicMap, Element, util
 from ...core.options import Keywords, SkipRendering, abbreviated_exception
+from ...core.overlay import CompositeOverlay, NdOverlay
 from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
 from ...streams import Buffer, PlotSize, RangeXY
 from ...util.transform import dim
@@ -831,7 +832,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         ax_specs, yaxes, dimensions = {}, {}, {}
         subcoordinate_axes = 0
-        for el, sp in zip(element, self.subplots.values()):
+        for el, (sp_key, sp) in zip(element, self.subplots.items()):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
                 ax_dims[::-1]
@@ -842,7 +843,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self._subcoord_overlaid:
                 if opts.get('subcoordinate_y') is None:
                     continue
-                ax_name = el.label
+                if element.kdims:
+                    ax_name = ', '.join(d.pprint_value(k) for d, k in zip(element.kdims, sp_key))
+                else:
+                    ax_name = el.label
                 subcoordinate_axes += 1
             else:
                 ax_name = yd.name
@@ -1129,13 +1133,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif not self.drawn:
                 ticks, labels = [], []
                 idx = 0
-                for el, sp in zip(self.current_frame, self.subplots.values()):
+                for el, (sp_key, sp) in zip(self.current_frame, self.subplots.items()):
                     if not sp.subcoordinate_y:
                         continue
                     ycenter = idx if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
                     idx += 1
                     ticks.append(ycenter)
-                    labels.append(el.label)
+                    if el.label or not self.current_frame.kdims:
+                        labels.append(el.label)
+                    else:
+                        labels.append(', '.join(d.pprint_value(k) for d, k in zip(self.current_frame.kdims, sp_key)))
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
@@ -2109,6 +2116,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['subcoordinate_y_range'] = plot.y_range
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
+                elif self.overlay_dims:
+                    key = ', '.join(d.pprint_value(v) for d, v in self.overlay_dims.items())
+                    self.handles['y_range'] = plot.extra_y_ranges.pop(key)
 
         if self.apply_hard_bounds:
             self._apply_hard_bounds(element, ranges)
@@ -3287,12 +3297,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             labels = self.hmap.last.traverse(lambda x: x.label, [
                 lambda el: isinstance(el, Element) and el.opts.get('plot').kwargs.get('subcoordinate_y', False)
             ])
-            if any(not label for label in labels):
+            if isinstance(self.hmap.last, NdOverlay):
+                pass
+            elif any(not label for label in labels):
                 raise ValueError(
                     'Every element wrapped in a subcoordinate_y overlay must have '
                     'a label.'
                 )
-            if len(set(labels)) == 1:
+            elif len(set(labels)) == 1:
                 raise ValueError(
                     'Elements wrapped in a subcoordinate_y overlay must all have '
                     'a unique label.'
@@ -3339,7 +3351,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             ):
                 subcoord_y_glyph_renderers.append(glyph_renderer)
 
-        if self.subcoordinate_y:
+        if self.subcoordinate_y and plot:
             # Reverse the subcoord-y renderers only.
             reversed_renderers = subcoord_y_glyph_renderers[::-1]
             reordered = []
