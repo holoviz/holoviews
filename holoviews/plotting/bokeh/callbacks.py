@@ -699,6 +699,7 @@ class PopupMixin:
             position = self._get_position(event)
         else:
             position = None
+
         popup_pane = panel(popup)
         if not popup_pane.visible:
             return
@@ -733,7 +734,7 @@ class PopupMixin:
             code="""
             export default ({panel}, event, _) => {
               if (!event.visible) {
-                panel.position.setv({x: NaN, y: NaN})
+                panel.visible = false;
               }
             }""",
         ))
