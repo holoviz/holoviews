@@ -17,6 +17,7 @@ from holoviews.plotting.bokeh import BokehRenderer
 from holoviews.streams import Stream
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):

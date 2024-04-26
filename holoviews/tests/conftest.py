@@ -74,6 +74,7 @@ def bokeh_backend():
 
 @pytest.fixture
 def mpl_backend():
+    pytest.importorskip("matplotlib")
     hv.renderer("matplotlib")
     prev_backend = hv.Store.current_backend
     hv.Store.current_backend = "matplotlib"
@@ -83,6 +84,7 @@ def mpl_backend():
 
 @pytest.fixture
 def plotly_backend():
+    pytest.importorskip("plotly")
     hv.renderer("plotly")
     prev_backend = hv.Store.current_backend
     hv.Store.current_backend = "plotly"

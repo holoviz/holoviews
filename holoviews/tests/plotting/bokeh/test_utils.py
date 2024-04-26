@@ -82,7 +82,7 @@ class TestBokehUtilsInstantiation(ComparisonTestCase):
                             ['scatter', 'patch'])
         self.assertEqual(order, ['scatter_1', 'patch_1', 'rect_1'])
 
-
+@pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
     "figure_index,expected",
     [
