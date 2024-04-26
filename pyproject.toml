@@ -47,7 +47,7 @@ Source = "https://github.com/holoviz/holoviews"
 HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
-recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
+recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1", "plotly >=4.0"]
 
 [project.scripts]
 holoviews = "holoviews.util.command:main"

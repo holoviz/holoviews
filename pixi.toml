@@ -27,13 +27,13 @@ pandas = ">=0.20.0"
 panel = ">=1.0"
 param = ">=1.12.0,<3.0"
 pip= "*"
-python = ">=3.9"
 pyviz_comms = ">=2.1"
 # Recommended
 bokeh = ">=3.1"
 ipython = ">=5.4.0"
 matplotlib-base = ">=3"
 notebook = "*"
+plotly = ">=4.0"
 
 [feature.py39.dependencies]
 python = "3.9.*"
@@ -56,7 +56,6 @@ netcdf4 = "*"
 networkx = "*"
 notebook = ">=7.0"
 pillow = "*"
-plotly = ">=4.0"
 pooch = "*"
 pyarrow = "*"
 scikit-image = "*"
@@ -69,7 +68,6 @@ xarray = ">=0.10.4"
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
-plotly = ">=4.0"  # Should either be recommended or test
 pytest = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
