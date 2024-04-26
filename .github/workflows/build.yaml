@@ -114,8 +114,12 @@ jobs:
           path: dist/
       - name: Install package
         run: python -m pip install dist/*.whl
-      - name: Test package
+      - name: Import package
         run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
+      - name: Install test dependencies
+        run: python -m pip install "$(ls dist/*whl)[tests]"
+      - name: Test package
+        run: python -m pytest --pyargs $PACKAGE
 
   pip_publish:
     name: Publish PyPI
