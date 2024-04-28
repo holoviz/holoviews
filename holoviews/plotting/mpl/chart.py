@@ -954,12 +954,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 xdiff = 1
             else:
                 xdiff = np.min(xdiff)
+            width = (1 - self.bar_padding) * xdiff
         except TypeError:
             # fast way to check for categorical
             # vs complicated dtype comparison
             xdiff = len(values.get('category', [None]))
+            width = (1 - self.bar_padding) / xdiff
             continuous = False
-        width = (1 - self.bar_padding) / xdiff
 
         if self.invert_axes:
             plot_fn = 'barh'
