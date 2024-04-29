@@ -73,10 +73,10 @@ on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
 
 # Installation
 
-![CondaPkg](https://img.shields.io/conda/v/anaconda/holoviews.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)\_
-![PyPI](https://img.shields.io/pypi/v/holoviews.svg)\_
-![License](https://img.shields.io/pypi/l/holoviews.svg)\_
-![Coverage](https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg)\_
+[![CondaPkg](https://img.shields.io/conda/v/anaconda/holoviews.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)](https://anaconda.org/pyviz/holoviews)
+[![PyPI](https://img.shields.io/pypi/v/holoviews.svg)](https://pypi.python.org/pypi/holoviews)
+[![License](https://img.shields.io/pypi/l/holoviews.svg)](https://github.com/holoviz/holoviews/blob/main/LICENSE.txt)
+[![Coverage](https://codecov.io/gh/holoviz/holoviews/branch/main/graph/badge.svg)](https://codecov.io/gh/holoviz/holoviews)
 
 HoloViews works with Python 3 on Linux, Windows, or Mac, and works
 seamlessly with [Jupyter Notebook and JupyterLab](https://jupyter.org).
