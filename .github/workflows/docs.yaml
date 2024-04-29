@@ -61,6 +61,10 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: TEST
+        run: |
+          echo ${{ needs.docs_build.outputs.tag }}
+          ls -la
 
   docs_publish:
     name: Publish Documentation
@@ -79,17 +83,21 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
-      - name: upload dev
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      - name: TEST
         run: |
-          pipx install awscli
-          aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
-      - name: upload main
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: |
-          pipx install awscli
-          aws s3 sync --quiet ./builtdocs s3://holoviews.org/
+          echo ${{ needs.docs_build.outputs.tag }}
+          ls -la
+      # - name: upload dev
+      #   if: |
+      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+      #     (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      #   run: |
+      #     pipx install awscli
+      #     aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
+      # - name: upload main
+      #   if: |
+      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+      #     (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      #   run: |
+      #     pipx install awscli
+      #     aws s3 sync --quiet ./builtdocs s3://holoviews.org/
