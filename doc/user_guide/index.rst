@@ -78,8 +78,8 @@ Supplementary guides
 
 These guides provide detail about specific additional features in HoloViews:
 
-`Installing and Configuring HoloViews <Installing_and_Configuring.html>`_
- Additional information about installation and configuration options.
+`Configuring HoloViews <Configuring.html>`_
+ Additional information about configuration options.
 
 `Customizing Plots <Customizing_Plots.html>`_
  How to customize plots including their titles, axis labels, ranges, ticks and more.
