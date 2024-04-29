@@ -35,10 +35,10 @@ object, but the same information is available more conveniently via the
 `hv.help()` command and tab completion in the Jupyter notebook.
 
 If you have any [issues](https://github.com/holoviz/holoviews/issues) or
-wish to [contribute
-code](https://help.github.com/articles/about-pull-requests), you can
-visit our [GitHub site](https://github.com/holoviz/holoviews) or file a
-topic on the [HoloViz Discourse](https://discourse.holoviz.org/).
+wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can
+visit our [GitHub site](https://github.com/holoviz/holoviews), file a
+topic on the [HoloViz Discourse](https://discourse.holoviz.org/), or ask a quick question
+on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
 
 ```{=html}
 </div>
@@ -91,24 +91,14 @@ topic on the [HoloViz Discourse](https://discourse.holoviz.org/).
 HoloViews works with Python 3 on Linux, Windows, or Mac, and works
 seamlessly with [Jupyter Notebook and JupyterLab](https://jupyter.org).
 
-The recommended way to install HoloViews is using the
-[conda](https://docs.conda.io/projects/conda/en/latest/index.html)
-command provided by
-[Anaconda](https://docs.anaconda.com/anaconda/install/) or
-[Miniconda](https://docs.conda.io/en/latest/miniconda.html):
+You can install HoloViews either with `conda` or `pip`, for more information see the [install](install.html).
 
-    conda install -c pyviz holoviews bokeh
+    conda install holoviews
 
-This command will install the typical packages most useful with
-HoloViews, though HoloViews itself directly depends only on
-[Numpy](https://numpy.org), [Pandas](https://pandas.pydata.org) and
-[Param](https://param.holoviz.org/).
+    pip install holoviews
 
 Additional installation and configuration options are described in the
 [user guide](user_guide/Installing_and_Configuring.html).
-
-Additional methods of installation, including different ways to use
-`pip` can be found in the [installation guide](install.html).
 
 # Usage
 
@@ -124,22 +114,22 @@ Now you can launch Jupyter Notebook or JupyterLab to explore them:
 
     jupyter lab
 
-If you are working with a JupyterLab version \<2.0 you will also need
-the PyViz JupyterLab extension:
-
-    jupyter labextension install @pyviz/jupyterlab_pyviz
-
-For more details on installing and configuring HoloViews see [the
-installing and configuring
-guide](user_guide/Installing_and_Configuring.html).
-
 After you have successfully installed and configured HoloViews, please
 see [Getting Started](getting_started/index.html).
 
-::: {.toctree titlesonly="" hidden="" maxdepth="2"}
-Home \<self\> Getting Started \<getting_started/index\> User Guide
-\<user_guide/index\> Gallery \<gallery/index\> Reference Gallery
-\<reference/index\> Developer Guide \<developer_guide/index\> Releases
-\<releases\> API \<reference_manual/index\> FAQ Roadmap \<roadmap\>
-About \<about\>
-:::
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+Home
+Getting Started <getting_started/index>
+User Guide <user_guide/index>
+Gallery <gallery/index>
+Reference Gallery <reference/index>
+Developer Guide <developer_guide/index>
+Releases <releases>
+API <reference_manual/index>
+FAQ Roadmap <roadmap>
+About <about>
+```
