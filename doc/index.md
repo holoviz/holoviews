@@ -97,9 +97,6 @@ You can install HoloViews either with `conda` or `pip`, for more information see
 
     pip install holoviews
 
-Additional installation and configuration options are described in the
-[user guide](user_guide/Installing_and_Configuring.html).
-
 # Usage
 
 Once you\'ve installed HoloViews, you can get a copy of all the examples
