@@ -1,14 +1,10 @@
-```{=html}
 <h1><img src="_static/logo_horizontal.png" style="width: 30%;"></h1>
-```
 
 **Stop plotting your data - annotate your data and let it visualize
 itself.**
 
-```{=html}
 <div style="display: flex">
   <div style="width: 95%">
-```
 
 HoloViews is an
 [open-source](https://github.com/holoviz/holoviews/blob/main/LICENSE.txt)
@@ -18,16 +14,16 @@ in very few lines of code, letting you focus on what you are trying to
 explore and convey, not on the process of plotting.
 
 For examples, check out the thumbnails below and the other items in the
-[Gallery](gallery) of demos and apps and the [Reference
-Gallery](reference) that shows every HoloViews component. Be sure to
+[Gallery](gallery/index) of demos and apps and the [Reference Gallery](reference/index)
+that shows every HoloViews component. Be sure to
 look at the code, not just the pictures, to appreciate how easy it is to
 create such plots yourself!
 
-The [Getting-Started](getting_started) guide explains the basic concepts
+The [Getting-Started](getting_started/index) guide explains the basic concepts
 and how to start using HoloViews, and is the recommended way to
 understand how everything works.
 
-The [User Guide](user_guide) goes more deeply into key concepts from
+The [User Guide](user_guide/index) goes more deeply into key concepts from
 HoloViews, when you are ready for further study.
 
 The [API](reference_manual) is the definitive guide to each HoloViews
@@ -40,16 +36,11 @@ visit our [GitHub site](https://github.com/holoviz/holoviews), file a
 topic on the [HoloViz Discourse](https://discourse.holoviz.org/), or ask a quick question
 on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
 
-```{=html}
 </div>
-```
 
-```{=html}
 </div>
 <hr width='100%'></hr>
-```
 
-```{=html}
 <div>
 <div >
   <a href="https://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
@@ -79,7 +70,6 @@ on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
       <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='33%'> </a>
 </div>
 </div>
-```
 
 # Installation
 
@@ -91,7 +81,7 @@ on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
 HoloViews works with Python 3 on Linux, Windows, or Mac, and works
 seamlessly with [Jupyter Notebook and JupyterLab](https://jupyter.org).
 
-You can install HoloViews either with `conda` or `pip`, for more information see the [install](install.html).
+You can install HoloViews either with `conda` or `pip`, for more information see the [install guide](install).
 
     conda install holoviews
 
@@ -99,7 +89,7 @@ You can install HoloViews either with `conda` or `pip`, for more information see
 
 # Usage
 
-Once you\'ve installed HoloViews, you can get a copy of all the examples
+Once you've installed HoloViews, you can get a copy of all the examples
 shown on this website:
 
     holoviews --install-examples
@@ -112,7 +102,7 @@ Now you can launch Jupyter Notebook or JupyterLab to explore them:
     jupyter lab
 
 After you have successfully installed and configured HoloViews, please
-see [Getting Started](getting_started/index.html).
+see [Getting Started](getting_started/index).
 
 ```{toctree}
 :titlesonly:
