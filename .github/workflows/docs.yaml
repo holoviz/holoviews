@@ -30,7 +30,7 @@ jobs:
   build_docs:
     name: Documentation
     needs: [pixi_lock]
-    runs-on: "ubuntu-latest"
+    runs-on: "macos-latest"
     timeout-minutes: 120
     defaults:
       run:
