@@ -125,6 +125,7 @@ depends_on = ["install-ui"]
 graphviz = "*"
 nbsite = ">=0.8.4,<0.9.0"
 pooch = "*"
+python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.tasks]
