@@ -56,46 +56,25 @@ Check out the [HoloViews web site](http://holoviews.org) for extensive examples 
 
 # Installation
 
-HoloViews works with
-[Python](https://github.com/holoviz/holoviews/actions/workflows/test.yaml)
-on Linux, Windows, or Mac, and works seamlessly with
-[Jupyter Notebook and JupyterLab](https://jupyter.org).
+HoloViews works with [Python](https://github.com/holoviz/holoviews/actions/workflows/test.yaml)
+on Linux, Windows, or Mac, and works seamlessly with [Jupyter Notebook and JupyterLab](https://jupyter.org).
 
-The recommended way to install HoloViews is using the
-[conda](https://docs.conda.io/projects/conda/en/latest/index.html) command provided by
-[Anaconda](https://docs.anaconda.com/free/anaconda/install/) or
-[Miniconda](https://docs.conda.io/en/latest/miniconda.html):
+You can install HoloViews either with `conda` or `pip`, for more information see the [install guide](https://holoviews.org/install.html).
 
     conda install holoviews
 
-This command will install the typical packages most useful with
-HoloViews, though HoloViews itself depends only on
-[Numpy](https://numpy.org) [Pandas](https://pandas.pydata.org) and [Param](https://param.holoviz.org).
-Additional installation and configuration options are described in the
-[user guide](https://holoviews.org/user_guide/Installing_and_Configuring.html).
+    pip install holoviews
 
-You can also clone holoviews directly from GitHub and install it with:
+# Developer Guide
 
-    git clone git://github.com/holoviz/holoviews.git
-    cd holoviews
-    pip install -e .
+If you want to help develop HoloViews, you can checkout the [developer guide](http://dev.holoviews.org/developer_guide/index.html),
+this guide will help you get set-up. Making it easy to contribute.
 
-## Usage
+# Communication
 
-Once you've installed HoloViews, you can get a copy of all the examples shown on this website:
-
-    holoviews --install-examples
-    cd holoviews-examples
-
-Now you can launch Jupyter Notebook or JupyterLab to explore them:
-
-    jupyter notebook
-
-    jupyter lab
-
-For more details on setup and configuration see [our website](https://holoviews.org/user_guide/Installing_and_Configuring.html).
-
-For general discussion, we have a [discord channel](https://discord.gg/AXRHnJU6sP).
 If you find any bugs or have any feature suggestions please file a GitHub
-[issue](https://github.com/holoviz/holoviews/issues)
-or submit a [pull request](https://help.github.com/articles/about-pull-requests).
+[issue](https://github.com/holoviz/holoviews/issues).
+
+If you have any usage questions, please ask them on [HoloViz Discourse](https://discourse.holoviz.org/),
+
+For general discussion, we have a [Discord channel](https://discord.gg/AXRHnJU6sP).
