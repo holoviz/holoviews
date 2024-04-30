@@ -119,7 +119,6 @@ filterwarnings = [
 ]
 
 [tool.coverage]
-run.concurrency = ["greenlet"]
 omit = ["holoviews/__version.py"]
 exclude_also = [
     "if __name__ == .__main__.:",
