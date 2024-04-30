@@ -168,6 +168,12 @@ jobs:
           echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
           pixi run -e ${{ matrix.environment }} test-ui $COV --cov-config=.uicoveragerc $FAIL
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui_screenshots_${{ runner.os }}
+          path: ./ui_screenshots
+          if-no-files-found: ignore
       - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
         with:
