@@ -44,6 +44,7 @@ jobs:
         with:
           environments: "build"
           download-data: false
+          install: false
       - name: conda build
         run: pixi run -e build build-conda
       - uses: actions/upload-artifact@v4
@@ -91,6 +92,7 @@ jobs:
         with:
           environments: "build"
           download-data: false
+          install: false
       - name: Build package
         run: pixi run -e build build-pip
       - uses: actions/upload-artifact@v4
