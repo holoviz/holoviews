@@ -126,3 +126,20 @@ class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
         for i, ticklabel in enumerate(ticklabels):
             assert ticklabel.get_text() == expected[i].get_text()
             assert ticklabel.get_position() == expected[i].get_position()
+
+    def test_group_dim(self):
+        bars = Bars(
+            ([3, 10, 1] * 10, ["A", "B"] * 15, np.random.randn(30)),
+            ["Group", "Category"],
+            "Value",
+        ).aggregate(function=np.mean)
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.34,  2.74))
+        assert ax.patches[0].get_width() == 0.4
+        assert len(ax.get_xticks()) > 3
+
+        xticklabels = ['A', '1', 'B', 'A', '3', 'B', 'A', '10', 'B']
+        for i, tick in enumerate(ax.get_xticklabels()):
+            assert tick.get_text() == xticklabels[i]

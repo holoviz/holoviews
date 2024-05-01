@@ -947,6 +947,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         is_dt = isdatetime(xvals)
         continuous = True
         try:
+            if cdim:
+                raise TypeError("Not continuous")
             xdiff_vals = date2num(xvals) if is_dt else xvals
             xdiff = np.abs(np.diff(xdiff_vals))
             if len(np.unique(xdiff)) == 1:
