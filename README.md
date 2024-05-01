@@ -70,7 +70,7 @@ You can install HoloViews either with `conda` or `pip`, for more information see
 If you want to help develop HoloViews, you can checkout the [developer guide](http://dev.holoviews.org/developer_guide/index.html),
 this guide will help you get set-up. Making it easy to contribute.
 
-# Communication
+# Support & Feedback
 
 If you find any bugs or have any feature suggestions please file a GitHub
 [issue](https://github.com/holoviz/holoviews/issues).
