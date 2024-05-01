@@ -1052,7 +1052,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 left_multiplier = 0
                 right_multiplier = 1
-            ranges["x"]["data"] = (
+            ranges[gdim.name]["data"] = (
                 x_range[0] - width * left_multiplier,
                 x_range[1] + width * right_multiplier
             )
