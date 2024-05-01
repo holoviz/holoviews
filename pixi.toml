@@ -112,11 +112,11 @@ playwright = "*"
 pytest-playwright = "*"
 
 [feature.test-ui.tasks]
-install-ui = 'playwright install chromium'
+_install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
-depends_on = ["install-ui"]
+depends_on = ["_install-ui"]
 
 # =============================================
 # =================== DOCS ====================
@@ -129,12 +129,12 @@ python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.tasks]
-docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
-docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
-docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
+_docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
+_docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
+_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
 
 [feature.doc.tasks.docs-build]
-depends_on = ['docs-generate-rst', 'docs-refmanual', 'docs-generate']
+depends_on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
 
 # =============================================
 # ================== BUILD ====================
