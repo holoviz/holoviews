@@ -79,6 +79,8 @@ The first time you run it, it will create a `lock-file` with information for all
 pixi run download-data
 ```
 
+All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
+
 ### Editable install
 
 It can be advantageous to install the HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
