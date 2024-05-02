@@ -54,6 +54,8 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Install nbsite
+        run: pixi run -e docs pip install git+https://github.com/holoviz-dev/nbsite.git@upgrade_theme_myst -U
       - name: Build documentation
         run: pixi run -e docs docs-build
       - name: upload dev
