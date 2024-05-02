@@ -1,6 +1,6 @@
 [project]
 name = "holoviews"
-channels = ["conda-forge", "pyviz/label/dev"]
+channels = ["pyviz/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tasks]
@@ -105,7 +105,7 @@ nbval = "*"
 pytest-xdist = "*"
 
 [feature.test-ui]
-channels = ["conda-forge", "pyviz/label/dev", "microsoft"]
+channels = ["pyviz/label/dev", "microsoft", "conda-forge"]
 
 [feature.test-ui.dependencies]
 playwright = "*"
