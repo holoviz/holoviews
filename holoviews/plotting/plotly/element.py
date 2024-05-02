@@ -272,7 +272,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             opts.update({STYLE_ALIASES.get(k, k): v
                          for k, v in style.items() if k != 'cmap'})
-
         return opts
 
     def init_graph(self, datum, options, index=0, **kwargs):

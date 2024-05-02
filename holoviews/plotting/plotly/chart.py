@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import param
 
 from ...element import Tiles
@@ -246,6 +247,8 @@ class BarPlot(BarsMixin, ElementPlot):
             orientation = 'v'
 
         xvals, gvals = self._get_coords(element, ranges, as_string=False)
+        if isinstance(xvals, list) and xvals[0].dtype == np.dtype('datetime64[ns]'):
+            xvals = pd.to_datetime(xvals)
 
         bars = []
         if element.ndims == 1:
@@ -255,7 +258,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 values.append(sel.iloc[0, 1] if len(sel) else 0)
             bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in xvals],
+                x: xvals,
                 y: np.nan_to_num(values)})
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
@@ -270,7 +273,7 @@ class BarPlot(BarsMixin, ElementPlot):
                     values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in xvals],
+                    x: xvals,
                     y: np.nan_to_num(values)})
         else:
             values = element.dimension_values(vdim)
@@ -279,6 +282,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
                 y: np.nan_to_num(values)})
+
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):
