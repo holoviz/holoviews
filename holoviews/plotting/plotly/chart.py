@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import param
 
 from ...element import Tiles
@@ -247,8 +246,6 @@ class BarPlot(BarsMixin, ElementPlot):
             orientation = 'v'
 
         xvals, gvals = self._get_coords(element, ranges, as_string=False)
-        if isinstance(xvals, list) and xvals[0].dtype == np.dtype('datetime64[ns]'):
-            xvals = pd.to_datetime(xvals)
 
         bars = []
         if element.ndims == 1:
