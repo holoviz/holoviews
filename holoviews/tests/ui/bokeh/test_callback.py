@@ -11,6 +11,12 @@ from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
+skip_popup = pytest.mark.skipif(not bokeh34, reason="Pop ups needs Bokeh 3.4")
+
+@pytest.fixture
+def points():
+    rng = np.random.default_rng(10)
+    return hv.Points(rng.normal(size=(1000, 2)))
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
@@ -191,3 +197,181 @@ def test_bind_trigger(serve_hv):
     wait_until(lambda: RANGE_COUNT[0] > 2, page)
 
     assert BOUND_COUNT[0] == 1
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup(serve_hv):
+    def popup_form(name):
+        return f"# {name}"
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form("Tap"))
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_none(serve_hv, points):
+    def popup_form(name):
+        return
+
+    hv.streams.Tap(source=points, popup=popup_form("Tap"))
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+150, bbox['y']+150, steps=5)
+    page.mouse.up()
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(0)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_callbacks(serve_hv):
+    def popup_form(x, y):
+        return pn.widgets.Button(name=f"{x},{y}")
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(2)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_visible(serve_hv, points):
+    def popup_form(x, y):
+        def hide(_):
+            col.visible = False
+        button = pn.widgets.Button(
+            name=f"{x},{y}",
+            on_click=hide,
+            css_classes=["custom-button"]
+        )
+        col = pn.Column(button)
+        return col
+
+    points = points.opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    # initial appearance
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(2)
+
+    # click custom button to hide
+    locator = page.locator(".custom-button")
+    locator.click()
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(0)
+
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_close_button(serve_hv, points):
+    def popup_form(x, y):
+        return "Hello"
+
+    points = points.opts(tools=["tap", "box_select"])
+    hv.streams.Tap(source=points, popup=popup_form)
+    hv.streams.BoundsXY(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+    hv_plot.click()
+
+    locator = page.locator(".bk-btn.bk-btn-default")
+    expect(locator).to_have_count(1)
+    expect(locator).to_be_visible()
+    page.click(".bk-btn.bk-btn-default")
+    expect(locator).not_to_be_visible()
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_undefined(serve_hv, points):
+    hv.streams.Selection1D(source=points)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+    hv_plot.click()  # should not raise any error; properly guarded
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_tap(serve_hv, points):
+    def popup_form(index):
+        return "# Tap"
+
+    points = points.opts(hit_dilation=5)
+    hv.streams.Selection1D(source=points, popup=popup_form)
+    points.opts(tools=["tap"], active_tools=["tap"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+    hv_plot.click()
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_lasso_select(serve_hv, points):
+    def popup_form(index):
+        if index:
+            return f"# lasso\n{len(index)}"
+
+    hv.streams.Selection1D(source=points, popup=popup_form)
+    points.opts(tools=["tap", "lasso_select"], active_tools=["lasso_select"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    box = hv_plot.bounding_box()
+    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
+    mid_x, mid_y = box['x'] + 10, box['y'] + 10
+    end_x, end_y = box['x'] + box['width'] - 10, box['y'] + 10
+
+    page.mouse.move(start_x, start_y)
+    hv_plot.click()
+    page.mouse.down()
+    page.mouse.move(mid_x, mid_y)
+    page.mouse.move(end_x, end_y)
+    page.mouse.up()
+
+    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
+    locator = page.locator("#lasso")
+    expect(locator).to_have_count(1)
+    expect(locator).not_to_have_text("lasso\n0")

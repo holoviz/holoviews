@@ -1560,3 +1560,10 @@ def test_imagestack_datashader_color_key():
         color_key=cc.glasbey_light,
     )
     render(op)  # should not error out
+
+
+def test_imagestack_datashade_count_cat():
+    # Test for https://github.com/holoviz/holoviews/issues/6154
+    df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
+    op = datashade(Points(df), aggregator=ds.count_cat("c"))
+    render(op)  # should not error out

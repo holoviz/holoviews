@@ -3,6 +3,7 @@ Collection of either extremely generic or simple Operation
 examples.
 """
 import warnings
+from functools import partial
 
 import numpy as np
 import param
@@ -754,6 +755,9 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
+    groupby_range = param.Selector(default="shared", objects=["shared", "separated"], doc="""
+        Whether to group the histograms along the same range or separate them.""")
+
     log = param.Boolean(default=False, doc="""
       Whether to use base 10 logarithmic samples for the bin edges.""")
 
@@ -781,15 +785,7 @@ class histogram(Operation):
     style_prefix = param.String(default=None, allow_None=None, doc="""
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
-    def _process(self, element, key=None):
-        if self.p.groupby:
-            if not isinstance(element, Dataset):
-                raise ValueError('Cannot use histogram groupby on non-Dataset Element')
-            grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
-            self.p.groupby = None
-            return grouped.map(self._process, Dataset)
-
-        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
+    def _get_dim_and_data(self, element):
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
@@ -800,6 +796,21 @@ class histogram(Operation):
             data = element.interface.values(element, selected_dim, compute=False)
         else:
             data = element.dimension_values(selected_dim)
+        return dim, data
+
+    def _process(self, element, key=None, groupby=False):
+        if self.p.groupby:
+            if not isinstance(element, Dataset):
+                raise ValueError('Cannot use histogram groupby on non-Dataset Element')
+            grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
+            if self.p.groupby_range == 'shared' and not self.p.bin_range:
+                _, data = self._get_dim_and_data(element)
+                self.p.bin_range = (data.min(), data.max())
+            self.p.groupby = None
+            return grouped.map(partial(self._process, groupby=True), Dataset)
+
+        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
+        dim, data = self._get_dim_and_data(element)
 
         is_datetime = isdatetime(data)
         if is_datetime:
@@ -859,7 +870,7 @@ class histogram(Operation):
             if isdatetime(edges):
                 edges = edges.astype('datetime64[ns]').astype('int64')
         else:
-            hist_range = self.p.bin_range or element.range(selected_dim)
+            hist_range = self.p.bin_range or element.range(dim)
             # Suppress a warning emitted by Numpy when datetime or timedelta scalars
             # are compared. See https://github.com/numpy/numpy/issues/10095 and
             # https://github.com/numpy/numpy/issues/9210.
@@ -939,8 +950,9 @@ class histogram(Operation):
         # Save off the computed bin edges so that if this operation instance
         # is used to compute another histogram, it will default to the same
         # bin edges.
-        self.bins = list(edges)
-        return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
+        if not groupby:
+            self.bins = list(edges)
+        return Histogram((edges, hist), kdims=[dim],
                          label=element.label, **params)
 
 

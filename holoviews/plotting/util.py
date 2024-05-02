@@ -83,12 +83,12 @@ def collate(obj):
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.param.warning(
-            "Nesting {0}s within a {1} makes it difficult to access "
-            "your data or control how it appears; we recommend "
-            "calling .collate() on the {1} in order to follow the "
-            "recommended nesting structure shown in the Composing "
-            "Data user guide (https://goo.gl/2YS8LJ)".format(
-                obj.type.__name__, type(obj).__name__))
+            f"Nesting {obj.type.__name__}s within a {type(obj).__name__} "
+            "makes it difficult to access your data or control how it appears; "
+            f"we recommend calling .collate() on the {type(obj).__name__} "
+            "in order to follow the recommended nesting structure shown "
+            "in the Composing Data user guide (https://goo.gl/2YS8LJ)"
+        )
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:

@@ -174,11 +174,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             ]
             if unsupported_opts:
                 raise ValueError(
-                    "The following {typ} style options are not supported by the Plotly "
-                    "backend when overlaid on Tiles:\n"
-                    "    {unsupported_opts}".format(
-                        typ=type(element).__name__, unsupported_opts=unsupported_opts
-                    )
+                    f"The following {type(element).__name__} style options are not supported by the Plotly "
+                    f"backend when overlaid on Tiles:\n    {unsupported_opts}"
                 )
 
         # Get data and options and merge them
@@ -351,8 +348,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.param.warning('Specified {} dim transform {!r} could not be applied, as not all '
-                             'dimensions could be resolved.'.format(k, v))
+                self.param.warning(f'Specified {k} dim transform {v!r} could not be applied, as not all '
+                             'dimensions could be resolved.')
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -367,14 +364,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
-                    raise ValueError('Mapping a dimension to the "{style}" '
+                    raise ValueError(f'Mapping a dimension to the "{k}" '
                                      'style option is not supported by the '
-                                     '{element} element using the {backend} '
-                                     'backend. To map the "{dim}" dimension '
-                                     'to the {style} use a groupby operation '
-                                     'to overlay your data along the dimension.'.format(
-                                         style=k, dim=v.dimension, element=element,
-                                         backend=self.renderer.backend))
+                                     f'{element} element using the {self.renderer.backend} '
+                                     f'backend. To map the "{v.dimension}" dimension '
+                                     f'to the {k} use a groupby operation '
+                                     'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'

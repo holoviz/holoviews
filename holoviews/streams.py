@@ -240,12 +240,13 @@ class Stream(param.Parameterized):
                 if overlap:
                     pname = type(s.parameterized).__name__
                     param.main.param.warning(
-                        'The {} parameter(s) on the {} object have '
+                        f'The {sorted([p.name for p in overlap])} parameter(s) '
+                        f'on the {pname} object have '
                         'already been supplied in another stream. '
                         'Ensure that the supplied streams only specify '
                         'each parameter once, otherwise multiple '
-                        'events will be triggered when the parameter '
-                        'changes.'.format(sorted([p.name for p in overlap]), pname))
+                        'events will be triggered when the parameter changes.'
+                    )
                 parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
@@ -1273,8 +1274,9 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, **params):
+    def __init__(self, linked=True, popup=None, **params):
         super().__init__(linked=linked, **params)
+        self.popup = popup
 
 
 class PointerX(LinkedStream):

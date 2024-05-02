@@ -194,9 +194,10 @@ class AggregationOperation(ResampleOperation2D):
         elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
-                raise ValueError("Aggregation column '{}' not found on '{}' element. "
-                                 "Ensure the aggregator references an existing "
-                                 "dimension.".format(column,element))
+                raise ValueError(
+                    f"Aggregation column '{column}' not found on '{element}' element. "
+                    "Ensure the aggregator references an existing dimension."
+                )
             if isinstance(agg_fn, (ds.count, ds.count_cat)):
                 if vdim_prefix:
                     vdim_name = f'{vdim_prefix}{column} Count'
@@ -405,7 +406,7 @@ class aggregate(LineAggregationOperation):
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
-            params['vdims'] = list(agg.coords[agg_fn.column].data)
+            params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
