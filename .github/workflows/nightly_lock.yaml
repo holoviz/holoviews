@@ -19,4 +19,4 @@ jobs:
           PACKAGE: "holoviews"
         run: |
           cp pixi.lock $(date +%Y-%m-%d)-pixi.lock
-          aws s3 cp $(date +%Y-%m-%d)-pixi.lock s3://assets.holoviz.org/lock/$PACKAGE
+          aws s3 cp ./$(date +%Y-%m-%d)-pixi.lock s3://assets.holoviz.org/lock/$PACKAGE/
