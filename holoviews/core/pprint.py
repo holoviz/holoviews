@@ -215,8 +215,8 @@ class InfoPrinter:
     @classmethod
     def object_info(cls, obj, name, backend, ansi=False):
         element = not getattr(obj, '_deep_indexable', False)
-        element_url ='http://holoviews.org/reference/elements/{backend}/{obj}.html'
-        container_url ='http://holoviews.org/reference/containers/{backend}/{obj}.html'
+        element_url ='https://holoviews.org/reference/elements/{backend}/{obj}.html'
+        container_url ='https://holoviews.org/reference/containers/{backend}/{obj}.html'
         url = element_url if element else container_url
         link = url.format(obj=name, backend=backend)
 
