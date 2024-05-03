@@ -43,11 +43,12 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://holoviews.org"
-Source = "http://github.com/holoviz/holoviews"
+Source = "https://github.com/holoviz/holoviews"
 HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
-recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1"]
+recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1", "plotly >=4.0"]
+tests = ["pytest", "pytest-rerunfailures"]
 
 [project.scripts]
 holoviews = "holoviews.util.command:main"
@@ -118,7 +119,6 @@ filterwarnings = [
 ]
 
 [tool.coverage]
-run.concurrency = ["greenlet"]
 omit = ["holoviews/__version.py"]
 exclude_also = [
     "if __name__ == .__main__.:",

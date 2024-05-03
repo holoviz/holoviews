@@ -178,7 +178,7 @@ class Interface(param.Parameterized):
     @classmethod
     def error(cls):
         info = dict(interface=cls.__name__)
-        url = "http://holoviews.org/user_guide/%s_Datasets.html"
+        url = "https://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
             datatype = 'a list of tabular'
             info['url'] = url % 'Tabular'
