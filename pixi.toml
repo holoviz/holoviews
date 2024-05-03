@@ -98,9 +98,10 @@ xyzservices = "*"
 tsdownsample = "*"  # currently not available on Windows
 
 [feature.test-example.tasks]
-test-example = 'pytest -n auto --dist loadscope --nbval-lax examples'
+test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 
 [feature.test-example.dependencies]
+psutil = "*"
 nbval = "*"
 pytest-xdist = "*"
 
