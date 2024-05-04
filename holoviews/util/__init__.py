@@ -305,7 +305,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         if backend and not used_fallback:
             cls.param.warning("All supplied Options objects already define a backend, "
-                              "backend override %r will be ignored." % backend)
+                              f"backend override {backend!r} will be ignored.")
 
         return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
 
@@ -926,8 +926,7 @@ class Dynamic(param.ParameterizedFunction):
             for name, p in self.p.streams.items():
                 if not isinstance(p, param.Parameter):
                     raise ValueError("Stream dictionary must map operation keywords "
-                                     "to parameter names. Cannot handle %r type."
-                                     % type(p))
+                                     f"to parameter names. Cannot handle {type(p)!r} type.")
                 if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
                     if p.name != name:
                         streams[p.owner][p.name] = name
@@ -949,8 +948,7 @@ class Dynamic(param.ParameterizedFunction):
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
-                raise ValueError('Streams must be Stream classes or instances, found %s type' %
-                                 type(stream).__name__)
+                raise ValueError(f'Streams must be Stream classes or instances, found {type(stream).__name__} type')
             if isinstance(op, Operation):
                 updates = {k: op.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in op.p}

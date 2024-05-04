@@ -80,9 +80,9 @@ class PandasInterface(Interface, PandasAPI):
                 d = dimension_name(d)
                 if len([c for c in data.columns if c == d]) > 1:
                     raise DataError('Dimensions may not reference duplicated DataFrame '
-                                    'columns (found duplicate %r columns). If you want to plot '
+                                    f'columns (found duplicate {d!r} columns). If you want to plot '
                                     'a column against itself simply declare two dimensions '
-                                    'with the same name. '% d, cls)
+                                    'with the same name.', cls)
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
@@ -185,7 +185,7 @@ class PandasInterface(Interface, PandasAPI):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {repr(not_found)}", cls)
 
     @classmethod
     def range(cls, dataset, dimension):

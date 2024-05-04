@@ -128,7 +128,7 @@ class SpatialPandasInterface(MultiInterface):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                              "dimensions, the following dimensions were "
-                             "not found: %s" % repr(not_found), cls)
+                             f"not found: {repr(not_found)}", cls)
 
     @classmethod
     def dtype(cls, dataset, dimension):

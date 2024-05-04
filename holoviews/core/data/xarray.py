@@ -108,15 +108,14 @@ class XArrayInterface(GridInterface):
                 vdim = asdim(vdim_param.default[0])
                 if vdim.name in data.dims:
                     raise DataError("xarray DataArray does not define a name, "
-                                    "and the default of '%s' clashes with a "
+                                    f"and the default of '{vdim.name}' clashes with a "
                                     "coordinate dimension. Give the DataArray "
-                                    "a name or supply an explicit value dimension."
-                                    % vdim.name, cls)
+                                    "a name or supply an explicit value dimension.", cls)
             else:
                 raise DataError("xarray DataArray does not define a name "
-                                "and %s does not define a default value "
+                                f"and {eltype.__name__} does not define a default value "
                                 "dimension. Give the DataArray a name or "
-                                "supply an explicit vdim." % eltype.__name__,
+                                "supply an explicit vdim.",
                                 cls)
             if not packed:
                 if vdim in data.dims:
@@ -213,8 +212,7 @@ class XArrayInterface(GridInterface):
             raise TypeError('Data must be be an xarray Dataset type.')
         elif not_found:
             raise DataError("xarray Dataset must define coordinates "
-                            "for all defined kdims, %s coordinates not found."
-                            % not_found, cls)
+                            f"for all defined kdims, {not_found} coordinates not found.", cls)
 
         for vdim in vdims:
             if packed:
@@ -257,7 +255,7 @@ class XArrayInterface(GridInterface):
             if not_found:
                 raise DataError("Supplied data does not contain specified "
                                 "dimensions, the following dimensions were "
-                                "not found: %s" % repr(not_found), cls)
+                                f"not found: {repr(not_found)}", cls)
 
         # Check whether irregular (i.e. multi-dimensional) coordinate
         # array dimensionality matches
@@ -273,8 +271,7 @@ class XArrayInterface(GridInterface):
                 raise DataError("The dimensions of coordinate arrays "
                                 "on irregular data must match. The "
                                 "following kdims were found to have "
-                                "non-matching array dimensions:\n\n%s"
-                                % ('\n'.join(nonmatching)), cls)
+                                "non-matching array dimensions:\n\n{}".format('\n'.join(nonmatching)), cls)
 
     @classmethod
     def compute(cls, dataset):
@@ -329,8 +326,7 @@ class XArrayInterface(GridInterface):
         invalid = [d for d in index_dims if dataset.data[d.name].ndim > 1]
         if invalid:
             if len(invalid) == 1: invalid = f"'{invalid[0]}'"
-            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
-                             % invalid)
+            raise ValueError(f"Cannot groupby irregularly sampled dimension(s) {invalid}.")
 
         group_kwargs = {}
         if group_type != 'raw' and issubclass(group_type, Element):

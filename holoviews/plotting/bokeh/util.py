@@ -298,11 +298,11 @@ def compute_layout_properties(
                 aspect = None
                 if logger:
                     logger.warning(
-                        "%s value was ignored because absolute width and "
+                        f"{aspect_type} value was ignored because absolute width and "
                         "height values were provided. Either supply "
                         "explicit frame_width and frame_height to achieve "
                         "desired aspect OR supply a combination of width "
-                        "or height and an aspect value." % aspect_type)
+                        "or height and an aspect value.")
         elif fixed_width and responsive:
             height = None
             responsive = False

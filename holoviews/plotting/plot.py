@@ -1809,8 +1809,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 self.zoffset += len(subplot.subplots.keys()) - 1
 
         if not subplots:
-            raise SkipRendering("%s backend could not plot any Elements "
-                                "in the Overlay." % self.renderer.backend)
+            raise SkipRendering(f"{self.renderer.backend} backend could not plot any Elements "
+                                "in the Overlay.")
         return subplots
 
     def _create_subplot(self, key, obj, streams, ranges):
@@ -1859,8 +1859,8 @@ class GenericOverlayPlot(GenericElementPlot):
             opts['group_counter'] = self.group_counter
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
-                self.param.warning('%s is empty and will be skipped '
-                                   'during plotting' % obj.last)
+                self.param.warning(f'{obj.last} is empty and will be skipped '
+                                   'during plotting')
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
             param_vals = self.param.values()
