@@ -795,7 +795,7 @@ class dim:
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '{}'.format(', '.join(['{}={!r}'.format(*item) for item in kwargs])) if kwargs else ''
+            kwargs = ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
