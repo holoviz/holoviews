@@ -40,7 +40,7 @@ class TilePlot(ElementPlot):
                 layer['maxzoom'] = element.data.get("max_zoom", 20)
             else:
                 for v in ["X", "Y", "Z"]:
-                    url = url.replace("{%s}" % v, "{%s}" % v.lower())
+                    url = url.replace(f"{{{v}}}", f"{{{v.lower()}}}")
                 layer["source"] = [url]
 
                 for key, attribution in _ATTRIBUTIONS.items():

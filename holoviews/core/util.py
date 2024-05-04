@@ -82,7 +82,7 @@ try:
         masked_types = (BaseMaskedArray,)
 except Exception as e:
     param.main.param.warning('pandas could not register all extension types '
-                                'imports failed with the following error: %s' % e)
+                                f'imports failed with the following error: {e}')
 
 try:
     import cftime
@@ -807,8 +807,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         "Accumulate blocks of hex and separate blocks by underscores"
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception(r"Please use a raw string or escape control code '\%s'"
-                            % invalid[cc])
+            raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:

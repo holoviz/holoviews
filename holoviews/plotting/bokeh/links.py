@@ -189,8 +189,8 @@ class DataLinkCallback(LinkCallback):
                     (v.dtype.kind not in 'iufc' and (v==col).all()) or
                     np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
                 raise ValueError('DataLink can only be applied if overlapping '
-                                 'dimension values are equal, %s column on source '
-                                 'does not match target' % k)
+                                 f'dimension values are equal, {k} column on source '
+                                 'does not match target')
 
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')

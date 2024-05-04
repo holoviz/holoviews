@@ -274,7 +274,7 @@ class dim:
             if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
-                                 'found %s type' % type(fn))
+                                 f'found {type(fn)} type')
             self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
 
@@ -292,10 +292,10 @@ class dim:
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot call method on %r expression. "
+            raise ValueError(f"Cannot call method on {self!r} expression. "
                              "Only methods accessed via namespaces, "
                              "e.g. dim(...).df or dim(...).xr), "
-                             "can be called. " % self)
+                             "can be called.")
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
@@ -795,7 +795,7 @@ class dim:
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
+            kwargs = ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:

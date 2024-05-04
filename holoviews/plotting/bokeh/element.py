@@ -1292,8 +1292,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
-                               'axes are %s, the option will '
-                               'be ignored.' % ax_type)
+                               f'axes are {ax_type}, the option will '
+                               'be ignored.')
         elif data_aspect:
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
@@ -1438,7 +1438,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower bound to override default of %.3f." % low)
+                f"lower bound to override default of {low:.3f}.")
         updates = {}
         if util.isfinite(low):
             updates['start'] = (axis_range.start, low)
@@ -1941,7 +1941,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
-                key = '@{%s}' % k
+                key = f'@{{{k}}}'
                 if (
                     (len(values) and isinstance(values[0], util.datetime_types)) or
                     (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
@@ -2639,9 +2639,8 @@ class ColorbarPlot(ElementPlot):
         color = style.get(name, None)
         if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
-                "Cannot declare style mapping for '%s' option and "
-                "declare a color_index; ignoring the color_index."
-                % name)
+                f"Cannot declare style mapping for '{name}' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if not cdim:
             return data, mapping

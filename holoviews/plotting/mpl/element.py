@@ -416,7 +416,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower-bound to override default of %.3f." % low)
+                f"lower-bound to override default of {low:.3f}.")
         if invert:
             high, low = low, high
         if isinstance(low, util.cftime_types) or low != high:

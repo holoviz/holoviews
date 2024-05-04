@@ -276,8 +276,8 @@ class MultiInterface(Interface):
         for d in dimensions:
             if not cls.isscalar(dataset, d, True):
                 raise ValueError('MultiInterface can only apply groupby '
-                                 'on scalar dimensions, %s dimension '
-                                 'is not scalar' % d)
+                                 f'on scalar dimensions, {d} dimension '
+                                 'is not scalar')
             vals = cls.values(dataset, d, False, True)
             values.append(vals)
         values = tuple(values)

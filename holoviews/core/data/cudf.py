@@ -108,9 +108,9 @@ class cuDFInterface(PandasInterface):
             d = dimension_name(d)
             if len([c for c in columns if c == d]) > 1:
                 raise DataError('Dimensions may not reference duplicated DataFrame '
-                                'columns (found duplicate %r columns). If you want to plot '
+                                f'columns (found duplicate {d!r} columns). If you want to plot '
                                 'a column against itself simply declare two dimensions '
-                                'with the same name. '% d, cls)
+                                'with the same name.', cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 

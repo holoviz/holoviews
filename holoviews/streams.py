@@ -361,8 +361,8 @@ class Stream(param.Parameterized):
             if k not in param_names:
                 raise KeyError(f'Cannot rename {k!r} as it is not a stream parameter')
             if k != v and v in param_names:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
 
@@ -768,8 +768,8 @@ class Params(Stream):
             if n not in pnames:
                 raise KeyError(f'Cannot rename {n!r} as it is not a stream parameter')
             if n != v and v in pnames:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
     def _watcher(self, *events):
@@ -843,8 +843,7 @@ class ParamMethod(Params):
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
             raise ValueError('ParamMethod stream expects a method on a '
-                             'parameterized class, found %s.'
-                             % type(parameterized).__name__)
+                             f'parameterized class, found {type(parameterized).__name__}.')
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
