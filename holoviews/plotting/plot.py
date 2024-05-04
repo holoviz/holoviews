@@ -349,8 +349,9 @@ class PlotSelector:
         try:
             return super().__setattr__(label, value)
         except Exception as e:
-            raise Exception("Please set class parameters directly on classes %s"
-                            % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())) from e
+            plot_cls_str = ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())
+            msg = f"Please set class parameters directly on classes {plot_cls_str}"
+            raise Exception(msg) from e
 
     def params(self):
         return self.plot_options

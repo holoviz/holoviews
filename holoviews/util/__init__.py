@@ -128,8 +128,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             raise Exception("Keyword options {} must be one of  {}".format(groups,
                             ','.join(repr(g) for g in groups)))
         elif not all(isinstance(v, dict) for v in kwargs.values()):
-            raise Exception("The %s options must be specified using dictionary groups" %
-                            ','.join(repr(k) for k in kwargs.keys()))
+            options_str = ','.join([repr(k) for k in kwargs.keys()])
+            msg = f"The {options_str} options must be specified using dictionary groups"
+            raise Exception(msg)
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
         targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
