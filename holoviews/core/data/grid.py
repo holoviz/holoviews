@@ -187,7 +187,7 @@ class GridInterface(DictInterface):
         if not_found and tuple(not_found) not in dataset.data:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            f"not found: {repr(not_found)}", cls)
+                            f"not found: {not_found!r}", cls)
 
 
     @classmethod

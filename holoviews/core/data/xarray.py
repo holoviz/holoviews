@@ -255,7 +255,7 @@ class XArrayInterface(GridInterface):
             if not_found:
                 raise DataError("Supplied data does not contain specified "
                                 "dimensions, the following dimensions were "
-                                f"not found: {repr(not_found)}", cls)
+                                f"not found: {not_found!r}", cls)
 
         # Check whether irregular (i.e. multi-dimensional) coordinate
         # array dimensionality matches
