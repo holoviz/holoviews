@@ -118,7 +118,6 @@ filterwarnings = [
     "ignore:No data was collected:coverage.exceptions.CoverageWarning",  # https://github.com/pytest-dev/pytest-cov/issues/627
     # 2024-05
     "ignore::numba.core.errors.NumbaPerformanceWarning",  # Not important for tests
-
 ]
 
 [tool.coverage]
