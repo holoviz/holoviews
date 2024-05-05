@@ -116,8 +116,6 @@ filterwarnings = [
     "ignore:The current Dask DataFrame implementation is deprecated:DeprecationWarning",  # https://github.com/dask/dask/issues/10917
     # 2024-04
     "ignore:No data was collected:coverage.exceptions.CoverageWarning",  # https://github.com/pytest-dev/pytest-cov/issues/627
-    # 2024-05
-    "ignore::numba.core.errors.NumbaPerformanceWarning",  # Not important for tests
 ]
 
 [tool.coverage]

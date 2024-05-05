@@ -131,7 +131,7 @@ cupy = { version = "*", channel = "conda-forge" }
 ucx = { version = "*", channel = "conda-forge" }
 
 [feature.test-gpu.tasks]
-test-gpu = "pytest holoviews/tests --gpu"
+test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
 
 # =============================================
 # =================== DOCS ====================
