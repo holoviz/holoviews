@@ -1,17 +1,14 @@
 import logging
-from unittest import SkipTest
 
 import numpy as np
-
-try:
-    import cudf
-except ImportError:
-    raise SkipTest("Could not import cuDF, skipping cuDFInterface tests.")
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.spaces import HoloMap
 
 from .base import HeterogeneousColumnTests, InterfaceTests
+
+pytestmark = pytest.mark.gpu
 
 
 class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
@@ -20,16 +17,21 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     """
 
     datatype = 'cuDF'
-    data_type = cudf.DataFrame
 
     __test__ = True
+
+    @property
+    def data_type(self):
+        import cudf
+        return cudf.DataFrame
 
     def setUp(self):
         super().setUp()
         logging.getLogger('numba.cuda.cudadrv.driver').setLevel(30)
 
+    @pytest.mark.xfail(reason="cuDF does not support variance aggregation")
     def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
-        raise SkipTest("cuDF does not support variance aggregation")
+        super().test_dataset_2D_aggregate_spread_fn_with_duplicates()
 
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
@@ -102,12 +104,13 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
                           kdims=['Age'])
         self.assertEqual(self.table.groupby(['Age']).apply('sort'), grouped)
 
+    @pytest.mark.xfail(reason="cuDF does not support variance aggregation")
     def test_dataset_aggregate_string_types_size(self):
-        raise SkipTest("cuDF does not support variance aggregation")
+        super().test_dataset_aggregate_string_types_size()
 
     def test_select_with_neighbor(self):
         try:
             # Not currently supported by CuDF
             super().test_select_with_neighbor()
         except NotImplementedError:
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")

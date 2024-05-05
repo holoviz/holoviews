@@ -15,6 +15,7 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
+test-gpu = ["py311", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -118,6 +119,19 @@ _install-ui = 'playwright install chromium'
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
 depends_on = ["_install-ui"]
+
+[feature.test-gpu]
+channels = ["pyviz/label/dev", "rapidsai", "conda-forge"]
+platforms = ["linux-64"]
+
+[feature.test-gpu.dependencies]
+cuda-version = "12.2.*"
+cudf = "24.04.*"
+cupy = { version = "*", channel = "conda-forge" }
+ucx = { version = "*", channel = "conda-forge" }
+
+[feature.test-gpu.tasks]
+test-gpu = "pytest holoviews/tests --gpu"
 
 # =============================================
 # =================== DOCS ====================

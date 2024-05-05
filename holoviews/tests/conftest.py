@@ -4,16 +4,38 @@ from collections.abc import Callable
 
 import panel as pn
 import pytest
-from panel.tests.conftest import (  # noqa: F401
-    optional_markers,
-    port,
-    pytest_addoption,
-    pytest_configure,
-    server_cleanup,
-)
+from panel.tests.conftest import port, server_cleanup  # noqa: F401
 from panel.tests.util import serve_and_wait
 
 import holoviews as hv
+
+CUSTOM_MARKS = ("ui", "gpu")
+optional_markers = {
+    "ui": {
+        "help": "<Command line help text for flag1...>",
+        "marker-descr": "UI test marker",
+        "skip-reason": "Test only runs with the --ui option.",
+    },
+    "gpu": {
+        "help": "<Command line help text for flag1...>",
+        "marker-descr": "GPU test marker",
+        "skip-reason": "Test only runs with the --gpu option.",
+    },
+}
+
+
+def pytest_addoption(parser):
+    for marker, info in optional_markers.items():
+        parser.addoption(
+            f"--{marker}", action="store_true", default=False, help=info["help"]
+        )
+
+
+def pytest_configure(config):
+    for marker, info in optional_markers.items():
+        config.addinivalue_line(
+            "markers", "{}: {}".format(marker, info["marker-descr"])
+        )
 
 
 def pytest_collection_modifyitems(config, items):
