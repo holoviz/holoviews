@@ -12,12 +12,12 @@ import holoviews as hv
 CUSTOM_MARKS = ("ui", "gpu")
 optional_markers = {
     "ui": {
-        "help": "<Command line help text for flag1...>",
+        "help": "Runs UI related tests",
         "marker-descr": "UI test marker",
         "skip-reason": "Test only runs with the --ui option.",
     },
     "gpu": {
-        "help": "<Command line help text for flag1...>",
+        "help": "Runs GPU related tests",
         "marker-descr": "GPU test marker",
         "skip-reason": "Test only runs with the --gpu option.",
     },
