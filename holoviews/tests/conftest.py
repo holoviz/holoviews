@@ -15,7 +15,7 @@ CUSTOM_MARKS = ("ui", "gpu")
 def pytest_addoption(parser):
     for marker in CUSTOM_MARKS:
         parser.addoption(
-            f"--{marker.lower()}",
+            f"--{marker}",
             action="store_true",
             default=False,
             help=f"Run {marker} related tests",
