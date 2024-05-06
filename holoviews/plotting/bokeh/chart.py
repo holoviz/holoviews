@@ -916,16 +916,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                     width = xdiff.astype('timedelta64[ns]').astype(np.int64) * width / 1e6
                 else:
                     width = width / xdiff
-                width = 1 - np.repeat(np.min(np.abs(width)), len(xvals))
-                data['width'] = [width]
-            else:
-                data['width'] = [np.repeat(width, len(xvals))]
-            width = 'width'
+                width = 1 - np.min(np.abs(width))
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
                                       container_type=dict,
                                       datatype=['dataframe', 'dictionary'])
-            data["width"] = [np.repeat(width, len(xvals))]
 
         y0, y1 = ranges.get(ydim.name, {'combined': (None, None)})['combined']
         if self.logy:
@@ -938,8 +933,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             mapping = {'x': xdim.name, 'top': 'top',
                        'bottom': 'bottom', 'width': width}
         elif grouping == 'grouped':
-            mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': bottom,
-                       'width': width}
+            mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': bottom, 'width': width}
         else:
             mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': bottom, 'width': width}
 
