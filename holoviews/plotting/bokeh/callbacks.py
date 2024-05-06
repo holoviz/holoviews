@@ -724,7 +724,7 @@ class PopupMixin:
         if self._existing_popup and not self._existing_popup.visible:
             if position:
                 self._panel.position = XY(**position)
-                if self.plot.comm:  # update on notebook
+                if self.plot.comm:  # update Jupyter Notebook
                     push_on_root(self.plot.root.ref['id'])
             return
 
@@ -740,7 +740,7 @@ class PopupMixin:
         ))
         # the first element is the close button
         self._panel.elements = [self._panel.elements[0], model]
-        if self.plot.comm:  # update on notebook
+        if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
 
