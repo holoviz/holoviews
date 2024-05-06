@@ -16,6 +16,10 @@ try:
 except ImportError:
     ibis = None
 
+try:
+    import cudf
+except ImportError:
+    cudf = None
 
 from holoviews import (
     Area,
@@ -459,6 +463,38 @@ class OperationTests(ComparisonTestCase):
                          vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
+    @pytest.mark.gpu
+    def test_dataset_histogram_cudf(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, dimension='x', num_bins=3, normed=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_cumulative_histogram_cudf(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_histogram_explicit_bins_cudf(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
+
+        hist = Histogram(([0, 1, 3], [1, 3]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
         points = Points([float(i) for i in range(10)])
