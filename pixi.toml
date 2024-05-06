@@ -127,6 +127,7 @@ platforms = ["linux-64"]
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
 cudf = "24.04.*"
+cuspatial = "*"
 cupy = { version = "*", channel = "conda-forge" }
 ucx = { version = "*", channel = "conda-forge" }
 

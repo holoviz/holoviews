@@ -83,12 +83,13 @@ def spatial_select_gridded(xvals, yvals, geometry):
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
     if 'cudf' in sys.modules:
         import cudf
+        import cupy as cp
         if isinstance(xvals, cudf.Series):
             xvals = xvals.values.astype('float')
             yvals = yvals.values.astype('float')
             try:
                 import cuspatial
-                result = cuspatial.point_in_polygon(
+                result = cuspatial.point_in_polygon(  # TODO: now only takes two arguments
                     xvals,
                     yvals,
                     cudf.Series([0], index=["selection"]),
@@ -98,8 +99,8 @@ def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
                 )
                 return result.values
             except ImportError:
-                xvals = np.asarray(xvals)
-                yvals = np.asarray(yvals)
+                xvals = cp.asnumpy(xvals)
+                yvals = cp.asnumpy(yvals)
     if 'dask' in sys.modules:
         import dask.dataframe as dd
         if isinstance(xvals, dd.Series):
