@@ -23,7 +23,7 @@ class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
         np.testing.assert_almost_equal(ax.get_xlim(), (-1.2, 11.2))
-        assert ax.patches[0].get_width() == 2.4000000000000004
+        np.testing.assert_almost_equal(ax.patches[0].get_width(), 2.4)
         assert len(ax.get_xticks()) > 3
 
     def test_bars_continuous_datetime(self):

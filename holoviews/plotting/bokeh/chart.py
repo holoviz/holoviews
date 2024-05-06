@@ -861,7 +861,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         for i, (k, cd) in enumerate(cdata.items()):
             if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
                 cd = categorize_array(cd, cdim)
-            # I don't know what this is for but adding the i check makes test pass
             if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k) and not i == len(cdata) - 1):
                 data[k].append(cd)
             else:
@@ -909,19 +908,17 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if group_dim is None:
             grouped = {0: element}
             is_dt = isdatetime(xvals)
-            try:
+            if is_dt or xvals.dtype.kind != 'O':
                 xdiff = np.diff(xvals)
                 if len(np.unique(xdiff)) == 1 and xdiff[0] == 0:
                     xdiff = 1
                 if is_dt:
-                    width = xdiff.astype('timedelta64[ms]').astype(np.int32) * width
+                    width = xdiff.astype('timedelta64[ns]').astype(np.int64) * width / 1e6
                 else:
                     width = width / xdiff
                 width = 1 - np.repeat(np.min(np.abs(width)), len(xvals))
                 data['width'] = [width]
-            except TypeError:
-                # fast way to check for categorical
-                # vs complicated dtype comparison
+            else:
                 data['width'] = [np.repeat(width, len(xvals))]
             width = 'width'
         else:

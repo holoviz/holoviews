@@ -946,9 +946,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         xvals = element.dimension_values(0)
         is_dt = isdatetime(xvals)
         continuous = True
-        try:
-            if cdim or len(element.kdims) > 1:
-                raise TypeError("Not continuous")
+        if is_dt or xvals.dtype.kind != 'O' and not (cdim or len(element.kdims) > 1):
             xdiff_vals = date2num(xvals) if is_dt else xvals
             xdiff = np.abs(np.diff(xdiff_vals))
             if len(np.unique(xdiff)) == 1:
@@ -957,9 +955,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 xdiff = np.min(xdiff)
             width = (1 - self.bar_padding) * xdiff
-        except TypeError:
-            # fast way to check for categorical
-            # vs complicated dtype comparison
+        else:
             xdiff = len(values.get('category', [None]))
             width = (1 - self.bar_padding) / xdiff
             continuous = False
