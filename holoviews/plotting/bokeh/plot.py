@@ -154,7 +154,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         new_data = {}
         for k, values in data.items():
             values = decode_bytes(values) # Bytes need decoding to strings
-
             # Certain datetime types need to be converted
             if len(values) and isinstance(values[0], cftime_types):
                 if any(v.calendar not in _STANDARD_CALENDARS for v in values):
