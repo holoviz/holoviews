@@ -10,40 +10,29 @@ from panel.tests.util import serve_and_wait
 import holoviews as hv
 
 CUSTOM_MARKS = ("ui", "gpu")
-optional_markers = {
-    "ui": {
-        "help": "Runs UI related tests",
-        "marker-descr": "UI test marker",
-        "skip-reason": "Test only runs with the --ui option.",
-    },
-    "gpu": {
-        "help": "Runs GPU related tests",
-        "marker-descr": "GPU test marker",
-        "skip-reason": "Test only runs with the --gpu option.",
-    },
-}
 
 
 def pytest_addoption(parser):
-    for marker, info in optional_markers.items():
+    for marker in CUSTOM_MARKS:
         parser.addoption(
-            f"--{marker}", action="store_true", default=False, help=info["help"]
+            f"--{marker.lower()}",
+            action="store_true",
+            default=False,
+            help=f"Run {marker} related tests",
         )
 
 
 def pytest_configure(config):
-    for marker, info in optional_markers.items():
-        config.addinivalue_line(
-            "markers", "{}: {}".format(marker, info["marker-descr"])
-        )
+    for marker in CUSTOM_MARKS:
+        config.addinivalue_line("markers", f"{marker}: {marker} test marker")
 
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
-    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    markers = [m for m in CUSTOM_MARKS if config.getoption(f"--{m}")]
     empty = not markers
     for item in items:
-        if empty and any(m in item.keywords for m in optional_markers):
+        if empty and any(m in item.keywords for m in CUSTOM_MARKS):
             skipped.append(item)
         elif empty:
             selected.append(item)
