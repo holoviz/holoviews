@@ -692,7 +692,6 @@ class TestSpatialSelectColumnar:
             mask = spatial_select_columnar(df.x, df.y, geometry, _method)
             assert np.array_equal(cp.asnumpy(mask), pt_mask)
 
-        @pytest.mark.xfail(reason='cuspatial.point_in_polygon API has changed')
         @pytest.mark.gpu
         def test_cuspatial(self, geometry, pt_mask, pandas_df, _method):
             import cudf
