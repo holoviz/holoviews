@@ -8,6 +8,7 @@ import bokeh.plotting
 import numpy as np
 import param
 from bokeh.document.events import ModelChangedEvent
+from bokeh.model import Model
 from bokeh.models import (
     BinnedTicker,
     ColorBar,
@@ -501,7 +502,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
-                properties = tool.properties_with_values(include_defaults=False)
+                properties = {
+                    p: v.clone() if isinstance(v, Model) else v
+                    for p, v in tool.properties_with_values(include_defaults=False).items()
+                }
                 tool = type(tool)(**properties)
             copied_tools.append(tool)
 
