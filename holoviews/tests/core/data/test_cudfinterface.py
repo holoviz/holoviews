@@ -109,8 +109,10 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         super().test_dataset_aggregate_string_types_size()
 
     def test_select_with_neighbor(self):
-        try:
-            # Not currently supported by CuDF
-            super().test_select_with_neighbor()
-        except NotImplementedError:
-            pytest.skip("Not supported")
+        import cupy as cp
+
+        select = self.table.interface.select_mask(self.table.dataset, {"Weight": 18})
+        select_neighbor = self.table.interface._select_mask_neighbor(self.table.dataset, dict(Weight=18))
+
+        np.testing.assert_almost_equal(cp.asnumpy(select), [False, True, False])
+        np.testing.assert_almost_equal(cp.asnumpy(select_neighbor), [True, True, True])
