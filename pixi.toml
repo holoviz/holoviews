@@ -127,9 +127,9 @@ platforms = ["linux-64"]
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
 cudf = "24.04.*"
+cupy = "*"
 cuspatial = "*"
-cupy = { version = "*", channel = "conda-forge" }
-ucx = { version = "*", channel = "conda-forge" }
+rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
 test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
