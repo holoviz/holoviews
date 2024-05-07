@@ -241,7 +241,7 @@ class cuDFInterface(PandasInterface):
         select_mask_neighbor = [False, True,  True, True, True,  False]
 
         """
-        mask = cls.select_mask(dataset, selection).fillna(False).to_cupy()
+        mask = cls.select_mask(dataset, selection).to_cupy()
         extra = (mask[1:] ^ mask[:-1])
         mask[1:] |= extra
         mask[:-1] |= extra
