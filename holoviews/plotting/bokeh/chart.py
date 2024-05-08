@@ -908,16 +908,15 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if group_dim is None:
             grouped = {0: element}
             is_dt = isdatetime(xvals)
-            if is_dt or xvals.dtype.kind != 'O':
-                xdiff = np.diff(xvals)
+            if is_dt or xvals.dtype.kind not in 'OU':
+                xdiff = np.abs(np.diff(xvals))
                 if len(np.unique(xdiff)) == 1 and xdiff[0] == 0:
                     xdiff = 1
                 if is_dt:
-                    width = (xdiff.astype('timedelta64[ms]').astype(np.int64) * width)
-                    width = np.min(np.abs(width))
+                    width *= xdiff.astype('timedelta64[ms]').astype(np.int64)
                 else:
-                    width = width / xdiff
-                    width = 1 - np.min(np.abs(width))
+                    width /= xdiff
+                width = np.min(width)
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
                                       container_type=dict,
