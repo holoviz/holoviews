@@ -9,16 +9,41 @@ download-data = 'python scripts/download_data.py'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core", "test-unit-task"]
-test-gpu = ["py311", "test-core", "test", "test-gpu"]
-docs = ["py311", "example", "doc"]
-build = ["py311", "build"]
-lint = ["py311", "lint"]
+test-39 = ["py39", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-310 = [
+    "py310",
+    "recommended",
+    "test-core",
+    "test",
+    "example",
+    "test-example",
+    "test-unit-task",
+]
+test-311 = [
+    "py311",
+    "recommended",
+    "test-core",
+    "test",
+    "example",
+    "test-example",
+    "test-unit-task",
+]
+test-312 = [
+    "py312",
+    "recommended",
+    "test-core",
+    "test",
+    "example",
+    "test-example",
+    "test-unit-task",
+]
+test-core = ["py312",  "test-core", "test-unit-task"]
+test-gpu = ["py311", "recommended", "test-core", "test", "test-gpu"]
+test-pypy = ["pypy", "test-core", "test-unit-task"]
+test-ui = ["py312", "recommended", "test-core", "test", "test-ui"]
+docs = ["py311", "recommended", "example", "doc"]
+build = ["py311", "recommended", "build"]
+lint = ["py311", "recommended", "lint"]
 
 [dependencies]
 colorcet = "*"
@@ -29,12 +54,6 @@ panel = ">=1.0"
 param = ">=1.12.0,<3.0"
 pip = "*"
 pyviz_comms = ">=2.1"
-# Recommended
-bokeh = ">=3.1"
-ipython = ">=5.4.0"
-matplotlib-base = ">=3"
-notebook = "*"
-plotly = ">=4.0"
 
 [feature.py39.dependencies]
 python = "3.9.*"
@@ -47,6 +66,19 @@ python = "3.11.*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+[feature.pypy]
+platforms = ["linux-64", "osx-64", "win-64"]  # not supported for osx-arm64
+
+[feature.pypy.dependencies]
+pypy = "7.3.*"
+
+[feature.recommended.dependencies]
+bokeh = ">=3.1"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+notebook = "*"
+plotly = ">=4.0"
 
 [feature.example.dependencies]
 cftime = "*"
@@ -80,7 +112,6 @@ test-unit = 'pytest holoviews/tests'
 [feature.test.dependencies]
 cftime = "*"
 contourpy = "*"
-# dash >=1.16
 dask-core = "*"
 datashader = ">=0.11.1"
 ffmpeg = "*"
