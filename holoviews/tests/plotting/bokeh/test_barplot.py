@@ -281,7 +281,7 @@ class TestBarPlot(TestBokehPlot):
     def test_bars_continuous_data_list_same_interval(self):
         bars = Bars(([0, 1, 2], [10, 20, 30]))
         plot = bokeh_renderer.get_plot(bars)
-        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.2)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.8)
 
     def test_bars_continuous_data_list_same_interval_custom_width(self):
         bars = Bars(([0, 1, 2], [10, 20, 30])).opts(bar_width=0.5)
@@ -291,7 +291,7 @@ class TestBarPlot(TestBokehPlot):
     def test_bars_continuous_data_list_diff_interval(self):
         bars = Bars(([0, 3, 10], [10, 20, 30]))
         plot = bokeh_renderer.get_plot(bars)
-        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.8857143)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.11428571)
 
     def test_bars_continuous_datetime(self):
         bars = Bars((pd.date_range("1/1/2000", periods=10), np.random.rand(10)))
