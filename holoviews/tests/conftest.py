@@ -74,39 +74,30 @@ def ibis_sqlite_backend():
         ibis.set_backend(None)
 
 
-@pytest.fixture
-def bokeh_backend():
+def _plotting_backend(backend):
+    pytest.importorskip(backend)
     if not hv.extension._loaded:
-        hv.extension("bokeh")
-    hv.renderer("bokeh")
+        hv.extension(backend)
+    hv.renderer(backend)
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = "bokeh"
+    hv.Store.current_backend = backend
     yield
     hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
+def bokeh_backend():
+    yield from _plotting_backend("bokeh")
 
 
 @pytest.fixture
 def mpl_backend():
-    pytest.importorskip("matplotlib")
-    if not hv.extension._loaded:
-        hv.extension("matplotlib")
-    hv.renderer("matplotlib")
-    prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = "matplotlib"
-    yield
-    hv.Store.current_backend = prev_backend
+    yield from _plotting_backend("matplotlib")
 
 
 @pytest.fixture
 def plotly_backend():
-    pytest.importorskip("plotly")
-    if not hv.extension._loaded:
-        hv.extension("plotly")
-    hv.renderer("plotly")
-    prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = "plotly"
-    yield
-    hv.Store.current_backend = prev_backend
+    yield from _plotting_backend("plotly")
 
 
 @pytest.fixture
