@@ -160,10 +160,10 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                 if any(v.calendar not in _STANDARD_CALENDARS for v in values):
                     self.param.warning(
                         'Converting cftime.datetime from a non-standard '
-                        'calendar (%s) to a standard calendar for plotting. '
+                        f'calendar ({values[0].calendar}) to a standard calendar for plotting. '
                         'This may lead to subtle errors in formatting '
                         'dates, for accurate tick formatting switch to '
-                        'the matplotlib backend.' % values[0].calendar)
+                        'the matplotlib backend.')
                 values = cftime_to_timestamp(values, 'ms')
             new_data[k] = values
         return new_data
@@ -574,8 +574,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if plotting_class is None:
                 if view is not None:
                     self.param.warning(
-                        "Bokeh plotting class for %s type not found, "
-                        "object will not be rendered." % vtype.__name__)
+                        f"Bokeh plotting class for {vtype.__name__} type not found, "
+                        "object will not be rendered.")
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
@@ -850,8 +850,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 continue
             elif plot_type is None:
                 self.param.warning(
-                    "Bokeh plotting class for %s type not found, object "
-                    " will not be rendered." % vtype.__name__)
+                    f"Bokeh plotting class for {vtype.__name__} type not found, object "
+                    " will not be rendered.")
                 continue
             num = num if len(self.coords) > 1 else 0
             subplot = plot_type(element, keys=self.keys,

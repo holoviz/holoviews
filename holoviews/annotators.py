@@ -120,8 +120,7 @@ class annotate(param.ParameterizedFunction):
             elif isinstance(annotator, (HoloMap, ViewableElement)):
                 layers.append(annotator)
             else:
-                raise ValueError("Cannot compose %s type with annotators." %
-                                 type(annotator).__name__)
+                raise ValueError(f"Cannot compose {type(annotator).__name__} type with annotators.")
         tables = Overlay(tables, group='Annotator')
         return (Overlay(layers).collate() + tables)
 
@@ -153,7 +152,7 @@ class annotate(param.ParameterizedFunction):
         if annotator_type is None:
             obj = overlay if isinstance(overlay, Overlay) else element
             raise ValueError('Could not find an Element to annotate on'
-                             '%s object.' % type(obj).__name__)
+                             f'{type(obj).__name__} object.')
 
         if len(layers) == 1:
             return layers[0]
@@ -386,7 +385,7 @@ class PathAnnotator(Annotator):
         if validate and len({len(v) for v in poly_data.values()}) != 1:
             raise ValueError('annotations must refer to value dimensions '
                              'which vary per path while at least one of '
-                             '%s varies by vertex.' % validate)
+                             f'{validate} varies by vertex.')
 
         # Add options to element
         tools = [tool() for tool in self._tools]

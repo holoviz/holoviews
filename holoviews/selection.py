@@ -141,10 +141,10 @@ class _base_link_selections(param.ParameterizedFunction):
 
         if Store.current_backend not in Store.renderers:
             raise RuntimeError("Cannot perform link_selections operation "
-                               "since the selected backend %r is not "
+                               f"since the selected backend {Store.current_backend!r} is not "
                                "loaded. Load the plotting extension with "
                                "hv.extension or import the plotting "
-                               "backend explicitly." % Store.current_backend)
+                               "backend explicitly.")
 
         # Perform transform
         return self._selection_transform(hvobj.clone())
@@ -523,7 +523,7 @@ class SelectionDisplay:
                                     f"display selection for all elements: {key_error} on '{element!r}'.") from e
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s." % e) from e
+                                    f"display selection for all elements: {e}.") from e
             ds_cache[selection_expr] = mask
         else:
             selection = element

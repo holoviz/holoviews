@@ -11,6 +11,12 @@ from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
+skip_popup = pytest.mark.skipif(not bokeh34, reason="Pop ups needs Bokeh 3.4")
+
+@pytest.fixture
+def points():
+    rng = np.random.default_rng(10)
+    return hv.Points(rng.normal(size=(1000, 2)))
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
@@ -192,7 +198,8 @@ def test_bind_trigger(serve_hv):
 
     assert BOUND_COUNT[0] == 1
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup(serve_hv):
     def popup_form(name):
@@ -210,13 +217,12 @@ def test_stream_popup(serve_hv):
     expect(locator).to_have_count(1)
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_none(serve_hv):
+def test_stream_popup_none(serve_hv, points):
     def popup_form(name):
         return
 
-    points = hv.Points(np.random.randn(10, 2))
     hv.streams.Tap(source=points, popup=popup_form("Tap"))
 
     page = serve_hv(points)
@@ -235,7 +241,7 @@ def test_stream_popup_none(serve_hv):
     expect(locator).to_have_count(0)
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_callbacks(serve_hv):
     def popup_form(x, y):
@@ -253,9 +259,9 @@ def test_stream_popup_callbacks(serve_hv):
     expect(locator).to_have_count(2)
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_visible(serve_hv):
+def test_stream_popup_visible(serve_hv, points):
     def popup_form(x, y):
         def hide(_):
             col.visible = False
@@ -267,7 +273,7 @@ def test_stream_popup_visible(serve_hv):
         col = pn.Column(button)
         return col
 
-    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    points = points.opts(tools=["tap"])
     hv.streams.Tap(source=points, popup=popup_form)
 
     page = serve_hv(points)
@@ -278,22 +284,23 @@ def test_stream_popup_visible(serve_hv):
     # initial appearance
     locator = page.locator(".bk-btn")
     expect(locator).to_have_count(2)
+    expect(locator.first).to_be_visible()
 
     # click custom button to hide
     locator = page.locator(".custom-button")
     locator.click()
     locator = page.locator(".bk-btn")
-    expect(locator).to_have_count(0)
+    expect(locator.first).not_to_be_visible()
 
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_close_button(serve_hv):
+def test_stream_popup_close_button(serve_hv, points):
     def popup_form(x, y):
         return "Hello"
 
-    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap", "box_select"])
+    points = points.opts(tools=["tap", "box_select"])
     hv.streams.Tap(source=points, popup=popup_form)
     hv.streams.BoundsXY(source=points, popup=popup_form)
 
@@ -309,10 +316,9 @@ def test_stream_popup_close_button(serve_hv):
     expect(locator).not_to_be_visible()
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d_undefined(serve_hv):
-    points = hv.Points(np.random.randn(10, 2))
+def test_stream_popup_selection1d_undefined(serve_hv, points):
     hv.streams.Selection1D(source=points)
 
     page = serve_hv(points)
@@ -321,13 +327,13 @@ def test_stream_popup_selection1d_undefined(serve_hv):
     hv_plot.click()  # should not raise any error; properly guarded
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d(serve_hv):
+def test_stream_popup_selection1d_tap(serve_hv, points):
     def popup_form(index):
         return "# Tap"
 
-    points = hv.Points(np.random.randn(1000, 2))
+    points = points.opts(hit_dilation=5)
     hv.streams.Selection1D(source=points, popup=popup_form)
     points.opts(tools=["tap"], active_tools=["tap"])
 
@@ -340,14 +346,13 @@ def test_stream_popup_selection1d(serve_hv):
     expect(locator).to_have_count(1)
 
 
-@pytest.mark.skipif(not bokeh34, reason="< Bokeh 3.4 does not support popup")
+@skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d_lasso_select(serve_hv):
+def test_stream_popup_selection1d_lasso_select(serve_hv, points):
     def popup_form(index):
         if index:
             return f"# lasso\n{len(index)}"
 
-    points = hv.Points(np.random.randn(1000, 2))
     hv.streams.Selection1D(source=points, popup=popup_form)
     points.opts(tools=["tap", "lasso_select"], active_tools=["lasso_select"])
 

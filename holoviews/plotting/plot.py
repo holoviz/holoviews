@@ -349,8 +349,9 @@ class PlotSelector:
         try:
             return super().__setattr__(label, value)
         except Exception as e:
-            raise Exception("Please set class parameters directly on classes %s"
-                            % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())) from e
+            plot_cls_str = ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())
+            msg = f"Please set class parameters directly on classes {plot_cls_str}"
+            raise Exception(msg) from e
 
     def params(self):
         return self.plot_options
@@ -1118,7 +1119,7 @@ class GenericElementPlot(DimensionedPlot):
        If specified, takes precedence over data and dimension ranges.""")
 
     ylim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       User-specified y-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
     zlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
@@ -1809,8 +1810,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 self.zoffset += len(subplot.subplots.keys()) - 1
 
         if not subplots:
-            raise SkipRendering("%s backend could not plot any Elements "
-                                "in the Overlay." % self.renderer.backend)
+            raise SkipRendering(f"{self.renderer.backend} backend could not plot any Elements "
+                                "in the Overlay.")
         return subplots
 
     def _create_subplot(self, key, obj, streams, ranges):
@@ -1859,8 +1860,8 @@ class GenericOverlayPlot(GenericElementPlot):
             opts['group_counter'] = self.group_counter
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
-                self.param.warning('%s is empty and will be skipped '
-                                   'during plotting' % obj.last)
+                self.param.warning(f'{obj.last} is empty and will be skipped '
+                                   'during plotting')
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
             param_vals = self.param.values()

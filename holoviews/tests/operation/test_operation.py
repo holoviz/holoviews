@@ -1,5 +1,6 @@
 import datetime as dt
-from unittest import skipIf
+from importlib.util import find_spec
+from unittest import SkipTest, skipIf
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,11 @@ try:
     import ibis
 except ImportError:
     ibis = None
+
+try:
+    import cudf
+except ImportError:
+    cudf = None
 
 from holoviews import (
     Area,
@@ -44,6 +50,7 @@ from holoviews.operation.element import (
     transform,
 )
 
+mpl = find_spec("matplotlib")
 da_skip = skipIf(da is None, "dask.array is not available")
 ibis_skip = skipIf(ibis is None, "ibis is not available")
 
@@ -127,6 +134,9 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_contours, contour)
 
     def test_image_contours_x_datetime(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test datetime axes")
+
         x = np.array(['2023-09-01', '2023-09-03', '2023-09-05'], dtype='datetime64')
         y = [14, 15]
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -150,6 +160,8 @@ class OperationTests(ComparisonTestCase):
         np.testing.assert_array_almost_equal(op_contours.dimension_values('z'), [0.5]*5)
 
     def test_image_contours_y_datetime(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test datetime axes")
         x = [14, 15, 16]
         y = np.array(['2023-09-01', '2023-09-03'], dtype='datetime64')
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -174,6 +186,8 @@ class OperationTests(ComparisonTestCase):
         np.testing.assert_array_almost_equal(op_contours.dimension_values('z'), [0.5]*5)
 
     def test_image_contours_xy_datetime(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test datetime axes")
         x = np.array(['2023-09-01', '2023-09-03', '2023-09-05'], dtype='datetime64')
         y = np.array(['2023-10-07', '2023-10-08'], dtype='datetime64')
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -204,6 +218,8 @@ class OperationTests(ComparisonTestCase):
         np.testing.assert_array_almost_equal(op_contours.dimension_values('z'), [0.5]*5)
 
     def test_image_contours_z_datetime(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test datetime axes")
         z = np.array([['2023-09-10', '2023-09-10'], ['2023-09-10', '2023-09-12']], dtype='datetime64')
         img = Image(z)
         op_contours = contours(img, levels=[np.datetime64('2023-09-11')])
@@ -447,6 +463,38 @@ class OperationTests(ComparisonTestCase):
                          vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
+    @pytest.mark.gpu
+    def test_dataset_histogram_cudf(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, dimension='x', num_bins=3, normed=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_cumulative_histogram_cudf(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_histogram_explicit_bins_cudf(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = Dataset(t, vdims='x')
+        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
+
+        hist = Histogram(([0, 1, 3], [1, 3]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
         points = Points([float(i) for i in range(10)])

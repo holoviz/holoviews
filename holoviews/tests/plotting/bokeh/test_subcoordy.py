@@ -5,6 +5,7 @@ from bokeh.models.tools import WheelZoomTool, ZoomInTool, ZoomOutTool
 from holoviews.core import Overlay
 from holoviews.element import Curve
 from holoviews.element.annotation import VSpan
+from holoviews.operation.normalization import subcoordinate_group_ranges
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -137,6 +138,14 @@ class TestSubcoordinateY(TestBokehPlot):
         overlay.opts(yaxis=None)
         plot = bokeh_renderer.get_plot(overlay)
         assert not plot.state.yaxis.visible
+
+    def test_overlay_set_ylim(self):
+        ylim = (1, 2.5)
+        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay.opts(ylim=ylim)
+        plot = bokeh_renderer.get_plot(overlay)
+        y_range = plot.handles['y_range']
+        assert y_range.start, y_range.end == ylim
 
     def test_axis_labels(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
@@ -391,3 +400,33 @@ class TestSubcoordinateY(TestBokehPlot):
             )
         ):
             bokeh_renderer.get_plot(Overlay(curves))
+
+    def test_norm_subcoordinate_group_ranges(self):
+        x = np.linspace(0, 10 * np.pi, 21)
+        curves = []
+        j = 0
+        for group in ['A', 'B']:
+            for i in range(2):
+                yvals = j * np.sin(x)
+                curves.append(
+                    Curve((x + np.pi/2, yvals), label=f'{group}{i}', group=group).opts(subcoordinate_y=True)
+                )
+                j += 1
+
+        overlay = Overlay(curves)
+        noverlay = subcoordinate_group_ranges(overlay)
+
+        expected = [
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-3.0, 3.0),
+            (-3.0, 3.0),
+        ]
+        for i, el in enumerate(noverlay):
+            assert el.get_dimension('y').range == expected[i]
+
+        plot = bokeh_renderer.get_plot(noverlay)
+
+        for i, sp in enumerate(plot.subplots.values()):
+                y_source = sp.handles['glyph_renderer'].coordinates.y_source
+                assert (y_source.start, y_source.end) == expected[i]

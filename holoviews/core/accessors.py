@@ -162,11 +162,10 @@ class Apply(metaclass=AccessorPipelineMeta):
             def apply_function(object, **kwargs):
                 method = getattr(object, method_name, None)
                 if method is None:
-                    raise AttributeError('Applied method %s does not exist.'
+                    raise AttributeError(f'Applied method {method_name} does not exist.'
                                          'When declaring a method to apply '
                                          'as a string ensure a corresponding '
-                                         'method exists on the object.' %
-                                         method_name)
+                                         'method exists on the object.')
                 return method(*args, **kwargs)
 
         if 'panel' in sys.modules:

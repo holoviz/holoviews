@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("IPython")
+
 from holoviews import Curve, Store
 from holoviews.ipython import IPTestCase, notebook_extension
 

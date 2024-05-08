@@ -8,7 +8,7 @@ from pyviz_comms import CommManager
 from holoviews import Store
 from holoviews.core.options import OptionTree
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting import bokeh, mpl
+from holoviews.plotting import bokeh
 from holoviews.util import Options, OutputSettings, opts, output
 
 BACKENDS = ['matplotlib', 'bokeh']
@@ -20,12 +20,20 @@ try:
 except ImportError:
     notebook = None
 
+try:
+    from holoviews.plotting import mpl
+except ImportError:
+    mpl = None
+
+
 
 class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
         if notebook is None:
             raise SkipTest("Jupyter Notebook not available")
+        if mpl is None:
+            raise SkipTest("Matplotlib not available")
         from holoviews.ipython import notebook_extension
 
         notebook_extension(*BACKENDS)
@@ -74,6 +82,8 @@ class TestOptsUtil(LoggingComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib not available")
         self.backend = Store.current_backend
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),

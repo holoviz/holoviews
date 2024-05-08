@@ -8,6 +8,7 @@ import bokeh.plotting
 import numpy as np
 import param
 from bokeh.document.events import ModelChangedEvent
+from bokeh.model import Model
 from bokeh.models import (
     BinnedTicker,
     ColorBar,
@@ -501,7 +502,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
-                properties = tool.properties_with_values(include_defaults=False)
+                properties = {
+                    p: v.clone() if isinstance(v, Model) else v
+                    for p, v in tool.properties_with_values(include_defaults=False).items()
+                }
                 tool = type(tool)(**properties)
             copied_tools.append(tool)
 
@@ -632,10 +636,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
 
+        if pos == 1 and 'subcoordinate_y' in range_tags_extras and dim and dim.range != (None, None):
+            dims = [dim]
+            v0, v1 = dim.range
+            axis_label = str(dim)
+            specs = ((dim.name, dim.label, dim.unit),)
         # For y-axes check if we explicitly passed in a dimension.
         # This is used by certain plot types to create an axis from
         # a synthetic dimension and exclusively supported for y-axes.
-        if pos == 1 and dim:
+        elif pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([
                 elrange.get(dim.name, {'combined': (None, None)})['combined']
@@ -654,11 +663,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = b, l, t, r
             if pos == 1 and self._subcoord_overlaid:
                 if isinstance(self.subcoordinate_y, bool):
-                    offset = self.subcoordinate_scale / 2.
-                    # This sum() is equal to n+1, n being the number of elements contained
-                    # in the overlay with subcoordinate_y=True, as the traversal goes through
-                    # the root overlay that has subcoordinate_y=True too since it's propagated.
-                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
+                    if self.ylim and all(np.isfinite(val) for val in self.ylim):
+                        v0, v1 = self.ylim
+                    else:
+                        offset = self.subcoordinate_scale / 2.
+                        # This sum() is equal to n+1, where n is the number of elements contained
+                        # in the overlay with subcoordinate_y=True (including the the root overlay,
+                        # which has subcoordinate_y=True due to option propagation)
+                        v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
                 else:
                     v0, v1 = 0, 1
             else:
@@ -1284,8 +1296,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
-                               'axes are %s, the option will '
-                               'be ignored.' % ax_type)
+                               f'axes are {ax_type}, the option will '
+                               'be ignored.')
         elif data_aspect:
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
@@ -1430,7 +1442,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower bound to override default of %.3f." % low)
+                f"lower bound to override default of {low:.3f}.")
         updates = {}
         if util.isfinite(low):
             updates['start'] = (axis_range.start, low)
@@ -1933,7 +1945,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
-                key = '@{%s}' % k
+                key = f'@{{{k}}}'
                 if (
                     (len(values) and isinstance(values[0], util.datetime_types)) or
                     (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
@@ -2631,9 +2643,8 @@ class ColorbarPlot(ElementPlot):
         color = style.get(name, None)
         if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
-                "Cannot declare style mapping for '%s' option and "
-                "declare a color_index; ignoring the color_index."
-                % name)
+                f"Cannot declare style mapping for '{name}' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if not cdim:
             return data, mapping

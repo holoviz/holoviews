@@ -37,6 +37,7 @@ env:
   PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DASK_DATAFRAME__QUERY_PLANNING: false
+  COV: "--cov=./holoviews --cov-report=xml"
 
 jobs:
   pre_commit:
@@ -83,7 +84,7 @@ jobs:
         if: env.MATRIX_OPTION == 'default'
         run: |
           MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-14", "windows-latest"],
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
               "environment": ["test-39", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
@@ -91,8 +92,8 @@ jobs:
         if: env.MATRIX_OPTION == 'full'
         run: |
           MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-14", "windows-latest"],
-              "environment": ["test-39", "test-310", "test311", "test312"]
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "environment": ["test-39", "test-310", "test-311", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -132,7 +133,7 @@ jobs:
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit --cov=./holoviews --cov-report=xml
+          pixi run -e ${{ matrix.environment }} test-unit $COV
       - name: Test Examples
         if: needs.setup.outputs.code_change == 'true'
         run: |
@@ -162,7 +163,17 @@ jobs:
       - name: Test UI
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} test-ui --cov=./holoviews --cov-report=xml
+          # Create a .uicoveragerc file to set the concurrency library to greenlet
+          # https://github.com/microsoft/playwright-python/issues/313
+          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
+          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
+          pixi run -e ${{ matrix.environment }} test-ui $COV --cov-config=.uicoveragerc $FAIL
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui_screenshots_${{ runner.os }}
+          path: ./ui_screenshots
+          if-no-files-found: ignore
       - uses: codecov/codecov-action@v4
         if: needs.setup.outputs.code_change == 'true'
         with:

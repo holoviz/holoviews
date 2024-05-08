@@ -693,15 +693,16 @@ class PopupMixin:
         if popup is None:
             if self._panel.visible:
                 self._panel.visible = False
-            if self._existing_popup and not self._existing_popup.visible:
-                self._existing_popup.visible = False
             return
 
         if event is not None:
             position = self._get_position(event)
         else:
             position = None
+
         popup_pane = panel(popup)
+        if not popup_pane.visible:
+            return
 
         if not popup_pane.stylesheets:
             self._panel.stylesheets = [
@@ -723,8 +724,7 @@ class PopupMixin:
         if self._existing_popup and not self._existing_popup.visible:
             if position:
                 self._panel.position = XY(**position)
-                self._existing_popup.visible = True
-                if self.plot.comm:
+                if self.plot.comm:  # update Jupyter Notebook
                     push_on_root(self.plot.root.ref['id'])
             return
 
@@ -734,13 +734,13 @@ class PopupMixin:
             code="""
             export default ({panel}, event, _) => {
               if (!event.visible) {
-                panel.position.setv({x: NaN, y: NaN})
+                panel.visible = false;
               }
             }""",
         ))
         # the first element is the close button
         self._panel.elements = [self._panel.elements[0], model]
-        if self.plot.comm:
+        if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
 

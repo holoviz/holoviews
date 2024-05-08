@@ -27,7 +27,7 @@ To contribute to HoloViews, you will also need [Github account](https://github.c
 
 ### Pixi
 
-Developing all aspects of HoloViews requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://prefix.dev/docs/pixi/overview#installation).
+Developing all aspects of HoloViews requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://pixi.sh/latest/#installation).
 
 #### Glossary
 
@@ -40,7 +40,9 @@ For more information, see the [Pixi documentation](https://pixi.sh/latest/).
 :::{admonition} Note
 :class: info
 
-The first time you run `pixi`, it will create a `.pixi` directory in the source directory. This directory will contain all the files needed for the virtual environments. The `.pixi` directory can be large, so don't accidentally put it into a cloud-synced directory.
+The first time you run `pixi`, it will create a `.pixi` directory in the source directory.
+This directory will contain all the files needed for the virtual environments.
+The `.pixi` directory can be large, so it is advised not to put the source directory into a cloud-synced directory.
 :::
 
 ## Installing the Project
@@ -51,9 +53,10 @@ The source code for the HoloViews project is hosted on [GitHub](https://github.c
 
 1. Go to [github.com/holoviz/holoviews](https://github.com/holoviz/holoviews)
 2. [Fork the repository](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository)
-3. Run in your terminal: `git clone https://github.com/<Your UserName Here>/holoviews`
+3. Run in your terminal: `git clone https://github.com/<Your Username Here>/holoviews`
 
-The instructions for cloning above created a `holoviews` directory at your file system location. This `holoviews` directory is the _source checkout_ for the remainder of this document, and your current working directory is this directory.
+The instructions for cloning above created a `holoviews` directory at your file system location.
+This `holoviews` directory is the _source checkout_ for the remainder of this document, and your current working directory is this directory.
 
 ### Fetch tags from upstream
 
@@ -73,11 +76,14 @@ To start developing, run the following command
 pixi install
 ```
 
-The first time you run it, it will create a `lock-file` with information for all available environments. This command will take a minute or so to run. When this is finished, it is possible to run the following command to download the data HoloViews tests and examples depend upon.
+The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
+When this is finished, it is possible to run the following command to download the data HoloViews tests and examples depend upon.
 
 ```bash
 pixi run download-data
 ```
+
+All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
 ### Editable install
 
@@ -129,7 +135,7 @@ pixi run test-unit
 
 The task is available in the following environments: `test-39`, `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
 
-If you haven't set the environment flag in the command, you need to select which one of the environments to use.
+If you haven't set the environment flag in the command, a menu will help you select which one of the environments to use.
 
 ### Example tests
 
@@ -168,7 +174,7 @@ A development version of HoloViews can be found [here](https://dev.holoviews.org
 
 ## Build
 
-HoloViews have to build tasks. One is for installing packages with Pip, and the other is for installing packages with Conda.
+HoloViews have two build tasks. One is for building packages for Pip, and the other is for building packages for Conda.
 
 ```bash
 pixi run build-pip

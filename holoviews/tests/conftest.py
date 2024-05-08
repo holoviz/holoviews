@@ -4,24 +4,35 @@ from collections.abc import Callable
 
 import panel as pn
 import pytest
-from panel.tests.conftest import (  # noqa: F401
-    optional_markers,
-    port,
-    pytest_addoption,
-    pytest_configure,
-    server_cleanup,
-)
+from panel.tests.conftest import port, server_cleanup  # noqa: F401
 from panel.tests.util import serve_and_wait
 
 import holoviews as hv
 
+CUSTOM_MARKS = ("ui", "gpu")
+
+
+def pytest_addoption(parser):
+    for marker in CUSTOM_MARKS:
+        parser.addoption(
+            f"--{marker}",
+            action="store_true",
+            default=False,
+            help=f"Run {marker} related tests",
+        )
+
+
+def pytest_configure(config):
+    for marker in CUSTOM_MARKS:
+        config.addinivalue_line("markers", f"{marker}: {marker} test marker")
+
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
-    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    markers = [m for m in CUSTOM_MARKS if config.getoption(f"--{m}")]
     empty = not markers
     for item in items:
-        if empty and any(m in item.keywords for m in optional_markers):
+        if empty and any(m in item.keywords for m in CUSTOM_MARKS):
             skipped.append(item)
         elif empty:
             selected.append(item)
@@ -76,6 +87,7 @@ def bokeh_backend():
 
 @pytest.fixture
 def mpl_backend():
+    pytest.importorskip("matplotlib")
     if not hv.extension._loaded:
         hv.extension("matplotlib")
     hv.renderer("matplotlib")
@@ -87,6 +99,7 @@ def mpl_backend():
 
 @pytest.fixture
 def plotly_backend():
+    pytest.importorskip("plotly")
     if not hv.extension._loaded:
         hv.extension("plotly")
     hv.renderer("plotly")
