@@ -913,15 +913,17 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 if len(np.unique(xdiff)) == 1 and xdiff[0] == 0:
                     xdiff = 1
                 if is_dt:
-                    width = xdiff.astype('timedelta64[ns]').astype(np.int64) * width / 1e6
+                    width = (xdiff.astype('timedelta64[ms]').astype(np.int64) * width)
+                    width = np.min(np.abs(width))
                 else:
                     width = width / xdiff
-                width = 1 - np.min(np.abs(width))
+                    width = 1 - np.min(np.abs(width))
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
                                       container_type=dict,
                                       datatype=['dataframe', 'dictionary'])
 
+        width = abs(width)
         y0, y1 = ranges.get(ydim.name, {'combined': (None, None)})['combined']
         if self.logy:
             bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))

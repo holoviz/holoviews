@@ -281,38 +281,32 @@ class TestBarPlot(TestBokehPlot):
     def test_bars_continuous_data_list_same_interval(self):
         bars = Bars(([0, 1, 2], [10, 20, 30]))
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 0.2)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.2)
 
     def test_bars_continuous_data_list_same_interval_custom_width(self):
         bars = Bars(([0, 1, 2], [10, 20, 30])).opts(bar_width=0.5)
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 0.5)
+        assert plot.handles["glyph"].width == 0.5
 
     def test_bars_continuous_data_list_diff_interval(self):
         bars = Bars(([0, 3, 10], [10, 20, 30]))
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 0.8857143)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.8857143)
 
     def test_bars_continuous_datetime(self):
         bars = Bars((pd.date_range("1/1/2000", periods=10), np.random.rand(10)))
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], -69119999.)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
 
     def test_bars_not_continuous_data_list(self):
         bars = Bars([("A", 1), ("B", 2), ("C", 3)])
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 0.8)
+        assert plot.handles["glyph"].width == 0.8
 
     def test_bars_not_continuous_data_list_custom_width(self):
         bars = Bars([("A", 1), ("B", 2), ("C", 3)]).opts(bar_width=1)
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 1)
+        assert plot.handles["glyph"].width == 1
 
     def test_bars_group(self):
         samples = 100
@@ -328,8 +322,7 @@ class TestBarPlot(TestBokehPlot):
             (pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"]
         ).aggregate(function=np.sum)
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 0.8)
+        assert plot.handles["glyph"].width == 0.8
 
     def test_bar_group_stacked(self):
         samples = 100
@@ -347,5 +340,4 @@ class TestBarPlot(TestBokehPlot):
             .opts(stacked=True)
         )
         plot = bokeh_renderer.get_plot(bars)
-        data = plot.handles["source"].data
-        np.testing.assert_almost_equal(data["width"], 0.8)
+        assert plot.handles["glyph"].width == 0.8
