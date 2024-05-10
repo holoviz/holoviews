@@ -53,3 +53,16 @@ repos:
         types_or:
           - markdown
           - yaml
+  - repo: https://github.com/hoxbro/taplo-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: taplo
+        args:
+          [
+            --option,
+            align_comments=false,
+            --option,
+            column_width=100,
+            --option,
+            "indent_string=    ",
+          ]
