@@ -166,7 +166,7 @@ unfixable = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = [
-    "RUF001", # Ambiguous unicode character,
+    "RUF001", # Ambiguous unicode character
     "RUF002", # Ambiguous unicode character
     "RUF003", # Ambiguous unicode character
     "NPY002", # Replace legacy `np.random.rand` call with Generator
