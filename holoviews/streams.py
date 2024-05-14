@@ -1894,3 +1894,12 @@ class PolyEdit(PolyDraw):
             vertex_style = {}
         self.shared = shared
         super().__init__(vertex_style=vertex_style, **params)
+
+
+def _streams_transform(obj):
+    if isinstance(obj, Pipe):
+        return obj.param.data
+    return obj
+
+
+param.reactive.register_reference_transform(_streams_transform)
