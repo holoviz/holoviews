@@ -921,6 +921,8 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        from panel.widgets.base import Widget
+
         if isinstance(self.p.streams, dict):
             streams = defaultdict(dict)
             stream_specs, params = [], {}
@@ -961,7 +963,8 @@ class Dynamic(param.ParameterizedFunction):
 
         params = {}
         for k, v in self.p.kwargs.items():
-            v = param.parameterized.resolve_ref(v)
+            if isinstance(v, Widget):
+                v = v.param.value
             if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = v
         streams += Params.from_params(params)

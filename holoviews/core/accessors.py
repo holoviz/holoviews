@@ -132,6 +132,8 @@ class Apply(metaclass=AccessorPipelineMeta):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        from panel.widgets.base import Widget
+
         from ..util import Dynamic
         from .data import Dataset
         from .dimension import ViewableElement
@@ -167,7 +169,10 @@ class Apply(metaclass=AccessorPipelineMeta):
                                          'method exists on the object.')
                 return method(*args, **kwargs)
 
-        kwargs = {k: param.parameterized.resolve_ref(v) for k, v in kwargs.items()}
+        kwargs = {
+            k: v.param.value if isinstance(v, Widget) else v
+            for k, v in kwargs.items()
+        }
 
         spec = Element if per_element else ViewableElement
         applies = isinstance(self._obj, spec)

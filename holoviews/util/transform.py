@@ -359,6 +359,7 @@ class dim:
 
     @property
     def params(self):
+        from panel.widgets.base import Widget
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
@@ -367,14 +368,18 @@ class dim:
                 op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
-                op_arg = param.parameterized.resolve_ref(op_arg)
+                if isinstance(op_arg, Widget):
+                    op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
                 elif isinstance(op_arg, slice):
                     (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
-                    start = param.parameterized.resolve_ref(start)
-                    stop = param.parameterized.resolve_ref(stop)
-                    step = param.parameterized.resolve_ref(step)
+                    if isinstance(start, Widget):
+                        start = start.param.value
+                    if isinstance(stop, Widget):
+                        stop = stop.param.value
+                    if isinstance(step, Widget):
+                        step = step.param.value
 
                     if isinstance(start, param.Parameter):
                         params[start.name+str(id(start))] = start
