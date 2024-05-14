@@ -458,8 +458,8 @@ class Callable(param.Parameterized):
     information see the DynamicMap tutorial at holoviews.org.
     """
 
-    callable = param.Callable(default=None, constant=True, doc="""
-         The callable function being wrapped.""", **util.disallow_refs)
+    callable = param.Callable(default=None, constant=True, allow_refs=False, doc="""
+         The callable function being wrapped.""")
 
     inputs = param.List(default=[], constant=True, doc="""
          The list of inputs the callable function is wrapping. Used

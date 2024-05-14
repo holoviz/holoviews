@@ -42,8 +42,6 @@ masked_types = ()
 
 anonymous_dimension_label = '_'
 
-disallow_refs = {'allow_refs': False}
-
 # Argspec was removed in Python 3.11
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
