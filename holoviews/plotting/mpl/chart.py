@@ -982,7 +982,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 goffset = width * (num_categories / 2 - 0.5)
                 if num_categories > 1:
                     # mini offset needed or else combines with non-continuous
-                    goffset += 0.000001
+                    goffset += width / 1000
 
                 xpos = gidx+goffset if not continuous else xvals[gidx]
                 if not continuous:
