@@ -961,10 +961,7 @@ class Dynamic(param.ParameterizedFunction):
 
         params = {}
         for k, v in self.p.kwargs.items():
-            if 'panel' in sys.modules:
-                from panel.widgets.base import Widget
-                if isinstance(v, Widget):
-                    v = v.param.value
+            v = param.parameterized.resolve_ref(v)
             if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = v
         streams += Params.from_params(params)

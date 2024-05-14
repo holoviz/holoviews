@@ -2,7 +2,6 @@
 Module for accessor objects for viewable HoloViews objects.
 """
 import copy
-import sys
 from functools import wraps
 from types import FunctionType
 
@@ -168,10 +167,7 @@ class Apply(metaclass=AccessorPipelineMeta):
                                          'method exists on the object.')
                 return method(*args, **kwargs)
 
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-            kwargs = {k: v.param.value if isinstance(v, Widget) else v
-                      for k, v in kwargs.items()}
+        kwargs = {k: param.parameterized.resolve_ref(v) for k, v in kwargs.items()}
 
         spec = Element if per_element else ViewableElement
         applies = isinstance(self._obj, spec)
