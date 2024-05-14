@@ -1,5 +1,4 @@
 import operator
-import sys
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -360,11 +359,7 @@ class dim:
 
     @property
     def params(self):
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-        else:
-            Widget = None
-
+        from panel.widgets.base import Widget
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
@@ -373,18 +368,17 @@ class dim:
                 op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
-                if Widget and isinstance(op_arg, Widget):
+                if isinstance(op_arg, Widget):
                     op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
                 elif isinstance(op_arg, slice):
                     (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
-
-                    if Widget and isinstance(start, Widget):
+                    if isinstance(start, Widget):
                         start = start.param.value
-                    if Widget and isinstance(stop, Widget):
+                    if isinstance(stop, Widget):
                         stop = stop.param.value
-                    if Widget and isinstance(step, Widget):
+                    if isinstance(step, Widget):
                         step = step.param.value
 
                     if isinstance(start, param.Parameter):

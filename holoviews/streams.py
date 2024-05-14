@@ -4,7 +4,6 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
-import sys
 import weakref
 from collections import defaultdict
 from contextlib import contextmanager
@@ -16,7 +15,6 @@ from types import FunctionType
 import numpy as np
 import pandas as pd
 import param
-from packaging.version import Version
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
@@ -49,12 +47,7 @@ def streams_list_from_dict(streams):
     "Converts a streams dictionary into a streams list"
     params = {}
     for k, v in streams.items():
-        if 'panel' in sys.modules:
-            if util.param_version > util.Version('2.0.0rc1'):
-                v = param.parameterized.transform_reference(v)
-            else:
-                from panel.depends import param_value_if_widget
-                v = param_value_if_widget(v)
+        v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
@@ -225,10 +218,7 @@ class Stream(param.Parameterized):
                 rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
-                if util.param_version > util.Version('2.0.0rc1'):
-                    deps = param.parameterized.resolve_ref(s)
-                else:
-                    deps = None
+                deps = param.parameterized.resolve_ref(s)
                 if deps:
                     s = Params(parameters=deps)
                 else:
@@ -689,16 +679,13 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, doc="""
-        Parameterized instance to watch for parameter changes.""", **util.disallow_refs)
+                                        constant=True, allow_None=True, allow_refs=False, doc="""
+        Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-        if util.param_version < Version('1.8.0') and watch:
-            raise RuntimeError('Params stream requires param version >= 1.8.0, '
-                               'to support watching parameters.')
         if parameters is None:
             parameters = [parameterized.param[p] for p in parameterized.param if p != 'name']
         else:
@@ -1907,3 +1894,12 @@ class PolyEdit(PolyDraw):
             vertex_style = {}
         self.shared = shared
         super().__init__(vertex_style=vertex_style, **params)
+
+
+def _streams_transform(obj):
+    if isinstance(obj, Pipe):
+        return obj.param.data
+    return obj
+
+
+param.reactive.register_reference_transform(_streams_transform)

@@ -890,8 +890,8 @@ class Dynamic(param.ParameterizedFunction):
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
-    streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
-        List of streams to attach to the returned DynamicMap""", **util.disallow_refs)
+    streams = param.ClassSelector(default=[], class_=(list, dict), allow_refs=False, doc="""
+        List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
         watch = params.pop('watch', True)
@@ -921,6 +921,8 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        from panel.widgets.base import Widget
+
         if isinstance(self.p.streams, dict):
             streams = defaultdict(dict)
             stream_specs, params = [], {}
@@ -961,10 +963,8 @@ class Dynamic(param.ParameterizedFunction):
 
         params = {}
         for k, v in self.p.kwargs.items():
-            if 'panel' in sys.modules:
-                from panel.widgets.base import Widget
-                if isinstance(v, Widget):
-                    v = v.param.value
+            if isinstance(v, Widget):
+                v = v.param.value
             if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = v
         streams += Params.from_params(params)
