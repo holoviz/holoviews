@@ -8,15 +8,13 @@ from holoviews.core.options import Store
 from holoviews.operation import Compositor
 
 try:
-    from holoviews import ipython  # noqa: F401
     from holoviews.ipython import IPTestCase
 except ImportError:
-    pytest.skip("IPython required to test IPython magics")
-    IPTestCase = None
+    pytest.skip("IPython required to test IPython magics", allow_module_level=True)
 
 
-@pytest.mark.xdist_group(name="ipython")
-class ExtensionTestCase(IPTestCase or object):
+@pytest.mark.xdist_group(name="ipython-magic")
+class ExtensionTestCase(IPTestCase):
 
     def setUp(self):
         self.old_custom_options = deepcopy(Store._custom_options)
