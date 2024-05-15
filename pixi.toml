@@ -69,13 +69,15 @@ xarray = ">=0.10.4"
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
+psutil = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
+pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
-test-unit = 'pytest holoviews/tests'
+test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
 [feature.test.dependencies]
 cftime = "*"
@@ -102,9 +104,7 @@ tsdownsample = "*" # currently not available on Windows
 test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 
 [feature.test-example.dependencies]
-psutil = "*"
 nbval = "*"
-pytest-xdist = "*"
 
 [feature.test-ui]
 channels = ["pyviz/label/dev", "microsoft", "conda-forge"]
