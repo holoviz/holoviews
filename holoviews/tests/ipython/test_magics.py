@@ -1,32 +1,35 @@
-from unittest import SkipTest
+from copy import deepcopy
+
+import pytest
+from pyviz_comms import CommManager
 
 import holoviews as hv
 from holoviews.core.options import Store
-
-try:
-    from holoviews import ipython            # noqa (Import test)
-    from holoviews.ipython import IPTestCase
-except ImportError:
-    raise SkipTest("Required dependencies not satisfied for testing magics")
-
-from pyviz_comms import CommManager
-
 from holoviews.operation import Compositor
 
+try:
+    from holoviews import ipython  # noqa: F401
+    from holoviews.ipython import IPTestCase
+except ImportError:
+    pytest.skip("IPython required to test IPython magics")
+    IPTestCase = None
 
-class ExtensionTestCase(IPTestCase):
+
+@pytest.mark.xdist_group(name="ipython")
+class ExtensionTestCase(IPTestCase or object):
 
     def setUp(self):
+        self.old_custom_options = deepcopy(Store._custom_options)
         super().setUp()
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
 
     def tearDown(self):
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
         super().tearDown()
+        Store._custom_options = self.old_custom_options
 
 
 class TestOptsMagic(ExtensionTestCase):
