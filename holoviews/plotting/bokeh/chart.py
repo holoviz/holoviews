@@ -858,10 +858,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Merge data and mappings
         mapping.update(cmapping)
-        for i, (k, cd) in enumerate(cdata.items()):
+        for k, cd in cdata.items():
             if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
                 cd = categorize_array(cd, cdim)
-            if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k) and not i == len(cdata) - 1):
+            if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k)):
                 data[k].append(cd)
             else:
                 data[k][-1] = cd
