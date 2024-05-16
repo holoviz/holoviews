@@ -48,7 +48,7 @@ on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
   <a href="https://holoviews.org/getting_started/Gridded_Datasets.html">
     <img src="https://assets.holoviews.org/collage/cells.png" width='27%'> </img>  </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
-    <img src="https://holoviews.org/_images/scatter_economic.png" width='47%' style="height: 300px;object-fit: cover;margin-bottom: 10px;"> </img>    </a>
+    <img src="https://holoviews.org/_images/scatter_economic.png" width='47%' style="height: 350px;object-fit: cover;margin-bottom: 10px;"> </img>    </a>
 </div>
 
 <div >
