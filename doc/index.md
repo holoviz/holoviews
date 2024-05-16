@@ -1,11 +1,11 @@
-<h1><img src="_static/logo_horizontal.png" style="width: 30%;"></h1>
+<h1><img class="dark-light" src="_static/logo_horizontal.png" style="width: 30%;"></h1>
 
 **Stop plotting your data - annotate your data and let it visualize
 itself.**
 
 <div style="display: flex">
-  <div style="width: 95%">
-
+  <div style="width: 95%"></div>
+</div>
 HoloViews is an
 [open-source](https://github.com/holoviz/holoviews/blob/main/LICENSE.txt)
 Python library designed to make data analysis and visualization seamless
@@ -48,7 +48,7 @@ on [Holoviz Discord](https://discord.gg/AXRHnJU6sP).
   <a href="https://holoviews.org/getting_started/Gridded_Datasets.html">
     <img src="https://assets.holoviews.org/collage/cells.png" width='27%'> </img>  </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
-    <img src="https://holoviews.org/_images/scatter_economic.png" width='47%'> </img>    </a>
+    <img src="https://holoviews.org/_images/scatter_economic.png" width='47%' style="height: 350px;object-fit: cover;margin-bottom: 10px;"> </img>    </a>
 </div>
 
 <div >
