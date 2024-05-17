@@ -3,7 +3,6 @@ from datetime import timedelta
 import numpy as np
 import pandas as pd
 import pytest
-from bokeh.sampledata.stocks import AAPL
 
 import holoviews as hv
 from holoviews.plotting.links import RangeToolLink
@@ -17,21 +16,26 @@ pytestmark = pytest.mark.ui
 @pytest.mark.parametrize(
     ["index", "intervalsx", "x_range_src", "x_range_tgt"],
     [
-        (range(len(AAPL["date"])), (100, 365), (0, 365), (0, 3269)),
         (
-            pd.to_datetime(AAPL["date"]),
+            range(3000),
+            (100, 365),
+            (0, 365),
+            (0, 3000 - 1),
+        ),
+        (
+            pd.date_range("2000-03-01", periods=3000),
             (timedelta(days=100), timedelta(days=365)),
             (
                 np.array(["2000-03-01"], dtype="datetime64[ns]")[0],
                 pd.Timestamp("2001-03-01"),
             ),
-            np.array(["2000-03-01", "2013-03-01"], dtype="datetime64[ns]"),
+            np.array(["2000-03-01", "2008-05-17"], dtype="datetime64[ns]"),
         ),
     ],
     ids=["int", "datetime"],
 )
 def test_rangetool_link_interval(serve_hv, index, intervalsx, x_range_src, x_range_tgt):
-    df = pd.DataFrame(AAPL["close"], columns=["close"], index=index)
+    df = pd.DataFrame(range(3000), columns=["close"], index=index)
     df.index.name = "Date"
 
     aapl_curve = hv.Curve(df, "Date", ("close", "Price ($)"))
