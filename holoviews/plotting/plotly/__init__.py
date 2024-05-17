@@ -24,8 +24,7 @@ from .tiles import *
 if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
-        "please upgrade from plotly %s to a more recent version."
-        % plotly.__version__, plotly.__version__, '4.0.0')
+        f"please upgrade from plotly {plotly.__version__} to a more recent version.", plotly.__version__, '4.0.0')
 
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 

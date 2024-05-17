@@ -616,8 +616,10 @@ class TestSelectionPolyExpr(ComparisonTestCase):
         self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
 
 
-@pytest.mark.skipif(shapely is None and spd is None, reason='Neither shapely nor spatialpandas are available')
 class TestSpatialSelectColumnar:
+    __test__ = False
+    method = None
+
     geometry_encl = np.array([
         [-1, 0.5],
         [ 1, 0.5],
@@ -655,30 +657,65 @@ class TestSpatialSelectColumnar:
                   -1,-1,-1]
         }, dtype=float)
 
-    @dd_available
+
     @pytest.fixture(scope="function")
     def dask_df(self, pandas_df):
         return dd.from_pandas(pandas_df, npartitions=2)
 
+    @pytest.fixture(scope="function")
+    def _method(self):
+        return self.method
+
     @pytest.mark.parametrize("geometry,pt_mask", [(geometry_encl, pt_mask_encl),(geometry_noencl, pt_mask_noencl)])
     class TestSpatialSelectColumnarPtMask:
-        def test_pandas(self, geometry, pt_mask, pandas_df):
-            mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry)
+
+        def test_pandas(self, geometry, pt_mask, pandas_df, _method):
+            mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry, _method)
             assert np.array_equal(mask, pt_mask)
 
         @dd_available
-        def test_dask(self, geometry, pt_mask, dask_df):
-            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+        def test_dask(self, geometry, pt_mask, dask_df, _method):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, _method)
             assert np.array_equal(mask.compute(), pt_mask)
 
-        def test_numpy(self, geometry, pt_mask, pandas_df):
-            mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry)
+        def test_numpy(self, geometry, pt_mask, pandas_df, _method):
+            mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, _method)
             assert np.array_equal(mask, pt_mask)
 
+        @pytest.mark.gpu
+        def test_cudf(self, geometry, pt_mask, pandas_df, _method, unimport):
+            import cudf
+            import cupy as cp
+            unimport('cuspatial')
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
+
+        @pytest.mark.gpu
+        def test_cuspatial(self, geometry, pt_mask, pandas_df, _method):
+            import cudf
+            import cupy as cp
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
 
     @pytest.mark.parametrize("geometry", [geometry_encl, geometry_noencl])
     class TestSpatialSelectColumnarDaskMeta:
         @dd_available
-        def test_meta_dtype(self, geometry, dask_df):
-            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+        def test_meta_dtype(self, geometry, dask_df, _method):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, _method)
             assert mask._meta.dtype == np.bool_
+
+
+@pytest.mark.skipif(shapely is None, reason='Shapely not available')
+class TestSpatialSelectColumnarShapely(TestSpatialSelectColumnar):
+    __test__ = True
+    method = 'shapely'
+
+
+@pytest.mark.skipif(spd is None, reason='Spatialpandas not available')
+class TestSpatialSelectColumnarSpatialpandas(TestSpatialSelectColumnar):
+    __test__ = True
+    method = 'spatialpandas'

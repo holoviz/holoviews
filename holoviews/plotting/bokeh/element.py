@@ -1,4 +1,5 @@
 import warnings
+from collections import defaultdict
 from itertools import chain
 from types import FunctionType
 
@@ -6,8 +7,8 @@ import bokeh
 import bokeh.plotting
 import numpy as np
 import param
-from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
+from bokeh.model import Model
 from bokeh.models import (
     BinnedTicker,
     ColorBar,
@@ -105,6 +106,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
+
+    apply_hard_bounds = param.Boolean(default=False, doc="""
+        If True, the navigable bounds of the plot will be set based
+        on the more extreme of extents between the data or xlim/ylim ranges.
+        If dim ranges are set, the hard bounds will be set to the dim ranges.""")
 
     autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
@@ -231,6 +237,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
+    hover_tooltips = param.ClassSelector(class_=(list, str), doc="""
+        A list of dimensions to be displayed in the hover tooltip.""")
+
+    hover_formatters = param.Dict(doc="""
+        A dict of formatting options for the hover tooltip.""")
+
+    hover_mode = param.ObjectSelector(default='mouse', objects=['mouse', 'vline', 'hline'], doc="""
+        The hover mode determines how the hover tool is activated.""")
+
     toolbar = param.ObjectSelector(default='right',
                                    objects=["above", "below",
                                             "left", "right", "disable", None],
@@ -287,16 +302,139 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
+    def _replace_hover_label_group(self, element, tooltip):
+        if isinstance(tooltip, tuple):
+            has_label = hasattr(element, 'label') and element.label
+            has_group = hasattr(element, 'group') and element.group != element.param.group.default
+            if not has_label and not has_group:
+                return tooltip
+
+            if ("$label" in tooltip or "${label}" in tooltip):
+                tooltip = (tooltip[0], element.label)
+            elif ("$group" in tooltip or "${group}" in tooltip):
+                tooltip = (tooltip[0], element.group)
+        elif isinstance(tooltip, str):
+            if "$label" in tooltip:
+                tooltip = tooltip.replace("$label", element.label)
+            elif "${label}" in tooltip:
+                tooltip = tooltip.replace("${label}", element.label)
+
+            if "$group" in tooltip:
+                tooltip = tooltip.replace("$group", element.group)
+            elif "${group}" in tooltip:
+                tooltip = tooltip.replace("${group}", element.group)
+        return tooltip
+
+    def _replace_hover_value_aliases(self, tooltip, tooltips_dict):
+        for name, tuple_ in tooltips_dict.items():
+            # some elements, like image, rename the tooltip, e.g. @y -> $y
+            # let's replace those, so the hover tooltip is discoverable
+            # ensure it works for `(@x, @y)` -> `($x, $y)` too
+            if isinstance(tooltip, tuple):
+                value_alias = tuple_[1]
+                if f"@{name}" in tooltip[1]:
+                    tooltip = (tooltip[0], tooltip[1].replace(f"@{name}", value_alias))
+                elif f"@{{{name}}}" in tooltip[1]:
+                    tooltip = (tooltip[0], tooltip[1].replace(f"@{{{name}}}", value_alias))
+            elif isinstance(tooltip, str):
+                if f"@{name}" in tooltip:
+                    tooltip = tooltip.replace(f"@{name}", tuple_[1])
+                elif f"@{{{name}}}" in tooltip:
+                    tooltip = tooltip.replace(f"@{{{name}}}", tuple_[1])
+        return tooltip
+
+    def _prepare_hover_kwargs(self, element):
+        tooltips, hover_opts = self._hover_opts(element)
+
+        dim_aliases = {
+            f"{dim.label} ({dim.unit})" if dim.unit else dim.label: dim.name
+            for dim in element.kdims + element.vdims
+        }
+
+        # make dict so it's easy to get the tooltip for a given dimension;
+        tooltips_dict = {}
+        units_dict = {}
+        for ttp in tooltips:
+            if isinstance(ttp, tuple):
+                name = ttp[0]
+                tuple_ = (ttp[0], ttp[1])
+            elif isinstance(ttp, Dimension):
+                name = ttp.name
+                # three brackets means replacing variable,
+                # and then wrapping in brackets, like @{air}
+                unit = f" ({ttp.unit})" if ttp.unit else ""
+                tuple_ = (
+                    ttp.pprint_label,
+                    f"@{{{util.dimension_sanitizer(ttp.name)}}}"
+                )
+                units_dict[name] = unit
+            elif isinstance(ttp, str):
+                name = ttp
+                # three brackets means replacing variable,
+                # and then wrapping in brackets, like @{air}
+                tuple_ = (ttp.name, f"@{{{util.dimension_sanitizer(ttp)}}}")
+
+            if name in dim_aliases:
+                name = dim_aliases[name]
+
+            # key is the vanilla data column/dimension name
+            # value should always be a tuple (label, value)
+            tooltips_dict[name] = tuple_
+
+        # subset the tooltips to only the ones user wants
+        if self.hover_tooltips:
+            # If hover tooltips are defined as a list of strings or tuples
+            if isinstance(self.hover_tooltips, list):
+                new_tooltips = []
+                for tooltip in self.hover_tooltips:
+                    if isinstance(tooltip, str):
+                        # make into a tuple
+                        new_tooltip = tooltips_dict.get(tooltip.lstrip("@"))
+                        if new_tooltip is None:
+                            label = tooltip.lstrip("$").lstrip("@")
+                            value = tooltip if "$" in tooltip else f"@{{{tooltip.lstrip('@')}}}"
+                            new_tooltip = (label, value)
+                        new_tooltips.append(new_tooltip)
+                    elif isinstance(tooltip, tuple):
+                        unit = units_dict.get(tooltip[0])
+                        tooltip = self._replace_hover_value_aliases(tooltip, tooltips_dict)
+                        if unit:
+                            tooltip = (f"{tooltip[0]}{unit}", tooltip[1])
+                        new_tooltips.append(tooltip)
+                    else:
+                        raise ValueError('Hover tooltips must be a list with items of strings or tuples.')
+                tooltips = new_tooltips
+            else:
+                # Likely HTML str
+                tooltips = self._replace_hover_value_aliases(self.hover_tooltips, tooltips_dict)
+        else:
+            tooltips = list(tooltips_dict.values())
+
+        # replace the label and group in the tooltips
+        if isinstance(tooltips, list):
+            tooltips = [self._replace_hover_label_group(element, ttp) for ttp in tooltips]
+        elif isinstance(tooltips, str):
+            tooltips = self._replace_hover_label_group(element, tooltips)
+
+        if self.hover_formatters:
+            hover_opts['formatters'] = self.hover_formatters
+
+        if self.hover_mode:
+            hover_opts["mode"] = self.hover_mode
+
+        return tooltips, hover_opts
+
     def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
         """
         if callbacks is None:
             callbacks = []
-        tooltips, hover_opts = self._hover_opts(element)
-        tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
-                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
-        if not tooltips: tooltips = None
+
+        tooltips, hover_opts = self._prepare_hover_kwargs(element)
+
+        if not tooltips:
+            tooltips = None
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -315,30 +453,59 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
+        all_tools = cb_tools + self.default_tools + self.tools
+        if self.hover_tooltips:
+            no_hover = (
+                "hover" not in all_tools and
+                not (any(isinstance(tool, tools.HoverTool) for tool in all_tools))
+            )
+            if no_hover:
+                all_tools.append("hover")
+
         tool_list = []
-        for tool in cb_tools + self.default_tools + self.tools:
+        for tool in all_tools:
             if tool in tool_names:
                 continue
             if tool in ['vline', 'hline']:
+                tool_opts = dict(hover_opts, mode=tool)
                 tool = tools.HoverTool(
-                    tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts
+                    tooltips=tooltips, tags=['hv_created'], **tool_opts
                 )
-            elif bokeh32 and tool in ['wheel_zoom', 'xwheel_zoom', 'ywheel_zoom']:
-                if tool.startswith('x'):
+            elif bokeh32 and isinstance(tool, str) and tool.endswith(
+                ('wheel_zoom', 'zoom_in', 'zoom_out')
+            ):
+                zoom_kwargs = {}
+                tags = ['hv_created']
+                if self.subcoordinate_y and not tool.startswith('x'):
+                    zoom_dims = 'height'
+                    zoom_kwargs['level'] = 1
+                    tags.append(tool)
+                elif tool.startswith('x'):
                     zoom_dims = 'width'
                 elif tool.startswith('y'):
                     zoom_dims = 'height'
                 else:
                     zoom_dims = 'both'
-                tool = tools.WheelZoomTool(
-                    zoom_together='none', dimensions=zoom_dims, tags=['hv_created']
-                )
+                zoom_kwargs['dimensions'] = zoom_dims
+                zoom_kwargs['tags'] = tags
+                if tool.endswith('wheel_zoom'):
+                    # Setting `zoom_together` for multi-y axis support.
+                    zoom_kwargs['zoom_together'] = 'none'
+                    zoom_type = tools.WheelZoomTool
+                elif tool.endswith('zoom_in'):
+                    zoom_type = tools.ZoomInTool
+                elif tool.endswith('zoom_out'):
+                    zoom_type = tools.ZoomOutTool
+                tool = zoom_type(**zoom_kwargs)
             tool_list.append(tool)
 
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
-                properties = tool.properties_with_values(include_defaults=False)
+                properties = {
+                    p: v.clone() if isinstance(v, Model) else v
+                    for p, v in tool.properties_with_values(include_defaults=False).items()
+                }
                 tool = type(tool)(**properties)
             copied_tools.append(tool)
 
@@ -350,6 +517,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
+
+        if self.subcoordinate_y:
+            zoom_tools = {}
+            _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
+            for t in copied_tools:
+                if isinstance(t, _zoom_types) and 'hv_created' in t.tags and len(t.tags) == 2:
+                    zoom_tools[t.tags[1]] = t
+            if zoom_tools:
+                self.handles['zooms_subcoordy'] = zoom_tools
 
         box_tools = [t for t in copied_tools if isinstance(t, tools.BoxSelectTool)]
         if box_tools:
@@ -368,9 +544,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _update_hover(self, element):
         tool = self.handles['hover']
         if 'hv_created' in tool.tags:
-            tooltips, hover_opts = self._hover_opts(element)
-            tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
-                        if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
+            tooltips, hover_opts = self._prepare_hover_kwargs(element)
             tool.tooltips = tooltips
         else:
             plot_opts = element.opts.get('plot', 'bokeh')
@@ -462,10 +636,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
 
+        if pos == 1 and 'subcoordinate_y' in range_tags_extras and dim and dim.range != (None, None):
+            dims = [dim]
+            v0, v1 = dim.range
+            axis_label = str(dim)
+            specs = ((dim.name, dim.label, dim.unit),)
         # For y-axes check if we explicitly passed in a dimension.
         # This is used by certain plot types to create an axis from
         # a synthetic dimension and exclusively supported for y-axes.
-        if pos == 1 and dim:
+        elif pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([
                 elrange.get(dim.name, {'combined': (None, None)})['combined']
@@ -484,11 +663,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = b, l, t, r
             if pos == 1 and self._subcoord_overlaid:
                 if isinstance(self.subcoordinate_y, bool):
-                    offset = self.subcoordinate_scale / 2.
-                    # This sum() is equal to n+1, n being the number of elements contained
-                    # in the overlay with subcoordinate_y=True, as the traversal goes through
-                    # the root overlay that has subcoordinate_y=True too since it's propagated.
-                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
+                    if self.ylim and all(np.isfinite(val) for val in self.ylim):
+                        v0, v1 = self.ylim
+                    else:
+                        offset = self.subcoordinate_scale / 2.
+                        # This sum() is equal to n+1, where n is the number of elements contained
+                        # in the overlay with subcoordinate_y=True (including the the root overlay,
+                        # which has subcoordinate_y=True due to option propagation)
+                        v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
                 else:
                     v0, v1 = 0, 1
             else:
@@ -1114,8 +1296,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
-                               'axes are %s, the option will '
-                               'be ignored.' % ax_type)
+                               f'axes are {ax_type}, the option will '
+                               'be ignored.')
         elif data_aspect:
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
@@ -1260,7 +1442,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower bound to override default of %.3f." % low)
+                f"lower bound to override default of {low:.3f}.")
         updates = {}
         if util.isfinite(low):
             updates['start'] = (axis_range.start, low)
@@ -1303,7 +1485,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             p0, p1 = self.padding, self.padding
 
-        # Clean this up in bokeh 3.0 using View.find_one API
         callback = CustomJS(code=f"""
         const cb = function() {{
 
@@ -1325,30 +1506,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return invert ? [upper, lower] : [lower, upper]
           }}
 
-          const ref = plot.id
-
-          const find = (view) => {{
-            let iterable = view.child_views === undefined ? []  : view.child_views
-            for (const sv of iterable) {{
-              if (sv.model.id == ref)
-                return sv
-              const obj = find(sv)
-              if (obj !== null)
-                return obj
-            }}
-            return null
-          }}
-          let plot_view = null;
-          for (const root of plot.document.roots()) {{
-            const root_view = window.Bokeh.index[root.id]
-            if (root_view === undefined)
-              return
-            plot_view = find(root_view)
-            if (plot_view != null)
-              break
-          }}
-          if (plot_view == null)
+          let plot_view = Bokeh.index.find_one(plot)
+          if (plot_view == null) {{
             return
+          }}
 
           let range_limits = {{}}
           for (const dr of plot.data_renderers) {{
@@ -1369,20 +1530,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
               }}
             }}
 
-            if (y_range_name) {{
+            if (y_range_name in range_limits) {{
+              const [vmin_old, vmax_old] = range_limits[y_range_name]
+              range_limits[y_range_name] = [Math.min(vmin, vmin_old), Math.max(vmax, vmax_old)]
+            }} else {{
               range_limits[y_range_name] = [vmin, vmax]
             }}
           }}
 
-           let range_tags_extras = plot.{dim}_range.tags[1]
-           if (range_tags_extras['autorange']) {{
-             let lowerlim = range_tags_extras['y-lowerlim'] ?? null
-             let upperlim = range_tags_extras['y-upperlim'] ?? null
-             let [start, end] = get_padded_range('default', lowerlim, upperlim, range_tags_extras['invert_yaxis'])
-             if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
-               plot.{dim}_range.setv({{start, end}})
-             }}
-           }}
+          let range_tags_extras = plot.{dim}_range.tags[1]
+          if (range_tags_extras['autorange']) {{
+            let lowerlim = range_tags_extras['y-lowerlim'] ?? null
+            let upperlim = range_tags_extras['y-upperlim'] ?? null
+            let [start, end] = get_padded_range('default', lowerlim, upperlim, range_tags_extras['invert_yaxis'])
+            if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
+              plot.{dim}_range.setv({{start, end}})
+            }}
+          }}
 
           for (let key in plot.extra_{dim}_ranges) {{
             const extra_range = plot.extra_{dim}_ranges[key]
@@ -1553,14 +1717,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
-                    raise ValueError('Mapping a dimension to the "{style}" '
+                    raise ValueError(f'Mapping a dimension to the "{k}" '
                                      'style option is not supported by the '
-                                     '{element} element using the {backend} '
-                                     'backend. To map the "{dim}" dimension '
-                                     'to the {style} use a groupby operation '
-                                     'to overlay your data along the dimension.'.format(
-                                         style=k, dim=v.dimension, element=element,
-                                         backend=self.renderer.backend))
+                                     f'{element} element using the {self.renderer.backend} '
+                                     f'backend. To map the "{v.dimension}" dimension '
+                                     f'to the {k} use a groupby operation '
+                                     'to overlay your data along the dimension.')
                 elif data and len(val) != len(next(iter(data.values()))):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
@@ -1783,9 +1945,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
-                key = '@{%s}' % k
-                if ((isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
-                    (len(values) and isinstance(values[0], util.datetime_types))):
+                key = f'@{{{k}}}'
+                if (
+                    (len(values) and isinstance(values[0], util.datetime_types)) or
+                    (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
+                ):
                     hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
                     hover.formatters[key] = "datetime"
 
@@ -1826,6 +1990,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['glyph_renderer'] = renderer
 
         self._postprocess_hover(renderer, source)
+
+        zooms_subcoordy = self.handles.get('zooms_subcoordy')
+        if zooms_subcoordy is not None:
+            for zoom in zooms_subcoordy.values():
+                # The default renderer is 'auto', instead we want to
+                # store the subplot renderer to aggregate them and set
+                # the final tool with a list of all the renderers.
+                zoom.renderers = [renderer]
 
         # Update plot, source and glyph
         with abbreviated_exception():
@@ -1880,6 +2052,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self._subcoord_overlaid:
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
+
+        if self.apply_hard_bounds:
+            self._apply_hard_bounds(element, ranges)
+
         self.handles['plot'] = plot
 
         if self.autorange:
@@ -1904,6 +2080,32 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.drawn = True
 
         return plot
+
+    def _apply_hard_bounds(self, element, ranges):
+        """
+        Apply hard bounds to the x and y ranges of the plot. If xlim/ylim is set, limit the
+        initial viewable range to xlim/ylim, but allow navigation up to the abs max between
+        the data range and xlim/ylim. If dim range is set (e.g. via redim.range), enforce
+        as hard bounds.
+
+        """
+
+        def validate_bound(bound):
+            return bound if util.isfinite(bound) else None
+
+        min_extent_x, min_extent_y, max_extent_x, max_extent_y = map(
+            validate_bound, self.get_extents(element, ranges, range_type='combined', lims_as_soft_ranges=True)
+        )
+
+        def set_bounds(axis, min_extent, max_extent):
+            """Set the bounds for a given axis, using None if both extents are None or identical"""
+            try:
+                self.handles[axis].bounds = None if min_extent == max_extent else (min_extent, max_extent)
+            except ValueError:
+                self.handles[axis].bounds = None
+
+        set_bounds('x_range', min_extent_x, max_extent_x)
+        set_bounds('y_range', min_extent_y, max_extent_y)
 
     def _setup_data_callbacks(self, plot):
         if not self._js_on_data_callbacks:
@@ -2029,6 +2231,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'cds' in self.handles:
                 cds = self.handles['cds']
                 self._postprocess_hover(renderer, cds)
+
+        if self.apply_hard_bounds:
+            self._apply_hard_bounds(element, ranges)
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
@@ -2185,7 +2390,6 @@ class CompositeElementPlot(ElementPlot):
         plot_method = '_'.join(key.split('_')[:-1])
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
-
 
 
 class ColorbarPlot(ElementPlot):
@@ -2439,9 +2643,8 @@ class ColorbarPlot(ElementPlot):
         color = style.get(name, None)
         if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
-                "Cannot declare style mapping for '%s' option and "
-                "declare a color_index; ignoring the color_index."
-                % name)
+                f"Cannot declare style mapping for '{name}' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if not cdim:
             return data, mapping
@@ -2603,7 +2806,6 @@ class LegendPlot(ElementPlot):
                         r.muted = self.legend_muted
 
 
-
 class AnnotationPlot:
     """
     Mix-in plotting subclass for AnnotationPlots which do not have a legend.
@@ -2633,7 +2835,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale']
+                          'subcoordinate_scale', 'autorange']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
@@ -2768,7 +2970,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 for r in item.renderers:
                     r.muted = self.legend_muted or r.muted
 
-
     def _init_tools(self, element, callbacks=None):
         """
         Processes the list of tools to be supplied to the plot.
@@ -2776,6 +2977,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if callbacks is None:
             callbacks = []
         hover_tools = {}
+        zooms_subcoordy = {}
+        _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
         init_tools, tool_types = [], []
         for key, subplot in self.subplots.items():
             el = element.get(key)
@@ -2792,6 +2995,15 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                             continue
                         else:
                             hover_tools[tooltips] = tool
+                    elif (
+                        self.subcoordinate_y and isinstance(tool, _zoom_types)
+                        and 'hv_created' in tool.tags and len(tool.tags) == 2
+                    ):
+                        if tool.tags[1] in zooms_subcoordy:
+                            continue
+                        else:
+                            zooms_subcoordy[tool.tags[1]] = tool
+                            self.handles['zooms_subcoordy'] = zooms_subcoordy
                     elif tool_type in tool_types:
                         continue
                     else:
@@ -2799,7 +3011,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     init_tools.append(tool)
         self.handles['hover_tools'] = hover_tools
         return init_tools
-
 
     def _merge_tools(self, subplot):
         """
@@ -2821,6 +3032,81 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 tool.renderers = list(util.unique_iterator(renderers))
                 if 'hover' not in self.handles:
                     self.handles['hover'] = tool
+        if 'zooms_subcoordy' in subplot.handles and 'zooms_subcoordy' in self.handles:
+            for subplot_zoom, overlay_zoom in zip(
+                subplot.handles['zooms_subcoordy'].values(),
+                self.handles['zooms_subcoordy'].values(),
+            ):
+                renderers = list(util.unique_iterator(overlay_zoom.renderers + subplot_zoom.renderers))
+                overlay_zoom.renderers = renderers
+
+    def _postprocess_subcoordinate_y_groups(self, overlay, plot):
+        """
+        Add a zoom tool per group to the overlay.
+        """
+        # First, just process and validate the groups and their content.
+        groups = defaultdict(list)
+
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            raise ValueError(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
+        for el in overlay:
+            # group is the Element type per default (e.g. Curve, Spike).
+            if el.group == type(el).__name__:
+                continue
+            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
+                raise ValueError(
+                    f"All elements in group {el.group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
+            groups[el.group].append(el)
+
+        # No need to go any further if there's just one group.
+        if len(groups) <= 1:
+            return
+
+        # At this stage, there's only one zoom tool (e.g. 1 wheel_zoom) that
+        # has all the renderers (e.g. all the curves in the overlay).
+        # We want to create as many zoom tools as groups, for each group
+        # the zoom tool must have the renderers of the elements of the group.
+        zoom_tools = self.handles['zooms_subcoordy']
+        for zoom_tool_name, zoom_tool in zoom_tools.items():
+            renderers_per_group = defaultdict(list)
+            # We loop through each overlay sub-elements and empty the list of
+            # renderers of the initial tool.
+            for el in overlay:
+                if el.group not in groups:
+                    continue
+                renderers_per_group[el.group].append(zoom_tool.renderers.pop(0))
+
+            if zoom_tool.renderers:
+                raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
+
+            new_ztools = []
+            # Create a new tool per group with the right renderers and a custom description.
+            for grp, grp_renderers in renderers_per_group.items():
+                new_tool = zoom_tool.clone()
+                new_tool.renderers = grp_renderers
+                new_tool.description = f"{zoom_tool_name.replace('_', ' ').title()} ({grp})"
+                new_ztools.append(new_tool)
+            # Revert tool order so the upper tool in the toolbar corresponds to the
+            # upper group in the overlay.
+            new_ztools = new_ztools[::-1]
+
+            # Update the handle for good measure.
+            zoom_tools[zoom_tool_name] = new_ztools
+
+            # Replace the original tool by the new ones
+            idx = plot.tools.index(zoom_tool)
+            plot.tools[idx:idx+1] = new_ztools
 
     def _get_dimension_factors(self, overlay, ranges, dimension):
         factors = []
@@ -2891,6 +3177,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._update_ranges(element, ranges)
 
         panels = []
+        subcoord_y_glyph_renderers = []
         for key, subplot in self.subplots.items():
             frame = None
             if self.tabs:
@@ -2909,6 +3196,24 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     title = get_tab_title(key, frame, self.hmap.last)
                 panels.append(TabPanel(child=child, title=title))
             self._merge_tools(subplot)
+            if getattr(subplot, "subcoordinate_y", False) and (
+                glyph_renderer := subplot.handles.get("glyph_renderer")
+            ):
+                subcoord_y_glyph_renderers.append(glyph_renderer)
+
+        if self.subcoordinate_y:
+            # Reverse the subcoord-y renderers only.
+            reversed_renderers = subcoord_y_glyph_renderers[::-1]
+            reordered = []
+            for item in plot.renderers:
+                if item not in subcoord_y_glyph_renderers:
+                    reordered.append(item)
+                else:
+                    reordered.append(reversed_renderers.pop(0))
+            plot.renderers = reordered
+
+        if self.subcoordinate_y:
+            self._postprocess_subcoordinate_y_groups(element, plot)
 
         if self.tabs:
             self.handles['plot'] = Tabs(
@@ -2935,6 +3240,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if self.top_level:
             self.init_links()
+
+        if self.autorange:
+            self._setup_autorange()
 
         self._execute_hooks(element)
 

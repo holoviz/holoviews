@@ -8,8 +8,7 @@ from packaging.version import Version
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from . import pandas
-from .interface import Interface
+from .interface import DataError, Interface
 from .util import cached
 
 
@@ -93,6 +92,17 @@ class IbisInterface(Interface):
         elif keys == [] and values is None:
             values = list(data.columns[: nvdim if nvdim else None])
         return data, dict(kdims=keys, vdims=values), {}
+
+    @classmethod
+    def validate(cls, dataset, vdims=True):
+        dim_types = 'all' if vdims else 'key'
+        dimensions = dataset.dimensions(dim_types, label='name')
+        cols = list(dataset.data.columns)
+        not_found = [d for d in dimensions if d not in cols]
+        if not_found:
+            raise DataError("Supplied data does not contain specified "
+                            "dimensions, the following dimensions were "
+                            f"not found: {not_found!r}", cls)
 
     @classmethod
     def compute(cls, dataset):
@@ -216,16 +226,16 @@ class IbisInterface(Interface):
             **{v.name: dataset.data[k] for k, v in dimensions.items()}
         )
 
-    validate = pandas.PandasInterface.validate
-    reindex = pandas.PandasInterface.reindex
+    @classmethod
+    def reindex(cls, dataset, kdims=None, vdims=None):
+        return dataset.data
 
     @classmethod
     def _index_ibis_table(cls, data):
         import ibis
         if not cls.has_rowid():
             raise ValueError(
-                "iloc expressions are not supported for ibis version %s."
-                % ibis.__version__
+                f"iloc expressions are not supported for ibis version {ibis.__version__}."
             )
 
         if "hv_row_id__" in data.columns:
@@ -347,9 +357,8 @@ class IbisInterface(Interface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not isinstance(values, ibis.Expr) and not np.isscalar(values):
-                raise ValueError("Cannot assign %s type as a Ibis table column, "
-                                 "expecting either ibis.Expr or scalar."
-                                 % type(values).__name__)
+                raise ValueError(f"Cannot assign {type(values).__name__} type as a Ibis table column, "
+                                 "expecting either ibis.Expr or scalar.")
             data = data.mutate(**{dimension.name: values})
         return data
 
@@ -426,6 +435,18 @@ class IbisInterface(Interface):
             else:
                 predicates.append(column == object)
         return predicates
+
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        raise NotImplementedError
 
     @classmethod
     def sample(cls, dataset, samples=None):

@@ -108,9 +108,9 @@ class cuDFInterface(PandasInterface):
             d = dimension_name(d)
             if len([c for c in columns if c == d]) > 1:
                 raise DataError('Dimensions may not reference duplicated DataFrame '
-                                'columns (found duplicate %r columns). If you want to plot '
+                                f'columns (found duplicate {d!r} columns). If you want to plot '
                                 'a column against itself simply declare two dimensions '
-                                'with the same name. '% d, cls)
+                                'with the same name.', cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -229,6 +229,22 @@ class cuDFInterface(PandasInterface):
                 mask = new_mask
             else:
                 mask &= new_mask
+        return mask
+
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection).to_cupy()
+        extra = (mask[1:] ^ mask[:-1])
+        mask[1:] |= extra
+        mask[:-1] |= extra
         return mask
 
     @classmethod

@@ -5,7 +5,7 @@ exclude: (\.min\.js$|\.svg$|\.html$)
 default_stages: [commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -20,20 +20,21 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.4.4
     hooks:
       - id: ruff
         files: holoviews/|scripts/
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.13
+    rev: v0.1.14
     hooks:
       - id: clean-notebook
+        args: [--strip-trailing-newlines]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
-    - id: codespell
-      additional_dependencies:
-        - tomli
+      - id: codespell
+        additional_dependencies:
+          - tomli
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
@@ -41,6 +42,28 @@ repos:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+    rev: v0.10.0.1
     hooks:
       - id: shellcheck
+  - repo: https://github.com/hoxbro/prettier-pre-commit
+    rev: v3.2.5
+    hooks:
+      - id: prettier
+        exclude: conda.recipe/meta.yaml
+        types_or:
+          - markdown
+          - yaml
+          - css
+  - repo: https://github.com/hoxbro/taplo-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: taplo
+        args:
+          [
+            --option,
+            align_comments=false,
+            --option,
+            column_width=100,
+            --option,
+            "indent_string=    ",
+          ]

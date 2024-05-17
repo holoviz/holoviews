@@ -59,8 +59,7 @@ class MockLoggingHandler(logging.Handler):
         msg='\n\n{method}: {last_line}\ndoes not end with:\n{substring}'
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError('Missing {method} output: {substring}'.format(
-                method=self.param_methods[level], substring=repr(substring)))
+            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
         if not last_line[0].endswith(substring):
             raise AssertionError(msg.format(method=self.param_methods[level],
                                             last_line=repr(last_line[0]),
@@ -77,8 +76,7 @@ class MockLoggingHandler(logging.Handler):
         msg='\n\n{method}: {last_line}\ndoes not contain:\n{substring}'
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError('Missing {method} output: {substring}'.format(
-                method=self.param_methods[level], substring=repr(substring)))
+            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
         if substring not in last_line[0]:
             raise AssertionError(msg.format(method=self.param_methods[level],
                                             last_line=repr(last_line[0]),

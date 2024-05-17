@@ -153,7 +153,7 @@ class notebook_extension(extension):
         if 'html' not in p.display_formats and len(p.display_formats) > 1:
             msg = ('Output magic unable to control displayed format '
                    'as IPython notebook uses fixed precedence '
-                   'between %r' % p.display_formats)
+                   f'between {p.display_formats!r}')
             display(HTML(f'<b>Warning</b>: {msg}'))
 
         loaded = notebook_extension._loaded
@@ -168,7 +168,7 @@ class notebook_extension(extension):
 
         css = ''
         if p.width is not None:
-            css += '<style>div.container { width: %s%% }</style>' % p.width
+            css += f'<style>div.container {{ width: {p.width}% }}</style>'
         if p.css:
             css += f'<style>{p.css}</style>'
 
@@ -239,8 +239,7 @@ class notebook_extension(extension):
 
         unmatched_args = set(args) - set(resources)
         if unmatched_args:
-            display(HTML("<b>Warning:</b> Unrecognized resources '%s'"
-                         % "', '".join(unmatched_args)))
+            display(HTML("<b>Warning:</b> Unrecognized resources '{}'".format("', '".join(unmatched_args))))
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
