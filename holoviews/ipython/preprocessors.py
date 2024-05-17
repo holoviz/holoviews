@@ -4,6 +4,7 @@ Prototype demo:
 python holoviews/ipython/convert.py Conversion_Example.ipynb | python
 """
 import ast
+
 from nbconvert.preprocessors import Preprocessor
 
 
@@ -78,7 +79,7 @@ def strip_magics(source):
     """
     filtered=[]
     for line in source.splitlines():
-        if not line.startswith('%') or line.startswith('%%'):
+        if not line.startswith('%'):
             filtered.append(line)
     return '\n'.join(filtered)
 
@@ -133,8 +134,7 @@ class OutputMagicProcessor(Preprocessor):
                                         template='hv.util.output({line!r})')
             source, output_lines = filter_magic(source, '%%output')
             if output_lines:
-                template = 'hv.util.output({options!r}, {{expr}})'.format(
-                    options=output_lines[-1])
+                template = f'hv.util.output({output_lines[-1]!r}, {{expr}})'
                 source = wrap_cell_expression(source, template)
 
             cell['source'] = source

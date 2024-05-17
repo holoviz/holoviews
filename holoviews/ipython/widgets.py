@@ -1,17 +1,10 @@
-import sys, math, time
-from unittest import SkipTest
-
-try:
-    import IPython
-    from IPython.core.display import clear_output
-except:
-    clear_output = None
-    raise SkipTest("IPython extension requires IPython >= 0.12")
-
-# IPython 0.13 does not have version_info
-ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
+import math
+import sys
+import time
 
 import param
+from IPython.core.display import clear_output
+
 from ..core.util import ProgressIndicator
 
 
@@ -69,8 +62,8 @@ class ProgressBar(ProgressIndicator):
         elif self.display == 'stdout':
             if percentage==100 and self.elapsed_time:
                 elapsed = time.time() -  self.start_time
-                if clear_output and not ipython2: clear_output()
-                if clear_output and ipython2: clear_output(wait=True)
+                if clear_output:
+                    clear_output()
                 self.out = '\r' + ('100%% %s %02d:%02d:%02d'
                                    % (self.label.lower(), elapsed//3600,
                                       elapsed//60, elapsed%60))
@@ -86,19 +79,18 @@ class ProgressBar(ProgressIndicator):
             self.cache['socket'] = self._get_socket()
 
         if self.cache['socket'] is not None:
-            self.cache['socket'].send('%s|%s' % (percentage, self.label))
+            self.cache['socket'].send(f'{percentage}|{self.label}')
 
 
     def _stdout_display(self, percentage, display=True):
-        if clear_output and not ipython2: clear_output()
-        if clear_output and ipython2: clear_output(wait=True)
+        if clear_output:
+            clear_output()
         percent_per_char = 100.0 / self.width
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)
         blank_count = self.width - char_count
         prefix = '\n' if len(self.current_progress) > 1 else ''
-        self.out =  prefix + ("%s[%s%s] %0.1f%%" %
-                              (self.label+':\n' if self.label else '',
+        self.out =  prefix + ("{}[{}{}] {:0.1f}%".format(self.label+':\n' if self.label else '',
                                self.fill_char * char_count,
                                ' '*len(self.fill_char) * blank_count,
                                percentage))
@@ -119,7 +111,7 @@ class ProgressBar(ProgressIndicator):
                                             max_tries=max_tries)
             self.param.message("Progress broadcast bound to port %d" % port)
             return sock
-        except:
+        except Exception:
             self.param.message("No suitable port found for progress broadcast.")
             return None
 
@@ -152,14 +144,13 @@ class RemoteProgress(ProgressBar):
                 [percent_str, label] = message.split('|')
                 percent = float(percent_str)
                 self.label = label
-                super(RemoteProgress, self).__call__(percent)
+                super().__call__(percent)
             except KeyboardInterrupt:
                 if percent is not None:
-                    self.param.message("Exited at %.3f%% completion" % percent)
+                    self.param.message(f"Exited at {percent:.3f}% completion")
                 break
-            except:
-                self.param.message("Could not process socket message: %r"
-                                  % message)
+            except Exception:
+                self.param.message(f"Could not process socket message: {message!r}")
 
 
 class RunProgress(ProgressBar):

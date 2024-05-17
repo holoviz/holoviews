@@ -2,18 +2,22 @@ from collections import namedtuple
 
 import numpy as np
 import param
-
 from param.parameterized import bothmethod
 
 from .core.data import Dataset
-from .core.dimension import OrderedDict
 from .core.element import Element, Layout
+from .core.layout import AdjointLayout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
 from .streams import (
-    Stream, SelectionExprSequence, CrossFilterSet,
-    Derived, PlotReset, SelectMode, Pipe
+    CrossFilterSet,
+    Derived,
+    Pipe,
+    PlotReset,
+    SelectionExprSequence,
+    SelectMode,
+    Stream,
 )
 from .util import DynamicMap
 
@@ -133,14 +137,14 @@ class _base_link_selections(param.ParameterizedFunction):
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
-        self.param.set_param(**kwargs)
+        self.param.update(**kwargs)
 
         if Store.current_backend not in Store.renderers:
-            raise RuntimeError("Cannot peform link_selections operation "
-                               "since the selected backend %r is not "
+            raise RuntimeError("Cannot perform link_selections operation "
+                               f"since the selected backend {Store.current_backend!r} is not "
                                "loaded. Load the plotting extension with "
                                "hv.extension or import the plotting "
-                               "backend explicitly." % Store.current_backend)
+                               "backend explicitly.")
 
         # Perform transform
         return self._selection_transform(hvobj.clone())
@@ -178,6 +182,10 @@ class _base_link_selections(param.ParameterizedFunction):
                     callback.operation)
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
+                self.param.warning(
+                    "linked selection: Encountered DynamicMap that we don't know "
+                    f"how to recurse into:\n{hvobj!r}"
+                )
                 return hvobj
         elif isinstance(hvobj, Element):
             # Register hvobj to receive selection expression callbacks
@@ -190,8 +198,8 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_expr_streams.get(element, None), cache=self._cache
                 )
             return hvobj
-        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
-            data = OrderedDict([(k, self._selection_transform(v, operations))
+        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
+            data = dict([(k, self._selection_transform(v, operations))
                                  for k, v in hvobj.items()])
             if isinstance(hvobj, NdOverlay):
                 def compose(*args, **kwargs):
@@ -245,7 +253,7 @@ class link_selections(_base_link_selections):
     """
 
     cross_filter_mode = param.Selector(
-        ['overwrite', 'intersect'], default='intersect', doc="""
+        objects=['overwrite', 'intersect'], default='intersect', doc="""
         Determines how to combine selections across different
         elements.""")
 
@@ -263,7 +271,7 @@ class link_selections(_base_link_selections):
         each element.""")
 
     selection_mode = param.Selector(
-        ['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
+        objects=['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
         Determines how to combine successive selections on the same
         element.""")
 
@@ -459,7 +467,7 @@ class link_selections(_base_link_selections):
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
 
 
-class SelectionDisplay(object):
+class SelectionDisplay:
     """
     Base class for selection display classes.  Selection display classes are
     responsible for transforming an element (or DynamicMap that produces an
@@ -470,11 +478,15 @@ class SelectionDisplay(object):
     def __call__(self, element):
         return self
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         raise NotImplementedError()
 
     @staticmethod
-    def _select(element, selection_expr, cache={}):
+    def _select(element, selection_expr, cache=None):
+        if cache is None:
+            cache = {}
         from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
@@ -508,11 +520,10 @@ class SelectionDisplay(object):
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s on '%r'."
-                                    % (key_error, element))
+                                    f"display selection for all elements: {key_error} on '{element!r}'.") from e
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s." % e)
+                                    f"display selection for all elements: {e}.") from e
             ds_cache[selection_expr] = mask
         else:
             selection = element
@@ -642,7 +653,9 @@ class ColorListSelectionDisplay(SelectionDisplay):
         self.alpha_props = [alpha_prop]
         self.backend = backend
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         def _build_selection(el, colors, alpha, exprs, **kwargs):
             from .plotting.util import linear_gradient
             ds = el.dataset
@@ -658,7 +671,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             color_inds = np.zeros(n, dtype='int8')
 
-            for i, expr, color in zip(range(1, len(clrs)), selection_exprs, selected_colors):
+            for i, expr in zip(range(1, len(clrs)), selection_exprs):
                 if not expr:
                     color_inds[:] = i
                 else:

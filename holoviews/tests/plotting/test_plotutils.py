@@ -1,26 +1,35 @@
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 
-from holoviews import NdOverlay, Overlay, Dimension
+from holoviews import Dimension, NdOverlay, Overlay
+from holoviews.core.options import Cycle
 from holoviews.core.spaces import DynamicMap, HoloMap
-from holoviews.core.options import Store, Cycle
+from holoviews.element import (
+    Area,
+    Curve,
+    HLine,
+    Image,
+    Path,
+    Points,
+    Scatter,
+    VectorField,
+)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import (Image, Scatter, Curve, Points,
-                               Area, VectorField, HLine, Path)
 from holoviews.operation import operation
 from holoviews.plotting.util import (
-    compute_overlayable_zorders, get_min_distance, process_cmap,
-    initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy,
-    bokeh_palette_to_palette, mplcmap_to_palette, color_intervals,
-    get_range, get_axis_padding)
+    _get_min_distance_numpy,
+    bokeh_palette_to_palette,
+    color_intervals,
+    compute_overlayable_zorders,
+    get_axis_padding,
+    get_min_distance,
+    get_range,
+    initialize_dynamic,
+    mplcmap_to_palette,
+    process_cmap,
+    split_dmap_overlay,
+)
 from holoviews.streams import PointerX
-
-try:
-    from holoviews.plotting.bokeh import util
-    bokeh_renderer = Store.renderers['bokeh']
-except:
-    bokeh_renderer = None
 
 
 class TestOverlayableZorders(ComparisonTestCase):
@@ -461,14 +470,8 @@ class TestPlotColorUtils(ComparisonTestCase):
             process_cmap({'A', 'B', 'C'}, 3)
 
 
+@pytest.mark.usefixtures("mpl_backend")
 class TestMPLColormapUtils(ComparisonTestCase):
-
-    def setUp(self):
-        try:
-            import matplotlib.cm # noqa
-            import holoviews.plotting.mpl # noqa
-        except:
-            raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
 
     def test_mpl_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='matplotlib')
@@ -483,8 +486,15 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
     def test_mpl_colormap_instance(self):
-        from matplotlib.cm import get_cmap
-        cmap = get_cmap('Greys')
+        try:
+            from matplotlib import colormaps
+            cmap = colormaps.get('Greys')
+        except ImportError:
+            # This will stop working and can be removed
+            # when we only support Matplotlib >= 3.5
+            from matplotlib.cm import get_cmap
+            cmap = get_cmap('Greys')
+
         colors = process_cmap(cmap, 3, provider='matplotlib')
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
@@ -521,14 +531,8 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'][::-1])
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestBokehPaletteUtils(ComparisonTestCase):
-
-    def setUp(self):
-        try:
-            import bokeh.palettes # noqa
-            import holoviews.plotting.bokeh # noqa
-        except:
-            raise SkipTest('Bokeh required to test bokeh palette utilities')
 
     def test_bokeh_palette_categorical_palettes_not_interpolated(self):
         # Ensure categorical palettes are not expanded
@@ -659,40 +663,3 @@ class TestRangeUtilities(ComparisonTestCase):
         self.assertEqual(drange, (-0.5, 2.5))
         self.assertEqual(srange, (-1, 4))
         self.assertEqual(hrange, (-1, 3))
-
-
-
-class TestBokehUtils(ComparisonTestCase):
-
-    def setUp(self):
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test bokeh plot utils.")
-        try:
-            import pscript # noqa
-        except:
-            raise SkipTest("Flexx required to test transpiling formatter functions.")
-
-
-    def test_py2js_funcformatter_single_arg(self):
-        def test(x):  return '%s$' % x
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_two_args(self):
-        def test(x, pos):  return '%s$' % x
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_arg_and_kwarg(self):
-        def test(x, pos=None):  return '%s$' % x
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    pos = (pos === undefined) ? null: pos;\n    return "" '
-                   '+ x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)

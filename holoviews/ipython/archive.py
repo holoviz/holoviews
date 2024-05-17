@@ -3,49 +3,20 @@ Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
 
-import time, sys, os, traceback
-
-from IPython import version_info
-from IPython.display import Javascript, display
-from .preprocessors import Substitute
-
-# Import appropriate nbconvert machinery
-if version_info[0] >= 4:
-    # Jupyter/IPython >=4.0
-    from nbformat import reader
-    from nbconvert import HTMLExporter
-
-    from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
-    from nbconvert import NotebookExporter
-else:
-    # IPython <= 3.0
-    from IPython.nbformat import reader
-    from IPython.nbconvert import HTMLExporter
-
-    if version_info[0] == 3:
-        # IPython 3
-        from IPython.nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
-        from IPython.nbconvert import NotebookExporter
-    else:
-        # IPython 2
-        from IPython.nbformat import current
-        NotebookExporter, ClearOutputPreprocessor = None, None
-
-        def v3_strip_output(nb):
-            """strip the outputs from a notebook object"""
-            nb["nbformat"] = 3
-            nb["nbformat_minor"] = 0
-            nb.metadata.pop('signature', None)
-            for cell in nb.worksheets[0].cells:
-                if 'outputs' in cell:
-                    cell['outputs'] = []
-                if 'prompt_number' in cell:
-                    cell['prompt_number'] = None
-            return nb
+import os
+import sys
+import time
+import traceback
 
 import param
+from IPython.display import Javascript, display
+from nbconvert import HTMLExporter, NotebookExporter
+from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
+from nbformat import reader
+
 from ..core.io import FileArchive, Pickler
 from ..plotting.renderer import HTML_TAGS, MIME_TYPES
+from .preprocessors import Substitute
 
 
 class NotebookArchive(FileArchive):
@@ -94,9 +65,9 @@ class NotebookArchive(FileArchive):
         self._timestamp = None
         self._tags = {MIME_TYPES[k]:v for k,v in HTML_TAGS.items() if k in MIME_TYPES}
 
-        keywords = ['%s=%s' % (k, v.__class__.__name__)
+        keywords = [f'{k}={v.__class__.__name__}'
                     for k, v in self.param.objects().items()]
-        self.auto.__func__.__doc__ = 'auto(enabled=Boolean, %s)' % ', '.join(keywords)
+        self.auto.__func__.__doc__ = f"auto(enabled=Boolean, {', '.join(keywords)})"
 
 
     def get_namespace(self):
@@ -109,7 +80,7 @@ class NotebookArchive(FileArchive):
            if not k.startswith('_') and v is sys.modules['holoviews']]
         if len(matches) == 0:
             raise Exception("Could not find holoviews module in namespace")
-        return '%s.archive' % matches[0]
+        return f'{matches[0]}.archive'
 
 
     def last_export_status(self):
@@ -138,18 +109,17 @@ class NotebookArchive(FileArchive):
         self._timestamp = tuple(time.localtime())
         kernel = r'var kernel = IPython.notebook.kernel; '
         nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
-        nbcmd = (r"var name_cmd = '%s.notebook_name = \"' + nbname + '\"'; " % self.namespace)
+        nbcmd = (rf"var name_cmd = '{self.namespace}.notebook_name = \"' + nbname + '\"'; ")
         cmd = (kernel + nbname + nbcmd + "kernel.execute(name_cmd); ")
         display(Javascript(cmd))
         time.sleep(0.5)
         self._auto=enabled
-        self.param.set_param(**kwargs)
+        self.param.update(**kwargs)
         tstamp = time.strftime(" [%Y-%m-%d %H:%M:%S]", self._timestamp)
         # When clear == True, it clears the archive, in order to start a new auto capture in a clean archive
         if clear:
             FileArchive.clear(self)
-        print("Automatic capture is now %s.%s"
-              % ('enabled' if enabled else 'disabled',
+        print("Automatic capture is now {}.{}".format('enabled' if enabled else 'disabled',
                  tstamp if enabled else ''))
 
     def export(self, timestamp=None):
@@ -166,25 +136,26 @@ class NotebookArchive(FileArchive):
         self.export_success = None
         name = self.get_namespace()
         # Unfortunate javascript hacks to get at notebook data
-        capture_cmd = ((r"var capture = '%s._notebook_data=r\"\"\"'" % name)
+        capture_cmd = ((rf"var capture = '{name}._notebook_data=r\"\"\"'")
                        + r"+json_string+'\"\"\"'; ")
         cmd = (r'var kernel = IPython.notebook.kernel; '
                + r'var json_data = IPython.notebook.toJSON(); '
                + r'var json_string = JSON.stringify(json_data); '
                + capture_cmd
-               + "var pycmd = capture + ';%s._export_with_html()'; " % name
+               + f"var pycmd = capture + ';{name}._export_with_html()'; "
                + r"kernel.execute(pycmd)")
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':self.notebook_name})
-        print(('Export name: %r\nDirectory    %r' % (export_name,
-                                                     os.path.join(os.path.abspath(self.root))))
+        print((f'Export name: {export_name!r}\nDirectory    {os.path.join(os.path.abspath(self.root))!r}')
                + '\n\nIf no output appears, please check holoviews.archive.last_export_status()')
         display(Javascript(cmd))
 
 
-    def add(self, obj=None, filename=None, data=None, info={}, html=None):
+    def add(self, obj=None, filename=None, data=None, info=None, html=None):
         "Similar to FileArchive.add but accepts html strings for substitution"
+        if info is None:
+            info = {}
         initial_last_key = list(self._files.keys())[-1] if len(self) else None
         if self._auto:
             exporters = self.exporters[:]
@@ -214,13 +185,9 @@ class NotebookArchive(FileArchive):
 
 
     def _clear_notebook(self, node):                # pragma: no cover
-        if NotebookExporter is not None:
-            exporter = NotebookExporter()
-            exporter.register_preprocessor(ClearOutputPreprocessor(enabled=True))
-            cleared,_ = exporter.from_notebook_node(node)
-        else:
-            stripped_node = v3_strip_output(node)
-            cleared = current.writes(stripped_node, 'ipynb')
+        exporter = NotebookExporter()
+        exporter.register_preprocessor(ClearOutputPreprocessor(enabled=True))
+        cleared, _ = exporter.from_notebook_node(node)
         return cleared
 
 
@@ -236,7 +203,7 @@ class NotebookArchive(FileArchive):
                 if html_key is None: continue
                 filename = self._format(basename, {'timestamp':tstamp,
                                                    'notebook':self.notebook_name})
-                fpath = filename+(('.%s' % ext) if ext else '')
+                fpath = filename+(f'.{ext}' if ext else '')
                 info = {'src':fpath, 'mime_type':info['mime_type']}
                 # No mime type
                 if 'mime_type' not in info: pass
@@ -270,7 +237,7 @@ class NotebookArchive(FileArchive):
             # If store cleared_notebook... save here
             super().export(timestamp=self._timestamp,
                            info={'notebook':self.notebook_name})
-        except:
+        except Exception:
             self.traceback = traceback.format_exc()
         else:
             self.export_success = True

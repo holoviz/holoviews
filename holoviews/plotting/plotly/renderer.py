@@ -1,21 +1,18 @@
 import base64
-
 from io import BytesIO
 
-import param
 import panel as pn
-
-with param.logging_level('CRITICAL'):
-    import plotly.graph_objs as go
-
+import param
 from param.parameterized import bothmethod
 
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from ...core.options import Store
 from ...core import HoloMap
+from ...core.options import Store
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .callbacks import callbacks
 from .util import clean_internal_figure_properties
 
+with param.logging_level('CRITICAL'):
+    import plotly.graph_objs as go
 
 
 def _PlotlyHoloviewsPane(fig_dict, **kwargs):
@@ -93,7 +90,6 @@ class PlotlyRenderer(Renderer):
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         if fmt == 'gif':
             import plotly.io as pio
-
             from PIL import Image
             from plotly.io.orca import ensure_server, shutdown_server, status
 
@@ -131,7 +127,7 @@ class PlotlyRenderer(Renderer):
             if fmt == 'svg':
                 data = data.decode('utf-8')
         else:
-            raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
+            raise ValueError(f"Unsupported format: {fmt}")
 
         if as_script:
             b64 = base64.b64encode(data).decode("utf-8")
@@ -150,7 +146,7 @@ class PlotlyRenderer(Renderer):
         options = plot.lookup_options(obj, 'plot').options
         width = options.get('width', plot.width) * factor
         height = options.get('height', plot.height) * factor
-        return dict(options, **{'width':int(width), 'height': int(height)})
+        return dict(options, width=int(width), height=int(height))
 
 
     @classmethod

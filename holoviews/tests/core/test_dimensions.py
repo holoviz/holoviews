@@ -1,16 +1,14 @@
 """
 Test cases for Dimension and Dimensioned object behaviour.
 """
-from unittest import SkipTest
-from holoviews.core import Dimensioned, Dimension
+import numpy as np
+import pandas as pd
+
+from holoviews.core import Dimension, Dimensioned
 from holoviews.element.comparison import ComparisonTestCase
+
 from ..utils import LoggingComparisonTestCase
 
-import numpy as np
-try:
-    import pandas as pd
-except:
-    pd = None
 
 class DimensionNameLabelTest(LoggingComparisonTestCase):
 
@@ -36,6 +34,24 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
 
     def test_dimension_label_kwarg(self):
         dim = Dimension('test', label='A test')
+        self.assertEqual(dim.label, 'A test')
+
+    def test_dimension_dict_empty(self):
+        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+            Dimension({})
+
+    def test_dimension_dict_label(self):
+        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+            Dimension(dict(label='A test'))
+
+    def test_dimension_dict_name(self):
+        dim = Dimension(dict(name='test'))
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.label, 'test')
+
+    def test_dimension_dict_name_and_label(self):
+        dim = Dimension(dict(name='test', label='A test'))
+        self.assertEqual(dim.name, 'test')
         self.assertEqual(dim.label, 'A test')
 
     def test_dimension_label_kwarg_and_tuple(self):
@@ -80,6 +96,12 @@ class DimensionReprTest(ComparisonTestCase):
     def test_name_dimension_repr_params_eval_equality(self):
         dim = Dimension('test', label='Test Dimension', unit='m')
         self.assertEqual(eval(repr(dim)) == dim, True)
+
+    def test_pprint_value_boolean(self):
+        # https://github.com/holoviz/holoviews/issues/5378
+        dim = Dimension('test')
+        self.assertEqual(dim.pprint_value(True), 'True')
+        self.assertEqual(dim.pprint_value(False), 'False')
 
 
 class DimensionEqualityTest(ComparisonTestCase):
@@ -167,31 +189,23 @@ class DimensionValuesTest(ComparisonTestCase):
         self.assertEqual(dim.values, self.values2)
 
     def test_dimension_values_series1(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.values1})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values1)
 
     def test_dimension_values_series2(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.values2})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values2)
 
 
     def test_dimension_values_series_duplicates1(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.duplicates1})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values1)
 
 
     def test_dimension_values_series_duplicates2(self):
-        if pd is None:
-            raise SkipTest("Pandas not available")
         df = pd.DataFrame({'col':self.duplicates2})
         dim = Dimension('test', values=df['col'])
         self.assertEqual(dim.values, self.values2)
@@ -229,12 +243,12 @@ class DimensionCloneTest(ComparisonTestCase):
 class DimensionDefaultTest(ComparisonTestCase):
 
     def test_validate_default_against_values(self):
-        msg = "Dimension\('A'\) default 1\.1 not found in declared values: \[0, 1\]"
+        msg = r"Dimension\('A'\) default 1\.1 not found in declared values: \[0, 1\]"
         with self.assertRaisesRegex(ValueError, msg):
             Dimension('A', values=[0, 1], default=1.1)
 
     def test_validate_default_against_range(self):
-        msg = "Dimension\('A'\) default 1\.1 not in declared range: \(0, 1\)"
+        msg = r"Dimension\('A'\) default 1\.1 not in declared range: \(0, 1\)"
         with self.assertRaisesRegex(ValueError, msg):
             Dimension('A', range=(0, 1), default=1.1)
 

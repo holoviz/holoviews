@@ -1,10 +1,10 @@
-import param
 import numpy as np
+import param
 
-from ...operation import interpolate_curve
 from ...element import Tiles
+from ...operation import interpolate_curve
 from ..mixins import AreaMixin, BarsMixin
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 
 
@@ -198,7 +198,6 @@ class BarPlot(BarsMixin, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    stacked = param.Boolean(default=False)
 
     style_opts = ['visible']
 
@@ -215,7 +214,7 @@ class BarPlot(BarsMixin, ElementPlot):
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
         if range_type not in ('data', 'combined'):
             return x0, y0, x1, y1
@@ -256,8 +255,8 @@ class BarPlot(BarsMixin, ElementPlot):
                 values.append(sel.iloc[0, 1] if len(sel) else 0)
             bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in xvals],
-                y: values})
+                x: xvals,
+                y: np.nan_to_num(values)})
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
             order = list(svals if stack_dim else gvals)
@@ -271,14 +270,16 @@ class BarPlot(BarsMixin, ElementPlot):
                     values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in xvals],
-                    y: values})
+                    x: xvals,
+                    y: np.nan_to_num(values)})
         else:
+            values = element.dimension_values(vdim)
             bars.append({
                 'orientation': orientation,
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
-                y: element.dimension_values(vdim)})
+                y: np.nan_to_num(values)})
+
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):

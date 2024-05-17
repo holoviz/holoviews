@@ -1,10 +1,10 @@
-import param
 import numpy as np
+import param
 
-from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
+from ..core.dimension import Dimension, process_dimensions
 from ..core.element import Element, Element2D
-from ..core.util import get_param_values, unique_iterator, OrderedDict
+from ..core.util import get_param_values, unique_iterator
 from .selection import Selection1DExpr, Selection2DExpr
 
 
@@ -32,8 +32,7 @@ class StatisticsElement(Dataset, Element2D):
         if not vdims:
             self.vdims = [Dimension('Density')]
         elif len(vdims) > 1:
-            raise ValueError("%s expects at most one vdim." %
-                             type(self).__name__)
+            raise ValueError(f"{type(self).__name__} expects at most one vdim.")
         else:
             self.vdims = process_dimensions(None, vdims)['vdims']
 
@@ -86,7 +85,7 @@ class StatisticsElement(Dataset, Element2D):
         """
         dim = self.get_dimension(dim, strict=True)
         if dim in self.vdims:
-            return np.full(len(self), np.NaN)
+            return np.full(len(self), np.nan)
         return self.interface.values(self, dim, expanded, flat)
 
     def get_dimension_type(self, dim):
@@ -129,10 +128,9 @@ class StatisticsElement(Dataset, Element2D):
             dimensions = self.kdims
         vdims = [d for d in dimensions if d in self.vdims]
         if vdims:
-            raise ValueError('%s element does not hold data for value '
-                             'dimensions. Could not return data for %s '
-                             'dimension(s).' %
-                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+            raise ValueError('{} element does not hold data for value '
+                             'dimensions. Could not return data for {} '
+                             'dimension(s).'.format(type(self).__name__, ', '.join([d.name for d in vdims])))
         return super().dframe(dimensions, False)
 
     def columns(self, dimensions=None):
@@ -153,11 +151,10 @@ class StatisticsElement(Dataset, Element2D):
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         vdims = [d for d in dimensions if d in self.vdims]
         if vdims:
-            raise ValueError('%s element does not hold data for value '
-                             'dimensions. Could not return data for %s '
-                             'dimension(s).' %
-                             (type(self).__name__, ', '.join([d.name for d in vdims])))
-        return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
+            raise ValueError('{} element does not hold data for value '
+                             'dimensions. Could not return data for {} '
+                             'dimension(s).'.format(type(self).__name__, ', '.join([d.name for d in vdims])))
+        return dict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
 class Bivariate(Selection2DExpr, StatisticsElement):

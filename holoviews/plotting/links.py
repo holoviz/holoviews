@@ -1,5 +1,4 @@
 import weakref
-
 from collections import defaultdict
 
 import param
@@ -36,9 +35,9 @@ class Link(param.Parameterized):
 
     def __init__(self, source, target=None, **params):
         if source is None:
-            raise ValueError('%s must define a source' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a source')
         if self._requires_target and target is None:
-            raise ValueError('%s must define a target.' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a target.')
 
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
@@ -69,10 +68,10 @@ class Link(param.Parameterized):
         if self.source in self.registry:
             links = self.registry[self.source]
             params = {
-                k: v for k, v in self.param.get_param_values() if k != 'name'}
+                k: v for k, v in self.param.values().items() if k != 'name'}
             for link in links:
                 link_params = {
-                    k: v for k, v in link.param.get_param_values() if k != 'name'}
+                    k: v for k, v in link.param.values().items() if k != 'name'}
                 if (type(link) is type(self) and link.source is self.source
                     and link.target is self.target and params == link_params):
                     return
@@ -96,10 +95,25 @@ class RangeToolLink(Link):
     a subset of a larger dataset in more detail. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
+
+    Example of how to use RangeToolLink can be found here:
+    https://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
     """
 
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
         Which axes to link the tool to.""")
+
+    boundsx = param.Tuple(default=None, length=2, doc="""
+        (start, end) bounds for the x-axis""")
+
+    boundsy = param.Tuple(default=None, length=2, doc="""
+        (start, end) bounds for the y-axis""")
+
+    intervalsx = param.Tuple(default=None, length=2, doc="""
+        (min, max) intervals for the x-axis""")
+
+    intervalsy = param.Tuple(default=None, length=2, doc="""
+        (min, max) intervals for the y-axis""")
 
     _requires_target = True
 

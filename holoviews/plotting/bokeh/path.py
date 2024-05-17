@@ -1,7 +1,7 @@
 from collections import defaultdict
 
-import param
 import numpy as np
+import param
 
 from ...core import util
 from ...element import Contours, Polygons
@@ -10,10 +10,14 @@ from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
-    expand_batched_style, base_properties, line_properties, fill_properties,
-    mpl_to_bokeh, validate
+    base_properties,
+    expand_batched_style,
+    fill_properties,
+    line_properties,
+    mpl_to_bokeh,
+    validate,
 )
-from .util import bokeh_version, multi_polygons_data
+from .util import multi_polygons_data
 
 
 class PathPlot(LegendPlot, ColorbarPlot):
@@ -40,7 +44,14 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     def _element_transform(self, transform, element, ranges):
         if isinstance(element, Contours):
-            return super()._element_transform(transform, element, ranges)
+            data = super()._element_transform(transform, element, ranges)
+            new_data = []
+            for d in data:
+                if isinstance(d, np.ndarray) and len(d) == 1:
+                    new_data.append(d[0])
+                else:
+                    new_data.append(d)
+            return np.array(new_data)
         return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
                                for el in element.split()])
 
@@ -65,7 +76,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
-                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+                data[dim] = [v] * len(next(iter(data.values())))
 
 
     def get_data(self, element, ranges, style):
@@ -138,7 +149,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         zorders = self._updated_zorders(element)
         for (key, el), zorder in zip(element.data.items(), zorders):
             el_opts = self.lookup_options(el, 'plot').options
-            self.param.set_param(**{k: v for k, v in el_opts.items()
+            self.param.update(**{k: v for k, v in el_opts.items()
                                     if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
@@ -152,7 +163,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 continue
 
             # Apply static styles
-            nvals = len(list(eldata.values())[0])
+            nvals = len(next(iter(eldata.values())))
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
             elmapping.update({k: v for k, v in smapping.items() if k not in elmapping})
@@ -212,7 +223,7 @@ class ContourPlot(PathPlot):
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
-                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+                data[dim] = [v] * len(next(iter(data.values())))
 
     def get_data(self, element, ranges, style):
         if self._has_holes is None:
@@ -227,7 +238,7 @@ class ContourPlot(PathPlot):
             element = element.clone([element.data], datatype=type(element).datatype)
 
         if self.static_source:
-            data = dict()
+            data = {}
             xs = self.handles['cds'].data['xs']
         else:
             if has_holes:
@@ -266,8 +277,7 @@ class ContourPlot(PathPlot):
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         if self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-            mapping[legend_prop] = dim_name
+            mapping['legend_field'] = dim_name
         return data, mapping, style
 
     def _init_glyph(self, plot, mapping, properties):

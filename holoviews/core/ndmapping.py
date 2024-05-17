@@ -6,18 +6,24 @@ also enables slicing over multiple dimension ranges.
 
 from itertools import cycle
 from operator import itemgetter
-import numpy as np
 
+import numpy as np
+import pandas as pd
 import param
 
 from . import util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
+from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
-    unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
-    process_ellipses, get_ndmapping_label
+    dimension_sort,
+    get_ndmapping_label,
+    process_ellipses,
+    sanitize_identifier,
+    unique_iterator,
+    wrap_tuple,
 )
 
-class item_check(object):
+
+class item_check:
     """
     Context manager to allow creating NdMapping types without
     performing the usual item_checks, providing significant
@@ -37,7 +43,7 @@ class item_check(object):
         MultiDimensionalMapping._check_items = self._enabled
 
 
-class sorted_context(object):
+class sorted_context:
     """
     Context manager to temporarily disable sorting on NdMapping
     types. Retains the current sort order, which can be useful as
@@ -101,11 +107,7 @@ class MultiDimensionalMapping(Dimensioned):
             params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
-        super().__init__(OrderedDict(), **dict(params))
-        if type(initial_items) is dict and not self.sort:
-            raise ValueError('If sort=False the data must define a fixed '
-                             'ordering, please supply a list of items or '
-                             'an OrderedDict, not a regular dictionary.')
+        super().__init__({}, **dict(params))
 
         self._next_ind = 0
         self._check_key_type = True
@@ -118,12 +120,12 @@ class MultiDimensionalMapping(Dimensioned):
                 initial_items = initial_items.items()
             elif isinstance(initial_items, MultiDimensionalMapping):
                 initial_items = initial_items.data.items()
-            self.data = OrderedDict((k if isinstance(k, tuple) else (k,), v)
+            self.data = dict((k if isinstance(k, tuple) else (k,), v)
                                     for k, v in initial_items)
             if self.sort:
                 self._resort()
         elif initial_items is not None:
-            self.update(OrderedDict(initial_items))
+            self.update(dict(initial_items))
 
 
     def _item_check(self, dim_vals, data):
@@ -139,10 +141,11 @@ class MultiDimensionalMapping(Dimensioned):
                 data_type = tuple(dt.__name__ for dt in self.data_type)
             else:
                 data_type = self.data_type.__name__
-            raise TypeError('{slf} does not accept {data} type, data elements have '
-                            'to be a {restr}.'.format(slf=type(self).__name__,
-                                                      data=type(data).__name__,
-                                                      restr=data_type))
+
+            slf = type(self).__name__
+            data = type(data).__name__
+            raise TypeError(f'{slf} does not accept {data} type, data elements have '
+                            f'to be a {data_type}.')
         elif not len(dim_vals) == self.ndims:
             raise KeyError('The data contains keys of length %d, but the kdims '
                            'only declare %d dimensions. Ensure that the number '
@@ -168,12 +171,12 @@ class MultiDimensionalMapping(Dimensioned):
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
-                raise KeyError('%s dimension value %s not in'
-                               ' specified dimension values.' % (dim, repr(val)))
+                raise KeyError(f'{dim} dimension value {val!r} not in'
+                               ' specified dimension values.')
 
         # Updates nested data structures rather than simply overriding them.
         if (update and (dim_vals in self.data)
-            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, OrderedDict))):
+            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, dict))):
             self.data[dim_vals].update(data)
         else:
             self.data[dim_vals] = data
@@ -247,7 +250,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        self.data = OrderedDict(dimension_sort(self.data, self.kdims, self.vdims,
+        self.data = dict(dimension_sort(self.data, self.kdims, self.vdims,
                                                range(self.ndims)))
 
 
@@ -323,7 +326,7 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = asdim(dimension)
 
         if dimension in self.dimensions():
-            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+            raise Exception(f'{dimension.name} dimension already defined')
 
         if vdim and self._deep_indexable:
             raise Exception('Cannot add value dimension to object that is deep indexable')
@@ -340,12 +343,11 @@ class MultiDimensionalMapping(Dimensioned):
 
         if isinstance(dim_val, str) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
-        else:
-            if not len(dim_val) == len(self):
-                raise ValueError("Added dimension values must be same length"
-                                 "as existing keys.")
+        elif not len(dim_val) == len(self):
+            raise ValueError("Added dimension values must be same length"
+                                "as existing keys.")
 
-        items = OrderedDict()
+        items = {}
         for dval, (key, val) in zip(dim_val, self.data.items()):
             if vdim:
                 new_val = list(val)
@@ -401,10 +403,10 @@ class MultiDimensionalMapping(Dimensioned):
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
         else:
-            return super(MultiDimensionalMapping, self).dimension_values(dimension, expanded, flat)
+            return super().dimension_values(dimension, expanded, flat)
 
 
-    def reindex(self, kdims=[], force=False):
+    def reindex(self, kdims=None, force=False):
         """Reindexes object dropping static or supplied kdims
 
         Creates a new object with a reordered or reduced set of key
@@ -422,6 +424,8 @@ class MultiDimensionalMapping(Dimensioned):
         Returns:
             Reindexed object
         """
+        if kdims is None:
+            kdims = []
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
             kdims = [kdims]
@@ -431,9 +435,9 @@ class MultiDimensionalMapping(Dimensioned):
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
-        reindexed_items = OrderedDict(
+        reindexed_items = dict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set([d.name for d in self.kdims]).difference(kdims)
+        reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
 
@@ -481,12 +485,12 @@ class MultiDimensionalMapping(Dimensioned):
             dimensions = getattr(self, group)
             if dimensions:
                 group = aliases[group].split('_')[0]
-                info_str += '%s Dimensions: \n' % group.capitalize()
+                info_str += f'{group.capitalize()} Dimensions: \n'
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
-                info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
+                info_str += f'\t {d.pprint_label}: {dmin}...{dmax} \n'
         return info_str
 
 
@@ -787,7 +791,7 @@ class UniformNdMapping(NdMapping):
         Returns:
             Cloned object
         """
-        settings = dict(self.param.get_param_values())
+        settings = self.param.values()
         if settings.get('group', None) != self._group:
             settings.pop('group')
         if settings.get('label', None) != self._label:
@@ -834,6 +838,8 @@ class UniformNdMapping(NdMapping):
             elements
         """
         from .data import concat
+        from .overlay import CompositeOverlay
+
         if not dimensions:
             dimensions = self.kdims
         if not isinstance(dimensions, list): dimensions = [dimensions]
@@ -850,7 +856,7 @@ class UniformNdMapping(NdMapping):
         for key, group in groups.items():
             last = group.values()[-1]
             if isinstance(last, UniformNdMapping):
-                group_data = OrderedDict([
+                group_data = dict([
                     (k, v.collapse()) for k, v in group.items()
                 ])
                 group = group.clone(group_data)
@@ -859,11 +865,17 @@ class UniformNdMapping(NdMapping):
                 if function:
                     agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
                     group_data = group.type(agg)
+            elif issubclass(group.type, CompositeOverlay) and hasattr(self, '_split_overlays'):
+                keys, maps = self._split_overlays()
+                group_data = group.type(dict([
+                    (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
+                    for key, ndmap in zip(keys, maps)
+                ]))
             else:
-                group_data = [el.data for el in group]
-                args = (group_data, function, group.last.kdims)
-                data = group.type.collapse_data(*args, **kwargs)
-                group_data = group.last.clone(data)
+                raise ValueError(
+                    "Could not determine correct collapse operation "
+                    "for items of type: {group.type!r}."
+                )
             collapsed[key] = group_data
         return collapsed if self.ndims-len(dimensions) else collapsed.last
 
@@ -881,7 +893,6 @@ class UniformNdMapping(NdMapping):
         Returns:
             DataFrame of columns corresponding to each dimension
         """
-        import pandas as pd
         if dimensions is None:
             outer_dimensions = self.kdims
             inner_dimensions = None
@@ -931,8 +942,7 @@ class UniformNdMapping(NdMapping):
     @group.setter
     def group(self, group):
         if group is not None and not sanitize_identifier.allowable(group):
-            raise ValueError("Supplied group %s contains invalid "
-                             "characters." % self.group)
+            raise ValueError(f"Supplied group {self.group} contains invalid characters.")
         self._group = group
 
 
@@ -941,19 +951,17 @@ class UniformNdMapping(NdMapping):
         "Label inherited from items"
         if self._label:
             return self._label
+        elif len(self):
+            label = get_ndmapping_label(self, 'label')
+            return '' if label is None else label
         else:
-            if len(self):
-                label = get_ndmapping_label(self, 'label')
-                return '' if label is None else label
-            else:
-                return ''
+            return ''
 
 
     @label.setter
     def label(self, label):
         if label is not None and not sanitize_identifier.allowable(label):
-            raise ValueError("Supplied group %s contains invalid "
-                             "characters." % self.group)
+            raise ValueError(f"Supplied group {self.group} contains invalid characters.")
         self._label = label
 
     @property
@@ -973,8 +981,7 @@ class UniformNdMapping(NdMapping):
         if not self._check_items:
             return
         elif self.type is not None and (type(data) != self.type):
-            raise AssertionError("%s must only contain one type of object, not both %s and %s." %
-                                 (self.__class__.__name__, type(data).__name__, self.type.__name__))
+            raise AssertionError(f"{self.__class__.__name__} must only contain one type of object, not both {type(data).__name__} and {self.type.__name__}.")
         super()._item_check(dim_vals, data)
 
 
@@ -982,9 +989,8 @@ class UniformNdMapping(NdMapping):
         from .overlay import Overlay
         if isinstance(other, type(self)):
             if self.kdims != other.kdims:
-                raise KeyError("Can only overlay two %ss with "
-                               "non-matching key dimensions."
-                               % type(self).__name__)
+                raise KeyError(f"Can only overlay two {type(self).__name__}s with "
+                               "non-matching key dimensions.")
             items = []
             self_keys = list(self.data.keys())
             other_keys = list(other.data.keys())
@@ -1004,7 +1010,10 @@ class UniformNdMapping(NdMapping):
 
         overlayed_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]
-        return self.clone(overlayed_items)
+        try:
+            return self.clone(overlayed_items)
+        except NotImplementedError:
+            return NotImplemented
 
 
     def __rmul__(self, other):

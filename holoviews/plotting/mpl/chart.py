@@ -1,28 +1,33 @@
-import param
-import numpy as np
 import matplotlib as mpl
-
+import numpy as np
+import param
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
+from packaging.version import Version
 
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
-    unique_array, isscalar, isdatetime
+    dt64_to_dt,
+    dt_to_int,
+    isdatetime,
+    isfinite,
+    isscalar,
+    match_spec,
+    search_indices,
+    unique_array,
 )
-from ...element import Raster, HeatMap
+from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..plot import PlotSelector
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
-from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
-from .element import ElementPlot, ColorbarPlot, LegendPlot
-from .path  import PathPlot
+from ..plot import PlotSelector
+from ..util import compute_sizes, get_min_distance, get_sideplot_ranges
+from .element import ColorbarPlot, ElementPlot, LegendPlot
+from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
 from .util import mpl_version
-
 
 
 class ChartPlot(ElementPlot):
@@ -123,7 +128,7 @@ class ErrorPlot(ColorbarPlot):
     def init_artists(self, ax, plot_data, plot_kwargs):
         handles = ax.errorbar(*plot_data, **plot_kwargs)
         bottoms, tops = None, None
-        if mpl_version >= str('2.0'):
+        if mpl_version >= Version('2.0'):
             _, caps, verts = handles
             if caps:
                 bottoms, tops = caps
@@ -147,11 +152,9 @@ class ErrorPlot(ColorbarPlot):
             with abbreviated_exception():
                 raise ValueError('Mapping a continuous or categorical '
                                  'dimension to a color on a ErrorBarPlot '
-                                 'is not supported by the {backend} backend. '
+                                 f'is not supported by the {self.renderer.backend} backend. '
                                  'To map a dimension to a color supply '
-                                 'an explicit list of rgba colors.'.format(
-                                     backend=self.renderer.backend
-                                 )
+                                 'an explicit list of rgba colors.'
                 )
 
         style['fmt'] = 'none'
@@ -209,7 +212,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
     style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle',
-                  'fill', 'capstyle', 'interpolate']
+                  'fill', 'capstyle', 'interpolate', 'step']
 
     _nonvectorized_styles = style_opts
 
@@ -277,7 +280,7 @@ class SpreadPlot(AreaPlot):
         pos_error = element.dimension_values(pos_idx)
         return (xs, mean-neg_error, mean+pos_error), style, {}
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         return ChartPlot.get_extents(self, element, ranges, range_type)
 
 
@@ -336,11 +339,9 @@ class HistogramPlot(ColorbarPlot):
             if 'vmin' in style:
                 raise ValueError('Mapping a continuous dimension to a '
                                  'color on a HistogramPlot is not '
-                                 'supported by the {backend} backend. '
+                                 f'supported by the {self.renderer.backend} backend. '
                                  'To map a dimension to a color supply '
-                                 'an explicit list of rgba colors.'.format(
-                                     backend=self.renderer.backend
-                                 )
+                                 'an explicit list of rgba colors.'
                 )
 
         # Plot bars and make any adjustments
@@ -384,16 +385,16 @@ class HistogramPlot(ColorbarPlot):
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.xticks)
-            labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
+            labels = [f"{np.rad2deg(x):.0f}\N{DEGREE SIGN}" for x in xvals]
         elif self.xticks:
             dim = element.get_dimension(0)
-            inds = np.linspace(0, len(edges), self.xticks, dtype=np.int)
+            inds = np.linspace(0, len(edges), self.xticks, dtype=int)
             edges = list(edges) + [edges[-1] + widths[-1]]
             xvals = [edges[i] for i in inds]
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
         s0, s1 = ranges[ydim.name]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
@@ -545,7 +546,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(ChartPlot, ColorbarPlot):
+class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
@@ -632,8 +633,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if sizes is None:
                 eltype = type(element).__name__
                 self.param.warning(
-                    '%s dimension is not numeric, cannot use to '
-                    'scale %s size.' % (sdim.pprint_label, eltype))
+                    f'{sdim.pprint_label} dimension is not numeric, cannot use to '
+                    f'scale {eltype} size.')
             else:
                 style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
@@ -846,12 +847,17 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     _nonvectorized_styles = ['visible']
 
-    legend_specs = dict(LegendPlot.legend_specs, **{
-        'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
-                       ncol=3, loc=3, mode="expand", borderaxespad=0.),
-        'bottom': dict(ncol=3, mode="expand", loc=2,
-                       bbox_to_anchor=(0., -0.4, 1., .102),
-                       borderaxespad=0.1)})
+    legend_specs = dict(
+        LegendPlot.legend_specs,
+        top=dict(
+            bbox_to_anchor=(0., 1.02, 1., .102),
+            ncol=3, loc=3, mode="expand", borderaxespad=0.
+        ),
+        bottom=dict(
+            bbox_to_anchor=(0., -0.4, 1., .102),
+            ncol=3, loc=2, mode="expand", borderaxespad=0.1
+        )
+    )
 
     def _get_values(self, element, ranges):
         """
@@ -920,6 +926,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     def _create_bars(self, axis, element, ranges, style):
         # Get values dimensions, and style information
         (gdim, cdim, sdim), values = self._get_values(element, ranges)
+
+        cats = None
         style_dim = None
         if sdim:
             cats = values['stack']
@@ -935,7 +943,23 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             style_map = {None: {}}
 
         # Compute widths
-        width = (1-(2.*self.bar_padding)) / len(values.get('category', [None]))
+        xvals = element.dimension_values(0)
+        is_dt = isdatetime(xvals)
+        continuous = True
+        if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
+            xdiff_vals = date2num(xvals) if is_dt else xvals
+            xdiff = np.abs(np.diff(xdiff_vals))
+            if len(np.unique(xdiff)) == 1:
+                # if all are same
+                xdiff = 1
+            else:
+                xdiff = np.min(xdiff)
+            width = (1 - self.bar_padding) * xdiff
+        else:
+            xdiff = len(values.get('category', [None]))
+            width = (1 - self.bar_padding) / xdiff
+            continuous = False
+
         if self.invert_axes:
             plot_fn = 'barh'
             x, y, w, bottom = 'y', 'width', 'height', 'left'
@@ -946,6 +970,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Iterate over group, category and stack dimension values
         # computing xticks and drawing bars and applying styles
         xticks, labels, bar_data = [], [], {}
+        categories = values.get('category', [None])
+        num_categories = len(categories)
         for gidx, grp in enumerate(values.get('group', [None])):
             sel_key = {}
             label = None
@@ -953,14 +979,22 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 grp_label = gdim.pprint_value(grp)
                 sel_key[gdim.name] = [grp]
                 yalign = -0.04 if cdim and self.multi_level else 0
-                xticks.append((gidx+0.5, grp_label, yalign))
-            for cidx, cat in enumerate(values.get('category', [None])):
-                xpos = gidx+self.bar_padding+(cidx*width) - 0.5
+                goffset = width * (num_categories / 2 - 0.5)
+                if num_categories > 1:
+                    # mini offset needed or else combines with non-continuous
+                    goffset += width / 1000
+                if continuous:
+                    xpos = xvals[gidx]
+                else:
+                    xpos = gidx+goffset+0.5
+                    xticks.append((xpos, grp_label, yalign))
+            for cidx, cat in enumerate(categories):
+                xpos = xvals[gidx] if continuous else (gidx+(cidx*width) - 0.5)
                 if cat is not None:
                     label = cdim.pprint_value(cat)
                     sel_key[cdim.name] = [cat]
-                    if self.multi_level:
-                        xticks.append((xpos+width/2., label, 0))
+                    if self.multi_level and not continuous:
+                        xticks.append((xpos, label, 0))
                 prev = 0
                 for stk in values.get('stack', [None]):
                     if stk is not None:
@@ -968,8 +1002,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                         sel_key[sdim.name] = [stk]
                     el = element.select(**sel_key)
                     vals = el.dimension_values(element.vdims[0].name)
-                    val = float(vals[0]) if len(vals) else np.NaN
-                    xval = xpos+width/2.
+                    val = float(vals[0]) if len(vals) else np.nan
+                    xval = xpos
+
                     if label in bar_data:
                         group = bar_data[label]
                         group[x].append(xval)
@@ -1008,8 +1043,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             legend_opts.update(**leg_spec)
             axis.legend(title=title, **legend_opts)
 
-        return bars, xticks, ax_dims
-
+        x_range = ranges[gdim.name]["data"]
+        if continuous and not is_dt:
+            if style.get('align', 'center') == 'center':
+                left_multiplier = 0.5
+                right_multiplier = 0.5
+            else:
+                left_multiplier = 0
+                right_multiplier = 1
+            ranges[gdim.name]["data"] = (
+                x_range[0] - width * left_multiplier,
+                x_range[1] + width * right_multiplier
+            )
+        return bars, xticks if not continuous else None, ax_dims
 
 
 class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
@@ -1038,7 +1084,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
-        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+        if "array" not in plot_kwargs and 'cmap' in plot_kwargs:
             del plot_kwargs['cmap']
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)

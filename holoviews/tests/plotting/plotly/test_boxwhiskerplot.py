@@ -19,7 +19,7 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_boxwhisker_single_invert_axes(self):
-        box = BoxWhisker([1, 1, 2, 3, 3, 4, 5, 5]).options(invert_axes=True)
+        box = BoxWhisker([1, 1, 2, 3, 3, 4, 5, 5]).opts(invert_axes=True)
         state = self._get_plot_state(box)
         self.assertEqual(len(state['data']), 1)
         self.assertEqual(state['data'][0]['type'], 'box')
@@ -44,7 +44,7 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_boxwhisker_multi_invert_axes(self):
-        box = BoxWhisker((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').options(
+        box = BoxWhisker((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').opts(
             invert_axes=True)
         state = self._get_plot_state(box)
         self.assertEqual(len(state['data']), 2)
@@ -59,6 +59,6 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
 
     def test_visible(self):
-        element = BoxWhisker(([3, 2, 1], [0, 1, 2])).options(visible=False)
+        element = BoxWhisker(([3, 2, 1], [0, 1, 2])).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)

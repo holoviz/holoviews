@@ -14,13 +14,13 @@ import numpy as np
 import param
 import pyparsing as pp
 
-from ..core.options import Options, Cycle, Palette
+from ..core.options import Cycle, Options, Palette
 from ..core.util import merge_option_dicts
 from ..operation import Compositor
 from .transform import dim
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
+allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
 
 
 # To generate warning in the standard param style
@@ -29,7 +29,7 @@ allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\(
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
-class Parser(object):
+class Parser:
     """
     Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
@@ -54,7 +54,7 @@ class Parser(object):
                 new_tok = [s for t in tok for s in
                            (cls.recurse_token(t, inner)
                             if isinstance(t, list) else [t])]
-                recursed.append((inner % ''.join(new_tok)))
+                recursed.append(inner % ''.join(new_tok))
             else:
                 recursed.append(tok)
         return inner % ''.join(recursed)
@@ -78,7 +78,7 @@ class Parser(object):
         return tokens
 
     @classmethod
-    def todict(cls, parseresult, mode='parens', ns={}):
+    def todict(cls, parseresult, mode='parens', ns=None):
         """
         Helper function to return dictionary given the parse results
         from a pyparsing.nestedExpr object (containing keywords).
@@ -86,6 +86,8 @@ class Parser(object):
         The ns is a dynamic namespace (typically the IPython Notebook
         namespace) used to update the class-level namespace.
         """
+        if ns is None:
+            ns = {}
         grouped, kwargs = [], {}
         tokens = cls.collect_tokens(parseresult, mode)
         # Group tokens without '=' and append to last token containing '='
@@ -109,12 +111,11 @@ class Parser(object):
                               (',.', '.')]:
                 keyword = keyword.replace(fst, snd)
             try:
-                kwargs.update(eval('dict(%s)' % keyword,
+                kwargs.update(eval(f'dict({keyword})',
                                    dict(cls.namespace, **ns)))
-            except:
+            except Exception:
                 if cls.abort_on_eval_failure:
-                    raise SyntaxError("Could not evaluate keyword: %r"
-                                      % keyword)
+                    raise SyntaxError(f"Could not evaluate keyword: {keyword!r}") from None
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"
                 parsewarning.warning(msg % keyword)
 
@@ -232,16 +233,15 @@ class OptsSpec(Parser):
         for normopt in options:
             if opts.count(normopt) > 1:
                 raise SyntaxError("Normalization specification must not"
-                                  " contain repeated %r" % normopt)
+                                  f" contain repeated {normopt!r}")
 
         if not all(opt in options for opt in opts):
-            raise SyntaxError("Normalization option not one of %s"
-                              % ", ".join(options))
+            raise SyntaxError(f"Normalization option not one of {', '.join(options)}")
         excluded = [('+framewise', '-framewise'), ('+axiswise', '-axiswise')]
         for pair in excluded:
             if all(exclude in opts for exclude in pair):
                 raise SyntaxError("Normalization specification cannot"
-                                  " contain both %s and %s" % (pair[0], pair[1]))
+                                  f" contain both {pair[0]} and {pair[1]}")
 
         # If unspecified, default is -axiswise and -framewise
         if len(opts) == 1 and opts[0].endswith('framewise'):
@@ -301,11 +301,13 @@ class OptsSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line, ns={}):
+    def parse(cls, line, ns=None):
         """
         Parse an options specification, returning a dictionary with
         path keys and {'plot':<options>, 'style':<options>} values.
         """
+        if ns is None:
+            ns = {}
         parses  = [p for p in cls.opts_spec.scanString(line)]
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
@@ -313,7 +315,7 @@ class OptsSpec(Parser):
             e = parses[0][2]
             processed = line[:e]
             if (processed.strip() != line.strip()):
-                raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
+                raise SyntaxError(f"Failed to parse remainder of string: {line[e:]!r}")
 
         grouped_paths = cls._group_paths_without_options(cls.opts_spec.parseString(line))
         parse = {}
@@ -346,11 +348,13 @@ class OptsSpec(Parser):
         }
 
     @classmethod
-    def parse_options(cls, line, ns={}):
+    def parse_options(cls, line, ns=None):
         """
         Similar to parse but returns a list of Options objects instead
         of the dictionary format.
         """
+        if ns is None:
+            ns = {}
         parsed = cls.parse(line, ns=ns)
         options_list = []
         for spec in sorted(parsed.keys()):
@@ -402,10 +406,12 @@ class CompositorSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line, ns={}):
+    def parse(cls, line, ns=None):
         """
         Parse compositor specifications, returning a list Compositors
         """
+        if ns is None:
+            ns = {}
         definitions = []
         parses  = [p for p in cls.compositor_spec.scanString(line)]
         if len(parses) != 1:
@@ -414,7 +420,7 @@ class CompositorSpec(Parser):
             e = parses[0][2]
             processed = line[:e]
             if (processed.strip() != line.strip()):
-                raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
+                raise SyntaxError(f"Failed to parse remainder of string: {line[e:]!r}")
 
         opmap = {op.__name__:op for op in Compositor.operations}
         for group in cls.compositor_spec.parseString(line):
@@ -428,8 +434,7 @@ class CompositorSpec(Parser):
             spec = ' '.join(group['spec'].asList()[0])
 
             if  group['op'] not in opmap:
-                raise SyntaxError("Operation %s not available for use with compositors."
-                                  % group['op'])
+                raise SyntaxError("Operation {} not available for use with compositors.".format(group['op']))
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets', ns=ns)
 

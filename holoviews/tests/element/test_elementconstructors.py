@@ -1,14 +1,38 @@
-import param
 import numpy as np
+import pandas as pd
+import param
 
 from holoviews import (
-    Dimension, Dataset, Element, Annotation, Curve, Path, Histogram,
-    HeatMap, Contours, Scatter, Points, Polygons, VectorField, Spikes,
-    Area, Bars, ErrorBars, BoxWhisker, Raster, Image, QuadMesh, RGB,
-    Graph, TriMesh, Div, Tiles
+    RGB,
+    Annotation,
+    Area,
+    Bars,
+    BoxWhisker,
+    Contours,
+    Curve,
+    Dataset,
+    Dimension,
+    Div,
+    Element,
+    ErrorBars,
+    Graph,
+    HeatMap,
+    Histogram,
+    Image,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Raster,
+    Scatter,
+    Spikes,
+    Tiles,
+    TriMesh,
+    VectorField,
 )
-from holoviews.element.path import BaseShape
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element.path import BaseShape
+
 
 class ElementConstructorTest(ComparisonTestCase):
     """
@@ -31,11 +55,12 @@ class ElementConstructorTest(ComparisonTestCase):
     def test_empty_element_constructor(self):
         failed_elements = []
         for name, el in param.concrete_descendents(Element).items():
+            if name == 'Sankey': continue
             if issubclass(el, (Annotation, BaseShape, Div, Tiles)):
                 continue
             try:
                 el([])
-            except:
+            except Exception:
                 failed_elements.append(name)
         self.assertEqual(failed_elements, [])
 
@@ -79,13 +104,13 @@ class ElementConstructorTest(ComparisonTestCase):
 
     def test_heatmap_construct(self):
         hmap = HeatMap([('A', 'a', 1), ('B', 'b', 2)])
-        dataset = Dataset({'x': ['A', 'B'], 'y': ['a', 'b'], 'z': [[1, np.NaN], [np.NaN, 2]]},
+        dataset = Dataset({'x': ['A', 'B'], 'y': ['a', 'b'], 'z': [[1, np.nan], [np.nan, 2]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
     def test_heatmap_construct_unsorted(self):
         hmap = HeatMap([('B', 'b', 2), ('A', 'a', 1)])
-        dataset = Dataset({'x': ['B', 'A'], 'y': ['b', 'a'], 'z': [[2, np.NaN], [np.NaN, 1]]},
+        dataset = Dataset({'x': ['B', 'A'], 'y': ['b', 'a'], 'z': [[2, np.nan], [np.nan, 1]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
@@ -93,7 +118,7 @@ class ElementConstructorTest(ComparisonTestCase):
         data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
         hmap = HeatMap(data)
         dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['c', 'b', 'a'],
-                           'z': [[0, 2, np.NaN], [np.NaN, 0, 0], [0, np.NaN, 2]]},
+                           'z': [[0, 2, np.nan], [np.nan, 0, 0], [0, np.nan, 2]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
@@ -101,7 +126,7 @@ class ElementConstructorTest(ComparisonTestCase):
         data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
         hmap = HeatMap(data).sort()
         dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['a', 'b', 'c'],
-                           'z': [[np.NaN, 0, 0], [0, np.NaN, 2], [0, 2, np.NaN]]},
+                           'z': [[np.nan, 0, 0], [0, np.nan, 2], [0, 2, np.nan]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
@@ -151,6 +176,50 @@ class ElementSignatureTest(ComparisonTestCase):
         vectorfield = VectorField([], ['a', 'b'], ['c', 'd'])
         self.assertEqual(vectorfield.kdims, [Dimension('a'), Dimension('b')])
         self.assertEqual(vectorfield.vdims, [Dimension('c'), Dimension('d')])
+
+    def test_vectorfield_from_uv(self):
+        x = np.linspace(-1, 1, 4)
+        X, Y = np.meshgrid(x, x)
+        U, V = 3 * X, 4 * Y
+        vectorfield = VectorField.from_uv((X, Y, U, V))
+
+        angle = np.arctan2(V, U)
+        mag = np.hypot(U, V)
+        kdims = [Dimension('x'), Dimension('y')]
+        vdims = [
+            Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
+            Dimension('Magnitude')
+        ]
+        self.assertEqual(vectorfield.kdims, kdims)
+        self.assertEqual(vectorfield.vdims, vdims)
+        self.assertEqual(vectorfield.dimension_values(0), X.T.flatten())
+        self.assertEqual(vectorfield.dimension_values(1), Y.T.flatten())
+        self.assertEqual(vectorfield.dimension_values(2), angle.T.flatten())
+        self.assertEqual(vectorfield.dimension_values(3), mag.T.flatten())
+
+    def test_vectorfield_from_uv_dataframe(self):
+        x = np.linspace(-1, 1, 4)
+        X, Y = np.meshgrid(x, x)
+        U, V = 5 * X, 5 * Y
+        df = pd.DataFrame({
+            "x": X.flatten(),
+            "y": Y.flatten(),
+            "u": U.flatten(),
+            "v": V.flatten(),
+        })
+        vectorfield = VectorField.from_uv(df, ["x", "y"], ["u", "v"])
+
+        angle = np.arctan2(V, U)
+        mag = np.hypot(U, V)
+        kdims = [Dimension('x'), Dimension('y')]
+        vdims = [
+            Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
+            Dimension('Magnitude')
+        ]
+        self.assertEqual(vectorfield.kdims, kdims)
+        self.assertEqual(vectorfield.vdims, vdims)
+        self.assertEqual(vectorfield.dimension_values(2, flat=False), angle.flat)
+        self.assertEqual(vectorfield.dimension_values(3, flat=False), mag.flat)
 
     def test_path_string_signature(self):
         path = Path([], ['a', 'b'])

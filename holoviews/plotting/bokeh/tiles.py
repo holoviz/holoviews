@@ -1,6 +1,5 @@
 import numpy as np
-
-from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource
+from bokeh.models import BBoxTileSource, QUADKEYTileSource, WMTSTileSource
 
 from ...core.options import SkipRendering
 from ...element.tiles import _ATTRIBUTIONS
@@ -12,7 +11,7 @@ class TilePlot(ElementPlot):
     style_opts = ['alpha', 'render_parents', 'level', 'smoothing', 'min_zoom', 'max_zoom']
     selection_display = None
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if (not self.overlaid and all(e is None or not np.isfinite(e) for e in extents)
             and range_type in ('combined', 'data')):
@@ -23,11 +22,14 @@ class TilePlot(ElementPlot):
         return extents
 
     def get_data(self, element, ranges, style):
-        if not isinstance(element.data, str):
-            SkipRendering("WMTS element data must be a URL string, "
-                          "bokeh cannot render %r" % element.data)
+        if not isinstance(element.data, (str, dict)):
+            SkipRendering("WMTS element data must be a URL string, dictionary, or "
+                          "xyzservices.TileProvider, bokeh cannot "
+                          f"render {element.data!r}")
         if element.data is None:
             raise ValueError("Tile source URL may not be None with the bokeh backend")
+        elif isinstance(element.data, dict):
+            tile_source = WMTSTileSource
         elif '{Q}' in element.data:
             tile_source = QUADKEYTileSource
         elif all(kw in element.data for kw in ('{XMIN}', '{XMAX}', '{YMIN}', '{YMAX}')):
@@ -38,13 +40,20 @@ class TilePlot(ElementPlot):
             raise ValueError('Tile source URL format not recognized. '
                              'Must contain {X}/{Y}/{Z}, {XMIN}/{XMAX}/{YMIN}/{YMAX} '
                              'or {Q} template strings.')
-        params = {'url': element.data}
-        for zoom in ('min_zoom', 'max_zoom'):
-            if zoom in style:
-                params[zoom] = style[zoom]
-        for key, attribution in _ATTRIBUTIONS.items():
-            if all(k in element.data for k in key):
-                params['attribution'] = attribution
+        if isinstance(element.data, dict):
+            params = {
+                'url': element.data.build_url(scale_factor="@2x"),
+                'min_zoom': element.data.get("min_zoom", 0),
+                'max_zoom': element.data.get("max_zoom", 20),
+                'attribution': element.data.html_attribution}
+        else:
+            params = {'url': element.data}
+            for zoom in ('min_zoom', 'max_zoom'):
+                if zoom in style:
+                    params[zoom] = style[zoom]
+            for key, attribution in _ATTRIBUTIONS.items():
+                if all(k in element.data for k in key):
+                    params['attribution'] = attribution
         return {}, {'tile_source': tile_source(**params)}, style
 
     def _update_glyph(self, renderer, properties, mapping, glyph, source=None, data=None):

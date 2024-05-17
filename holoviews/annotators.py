@@ -1,22 +1,24 @@
 import sys
-
-from collections import OrderedDict
 from inspect import getmro
 
 import param
-
-from panel.pane import PaneBase
 from panel.layout import Row, Tabs
+from panel.pane import PaneBase
 from panel.util import param_name
 
-from .core import DynamicMap, HoloMap, ViewableElement, Element, Layout, Overlay, Store
+from .core import DynamicMap, Element, HoloMap, Layout, Overlay, Store, ViewableElement
 from .core.util import isscalar
-from .element import Rectangles, Path, Polygons, Points, Table, Curve
-from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw, CurveEdit
+from .element import Curve, Path, Points, Polygons, Rectangles, Table
+from .plotting.links import (
+    DataLink,
+    RectanglesTableLink,
+    SelectionLink,
+    VertexTableLink,
+)
+from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
 
 
-def preprocess(function, current=[]):
+def preprocess(function, current=None):
     """
     Turns a param.depends watch call into a preprocessor method, i.e.
     skips all downstream events triggered by it.
@@ -25,6 +27,8 @@ def preprocess(function, current=[]):
           method which depends on a particular parameter.
           (see https://github.com/pyviz/param/issues/332)
     """
+    if current is None:
+        current = []
     def inner(*args, **kwargs):
         self = args[0]
         self.param._BATCH_WATCH = True
@@ -76,7 +80,7 @@ class annotate(param.ParameterizedFunction):
     vertex_style = param.Dict(default={'nonselection_alpha': 0.5}, doc="""
         Options to apply to vertices during drawing and editing.""")
 
-    _annotator_types = OrderedDict()
+    _annotator_types = {}
 
     @property
     def annotated(self):
@@ -116,8 +120,7 @@ class annotate(param.ParameterizedFunction):
             elif isinstance(annotator, (HoloMap, ViewableElement)):
                 layers.append(annotator)
             else:
-                raise ValueError("Cannot compose %s type with annotators." %
-                                 type(annotator).__name__)
+                raise ValueError(f"Cannot compose {type(annotator).__name__} type with annotators.")
         tables = Overlay(tables, group='Annotator')
         return (Overlay(layers).collate() + tables)
 
@@ -149,7 +152,7 @@ class annotate(param.ParameterizedFunction):
         if annotator_type is None:
             obj = overlay if isinstance(overlay, Overlay) else element
             raise ValueError('Could not find an Element to annotate on'
-                             '%s object.' % type(obj).__name__)
+                             f'{type(obj).__name__} object.')
 
         if len(layers) == 1:
             return layers[0]
@@ -224,7 +227,7 @@ class Annotator(PaneBase):
         super().__init__(None, **params)
         self.object = self._process_element(object)
         self._table_row = Row()
-        self.editor = Tabs(('%s' % param_name(self.name), self._table_row))
+        self.editor = Tabs((f'{param_name(self.name)}', self._table_row))
         self.plot = DynamicMap(self._get_plot)
         self.plot.callback.inputs[:] = [self.object]
         self._tables = []
@@ -336,19 +339,19 @@ class PathAnnotator(Annotator):
     def __init__(self, object=None, **params):
         self._vertex_table_row = Row()
         super().__init__(object, **params)
-        self.editor.append(('%s Vertices' % param_name(self.name),
+        self.editor.append((f'{param_name(self.name)} Vertices',
                             self._vertex_table_row))
 
     def _init_stream(self):
         name = param_name(self.name)
         self._stream = PolyDraw(
             source=self.plot, data={}, num_objects=self.num_objects,
-            show_vertices=self.show_vertices, tooltip='%s Tool' % name,
+            show_vertices=self.show_vertices, tooltip=f'{name} Tool',
             vertex_style=self.vertex_style, empty_value=self.empty_value
         )
         if self.edit_vertices:
             self._vertex_stream = PolyEdit(
-                source=self.plot, tooltip='%s Edit Tool' % name,
+                source=self.plot, tooltip=f'{name} Edit Tool',
                 vertex_style=self.vertex_style,
             )
 
@@ -379,10 +382,10 @@ class PathAnnotator(Annotator):
         # Validate annotations
         poly_data = {c: element.dimension_values(c, expanded=False)
                      for c in validate}
-        if validate and len(set(len(v) for v in poly_data.values())) != 1:
+        if validate and len({len(v) for v in poly_data.values()}) != 1:
             raise ValueError('annotations must refer to value dimensions '
                              'which vary per path while at least one of '
-                             '%s varies by vertex.' % validate)
+                             f'{validate} varies by vertex.')
 
         # Add options to element
         tools = [tool() for tool in self._tools]
@@ -419,7 +422,7 @@ class PathAnnotator(Annotator):
         self._table = Table(table_data, annotations, [], label=name).opts(
             show_title=False, **self.table_opts)
         self._vertex_table = Table(
-            [], table.kdims, list(self.vertex_annotations), label='%s Vertices' % name
+            [], table.kdims, list(self.vertex_annotations), label=f'{name} Vertices'
         ).opts(show_title=False, **self.table_opts)
         self._update_links()
         self._table_row[:] = [self._table]
@@ -458,7 +461,7 @@ class _GeomAnnotator(Annotator):
         name = param_name(self.name)
         self._stream = self._stream_type(
             source=self.plot, data={}, num_objects=self.num_objects,
-            tooltip='%s Tool' % name, empty_value=self.empty_value
+            tooltip=f'{name} Tool', empty_value=self.empty_value
         )
 
     def _process_element(self, object):
@@ -519,7 +522,7 @@ class CurveAnnotator(_GeomAnnotator):
     def _init_stream(self):
         name = param_name(self.name)
         self._stream = self._stream_type(
-            source=self.plot, data={}, tooltip='%s Tool' % name,
+            source=self.plot, data={}, tooltip=f'{name} Tool',
             style=self.vertex_style
         )
 
@@ -547,6 +550,3 @@ annotate._annotator_types.update([
     (Curve, CurveAnnotator),
     (Rectangles, RectangleAnnotator),
 ])
-
-# Alias: remove before 1.13.0 release
-BoxAnnotator = RectangleAnnotator

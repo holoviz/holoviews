@@ -1,22 +1,20 @@
-import os
 import base64
-
-from io import BytesIO
-from tempfile import NamedTemporaryFile
+import os
 from contextlib import contextmanager
+from io import BytesIO
 from itertools import chain
-
-import param
+from tempfile import NamedTemporaryFile
 
 import matplotlib as mpl
-
+import param
 from matplotlib import pyplot as plt
 from param.parameterized import bothmethod
 
 from ...core import HoloMap
 from ...core.options import Store
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import get_tight_bbox, get_old_rcparams
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
+from .util import get_old_rcparams, get_tight_bbox
+
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -49,7 +47,7 @@ class MPLRenderer(Renderer):
 
     backend = param.String('matplotlib', doc="The backend name.")
 
-    dpi=param.Integer(72, doc="""
+    dpi=param.Integer(default=72, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto',
@@ -94,7 +92,7 @@ class MPLRenderer(Renderer):
             for o in objects:
                 plots.append(self.get_plot(o))
             plt.show()
-        except:
+        except Exception:
             raise
         finally:
             MPLPlot._close_figures = True
@@ -167,7 +165,7 @@ class MPLRenderer(Renderer):
             # Attempts to precompute the tight bounding box
             try:
                 kw = self._compute_bbox(fig, kw)
-            except:
+            except Exception:
                 pass
             bytes_io = BytesIO()
             fig.canvas.print_figure(bytes_io, **kw)
@@ -196,7 +194,7 @@ class MPLRenderer(Renderer):
         if self.dpi is not None: anim_kwargs['dpi'] = self.dpi
         if not hasattr(anim, '_encoded_video'):
             # Windows will throw PermissionError with auto-delete
-            with NamedTemporaryFile(suffix='.%s' % fmt, delete=False) as f:
+            with NamedTemporaryFile(suffix=f'.{fmt}', delete=False) as f:
                 anim.save(f.name, writer=writer, **anim_kwargs)
                 video = f.read()
             f.close()
@@ -216,7 +214,7 @@ class MPLRenderer(Renderer):
         """
         fig_id = id(fig)
         if kw['bbox_inches'] == 'tight':
-            if not fig_id in MPLRenderer.drawn:
+            if fig_id not in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
                 extra_artists = kw.pop("bbox_extra_artists", [])

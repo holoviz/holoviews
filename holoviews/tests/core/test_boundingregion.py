@@ -4,7 +4,8 @@ Test cases for boundingregion
 
 import unittest
 
-from holoviews.core import BoundingBox, AARectangle
+from holoviews.core import AARectangle, BoundingBox
+
 
 class TestAARectangle(unittest.TestCase):
     def setUp(self):
@@ -65,4 +66,3 @@ class TestBoundingBox(unittest.TestCase):
         self.assertTrue(self.region.contains(self.xc, self.bottom))
     def test_top_boundary(self):
         self.assertTrue(self.region.contains(self.xc, self.top))
-

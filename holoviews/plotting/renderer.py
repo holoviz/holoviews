@@ -1,47 +1,47 @@
-# -*- coding: utf-8 -*-
 """
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 import base64
 import os
-
-from io import BytesIO
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 from contextlib import contextmanager
 from functools import partial
+from io import BytesIO, StringIO
 
+import panel as pn
 import param
-import panel
-
 from bokeh.document import Document
-from bokeh.io import curdoc
 from bokeh.embed import file_html
+from bokeh.io import curdoc
 from bokeh.resources import CDN, INLINE
+from packaging.version import Version
 from panel import config
-from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
+from panel.io.notebook import ipywidget, load_notebook, render_mimebundle, render_model
 from panel.io.state import state
 from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
-from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
-from pyviz_comms import CommManager, JupyterCommManager
+from panel.widgets.player import PlayerBase
+from pyviz_comms import CommManager
 
-from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
-from ..core.data import disable_pipeline
-from ..core.io import Exporter
-from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unbound_dimensions, LooseVersion
-from ..streams import Stream
-from . import Plot
-from .util import displayable, collate, initialize_dynamic
+try:
+    # Added in Panel 1.0 to support JS -> Python binary comms
+    from panel.io.notebook import JupyterCommManagerBinary as JupyterCommManager
+except ImportError:
+    from pyviz_comms import JupyterCommManager
 
 from param.parameterized import bothmethod
 
-panel_version = LooseVersion(panel.__version__)
+from ..core import AdjointLayout, DynamicMap, HoloMap, Layout
+from ..core.data import disable_pipeline
+from ..core.io import Exporter
+from ..core.options import Compositor, SkipRendering, Store, StoreOptions
+from ..core.util import unbound_dimensions
+from ..streams import Stream
+from . import Plot
+from .util import collate, displayable, initialize_dynamic
+
+panel_version = Version(pn.__version__)
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -110,14 +110,14 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g. 'matplotlib' or 'cairo'.""")
 
-    dpi = param.Integer(None, doc="""
+    dpi = param.Integer(default=None, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps = param.Number(20, doc="""
+    fps = param.Number(default=20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
@@ -131,7 +131,7 @@ class Renderer(Exporter):
         mode a bokeh Document will be returned which can be served as a
         bokeh server app. By default renders all output is rendered to HTML.""")
 
-    size = param.Integer(100, doc="""
+    size = param.Integer(default=100, doc="""
         The rendered size as a percentage size""")
 
     widget_location = param.ObjectSelector(default=None, allow_None=True, objects=[
@@ -147,10 +147,10 @@ class Renderer(Exporter):
     css = param.Dict(default={}, doc="""
         Dictionary of CSS attributes and values to apply to HTML output.""")
 
-    info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+    info_fn = param.Callable(default=None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
 
-    key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+    key_fn = param.Callable(default=None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
     post_render_hooks = param.Dict(default={'svg':[], 'png':[]}, doc="""
@@ -206,7 +206,7 @@ class Renderer(Exporter):
         Given a HoloViews Viewable return a corresponding plot instance.
         """
         if isinstance(obj, DynamicMap) and obj.unbounded:
-            dims = ', '.join('%r' % dim for dim in obj.unbounded)
+            dims = ', '.join(f'{dim!r}' for dim in obj.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -271,7 +271,7 @@ class Renderer(Exporter):
         Given a HoloViews Viewable return a corresponding plot state.
         """
         if not isinstance(obj, Plot):
-            obj = self_or_cls.get_plot(obj, renderer, **kwargs)
+            obj = self_or_cls.get_plot(obj=obj, renderer=renderer, **kwargs)
         return obj.state
 
     def _validate(self, obj, fmt, **kwargs):
@@ -303,15 +303,14 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt)
             fmt = 'html'
         elif dynamic or (self._render_with_panel and fmt == 'html'):
-            plot = HoloViewsPane(obj, center=True, backend=self.backend,
+            plot = HoloViewsPane(obj, center=self.center, backend=self.backend,
                                  renderer=self)
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
-            raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
-                            % (fmt, self.mode, fig_formats + holomap_formats))
+            raise Exception(f"Format {fmt!r} not supported by mode {self.mode!r}. Allowed formats: {fig_formats + holomap_formats!r}")
         self.last_plot = plot
         return plot, fmt
 
@@ -324,8 +323,8 @@ class Renderer(Exporter):
             try:
                 data = hook(data, obj)
             except Exception as e:
-                self.param.warning("The post_render_hook %r could not "
-                                   "be applied:\n\n %s" % (hook, e))
+                self.param.warning(f"The post_render_hook {hook!r} could not "
+                                   f"be applied:\n\n {e}")
         return data
 
     def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):
@@ -350,15 +349,14 @@ class Renderer(Exporter):
             return file_html(doc, resources)
         elif fmt in ['html', 'json']:
             return figdata
-        else:
-            if fmt == 'svg':
-                figdata = figdata.encode("utf-8")
-            elif fmt == 'pdf' and 'height' not in css:
-                _, h = self.get_size(plot)
-                css['height'] = '%dpx' % (h*self.dpi*1.15)
+        elif fmt == 'svg':
+            figdata = figdata.encode("utf-8")
+        elif fmt == 'pdf' and 'height' not in css:
+            _, h = self.get_size(plot)
+            css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):
-            css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
+            css = '; '.join(f"{k}: {v}" for k, v in css.items())
         else:
             raise ValueError("CSS must be supplied as Python dictionary")
 
@@ -410,7 +408,8 @@ class Renderer(Exporter):
         client_comm = self.comm_manager.get_client_comm(
             on_msg=partial(plot._on_msg, ref, manager),
             on_error=partial(plot._on_error, ref),
-            on_stdout=partial(plot._on_stdout, ref)
+            on_stdout=partial(plot._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         manager.client_comm_id = client_comm.id
         return render_mimebundle(model, doc, comm, manager)
@@ -419,7 +418,7 @@ class Renderer(Exporter):
         # Handle rendering object as ipywidget
         widget = ipywidget(plot, combine_events=True)
         if hasattr(widget, '_repr_mimebundle_'):
-            return widget._repr_mimebundle()
+            return widget._repr_mimebundle_(), {}
         plaintext = repr(widget)
         if len(plaintext) > 110:
             plaintext = plaintext[:110] + '…'
@@ -538,11 +537,12 @@ class Renderer(Exporter):
             element_type = obj
         else:
             element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+            if element_type is None:
+                raise SkipRendering(f"{type(obj).__name__} was empty, could not determine plotting class.")
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise SkipRendering("No plotting class for {0} "
-                                "found".format(element_type.__name__))
+            raise SkipRendering(f"No plotting class for {element_type.__name__} found.") from None
         return plotclass
 
     @classmethod
@@ -558,17 +558,21 @@ class Renderer(Exporter):
         raise NotImplementedError
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
+    def save(self_or_cls, obj, basename, fmt='auto', key=None, info=None,
              options=None, resources='inline', title=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
 
         if kwargs:
-            param.main.warning("Supplying plot, style or norm options "
+            param.main.param.warning("Supplying plot, style or norm options "
                                "as keyword arguments to the Renderer.save "
                                "method is deprecated and will error in "
                                "the next minor release.")
@@ -588,7 +592,7 @@ class Renderer(Exporter):
                 if title is None:
                     title = os.path.basename(basename)
                 if fmt in MIME_TYPES:
-                    basename = '.'.join([basename, fmt])
+                    basename = f"{basename}.{fmt}"
             plot.layout.save(basename, embed=True, resources=resources, title=title)
             return
 
@@ -603,7 +607,7 @@ class Renderer(Exporter):
             basename.write(encoded)
             basename.seek(0)
         else:
-            filename ='%s.%s' % (basename, info['file-ext'])
+            filename =f"{basename}.{info['file-ext']}"
             with open(filename, 'wb') as f:
                 f.write(encoded)
 
@@ -640,16 +644,23 @@ class Renderer(Exporter):
         return options
 
     @classmethod
-    def load_nb(cls, inline=True):
+    def load_nb(cls, inline=False, reloading=False, enable_mathjax=False):
         """
         Loads any resources required for display of plots
         in the Jupyter notebook
         """
-        load_notebook(inline)
+        if panel_version >= Version('1.0.2'):
+            load_notebook(inline, reloading=reloading, enable_mathjax=enable_mathjax)
+        elif panel_version >= Version('1.0.0'):
+            load_notebook(inline, reloading=reloading)
+        elif reloading:
+            return
+        else:
+            load_notebook(inline)
         with param.logging_level('ERROR'):
             try:
                 ip = get_ipython() # noqa
-            except:
+            except Exception:
                 ip = None
             if not ip or not hasattr(ip, 'kernel'):
                 return

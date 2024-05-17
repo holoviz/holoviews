@@ -18,7 +18,7 @@ class TestErrorBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [0.5, 5.25])
 
     def test_errorbars_plot_inverted(self):
-        errorbars = ErrorBars([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).options(invert_axes=True)
+        errorbars = ErrorBars([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).opts(invert_axes=True)
         state = self._get_plot_state(errorbars)
         self.assertEqual(state['data'][0]['x'], np.array([1, 2, 3]))
         self.assertEqual(state['data'][0]['y'], np.array([0, 1, 2]))
@@ -31,6 +31,6 @@ class TestErrorBarsPlot(TestPlotlyPlot):
         element = ErrorBars(
             [(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)],
             vdims=['y', 'y2']
-        ).options(visible=False)
+        ).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)

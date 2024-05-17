@@ -1,7 +1,6 @@
 import param
-
-from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 from ...core.util import max_range
 from ...util.transform import dim
@@ -47,7 +46,7 @@ class SankeyPlot(GraphPlot):
 
     style_opts = GraphPlot.style_opts + ['label_text_font_size']
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         """
         A Chord plot is always drawn on a unit circle.
         """
@@ -104,7 +103,7 @@ class SankeyPlot(GraphPlot):
             if self.show_values:
                 value = value_dim.pprint_value(node['value'], print_unit=True)
                 if label:
-                    label = '%s - %s' % (label, value)
+                    label = f'{label} - {value}'
                 else:
                     label = value
             if label:
@@ -120,7 +119,7 @@ class SankeyPlot(GraphPlot):
         for label in labels:
             try:
                 label.remove()
-            except:
+            except Exception:
                 pass
         if 'text' not in data:
             return []

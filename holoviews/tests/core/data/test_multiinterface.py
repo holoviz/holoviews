@@ -2,25 +2,19 @@
 Tests for the Dataset Element types.
 """
 
-from unittest import SkipTest
-
 import logging
 
 import numpy as np
+import pandas as pd
+from param import get_logger
 
 from holoviews.core.data import Dataset, MultiInterface
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
-from param import get_logger
-
-try:
-    import pandas as pd
-except:
-    pd = None
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
 
 
@@ -50,8 +44,6 @@ class GeomTests(ComparisonTestCase):
             self.assertEqual(dict(cols), dict(dicts[i], geom_type='Line'))
 
     def test_df_dataset(self):
-        if not pd:
-            raise SkipTest('Pandas not available')
         dfs = [pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]), columns=['x', 'y'])
                   for i in range(2)]
         mds = Path(dfs, kdims=['x', 'y'], datatype=[self.datatype])
@@ -134,7 +126,7 @@ class GeomTests(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.NaN, 1, 2]))
+        self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.nan, 1, 2]))
 
     def test_empty_array_values(self):
         mds = Path([], kdims=['x', 'y'], datatype=[self.datatype])

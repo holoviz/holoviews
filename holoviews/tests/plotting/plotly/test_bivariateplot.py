@@ -18,13 +18,13 @@ class TestBivariatePlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['contours']['coloring'], 'lines')
 
     def test_bivariate_filled(self):
-        bivariate = Bivariate(([3, 2, 1], [0, 1, 2])).options(
+        bivariate = Bivariate(([3, 2, 1], [0, 1, 2])).opts(
             filled=True)
         state = self._get_plot_state(bivariate)
         self.assertEqual(state['data'][0]['contours']['coloring'], 'fill')
 
     def test_bivariate_ncontours(self):
-        bivariate = Bivariate(([3, 2, 1], [0, 1, 2])).options(ncontours=5)
+        bivariate = Bivariate(([3, 2, 1], [0, 1, 2])).opts(ncontours=5)
         state = self._get_plot_state(bivariate)
         self.assertEqual(state['data'][0]['ncontours'], 5)
         self.assertEqual(state['data'][0]['autocontour'], False)
@@ -43,6 +43,6 @@ class TestBivariatePlot(TestPlotlyPlot):
         self.assertFalse(trace['showscale'])
 
     def test_visible(self):
-        element = Bivariate(([3, 2, 1], [0, 1, 2])).options(visible=False)
+        element = Bivariate(([3, 2, 1], [0, 1, 2])).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)

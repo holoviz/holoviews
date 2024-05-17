@@ -1,13 +1,14 @@
-import param
+import matplotlib as mpl
 import numpy as np
-import matplotlib
-
-from matplotlib import patches as patches
+import pandas as pd
+import param
+from matplotlib import patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec
 from ...core.options import abbreviated_exception
-from .element import ElementPlot, ColorbarPlot
+from ...core.util import match_spec
+from ...element import HLines, HSpans, VLines, VSpans
+from .element import ColorbarPlot, ElementPlot
 from .plot import mpl_rc_context
 
 
@@ -228,7 +229,7 @@ class LabelsPlot(ColorbarPlot):
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:
-                    color = colors.index(color) if color in colors else np.NaN
+                    color = colors.index(color) if color in colors else np.nan
                     plot_kwargs['color'] = cmap(color)
             kwargs = dict(plot_kwargs, **{k: v[i] for k, v in vectorized.items()})
             texts.append(ax.text(x, y, text, **kwargs))
@@ -279,7 +280,68 @@ class SplinePlot(AnnotationPlot):
         verts, codes = data
         if not len(verts):
             return []
-        patch = patches.PathPatch(matplotlib.path.Path(verts, codes),
+        patch = patches.PathPatch(mpl.path.Path(verts, codes),
                                   facecolor='none', **opts)
         axis.add_patch(patch)
         return [patch]
+
+
+
+class _SyntheticAnnotationPlot(AnnotationPlot):
+
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
+                  'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, positions, opts):
+        if isinstance(positions, np.ndarray):
+            values = positions
+        else:
+            size = len(self.hmap.last.kdims)
+            first_keys = list(positions)[:size]
+            values = zip(*[positions[n] for n in first_keys])
+        fn = getattr(axis, self._methods[self.invert_axes])
+        return [fn(*val, **opts) for val in values]
+
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        extents = super().get_extents(element, ranges, range_type)
+        if isinstance(element, HLines):
+            extents = np.nan, extents[0], np.nan, extents[2]
+        elif isinstance(element, VLines):
+            extents = extents[0], np.nan, extents[2], np.nan
+        elif isinstance(element, HSpans):
+            extents = pd.array(extents)
+            extents = np.nan, extents[:2].min(), np.nan, extents[2:].max()
+        elif isinstance(element, VSpans):
+            extents = pd.array(extents)
+            extents = extents[:2].min(), np.nan, extents[2:].max(), np.nan
+        return extents
+
+    def initialize_plot(self, ranges=None):
+        figure = super().initialize_plot(ranges=ranges)
+        labels = "yx" if self.invert_axes else "xy"
+        if isinstance(figure, mpl.axes.Axes):
+            figure.set_xlabel(labels[0])
+            figure.set_ylabel(labels[1])
+        else:
+            figure.axes[0].set_xlabel(labels[0])
+            figure.axes[0].set_ylabel(labels[1])
+        return figure
+
+
+class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axhline", "axvline")
+
+
+class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axvline", "axhline")
+
+
+class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axhspan", "axvspan")
+
+
+class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
+    _methods = ("axvspan", "axhspan")

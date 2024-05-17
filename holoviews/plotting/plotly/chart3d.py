@@ -1,13 +1,12 @@
-import param
 import numpy as np
-
+import param
 from plotly import colors
 from plotly.figure_factory._trisurf import trisurf as trisurface
 
-from .selection import PlotlyOverlaySelectionDisplay
 from ...core.options import SkipRendering
-from .element import ElementPlot, ColorbarPlot
-from .chart import ScatterPlot, CurvePlot
+from .chart import CurvePlot, ScatterPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class Chart3DPlot(ElementPlot):
@@ -102,8 +101,8 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
     def get_data(self, element, ranges, style, **kwargs):
         try:
             from scipy.spatial import Delaunay
-        except:
-            raise SkipRendering("SciPy not available, cannot plot TriSurface")
+        except ImportError:
+            raise SkipRendering("SciPy not available, cannot plot TriSurface") from None
         x, y, z = (element.dimension_values(i) for i in range(3))
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)

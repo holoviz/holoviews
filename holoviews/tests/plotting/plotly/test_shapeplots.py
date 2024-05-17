@@ -1,7 +1,16 @@
-from holoviews.element import (
-    VLine, HLine, Bounds, Box, Rectangles, Segments, Tiles, Path
-)
 import numpy as np
+
+from holoviews.element import (
+    Bounds,
+    Box,
+    HLine,
+    Path,
+    Rectangles,
+    Segments,
+    Tiles,
+    VLine,
+)
+
 from .test_plot import TestPlotlyPlot
 
 default_shape_color = '#2a3f5f'
@@ -121,7 +130,7 @@ class TestPathShape(TestShape):
 
         # Check svg path
         expected_path = 'M' + 'L'.join([
-            '{x} {y}'.format(x=x, y=y) for x, y in
+            f'{x} {y}' for x, y in
             zip(element.dimension_values(0), element.dimension_values(1))]) + 'Z'
 
         self.assertEqual(shape['path'], expected_path)

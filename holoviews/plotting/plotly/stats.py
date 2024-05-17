@@ -1,8 +1,9 @@
 import param
 
-from .selection import PlotlyOverlaySelectionDisplay
+from ..mixins import MultiDistributionMixin
 from .chart import ChartPlot
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class BivariatePlot(ChartPlot, ColorbarPlot):
@@ -75,10 +76,7 @@ class DistributionPlot(ElementPlot):
         return {'type': 'scatter', 'mode': 'lines'}
 
 
-class MultiDistributionPlot(ElementPlot):
-
-    def _get_axis_dims(self, element):
-        return element.kdims, element.vdims[0]
+class MultiDistributionPlot(MultiDistributionMixin, ElementPlot):
 
     def get_data(self, element, ranges, style, **kwargs):
         if element.kdims:
@@ -89,6 +87,8 @@ class MultiDistributionPlot(ElementPlot):
         axis = 'x' if self.invert_axes else 'y'
         for key, group in groups:
             if element.kdims:
+                if isinstance(key, str):
+                    key = (key,)
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
@@ -96,10 +96,6 @@ class MultiDistributionPlot(ElementPlot):
             plots.append(data)
         return plots
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
 
 
 class BoxWhiskerPlot(MultiDistributionPlot):

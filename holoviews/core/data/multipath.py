@@ -4,7 +4,7 @@ from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .dictionary import DictInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 
 
 class MultiInterface(Interface):
@@ -31,7 +31,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        from ...element import Polygons, Path
+        from ...element import Path, Polygons
 
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
@@ -59,8 +59,8 @@ class MultiInterface(Interface):
                                 if hasattr(Interface.interfaces.get(dt), 'has_holes')]
                 geom_type = d.get('geom_type')
                 if geom_type is not None and geom_type not in cls.geom_types:
-                    raise DataError("Geometry type '%s' not recognized, "
-                                    "must be one of %s." % (geom_type, cls.geom_types))
+                    raise DataError(f"Geometry type '{geom_type}' not recognized, "
+                                    f"must be one of {cls.geom_types}.")
                 else:
                     datatype = [dt for dt in datatype
                                 if hasattr(Interface.interfaces.get(dt), 'geom_type')]
@@ -101,7 +101,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def geom_type(cls, dataset):
-        from holoviews.element import Polygons, Path, Points
+        from holoviews.element import Path, Points, Polygons
         if isinstance(dataset, type):
             eltype = dataset
         else:
@@ -276,8 +276,8 @@ class MultiInterface(Interface):
         for d in dimensions:
             if not cls.isscalar(dataset, d, True):
                 raise ValueError('MultiInterface can only apply groupby '
-                                 'on scalar dimensions, %s dimension '
-                                 'is not scalar' % d)
+                                 f'on scalar dimensions, {d} dimension '
+                                 'is not scalar')
             vals = cls.values(dataset, d, False, True)
             values.append(vals)
         values = tuple(values)
@@ -300,7 +300,9 @@ class MultiInterface(Interface):
             return container_type(grouped_data)
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         raise NotImplementedError('Sampling operation on subpaths not supported')
 
     @classmethod
@@ -348,7 +350,9 @@ class MultiInterface(Interface):
         return ds.interface.dtype(ds, dimension)
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0], False).argsort()
@@ -409,7 +413,7 @@ class MultiInterface(Interface):
                 gt = geom_type
 
             if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
-                not geom_type == 'Points'):
+                not geom_type == 'Points' and len(dvals)):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             if scalar and not expanded:
@@ -421,7 +425,7 @@ class MultiInterface(Interface):
                 continue
             values.append(dvals)
             if not is_points and expanded:
-                values.append([np.NaN])
+                values.append([np.nan])
 
         if not values:
             return np.array([])
@@ -473,7 +477,7 @@ class MultiInterface(Interface):
                 if gt is not None:
                     obj['geom_type'] = gt
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
         return objs
 

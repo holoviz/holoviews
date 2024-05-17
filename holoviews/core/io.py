@@ -12,27 +12,36 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
+import itertools
+import os
+import pickle
+import re
+import shutil
+import string
+import tarfile
+import time
+import zipfile
 from collections import defaultdict
-
-from io import BytesIO
 from hashlib import sha256
+from io import BytesIO
 
 import param
 from param.parameterized import bothmethod
 
 from .dimension import LabelledData
 from .element import Collator, Element
-from .overlay import Overlay, Layout
-from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
+from .ndmapping import NdMapping, UniformNdMapping
 from .options import Store
-from .util import unique_iterator, group_sanitizer, label_sanitizer
+from .overlay import Layout, Overlay
+from .util import group_sanitizer, label_sanitizer, unique_iterator
 
 
-def sanitizer(name, replacements=[(':','_'), ('/','_'), ('\\','_')]):
+def sanitizer(name, replacements=None):
     """
     String sanitizer to avoid problematic characters in filenames.
     """
+    if replacements is None:
+        replacements = [(':', '_'), ('/', '_'), ('\\', '_')]
     for old,new in replacements:
         name = name.replace(old,new)
     return name
@@ -92,10 +101,10 @@ class Exporter(param.ParameterizedFunction):
       high-dimensional key of values associated with dimension labels.
 
       The returned dictionary must have string keys and simple
-      literals that may be conviently used for dictionary-style
+      literals that may be conveniently used for dictionary-style
       indexing. Returns an empty dictionary by default.""")
 
-    info_fn = param.Callable(lambda x: {'repr':repr(x)}, doc="""
+    info_fn = param.Callable(default=lambda x: {'repr':repr(x)}, doc="""
       Function that generates additional metadata information from the
       HoloViews object being saved.
 
@@ -121,8 +130,9 @@ class Exporter(param.ParameterizedFunction):
     @bothmethod
     def _filename(self_or_cls, filename):
         "Add the file extension if not already present"
+        filename = os.fspath(filename)
         if not filename.endswith(self_or_cls.file_ext):
-            return '%s.%s' % (filename, self_or_cls.file_ext)
+            return f'{filename}.{self_or_cls.file_ext}'
         else:
             return filename
 
@@ -132,7 +142,7 @@ class Exporter(param.ParameterizedFunction):
         Returns a merged metadata info dictionary from the supplied
         function and additional dictionaries
         """
-        merged = dict([(k,v) for d in dicts for (k,v) in d.items()])
+        merged = {k:v for d in dicts for (k,v) in d.items()}
         return dict(merged, **fn(obj)) if fn else merged
 
     def __call__(self, obj, fmt=None):
@@ -152,7 +162,7 @@ class Exporter(param.ParameterizedFunction):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, **kwargs):
+    def save(self_or_cls, obj, basename, fmt=None, key=None, info=None, **kwargs):
         """
         Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
@@ -163,6 +173,10 @@ class Exporter(param.ParameterizedFunction):
         to update the output of the relevant key and info functions
         which is then saved (if supported).
         """
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         raise NotImplementedError("Exporter save method not implemented.")
 
 
@@ -221,7 +235,7 @@ class Importer(param.ParameterizedFunction):
 class Serializer(Exporter):
     "A generic exporter that supports any arbitrary serializer"
 
-    serializer=param.Callable(Store.dumps, doc="""
+    serializer=param.Callable(default=Store.dumps, doc="""
        The serializer function, set to Store.dumps by default. The
        serializer should take an object and output a serialization as
        a string or byte stream.
@@ -242,7 +256,11 @@ class Serializer(Exporter):
         return data, {'file-ext': self.file_ext, 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, filename, info={}, key={}, **kwargs):
+    def save(self_or_cls, obj, filename, info=None, key=None, **kwargs):
+        if key is None:
+            key = {}
+        if info is None:
+            info = {}
         data, base_info = self_or_cls(obj, **kwargs)
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
@@ -257,7 +275,7 @@ class Serializer(Exporter):
 class Deserializer(Importer):
     "A generic importer that supports any arbitrary de-serializer."
 
-    deserializer=param.Callable(Store.load, doc="""
+    deserializer=param.Callable(default=Store.load, doc="""
        The deserializer function, set to Store.load by default. The
        deserializer should take a file-like object that can be read
        from until the first object has been deserialized. If the file
@@ -277,7 +295,8 @@ class Deserializer(Importer):
             data = self_or_cls.deserializer(f)
             try:
                 data = self_or_cls.deserializer(f)
-            except: pass
+            except Exception:
+                pass
         return data
 
     @bothmethod
@@ -322,20 +341,28 @@ class Pickler(Exporter):
     file_ext = 'hvz'
 
 
-    def __call__(self, obj, key={}, info={}, **kwargs):
+    def __call__(self, obj, key=None, info=None, **kwargs):
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         buff = BytesIO()
         self.save(obj, buff, key=key, info=info, **kwargs)
         buff.seek(0)
         return buff.read(), {'file-ext': 'hvz', 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, filename, key={}, info={}, **kwargs):
+    def save(self_or_cls, obj, filename, key=None, info=None, **kwargs):
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         base_info = {'file-ext': 'hvz', 'mime_type':self_or_cls.mime_type}
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         compression = zipfile.ZIP_STORED if self_or_cls.compress else zipfile.ZIP_DEFLATED
 
-        filename = self_or_cls._filename(filename) if isinstance(filename, str) else filename
+        filename = self_or_cls._filename(filename) if isinstance(filename, (str, os.PathLike)) else filename
         with zipfile.ZipFile(filename, 'w', compression=compression) as f:
 
             if isinstance(obj, Layout) and not isinstance(obj, Overlay):
@@ -343,8 +370,7 @@ class Pickler(Exporter):
                 components = list(obj.data.values())
                 entries = entries if len(entries) > 1 else [entries[0]+'(L)']
             else:
-                entries = ['%s.%s' % (group_sanitizer(obj.group, False),
-                                      label_sanitizer(obj.label, False))]
+                entries = [f'{group_sanitizer(obj.group, False)}.{label_sanitizer(obj.label, False)}']
                 components = [obj]
 
             for component, entry in zip(components, entries):
@@ -379,7 +405,7 @@ class Unpickler(Importer):
         with zipfile.ZipFile(filename, 'r') as f:
             for entry in entries:
                 if entry not in f.namelist():
-                    raise Exception("Entry %s not available" % entry)
+                    raise Exception(f"Entry {entry} not available")
                 components.append(Store.loads(f.read(entry)))
                 single_layout = entry.endswith('(L)')
 
@@ -395,7 +421,7 @@ class Unpickler(Importer):
                 raise Exception("No metadata available")
             metadata = pickle.loads(f.read('metadata'))
             if name not in metadata:
-                raise KeyError("Entry %s is missing from the metadata" % name)
+                raise KeyError(f"Entry {name} is missing from the metadata")
             return metadata[name]
 
     @bothmethod
@@ -412,7 +438,7 @@ class Unpickler(Importer):
             return [el for el in f.namelist() if el != 'metadata']
 
     @bothmethod
-    def collect(self_or_cls, files, drop=[], metadata=True):
+    def collect(self_or_cls, files, drop=None, metadata=True):
         """
         Given a list or NdMapping type containing file paths return a
         Layout of Collators, which can be called to load a given set
@@ -424,6 +450,8 @@ class Unpickler(Importer):
         they do not clash with the file metadata. Any key dimension
         may be dropped by name by supplying a drop argument.
         """
+        if drop is None:
+            drop = []
         aslist = not isinstance(files, (NdMapping, Element))
         if isinstance(files, Element):
             files = Collator(files)
@@ -454,7 +482,7 @@ class Unpickler(Importer):
                 kval = key[files.get_dimension_index(odim)]
                 if kval != mdata[odim]:
                     raise KeyError("Metadata supplies inconsistent "
-                                   "value for dimension %s" % odim)
+                                   f"value for dimension {odim}")
             mkey = tuple(mdata.get(d, None) for d in added_dims)
             key = mkey if aslist else key + mkey
             if isinstance(fname, tuple) and len(fname) == 1:
@@ -558,7 +586,7 @@ class FileArchive(Archive):
         The root directory in which the output directory is
         located. May be an absolute or relative path.""")
 
-    archive_format = param.ObjectSelector('zip', objects=['zip', 'tar'], doc="""
+    archive_format = param.ObjectSelector(default='zip', objects=['zip', 'tar'], doc="""
         The archive format to use if there are multiple files and pack
         is set to True. Supported formats include 'zip' and 'tar'.""")
 
@@ -605,14 +633,14 @@ class FileArchive(Archive):
         if formatter is None: return []
         try:
             parse = list(string.Formatter().parse(formatter))
-            return  set(f for f in list(zip(*parse))[1] if f is not None)
-        except:
-            raise SyntaxError("Could not parse formatter %r" % formatter)
+            return {f for f in list(zip(*parse))[1] if f is not None}
+        except Exception as e:
+            raise SyntaxError(f"Could not parse formatter {formatter!r}") from e
 
     def __init__(self, **params):
         super().__init__(**params)
         #  Items with key: (basename,ext) and value: (data, info)
-        self._files = OrderedDict()
+        self._files = {}
         self._validate_formatters()
 
 
@@ -631,7 +659,7 @@ class FileArchive(Archive):
             if lower == upper:
                 range = dim.pprint_value(lower)
             else:
-                range = "%s-%s" % (lower, upper)
+                range = f"{lower}-{upper}"
             formatters = {'name': dim.name, 'range': range,
                           'unit': dim.unit}
             dim_strings.append(self.dimension_formatter.format(**formatters))
@@ -640,14 +668,16 @@ class FileArchive(Archive):
 
     def _validate_formatters(self):
         if not self.parse_fields(self.filename_formatter).issubset(self.ffields):
-            raise Exception("Valid filename fields are: %s" % ','.join(sorted(self.ffields)))
+            raise Exception(f"Valid filename fields are: {','.join(sorted(self.ffields))}")
         elif not self.parse_fields(self.export_name).issubset(self.efields):
-            raise Exception("Valid export fields are: %s" % ','.join(sorted(self.efields)))
-        try: time.strftime(self.timestamp_format, tuple(time.localtime()))
-        except: raise Exception("Timestamp format invalid")
+            raise Exception(f"Valid export fields are: {','.join(sorted(self.efields))}")
+        try:
+            time.strftime(self.timestamp_format, tuple(time.localtime()))
+        except Exception as e:
+            raise Exception("Timestamp format invalid") from e
 
 
-    def add(self, obj=None, filename=None, data=None, info={}, **kwargs):
+    def add(self, obj=None, filename=None, data=None, info=None, **kwargs):
         """
         If a filename is supplied, it will be used. Otherwise, a
         filename will be generated from the supplied object. Note that
@@ -657,6 +687,8 @@ class FileArchive(Archive):
         The data to be archived is either supplied explicitly as
         'data' or automatically rendered from the object.
         """
+        if info is None:
+            info = {}
         if [filename, obj] == [None, None]:
             raise Exception("Either filename or a HoloViews object is "
                             "needed to create an entry in the archive.")
@@ -723,21 +755,21 @@ class FileArchive(Archive):
         with zipfile.ZipFile(os.path.join(root, archname), 'w') as zipf:
             for (basename, ext), entry in files:
                 filename = self._truncate_name(basename, ext)
-                zipf.writestr(('%s/%s' % (export_name, filename)),Exporter.encode(entry))
+                zipf.writestr(f'{export_name}/{filename}',Exporter.encode(entry))
 
     def _tar_archive(self, export_name, files, root):
         archname = '.'.join(self._unique_name(export_name, 'tar', root))
         with tarfile.TarFile(os.path.join(root, archname), 'w') as tarf:
             for (basename, ext), entry in files:
                 filename = self._truncate_name(basename, ext)
-                tarinfo = tarfile.TarInfo('%s/%s' % (export_name, filename))
+                tarinfo = tarfile.TarInfo(f'{export_name}/{filename}')
                 filedata = Exporter.encode(entry)
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
     def _single_file_archive(self, export_name, files, root):
         ((basename, ext), entry) = files[0]
-        full_fname = '%s_%s' % (export_name, basename)
+        full_fname = f'{export_name}_{basename}'
         (unique_name, ext) = self._unique_name(full_fname, ext, root)
         filename = self._truncate_name(self._normalize_name(unique_name), ext=ext)
         fpath = os.path.join(root, filename)
@@ -788,7 +820,7 @@ class FileArchive(Archive):
             start = basename[:max_len-(tail + len(join))]
             end = basename[-tail:]
             basename = start + join + end
-        filename = '%s.%s' % (basename, ext) if ext else basename
+        filename = f'{basename}.{ext}' if ext else basename
 
         return filename
 
@@ -799,10 +831,12 @@ class FileArchive(Archive):
         return basename.replace(' ', '_')
 
 
-    def export(self, timestamp=None, info={}):
+    def export(self, timestamp=None, info=None):
         """
         Export the archive, directory or file.
         """
+        if info is None:
+            info = {}
         tval = tuple(time.localtime()) if timestamp is None else timestamp
         tstamp = time.strftime(self.timestamp_format, tval)
 
@@ -821,7 +855,7 @@ class FileArchive(Archive):
         elif self.archive_format == 'tar':
             self._tar_archive(export_name, files, root)
         if self.flush_archive:
-            self._files = OrderedDict()
+            self._files = {}
 
     def _format(self, formatter, info):
         filtered = {k:v for k,v in info.items()
@@ -833,29 +867,26 @@ class FileArchive(Archive):
         return len(self._files)
 
     def __repr__(self):
-        return self.pprint()
+        return self.param.pprint()
 
     def contents(self, maxlen=70):
         "Print the current (unexported) contents of the archive"
         lines = []
         if len(self._files) == 0:
-            print("Empty %s" % self.__class__.__name__)
+            print(f"Empty {self.__class__.__name__}")
             return
 
-        fnames = [self._truncate_name(maxlen=maxlen, *k) for k in self._files]
+        fnames = [self._truncate_name(*k, maxlen=maxlen) for k in self._files]
         max_len = max([len(f) for f in fnames])
         for name,v in zip(fnames, self._files.values()):
             mime_type = v[1].get('mime_type', 'no mime type')
-            lines.append('%s : %s' % (name.ljust(max_len), mime_type))
+            lines.append(f'{name.ljust(max_len)} : {mime_type}')
         print('\n'.join(lines))
 
     def listing(self):
         "Return a list of filename entries currently in the archive"
-        return ['.'.join([f,ext]) if ext else f for (f,ext) in self._files.keys()]
+        return [f'{f}.{ext}' if ext else f for (f,ext) in self._files.keys()]
 
     def clear(self):
         "Clears the file archive"
         self._files.clear()
-
-
-

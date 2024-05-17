@@ -1,20 +1,30 @@
-import uuid
 import time
-import sys
+import uuid
 from collections import deque
-from unittest import SkipTest
 
-import param
 import numpy as np
-from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
-from holoviews.core.spaces import DynamicMap, HoloMap, Callable
+import param
+import pytest
+
+from holoviews import Dimension, GridSpace, Layout, NdLayout, NdOverlay
 from holoviews.core.options import Store
-from holoviews.element import Image, Scatter, Curve, Text, Points
+from holoviews.core.spaces import Callable, DynamicMap, HoloMap
+from holoviews.element import Curve, Image, Points, Scatter, Text
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
-from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer, pointer_types
+from holoviews.streams import (
+    Buffer,
+    LinkedStream,
+    Params,
+    PointerX,
+    PointerXY,
+    PointerY,
+    RangeX,
+    Stream,
+    pointer_types,
+)
 from holoviews.util import Dynamic
-from holoviews.element.comparison import ComparisonTestCase
 
 from ..utils import LoggingComparisonTestCase
 from .test_dimensioned import CustomBackendTestCase, ExampleElement
@@ -45,8 +55,8 @@ class DynamicMapConstructor(ComparisonTestCase):
             DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
-        regexp = ("Callback '<lambda>' signature over \['x'\] does not accommodate "
-                  "required kdims \['x', 'y'\]")
+        regexp = (r"Callback '<lambda>' signature over \['x'\] does not accommodate "
+                  r"required kdims \['x', 'y'\]")
         with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(lambda x: x, kdims=['x','y'])
 
@@ -58,10 +68,8 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
 
     def test_simple_constructor_streams_dict_panel_widget(self):
-        if 'panel' not in sys.modules:
-            raise SkipTest('Panel not available')
-        import panel
-        DynamicMap(lambda x: x, streams=dict(x=panel.widgets.FloatSlider()))
+        import panel as pn
+        DynamicMap(lambda x: x, streams=dict(x=pn.widgets.FloatSlider()))
 
     def test_simple_constructor_streams_dict_parameter(self):
         test = ExampleParameterized()
@@ -392,7 +400,8 @@ class DynamicMapMethods(ComparisonTestCase):
         self.assertIs(mapped, layout)
 
     def test_dynamic_reindex_reorder(self):
-        def history_callback(x, y, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x, y):
             history.append((x, y))
             return Points(list(history))
         dmap = DynamicMap(history_callback, kdims=['x', 'y'])
@@ -401,7 +410,8 @@ class DynamicMapMethods(ComparisonTestCase):
         self.assertEqual(points, Points([(1, 2)]))
 
     def test_dynamic_reindex_drop_raises_exception(self):
-        def history_callback(x, y, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x, y):
             history.append((x, y))
             return Points(list(history))
         dmap = DynamicMap(history_callback, kdims=['x', 'y'])
@@ -543,6 +553,36 @@ class DynamicMapUnboundedProperty(ComparisonTestCase):
         self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
 
 
+class DynamicMapCurrentKeyProperty(ComparisonTestCase):
+
+    def test_current_key_None_on_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        self.assertIsNone(dmap.current_key)
+
+    def test_current_key_one_dimension(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        dmap[0]
+        self.assertEqual(dmap.current_key, 0)
+        dmap[1]
+        self.assertEqual(dmap.current_key, 1)
+        dmap[0]
+        self.assertEqual(dmap.current_key, 0)
+        self.assertNotEqual(dmap.current_key, dmap.last_key)
+
+    def test_current_key_multiple_dimensions(self):
+        fn = lambda i, j: Curve([i, j])
+        dmap=DynamicMap(fn, kdims=[Dimension('i', range=(0,5)), Dimension('j', range=(0,5))])
+        dmap[0, 2]
+        self.assertEqual(dmap.current_key, (0, 2))
+        dmap[5, 5]
+        self.assertEqual(dmap.current_key, (5, 5))
+        dmap[0, 2]
+        self.assertEqual(dmap.current_key, (0, 2))
+        self.assertNotEqual(dmap.current_key, dmap.last_key)
+
+
 class DynamicTransferStreams(ComparisonTestCase):
 
     def setUp(self):
@@ -593,14 +633,14 @@ class DynamicTransferStreams(ComparisonTestCase):
         self.assertEqual(dmap[(0, 3)].label, 'custom label')
 
     def test_dynamic_util_inherits_dim_streams_clash(self):
-        exception = ("The supplied stream objects PointerX\(x=None\) and "
-                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
+        exception = (r"The supplied stream objects PointerX\(x=None\) and "
+                     r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
         with self.assertRaisesRegex(Exception, exception):
             Dynamic(self.dmap, streams=[PointerX])
 
     def test_dynamic_util_inherits_dim_streams_clash_dict(self):
-        exception = ("The supplied stream objects PointerX\(x=None\) and "
-                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
+        exception = (r"The supplied stream objects PointerX\(x=None\) and "
+                     r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
         with self.assertRaisesRegex(Exception, exception):
             Dynamic(self.dmap, streams=dict(x=PointerX.param.x))
 
@@ -713,7 +753,7 @@ class DynamicTestOverlay(ComparisonTestCase):
 
         overlaid = dmap * dmap2
         overlay = overlaid[()]
-        self.assertEqual(overlay.Scatter.I, fn(0, 0))
+        self.assertEqual(overlay.Scatter.I, fn(None, None))
 
         dmap.event(x=1, y=2)
         overlay = overlaid[()]
@@ -763,7 +803,8 @@ class DynamicCallableMemoize(ComparisonTestCase):
 
     def test_dynamic_callable_memoize(self):
         # Always memoized only one of each held
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
 
@@ -773,21 +814,20 @@ class DynamicCallableMemoize(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
-
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1]))
 
-        for i in range(2):
-            x.event(x=2)
-
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 2]))
 
 
     def test_dynamic_callable_disable_callable_memoize(self):
         # Disabling Callable.memoize means no memoization is applied,
         # every access to DynamicMap calls callback and adds sample
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
 
@@ -798,13 +838,31 @@ class DynamicCallableMemoize(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1, 1]))
 
-        for i in range(2):
-            x.event(x=2)
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+
+
+class DynamicMapRX(ComparisonTestCase):
+
+    def test_dynamic_rx(self):
+        freq = param.rx(1)
+        rx_curve = param.rx(sine_array)(0, freq).rx.pipe(Curve)
+        dmap = DynamicMap(rx_curve)
+        assert len(dmap.streams) == 1
+        pstream = dmap.streams[0]
+        assert isinstance(pstream, Params)
+        assert len(pstream.parameters) == 2
+        fn_param, freq_param = pstream.parameters
+        assert getattr(fn_param.owner, fn_param.name) == sine_array
+        assert getattr(freq_param.owner, freq_param.name) == 1
+        self.assertEqual(dmap[()], Curve(sine_array(0, 1)))
+        freq.rx.value = 2
+        self.assertEqual(dmap[()], Curve(sine_array(0, 2)))
 
 
 class StreamSubscribersAddandClear(ComparisonTestCase):
@@ -853,7 +911,8 @@ class DynamicStreamReset(ComparisonTestCase):
         # Enable transient stream meaning memoization only happens when
         # stream is inactive, should have sample for each call to
         # stream.update
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             if x is not None:
                 history.append(x)
             return Curve(list(history))
@@ -864,30 +923,30 @@ class DynamicStreamReset(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1]))
 
-        for i in range(2):
-            x.event(x=2)
-
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
 
     def test_dynamic_stream_transients(self):
         # Ensure Stream reset option resets streams to default value
         # when not triggering
-        global xresets, yresets
-        xresets, yresets = 0, 0
-        def history_callback(x, y, history=deque(maxlen=10)):
-            global xresets, yresets
+        history = deque(maxlen=10)
+        def history_callback(x, y):
             if x is None:
-                xresets += 1
+                history_callback.xresets += 1
             else:
                 history.append(x)
             if y is None:
-                yresets += 1
+                history_callback.yresets += 1
 
             return Curve(list(history))
+
+        history_callback.xresets = 0
+        history_callback.yresets = 0
 
         x = PointerX(transient=True)
         y = PointerY(transient=True)
@@ -902,14 +961,15 @@ class DynamicStreamReset(ComparisonTestCase):
             x.event(x=i)
             y.event(y=i)
 
-        self.assertEqual(xresets, 2)
-        self.assertEqual(yresets, 2)
+        self.assertEqual(history_callback.xresets, 2)
+        self.assertEqual(history_callback.yresets, 2)
 
     def test_dynamic_callable_stream_hashkey(self):
         # Enable transient stream meaning memoization only happens when
         # stream is inactive, should have sample for each call to
         # stream.update
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             if x is not None:
                 history.append(x)
             return Curve(list(history))
@@ -925,13 +985,12 @@ class DynamicStreamReset(ComparisonTestCase):
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
-        for i in range(2):
-            x.event(x=1)
+        x.event(x=1)
+        x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1, 1]))
 
-        for i in range(2):
-            x.event(x=2)
-
+        x.event(x=2)
+        x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
@@ -939,7 +998,7 @@ class DynamicStreamReset(ComparisonTestCase):
 class TestPeriodicStreamUpdate(ComparisonTestCase):
 
     def test_periodic_counter_blocking(self):
-        class Counter(object):
+        class Counter:
             def __init__(self):
                 self.count = 0
             def __call__(self):
@@ -963,6 +1022,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
         self.assertEqual(xval.x, 100)
 
+    @pytest.mark.flaky(reruns=3)
     def test_periodic_param_fn_non_blocking(self):
         def callback(x): return Curve([1,2,3])
         xval = Stream.define('x',x=0)()

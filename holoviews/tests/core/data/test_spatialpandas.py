@@ -8,19 +8,26 @@ import numpy as np
 try:
     import spatialpandas
     from spatialpandas.geometry import (
-        LineDtype, PointDtype, PolygonDtype,
-        MultiLineDtype, MultiPointDtype, MultiPolygonDtype
+        LineDtype,
+        MultiLineDtype,
+        MultiPointDtype,
+        MultiPolygonArray,
+        MultiPolygonDtype,
+        PointDtype,
+        PolygonDtype,
     )
-except Exception:
+except ImportError:
     spatialpandas = None
 
 try:
     import dask.dataframe as dd
-except Exception:
+except ImportError:
     dd = None
 
 from holoviews.core.data import (
-    Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
+    DaskSpatialPandasInterface,
+    Dataset,
+    SpatialPandasInterface,
 )
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
@@ -222,6 +229,23 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
                                    2., 7., 5., 6., 7. ]))
         self.assertEqual(path.data.iloc[1, 0].buffer_values,
                          np.array([3, 2, 7, 5, 6, 7, 3, 2, 3, 7, 1, 2, 2, 0, 3, 7]))
+
+    def test_geometry_array_constructor(self):
+        polygons = MultiPolygonArray([
+            # First Element
+            [[[0, 0, 1, 0, 2, 2, -1, 4, 0, 0],         # Filled quadrilateral (CCW order)
+              [0.5, 1,  1, 2,  1.5, 1.5,  0.5, 1],     # Triangular hole (CW order)
+              [0, 2, 0, 2.5, 0.5, 2.5, 0.5, 2, 0, 2]], # Rectangular hole (CW order)
+
+             [[-0.5, 3, 1.5, 3, 1.5, 4, -0.5, 3]],],   # Filled triangle
+
+            # Second Element
+            [[[1.25, 0, 1.25, 2, 4, 2, 4, 0, 1.25, 0],          # Filled rectangle (CCW order)
+              [1.5, 0.25, 3.75, 0.25, 3.75, 1.75, 1.5, 1.75, 1.5, 0.25]],]
+        ]) # Rectangular hole (CW order)
+
+        path = Polygons(polygons)
+        self.assertIsInstance(path.data.geometry.dtype, MultiPolygonDtype)
 
 
 class DaskSpatialPandasTest(GeomTests, RoundTripTests):

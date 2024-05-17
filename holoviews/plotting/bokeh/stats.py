@@ -1,26 +1,30 @@
 from collections import defaultdict
 from functools import partial
 
-import param
 import numpy as np
+import param
+from bokeh.models import Circle, FactorRange, HBar, VBar
 
-from bokeh.models import FactorRange, Circle, VBar, HBar
-
-from .selection import BokehOverlaySelectionDisplay
 from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
-    dimension_sanitizer, wrap_tuple, unique_iterator, isfinite,
-    is_dask_array, is_cupy_array
+    dimension_sanitizer,
+    is_cupy_array,
+    is_dask_array,
+    isfinite,
+    unique_iterator,
+    wrap_tuple,
 )
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
+from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot
-from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .path import PolygonPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties
-from .util import bokeh_version, decode_bytes
+from .util import decode_bytes
 
 
 class DistributionPlot(AreaPlot):
@@ -63,10 +67,13 @@ class BivariatePlot(PolygonPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop='cmap', is_cmap=True)
 
 
-class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    outlier_radius = param.Number(default=0.01, doc="""
+        The radius of the circle marker for the outliers.""")
 
     # Deprecated options
 
@@ -91,18 +98,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     selection_display = BokehOverlaySelectionDisplay(color_prop='box_color')
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
-
-    def _get_axis_dims(self, element):
-        return element.kdims, element.vdims[0]
-
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
         if self.show_legend and not element.kdims and self.overlaid:
-            legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
+            legend_prop = 'legend_label'
             properties[legend_prop] = element.label
         return properties
 
@@ -195,11 +194,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
-            out_map = {'y': 'index', 'x': vdim}
+            out_map = {'y': 'index', 'x': vdim, 'radius': self.outlier_radius}
         else:
             vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-            out_map = {'x': 'index', 'y': vdim}
+            out_map = {'x': 'index', 'y': vdim, 'radius': self.outlier_radius}
         vbar2_map = dict(vbar_map)
 
         # Get color values
@@ -210,7 +209,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             cdim, cidx = None, None
 
         factors = []
-        vdim = element.vdims[0].name
+        vdim = dimension_sanitizer(element.vdims[0].name)
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
@@ -309,8 +308,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = list(unique_iterator(factors))
 
         if self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-            vbar_map[legend_prop] = cdim.name
+            vbar_map['legend_field'] = cdim.name
 
         return data, mapping, style
 
@@ -360,7 +358,7 @@ class ViolinPlot(BoxWhiskerPlot):
                    for glyph in ('violin_', 'box_')] +
                   [glyph+p for p in base_properties+line_properties
                    for glyph in ('stats_', 'outline_')] +
-                  ['_'.join([glyph, p]) for p in ('color', 'alpha')
+                  [f'{glyph}_{p}' for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
                   ['cmap', 'box_cmap', 'violin_cmap'])
 
@@ -404,7 +402,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if len(split_cats) > 2:
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
-                    'greater than 2. Found {0} categories: {1}'.format(
+                    'greater than 2. Found {} categories: {}'.format(
                         len(split_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
@@ -546,7 +544,7 @@ class ViolinPlot(BoxWhiskerPlot):
         kde_data, line_data, seg_data, bar_data, scatter_data = (
             defaultdict(list) for i in range(5)
         )
-        for i, (key, g) in enumerate(groups.items()):
+        for key, g in groups.items():
             key = decode_bytes(key)
             if element.kdims:
                 key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
@@ -592,10 +590,9 @@ class ViolinPlot(BoxWhiskerPlot):
                 group='violin', factors=factors)
             style['violin_fill_color'] = {'field': repr(split_dim), 'transform': cmapper}
             if self.show_legend:
-                legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-                kde_map[legend_prop] = repr(split_dim)
+                kde_map['legend_field'] = repr(split_dim)
 
-        for k, v in list(style.items()):
+        for k in style.copy():
             if k.startswith('violin_line'):
                 style[k.replace('violin', 'outline')] = style.pop(k)
         style['violin_line_width'] = 0

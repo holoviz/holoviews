@@ -4,17 +4,17 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
-import sys
 import weakref
-from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
+from numbers import Number
 from types import FunctionType
 
-import param
 import numpy as np
+import pandas as pd
+import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
@@ -22,7 +22,7 @@ from .core.ndmapping import UniformNdMapping
 # Types supported by Pointer derived streams
 pointer_types = (Number, str, tuple)+util.datetime_types
 
-class _SkipTrigger(): pass
+class _SkipTrigger: pass
 
 
 @contextmanager
@@ -47,13 +47,11 @@ def streams_list_from_dict(streams):
     "Converts a streams dictionary into a streams list"
     params = {}
     for k, v in streams.items():
-        if 'panel' in sys.modules:
-            from panel.depends import param_value_if_widget
-            v = param_value_if_widget(v)
+        v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
-            raise TypeError('Cannot handle value %r in streams dictionary' % v)
+            raise TypeError(f'Cannot handle value {v!r} in streams dictionary')
     return Params.from_params(params)
 
 
@@ -166,7 +164,7 @@ class Stream(param.Parameterized):
             if key_count > 1 and key_count > value_count and k not in key_clashes:
                 key_clashes.append(k)
         if key_clashes:
-            print('Parameter name clashes for keys %r' % key_clashes)
+            print(f'Parameter name clashes for keys {key_clashes!r}')
 
         # Group subscribers by precedence while keeping the ordering
         # within each group
@@ -220,26 +218,31 @@ class Stream(param.Parameterized):
                 rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
-                invalid.append(s)
-                continue
+                deps = param.parameterized.resolve_ref(s)
+                if deps:
+                    s = Params(parameters=deps)
+                else:
+                    invalid.append(s)
+                    continue
             if isinstance(s, Params):
                 pid = id(s.parameterized)
                 overlap = (set(s.parameters) & parameterizeds[pid])
                 if overlap:
                     pname = type(s.parameterized).__name__
                     param.main.param.warning(
-                        'The %s parameter(s) on the %s object have '
+                        f'The {sorted([p.name for p in overlap])} parameter(s) '
+                        f'on the {pname} object have '
                         'already been supplied in another stream. '
                         'Ensure that the supplied streams only specify '
                         'each parameter once, otherwise multiple '
-                        'events will be triggered when the parameter '
-                        'changes.' % (sorted([p.name for p in overlap]), pname))
+                        'events will be triggered when the parameter changes.'
+                    )
                 parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
 
 
-    def __init__(self, rename={}, source=None, subscribers=[], linked=False,
+    def __init__(self, rename=None, source=None, subscribers=None, linked=False,
                  transient=False, **params):
         """
         The rename argument allows multiple streams with similar event
@@ -254,6 +257,10 @@ class Stream(param.Parameterized):
         """
 
         # Source is stored as a weakref to allow it to be garbage collected
+        if subscribers is None:
+            subscribers = []
+        if rename is None:
+            rename = {}
         self._source = None if source is None else weakref.ref(source)
 
         self._subscribers = []
@@ -301,7 +308,7 @@ class Stream(param.Parameterized):
         """
         policies = ['all', 'user', 'internal']
         if policy not in policies:
-            raise ValueError('Policy for clearing subscribers must be one of %s' % policies)
+            raise ValueError(f'Policy for clearing subscribers must be one of {policies}')
         if policy == 'all':
             remaining = []
         elif policy == 'user':
@@ -342,10 +349,10 @@ class Stream(param.Parameterized):
         param_names = [k for k in self.param if k != 'name']
         for k, v in mapping.items():
             if k not in param_names:
-                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
+                raise KeyError(f'Cannot rename {k!r} as it is not a stream parameter')
             if k != v and v in param_names:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
 
@@ -356,7 +363,7 @@ class Stream(param.Parameterized):
         same name. Returns a new clone of the stream instance with the
         specified name mapping.
         """
-        params = {k: v for k, v in self.param.get_param_values() if k != 'name'}
+        params = {k: v for k, v in self.param.values().items() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=(self._source() if self._source else None),
                               linked=self.linked, **params)
@@ -397,7 +404,7 @@ class Stream(param.Parameterized):
 
     @property
     def contents(self):
-        filtered = {k: v for k, v in self.param.get_param_values() if k != 'name'}
+        filtered = {k: v for k, v in self.param.values().items() if k != 'name'}
         return {self._rename.get(k, k): v for (k, v) in filtered.items()
                 if self._rename.get(k, True) is not None}
 
@@ -417,7 +424,7 @@ class Stream(param.Parameterized):
         constant.
         """
         with util.disable_constant(self):
-            self.param.set_param(**kwargs)
+            self.param.update(**kwargs)
 
     def event(self, **kwargs):
         """
@@ -444,12 +451,12 @@ class Stream(param.Parameterized):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        kwargs = ','.join('%s=%r' % (k, v)
-                          for (k, v) in self.param.get_param_values() if k != 'name')
+        kwargs = ','.join(f'{k}={v!r}'
+                          for (k, v) in self.param.values().items() if k != 'name')
         if not self._rename:
-            return '%s(%s)' % (cls_name, kwargs)
+            return f'{cls_name}({kwargs})'
         else:
-            return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
+            return f'{cls_name}({self._rename!r}, {kwargs})'
 
 
     def __str__(self):
@@ -524,7 +531,7 @@ class Buffer(Pipe):
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
-        if (util.pd and isinstance(data, util.pd.DataFrame)):
+        if isinstance(data, pd.DataFrame):
             example = data
         elif isinstance(data, np.ndarray):
             if data.ndim != 2:
@@ -533,7 +540,7 @@ class Buffer(Pipe):
         elif isinstance(data, dict):
             if not all(isinstance(v, np.ndarray) for v in data.values()):
                 raise ValueError("Data in dictionary must be of array types.")
-            elif len(set(len(v) for v in data.values())) > 1:
+            elif len({len(v) for v in data.values()}) > 1:
                 raise ValueError("Columns in dictionary must all be the same length.")
             example = data
         else:
@@ -542,7 +549,10 @@ class Buffer(Pipe):
                 loaded = True
             except ImportError:
                 try:
-                    from streamz.dataframe import DataFrame as StreamingDataFrame, Series as StreamingSeries
+                    from streamz.dataframe import (
+                        DataFrame as StreamingDataFrame,
+                        Series as StreamingSeries,
+                    )
                     loaded = True
                 except ImportError:
                     loaded = False
@@ -555,7 +565,7 @@ class Buffer(Pipe):
             data.stream.sink(self.send)
             self.sdf = data
 
-        if index and (util.pd and isinstance(example, util.pd.DataFrame)):
+        if index and isinstance(example, pd.DataFrame):
             example = example.reset_index()
         params['data'] = example
         super().__init__(**params)
@@ -568,23 +578,20 @@ class Buffer(Pipe):
 
     def verify(self, x):
         """ Verify consistency of dataframes that pass through this stream """
-        if type(x) != type(self.data):
-            raise TypeError("Input expected to be of type %s, got %s." %
-                            (type(self.data).__name__, type(x).__name__))
+        if type(x) != type(self.data):  # noqa: E721
+            raise TypeError(f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}.")
         elif isinstance(x, np.ndarray):
             if x.ndim != 2:
                 raise ValueError('Streamed array data must be two-dimensional')
             elif x.shape[1] != self.data.shape[1]:
-                raise ValueError("Streamed array data expeced to have %d columns, "
+                raise ValueError("Streamed array data expected to have %d columns, "
                                  "got %d." % (self.data.shape[1], x.shape[1]))
-        elif util.pd and isinstance(x, util.pd.DataFrame) and list(x.columns) != list(self.data.columns):
-            raise IndexError("Input expected to have columns %s, got %s" %
-                             (list(self.data.columns), list(x.columns)))
+        elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
+            raise IndexError(f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}")
         elif isinstance(x, dict):
             if any(c not in x for c in self.data):
-                raise IndexError("Input expected to have columns %s, got %s" %
-                                 (sorted(self.data.keys()), sorted(x.keys())))
-            elif len(set(len(v) for v in x.values())) > 1:
+                raise IndexError(f"Input expected to have columns {sorted(self.data.keys())}, got {sorted(x.keys())}")
+            elif len({len(v) for v in x.values()}) > 1:
                 raise ValueError("Input columns expected to have the "
                                  "same number of rows.")
 
@@ -593,7 +600,7 @@ class Buffer(Pipe):
         "Clears the data in the stream"
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
-        elif util.pd and isinstance(self.data, util.pd.DataFrame):
+        elif isinstance(self.data, pd.DataFrame):
             data = self.data.iloc[:0]
         elif isinstance(self.data, dict):
             data = {k: v[:0] for k, v in self.data.items()}
@@ -609,23 +616,29 @@ class Buffer(Pipe):
         """
         if isinstance(data, np.ndarray):
             data_length = len(data)
-            if data_length < self.length:
+            if not self.length:
+                data = np.concatenate([self.data, data])
+            elif data_length < self.length:
                 prev_chunk = self.data[-(self.length-data_length):]
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
                 data = data[-self.length:]
-        elif util.pd and isinstance(data, util.pd.DataFrame):
+        elif isinstance(data, pd.DataFrame):
             data_length = len(data)
-            if data_length < self.length:
+            if not self.length:
+                data = pd.concat([self.data, data])
+            elif data_length < self.length:
                 prev_chunk = self.data.iloc[-(self.length-data_length):]
-                data = util.pd.concat([prev_chunk, data])
+                data = pd.concat([prev_chunk, data])
             elif data_length > self.length:
                 data = data.iloc[-self.length:]
         elif isinstance(data, dict) and data:
-            data_length = len(list(data.values())[0])
+            data_length = len(next(iter(data.values())))
             new_data = {}
             for k, v in data.items():
-                if data_length < self.length:
+                if not self.length:
+                    new_data[k] = np.concatenate([self.data[k], v])
+                elif data_length < self.length:
                     prev_chunk = self.data[k][-(self.length-data_length):]
                     new_data[k] = np.concatenate([prev_chunk, v])
                 elif data_length > self.length:
@@ -643,7 +656,7 @@ class Buffer(Pipe):
         """
         data = kwargs.get('data')
         if data is not None:
-            if (util.pd and isinstance(data, util.pd.DataFrame) and
+            if (isinstance(data, pd.DataFrame) and
                 list(data.columns) != list(self.data.columns) and self._index):
                 data = data.reset_index()
             self.verify(data)
@@ -666,16 +679,13 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, doc="""
+                                        constant=True, allow_None=True, allow_refs=False, doc="""
         Parameterized instance to watch for parameter changes.""")
 
-    parameters = param.List([], constant=True, doc="""
+    parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-        if util.param_version < '1.8.0' and watch:
-            raise RuntimeError('Params stream requires param version >= 1.8.0, '
-                               'to support watching parameters.')
         if parameters is None:
             parameters = [parameterized.param[p] for p in parameterized.param if p != 'name']
         else:
@@ -730,7 +740,7 @@ class Params(Stream):
         streams = []
         for _, group in groupby(sorted(params.items(), key=key_fn), key_fn):
             group = list(group)
-            inst = [p.owner for _, p in group][0]
+            inst = next(p.owner for _, p in group)
             if inst is None:
                 continue
             names = [p.name for _, p in group]
@@ -743,18 +753,16 @@ class Params(Stream):
         for k, v in mapping.items():
             n = k[1] if isinstance(k, tuple) else k
             if n not in pnames:
-                raise KeyError('Cannot rename %r as it is not a stream parameter' % n)
+                raise KeyError(f'Cannot rename {n!r} as it is not a stream parameter')
             if n != v and v in pnames:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
     def _watcher(self, *events):
         try:
             self._events = list(events)
             self.trigger([self])
-        except:
-            raise
         finally:
             self._events = []
 
@@ -768,7 +776,7 @@ class Params(Stream):
         for p in self.parameters:
             pkey = (p.owner, p.name)
             pname = self._rename.get(pkey, p.name)
-            key = ' '.join([p.owner.name, pname])
+            key = ' '.join([str(id(p.owner)), pname])
             if self._rename.get(pkey, True) is not None:
                 hashkey[key] = getattr(p.owner, p.name)
         hashkey['_memoize_key'] = self._memoize_counter
@@ -787,12 +795,12 @@ class Params(Stream):
                 if isinstance(owner, Stream):
                     owner.update(**updates)
                 else:
-                    owner.param.set_param(**updates)
+                    owner.param.update(**updates)
         elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
             return
         else:
-            self.parameterized.param.set_param(**kwargs)
+            self.parameterized.param.update(**kwargs)
 
     @property
     def contents(self):
@@ -816,18 +824,17 @@ class ParamMethod(Params):
                                         constant=True, allow_None=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
-    parameters = param.List([], constant=True, doc="""
+    parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
             raise ValueError('ParamMethod stream expects a method on a '
-                             'parameterized class, found %s.'
-                             % type(parameterized).__name__)
+                             f'parameterized class, found {type(parameterized).__name__}.')
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
-            parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
+            parameters = [p.pobj for p in parameterized.param.method_dependencies(method.__name__)]
 
         params['watch_only'] = True
         super().__init__(parameterized, parameters, watch, **params)
@@ -975,8 +982,8 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
-        from .element import Element
         from .core.spaces import DynamicMap
+        from .element import Element
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)
@@ -990,8 +997,7 @@ class SelectionExpr(Derived):
             raise ValueError(
                 "The source of SelectionExpr must be an instance of an "
                 "Element subclass or a DynamicMap that returns such an "
-                "instance. Received value of type {typ}: {val}".format(
-                    typ=type(source), val=source)
+                f"instance. Received value of type {type(source)}: {source}"
             )
 
         input_streams = self._build_selection_streams(source)
@@ -1161,13 +1167,12 @@ class SelectionExprSequence(Derived):
                     combined_selection_expr = ~selection_expr
                 else:
                     combined_selection_expr = selection_expr
-            else:
-                if mode == "intersect":
-                    combined_selection_expr &= selection_expr
-                elif mode == "union":
-                    combined_selection_expr |= selection_expr
-                else:  # inverse
-                    combined_selection_expr &= ~selection_expr
+            elif mode == "intersect":
+                combined_selection_expr &= selection_expr
+            elif mode == "union":
+                combined_selection_expr |= selection_expr
+            else:  # inverse
+                combined_selection_expr &= ~selection_expr
 
             # Update region
             if isinstance(source, DynamicMap):
@@ -1255,8 +1260,9 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, **params):
+    def __init__(self, linked=True, popup=None, **params):
         super().__init__(linked=linked, **params)
+        self.popup = popup
 
 
 class PointerX(LinkedStream):
@@ -1420,16 +1426,16 @@ class PlotSize(LinkedStream):
     Returns the dimensions of a plot once it has been displayed.
     """
 
-    width = param.Integer(None, constant=True, doc="The width of the plot in pixels")
+    width = param.Integer(default=None, constant=True, doc="The width of the plot in pixels")
 
-    height = param.Integer(None, constant=True, doc="The height of the plot in pixels")
+    height = param.Integer(default=None, constant=True, doc="The height of the plot in pixels")
 
     scale = param.Number(default=1.0, constant=True, doc="""
        Scale factor to scale width and height values reported by the stream""")
 
     def transform(self):
-        return {'width':  int(self.width * self.scale),
-                'height': int(self.height * self.scale)}
+        return {'width':  int(self.width * self.scale) if self.width else None,
+                'height': int(self.height * self.scale) if self.height else None}
 
 
 class SelectMode(LinkedStream):
@@ -1462,6 +1468,10 @@ class RangeX(LinkedStream):
     x_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
+    def _set_stream_parameters(self, **kwargs):
+        kwargs.pop("y_range", None)
+        super()._set_stream_parameters(**kwargs)
+
 
 class RangeY(LinkedStream):
     """
@@ -1470,6 +1480,10 @@ class RangeY(LinkedStream):
 
     y_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
+
+    def _set_stream_parameters(self, **kwargs):
+        kwargs.pop("x_range", None)
+        super()._set_stream_parameters(**kwargs)
 
 
 class BoundsXY(LinkedStream):
@@ -1602,7 +1616,9 @@ class PointDraw(CDSStream):
         path-like data).""")
 
     def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
-                 styles={}, tooltip=None, **params):
+                 styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.add = add
         self.drag = drag
         self.empty_value = empty_value
@@ -1645,7 +1661,9 @@ class CurveEdit(PointDraw):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, style={}, tooltip=None, **params):
+    def __init__(self, style=None, tooltip=None, **params):
+        if style is None:
+            style = {}
         self.style = style or {'size': 10}
         self.tooltip = tooltip
         super(PointDraw, self).__init__(**params)
@@ -1689,8 +1707,12 @@ class PolyDraw(CDSStream):
         path-like data).""")
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style={}, styles={},
+                 show_vertices=False, vertex_style=None, styles=None,
                  tooltip=None, **params):
+        if styles is None:
+            styles = {}
+        if vertex_style is None:
+            vertex_style = {}
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
@@ -1747,7 +1769,9 @@ class FreehandDraw(CDSStream):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
@@ -1801,7 +1825,9 @@ class BoxEdit(CDSStream):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
@@ -1810,7 +1836,7 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Rectangles, Polygons
+        from .element import Polygons, Rectangles
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1863,6 +1889,17 @@ class PolyEdit(PolyDraw):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, vertex_style={}, shared=True, **params):
+    def __init__(self, vertex_style=None, shared=True, **params):
+        if vertex_style is None:
+            vertex_style = {}
         self.shared = shared
         super().__init__(vertex_style=vertex_style, **params)
+
+
+def _streams_transform(obj):
+    if isinstance(obj, Pipe):
+        return obj.param.data
+    return obj
+
+
+param.reactive.register_reference_transform(_streams_transform)

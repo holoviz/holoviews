@@ -1,7 +1,8 @@
-import param
 import numpy as np
+import param
 
 from ...core.ndmapping import sorted_context
+from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
@@ -43,7 +44,7 @@ class BivariatePlot(PolygonPlot):
         A list of scalar values used to specify the contour levels.""")
 
 
-class BoxPlot(ChartPlot):
+class BoxPlot(MultiDistributionMixin, ChartPlot):
     """
     BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
@@ -60,11 +61,6 @@ class BoxPlot(ChartPlot):
 
     _plot_methods = dict(single='boxplot')
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
-
     def get_data(self, element, ranges, style):
         if element.kdims:
             with sorted_context(False):
@@ -78,7 +74,8 @@ class BoxPlot(ChartPlot):
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            data.append(group[group.vdims[0]])
+            d = group[group.vdims[0]]
+            data.append(d[np.isfinite(d)])
             labels.append(label)
         style['labels'] = labels
         style = {k: v for k, v in style.items()
@@ -197,7 +194,8 @@ class ViolinPlot(BoxPlot):
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            data.append(group[group.vdims[0]])
+            d = group[group.vdims[0]]
+            data.append(d[np.isfinite(d)])
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = list(range(len(data)))
@@ -208,6 +206,7 @@ class ViolinPlot(BoxPlot):
             element = element.aggregate(function=np.mean)
         else:
             element = element.clone([(element.aggregate(function=np.mean),)])
+
         new_style = self._apply_transforms(element, ranges, style)
         style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}

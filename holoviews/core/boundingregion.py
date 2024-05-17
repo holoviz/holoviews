@@ -7,12 +7,12 @@ File originally part of the Topographica project.
 ### matrix notation, not list notation, so that it can be scaled,
 ### translated, etc. easily.
 ###
-import param
 from param.parameterized import get_occupied_slots
+
 from .util import datetime_types
 
 
-class BoundingRegion(object):
+class BoundingRegion:
     """
     Abstract bounding region class, for any portion of a 2D plane.
 
@@ -93,20 +93,22 @@ class BoundingBox(BoundingRegion):
         l, b, r, t = self._aarect.lbrt()
         if (not isinstance(r, datetime_types) and r == -l and
             not isinstance(b, datetime_types) and t == -b and r == t):
-            return 'BoundingBox(radius=%s)' % (r)
+            return f'BoundingBox(radius={r})'
         else:
-            return 'BoundingBox(points=((%s,%s),(%s,%s)))' % (l, b, r, t)
+            return f'BoundingBox(points=(({l},{b}),({r},{t})))'
 
 
     def __repr__(self):
         return self.__str__()
 
 
-    def script_repr(self, imports=[], prefix="    "):
+    def script_repr(self, imports=None, prefix="    "):
         # Generate import statement
+        if imports is None:
+            imports = []
         cls = self.__class__.__name__
         mod = self.__module__
-        imports.append("from %s import %s" % (mod, cls))
+        imports.append(f"from {mod} import {cls}")
         return self.__str__()
 
 
@@ -242,7 +244,7 @@ class BoundingEllipse(BoundingBox):
 # JABALERT: Should probably remove top, bottom, etc. accessor functions,
 # and use the slot itself instead.
 ###################################################
-class AARectangle(object):
+class AARectangle:
     """
     Axis-aligned rectangle class.
 
@@ -331,41 +333,3 @@ class AARectangle(object):
     def empty(self):
         l, b, r, t = self.lbrt()
         return (r <= l) or (t <= b)
-
-
-def identity_hook(obj, val): return val
-
-
-### JABALERT: Should classes like this inherit from something like
-### ClassInstanceParameter, which takes a class name and verifies that
-### the value is in that class?
-###
-### Do we also need a BoundingBoxParameter?
-class BoundingRegionParameter(param.Parameter):
-    """
-    Parameter whose value can be any BoundingRegion instance, enclosing a
-    region in a 2D plane.
-    """
-
-    __slots__ = ['set_hook']
-
-
-    def __init__(self, default=BoundingBox(radius=0.5), **params):
-        self.set_hook = identity_hook
-        super().__init__(default=default, instantiate=True, **params)
-
-    def __set__(self, obj, val):
-        """
-        Set a non default bounding box, use the installed set hook to
-        apply any conversion or transformation on the coordinates and
-        create a new bounding box with the converted coordinate set.
-        """
-        coords = [self.set_hook(obj, point) for point in val.lbrt()]
-        if coords != val.lbrt():
-            val = BoundingBox(
-                points=[(coords[0], coords[1]), (coords[2], coords[3])])
-
-        if not isinstance(val, BoundingRegion):
-            raise ValueError("Parameter must be a BoundingRegion.")
-        else:
-            super().__set__(obj, val)

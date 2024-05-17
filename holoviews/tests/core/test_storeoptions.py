@@ -2,20 +2,19 @@
 Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
-
 from unittest import SkipTest
 
 import numpy as np
 
-try:
-    from holoviews.plotting import mpl # noqa Register backend
-except:
-    raise SkipTest('Matplotlib backend not available.')
-
-from holoviews import Overlay, Curve, Image, HoloMap
+from holoviews import Curve, HoloMap, Image, Overlay
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import bokeh  # noqa: F401
 
+try:
+    from holoviews.plotting import mpl
+except ImportError:
+    mpl = None
 
 class TestStoreOptionsMerge(ComparisonTestCase):
 
@@ -50,6 +49,9 @@ class TestStoreOptsMethod(ComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
+
         Store.current_backend = 'matplotlib'
 
     def test_overlay_options_partitioned(self):
@@ -58,8 +60,8 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         data = [zip(range(10),range(10)), zip(range(5),range(5))]
         o = Overlay([Curve(c) for c in data]).opts(
-            dict(plot={'Curve.Curve':{'show_grid':False}},
-                 style={'Curve.Curve':{'color':'k'}}))
+            {'Curve.Curve': {'show_grid': False, 'color':'k'}}
+        )
 
         self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'plot').kwargs['show_grid'], False)
@@ -76,8 +78,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         data = [zip(range(10),range(10)), zip(range(5),range(5))]
         o = Overlay([Curve(c) for c in data]).opts(
-            {'Curve.Curve':{'plot':{'show_grid':True},
-                            'style':{'color':'b'}}})
+            {'Curve.Curve': {'show_grid':True, 'color':'b'}})
 
         self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'plot').kwargs['show_grid'], True)
@@ -93,7 +94,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         Short __call__ syntax.
         """
         im = Image(np.random.rand(10,10))
-        layout = (im + im).opts({'Layout':dict(plot={'hspace':5})})
+        layout = (im + im).opts({'Layout':dict({'hspace':5})})
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 5)
 
@@ -102,12 +103,12 @@ class TestStoreOptsMethod(ComparisonTestCase):
         The old (longer) syntax in __call__
         """
         im = Image(np.random.rand(10,10))
-        layout = (im + im).opts({'Layout':dict(plot={'hspace':10})})
+        layout = (im + im).opts({'Layout':dict({'hspace':10})})
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 10)
 
     def test_holomap_opts(self):
-        hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(plot=dict(xaxis=None))
+        hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(xaxis=None)
         opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
         self.assertIs(opts.kwargs['xaxis'], None)
 

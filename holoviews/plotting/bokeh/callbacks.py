@@ -1,43 +1,80 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import asyncio
+import base64
 import time
-
 from collections import defaultdict
+from functools import partial
 
 import numpy as np
-import panel as pn
-
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
-    PolyDrawTool, BoxEditTool, PolyEditTool, FreehandDrawTool,
-    PointDrawTool
+    BoxEditTool,
+    Button,
+    CustomJS,
+    DataRange1d,
+    DatetimeAxis,
+    FactorRange,
+    FreehandDrawTool,
+    PointDrawTool,
+    PolyDrawTool,
+    PolyEditTool,
+    Range1d,
 )
-from panel.io.state import state
-from panel.io.model import hold
-from tornado import gen
+from panel.io.notebook import push_on_root
+from panel.io.state import set_curdoc, state
+from panel.pane import panel
 
-from ...core import OrderedDict
+try:
+    from bokeh.models import XY, Panel
+except Exception:
+    Panel = XY = None
+
+from ...core.data import Dataset
 from ...core.options import CallbackError
 from ...core.util import (
-    datetime_types, dimension_sanitizer, dt64_to_dt
+    VersionError,
+    datetime_types,
+    dimension_sanitizer,
+    dt64_to_dt,
+    isequal,
 )
 from ...element import Table
 from ...streams import (
-    Stream, PointerXY, RangeXY, Selection1D, RangeX, RangeY, PointerX,
-    PointerY, BoundsX, BoundsY, Tap, SingleTap, DoubleTap, MouseEnter,
-    MouseLeave, PressUp, PanEnd, PlotSize, Draw, BoundsXY, PlotReset,
-    BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
-    CurveEdit, SelectionXY, Lasso, SelectMode
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    BoxEdit,
+    CDSStream,
+    CurveEdit,
+    DoubleTap,
+    Draw,
+    FreehandDraw,
+    Lasso,
+    MouseEnter,
+    MouseLeave,
+    PanEnd,
+    PlotReset,
+    PlotSize,
+    PointDraw,
+    PointerX,
+    PointerXY,
+    PointerY,
+    PolyDraw,
+    PolyEdit,
+    PressUp,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
+    SelectionXY,
+    SelectMode,
+    SingleTap,
+    Stream,
+    Tap,
 )
-from .util import bokeh_version, convert_timestamp
-
-if bokeh_version >= '2.3.0':
-    CUSTOM_TOOLTIP = 'description'
-else:
-    CUSTOM_TOOLTIP = 'custom_tooltip'
+from ...util.warnings import warn
+from .util import bokeh33, convert_timestamp
 
 
-class Callback(object):
+class Callback:
     """
     Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback
@@ -90,16 +127,14 @@ class Callback(object):
       received within the `throttle_timeout` duration.
     """
 
-    # Throttling configuration
-    adaptive_window = 3
-    throttle_timeout = 100
-    throttling_scheme = 'adaptive'
-
     # Attributes to sync
     attributes = {}
 
     # The plotting handle(s) to attach the JS callback on
     models = []
+
+    # Additional handles to hash on for uniqueness
+    extra_handles = []
 
     # Conditions when callback should be skipped
     skip_events  = []
@@ -115,6 +150,9 @@ class Callback(object):
     _callbacks = {}
     _transforms = []
 
+    # Asyncio background task
+    _background_task = set()
+
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
@@ -123,8 +161,6 @@ class Callback(object):
         self.reset()
         self._active = False
         self._prev_msg = None
-        self._last_event = time.time()
-        self._history = []
 
     def _transform(self, msg):
         for transform in self._transforms:
@@ -151,7 +187,7 @@ class Callback(object):
         if self.handle_ids:
             handles = self._init_plot_handles()
             for handle_name in self.models:
-                if not (handle_name in handles):
+                if handle_name not in handles:
                     continue
                 handle = handles[handle_name]
                 cb_hash = (id(handle), id(type(self)))
@@ -189,7 +225,8 @@ class Callback(object):
             streams.append(stream)
 
         try:
-            Stream.trigger(streams)
+            with set_curdoc(self.plot.document):
+                Stream.trigger(streams)
         except CallbackError as e:
             if self.plot.root and self.plot.root.ref['id'] in state._handles:
                 handle, _ = state._handles[self.plot.root.ref['id']]
@@ -218,7 +255,7 @@ class Callback(object):
         self.plot_handles = handles
 
         requested = {}
-        for h in self.models:
+        for h in self.models+self.extra_handles:
             if h in self.plot_handles:
                 requested[h] = handles[h]
         self.handle_ids.update(self._get_stream_handle_ids(requested))
@@ -232,7 +269,7 @@ class Callback(object):
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
-            for h in self.models:
+            for h in self.models+self.extra_handles:
                 if h in handles:
                     handle_id = handles[h].ref['id']
                     stream_handle_ids[stream][h] = handle_id
@@ -247,7 +284,7 @@ class Callback(object):
         be the same as the model.
         """
         if not cb_obj:
-            raise Exception('Bokeh plot attribute %s could not be found' % spec)
+            raise AttributeError(f'Bokeh plot attribute {spec} could not be found')
         if model is None:
             model = cb_obj
         spec = spec.split('.')
@@ -278,22 +315,7 @@ class Callback(object):
         with edit_readonly(state):
             state.busy = busy
 
-    def _schedule_callback(self, cb, timeout=None, offset=True):
-        if timeout is None:
-            if self._history and self.throttling_scheme == 'adaptive':
-                timeout = int(np.array(self._history).mean()*1000)
-            else:
-                timeout = self.throttle_timeout
-            if self.throttling_scheme != 'debounce' and offset:
-                # Subtract the time taken since event started
-                diff = time.time()-self._last_event
-                timeout = max(timeout-(diff*1000), 50)
-        if not pn.state.curdoc:
-            cb()
-        else:
-            pn.state.curdoc.add_timeout_callback(cb, int(timeout))
-
-    def on_change(self, attr, old, new):
+    async def on_change(self, attr, old, new):
         """
         Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
@@ -302,13 +324,9 @@ class Callback(object):
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            if self.plot.renderer.mode == 'server':
-                self._schedule_callback(self.process_on_change, offset=False)
-            else:
-                with hold(self.plot.document):
-                    self.process_on_change()
+            await self.process_on_change()
 
-    def on_event(self, event):
+    async def on_event(self, event):
         """
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
@@ -317,48 +335,21 @@ class Callback(object):
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            if self.plot.renderer.mode == 'server':
-                self._schedule_callback(self.process_on_event, offset=False)
-            else:
-                with hold(self.plot.document):
-                    self.process_on_event()
+            await self.process_on_event()
 
-    def throttled(self):
-        now = time.time()
-        timeout = self.throttle_timeout/1000.
-        if self.throttling_scheme in ('throttle', 'adaptive'):
-            diff = (now-self._last_event)
-            if self._history and self.throttling_scheme == 'adaptive':
-                timeout = np.array(self._history).mean()
-            if diff < timeout:
-                return int((timeout-diff)*1000)
-        else:
-            prev_event = self._queue[-1][-1]
-            diff = (now-prev_event)
-            if diff < timeout:
-                return self.throttle_timeout
-        self._last_event = time.time()
-        return False
-
-    @gen.coroutine
-    def process_on_event_coroutine(self):
-        self.process_on_event()
-
-    def process_on_event(self):
+    async def process_on_event(self, timeout=None):
         """
         Trigger callback change event and triggering corresponding streams.
         """
+        await asyncio.sleep(0.01)
         if not self._queue:
             self._active = False
             self._set_busy(False)
             return
-        throttled = self.throttled()
-        if throttled and pn.state.curdoc:
-            self._schedule_callback(self.process_on_event, throttled)
-            return
+
         # Get unique event types in the queue
-        events = list(OrderedDict([(event.event_name, event)
-                                   for event, dt in self._queue]).values())
+        events = list(dict([(event.event_name, event)
+                            for event, dt in self._queue]).values())
         self._queue = []
 
         # Process event types
@@ -370,24 +361,14 @@ class Callback(object):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        w = self.adaptive_window-1
-        diff = time.time()-self._last_event
-        self._history = self._history[-w:] + [diff]
-        if self.plot.renderer.mode == 'server':
-            self._schedule_callback(self.process_on_event)
+        await self.process_on_event()
 
-    @gen.coroutine
-    def process_on_change_coroutine(self):
-        self.process_on_change()
-
-    def process_on_change(self):
+    async def process_on_change(self):
+        # Give on_change time to process new events
+        await asyncio.sleep(0.01)
         if not self._queue:
             self._active = False
             self._set_busy(False)
-            return
-        throttled = self.throttled()
-        if throttled:
-            self._schedule_callback(self.process_on_change, throttled)
             return
         self._queue = []
 
@@ -400,27 +381,41 @@ class Callback(object):
             else:
                 obj_handle = attr_path[0]
             cb_obj = self.plot_handles.get(obj_handle)
-            msg[attr] = self.resolve_attr_spec(path, cb_obj)
+            try:
+                msg[attr] = self.resolve_attr_spec(path, cb_obj)
+            except Exception:
+                # To give BokehJS a chance to update the model
+                # https://github.com/holoviz/holoviews/issues/5746
+                await asyncio.sleep(0.05)
+                msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
         if self.skip_change(msg):
             equal = True
         else:
-            try:
-                equal = msg == self._prev_msg
-            except Exception:
-                equal = False
+            equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
-            w = self.adaptive_window-1
-            diff = time.time()-self._last_event
-            self._history = self._history[-w:] + [diff]
             self._prev_msg = msg
+        await self.process_on_change()
 
-        if self.plot.renderer.mode == 'server':
-            self._schedule_callback(self.process_on_change)
+    def _schedule_event(self, event):
+        if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
+            task = asyncio.create_task(self.on_event(event))
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
         else:
-            self._active = False
+            self.plot.document.add_next_tick_callback(partial(self.on_event, event))
+
+    def _schedule_change(self, attr, old, new):
+        if not self.plot.document:
+            return
+        if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
+            task = asyncio.create_task(self.on_change(attr, old, new))
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
+        else:
+            self.plot.document.add_next_tick_callback(partial(self.on_change, attr, old, new))
 
     def set_callback(self, handle):
         """
@@ -428,39 +423,45 @@ class Callback(object):
         """
         if self.on_events:
             for event in self.on_events:
-                handle.on_event(event, self.on_event)
+                handle.on_event(event, self._schedule_event)
         if self.on_changes:
             for change in self.on_changes:
                 if change in ['patching', 'streaming']:
                     # Patch and stream events do not need handling on server
                     continue
-                handle.on_change(change, self.on_change)
+                handle.on_change(change, self._schedule_change)
 
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
-        for handle_name in self.models:
+        hash_handles, cb_handles = [], []
+        for handle_name in self.models+self.extra_handles:
             if handle_name not in handles:
                 warn_args = (handle_name, type(self.plot).__name__,
                              type(self).__name__)
-                print('%s handle not found on %s, cannot '
-                      'attach %s callback' % warn_args)
+                print('{} handle not found on {}, cannot '
+                      'attach {} callback'.format(*warn_args))
                 continue
             handle = handles[handle_name]
+            if handle_name not in self.extra_handles:
+                cb_handles.append(handle)
+            hash_handles.append(handle)
 
-            # Hash the plot handle with Callback type allowing multiple
-            # callbacks on one handle to be merged
-            cb_hash = (id(handle), id(type(self)))
-            if cb_hash in self._callbacks:
-                # Merge callbacks if another callback has already been attached
-                cb = self._callbacks[cb_hash]
-                cb.streams = list(set(cb.streams+self.streams))
-                for k, v in self.handle_ids.items():
-                    cb.handle_ids[k].update(v)
-                continue
+        # Hash the plot handle with Callback type allowing multiple
+        # callbacks on one handle to be merged
+        hash_ids = [id(h) for h in hash_handles]
+        cb_hash = tuple(hash_ids)+(id(type(self)),)
+        if cb_hash in self._callbacks:
+            # Merge callbacks if another callback has already been attached
+            cb = self._callbacks[cb_hash]
+            cb.streams = list(set(cb.streams+self.streams))
+            for k, v in self.handle_ids.items():
+                cb.handle_ids[k].update(v)
+            self.cleanup()
+            return
 
+        for handle in cb_handles:
             self.set_callback(handle)
-            self._callbacks[cb_hash] = self
-
+        self._callbacks[cb_hash] = self
 
 
 class PointerXYCallback(Callback):
@@ -565,13 +566,194 @@ class DrawCallback(PointerXYCallback):
         return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
-class TapCallback(PointerXYCallback):
+class PopupMixin:
+
+    geom_type = 'any'
+
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id=plot_id)
+        if not self.streams:
+            return
+
+        self._selection_event = None
+        self._processed_event = True
+        self._skipped_partial_event = False
+        self._existing_popup = None
+        stream = self.streams[0]
+        if not getattr(stream, 'popup', None):
+            return
+        elif Panel is None:
+            raise VersionError("Popup requires Bokeh >= 3.4")
+
+        close_button = Button(label="", stylesheets=[r"""
+        :host(.bk-Button) {
+            width: 100%;
+            height: 100%;
+            top: -1em;
+        }
+        .bk-btn, .bk-btn:hover, .bk-btn:active, .bk-btn:focus {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0.5em;
+            margin: -0.5em;
+            outline: none;
+            box-shadow: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        .bk-btn::after {
+            content: '\2715';
+        }
+        """],
+        css_classes=["popup-close-btn"])
+        self._panel = Panel(
+            position=XY(x=np.nan, y=np.nan),
+            anchor="top_left",
+            elements=[close_button],
+            visible=False
+        )
+        close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
+
+        self.plot.state.elements.append(self._panel)
+        self._watch_position()
+
+    def _watch_position(self):
+        geom_type = self.geom_type
+        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
+        self.plot.state.js_on_event('selectiongeometry', CustomJS(
+            args=dict(panel=self._panel),
+            code=f"""
+            export default ({{panel}}, cb_obj, _) => {{
+              const el = panel.elements[1]
+              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                 return
+              }}
+              let pos;
+              if (cb_obj.geometry.type === 'point') {{
+                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
+              }} else if (cb_obj.geometry.type === 'rect') {{
+                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
+              }} else if (cb_obj.geometry.type === 'poly') {{
+                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
+              }}
+              if (pos) {{
+                panel.position.setv(pos)
+              }}
+            }}""",
+        ))
+
+    def _get_position(self, event):
+        if self.geom_type not in ('any', event.geometry['type']):
+            return
+        elif event.geometry['type'] == 'point':
+            return dict(x=event.geometry['x'], y=event.geometry['y'])
+        elif event.geometry['type'] == 'rect':
+            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
+        elif event.geometry['type'] == 'poly':
+            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
+
+    def _update_selection_event(self, event):
+        if (((prev:= self._selection_event) and prev.final and not self._processed_event) or
+            self.geom_type not in (event.geometry["type"], "any")):
+            return
+        self._selection_event = event
+        self._processed_event = not event.final
+        if event.final and self._skipped_partial_event:
+            self._process_selection_event()
+            self._skipped_partial_event = False
+
+    def on_msg(self, msg):
+        super().on_msg(msg)
+        if hasattr(self, '_panel'):
+            self._process_selection_event()
+
+    def _process_selection_event(self):
+        event = self._selection_event
+        if event is not None:
+            if self.geom_type not in (event.geometry["type"], "any"):
+                return
+            elif not event.final:
+                self._skipped_partial_event = True
+                return
+
+        if event:
+            self._processed_event = True
+        for stream in self.streams:
+            popup = stream.popup
+            if popup is not None:
+                break
+
+        if callable(popup):
+            popup = popup(**stream.contents)
+
+        # If no popup is defined, hide the panel
+        if popup is None:
+            if self._panel.visible:
+                self._panel.visible = False
+            return
+
+        if event is not None:
+            position = self._get_position(event)
+        else:
+            position = None
+
+        popup_pane = panel(popup)
+        if not popup_pane.visible:
+            return
+
+        if not popup_pane.stylesheets:
+            self._panel.stylesheets = [
+                """
+                :host {
+                    padding: 1em;
+                    border-radius: 0.5em;
+                    border: 1px solid lightgrey;
+                }
+                """,
+            ]
+        else:
+            self._panel.stylesheets = []
+
+        self._panel.visible = True
+        # for existing popup, important to check if they're visible
+        # otherwise, UnknownReferenceError: can't resolve reference 'p...'
+        # meaning the popup has already been removed; we need to regenerate
+        if self._existing_popup and not self._existing_popup.visible:
+            if position:
+                self._panel.position = XY(**position)
+                if self.plot.comm:  # update Jupyter Notebook
+                    push_on_root(self.plot.root.ref['id'])
+            return
+
+        model = popup_pane.get_root(self.plot.document, self.plot.comm)
+        model.js_on_change('visible', CustomJS(
+            args=dict(panel=self._panel),
+            code="""
+            export default ({panel}, event, _) => {
+              if (!event.visible) {
+                panel.visible = false;
+              }
+            }""",
+        ))
+        # the first element is the close button
+        self._panel.elements = [self._panel.elements[0], model]
+        if self.plot.comm:  # update Jupyter Notebook
+            push_on_root(self.plot.root.ref['id'])
+        self._existing_popup = popup_pane
+
+
+class TapCallback(PopupMixin, PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
 
     Note: As of bokeh 0.12.5, there is no way to distinguish the
     individual tap events within a doubletap event.
     """
+
+    geom_type = 'point'
 
     on_events = ['tap', 'doubletap']
 
@@ -594,6 +776,7 @@ class TapCallback(PointerXYCallback):
         if v < s or v > e:
             value = None
         return value
+
 
 
 class SingleTapCallback(TapCallback):
@@ -651,34 +834,52 @@ class RangeXYCallback(Callback):
     Returns the x/y-axis ranges of a plot.
     """
 
-    attributes = {'x0': 'x_range.attributes.start',
-                  'x1': 'x_range.attributes.end',
-                  'y0': 'y_range.attributes.start',
-                  'y1': 'y_range.attributes.end'}
-    models = ['x_range', 'y_range']
-    on_changes = ['start', 'end']
+    on_events = ['rangesupdate']
+
+    models = ['plot']
+
+    extra_handles = ['x_range', 'y_range']
+
+    attributes = {
+        'x0': 'cb_obj.x0',
+        'y0': 'cb_obj.y0',
+        'x1': 'cb_obj.x1',
+        'y1': 'cb_obj.y1',
+    }
+
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id)
+        for stream in self.streams:
+            msg = self._process_msg({})
+            stream.update(**msg)
 
     def _process_msg(self, msg):
+        if self.plot.state.x_range is not self.plot.handles['x_range']:
+            x_range = self.plot.handles['x_range']
+            msg['x0'], msg['x1'] = x_range.start, x_range.end
+        if self.plot.state.y_range is not self.plot.handles['y_range']:
+            y_range = self.plot.handles['y_range']
+            msg['y0'], msg['y1'] = y_range.start, y_range.end
         data = {}
         if 'x0' in msg and 'x1' in msg:
             x0, x1 = msg['x0'], msg['x1']
-            if x0 > x1:
-                x0, x1 = x1, x0
             if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
                 if not isinstance(x0, datetime_types):
                     x0 = convert_timestamp(x0)
                 if not isinstance(x1, datetime_types):
                     x1 = convert_timestamp(x1)
+            if x0 > x1:
+                x0, x1 = x1, x0
             data['x_range'] = (x0, x1)
         if 'y0' in msg and 'y1' in msg:
             y0, y1 = msg['y0'], msg['y1']
-            if y0 > y1:
-                y0, y1 = y1, y0
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
                 if not isinstance(y0, datetime_types):
                     y0 = convert_timestamp(y0)
                 if not isinstance(y1, datetime_types):
                     y1 = convert_timestamp(y1)
+            if y0 > y1:
+                y0, y1 = y1, y0
             data['y_range'] = (y0, y1)
         return self._transform(data)
 
@@ -688,9 +889,14 @@ class RangeXCallback(RangeXYCallback):
     Returns the x-axis range of a plot.
     """
 
-    attributes = {'x0': 'x_range.attributes.start',
-                  'x1': 'x_range.attributes.end'}
-    models = ['x_range']
+    on_events = ['rangesupdate']
+
+    models = ['plot']
+
+    attributes = {
+        'x0': 'cb_obj.x0',
+        'x1': 'cb_obj.x1',
+    }
 
 
 class RangeYCallback(RangeXYCallback):
@@ -698,10 +904,14 @@ class RangeYCallback(RangeXYCallback):
     Returns the y-axis range of a plot.
     """
 
-    attributes = {'y0': 'y_range.attributes.start',
-                  'y1': 'y_range.attributes.end'}
-    models = ['y_range']
+    on_events = ['rangesupdate']
 
+    models = ['plot']
+
+    attributes = {
+        'y0': 'cb_obj.y0',
+        'y1': 'cb_obj.y1'
+    }
 
 
 class PlotSizeCallback(Callback):
@@ -742,7 +952,7 @@ class SelectModeCallback(Callback):
         return msg
 
 
-class BoundsCallback(Callback):
+class BoundsCallback(PopupMixin, Callback):
     """
     Returns the bounds of a box_select tool.
     """
@@ -750,6 +960,7 @@ class BoundsCallback(Callback):
                   'x1': 'cb_obj.geometry.x1',
                   'y0': 'cb_obj.geometry.y0',
                   'y1': 'cb_obj.geometry.y1'}
+    geom_type = 'rect'
     models = ['plot']
     on_events = ['selectiongeometry']
 
@@ -792,7 +1003,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, xdim)
                     try:
                         xfactors = list(np.array(xfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['x_selection'] = xfactors
         else:
@@ -807,7 +1018,7 @@ class SelectionXYCallback(BoundsCallback):
                     dtype = el.interface.dtype(el, ydim)
                     try:
                         yfactors = list(np.array(yfactors).astype(dtype))
-                    except:
+                    except Exception:
                         pass
             msg['y_selection'] = yfactors
         else:
@@ -861,11 +1072,13 @@ class BoundsYCallback(Callback):
             return {}
 
 
-class LassoCallback(Callback):
+class LassoCallback(PopupMixin, Callback):
 
     attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
+    geom_type = 'poly'
     models = ['plot']
     on_events = ['selectiongeometry']
+
     skip_events = [lambda event: event.geometry['type'] != 'poly',
                    lambda event: not event.final]
 
@@ -884,7 +1097,7 @@ class LassoCallback(Callback):
         return {'geometry': np.column_stack([xs, ys])}
 
 
-class Selection1DCallback(Callback):
+class Selection1DCallback(PopupMixin, Callback):
     """
     Returns the current selection on a ColumnDataSource.
     """
@@ -892,6 +1105,64 @@ class Selection1DCallback(Callback):
     attributes = {'index': 'cb_obj.indices'}
     models = ['selected']
     on_changes = ['indices']
+
+    def _watch_position(self):
+        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
+        source = self.plot.handles['source']
+        renderer = self.plot.handles['glyph_renderer']
+        selected = self.plot.handles['selected']
+        self.plot.state.js_on_event('selectiongeometry', CustomJS(
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
+            code="""
+            export default ({panel, renderer, source, selected}, cb_obj, _) => {
+              const el = panel.elements[1]
+              if ((el && !el.visible) || !cb_obj.final) {
+                 return
+              }
+              let x, y, xs, ys;
+              let indices = selected.indices;
+              if (cb_obj.geometry.type == 'point') {
+                indices = indices.slice(-1)
+              }
+              if (renderer.glyph.x && renderer.glyph.y) {
+                xs = source.get_column(renderer.glyph.x.field)
+                ys = source.get_column(renderer.glyph.y.field)
+              } else if (renderer.glyph.right && renderer.glyph.top) {
+                xs = source.get_column(renderer.glyph.right.field)
+                ys = source.get_column(renderer.glyph.top.field)
+              } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                xs = source.get_column(renderer.glyph.x1.field)
+                ys = source.get_column(renderer.glyph.y1.field)
+              } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                xs = source.get_column(renderer.glyph.xs.field)
+                ys = source.get_column(renderer.glyph.ys.field)
+              }
+              if (!xs || !ys) { return }
+              for (const i of indices) {
+                const tx = xs[i]
+                if (!x || (tx > x)) {
+                  x = xs[i]
+                }
+                const ty = ys[i]
+                if (!y || (ty > y)) {
+                  y = ys[i]
+                }
+              }
+              if (x && y) {
+                panel.position.setv({x, y})
+              }
+            }""",
+        ))
+
+    def _get_position(self, event):
+        el = self.plot.current_frame
+        if isinstance(el, Dataset):
+            s = self.streams[0]
+            sel = el.iloc[s.index]
+            # get the most top-right point
+            (_, x1), (_, y1) = sel.range(0), sel.range(1)
+            return dict(x=x1, y=y1)
+        return super()._get_position(event)
 
     def _process_msg(self, msg):
         el = self.plot.current_frame
@@ -966,6 +1237,19 @@ class CDSCallback(Callback):
                 values = new_values
             elif any(isinstance(v, (int, float)) for v in values):
                 values = [np.nan if v is None else v for v in values]
+            elif (
+                isinstance(values, list)
+                and len(values) == 4
+                and values[2] in ("big", "little")
+                and isinstance(values[3], list)
+            ):
+                # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+                # This could be fixed in Bokeh 3.0, but has not been tested.
+                # Example:
+                # ['pm9vF9dSY8EAAADgPFNjwQAAAMAmU2PBAAAAAMtSY8E=','float64', 'little', [4]]
+                buffer = base64.decodebytes(values[0].encode())
+                dtype = np.dtype(values[1]).newbyteorder(values[2])
+                values = np.frombuffer(buffer, dtype)
             msg['data'][col] = values
         return self._transform(msg)
 
@@ -974,29 +1258,33 @@ class GlyphDrawCallback(CDSCallback):
 
     _style_callback = """
       var types = Bokeh.require("core/util/types");
-      var length = cb_obj.data[length_var].length;
-      for (var i = 0; i < length; i++) {
+      var changed = false
+      for (var i = 0; i < cb_obj.length; i++) {
         for (var style in styles) {
           var value = styles[style];
           if (types.isArray(value)) {
             value = value[i % value.length];
           }
-          cb_obj.data[style][i] = value;
+          if (cb_obj.data[style][i] !== value) {
+            cb_obj.data[style][i] = value;
+            changed = true;
+          }
         }
       }
+      if (changed)
+        cb_obj.change.emit()
     """
 
-    def _create_style_callback(self, cds, glyph, length_var):
+    def _create_style_callback(self, cds, glyph):
         stream = self.streams[0]
+        col = cds.column_names[0]
+        length = len(cds.data[col])
         for style, values in stream.styles.items():
-            cds.data[style] = [
-                values[i % len(values)]
-                for i in range(len(cds.data[length_var]))]
+            cds.data[style] = [values[i % len(values)] for i in range(length)]
             setattr(glyph, style, style)
         cb = CustomJS(code=self._style_callback,
                       args={'styles': stream.styles,
-                            'empty': stream.empty_value,
-                            'length_var': length_var})
+                            'empty': stream.empty_value})
         cds.js_on_change('data', cb)
 
     def _update_cds_vdims(self, data):
@@ -1011,7 +1299,7 @@ class GlyphDrawCallback(CDSCallback):
             if dim in data:
                 continue
             values = element.dimension_values(d)
-            if len(values) != len(list(data.values())[0]):
+            if len(values) != len(next(iter(data.values()))):
                 values = np.concatenate([values, [stream.empty_value]])
             data[dim] = values
 
@@ -1028,9 +1316,9 @@ class PointDrawCallback(GlyphDrawCallback):
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if stream.styles:
-            self._create_style_callback(cds, glyph, 'x')
+            self._create_style_callback(cds, glyph)
         if stream.empty_value is not None:
             kwargs['empty_value'] = stream.empty_value
         point_tool = PointDrawTool(
@@ -1060,7 +1348,7 @@ class CurveEditCallback(GlyphDrawCallback):
         renderers = [renderer]
         kwargs = {}
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         point_tool = PointDrawTool(
             add=False, drag=True, renderers=renderers, **kwargs
         )
@@ -1105,9 +1393,9 @@ class PolyDrawCallback(GlyphDrawCallback):
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
         if stream.styles:
-            self._create_style_callback(cds, glyph, 'xs')
+            self._create_style_callback(cds, glyph)
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if stream.empty_value is not None:
             kwargs['empty_value'] = stream.empty_value
         poly_tool = PolyDrawTool(
@@ -1152,10 +1440,10 @@ class FreehandDrawCallback(PolyDrawCallback):
         glyph = plot.handles['glyph']
         stream = self.streams[0]
         if stream.styles:
-            self._create_style_callback(cds, glyph, 'xs')
+            self._create_style_callback(cds, glyph)
         kwargs = {}
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if stream.empty_value is not None:
             kwargs['empty_value'] = stream.empty_value
         poly_tool = FreehandDrawTool(
@@ -1179,20 +1467,20 @@ class BoxEditCallback(GlyphDrawCallback):
         data = cds.data
         element = self.plot.current_frame
 
-        xs, ys, widths, heights = [], [], [], []
+        l, b, r, t =  [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
-            xs.append((x0+x1)/2.)
-            ys.append((y0+y1)/2.)
-            widths.append(x1-x0)
-            heights.append(y1-y0)
-        data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
+            l.append(x0)
+            b.append(y0)
+            r.append(x1)
+            t.append(y1)
+        data = {'left': l, 'bottom': b, 'right': r, 'top': t}
         data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
         cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
+        r1 = plot.state.quad(left='left', bottom='bottom', right='right', top='top', source=cds, **style)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         data = self._process_msg({'data': data})['data']
@@ -1210,15 +1498,19 @@ class BoxEditCallback(GlyphDrawCallback):
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
 
         renderer = self.plot.handles['glyph_renderer']
         if isinstance(self.plot, PathPlot):
             renderer = self._path_initialize()
         if stream.styles:
-            self._create_style_callback(cds, renderer.glyph, 'x')
-        box_tool = BoxEditTool(renderers=[renderer], **kwargs)
-        self.plot.state.tools.append(box_tool)
+            self._create_style_callback(cds, renderer.glyph)
+        if bokeh33:
+            # First version with Quad support
+            box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+            self.plot.state.tools.append(box_tool)
+        else:
+            warn("BoxEditTool requires Bokeh >= 3.3")
         self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 
@@ -1226,19 +1518,12 @@ class BoxEditCallback(GlyphDrawCallback):
         data = super()._process_msg(msg)
         if 'data' not in data:
             return {}
-        data = data['data']
-        x0s, x1s, y0s, y1s = [], [], [], []
-        for (x, y, w, h) in zip(data['x'], data['y'], data['width'], data['height']):
-            x0s.append(x-w/2.)
-            x1s.append(x+w/2.)
-            y0s.append(y-h/2.)
-            y1s.append(y+h/2.)
-        values = {}
-        for col in data:
-            if col in ('x', 'y', 'width', 'height'):
-                continue
-            values[col] = data[col]
-        msg = {'data': dict(values, x0=x0s, x1=x1s, y0=y0s, y1=y1s)}
+        values = dict(data['data'])
+        values['x0'] = values.pop("left")
+        values['y0'] = values.pop("bottom")
+        values['x1'] = values.pop("right")
+        values['y1'] = values.pop("top")
+        msg = {'data': values}
         self._update_cds_vdims(msg['data'])
         return self._transform(msg)
 
@@ -1256,7 +1541,7 @@ class PolyEditCallback(PolyDrawCallback):
         stream = self.streams[0]
         kwargs = {}
         if stream.tooltip:
-            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+            kwargs['description'] = stream.tooltip
         if vertex_tool is None:
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)

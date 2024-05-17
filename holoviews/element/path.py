@@ -6,12 +6,11 @@ quickly draw common shapes.
 """
 
 import numpy as np
-
 import param
+
 from ..core import Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension
-from ..core.util import OrderedDict
 from .geom import Geometry
 from .selection import SelectionPolyExpr
 
@@ -56,7 +55,7 @@ class Path(SelectionPolyExpr, Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=[
+    datatype = param.List(default=[
         'multitabular', 'spatialpandas', 'dask_spatialpandas']
     )
 
@@ -92,8 +91,7 @@ class Path(SelectionPolyExpr, Geometry):
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
         if not all(isinstance(k, slice) for k in key):
-            raise KeyError("%s only support slice indexing" %
-                             self.__class__.__name__)
+            raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = key
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
@@ -173,7 +171,7 @@ class Path(SelectionPolyExpr, Geometry):
             elif datatype is None:
                 obj = self.clone([self.data])
             else:
-                raise ValueError("%s datatype not support" % datatype)
+                raise ValueError(f"{datatype} datatype not support")
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
 
@@ -255,7 +253,7 @@ class Polygons(Contours):
     for each coordinate array to be split into a multi-geometry
     through NaN-separators. Each sub-geometry separated by the NaNs
     therefore has an unambiguous mapping to a list of holes. If a
-    (multi-)polygon has no holes, the 'holes' key may be ommitted.
+    (multi-)polygon has no holes, the 'holes' key may be omitted.
 
     Any value dimensions stored on a Polygons geometry must be scalar,
     just like the Contours element. Since not all formats allow
@@ -323,7 +321,7 @@ class BaseShape(Path):
         containing the specified args and kwargs.
         """
         link = overrides.pop('link', True)
-        settings = dict(self.param.get_param_values(), **overrides)
+        settings = dict(self.param.values(), **overrides)
         if 'id' not in settings:
             settings['id'] = self.id
         if not args and link:
@@ -480,5 +478,5 @@ class Bounds(BaseShape):
         super().__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
         xdim, ydim = self.kdims
-        self.data = [OrderedDict([(xdim.name, np.array([l, l, r, r, l])),
+        self.data = [dict([(xdim.name, np.array([l, l, r, r, l])),
                                   (ydim.name, np.array([b, t, t, b, b]))])]

@@ -1,7 +1,7 @@
 import numpy as np
 
 from holoviews.core.spaces import GridSpace
-from holoviews.element import Scatter, Curve
+from holoviews.element import Curve, Scatter
 
 from .test_plot import TestPlotlyPlot
 
@@ -12,13 +12,13 @@ class TestGridPlot(TestPlotlyPlot):
         # Create GridSpace
         grid = GridSpace({(i, j): Curve([i, j]) for i in [0, 1]
                           for j in [0, 1]})
-        grid = grid.options(vspacing=0, hspacing=0)
+        grid = grid.opts(vspacing=0, hspacing=0)
 
         # Create Scatter
         scatter = Scatter([-10, 0])
 
         # Create Horizontal Layout
-        layout = (scatter + grid).options(vspacing=0, hspacing=0)
+        layout = (scatter + grid).opts(vspacing=0, hspacing=0)
 
         state = self._get_plot_state(layout)
 

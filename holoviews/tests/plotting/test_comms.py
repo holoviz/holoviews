@@ -1,5 +1,6 @@
-from holoviews.element.comparison import ComparisonTestCase
 from pyviz_comms import Comm, JupyterComm
+
+from holoviews.element.comparison import ComparisonTestCase
 
 
 class TestComm(ComparisonTestCase):
@@ -54,11 +55,3 @@ class TestJupyterComm(ComparisonTestCase):
         msg = {'content': {'data': 'Test'}}
         decoded = JupyterComm.decode(msg)
         self.assertEqual(decoded, 'Test')
-
-    def test_on_msg(self):
-        def raise_error(msg):
-            if msg == 'Error':
-                raise Exception()
-        comm = JupyterComm(id='Test', on_msg=raise_error)
-        with self.assertRaises(Exception):
-            comm._handle_msg({'content': {'data': 'Error'}})

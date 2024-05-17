@@ -1,20 +1,21 @@
+import colorsys
+from copy import deepcopy
 from operator import itemgetter
 
 import numpy as np
-import colorsys
 import param
 
-from ..core import util, config, Dimension, Element2D, Overlay, Dataset
+from ..core import Dataset, Dimension, Element2D, Overlay, config, util
+from ..core.boundingregion import BoundingBox, BoundingRegion
 from ..core.data import ImageInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
-from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
 from .geom import Selection2DExpr
 from .graphs import TriMesh
 from .tabular import Table
-from .util import compute_slice_bounds, categorical_aggregate2d
+from .util import categorical_aggregate2d, compute_slice_bounds
 
 
 class Raster(Element2D):
@@ -58,7 +59,7 @@ class Raster(Element2D):
         elif len(slices) > (2 + self.depth):
             raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
+            raise KeyError(f"{self.vdims[0].name!r} is the only selectable value dimension")
 
         slc_types = [isinstance(sl, slice) for sl in slices[:2]]
         data = self.data.__getitem__(slices[:2][::-1])
@@ -100,7 +101,7 @@ class Raster(Element2D):
         else:
             return super().dimension_values(dim)
 
-    def sample(self, samples=[], bounds=None, **sample_values):
+    def sample(self, samples=None, bounds=None, **sample_values):
         """
         Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -109,11 +110,13 @@ class Raster(Element2D):
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
         """
+        if samples is None:
+            samples = []
         if isinstance(samples, tuple):
             X, Y = samples
             samples = zip(X, Y)
 
-        params = dict(self.param.get_param_values(onlychanged=True),
+        params = dict(self.param.values(onlychanged=True),
                       vdims=self.vdims)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
@@ -125,7 +128,7 @@ class Raster(Element2D):
             params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
-            dimension, sample_coord = list(sample_values.items())[0]
+            dimension, sample_coord = next(iter(sample_values.items()))
             if isinstance(sample_coord, slice):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
@@ -133,7 +136,7 @@ class Raster(Element2D):
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(dimension)
             if sample_ind is None:
-                raise Exception("Dimension %s not found during sampling" % dimension)
+                raise Exception(f"Dimension {dimension} not found during sampling")
             other_dimension = [d for i, d in enumerate(self.kdims) if
                                i != sample_ind]
 
@@ -173,7 +176,7 @@ class Raster(Element2D):
             if oidx and hasattr(self, 'bounds'):
                 reduced = reduced[::-1]
             data = zip(x_vals, reduced)
-            params = dict(dict(self.param.get_param_values(onlychanged=True)),
+            params = dict(dict(self.param.values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
             params.pop('extents', None)
@@ -191,7 +194,7 @@ class Raster(Element2D):
         return int(round(coord[1])), int(round(coord[0]))
 
     def __len__(self):
-        return np.product(self._zdata.shape)
+        return np.prod(self._zdata.shape)
 
 
 
@@ -275,11 +278,12 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar. "
-                            "To display columnar data as gridded use the HeatMap "
-                            "element or aggregate the data (e.g. using rasterize "
-                            "or np.histogram2d)." %
-                            (type(self).__name__, self.interface.__name__))
+            raise DataError(
+                f"{type(self).__name__} type expects gridded data, "
+                f"{self.interface.__name__} is columnar. "
+                "To display columnar data as gridded use the HeatMap "
+                "element or aggregate the data (e.g. using np.histogram2d)."
+            )
 
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
         if bounds is None:
@@ -301,8 +305,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         non_finite = all(not util.isfinite(v) for v in bounds.lbrt())
         if non_finite:
             bounds = BoundingBox(points=((0, 0), (0, 0)))
-            xdensity = xdensity or 1
-            ydensity = ydensity or 1
+            xdensity = xdensity if xdensity and util.isfinite(xdensity) else 1
+            ydensity = ydensity if ydensity and util.isfinite(ydensity) else 1
         else:
             l, b, r, t = bounds.lbrt()
             xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
@@ -329,13 +333,12 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if yvals.ndim > 1:
             invalid.append(ydim)
         if invalid:
-            dims = '%s and %s' % tuple(invalid) if len(invalid) > 1 else '%s' % invalid[0]
-            raise ValueError('{clsname} coordinates must be 1D arrays, '
-                             '{dims} dimension(s) were found to have '
+            dims = '{} and {}'.format(*tuple(invalid)) if len(invalid) > 1 else f'{invalid[0]}'
+            raise ValueError(f'{clsname} coordinates must be 1D arrays, '
+                             f'{dims} dimension(s) were found to have '
                              'multiple dimensions. Either supply 1D '
                              'arrays or use the QuadMesh element for '
-                             'curvilinear coordinates.'.format(
-                                 clsname=clsname, dims=dims))
+                             'curvilinear coordinates.')
 
         xvalid = util.validate_regular_sampling(xvals, self.rtol)
         yvalid = util.validate_regular_sampling(yvals, self.rtol)
@@ -346,9 +349,9 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                "{clsname} constructor.")
         dims = None
         if not xvalid:
-            dims = ' %s is ' % xdim if yvalid else '(s) %s and %s are' % (xdim, ydim)
+            dims = f' {xdim} is ' if yvalid else f'(s) {xdim} and {ydim} are'
         elif not yvalid:
-            dims = ' %s is' % ydim
+            dims = f' {ydim} is'
         if dims:
             self.param.warning(
                 msg.format(clsname=clsname, dims=dims, rtol=self.rtol))
@@ -453,13 +456,15 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                               ydensity=self.ydensity, bounds=bounds)
 
 
-    def closest(self, coords=[], **kwargs):
+    def closest(self, coords=None, **kwargs):
         """
         Given a single coordinate or multiple coordinates as
         a tuple or list of tuples or keyword arguments matching
         the dimension closest will find the closest actual x/y
         coordinates.
         """
+        if coords is None:
+            coords = []
         if kwargs and coords:
             raise ValueError("Specify coordinate using as either a list "
                              "keyword arguments not both")
@@ -501,6 +506,72 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
+
+
+class ImageStack(Image):
+    """
+    ImageStack expands the capabilities of Image to by supporting
+    multiple layers of images.
+
+    As there is many ways to represent multiple layers of images,
+    the following options are supported:
+
+        1) A 3D Numpy array with the shape (y, x, level)
+        2) A list of 2D Numpy arrays with identical shape (y, x)
+        3) A dictionary where the keys will be set as the vdims and the
+            values are 2D Numpy arrays with identical shapes (y, x).
+            If the dictionary's keys matches the kdims of the element,
+            they need to be 1D arrays.
+        4) A tuple containing (x, y, level_0, level_1, ...),
+            where the level is a 2D Numpy array in the shape of (y, x).
+        5) An xarray DataArray or Dataset where its `coords` contain the kdims.
+
+    If no kdims are supplied, x and y are used.
+
+    If no vdims are supplied, and the naming can be inferred like with a dictionary
+    the levels will be named level_0, level_1, etc.
+    """
+
+    vdims = param.List(doc="""
+        The dimension description of the data held in the matrix.""")
+
+    group = param.String(default='ImageStack', constant=True)
+
+    _ndim = 3
+
+    _vdim_reductions = {1: Image}
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        _kdims = kdims or self.kdims
+        if isinstance(data, list) and len(data):
+            x = np.arange(data[0].shape[1])
+            y = np.arange(data[0].shape[0])
+            data = (x, y, *data)
+        elif isinstance(data, dict):
+            first = next(v for k, v in data.items() if k not in _kdims)
+            xdim, ydim = map(str, _kdims)
+            if xdim not in data:
+                data[xdim] = np.arange(first.shape[1])
+            if ydim not in data:
+                data[ydim] = np.arange(first.shape[0])
+        elif isinstance(data, np.ndarray) and data.ndim == 3:
+            x = np.arange(data.shape[1])
+            y = np.arange(data.shape[0])
+            arr = (data[:, :, n] for n in range(data.shape[2]))
+            data = (x, y, *arr)
+        elif (
+            isinstance(data, tuple) and len(data) == 3
+            and isinstance(data[2], np.ndarray) and data[2].ndim == 3
+        ):
+            arr = (data[2][:, :, n] for n in range(data[2].shape[2]))
+            data = (data[0], data[1], *arr)
+
+        if vdims is None:
+            if isinstance(data, tuple):
+                vdims = [Dimension(f"level_{i}") for i in range(len(data[2:]))]
+            elif isinstance(data, dict):
+                vdims = [Dimension(key) for key in data.keys() if key not in _kdims]
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 class RGB(Image):
@@ -578,8 +649,8 @@ class RGB(Image):
         """
         try:
             from PIL import Image
-        except:
-            raise ImportError("RGB.load_image requires PIL (or Pillow).")
+        except ImportError:
+            raise ImportError("RGB.load_image requires PIL (or Pillow).") from None
 
         with open(filename, 'rb') as f:
             data = np.array(Image.open(f))
@@ -612,7 +683,8 @@ class RGB(Image):
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
         if vdims is None:
-            vdims = list(self.vdims)
+            # Need to make a deepcopy of the value so the RGB.default is not shared across instances
+            vdims = deepcopy(self.vdims)
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
@@ -730,11 +802,12 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
             data = ([], [], np.zeros((0, 0)))
         super().__init__(data, kdims, vdims, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar. "
-                            "To display columnar data as gridded use the HeatMap "
-                            "element or aggregate the data (e.g. using "
-                            "np.histogram2d)." %
-                            (type(self).__name__, self.interface.__name__))
+            raise DataError(
+                f"{type(self).__name__} type expects gridded data, "
+                f"{self.interface.__name__} is columnar. "
+                "To display columnar data as gridded use the HeatMap "
+                "element or aggregate the data (e.g. using np.histogram2d)."
+            )
 
     def trimesh(self):
         """
@@ -756,7 +829,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
         # Generate triangle simplexes
         shape = self.dimension_values(2, flat=False).shape
         s0 = shape[0]
-        t1 = np.arange(np.product(shape))
+        t1 = np.arange(np.prod(shape))
         js = (t1//s0)
         t1s = js*(s0+1)+t1%s0
         t2s = t1s+1
@@ -847,7 +920,7 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
                     return super().range(dim, data_range, dimension_range)
                 else:
                     drange = self.gridded.range(dim, data_range, dimension_range)
-            except:
+            except Exception:
                 drange = None
             finally:
                 self.gridded._binned = False

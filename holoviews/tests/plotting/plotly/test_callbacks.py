@@ -1,29 +1,28 @@
-from unittest import TestCase, SkipTest
-
-try:
-    from unittest.mock import Mock
-except:
-    from mock import Mock
-
 import uuid
+from unittest import TestCase
+from unittest.mock import Mock
+
+import plotly.graph_objs as go
+
 from holoviews import Tiles
-try:
-    import plotly.graph_objs as go
-except:
-    go = None
-
-from holoviews.streams import (
-    BoundsXY, BoundsX, BoundsY, RangeXY, RangeX, RangeY, Selection1D
+from holoviews.plotting.plotly.callbacks import (
+    BoundsXCallback,
+    BoundsXYCallback,
+    BoundsYCallback,
+    RangeXCallback,
+    RangeXYCallback,
+    RangeYCallback,
+    Selection1DCallback,
 )
-
-try:
-    from holoviews.plotting.plotly.callbacks import (
-        RangeXYCallback, RangeXCallback, RangeYCallback,
-        BoundsXYCallback, BoundsXCallback, BoundsYCallback,
-        Selection1DCallback
-    )
-except:
-    pass
+from holoviews.streams import (
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
+)
 
 
 def mock_plot(trace_uid=None):
@@ -69,8 +68,6 @@ def build_callback_set(callback_cls, trace_uids, stream_type, num_streams=2):
 class TestCallbacks(TestCase):
 
     def setUp(self):
-        if go is None:
-            raise SkipTest("Plotly required to test plotly callbacks")
         self.fig_dict = go.Figure({
             'data': [
                 {'type': 'scatter',
@@ -347,7 +344,7 @@ class TestCallbacks(TestCase):
                 xyevents[4], xevents[4], yevents[4]
         ):
             assert len(xyevent) == 0
-            assert len(yevent) == 0
+            assert len(xevent) == 0
             assert len(yevent) == 0
 
     def testBoundsXYCallbackEventData(self):
@@ -640,9 +637,9 @@ class TestCallbacks(TestCase):
         )
 
         # Check that all streams attached to the 'forth' plot were triggered
-        for stream, events in zip(streamss[3], sel_events[3]):
+        for stream, _events in zip(streamss[3], sel_events[3]):
             assert stream.index == [0, 2]
 
         # Check that streams attached to plots not in this figure are not called
-        for stream, events in zip(streamss[4], sel_events[4]):
+        for _stream, events in zip(streamss[4], sel_events[4]):
             assert len(events) == 0

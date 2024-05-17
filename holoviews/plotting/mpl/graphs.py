@@ -1,19 +1,20 @@
-import param
-import numpy as np
+import warnings
 
+import numpy as np
+import param
 from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import unique_array, search_indices, is_number, isscalar
+from ...core.util import is_number, isscalar, search_indices, unique_array
 from ...util.transform import dim
-from ..mixins import ChordMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..mixins import ChordMixin, GraphMixin
+from ..util import get_directed_graph_paths, process_cmap
 from .element import ColorbarPlot
 from .util import filter_styles
 
 
-class GraphPlot(ColorbarPlot):
+class GraphPlot(GraphMixin, ColorbarPlot):
 
     arrowhead_length = param.Number(default=0.025, doc="""
       If directed option is enabled this determines the length of the
@@ -141,9 +142,6 @@ class GraphPlot(ColorbarPlot):
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
-
     def init_artists(self, ax, plot_args, plot_kwargs):
         # Draw edges
         color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm']
@@ -168,7 +166,10 @@ class GraphPlot(ColorbarPlot):
         xs, ys = plot_args['nodes']
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups)
-        nodes = ax.scatter(xs, ys, **node_opts)
+        with warnings.catch_warnings():
+            # scatter have a default cmap and with an empty array will emit this warning
+            warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
+            nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}
 
@@ -243,8 +244,7 @@ class TriMeshPlot(GraphPlot):
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
-        # Ensure the edgepaths for the triangles are generated before plotting
-        element.edgepaths
+        element._initialize_edgepaths()
         return super().get_data(element, ranges, style)
 
 
@@ -357,7 +357,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         for label in labels:
             try:
                 label.remove()
-            except:
+            except Exception:
                 pass
         if 'text' not in data:
             self.handles['labels'] = []

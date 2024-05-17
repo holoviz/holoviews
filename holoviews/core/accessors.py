@@ -2,14 +2,10 @@
 Module for accessor objects for viewable HoloViews objects.
 """
 import copy
-import sys
-
-from collections import OrderedDict
+from functools import wraps
 from types import FunctionType
 
 import param
-
-from param.parameterized import add_metaclass
 
 from . import util
 from .pprint import PrettyPrinter
@@ -25,8 +21,12 @@ class AccessorPipelineMeta(type):
 
     @classmethod
     def pipelined(mcs, __call__):
+        @wraps(__call__)
         def pipelined_call(*args, **kwargs):
-            from ..operation.element import method as method_op, factory
+            from ..operation.element import (
+                factory,
+                method as method_op,
+            )
             from .data import Dataset, MultiDimensionalMapping
             inst = args[0]
 
@@ -80,13 +80,10 @@ class AccessorPipelineMeta(type):
 
             return result
 
-        pipelined_call.__doc__ = __call__.__doc__
-
         return pipelined_call
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Apply(object):
+class Apply(metaclass=AccessorPipelineMeta):
     """
     Utility to apply a function or operation to all viewable elements
     inside the object.
@@ -95,7 +92,7 @@ class Apply(object):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, apply_function, streams=[], link_inputs=True,
+    def __call__(self, apply_function, streams=None, link_inputs=True,
                  link_dataset=True, dynamic=None, per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
@@ -135,11 +132,16 @@ class Apply(object):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        from panel.widgets.base import Widget
+
+        from ..util import Dynamic
         from .data import Dataset
         from .dimension import ViewableElement
         from .element import Element
-        from .spaces import HoloMap, DynamicMap
-        from ..util import Dynamic
+        from .spaces import DynamicMap, HoloMap
+
+        if streams is None:
+            streams = []
 
         if isinstance(self._obj, DynamicMap) and dynamic == False:
             samples = tuple(d.values for d in self._obj.kdims)
@@ -161,17 +163,16 @@ class Apply(object):
             def apply_function(object, **kwargs):
                 method = getattr(object, method_name, None)
                 if method is None:
-                    raise AttributeError('Applied method %s does not exist.'
+                    raise AttributeError(f'Applied method {method_name} does not exist.'
                                          'When declaring a method to apply '
                                          'as a string ensure a corresponding '
-                                         'method exists on the object.' %
-                                         method_name)
+                                         'method exists on the object.')
                 return method(*args, **kwargs)
 
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-            kwargs = {k: v.param.value if isinstance(v, Widget) else v
-                      for k, v in kwargs.items()}
+        kwargs = {
+            k: v.param.value if isinstance(v, Widget) else v
+            for k, v in kwargs.items()
+        }
 
         spec = Element if per_element else ViewableElement
         applies = isinstance(self._obj, spec)
@@ -230,8 +231,8 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
-        from ..util.transform import dim
         from ..streams import Params
+        from ..util.transform import dim
         params = {}
         for arg in kwargs.values():
             if isinstance(arg, dim):
@@ -241,22 +242,26 @@ class Apply(object):
         kwargs['_method_args'] = args
         return self.__call__('opts', **kwargs)
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **kwargs):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a reduce function to all ViewableElement objects.
 
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
+        if dimensions is None:
+            dimensions = []
         kwargs['_method_args'] = (dimensions, function, spreadfn)
         kwargs['per_element'] = True
         return self.__call__('reduce', **kwargs)
 
-    def sample(self, samples=[], bounds=None, **kwargs):
+    def sample(self, samples=None, bounds=None, **kwargs):
         """Samples element values at supplied coordinates.
 
         See :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
         for more information.
         """
+        if samples is None:
+            samples = []
         kwargs['_method_args'] = (samples, bounds)
         kwargs['per_element'] = True
         return self.__call__('sample', **kwargs)
@@ -275,8 +280,8 @@ class Apply(object):
         See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
         for more information.
         """
-        from ..util.transform import dim
         from ..streams import Params
+        from ..util.transform import dim
         params = {}
         for _, arg in list(args)+list(kwargs.items()):
             if isinstance(arg, dim):
@@ -288,8 +293,7 @@ class Apply(object):
         return self.__call__('transform', **kwargs)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Redim(object):
+class Redim(metaclass=AccessorPipelineMeta):
     """
     Utility that supports re-dimensioning any HoloViews object via the
     redim method.
@@ -361,9 +365,12 @@ class Redim(object):
             dimension = self._obj.vdims[idx]
         return dimension
 
-    def _create_expression_transform(self, kdims, vdims, exclude=[]):
-        from .dimension import dimension_name
+    def _create_expression_transform(self, kdims, vdims, exclude=None):
         from ..util.transform import dim
+        from .dimension import dimension_name
+
+        if exclude is None:
+            exclude = []
 
         def _transform_expression(expression):
             if dimension_name(expression.dimension) in exclude:
@@ -439,7 +446,7 @@ class Redim(object):
         def dynamic_redim(obj, **dynkwargs):
             return obj.redim(specs, **dimensions)
         dmap = Dynamic(obj, streams=obj.streams, operation=dynamic_redim)
-        dmap.data = OrderedDict(self._filter_cache(redimmed, kdims))
+        dmap.data = dict(self._filter_cache(redimmed, kdims))
         with util.disable_constant(dmap):
             dmap.kdims = kdims
             dmap.vdims = vdims
@@ -488,8 +495,7 @@ class Redim(object):
         return self._redim('values', specs, **ranges)
 
 
-@add_metaclass(AccessorPipelineMeta)
-class Opts(object):
+class Opts(metaclass=AccessorPipelineMeta):
 
     def __init__(self, obj, mode=None):
         self._mode = mode
@@ -508,7 +514,7 @@ class Opts(object):
             Options object associated with the object containing the
             applied option keywords.
         """
-        from .options import Store, Options
+        from .options import Options, Store
         keywords = {}
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
@@ -559,14 +565,16 @@ class Opts(object):
         Returns:
             Returns the object or a clone with the options applied
         """
+        if not(args) and not(kwargs):
+            return self._obj
         if self._mode is None:
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
             if apply_groups:
                 msg = ("Calling the .opts method with options broken down by options "
-                       "group (i.e. separate plot, style and norm groups) is deprecated. "
+                       "group (i.e. separate plot, style and norm groups) has been removed. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
-                param.main.param.warning(msg)
+                raise ValueError(msg)
 
         return self._dispatch_opts( *args, **kwargs)
 
@@ -598,10 +606,9 @@ class Opts(object):
         pprinter = PrettyPrinter(show_options=True, show_defaults=show_defaults)
         print(pprinter.pprint(self._obj))
 
-    def _holomap_opts(self, *args, **kwargs):
-        clone = kwargs.pop('clone', None)
+    def _holomap_opts(self, *args, clone=None, **kwargs):
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        data = OrderedDict([(k, v.opts(*args, **kwargs))
+        data = dict([(k, v.opts(*args, **kwargs))
                              for k, v in self._obj.data.items()])
 
         # By default do not clone in .opts method
@@ -627,7 +634,7 @@ class Opts(object):
                 obj.callback = self._obj.callback
                 self._obj.callback = dmap.callback
             dmap = self._obj
-            dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
+            dmap.data = dict([(k, v.opts(*args, **kwargs))
                                      for k, v in self._obj.data.items()])
         return dmap
 
@@ -652,3 +659,17 @@ class Opts(object):
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*new_args, **kwargs)
+
+    def __getitem__(self, item):
+        options = self.get().kwargs
+        if item in options:
+            return options[item]
+        else:
+            raise KeyError(
+                f"{item!r} is not in opts. Valid items is {', '.join(options)}."
+            )
+
+    def __repr__(self):
+        options = self.get().kwargs
+        kws = ', '.join(f"{k}={options[k]!r}" for k in sorted(options.keys()))
+        return f"Opts({kws})"

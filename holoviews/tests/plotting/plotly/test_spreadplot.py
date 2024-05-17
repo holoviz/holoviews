@@ -34,6 +34,6 @@ class TestSpreadPlot(TestPlotlyPlot):
         element = Spread(
             [(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)],
             vdims=['y', 'y2']
-        ).options(visible=False)
+        ).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][0]['visible'], False)

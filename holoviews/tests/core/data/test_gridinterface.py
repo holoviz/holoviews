@@ -1,13 +1,14 @@
 import datetime as dt
-
-from collections import OrderedDict
 from itertools import product
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
+
 from holoviews.core.data import Dataset
-from holoviews.core.util import pd, date_range
-from holoviews.element import Image, Curve, RGB, HSV
+from holoviews.core.data.interface import DataError
+from holoviews.core.util import date_range
+from holoviews.element import HSV, RGB, Curve, Image
 from holoviews.util.transform import dim
 
 try:
@@ -15,15 +16,17 @@ try:
 except ImportError:
     da = None
 
-pd_skip = skipIf(pd is None, "pandas is not available")
-
 
 from .base import (
-    GriddedInterfaceTests, InterfaceTests, HomogeneousColumnTests, DatatypeContext
+    DatatypeContext,
+    GriddedInterfaceTests,
+    HomogeneousColumnTests,
+    InterfaceTests,
 )
 from .test_imageinterface import (
-    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
-    BaseHSVElementInterfaceTests
+    BaseHSVElementInterfaceTests,
+    BaseImageElementInterfaceTests,
+    BaseRGBElementInterfaceTests,
 )
 
 
@@ -31,15 +34,13 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     __test__ = False
 
-    @pd_skip
     def test_dataset_dataframe_init_hm(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(DataError):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
-    @pd_skip
     def test_dataset_dataframe_init_hm_alias(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(DataError):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
@@ -347,7 +348,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
 class GridInterfaceTests(BaseGridInterfaceTests):
     datatype = 'grid'
-    data_type = (OrderedDict, dict)
+    data_type = (dict,)
     element = Dataset
 
     __test__ = True
@@ -519,7 +520,6 @@ class DaskGridInterfaceTests(GridInterfaceTests):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten().compute())
 
-    @pd_skip
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
         self.assertEqual(df.x.values, self.xs)
@@ -531,7 +531,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 
@@ -688,7 +688,7 @@ class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
 class RGBElement_GridInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 
@@ -700,7 +700,7 @@ class RGBElement_GridInterfaceTests(BaseRGBElementInterfaceTests):
 class RGBElement_PackedGridInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 
@@ -711,7 +711,7 @@ class RGBElement_PackedGridInterfaceTests(BaseRGBElementInterfaceTests):
 class HSVElement_GridInterfaceTests(BaseHSVElementInterfaceTests):
 
     datatype = 'grid'
-    data_type = OrderedDict
+    data_type = dict
 
     __test__ = True
 

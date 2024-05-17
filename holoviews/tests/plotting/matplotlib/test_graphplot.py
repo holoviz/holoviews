@@ -1,16 +1,13 @@
 import numpy as np
+import pytest
+from matplotlib.collections import LineCollection, PolyCollection
+from packaging.version import Version
 
 from holoviews.core.data import Dataset
-from holoviews.core.options import Cycle
+from holoviews.core.options import AbbreviatedException, Cycle
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
+from holoviews.element import Chord, Graph, Nodes, TriMesh, circular_layout
 from holoviews.util.transform import dim
-
-# Standardize backend due to random inconsistencies
-try:
-    from matplotlib.collections import LineCollection, PolyCollection
-except:
-    pass
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -41,7 +38,7 @@ class TestMplGraphPlot(TestMPLPlot):
                          [p.array() for p in self.graph.edgepaths.split()])
 
     def test_plot_graph_categorical_colored_nodes(self):
-        g = self.graph2.opts(plot=dict(color_index='Label'), style=dict(cmap='Set1'))
+        g = self.graph2.opts(color_index='Label', cmap='Set1')
         plot = mpl_renderer.get_plot(g)
         nodes = plot.handles['nodes']
         facecolors = np.array([[0.89411765, 0.10196078, 0.10980392, 1.],
@@ -55,15 +52,16 @@ class TestMplGraphPlot(TestMPLPlot):
         self.assertEqual(nodes.get_facecolors(), facecolors)
 
     def test_plot_graph_numerically_colored_nodes(self):
-        g = self.graph3.opts(plot=dict(color_index='Weight'), style=dict(cmap='viridis'))
+        g = self.graph3.opts(color_index='Weight', cmap='viridis')
         plot = mpl_renderer.get_plot(g)
         nodes = plot.handles['nodes']
         self.assertEqual(np.asarray(nodes.get_array()), self.weights)
         self.assertEqual(nodes.get_clim(), (self.weights.min(), self.weights.max()))
 
     def test_plot_graph_categorical_colored_edges(self):
-        g = self.graph3.opts(plot=dict(edge_color_index='start'),
-                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
+        g = self.graph3.opts(
+            edge_color_index='start', edge_cmap=['#FFFFFF', '#000000']
+        )
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
         colors = np.array([[1., 1., 1., 1.],
@@ -77,11 +75,12 @@ class TestMplGraphPlot(TestMPLPlot):
         self.assertEqual(edges.get_colors(), colors)
 
     def test_plot_graph_numerically_colored_edges(self):
-        g = self.graph4.opts(plot=dict(edge_color_index='Weight'),
-                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
+        g = self.graph4.opts(
+            edge_color_index='Weight', edge_cmap=['#FFFFFF', '#000000']
+        )
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), self.weights)
+        self.assertEqual(np.asarray(edges.get_array()), self.weights)
         self.assertEqual(edges.get_clim(), (self.weights.min(), self.weights.max()))
 
     ###########################
@@ -92,7 +91,7 @@ class TestMplGraphPlot(TestMPLPlot):
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, '#000000'), (0, 1, 1, '#FF0000'), (1, 1, 2, '#00FF00')],
                       vdims='color')
-        graph = Graph((edges, nodes)).options(node_color='color')
+        graph = Graph((edges, nodes)).opts(node_color='color')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_facecolors(),
@@ -106,7 +105,7 @@ class TestMplGraphPlot(TestMPLPlot):
             nodes = Nodes([(0, 0, 0, c1), (0, 1, 1, c2), (1, 1, 2, c3)],
                       vdims='color')
             return Graph((edges, nodes))
-        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).options(node_color='color')
+        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).opts(node_color='color')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_facecolors(),
@@ -119,7 +118,7 @@ class TestMplGraphPlot(TestMPLPlot):
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
                       vdims='color')
-        graph = Graph((edges, nodes)).options(node_color='color')
+        graph = Graph((edges, nodes)).opts(node_color='color')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(np.asarray(artist.get_array()), np.array([0.5, 1.5, 2.5]))
@@ -133,20 +132,20 @@ class TestMplGraphPlot(TestMPLPlot):
             nodes = Nodes([(0, 0, 0, c1), (0, 1, 1, c2), (1, 1, 2, c3)],
                       vdims='color')
             return Graph((edges, nodes))
-        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).options(node_color='color', framewise=True)
+        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).opts(node_color='color', framewise=True)
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([0.5, 1.5, 2.5]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0.5, 1.5, 2.5]))
         self.assertEqual(artist.get_clim(), (0.5, 2.5))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([3, 2, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([3, 2, 1]))
         self.assertEqual(artist.get_clim(), (1, 3))
 
     def test_graph_op_node_color_categorical(self):
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 'A'), (0, 1, 1, 'B'), (1, 1, 2, 'A')],
                       vdims='color')
-        graph = Graph((edges, nodes)).options(node_color='color')
+        graph = Graph((edges, nodes)).opts(node_color='color')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
@@ -155,7 +154,7 @@ class TestMplGraphPlot(TestMPLPlot):
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)],
                       vdims='size')
-        graph = Graph((edges, nodes)).options(node_size='size')
+        graph = Graph((edges, nodes)).opts(node_size='size')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_sizes(), np.array([4, 16, 36]))
@@ -168,7 +167,7 @@ class TestMplGraphPlot(TestMPLPlot):
             nodes = Nodes([(0, 0, 0, c1), (0, 1, 1, c2), (1, 1, 2, c3)],
                       vdims='size')
             return Graph((edges, nodes))
-        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).options(node_size='size')
+        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).opts(node_size='size')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_sizes(), np.array([4, 16, 36]))
@@ -178,7 +177,7 @@ class TestMplGraphPlot(TestMPLPlot):
     def test_graph_op_node_linewidth(self):
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 3.5)], vdims='line_width')
-        graph = Graph((edges, nodes)).options(node_linewidth='line_width')
+        graph = Graph((edges, nodes)).opts(node_linewidth='line_width')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_linewidths(), [2, 4, 3.5])
@@ -191,7 +190,7 @@ class TestMplGraphPlot(TestMPLPlot):
             nodes = Nodes([(0, 0, 0, c1), (0, 1, 1, c2), (1, 1, 2, c3)],
                       vdims='line_width')
             return Graph((edges, nodes))
-        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).options(node_linewidth='line_width')
+        graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).opts(node_linewidth='line_width')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_linewidths(), [2, 4, 6])
@@ -200,15 +199,14 @@ class TestMplGraphPlot(TestMPLPlot):
 
     def test_graph_op_node_alpha(self):
         import matplotlib as mpl
-        from packaging.version import Version
-
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
-        graph = Graph((edges, nodes)).options(node_alpha='alpha')
+        graph = Graph((edges, nodes)).opts(node_alpha='alpha')
 
         if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
-            with self.assertRaises(Exception):
+            msg = 'TypeError: alpha must be a float or None'
+            with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(graph)
         else:
             plot = mpl_renderer.get_plot(graph)
@@ -217,7 +215,7 @@ class TestMplGraphPlot(TestMPLPlot):
 
     def test_graph_op_edge_color(self):
         edges = [(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')]
-        graph = Graph(edges, vdims='color').options(edge_color='color')
+        graph = Graph(edges, vdims='color').opts(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
         self.assertEqual(edges.get_edgecolors(), np.array([
@@ -230,7 +228,7 @@ class TestMplGraphPlot(TestMPLPlot):
             0: Graph([(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')],
                     vdims='color'),
             1: Graph([(0, 1, 'green'), (0, 2, 'blue'), (1, 3, 'red')],
-                     vdims='color')}).options(edge_color='color')
+                     vdims='color')}).opts(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
         self.assertEqual(edges.get_edgecolors(), np.array([
@@ -245,10 +243,10 @@ class TestMplGraphPlot(TestMPLPlot):
 
     def test_graph_op_edge_color_linear(self):
         edges = [(0, 1, 2), (0, 2, 0.5), (1, 3, 3)]
-        graph = Graph(edges, vdims='color').options(edge_color='color')
+        graph = Graph(edges, vdims='color').opts(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([2, 0.5, 3]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([2, 0.5, 3]))
         self.assertEqual(edges.get_clim(), (0.5, 3))
 
     def test_graph_op_edge_color_linear_update(self):
@@ -256,32 +254,33 @@ class TestMplGraphPlot(TestMPLPlot):
             0: Graph([(0, 1, 2), (0, 2, 0.5), (1, 3, 3)],
                     vdims='color'),
             1: Graph([(0, 1, 4.3), (0, 2, 1.4), (1, 3, 2.6)],
-                     vdims='color')}).options(edge_color='color', framewise=True)
+                     vdims='color')}).opts(edge_color='color', framewise=True)
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([2, 0.5, 3]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([2, 0.5, 3]))
         self.assertEqual(edges.get_clim(), (0.5, 3))
         plot.update((1,))
-        self.assertEqual(edges.get_array(), np.array([4.3, 1.4, 2.6]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([4.3, 1.4, 2.6]))
         self.assertEqual(edges.get_clim(), (1.4, 4.3))
 
     def test_graph_op_edge_color_categorical(self):
         edges = [(0, 1, 'C'), (0, 2, 'B'), (1, 3, 'A')]
-        graph = Graph(edges, vdims='color').options(edge_color='color')
+        graph = Graph(edges, vdims='color').opts(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([0, 1, 2]))
         self.assertEqual(edges.get_clim(), (0, 2))
 
     def test_graph_op_edge_alpha(self):
         edges = [(0, 1, 0.1), (0, 2, 0.5), (1, 3, 0.3)]
-        graph = Graph(edges, vdims='alpha').options(edge_alpha='alpha')
-        with self.assertRaises(Exception):
+        graph = Graph(edges, vdims='alpha').opts(edge_alpha='alpha')
+        msg = 'ValueError: Mapping a dimension to the "edge_alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(graph)
 
     def test_graph_op_edge_linewidth(self):
         edges = [(0, 1, 2), (0, 2, 10), (1, 3, 6)]
-        graph = Graph(edges, vdims='line_width').options(edge_linewidth='line_width')
+        graph = Graph(edges, vdims='line_width').opts(edge_linewidth='line_width')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
         self.assertEqual(edges.get_linewidths(), [2, 10, 6])
@@ -291,7 +290,7 @@ class TestMplGraphPlot(TestMPLPlot):
             0: Graph([(0, 1, 2), (0, 2, 0.5), (1, 3, 3)],
                     vdims='line_width'),
             1: Graph([(0, 1, 4.3), (0, 2, 1.4), (1, 3, 2.6)],
-                     vdims='line_width')}).options(edge_linewidth='line_width')
+                     vdims='line_width')}).opts(edge_linewidth='line_width')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
         self.assertEqual(edges.get_linewidths(), [2, 0.5, 3])
@@ -320,7 +319,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
                          [p.array() for p in self.trimesh._split_edgepaths.split()])
 
     def test_plot_simple_trimesh_filled(self):
-        plot = mpl_renderer.get_plot(self.trimesh.opts(plot=dict(filled=True)))
+        plot = mpl_renderer.get_plot(self.trimesh.opts(filled=True))
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
         self.assertIsInstance(edges, PolyCollection)
@@ -330,7 +329,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
                          paths)
 
     def test_plot_trimesh_colored_edges(self):
-        opts = dict(plot=dict(edge_color_index='weight'), style=dict(edge_cmap='Greys'))
+        opts = dict(edge_color_index='weight', edge_cmap='Greys')
         plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
         edges = plot.handles['edges']
         colors = np.array([[ 1.,  1.,  1.,  1.],
@@ -338,7 +337,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         self.assertEqual(edges.get_edgecolors(), colors)
 
     def test_plot_trimesh_categorically_colored_edges(self):
-        opts = dict(plot=dict(edge_color_index='node1'), style=dict(edge_color=Cycle('Set1')))
+        opts = dict(edge_color_index='node1', edge_color=Cycle('Set1'))
         plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
         edges = plot.handles['edges']
         colors = np.array([[0.894118, 0.101961, 0.109804, 1.],
@@ -346,8 +345,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         self.assertEqual(edges.get_edgecolors(), colors)
 
     def test_plot_trimesh_categorically_colored_edges_filled(self):
-        opts = dict(plot=dict(edge_color_index='node1', filled=True),
-                    style=dict(edge_color=Cycle('Set1')))
+        opts = dict(edge_color_index='node1', filled=True, edge_color=Cycle('Set1'))
         plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
         edges = plot.handles['edges']
         colors = np.array([[0.894118, 0.101961, 0.109804, 1.],
@@ -361,7 +359,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_node_color(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 'red'), (0, 0, 1, 'green'), (0, 1, 2, 'blue'), (1, 0, 3, 'black')]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(node_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_facecolors(),
@@ -370,7 +368,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_node_color_linear(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(node_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
         self.assertEqual(np.asarray(artist.get_array()), np.array([2, 1, 3, 4]))
@@ -379,7 +377,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_node_color_categorical(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 'B'), (0, 0, 1, 'C'), (0, 1, 2, 'A'), (1, 0, 3, 'B')]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(node_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
         self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2, 0]))
@@ -388,22 +386,22 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_node_size(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 3), (0, 0, 1, 2), (0, 1, 2, 8), (1, 0, 3, 4)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='size'))).options(node_size='size')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='size'))).opts(node_size='size')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_sizes(), np.array([9, 4, 64, 16]))
 
     def test_trimesh_op_node_alpha(self):
         import matplotlib as mpl
-        from packaging.version import Version
 
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).options(node_alpha='alpha')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).opts(node_alpha='alpha')
 
         if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
-            with self.assertRaises(Exception):
+            msg = "TypeError: alpha must be a float or None"
+            with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(trimesh)
         else:
             plot = mpl_renderer.get_plot(trimesh)
@@ -413,7 +411,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_node_line_width(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='line_width'))).options(node_linewidth='line_width')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='line_width'))).opts(node_linewidth='line_width')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
         self.assertEqual(artist.get_linewidths(), [0.2, 0.6, 1, 0.3])
@@ -421,16 +419,16 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_edge_color_linear_mean_node(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(edge_color='color')
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
-        self.assertEqual(artist.get_array(), np.array([2, 8/3.]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 8/3.]))
         self.assertEqual(artist.get_clim(), (1, 4))
 
     def test_trimesh_op_edge_color(self):
         edges = [(0, 1, 2, 'red'), (1, 2, 3, 'blue')]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
         self.assertEqual(artist.get_edgecolors(), np.array([
@@ -439,32 +437,33 @@ class TestMplTriMeshPlot(TestMPLPlot):
     def test_trimesh_op_edge_color_linear(self):
         edges = [(0, 1, 2, 2.4), (1, 2, 3, 3.6)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
-        self.assertEqual(artist.get_array(), np.array([2.4, 3.6]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2.4, 3.6]))
         self.assertEqual(artist.get_clim(), (2.4, 3.6))
 
     def test_trimesh_op_edge_color_categorical(self):
         edges = [(0, 1, 2, 'A'), (1, 2, 3, 'B')]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
-        self.assertEqual(artist.get_array(), np.array([0, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_trimesh_op_edge_alpha(self):
         edges = [(0, 1, 2, 0.7), (1, 2, 3, 0.3)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='alpha').options(edge_alpha='alpha')
-        with self.assertRaises(Exception):
+        trimesh = TriMesh((edges, nodes), vdims='alpha').opts(edge_alpha='alpha')
+        msg = 'ValueError: Mapping a dimension to the "edge_alpha" style'
+        with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(trimesh)
 
     def test_trimesh_op_edge_line_width(self):
         edges = [(0, 1, 2, 7), (1, 2, 3, 3)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='line_width').options(edge_linewidth='line_width')
+        trimesh = TriMesh((edges, nodes), vdims='line_width').opts(edge_linewidth='line_width')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
         self.assertEqual(artist.get_linewidths(), [7, 3])
@@ -485,20 +484,19 @@ class TestMplChordPlot(TestMPLPlot):
         return Chord((edges, nodes), vdims='weight')
 
     def test_chord_nodes_label_text(self):
-        g = self.chord.opts(plot=dict(label_index='Label'))
+        g = self.chord.opts(label_index='Label')
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
 
     def test_chord_nodes_labels_mapping(self):
-        g = self.chord.opts(plot=dict(labels='Label'))
+        g = self.chord.opts(labels='Label')
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
 
     def test_chord_nodes_categorically_colormapped(self):
-        g = self.chord.opts(plot=dict(color_index='Label'),
-                            style=dict(cmap=['#FFFFFF', '#CCCCCC', '#000000']))
+        g = self.chord.opts(color_index='Label', cmap=['#FFFFFF', '#CCCCCC', '#000000'])
         plot = mpl_renderer.get_plot(g)
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
@@ -509,18 +507,17 @@ class TestMplChordPlot(TestMPLPlot):
         self.assertEqual(nodes.get_facecolors(), colors)
 
     def test_chord_node_color_style_mapping(self):
-        g = self.chord.opts(style=dict(node_color='Label', cmap=['#FFFFFF', '#CCCCCC', '#000000']))
+        g = self.chord.opts(node_color='Label', cmap=['#FFFFFF', '#CCCCCC', '#000000'])
         plot = mpl_renderer.get_plot(g)
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
         self.assertEqual(np.asarray(nodes.get_array()), np.array([0, 1, 2]))
-        self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(arcs.get_array()), np.array([0, 1, 2]))
         self.assertEqual(nodes.get_clim(), (0, 2))
         self.assertEqual(arcs.get_clim(), (0, 2))
 
     def test_chord_edges_categorically_colormapped(self):
-        g = self.chord.opts(plot=dict(edge_color_index='start'),
-                            style=dict(edge_cmap=['#FFFFFF', '#000000']))
+        g = self.chord.opts(edge_color_index='start', edge_cmap=['#FFFFFF', '#000000'])
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
         colors = np.array([[ 1., 1., 1., 1. ],
@@ -529,39 +526,39 @@ class TestMplChordPlot(TestMPLPlot):
         self.assertEqual(edges.get_edgecolors(), colors)
 
     def test_chord_edge_color_style_mapping(self):
-        g = self.chord.opts(style=dict(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']))
+        g = self.chord.opts(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000'])
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([0, 0, 1]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([0, 0, 1]))
         self.assertEqual(edges.get_clim(), (0, 2))
 
     def test_chord_edge_color_linear_style_mapping_update(self):
-        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(edge_color='weight', framewise=True)
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).opts(edge_color='weight', framewise=True)
         plot = mpl_renderer.get_plot(hmap)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([1, 2, 3]))
         self.assertEqual(edges.get_clim(), (1, 3))
         plot.update((1,))
-        self.assertEqual(edges.get_array(), np.array([2, 3, 4]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([2, 3, 4]))
         self.assertEqual(edges.get_clim(), (2, 4))
 
     def test_chord_node_color_linear_style_mapping_update(self):
-        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(node_color='Label', framewise=True)
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).opts(node_color='Label', framewise=True)
         plot = mpl_renderer.get_plot(hmap)
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
-        self.assertEqual(nodes.get_array(), np.array([0, 1, 2]))
-        self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(nodes.get_array()), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(arcs.get_array()), np.array([0, 1, 2]))
         self.assertEqual(nodes.get_clim(), (0, 2))
         self.assertEqual(arcs.get_clim(), (0, 2))
         plot.update((1,))
-        self.assertEqual(nodes.get_array(), np.array([1, 2, 3]))
-        self.assertEqual(arcs.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(np.asarray(nodes.get_array()), np.array([1, 2, 3]))
+        self.assertEqual(np.asarray(arcs.get_array()), np.array([1, 2, 3]))
         self.assertEqual(nodes.get_clim(), (1, 3))
         self.assertEqual(arcs.get_clim(), (1, 3))
 
     def test_chord_edge_color_style_mapping_update(self):
-        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).opts(
             edge_color=dim('weight').categorize({1: 'red', 2: 'green', 3: 'blue', 4: 'black'})
         )
         plot = mpl_renderer.get_plot(hmap)
@@ -575,7 +572,7 @@ class TestMplChordPlot(TestMPLPlot):
         ]))
 
     def test_chord_node_color_style_mapping_update(self):
-        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).opts(
             node_color=dim('Label').categorize({0: 'red', 1: 'green', 2: 'blue', 3: 'black'})
         )
         plot = mpl_renderer.get_plot(hmap)

@@ -1,5 +1,5 @@
-import param
 import numpy as np
+import param
 
 from .element import ColorbarPlot
 

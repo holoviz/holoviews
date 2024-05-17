@@ -1,0 +1,204 @@
+name: tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "How much of the test suite to run"
+        type: choice
+        default: default
+        options:
+          - default
+          - full
+          - downstream
+      cache:
+        description: "Use cache"
+        type: boolean
+        default: true
+
+  schedule:
+    - cron: "0 14 * * SUN"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+env:
+  DISPLAY: ":99.0"
+  PYTHONIOENCODING: "utf-8"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DASK_DATAFRAME__QUERY_PLANNING: false
+  COV: "--cov=./holoviews --cov-report=xml"
+
+jobs:
+  pre_commit:
+    name: Run pre-commit
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
+
+  setup:
+    name: Setup workflow
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code_change: ${{ steps.filter.outputs.code }}
+      matrix: ${{ env.MATRIX }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+      - name: Check for code changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'holoviews/**'
+              - 'examples/**'
+              - 'pixi.toml'
+              - 'pyproject.toml'
+              - '.github/workflows/test.yaml'
+      - name: Set matrix option
+        run: |
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            OPTION=${{ github.event.inputs.target }}
+          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
+            OPTION="full"
+          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
+            OPTION="full"
+          else
+            OPTION="default"
+          fi
+          echo "MATRIX_OPTION=$OPTION" >> $GITHUB_ENV
+      - name: Set test matrix with 'default' option
+        if: env.MATRIX_OPTION == 'default'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "environment": ["test-39", "test-312"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+      - name: Set test matrix with 'full' option
+        if: env.MATRIX_OPTION == 'full'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "environment": ["test-39", "test-310", "test-311", "test-312"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+      - name: Set test matrix with 'downstream' option
+        if: env.MATRIX_OPTION == 'downstream'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest"],
+              "environment": ["test-311"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+        with:
+          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
+
+  unit_test_suite:
+    name: unit:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    timeout-minutes: 120
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Check packages latest version
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+      - name: Test Unit
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.environment }} test-unit $COV
+      - name: Test Examples
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.environment }} test-example
+      - uses: codecov/codecov-action@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  ui_test_suite:
+    name: ui:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["test-ui"]
+    timeout-minutes: 60
+    env:
+      PANEL_LOG_LEVEL: info
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Test UI
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          # Create a .uicoveragerc file to set the concurrency library to greenlet
+          # https://github.com/microsoft/playwright-python/issues/313
+          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
+          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
+          pixi run -e ${{ matrix.environment }} test-ui $COV --cov-config=.uicoveragerc $FAIL
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui_screenshots_${{ runner.os }}
+          path: ./ui_screenshots
+          if-no-files-found: ignore
+      - uses: codecov/codecov-action@v4
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  core_test_suite:
+    name: core:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["test-core"]
+    timeout-minutes: 120
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        if: needs.setup.outputs.code_change == 'true'
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Check packages latest version
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
+      - name: Test Unit
+        if: needs.setup.outputs.code_change == 'true'
+        run: |
+          pixi run -e ${{ matrix.environment }} test-unit

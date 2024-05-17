@@ -1,26 +1,25 @@
 import datetime as dt
-
-from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 
 try:
-    import pandas as pd
     import xarray as xr
-except:
+except ImportError:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
 
-from holoviews.core.data import Dataset, concat
+from holoviews.core.data import Dataset, XArrayInterface, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Image, RGB, HSV, QuadMesh
+from holoviews.element import HSV, RGB, Image, ImageStack, QuadMesh
 
-from .test_imageinterface import (
-    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
-    BaseHSVElementInterfaceTests
-)
 from .test_gridinterface import BaseGridInterfaceTests
+from .test_imageinterface import (
+    BaseHSVElementInterfaceTests,
+    BaseImageElementInterfaceTests,
+    BaseRGBElementInterfaceTests,
+)
 
 
 class XArrayInterfaceTests(BaseGridInterfaceTests):
@@ -39,13 +38,15 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         y = np.arange(2, 12, 2) * multiplier
         da = xr.DataArray(
             data=[np.arange(100).reshape(5, 20)],
-            coords=OrderedDict([('band', [1]), ('x', x), ('y', y)]),
+            coords=dict([('band', [1]), ('x', x), ('y', y)]),
             dims=['band', 'y','x'],
             attrs={'transform': (3, 0, 2, 0, -2, -2)})
         xs, ys = (np.tile(x[:, np.newaxis], len(y)).T,
                   np.tile(y[:, np.newaxis], len(x)))
-        return da.assign_coords(**{'xc': xr.DataArray(xs, dims=('y','x')),
-                                   'yc': xr.DataArray(ys, dims=('y','x')),})
+        return da.assign_coords(
+            xc=xr.DataArray(xs, dims=('y','x')),
+            yc=xr.DataArray(ys, dims=('y','x')),
+        )
 
     def get_multi_dim_irregular_dataset(self):
         temp = 15 + 8 * np.random.randn(2, 2, 4, 3)
@@ -59,6 +60,14 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
                                 'z': np.arange(4),
                                 'time': pd.date_range('2014-09-06', periods=3),
                                 'reference_time': pd.Timestamp('2014-09-05')})
+
+    def test_ignore_dependent_dimensions_if_not_specified(self):
+        coords = dict([('time', [0, 1]), ('lat', [0, 1]), ('lon', [0, 1])])
+        da = xr.DataArray(np.arange(8).reshape((2, 2, 2)),
+                          coords, ['time', 'lat', 'lon']).assign_coords(
+                              lat1=xr.DataArray([2,3], dims=['lat']))
+        assert Dataset(da, ['time', 'lat', 'lon'], vdims='value').kdims == ['time', 'lat', 'lon']
+        assert Dataset(da, ['time', 'lat1', 'lon'], vdims='value').kdims == ['time', 'lat1', 'lon']
 
     def test_xarray_dataset_irregular_shape(self):
         ds = Dataset(self.get_multi_dim_irregular_dataset())
@@ -145,7 +154,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
 
     def test_xarray_coord_ordering(self):
         data = np.zeros((3,4,5))
-        coords = OrderedDict([('b', range(3)), ('c', range(4)), ('a', range(5))])
+        coords = dict([('b', range(3)), ('c', range(4)), ('a', range(5))])
         darray = xr.DataArray(data, coords=coords, dims=['b', 'c', 'a'])
         dataset = xr.Dataset({'value': darray}, coords=coords)
         ds = Dataset(dataset)
@@ -192,7 +201,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ds1 = Dataset(([0, 1], [1, 2, 3], arr1), ['x', 'y'], 'z')
         ds2 = Dataset(([0, 1, 2], [1, 2], arr2), ['x', 'y'], 'z')
         hmap = HoloMap({1: ds1, 2: ds2})
-        arr = np.full((3, 3, 2), np.NaN)
+        arr = np.full((3, 3, 2), np.nan)
         arr[:, :2, 0] = arr1
         arr[:2, :, 1] = arr2
         ds = Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')
@@ -219,7 +228,13 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         self.assertEqual(ds.range('x'), expected)
 
     def test_datetime64_bins_range(self):
-        xs = [np.datetime64(dt.datetime(2018, 1, i)) for i in range(1, 11)]
+        xs = list(
+            np.arange(
+                dt.datetime(2018, 1, 1),
+                dt.datetime(2018, 1, 11),
+                dt.timedelta(days=1)
+            ).astype("datetime64[ns]")
+        )
         ys = np.arange(10)
         array = np.random.rand(10, 10)
         ds = QuadMesh((xs, ys, array))
@@ -234,8 +249,16 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             coords=dict(chain=range(d.shape[0]), value=range(d.shape[1])))
         ds = Dataset(da)
         t = ds.select(chain=0)
-        self.assertEqual(t.data.dims , dict(chain=1,value=8))
-        self.assertEqual(t.data.stuff.shape , (1,8))
+        if hasattr(t.data, "sizes"):
+            # Started to warn in xarray 2023.12.0:
+            # The return type of `Dataset.dims` will be changed to return a
+            # set of dimension names in future, in order to be more consistent
+            # with `DataArray.dims`. To access a mapping from dimension names to
+            # lengths, please use `Dataset.sizes`.
+            assert t.data.sizes == dict(chain=1, value=8)
+        else:
+            assert t.data.dims == dict(chain=1, value=8)
+        assert t.data.stuff.shape == (1, 8)
 
     def test_mask_2d_array_transposed(self):
         array = np.random.rand(4, 3)
@@ -247,6 +270,50 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         expected = array.copy()
         expected[mask] = np.nan
         self.assertEqual(masked_array, expected)
+
+    def test_from_empty_numpy(self):
+        """
+        Datashader sometimes pass an empty array to the interface
+        """
+        kdims = ["dim_0", "dim_1"]
+        vdims = ["dim_2"]
+        ds = XArrayInterface.init(Image, np.array([]), kdims, vdims)
+        assert isinstance(ds[0], xr.Dataset)
+        assert ds[0][vdims[0]].size == 0
+        assert ds[1]["kdims"] == kdims
+        assert ds[1]["vdims"] == vdims
+
+    def test_image_stack_xarray_dataset(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = xr.Dataset(
+            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            coords={"x": x, "y": y},
+        )
+        img_stack = ImageStack(ds, kdims=["x", "y"])
+        assert img_stack.interface is XArrayInterface
+        assert img_stack.kdims == [Dimension("x"), Dimension("y")]
+        assert img_stack.vdims == [Dimension("a"), Dimension("b"), Dimension("c")]
+
+    def test_image_stack_xarray_dataarray(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        ds = xr.Dataset(
+            {"a": (["x", "y"], a), "b": (["x", "y"], b), "c": (["x", "y"], c)},
+            coords={"x": x, "y": y},
+        ).to_array("level")
+        img_stack = ImageStack(ds, vdims=["level"])
+        assert img_stack.interface is XArrayInterface
+        assert img_stack.kdims == [Dimension("x"), Dimension("y")]
+        assert img_stack.vdims == [Dimension("a"), Dimension("b"), Dimension("c")]
 
     # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):
@@ -287,7 +354,7 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     def setUp(self):
         try:
             import dask.array # noqa
-        except:
+        except ImportError:
             raise SkipTest('Dask could not be imported, cannot test '
                            'dask arrays with XArrayInterface')
         super().setUp()

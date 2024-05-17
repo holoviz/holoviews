@@ -1,14 +1,17 @@
+import unittest
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
+from packaging.version import Version
 
 try:
-    import pandas as pd
     import dask.dataframe as dd
-except:
+except ImportError:
     raise SkipTest("Could not import dask, skipping DaskInterface tests.")
 
 from holoviews.core.data import Dataset
+from holoviews.core.util import pandas_version
 from holoviews.util.transform import dim
 
 from .test_pandasinterface import BasePandasInterfaceTests
@@ -72,6 +75,20 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     def test_dataset_aggregate_string_types(self):
         raise SkipTest("Temporarily skipped")
+
+    @unittest.skipIf(
+        pandas_version >= Version("2.0"),
+        reason="Not supported yet, https://github.com/dask/dask/issues/9913"
+    )
+    def test_dataset_aggregate_ht(self):
+        super().test_dataset_aggregate_ht()
+
+    @unittest.skipIf(
+        pandas_version >= Version("2.0"),
+        reason="Not supported yet, https://github.com/dask/dask/issues/9913"
+    )
+    def test_dataset_aggregate_ht_alias(self):
+        super().test_dataset_aggregate_ht_alias()
 
     def test_dataset_from_multi_index(self):
         raise SkipTest("Temporarily skipped")

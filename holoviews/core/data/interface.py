@@ -1,9 +1,8 @@
 import sys
 import warnings
 
-import six
-import param
 import numpy as np
+import param
 
 from .. import util
 from ..element import Element
@@ -16,17 +15,17 @@ class DataError(ValueError):
 
     def __init__(self, msg, interface=None):
         if interface is not None:
-            msg = '\n\n'.join([msg, interface.error()])
+            msg = f"{msg}\n\n{interface.error()}"
         super().__init__(msg)
 
 
-class Accessor(object):
+class Accessor:
     def __init__(self, dataset):
         self.dataset = dataset
 
     def __getitem__(self, index):
-        from ..data import Dataset
         from ...operation.element import method
+        from ..data import Dataset
         in_method = self.dataset._in_method
         if not in_method:
             self.dataset._in_method = True
@@ -179,7 +178,7 @@ class Interface(param.Parameterized):
     @classmethod
     def error(cls):
         info = dict(interface=cls.__name__)
-        url = "http://holoviews.org/user_guide/%s_Datasets.html"
+        url = "https://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
             datatype = 'a list of tabular'
             info['url'] = url % 'Tabular'
@@ -203,7 +202,7 @@ class Interface(param.Parameterized):
             vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
-        if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+        if hasattr(data, 'interface') and isinstance(data.interface, type) and issubclass(data.interface, Interface):
             if datatype is None:
                 datatype = [dt for dt in data.datatype if dt in eltype.datatype]
                 if not datatype:
@@ -224,7 +223,7 @@ class Interface(param.Parameterized):
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
-            elif 'dataframe' in datatype and util.pd:
+            elif 'dataframe' in datatype:
                 data = data.dframe()
             else:
                 data = tuple(data.columns().values())
@@ -263,10 +262,9 @@ class Interface(param.Parameterized):
                      "to support the supplied data format.")
             if priority_errors:
                 intfc, e, _ = priority_errors[0]
-                priority_error = ("%s raised following error:\n\n %s"
-                                  % (intfc.__name__, e))
-                error = ' '.join([error, priority_error])
-                raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
+                priority_error = f"{intfc.__name__} raised following error:\n\n {e}"
+                error = f"{error} {priority_error}"
+                raise DataError(error, intfc).with_traceback(sys.exc_info()[2])
             raise DataError(error)
 
         return data, interface, dims, extra_kws
@@ -280,7 +278,7 @@ class Interface(param.Parameterized):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {not_found!r}", cls)
 
     @classmethod
     def persist(cls, dataset):
@@ -332,8 +330,8 @@ class Interface(param.Parameterized):
         data = data.astype('float64')
         mask = data != nodata
         if hasattr(data, 'where'):
-            return data.where(mask, np.NaN)
-        return np.where(mask, data, np.NaN)
+            return data.where(mask, np.nan)
+        return np.where(mask, data, np.nan)
 
     @classmethod
     def select_mask(cls, dataset, selection):
@@ -348,10 +346,10 @@ class Interface(param.Parameterized):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
             if isinstance(sel, slice):
                 with warnings.catch_warnings():
@@ -379,6 +377,21 @@ class Interface(param.Parameterized):
                     mask &= index_mask
         return mask
 
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection)
+        extra = mask[1:] ^ mask[:-1]
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def indexed(cls, dataset, selection):
@@ -399,7 +412,7 @@ class Interface(param.Parameterized):
         if column.dtype.kind == 'M':
             return column.min(), column.max()
         elif len(column) == 0:
-            return np.NaN, np.NaN
+            return np.nan, np.nan
         else:
             try:
                 assert column.dtype.kind not in 'SUO'
@@ -409,7 +422,7 @@ class Interface(param.Parameterized):
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):
-                    return np.NaN, np.NaN
+                    return np.nan, np.nan
                 return column[0], column[-1]
 
     @classmethod
@@ -427,7 +440,7 @@ class Interface(param.Parameterized):
             dimensions, keys = [], [()]*len(datasets)
         else:
             raise DataError('Concatenation only supported for NdMappings '
-                            'and lists of Datasets, found %s.' % type(datasets).__name__)
+                            f'and lists of Datasets, found {type(datasets).__name__}.')
 
         template = datasets[0]
         datatype = datatype or template.interface.datatype
@@ -439,10 +452,10 @@ class Interface(param.Parameterized):
             datatype = 'grid'
 
         if len(datasets) > 1 and not dimensions and cls.interfaces[datatype].gridded:
-            raise DataError('Datasets with %s datatype cannot be concatenated '
+            raise DataError(f'Datasets with {datatype} datatype cannot be concatenated '
                             'without defining the dimensions to concatenate along. '
                             'Ensure you pass in a NdMapping (e.g. a HoloMap) '
-                            'of Dataset types, not a list.' % datatype)
+                            'of Dataset types, not a list.')
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]

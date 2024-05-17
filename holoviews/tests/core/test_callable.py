@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests of the Callable object that wraps user callbacks. Also test
 how DynamicMap validates and invokes Callable based on its signature.
@@ -7,22 +6,26 @@ from functools import partial
 
 import param
 
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import Scatter
 from holoviews import streams
-from holoviews.core.spaces import Callable, Generator, DynamicMap
 from holoviews.core.operation import OperationCallable
+from holoviews.core.spaces import Callable, DynamicMap, Generator
+from holoviews.element import Scatter
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import contours
 
 from ..utils import LoggingComparisonTestCase
 
-class CallableClass(object):
+
+class CallableClass:
 
     @staticmethod
     def somestaticmethod(): pass
 
     @classmethod
     def someclsmethod(cls): pass
+
+    def someinstancemethod(self, x, y):
+        return x + y
 
     def __call__(self, *testargs):
         return sum(testargs)
@@ -52,7 +55,7 @@ class TestCallableName(ComparisonTestCase):
         self.assertEqual(cb.name.startswith('functools.partial('), True)
 
     def test_generator_expression_name(self):
-        cb = Generator((i for i in range(10)))
+        cb = Generator(i for i in range(10))
         self.assertEqual(cb.name, '<genexpr>')
 
     def test_generator_name(self):
@@ -65,6 +68,9 @@ class TestCallableName(ComparisonTestCase):
 
     def test_callable_class_call_method(self):
         self.assertEqual(Callable(CallableClass().__call__).name, 'CallableClass')
+
+    def test_callable_instance_method(self):
+        assert Callable(CallableClass().someinstancemethod).name == 'CallableClass.someinstancemethod'
 
     def test_classmethod_name(self):
         self.assertEqual(Callable(CallableClass().someclsmethod).name,
@@ -106,7 +112,7 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
         self.log_handler.assertContains('WARNING', substr)
 
     def test_callable_lambda_extras_kwargs(self):
-        substr = "['x'] overriden by keywords"
+        substr = "['x'] overridden by keywords"
         self.assertEqual(Callable(lambda x,y: x+y)(3,5,x=10), 15)
         self.log_handler.assertEndsWith('WARNING', substr)
 
@@ -115,6 +121,12 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
 
     def test_callable_class(self):
         self.assertEqual(Callable(CallableClass())(1,2,3,4), 10)
+
+    def test_callable_instance_method(self):
+        assert Callable(CallableClass().someinstancemethod)(1, 2) == 3
+
+    def test_callable_partial_instance_method(self):
+        assert Callable(partial(CallableClass().someinstancemethod, x=1))(2) == 3
 
     def test_callable_paramfunc(self):
         self.assertEqual(Callable(ParamFunc)(3,b=5), 15)
@@ -143,6 +155,14 @@ class TestCallableArgspec(ComparisonTestCase):
         self.assertEqual(Callable(CallableClass()).argspec.keywords, None)
         self.assertEqual(Callable(CallableClass()).argspec.varargs, 'testargs')
 
+    def test_callable_instance_method(self):
+        assert Callable(CallableClass().someinstancemethod).argspec.args == ['x', 'y']
+        assert Callable(CallableClass().someinstancemethod).argspec.keywords is None
+
+    def test_callable_partial_instance_method(self):
+        assert Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.args == ['y']
+        assert Callable(partial(CallableClass().someinstancemethod, x=1)).argspec.keywords is None
+
     def test_callable_paramfunc_argspec(self):
         self.assertEqual(Callable(ParamFunc).argspec.args, ['a'])
         self.assertEqual(Callable(ParamFunc).argspec.keywords, 'params')
@@ -169,6 +189,12 @@ class TestKwargCallableInvocation(ComparisonTestCase):
 
     def test_callable_partial(self):
         self.assertEqual(Callable(partial(lambda x,y: x+y,x=4))(y=5), 9)
+
+    def test_callable_instance_method(self):
+        assert Callable(CallableClass().someinstancemethod)(x=1, y=2) == 3
+
+    def test_callable_partial_instance_method(self):
+        assert Callable(partial(CallableClass().someinstancemethod, x=1))(y=2) == 3
 
     def test_callable_paramfunc(self):
         self.assertEqual(Callable(ParamFunc)(a=3,b=5), 15)
@@ -219,21 +245,21 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
     def test_dynamic_kdims_only(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_kdims_only_by_position(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['A-dim','B-dim'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_kdims_swapped_by_name(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['B','A'])
         self.assertEqual(dmap[1,'Test'], Scatter([(1, 2)], label='Test'))
@@ -241,7 +267,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
     def test_dynamic_kdims_only_invalid(self):
         def fn(A,B):
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         regexp="Callable 'fn' accepts more positional arguments than there are kdims and stream parameters"
         with self.assertRaisesRegex(KeyError, regexp):
@@ -251,7 +277,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
     def test_dynamic_kdims_args_only(self):
         def fn(*args):
             (A,B) = args
-            return Scatter([(A,2)], label=A)
+            return Scatter([(B,2)], label=A)
 
         dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
@@ -356,5 +382,3 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         xy = streams.PointerXY(x=1, y=2)
         dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
-
-

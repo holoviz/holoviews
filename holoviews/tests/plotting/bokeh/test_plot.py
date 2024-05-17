@@ -1,22 +1,22 @@
-from unittest import SkipTest
-
+import numpy as np
 import pyviz_comms as comms
-
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    HoverTool,
+    LinearColorMapper,
+    LogColorMapper,
+)
 from param import concrete_descendents
 
+from holoviews import Curve
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.bokeh.callbacks import Callback
+from holoviews.plotting.bokeh.element import ElementPlot
 
-try:
-    from bokeh.models import (
-        ColumnDataSource, LinearColorMapper, LogColorMapper, HoverTool
-    )
-    from holoviews.plotting.bokeh.callbacks import Callback
-    from holoviews.plotting.bokeh.element import ElementPlot
-    bokeh_renderer = Store.renderers['bokeh']
-except:
-    bokeh_renderer = None
+bokeh_renderer = Store.renderers['bokeh']
 
 from .. import option_intersections
 
@@ -36,8 +36,6 @@ class TestBokehPlot(ComparisonTestCase):
         self.previous_backend = Store.current_backend
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
         Store.set_current_backend('bokeh')
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
@@ -61,7 +59,9 @@ class TestBokehPlot(ComparisonTestCase):
         mapper_type = LogColorMapper if log else LinearColorMapper
         self.assertTrue(isinstance(cmapper, mapper_type))
 
-    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters={}):
+    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters=None):
+        if formatters is None:
+            formatters = {}
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
@@ -83,3 +83,44 @@ class TestBokehPlot(ComparisonTestCase):
         print(renderers, hover)
         for renderer in renderers:
             self.assertTrue(any(renderer in h.renderers for h in hover))
+
+
+def test_sync_two_plots():
+    curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
+    plot1 = curve(0) * curve(1)
+    plot2 = curve(0) * curve(1) * curve(2)
+    combined_plot = plot1 + plot2
+
+    grid_bkplot = bokeh_renderer.get_plot(combined_plot).handles["plot"]
+    for p, *_ in grid_bkplot.children:
+        for r in p.renderers:
+            if r.name == "C":
+                assert r.js_property_callbacks == {}
+            else:
+                k, v = next(iter(r.js_property_callbacks.items()))
+                assert k == "change:muted"
+                assert len(v) == 1
+                assert isinstance(v[0], CustomJS)
+                assert v[0].code == "dst.muted = src.muted"
+
+
+def test_sync_three_plots():
+    curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
+    plot1 = curve(0) * curve(1)
+    plot2 = curve(0) * curve(1) * curve(2)
+    plot3 = curve(0) * curve(1)
+    combined_plot = plot1 + plot2 + plot3
+
+    grid_bkplot = bokeh_renderer.get_plot(combined_plot).handles["plot"]
+    for p, *_ in grid_bkplot.children:
+        for r in p.renderers:
+            if r.name == "C":
+                assert r.js_property_callbacks == {}
+            else:
+                k, v = next(iter(r.js_property_callbacks.items()))
+                assert k == "change:muted"
+                assert len(v) == 2
+                assert isinstance(v[0], CustomJS)
+                assert v[0].code == "dst.muted = src.muted"
+                assert isinstance(v[1], CustomJS)
+                assert v[1].code == "dst.muted = src.muted"

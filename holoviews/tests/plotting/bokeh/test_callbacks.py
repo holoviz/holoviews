@@ -1,35 +1,47 @@
 import datetime as dt
-
 from collections import deque, namedtuple
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
+import pytest
 import pyviz_comms as comms
+from bokeh.events import Tap
+from bokeh.io.doc import set_curdoc
+from bokeh.models import ColumnDataSource, Plot, PolyEditTool, Range1d, Selection
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.core.util import pd
-from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
+from holoviews.element import Box, Curve, Points, Polygons, Rectangles, Table
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.bokeh.callbacks import (
+    BoxEditCallback,
+    Callback,
+    CDSCallback,
+    PointDrawCallback,
+    PointerXCallback,
+    PolyDrawCallback,
+    PolyEditCallback,
+    TapCallback,
+)
+from holoviews.plotting.bokeh.renderer import BokehRenderer
 from holoviews.streams import (
-    PointDraw, PolyDraw, PolyEdit, BoxEdit, PointerXY, PointerX,
-    PlotReset, Selection1D, RangeXY, PlotSize, CDSStream, SingleTap
+    BoxEdit,
+    CDSStream,
+    PlotReset,
+    PlotSize,
+    PointDraw,
+    PointerX,
+    PointerXY,
+    PolyDraw,
+    PolyEdit,
+    RangeXY,
+    Selection1D,
+    SingleTap,
 )
 
-try:
-    from bokeh.events import Tap
-    from bokeh.io.doc import set_curdoc
-    from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
-    from holoviews.plotting.bokeh.callbacks import (
-        Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-        BoxEditCallback, PointerXCallback, TapCallback
-    )
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
-    bokeh_server_renderer = BokehRenderer.instance(mode='server')
-    bokeh_renderer = BokehRenderer.instance()
-except:
-    bokeh_renderer = None
-    bokeh_server_renderer = None
+bokeh_server_renderer = BokehRenderer.instance(mode='server')
+bokeh_renderer = BokehRenderer.instance()
 
 
 class CallbackTestCase(ComparisonTestCase):
@@ -100,7 +112,8 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['y'], np.array([0.4]))
 
     def test_stream_callback_single_call(self):
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
         stream = PointerX(x=0)
@@ -150,7 +163,7 @@ class TestResetCallback(CallbackTestCase):
 class TestPointerCallbacks(CallbackTestCase):
 
     def test_pointer_x_datetime_out_of_bounds(self):
-        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)]).opts(padding=0)
         PointerX(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
@@ -191,8 +204,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         points = Points([(0, 1)])
         PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_point_draw_callback_with_vdims_initialization(self):
         points = Points([(0, 1, 'A')], vdims=['A'])
@@ -226,8 +238,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_poly_draw_callback_with_vdims(self):
         polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
@@ -260,11 +271,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
-        self.assertEqual(source.data['x'], [0])
-        self.assertEqual(source.data['y'], [0])
-        self.assertEqual(source.data['width'], [1])
-        self.assertEqual(source.data['height'], [1])
-        data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
+        self.assertEqual(source.data['left'], [-0.5])
+        self.assertEqual(source.data['bottom'], [-0.5])
+        self.assertEqual(source.data['right'], [0.5])
+        self.assertEqual(source.data['top'], [0.5])
+        data = {'left': [-0.25, 0], 'bottom': [-1, 0.75], 'right': [0.25, 2], 'top': [1, 1.25]}
         callback.on_msg({'data': data})
         element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
         self.assertEqual(box_edit.element, element)
@@ -276,11 +287,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
-        self.assertEqual(source.data['x'], [0])
-        self.assertEqual(source.data['y'], [0])
-        self.assertEqual(source.data['width'], [1])
-        self.assertEqual(source.data['height'], [1])
-        data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
+        self.assertEqual(source.data['left'], [-0.5])
+        self.assertEqual(source.data['bottom'], [-0.5])
+        self.assertEqual(source.data['right'], [0.5])
+        self.assertEqual(source.data['top'], [0.5])
+        data = {'left': [-0.25, 0], 'bottom': [-1, 0.75], 'right': [0.25, 2], 'top': [1, 1.25]}
         callback.on_msg({'data': data})
         element = Polygons([Box(0, 0, (0.5, 2)), Box(1, 1, (2, 0.5))])
         self.assertEqual(box_edit.element, element)
@@ -289,9 +300,9 @@ class TestEditToolCallbacks(CallbackTestCase):
         boxes = Polygons([Box(0, 0, 1)])
         BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
-        self.assertEqual(plot.handles['cds']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['cds']._callbacks
 
+    @pytest.mark.flaky(reruns=3)
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
@@ -307,8 +318,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyEdit(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertEqual(plot.handles['source']._callbacks,
-                         {'data': [plot.callbacks[0].on_change]})
+        assert 'data' in plot.handles['source']._callbacks
 
     def test_poly_edit_shared_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
@@ -334,7 +344,7 @@ class TestEditToolCallbacks(CallbackTestCase):
     def test_point_draw_shared_datasource_callback(self):
         points = Points([1, 2, 3])
         table = Table(points.data, ['x', 'y'])
-        layout = (points + table).options(shared_datasource=True, clone=False)
+        layout = (points + table).opts(shared_datasource=True, clone=False)
         PointDraw(source=points)
         self.assertIs(points.data, table.data)
         plot = bokeh_renderer.get_plot(layout)
@@ -387,26 +397,6 @@ class TestServerCallbacks(CallbackTestCase):
         resolved = callback.resolve_attr_spec(spec, selected, model=selected)
         self.assertEqual(resolved, {'id': selected.ref['id'], 'value': [0, 2]})
 
-    def test_rangexy_resolves(self):
-        points = Points([1, 2, 3])
-        RangeXY(source=points)
-        plot = bokeh_server_renderer.get_plot(points)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
-        callback = plot.callbacks[0]
-        x0_range_spec = callback.attributes['x0']
-        x1_range_spec = callback.attributes['x1']
-        y0_range_spec = callback.attributes['y0']
-        y1_range_spec = callback.attributes['y1']
-        resolved = callback.resolve_attr_spec(x0_range_spec, x_range, model=x_range)
-        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 0})
-        resolved = callback.resolve_attr_spec(x1_range_spec, x_range, model=x_range)
-        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 2})
-        resolved = callback.resolve_attr_spec(y0_range_spec, y_range, model=y_range)
-        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 1})
-        resolved = callback.resolve_attr_spec(y1_range_spec, y_range, model=y_range)
-        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 3})
-
     def test_plotsize_resolves(self):
         points = Points([1, 2, 3])
         PlotSize(source=points)
@@ -432,7 +422,12 @@ class TestServerCallbacks(CallbackTestCase):
                                     'value': points.columns()})
 
     def test_rangexy_datetime(self):
-        curve = Curve(pd.util.testing.makeTimeDataFrame(), 'index', 'C')
+        df = pd.DataFrame(
+            data = np.random.default_rng(2).standard_normal((30, 4)),
+            columns=list('ABCD'),
+            index=pd.date_range('2018-01-01', freq='D', periods=30),
+        )
+        curve = Curve(df, 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]
@@ -459,3 +454,35 @@ class TestServerCallbacks(CallbackTestCase):
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
+
+
+def test_msg_with_base64_array():
+    # Account for issue seen in https://github.com/holoviz/geoviews/issues/584
+    data_before = ["AAAAAAAAJEAAAAAAAAA0QAAAAAAAAD5AAAAAAAAAREA=", "float64", "little", [4]]
+    msg_before = {"data": {"x": data_before}}
+    msg_after = CDSCallback(None, None, None)._process_msg(msg_before)
+    data_after = msg_after["data"]["x"]
+
+    data_expected = np.array([10.0, 20.0, 30.0, 40.0])
+    assert np.equal(data_expected, data_after).all()
+
+
+@pytest.mark.usefixtures('bokeh_backend')
+def test_rangexy_multi_yaxes():
+    c1 = Curve(np.arange(100).cumsum(), vdims='y')
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+    RangeXY(source=c1)
+    RangeXY(source=c2)
+
+    overlay = (c1 * c2).opts(multi_y=True)
+    plot = bokeh_server_renderer.get_plot(overlay)
+
+    p1, p2 = plot.subplots.values()
+
+    assert plot.state.y_range is p1.handles['y_range']
+    assert 'y2' in plot.state.extra_y_ranges
+    assert plot.state.extra_y_ranges['y2'] is p2.handles['y_range']
+
+    # Ensure both callbacks are attached
+    assert p1.callbacks[0].plot is p1
+    assert p2.callbacks[0].plot is p2

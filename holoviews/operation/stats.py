@@ -1,12 +1,10 @@
-import param
 import numpy as np
+import param
 
-from ..core import Dimension, Dataset, NdOverlay
+from ..core import Dataset, Dimension, NdOverlay
 from ..core.operation import Operation
 from ..core.util import cartesian_product, isfinite
-from ..element import (Curve, Area, Image, Distribution, Bivariate,
-                       Contours, Polygons)
-
+from ..element import Area, Bivariate, Contours, Curve, Distribution, Image, Polygons
 from .element import contours
 
 
@@ -70,7 +68,7 @@ class univariate_kde(Operation):
             from scipy import stats
             from scipy.linalg import LinAlgError
         except ImportError:
-            raise ImportError('%s operation requires SciPy to be installed.' % type(self).__name__)
+            raise ImportError(f'{type(self).__name__} operation requires SciPy to be installed.') from None
 
         params = {}
         if isinstance(element, Distribution):
@@ -79,7 +77,7 @@ class univariate_kde(Operation):
                 params['group'] = element.group
             params['label'] = element.label
             vdim = element.vdims[0]
-            vdim_name = '{}_density'.format(selected_dim.name)
+            vdim_name = f'{selected_dim.name}_density'
             vdims = [vdim.clone(vdim_name, label='Density') if vdim.name == 'Density' else vdim]
         else:
             if self.p.dimension:
@@ -87,11 +85,10 @@ class univariate_kde(Operation):
             else:
                 dimensions = element.vdims+element.kdims
                 if not dimensions:
-                    raise ValueError("%s element does not declare any dimensions "
-                                     "to compute the kernel density estimate on." %
-                                     type(element).__name__)
+                    raise ValueError(f"{type(element).__name__} element does not declare any dimensions "
+                                     "to compute the kernel density estimate on.")
                 selected_dim = dimensions[0]
-            vdim_name = '{}_density'.format(selected_dim.name)
+            vdim_name = f'{selected_dim.name}_density'
             vdims = [Dimension(vdim_name, label='Density')]
 
         data = element.dimension_values(selected_dim)
@@ -174,7 +171,7 @@ class bivariate_kde(Operation):
         try:
             from scipy import stats
         except ImportError:
-            raise ImportError('%s operation requires SciPy to be installed.' % type(self).__name__)
+            raise ImportError(f'{type(self).__name__} operation requires SciPy to be installed.') from None
 
         if len(element.dimensions()) < 2:
             raise ValueError("bivariate_kde can only be computed on elements "

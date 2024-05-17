@@ -1,10 +1,11 @@
-import param
 import numpy as np
 import pandas as pd
+import param
+from packaging.version import Version
 
-from ..core import Operation, Element
+from ..core import Element, Operation
 from ..core.data import PandasInterface
-from ..core.util import pandas_version
+from ..core.util import _PANDAS_FUNC_LOOKUP, pandas_version
 from ..element import Scatter
 
 
@@ -50,16 +51,15 @@ class rolling(Operation,RollingBase):
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
                                         **self._roll_kwargs())
         if self.p.window_type is None:
-            kwargs = {'raw': True} if pandas_version >= '0.23.0' else {}
+            kwargs = {'raw': True} if pandas_version >= Version('0.23.0') else {}
             rolled = df.apply(self.p.function, **kwargs)
+        elif self.p.function is np.mean:
+            rolled = df.mean()
+        elif self.p.function is np.sum:
+            rolled = df.sum()
         else:
-            if self.p.function is np.mean:
-                rolled = df.mean()
-            elif self.p.function is np.sum:
-                rolled = df.sum()
-            else:
-                raise ValueError("Rolling window function only supports "
-                                 "mean and sum when custom window_type is supplied")
+            raise ValueError("Rolling window function only supports "
+                            "mean and sum when custom window_type is supplied")
         return element.clone(rolled.reset_index())
 
     def _process(self, element, key=None):
@@ -89,7 +89,8 @@ class resample(Operation):
         resample_kwargs = {'rule': self.p.rule, 'label': self.p.label,
                            'closed': self.p.closed}
         df = df.set_index(xdim).resample(**resample_kwargs)
-        return element.clone(df.apply(self.p.function).reset_index())
+        fn = _PANDAS_FUNC_LOOKUP.get(self.p.function, self.p.function)
+        return element.clone(df.apply(fn).reset_index())
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)

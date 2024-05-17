@@ -1,0 +1,26 @@
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --pst-color-inline-code: var(--holoviz-main-color);
+  --pst-color-link-hover: var(--holoviz-main-color);
+  --pst-color-link: var(--holoviz-main-color);
+  --pst-color-primary: var(--holoviz-main-color);
+  --pst-color-secondary-highlight: var(--holoviz-main-color);
+  --pst-color-secondary: var(--holoviz-main-color);
+  --sd-color-card-border-hover: var(--holoviz-main-color);
+}
+
+:root[data-theme="light"] {
+  --holoviz-main-color: #a31a26;
+}
+
+:root[data-theme="dark"] {
+  --holoviz-main-color: #f37323;
+}
+
+#binder-link {
+  display: inline-block;
+  font-size: 0.9rem;
+  padding-left: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}

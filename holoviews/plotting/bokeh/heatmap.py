@@ -1,16 +1,13 @@
-import param
 import numpy as np
-
+import param
 from bokeh.models.glyphs import AnnularWedge
 
 from ...core.data import GridInterface
-from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
+from ...core.util import dimension_sanitizer, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import (
-    base_properties, line_properties, fill_properties, text_properties
-)
+from .styles import base_properties, fill_properties, line_properties, text_properties
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -72,7 +69,7 @@ class HeatMapPlot(ColorbarPlot):
         return transform.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
 
     def get_data(self, element, ranges, style):
-        x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
+        x, y, z = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:3])
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if 'line_alpha' not in style and 'line_width' not in style:
@@ -286,7 +283,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         if isinstance(renderer.glyph, AnnularWedge):
             super()._postprocess_hover(renderer, source)
 
-    def get_extents(self, view, ranges, range_type='combined'):
+    def get_extents(self, view, ranges, range_type='combined', **kwargs):
         """Supply custom, static extents because radial heatmaps always have
         the same boundaries.
         """
@@ -474,7 +471,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         # dimension labels
         dim_labels = element.dimensions(label=True)[:3]
-        x, y, z = [dimension_sanitizer(d) for d in dim_labels]
+        x, y, z = (dimension_sanitizer(d) for d in dim_labels)
         if self.invert_axes: x, y = y, x
 
         # color mapper

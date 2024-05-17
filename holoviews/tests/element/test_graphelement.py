@@ -1,20 +1,17 @@
 """
 Unit tests of Graph Element.
 """
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 
 from holoviews.core.data import Dataset
-from holoviews.core import util
 from holoviews.element.chart import Points
-from holoviews.element.graphs import (
-    Graph, Nodes, TriMesh, Chord, circular_layout, connect_edges,
-    connect_edges_pd)
-from holoviews.element.sankey import Sankey
 from holoviews.element.comparison import ComparisonTestCase
-
-pd_skip = skipIf(util.pd is None, 'Pandas not available')
+from holoviews.element.graphs import Chord, Graph, Nodes, TriMesh
+from holoviews.element.sankey import Sankey
+from holoviews.element.util import circular_layout, connect_edges, connect_edges_pd
 
 
 class GraphTests(ComparisonTestCase):
@@ -62,14 +59,12 @@ class GraphTests(ComparisonTestCase):
         self.assertEqual(graph.nodes.dimension_values(3),
                          node_info.dimension_values(1))
 
-    @pd_skip
     def test_graph_node_info_merge_on_index_partial(self):
         node_info = Dataset((np.arange(5), np.arange(1,6)), 'index', 'label')
         graph = Graph(((self.source, self.target), node_info))
-        expected = np.array([1., 2., 3., 4., 5., np.NaN, np.NaN, np.NaN])
+        expected = np.array([1., 2., 3., 4., 5., np.nan, np.nan, np.nan])
         self.assertEqual(graph.nodes.dimension_values(3), expected)
 
-    @pd_skip
     def test_graph_edge_segments_pd(self):
         segments = connect_edges_pd(self.graph)
         paths = []
@@ -86,7 +81,7 @@ class GraphTests(ComparisonTestCase):
     def test_constructor_with_nodes_and_paths_dimension_mismatch(self):
         paths = Graph(((self.source, self.target), self.nodes)).edgepaths
         exception = 'Ensure that the first two key dimensions on Nodes and EdgePaths match: x != x2'
-        with self.assertRaisesRegexp(ValueError, exception):
+        with self.assertRaisesRegex(ValueError, exception):
             Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
 
     def test_graph_clone_static_plot_id(self):
@@ -138,7 +133,7 @@ class FromNetworkXTests(ComparisonTestCase):
     def setUp(self):
         try:
             import networkx as nx # noqa
-        except:
+        except ImportError:
             raise SkipTest('Test requires networkx to be installed')
 
     def test_from_networkx_with_node_attrs(self):
@@ -231,9 +226,9 @@ class ChordTests(ComparisonTestCase):
 
     def test_chord_constructor_self_reference(self):
         chord = Chord([('A', 'B', 2), ('B', 'A', 3), ('A', 'A', 2)])
-        nodes = np.array(
-            [[-0.5, 0.866025, 0],
-             [0.5, -0.866025, 1]]
+        nodes = pd.DataFrame(
+            [[-0.5, 0.866025, "A"], [0.5, -0.866025, "B"]],
+            columns=["x", "y", "index"]
         )
         self.assertEqual(chord.nodes, Nodes(nodes))
 
@@ -269,9 +264,8 @@ class TriMeshTests(ComparisonTestCase):
         self.assertEqual(trimesh.nodes.array([0, 1]), np.array(nodes).T)
         self.assertEqual(trimesh.nodes.dimension_values(2), np.arange(4))
 
-    @pd_skip
     def test_trimesh_constructor_df_nodes(self):
-        nodes_df = util.pd.DataFrame(self.nodes, columns=['x', 'y', 'z'])
+        nodes_df = pd.DataFrame(self.nodes, columns=['x', 'y', 'z'])
         trimesh = TriMesh((self.simplices, nodes_df))
         nodes = Nodes([(0, 0, 0, 0), (0.5, 1, 1, 1),
                        (1., 0, 2, 2), (1.5, 1, 3, 4)], vdims='z')
@@ -287,7 +281,7 @@ class TriMeshTests(ComparisonTestCase):
 
     def test_trimesh_edgepaths(self):
         trimesh = TriMesh((self.simplices, self.nodes))
-        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.NaN, np.NaN),
+        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.nan, np.nan),
                  (0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
         for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths):
             self.assertEqual(p1, p2)
@@ -314,6 +308,7 @@ class TestSankey(ComparisonTestCase):
                 'value': 1,
                 'depth': 0,
                 'height': 1,
+                'column': 0,
                 'x0': 0,
                 'x1': 15,
                 'y0': 0.0,
@@ -325,13 +320,14 @@ class TestSankey(ComparisonTestCase):
                 'value': 1,
                 'depth': 1,
                 'height': 0,
+                'column': 1,
                 'x0': 985.0,
                 'x1': 1000.0,
                 'y0': 0.0,
                 'y1': 500.0},
             'value': 1,
             'width': 500.0,
-            'y0': 0.0,
-            'y1': 0.0
+            'y0': 250.0,
+            'y1': 250.0
         }
         self.assertEqual(links[0], link)

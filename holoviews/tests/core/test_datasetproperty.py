@@ -5,17 +5,17 @@ import pandas as pd
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
 
-from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
+from holoviews import Curve, Dataset, Dimension, Distribution, Scatter
 from holoviews.core import Apply, Redim
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation import histogram, function
+from holoviews.operation import function, histogram
 
 try:
-    from holoviews.operation.datashader import dynspread, datashade, rasterize
-except:
+    from holoviews.operation.datashader import datashade, dynspread, rasterize
+except ImportError:
     dynspread = datashade = rasterize = None
 
 

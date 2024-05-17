@@ -76,9 +76,9 @@ outside of the actual matrix.
 """
 
 import numpy as np
+
 from .boundingregion import BoundingBox
 from .util import datetime_types
-
 
 # Note about the 'bounds-master' approach we have adopted
 # =======================================================
@@ -115,7 +115,7 @@ from .util import datetime_types
 
 
 
-class SheetCoordinateSystem(object):
+class SheetCoordinateSystem:
     """
     Provides methods to allow conversion between sheet and matrix
     coordinates.
@@ -185,7 +185,7 @@ class SheetCoordinateSystem(object):
         Returns (adjusted_bounds, true_density)
         """
         left,bottom,right,top = nominal_bounds.lbrt()
-        width = right-left; height = top-bottom
+        width, height = right-left, top-bottom
         center_y = bottom + height/2.0
         # True density is not equal to the nominal_density when
         # nominal_density*(right-left) is not an integer.
@@ -517,7 +517,6 @@ class Slice(np.ndarray):
 
         l_idx = int(np.ceil(l_m-0.5))
         t_idx = int(np.ceil(t_m-0.5))
-        # CBENHANCEMENT: Python 2.6's math.trunc()?
         r_idx = int(np.floor(r_m+0.5))
         b_idx = int(np.floor(b_m+0.5))
 

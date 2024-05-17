@@ -1,23 +1,22 @@
 import itertools
 
-import param
 import numpy as np
+import pandas as pd
+import param
 
-from ..core import Dataset, OrderedDict
+from ..core import Dataset
 from ..core.boundingregion import BoundingBox
-from ..core.data import default_datatype
+from ..core.data import PandasInterface, default_datatype
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (
-    cartesian_product, datetime_types, is_cyclic, is_nan,
-    one_to_one, sort_topologically
+    cartesian_product,
+    datetime_types,
+    is_cyclic,
+    is_nan,
+    one_to_one,
+    sort_topologically,
 )
-
-try:
-    import pandas as pd
-    from ..core.data import PandasInterface
-except:
-    pd = None
 
 
 def split_path(path):
@@ -29,11 +28,11 @@ def split_path(path):
     values = path.dimension_values(0)
     splits = np.concatenate([[0], np.where(np.isnan(values))[0]+1, [None]])
     subpaths = []
-    data = PandasInterface.as_dframe(path) if pd else path.array()
+    data = PandasInterface.as_dframe(path)
     for i in range(len(splits)-1):
         end = splits[i+1]
         slc = slice(splits[i], None if end is None else end-1)
-        subpath = data.iloc[slc] if pd else data[slc]
+        subpath = data.iloc[slc]
         if len(subpath):
             subpaths.append(subpath)
     return subpaths
@@ -95,11 +94,11 @@ def reduce_fn(x):
     """
     Aggregation function to get the first non-zero value.
     """
-    values = x.values if pd and isinstance(x, pd.Series) else x
+    values = x.values if isinstance(x, pd.Series) else x
     for v in values:
         if not is_nan(v):
             return v
-    return np.NaN
+    return np.nan
 
 
 class categorical_aggregate2d(Operation):
@@ -118,11 +117,11 @@ class categorical_aggregate2d(Operation):
                      kdims=['Country', 'Year'], vdims=['Population'])
     >> categorical_aggregate2d(table)
     Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
-             'Population': [[ 282.2 , np.NaN], [np.NaN,   58.89]]},
+             'Population': [[ 282.2 , np.nan], [np.nan,   58.89]]},
             kdims=['Country', 'Year'], vdims=['Population'])
     """
 
-    datatype = param.List(['xarray', 'grid'], doc="""
+    datatype = param.List(default=['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
     @classmethod
@@ -140,9 +139,9 @@ class categorical_aggregate2d(Operation):
             return xcoords, np.sort(ycoords)
 
         # Determine global orderings of y-values using topological sort
-        grouped = obj.groupby(xdim, container_type=OrderedDict,
+        grouped = obj.groupby(xdim, container_type=dict,
                               group_type=Dataset).values()
-        orderings = OrderedDict()
+        orderings = {}
         sort = True
         for group in grouped:
             vals = group.dimension_values(ydim, False)
@@ -174,14 +173,14 @@ class categorical_aggregate2d(Operation):
         vdims = obj.dimensions()[2:]
         xdim, ydim = dim_labels[:2]
         shape = (len(ycoords), len(xcoords))
-        nsamples = np.product(shape)
+        nsamples = np.prod(shape)
         grid_data = {xdim: xcoords, ydim: ycoords}
 
         ys, xs = cartesian_product([ycoords, xcoords], copy=True)
         data = {xdim: xs, ydim: ys}
         for vdim in vdims:
             values = np.empty(nsamples)
-            values[:] = np.NaN
+            values[:] = np.nan
             data[vdim.name] = values
         dtype = default_datatype
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
@@ -189,12 +188,9 @@ class categorical_aggregate2d(Operation):
         reindexed = concat_data.reindex([xdim, ydim], vdims)
         if not reindexed:
             agg = reindexed
-        elif pd:
-            df = PandasInterface.as_dframe(reindexed)
-            df = df.groupby([xdim, ydim], sort=False).first().reset_index()
-            agg = reindexed.clone(df)
-        else:
-            agg = reindexed.aggregate([xdim, ydim], reduce_fn)
+        df = PandasInterface.as_dframe(reindexed)
+        df = df.groupby([xdim, ydim], sort=False).first().reset_index()
+        agg = reindexed.clone(df)
 
         # Convert data to a gridded dataset
         for vdim in vdims:
@@ -229,12 +225,8 @@ class categorical_aggregate2d(Operation):
             raise ValueError("Must have at two dimensions to aggregate over"
                              "and one value dimension to aggregate on.")
 
-        if pd:
-            obj = Dataset(obj, datatype=['dataframe'])
-            return self._aggregate_dataset_pandas(obj)
-        else:
-            obj = Dataset(obj, datatype=['dictionary'])
-            return self._aggregate_dataset(obj)
+        obj = Dataset(obj, datatype=['dataframe'])
+        return self._aggregate_dataset_pandas(obj)
 
 
 def circular_layout(nodes):
@@ -288,11 +280,8 @@ def connect_edges_pd(graph):
     df = df.rename(columns={x.name: 'dst_x', y.name: 'dst_y'})
     df = df.sort_values('graph_edge_index').drop(['graph_edge_index'], axis=1)
 
-    edge_segments = []
-    for i, edge in df.iterrows():
-        start = edge['src_x'], edge['src_y']
-        end = edge['dst_x'], edge['dst_y']
-        edge_segments.append(np.array([start, end]))
+    cols = ["src_x", "src_y", "dst_x", "dst_y"]
+    edge_segments = list(df[cols].values.reshape(df.index.size, 2, 2))
     return edge_segments
 
 
@@ -305,9 +294,10 @@ def connect_tri_edges_pd(trimesh):
     """
     edges = trimesh.dframe().copy()
     edges.index.name = 'trimesh_edge_index'
-    edges = edges.reset_index()
+    edges = edges.drop("color", errors="ignore", axis=1).reset_index()
     nodes = trimesh.nodes.dframe().copy()
     nodes.index.name = 'node_index'
+    nodes = nodes.drop(["color", "z"], errors="ignore", axis=1)
     v1, v2, v3 = trimesh.kdims
     x, y, idx = trimesh.nodes.kdims[:3]
 

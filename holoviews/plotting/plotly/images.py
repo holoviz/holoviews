@@ -1,5 +1,4 @@
 import numpy as np
-
 from plotly.graph_objs.layout import Image as _Image
 
 from ...core.util import VersionError
@@ -56,7 +55,7 @@ class RGBPlot(ElementPlot):
             import PIL.Image
         except ImportError:
             raise VersionError("""\
-Rendering RGB elements with the plotly backend requires the Pillow package""")
+Rendering RGB elements with the plotly backend requires the Pillow package""") from None
 
         img = np.flip(
             np.dstack([element.dimension_values(d, flat=False)
@@ -79,8 +78,7 @@ Rendering RGB elements with the plotly backend requires the Pillow package""")
             img = np.zeros((1, 1, 3), dtype=np.uint8)
 
         if img.ndim != 3 or img.shape[2] not in (3, 4):
-            raise ValueError("Unsupported image array with shape: {shape}"
-                             .format(shape=img.shape))
+            raise ValueError(f"Unsupported image array with shape: {img.shape}")
 
         # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()

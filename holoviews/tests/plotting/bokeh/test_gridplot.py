@@ -1,20 +1,20 @@
 import numpy as np
+from bokeh.layouts import Column
+from bokeh.models import Div, Toolbar
 
-from holoviews.core import (HoloMap, GridSpace, NdOverlay, Dataset,
-                            DynamicMap, GridMatrix)
+from holoviews.core import (
+    Dataset,
+    DynamicMap,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    NdOverlay,
+)
 from holoviews.element import Curve, Image, Points
 from holoviews.operation import gridmatrix
 from holoviews.streams import Stream
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-try:
-    from bokeh.layouts import Column
-    from bokeh.models import Div, ToolbarBox
-    from holoviews.plotting.bokeh.util import bokeh_version
-except:
-    pass
-
 
 
 class TestGridPlot(TestBokehPlot):
@@ -66,10 +66,7 @@ class TestGridPlot(TestBokehPlot):
                             for j in range(2,4) if not (i==1 and j == 2)})
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        if bokeh_version < '2.0.2':
-            self.assertEqual(size, (318, 310))
-        else:
-            self.assertEqual(size, (320, 311))
+        self.assertEqual(size, (320, 311))
 
     def test_grid_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
@@ -82,7 +79,7 @@ class TestGridPlot(TestBokehPlot):
 
         # Pop key (1,) for one of the HoloMaps and make GridSpace
         hmap2.pop(1)
-        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(plot=dict(shared_datasource=True))
+        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(shared_datasource=True)
 
         # Get plot
         plot = bokeh_renderer.get_plot(grid)
@@ -105,20 +102,21 @@ class TestGridPlot(TestBokehPlot):
         plot.update((1,))
         self.assertEqual(data['A'], hmap1[1].dimension_values(0))
         self.assertEqual(data['B'], hmap1[1].dimension_values(1))
-        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
-        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.nan))
+        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
     def test_grid_set_toolbar_location(self):
-        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').options(toolbar='left')
+        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertIsInstance(plot.state.children[0].children[0], ToolbarBox)
+        self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
+
 
     def test_grid_disable_toolbar(self):
-        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').options(toolbar=None)
+        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar=None)
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        self.assertEqual([p for p in plot.state.children if isinstance(p, ToolbarBox)], [])
+        self.assertEqual([p for p in plot.state.children if isinstance(p, Toolbar)], [])
 
     def test_grid_dimensioned_stream_title_update(self):
         stream = Stream.define('Test', test=0)()

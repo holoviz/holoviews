@@ -1,8 +1,9 @@
 import gc
 
-from holoviews.core.spaces import HoloMap
 from holoviews.core.element import Element
-from holoviews.core.options import Store, Keywords, Options, OptionTree
+from holoviews.core.options import Keywords, Options, OptionTree, Store
+from holoviews.core.spaces import HoloMap
+
 from ..utils import LoggingComparisonTestCase
 
 
@@ -10,7 +11,7 @@ class ExampleElement(Element):
     pass
 
 
-class MockRenderer(object):
+class MockRenderer:
 
     def __init__(self, backend):
         self.backend = backend
@@ -40,7 +41,11 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         Store.renderers.pop('backend_2')
 
     @classmethod
-    def register_custom(cls, objtype, backend, custom_plot=[], custom_style=[]):
+    def register_custom(cls, objtype, backend, custom_plot=None, custom_style=None):
+        if custom_style is None:
+            custom_style = []
+        if custom_plot is None:
+            custom_plot = []
         groups = Options._option_groups
         if backend not in Store._options:
             Store._options[backend] = OptionTree([], groups=groups)
@@ -66,26 +71,26 @@ class TestDimensioned_options(CustomBackendTestCase):
     def test_apply_options_current_backend_style_invalid(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type "
                "across all extensions. Similar options for current "
-               "extension \('backend_1'\) are: \['style_opt1', 'style_opt2'\]\.")
+               r"extension \('backend_1'\) are: \['style_opt1', 'style_opt2'\]\.")
         with self.assertRaisesRegex(ValueError, err):
             ExampleElement([]).options(style_opt3='A')
 
     def test_apply_options_current_backend_style_invalid_no_match(self):
-        err = ("Unexpected option 'zxy' for ExampleElement type across all extensions\. "
-               "No similar options found\.")
+        err = (r"Unexpected option 'zxy' for ExampleElement type across all extensions\. "
+               r"No similar options found\.")
         with self.assertRaisesRegex(ValueError, err):
             ExampleElement([]).options(zxy='A')
 
     def test_apply_options_explicit_backend_style_invalid_cross_backend(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "
                "using the 'backend_2' extension. Similar options are: "
-               "\['style_opt1', 'style_opt2'\]\.")
+               r"\['style_opt1', 'style_opt2'\]\.")
         with self.assertRaisesRegex(ValueError, err):
             ExampleElement([]).options(style_opt3='A', backend='backend_2')
 
     def test_apply_options_explicit_backend_style_invalid_no_match(self):
         err = ("Unexpected option 'zxy' for ExampleElement type when using the "
-               "'backend_2' extension. No similar options found\.")
+               r"'backend_2' extension. No similar options found\.")
         with self.assertRaisesRegex(ValueError, err):
             ExampleElement([]).options(zxy='A', backend='backend_2')
 
@@ -99,7 +104,7 @@ class TestDimensioned_options(CustomBackendTestCase):
     def test_apply_options_explicit_backend_style_invalid(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "
                "using the 'backend_2' extension. Similar options are: "
-               "\['style_opt1', 'style_opt2'\]\.")
+               r"\['style_opt1', 'style_opt2'\]\.")
         with self.assertRaisesRegex(ValueError, err):
             ExampleElement([]).options(style_opt3='A', backend='backend_2')
 

@@ -1,8 +1,7 @@
 import numpy as np
-
 import param
 
-from ..core import Dimension, Dataset, Element2D
+from ..core import Dataset, Dimension, Element2D
 from .selection import Selection2DExpr, SelectionGeomExpr
 
 
@@ -52,6 +51,35 @@ class VectorField(Selection2DExpr, Geometry):
     vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
                                 Dimension('Magnitude')], bounds=(1, None))
 
+    @classmethod
+    def from_uv(cls, data, kdims=None, vdims=None, **params):
+        if kdims is None:
+            kdims = ['x', 'y']
+        if vdims is None:
+            vdims = ['u', 'v']
+        dataset = Dataset(data, kdims=kdims, vdims=vdims, **params)
+        us, vs = (dataset.dimension_values(i) for i in range(2, 4))
+
+        uv_magnitudes = np.hypot(us, vs)  # unscaled
+        # this follows mathematical conventions,
+        # unlike WindBarbs which follows meteorological conventions
+        radians = np.arctan2(vs, us)
+
+        # calculations on this data could mutate the original data
+        # here we do not do any calculations; we only store the data
+        repackaged_dataset = {}
+        for kdim in kdims:
+            repackaged_dataset[kdim] = dataset[kdim]
+        repackaged_dataset["Angle"] = radians
+        repackaged_dataset["Magnitude"] = uv_magnitudes
+        for vdim in vdims[2:]:
+            repackaged_dataset[vdim] = dataset[vdim]
+        vdims = [
+            Dimension('Angle', cyclic=True, range=(0, 2 * np.pi)),
+            Dimension('Magnitude')
+        ] + vdims[2:]
+        return cls(repackaged_dataset, kdims=kdims, vdims=vdims, **params)
+
 
 class Segments(SelectionGeomExpr, Geometry):
     """
@@ -79,4 +107,3 @@ class Rectangles(SelectionGeomExpr, Geometry):
         The key dimensions of the Rectangles element represent the
         bottom-left (x0, y0) and top right (x1, y1) coordinates
         of each box.""")
-

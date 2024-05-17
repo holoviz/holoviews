@@ -1,13 +1,13 @@
 import numpy as np
 
+from .. import util
 from ..boundingregion import BoundingBox
 from ..dimension import dimension_name
 from ..element import Element
-from ..ndmapping import  NdMapping, item_check
-from ..sheetcoords import Slice, SheetCoordinateSystem
-from .. import util
+from ..ndmapping import NdMapping, item_check
+from ..sheetcoords import SheetCoordinateSystem, Slice
 from .grid import GridInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 from .util import finite_range
 
 
@@ -55,9 +55,9 @@ class ImageInterface(GridInterface):
             shape = data.shape[:2]
             error = DataError if len(shape) > 1 and not eltype._binned else ValueError
             if shape != expected and not (not expected and shape == (1,)):
-                raise error('Key dimension values and value array %s '
-                            'shapes do not match. Expected shape %s, '
-                            'actual shape: %s' % (vdims[0], expected, shape), cls)
+                raise error(f'Key dimension values and value array {vdims[0]} '
+                            f'shapes do not match. Expected shape {expected}, '
+                            f'actual shape: {shape}', cls)
 
         if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')
@@ -91,7 +91,7 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def length(cls, dataset):
-        return np.product(dataset.data.shape[:2], dtype=np.intp)
+        return np.prod(dataset.data.shape[:2], dtype=np.intp)
 
 
     @classmethod
@@ -239,7 +239,7 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
         """
         Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -248,6 +248,8 @@ class ImageInterface(GridInterface):
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
         """
+        if samples is None:
+            samples = []
         if len(samples[0]) == 1:
             select = {dataset.kdims[0].name: [s[0] for s in samples]}
             return tuple(dataset.select(**select).columns().values())
@@ -297,7 +299,7 @@ class ImageInterface(GridInterface):
         """
         if np.isscalar(data) or len(data) != 1:
             return data
-        key = list(data.keys())[0]
+        key = next(iter(data.keys()))
 
         if len(data[key]) == 1 and key in dataset.vdims:
             return data[key][0]

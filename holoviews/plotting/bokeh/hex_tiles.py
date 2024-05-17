@@ -1,12 +1,8 @@
-import types
+from collections.abc import Callable
 
-import param
 import numpy as np
-
-try:
-    from bokeh.util.hex import cartesian_to_axial
-except:
-    cartesian_to_axial = None
+import param
+from bokeh.util.hex import cartesian_to_axial
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
@@ -15,7 +11,7 @@ from ...element import HexTiles
 from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import base_properties, line_properties, fill_properties
+from .styles import base_properties, fill_properties, line_properties
 
 
 class hex_binning(Operation):
@@ -23,11 +19,11 @@ class hex_binning(Operation):
     Applies hex binning by computing aggregates on a hexagonal grid.
 
     Should not be user facing as the returned element is not directly
-    useable.
+    usable.
     """
 
     aggregator = param.ClassSelector(
-        default=np.size, class_=(types.FunctionType, tuple), doc="""
+        default=np.size, class_=(Callable, tuple), doc="""
       Aggregation function or dimension transform used to compute bin
       values. Defaults to np.size to count the number of values
       in each bin.""")
@@ -104,7 +100,7 @@ Compositor.register(compositor)
 class HexTilesPlot(ColorbarPlot):
 
     aggregator = param.ClassSelector(
-        default=np.size, class_=(types.FunctionType, tuple), doc="""
+        default=np.size, class_=(Callable, tuple), doc="""
       Aggregation function or dimension transform used to compute
       bin values.  Defaults to np.size to count the number of values
       in each bin.""")
@@ -152,7 +148,7 @@ class HexTilesPlot(ColorbarPlot):
     _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         xdim, ydim = element.kdims[:2]
         ranges[xdim.name]['data'] = xdim.range
         ranges[ydim.name]['data'] = ydim.range

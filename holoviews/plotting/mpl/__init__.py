@@ -1,45 +1,41 @@
 import os
 
+from colorcet import kbc, register_cmap
 from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from matplotlib.cm import register_cmap
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+from packaging.version import Version
 from param import concrete_descendents
-from colorcet import kbc
 
-from ...core import Layout, Collator, GridMatrix, config
-from ...core.options import Cycle, Palette, Options
+from ...core import Collator, GridMatrix, Layout, config
+from ...core.options import Cycle, Options, Palette
 from ...core.overlay import NdOverlay, Overlay
-from ...core.util import LooseVersion, pd
-from ...element import * # noqa (API import)
+from ...element import *
 from ..plot import PlotSelector
 from ..util import fire_colors
-from .annotation import * # noqa (API import)
-from .chart import * # noqa (API import)
-from .chart3d import * # noqa (API import)
+from .annotation import *
+from .chart import *
+from .chart3d import *
 from .element import ElementPlot
-from .geometry import * # noqa (API import)
-from .graphs import * # noqa (API import)
-from .heatmap import * # noqa (API import)
-from .hex_tiles import * # noqa (API import)
-from .path import * # noqa (API import)
-from .plot import * # noqa (API import)
-from .raster import * # noqa (API import)
-from .sankey import * # noqa (API import)
-from .stats import * # noqa (API import)
-from .tabular import * # noqa (API import)
-
+from .geometry import *
+from .graphs import *
+from .heatmap import *
+from .hex_tiles import *
+from .path import *
+from .plot import *
+from .raster import *
 from .renderer import MPLRenderer
+from .sankey import *
+from .stats import *
+from .tabular import *
 
+mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
 
-mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
-
-if pd:
-    try:
-        from pandas.plotting import register_matplotlib_converters
-        register_matplotlib_converters()
-    except ImportError:
-        from pandas.tseries import converter
-        converter.register()
+try:
+    from pandas.plotting import register_matplotlib_converters
+    register_matplotlib_converters()
+except ImportError:
+    from pandas.tseries import converter
+    converter.register()
 
 
 def set_style(key):
@@ -154,6 +150,7 @@ Store.register({Curve: CurvePlot,
                                        False: HeatMapPlot},
                                       True),
                 Image: RasterPlot,
+                ImageStack: RGBPlot,
                 RGB: RGBPlot,
                 HSV: RGBPlot,
 
@@ -166,6 +163,10 @@ Store.register({Curve: CurvePlot,
                 Sankey: SankeyPlot,
 
                 # Annotation plots
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 VLine: VLinePlot,
                 HLine: HLinePlot,
                 VSpan: VSpanPlot,
@@ -272,6 +273,11 @@ options.Slope = Options('style', color=Cycle())
 options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.Spline = Options('style', edgecolor=Cycle())
+options.HLines = Options('style', color=Cycle())
+options.VLines = Options('style', color=Cycle())
+options.VSpans = Options('style', alpha=0.5, facecolor=Cycle())
+options.HSpans = Options('style', alpha=0.5, facecolor=Cycle())
+options.Labels = Options('style', color=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 # Paths

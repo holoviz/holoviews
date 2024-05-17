@@ -1,22 +1,22 @@
 import sqlite3
-from unittest import SkipTest
-
 from tempfile import NamedTemporaryFile
+from unittest import SkipTest
 
 try:
     import ibis
     from ibis import sqlite
-except:
+except ImportError:
     raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
 
 import numpy as np
 import pandas as pd
+from packaging.version import Version
 
 from holoviews.core.data import Dataset
+from holoviews.core.data.ibis import IbisInterface, ibis_version
 from holoviews.core.spaces import HoloMap
-from holoviews.core.data.ibis import IbisInterface
 
-from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
+from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
 
 
 def create_temp_db(df, name, index=False):
@@ -66,7 +66,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
         )
 
-        # Create table with aliased dimenion names
+        # Create table with aliased dimension names
         self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
         self.alias_vdims = [("weight", "Weight"), ("height", "Height")]
         alias_df = pd.DataFrame(
@@ -158,18 +158,20 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         raise SkipTest("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
+        int_dtype = "int64" if ibis_version() >= Version("9.0") else "int32"
         ds = self.table
         self.assertEqual(ds.interface.dtype(ds, "Gender"), np.dtype("object"))
-        self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype("int32"))
-        self.assertEqual(ds.interface.dtype(ds, "Weight"), np.dtype("int32"))
+        self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype(int_dtype))
+        self.assertEqual(ds.interface.dtype(ds, "Weight"), np.dtype(int_dtype))
         self.assertEqual(ds.interface.dtype(ds, "Height"), np.dtype("float64"))
 
     def test_dataset_dtypes(self):
+        int_dtype = "int64" if ibis_version() >= Version("9.0") else "int32"
         self.assertEqual(
-            self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype("int32")
+            self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype(int_dtype)
         )
         self.assertEqual(
-            self.dataset_hm.interface.dtype(self.dataset_hm, "y"), np.dtype("int32")
+            self.dataset_hm.interface.dtype(self.dataset_hm, "y"), np.dtype(int_dtype)
         )
 
     def test_dataset_reduce_ht(self):
@@ -257,6 +259,13 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
             self.compare_dataset(expected, result, msg=str(agg))
 
+    def test_select_with_neighbor(self):
+        try:
+            # Not currently supported by Ibis
+            super().test_select_with_neighbor()
+        except NotImplementedError:
+            raise SkipTest("Not supported")
+
     if not IbisInterface.has_rowid():
 
         def test_dataset_iloc_slice_rows_slice_cols(self):
@@ -303,4 +312,3 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
         def test_dataset_boolean_index(self):
             raise SkipTest("Not supported")
-

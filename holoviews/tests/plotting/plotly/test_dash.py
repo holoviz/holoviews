@@ -1,19 +1,31 @@
-from dash._callback_context import CallbackContext
-
-from .test_plot import TestPlotlyPlot
-from holoviews.plotting.plotly.dash import (
-    to_dash, DashComponents, encode_store_data, decode_store_data
-)
-from holoviews import Scatter, DynamicMap, Bounds
-from holoviews.streams import BoundsXY, RangeXY, Selection1D
-from dash_core_components import Store
-import plotly.io as pio
-pio.templates.default = None
+import unittest
+from unittest.mock import MagicMock, patch
 
 try:
-    from unittest.mock import MagicMock, patch
-except:
-    from mock import MagicMock, patch
+    import dash  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("Dash not installed")
+
+from dash._callback_context import CallbackContext
+
+from holoviews import Bounds, DynamicMap, Scatter
+from holoviews.plotting.plotly.dash import (
+    DashComponents,
+    decode_store_data,
+    encode_store_data,
+    to_dash,
+)
+from holoviews.streams import BoundsXY, RangeXY, Selection1D
+
+from .test_plot import TestPlotlyPlot
+
+try:
+    from dash_core_components import Store
+except ImportError:
+    from dash.dcc import Store
+import plotly.io as pio
+
+pio.templates.default = None
 
 
 class TestHoloViewsDash(TestPlotlyPlot):
@@ -65,7 +77,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -161,7 +173,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # First figure is the scatter trace
         self.assertEqual(fig1["data"][0]["type"], "scatter")
 
-        # Second figure holds reset bounds elemnt
+        # Second figure holds reset bounds element
         self.assertEqual(len(fig2["data"]), 0)
         self.assertEqual(len(fig2["layout"]["shapes"]), 1)
         self.assertEqual(
@@ -206,7 +218,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -296,7 +308,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -348,7 +360,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
             "streams": {id(selection1d): selection1d.contents}
         })
 
-        # Update store, then mimick a selection on scatter figure
+        # Update store, then mimic a selection on scatter figure
         # store_value = new_store
         with patch.object(
                 CallbackContext, "triggered",
@@ -428,7 +440,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 0)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -444,7 +456,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
             (g.id, prop)
             for g in components.graphs
             for prop in ["selectedData", "relayoutData"]
-        ] + [(list(components.kdims.values())[0].children[1].id, 'value')]
+        ] + [(next(iter(components.kdims.values())).children[1].id, 'value')]
 
         self.assertEqual(
             [(ip.component_id, ip.component_property) for ip in inputs],

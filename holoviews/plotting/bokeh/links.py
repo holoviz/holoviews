@@ -1,16 +1,21 @@
 import numpy as np
-
-from bokeh.models import CustomJS, ToolbarBox
+from bokeh.models import CustomJS, Toolbar
+from bokeh.models.tools import RangeTool
 
 from ...core.util import isscalar
 from ..links import (
-    Link, RectanglesTableLink, DataLink, RangeToolLink,
-    SelectionLink, VertexTableLink
+    DataLink,
+    Link,
+    RangeToolLink,
+    RectanglesTableLink,
+    SelectionLink,
+    VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .util import bokeh34
 
 
-class LinkCallback(object):
+class LinkCallback:
 
     source_model = None
     target_model = None
@@ -33,21 +38,21 @@ class LinkCallback(object):
         self.target_plot = target_plot
         self.validate()
 
-        references = {k: v for k, v in link.param.get_param_values()
+        references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
         for sh in self.source_handles+[self.source_model]:
-            key = '_'.join(['source', sh])
+            key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
-        for p, value in link.param.get_param_values():
+        for p, value in link.param.values().items():
             if p in ('name', 'source', 'target'):
                 continue
             references[p] = value
 
         if target_plot is not None:
             for sh in self.target_handles+[self.target_model]:
-                key = '_'.join(['target', sh])
+                key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
         if self.source_model in source_plot.handles:
@@ -78,7 +83,7 @@ class LinkCallback(object):
         Traverses the supplied plot and searches for any Links on
         the plotted objects.
         """
-        plot_fn = lambda x: isinstance(x, GenericElementPlot) and not isinstance(x, GenericOverlayPlot)
+        plot_fn = lambda x: isinstance(x, (GenericElementPlot, GenericOverlayPlot))
         plots = root_plot.traverse(lambda x: x, [plot_fn])
         potentials = [cls.find_link(plot) for plot in plots]
         source_links = [p for p in potentials if p is not None]
@@ -109,12 +114,11 @@ class LinkCallback(object):
                                          src._plot_id == source._plot_id)]
                 if links:
                     return (plot, links)
-            else:
-                if ((link.target is source) or
-                    (link.target is not None and
-                     link.target._plot_id is not None and
-                     link.target._plot_id == source._plot_id)):
-                    return (plot, [link])
+            elif ((link.target is source) or
+                (link.target is not None and
+                    link.target._plot_id is not None and
+                    link.target._plot_id == source._plot_id)):
+                return (plot, [link])
 
     def validate(self):
         """
@@ -130,21 +134,53 @@ class RangeToolLinkCallback(LinkCallback):
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
-        try:
-            from bokeh.models.tools import RangeTool
-        except:
-            raise Exception('RangeToolLink requires bokeh >= 0.13')
-        toolbars = list(root_model.select({'type': ToolbarBox}))
+        toolbars = list(root_model.select({'type': Toolbar}))
         axes = {}
-        if 'x' in link.axes:
-            axes['x_range'] = target_plot.handles['x_range']
-        if 'y' in link.axes:
-            axes['y_range'] = target_plot.handles['y_range']
+
+        for axis in ('x', 'y'):
+            if axis not in link.axes:
+                continue
+
+            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
+            interval = getattr(link, f'intervals{axis}', None)
+            if interval is not None and bokeh34:
+                min, max = interval
+                if min is not None:
+                    axes[f'{axis}_range'].min_interval = min
+                if max is not None:
+                    axes[f'{axis}_range'].max_interval = max
+                    self._set_range_for_interval(axes[f'{axis}_range'], max)
+
+            bounds = getattr(link, f'bounds{axis}', None)
+            if bounds is not None:
+                start, end = bounds
+                if start is not None:
+                    axes[f'{axis}_range'].start = start
+                    axes[f'{axis}_range'].reset_start = start
+                if end is not None:
+                    axes[f'{axis}_range'].end = end
+                    axes[f'{axis}_range'].reset_end = end
+
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if toolbars:
-            toolbar = toolbars[0].toolbar
-            toolbar.tools.append(tool)
+            toolbars[0].tools.append(tool)
+
+    def _set_range_for_interval(self, axis, max):
+        # Changes the existing Range1d axis range to be in the interval
+        for n in ("", "reset_"):
+            start = getattr(axis, f"{n}start")
+            try:
+                end = start + max
+            except Exception as e:
+                # Handle combinations of datetime axis and timedelta interval
+                # Likely a better way to do this
+                try:
+                    import pandas as pd
+                    end = (pd.array([start]) + pd.array([max]))[0]
+                except Exception:
+                    raise e from None
+            setattr(axis, f"{n}end", end)
 
 
 class DataLinkCallback(LinkCallback):
@@ -161,7 +197,7 @@ class DataLinkCallback(LinkCallback):
         src_len = [len(v) for v in src_cds.data.values()]
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
-            raise Exception('DataLink source data length must match target '
+            raise ValueError('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
 
@@ -177,8 +213,8 @@ class DataLinkCallback(LinkCallback):
                     (v.dtype.kind not in 'iufc' and (v==col).all()) or
                     np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
                 raise ValueError('DataLink can only be applied if overlapping '
-                                 'dimension values are equal, %s column on source '
-                                 'does not match target' % k)
+                                 f'dimension values are equal, {k} column on source '
+                                 'does not match target')
 
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')
@@ -188,8 +224,6 @@ class DataLinkCallback(LinkCallback):
             renderer.update(data_source=src_cds)
         else:
             renderer.update(source=src_cds)
-        if hasattr(renderer, 'view'):
-            renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
         target_plot.handles['cds'] = src_cds
         for callback in target_plot.callbacks:
@@ -228,53 +262,17 @@ class RectanglesTableLinkCallback(DataLinkCallback):
     on_target_changes = ['patching']
 
     source_code = """
-    var xs = source_cds.data[source_glyph.x.field]
-    var ys = source_cds.data[source_glyph.y.field]
-    var ws = source_cds.data[source_glyph.width.field]
-    var hs = source_cds.data[source_glyph.height.field]
-
-    var x0 = []
-    var x1 = []
-    var y0 = []
-    var y1 = []
-    for (var i = 0; i < xs.length; i++) {
-      var hw = ws[i]/2.
-      var hh = hs[i]/2.
-      x0.push(xs[i]-hw)
-      x1.push(xs[i]+hw)
-      y0.push(ys[i]-hh)
-      y1.push(ys[i]+hh)
-    }
-    target_cds.data[columns[0]] = x0
-    target_cds.data[columns[1]] = y0
-    target_cds.data[columns[2]] = x1
-    target_cds.data[columns[3]] = y1
+    target_cds.data[columns[0]] = source_cds.data[source_glyph.left.field]
+    target_cds.data[columns[1]] = source_cds.data[source_glyph.bottom.field]
+    target_cds.data[columns[2]] = source_cds.data[source_glyph.right.field]
+    target_cds.data[columns[3]] = source_cds.data[source_glyph.top.field]
     """
 
     target_code = """
-    var x0s = target_cds.data[columns[0]]
-    var y0s = target_cds.data[columns[1]]
-    var x1s = target_cds.data[columns[2]]
-    var y1s = target_cds.data[columns[3]]
-
-    var xs = []
-    var ys = []
-    var ws = []
-    var hs = []
-    for (var i = 0; i < x0s.length; i++) {
-      var x0 = Math.min(x0s[i], x1s[i])
-      var y0 = Math.min(y0s[i], y1s[i])
-      var x1 = Math.max(x0s[i], x1s[i])
-      var y1 = Math.max(y0s[i], y1s[i])
-      xs.push((x0+x1)/2.)
-      ys.push((y0+y1)/2.)
-      ws.push(x1-x0)
-      hs.push(y1-y0)
-    }
-    source_cds.data['x'] = xs
-    source_cds.data['y'] = ys
-    source_cds.data['width'] = ws
-    source_cds.data['height'] = hs
+    source_cds.data['left'] = target_cds.data[columns[0]]
+    source_cds.data['bottom'] = target_cds.data[columns[1]]
+    source_cds.data['right'] = target_cds.data[columns[2]]
+    source_cds.data['top'] = target_cds.data[columns[3]]
     """
 
     def __init__(self, root_model, link, source_plot, target_plot=None):

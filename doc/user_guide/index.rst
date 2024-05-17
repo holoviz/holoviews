@@ -78,8 +78,8 @@ Supplementary guides
 
 These guides provide detail about specific additional features in HoloViews:
 
-`Installing and Configuring HoloViews <Installing_and_Configuring.html>`_
- Additional information about installation and configuration options.
+`Configuring HoloViews <Configuring.html>`_
+ Information about configuration options.
 
 `Customizing Plots <Customizing_Plots.html>`_
  How to customize plots including their titles, axis labels, ranges, ticks and more.
@@ -93,7 +93,7 @@ These guides provide detail about specific additional features in HoloViews:
 `Deploying Bokeh Apps <Deploying_Bokeh_Apps.html>`_
  Using `bokeh server <http://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
 
-`Link bokeh plots <Linking_Plots.html>`_
+`Linking Bokeh plots <Linking_Plots.html>`_
  Using Links to define custom interactions on a plot without a Python server
 
 `Plotting with matplotlib <Plotting_with_Matplotlib.html>`_
@@ -106,10 +106,10 @@ These guides provide detail about specific additional features in HoloViews:
  Using the ``Renderer`` and ``Plot`` classes for access to the plotting machinery.
 
 `Using linked brushing to cross-filter complex datasets <Linked_Brushing.html>`_
- Explains how to use the `link_selections` helper to cross-filter multiple elements.
+ Explains how to use the ``link_selections`` helper to cross-filter multiple elements.
 
 `Using Annotators to edit and label data <Annotators.html>`_
- Explains how to use the `annotate` helper to edit and annotate elements with the help of drawing tools and editable tables.
+ Explains how to use the ``annotate`` helper to edit and annotate elements with the help of drawing tools and editable tables.
 
 `Exporting and Archiving <Exporting_and_Archiving.html>`_
  Archive both your data and visualization in scripts and notebooks.
@@ -148,6 +148,7 @@ These guides provide detail about specific additional features in HoloViews:
     Colormaps <Colormaps>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>
+    Linking Bokeh plots <Linking_Plots>
     Plotting with matplotlib <Plotting_with_Matplotlib>
     Plotting with plotly <Plotting_with_Plotly>
     Working with Plot and Renderers <Plots_and_Renderers>
