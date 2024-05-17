@@ -707,8 +707,8 @@ def _list_cmaps(provider=None, records=False):
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
             cmaps += info('colorcet', cet_maps)
-            cmaps += info('colorcet', [p+'_r' for p in cet_maps])
-        except:
+            cmaps += info('colorcet', [p+'_r' for p in cet_maps if not p.endswith('_r')])
+        except ImportError:
             pass
     return sorted(unique_iterator(cmaps))
 
