@@ -986,7 +986,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 if continuous:
                     xpos = xvals[gidx]
                 else:
-                    xpos = gidx+goffset+0.5
+                    xpos = gidx+goffset
                     xticks.append((xpos, grp_label, yalign))
             for cidx, cat in enumerate(categories):
                 xpos = xvals[gidx] if continuous else (gidx+(cidx*width) - 0.5)
