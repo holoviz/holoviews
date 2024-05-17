@@ -282,7 +282,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
-        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
+        expanded = cls._expand_options(merge_options_to_dict(options))
+        expanded = expanded or {}
+        cls._linemagic(expanded, backend=kwargs.get('backend'))
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
@@ -315,7 +317,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         """
         Validates and expands a dictionaries of options indexed by
         type[.group][.label] keys into separate style, plot, norm and
-        output options.
+        output options. If the backend is not loaded, ``None`` is returned.
 
             opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
@@ -339,8 +341,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         try:
             backend_options = Store.options(backend=backend or current_backend)
-        except KeyError as e:
-            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.') from None
+        except KeyError:
+            return None
+
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)
@@ -451,8 +454,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
-                allowed_kws = cls._element_keywords(backend,
-                                                    elements=[element])[element]
+                keywords = cls._element_keywords(backend,
+                                                    elements=[element])
+                allowed_kws = keywords.get(element, keys)
                 invalid = keys - set(allowed_kws)
             else:
                 mismatched = {}

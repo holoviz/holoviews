@@ -71,6 +71,7 @@ from .resample import LinkableOperation, ResampleOperation2D
 
 ds_version = Version(ds.__version__)
 ds15 = ds_version >= Version('0.15.1')
+ds16 = ds_version >= Version('0.16.0')
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -1388,7 +1389,8 @@ class geometry_rasterize(LineAggregationOperation):
         if element._plot_id in self._precomputed:
             data, col = self._precomputed[element._plot_id]
         else:
-            if 'spatialpandas' not in element.interface.datatype:
+            if (('spatialpandas' not in element.interface.datatype) and
+                (not (ds16 and 'geodataframe' in element.interface.datatype))):
                 element = element.clone(datatype=['spatialpandas'])
             data = element.data
             col = element.interface.geo_column(data)
@@ -1642,6 +1644,8 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
+        elif isinstance(element, ImageStack):
+            data = element.data
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
