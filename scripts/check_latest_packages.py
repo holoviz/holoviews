@@ -1,29 +1,36 @@
+import os
 import sys
 from datetime import date, datetime, timedelta
+from importlib.metadata import version
 
 import requests
 from packaging.version import Version
 
+if sys.stdout.isatty() or os.environ.get("GITHUB_ACTIONS"):
+    GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
+else:
+    GREEN = RED = RESET = ""
+
 
 def main(*packages):
     allowed_date = date.today() - timedelta(days=5)
-    GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
     all_latest = True
     for package in sorted(packages):
         url = f"https://pypi.org/pypi/{package}/json"
         resp = requests.get(url, timeout=20).json()
         latest = resp["info"]["version"]
-        current = __import__(package).__version__
+        current = version(package)
 
+        # Remove suffix because older Python versions does not support it
         latest_release_date = datetime.fromisoformat(
-            resp["releases"][latest][0]["upload_time_iso_8601"]
+            resp["releases"][latest][0]["upload_time_iso_8601"].removesuffix("Z")
         ).date()
         current_release_date = datetime.fromisoformat(
-            resp["releases"][current][0]["upload_time_iso_8601"]
+            resp["releases"][current][0]["upload_time_iso_8601"].removesuffix("Z")
         ).date()
 
         version_check = Version(current) >= Version(latest)
-        date_check = current_release_date >= allowed_date
+        date_check = latest_release_date >= allowed_date
         is_latest = version_check or date_check
         all_latest &= is_latest
 
@@ -37,4 +44,4 @@ def main(*packages):
 
 
 if __name__ == "__main__":
-    main("numpy", "pandas")
+    main(*sys.argv[1:])

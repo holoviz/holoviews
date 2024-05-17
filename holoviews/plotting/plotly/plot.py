@@ -173,8 +173,8 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
             if plot_type is None:
                 self.param.warning(
-                    "Plotly plotting class for %s type not found, "
-                    "object will not be rendered." % vtype.__name__)
+                    f"Plotly plotting class for {vtype.__name__} type not found, "
+                    "object will not be rendered.")
                 continue
             num = num if len(self.coords) > 1 else 0
             subplot = plot_type(element, keys=self.keys,
@@ -332,8 +332,8 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             if plotting_class is None:
                 if view is not None:
                     self.param.warning(
-                        "Plotly plotting class for %s type not found, "
-                        "object will not be rendered." % vtype.__name__)
+                        f"Plotly plotting class for {vtype.__name__} type not found, "
+                        "object will not be rendered.")
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,

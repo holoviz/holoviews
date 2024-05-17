@@ -416,7 +416,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower-bound to override default of %.3f." % low)
+                f"lower-bound to override default of {low:.3f}.")
         if invert:
             high, low = low, high
         if isinstance(low, util.cftime_types) or low != high:
@@ -592,8 +592,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         plot_fn = getattr(ax, plot_method)
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
-             plot_kwargs.pop('vmin', None)
-             plot_kwargs.pop('vmax', None)
+            plot_kwargs.pop('vmin', None)
+            plot_kwargs.pop('vmax', None)
         with warnings.catch_warnings():
             # scatter have a default cmap and with an empty array will emit this warning
             warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")

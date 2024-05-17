@@ -12,6 +12,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .util import bokeh34
 
 
 class LinkCallback:
@@ -141,22 +142,45 @@ class RangeToolLinkCallback(LinkCallback):
                 continue
 
             axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
-            bounds = getattr(link, f'bounds{axis}', None)
-            if bounds is None:
-                continue
+            interval = getattr(link, f'intervals{axis}', None)
+            if interval is not None and bokeh34:
+                min, max = interval
+                if min is not None:
+                    axes[f'{axis}_range'].min_interval = min
+                if max is not None:
+                    axes[f'{axis}_range'].max_interval = max
+                    self._set_range_for_interval(axes[f'{axis}_range'], max)
 
-            start, end = bounds
-            if start is not None:
-                axes[f'{axis}_range'].start = start
-                axes[f'{axis}_range'].reset_start = start
-            if end is not None:
-                axes[f'{axis}_range'].end = end
-                axes[f'{axis}_range'].reset_end = end
+            bounds = getattr(link, f'bounds{axis}', None)
+            if bounds is not None:
+                start, end = bounds
+                if start is not None:
+                    axes[f'{axis}_range'].start = start
+                    axes[f'{axis}_range'].reset_start = start
+                if end is not None:
+                    axes[f'{axis}_range'].end = end
+                    axes[f'{axis}_range'].reset_end = end
 
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
         if toolbars:
             toolbars[0].tools.append(tool)
+
+    def _set_range_for_interval(self, axis, max):
+        # Changes the existing Range1d axis range to be in the interval
+        for n in ("", "reset_"):
+            start = getattr(axis, f"{n}start")
+            try:
+                end = start + max
+            except Exception as e:
+                # Handle combinations of datetime axis and timedelta interval
+                # Likely a better way to do this
+                try:
+                    import pandas as pd
+                    end = (pd.array([start]) + pd.array([max]))[0]
+                except Exception:
+                    raise e from None
+            setattr(axis, f"{n}end", end)
 
 
 class DataLinkCallback(LinkCallback):
@@ -189,8 +213,8 @@ class DataLinkCallback(LinkCallback):
                     (v.dtype.kind not in 'iufc' and (v==col).all()) or
                     np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
                 raise ValueError('DataLink can only be applied if overlapping '
-                                 'dimension values are equal, %s column on source '
-                                 'does not match target' % k)
+                                 f'dimension values are equal, {k} column on source '
+                                 'does not match target')
 
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')

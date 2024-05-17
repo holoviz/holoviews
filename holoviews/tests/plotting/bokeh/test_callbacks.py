@@ -422,7 +422,12 @@ class TestServerCallbacks(CallbackTestCase):
                                     'value': points.columns()})
 
     def test_rangexy_datetime(self):
-        curve = Curve(pd._testing.makeTimeDataFrame(), 'index', 'C')
+        df = pd.DataFrame(
+            data = np.random.default_rng(2).standard_normal((30, 4)),
+            columns=list('ABCD'),
+            index=pd.date_range('2018-01-01', freq='D', periods=30),
+        )
+        curve = Curve(df, 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]
@@ -462,13 +467,14 @@ def test_msg_with_base64_array():
     assert np.equal(data_expected, data_after).all()
 
 
+@pytest.mark.usefixtures('bokeh_backend')
 def test_rangexy_multi_yaxes():
     c1 = Curve(np.arange(100).cumsum(), vdims='y')
     c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
     RangeXY(source=c1)
     RangeXY(source=c2)
 
-    overlay = (c1 * c2).opts(backend='bokeh', multi_y=True)
+    overlay = (c1 * c2).opts(multi_y=True)
     plot = bokeh_server_renderer.get_plot(overlay)
 
     p1, p2 = plot.subplots.values()

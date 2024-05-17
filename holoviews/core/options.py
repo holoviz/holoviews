@@ -1294,7 +1294,7 @@ class Store:
         elif len(ids) != 1:
             idlist = ",".join([str(el) for el in sorted(ids)])
             raise Exception("Object contains elements combined across "
-                            "multiple custom trees (ids %s)" % idlist)
+                            f"multiple custom trees (ids {idlist})")
         return cls._custom_options[backend][next(iter(ids))]
 
     @classmethod

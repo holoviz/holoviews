@@ -478,7 +478,7 @@ class Div(Element):
             data = ''
         if not isinstance(data, str):
             raise ValueError("Div element html data must be a string "
-                             "type, found %s type." % type(data).__name__)
+                             f"type, found {type(data).__name__} type.")
         super().__init__(data, **params)
 
 

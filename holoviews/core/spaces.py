@@ -1,7 +1,7 @@
 import itertools
 import types
 from collections import defaultdict
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
 from numbers import Number
@@ -458,8 +458,8 @@ class Callable(param.Parameterized):
     information see the DynamicMap tutorial at holoviews.org.
     """
 
-    callable = param.Callable(default=None, constant=True, doc="""
-         The callable function being wrapped.""", **util.disallow_refs)
+    callable = param.Callable(default=None, constant=True, allow_refs=False, doc="""
+         The callable function being wrapped.""")
 
     inputs = param.List(default=[], constant=True, doc="""
          The list of inputs the callable function is wrapping. Used
@@ -546,12 +546,10 @@ class Callable(param.Parameterized):
         # Nothing to do for callbacks that accept no arguments
         kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
-        if hasattr(self.callable, 'rx'):
-            with suppress(TypeError):
-                # If param.bind is used and not all arguments are set
-                # it will raise TypeError
-                return self.callable.rx.value
-        if not args and not kwargs and not any(kwarg_hash): return self.callable()
+        if isinstance(self.callable, param.rx):
+            return self.callable.rx.value
+        elif not args and not kwargs and not any(kwarg_hash):
+            return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
@@ -572,8 +570,7 @@ class Callable(param.Parameterized):
             pos_kwargs = {k:v for k,v in zip(self.argspec.args, args)}
             ignored = range(len(self.argspec.args),len(args))
             if len(ignored):
-                self.param.warning('Ignoring extra positional argument %s'
-                                   % ', '.join('%s' % i for i in ignored))
+                self.param.warning('Ignoring extra positional argument {}'.format(', '.join(f'{i}' for i in ignored)))
             clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
             if clashes:
                 self.param.warning(
@@ -777,7 +774,7 @@ class DynamicMap(HoloMap):
             streams = streams_list_from_dict(streams)
 
         # If callback is a parameterized method and watch is disabled add as stream
-        if util.param_version > util.Version('2.0.0rc1') and param.parameterized.resolve_ref(callback):
+        if param.parameterized.resolve_ref(callback):
             streams.append(callback)
         elif (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
             (isinstance(callback, FunctionType) and hasattr(callback, '_dinfo')))):
@@ -1458,8 +1455,7 @@ class DynamicMap(HoloMap):
                 layout_type = type(layout).__name__
                 if len(container.keys()) != len(layout.keys()):
                     raise ValueError('Collated DynamicMaps must return '
-                                     '%s with consistent number of items.'
-                                     % layout_type)
+                                     f'{layout_type} with consistent number of items.')
 
                 key = kwargs['selection_key']
                 index = kwargs['selection_index']
@@ -1472,10 +1468,10 @@ class DynamicMap(HoloMap):
 
                 dyn_type_counter = {t: len(vals) for t, vals in dyn_type_map.items()}
                 if dyn_type_counter != type_counter:
-                    raise ValueError('The objects in a %s returned by a '
+                    raise ValueError(f'The objects in a {layout_type} returned by a '
                                      'DynamicMap must consistently return '
                                      'the same number of items of the '
-                                     'same type.' % layout_type)
+                                     'same type.')
                 return dyn_type_map[obj_type][index]
 
             callback = Callable(partial(collation_cb, selection_key=k,
@@ -1501,8 +1497,7 @@ class DynamicMap(HoloMap):
             raise ValueError(
                 'The following streams are set to be automatically '
                 'linked to a plot, but no stream_mapping specifying '
-                'which item in the (Nd)Layout to link it to was found:\n%s'
-                % ', '.join(unmapped_streams)
+                'which item in the (Nd)Layout to link it to was found:\n{}'.format(', '.join(unmapped_streams))
             )
         return container
 
@@ -1884,6 +1879,5 @@ class GridMatrix(GridSpace):
 
     def _item_check(self, dim_vals, data):
         if not traversal.uniform(NdMapping([(0, self), (1, data)])):
-            raise ValueError("HoloMaps dimensions must be consistent in %s." %
-                             type(self).__name__)
+            raise ValueError(f"HoloMaps dimensions must be consistent in {type(self).__name__}.")
         NdMapping._item_check(self, dim_vals, data)

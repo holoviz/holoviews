@@ -160,8 +160,9 @@ class BarsMixin:
         s0 = min(s0, 0) if util.isfinite(s0) else 0
         s1 = max(s1, 0) if util.isfinite(s1) else 0
         ranges[vdim]['soft'] = (s0, s1)
+        l, b, r, t = super().get_extents(element, ranges, range_type, ydim=element.vdims[0])
         if range_type not in ('combined', 'data'):
-            return super().get_extents(element, ranges, range_type, ydim=element.vdims[0])
+            return l, b, r, t
 
         # Compute stack heights
         xdim = element.kdims[0]
@@ -173,14 +174,15 @@ class BarsMixin:
         else:
             y0, y1 = ranges[vdim]['combined']
 
+        x0, x1 = (l, r) if util.isnumeric(l) and len(element.kdims) == 1 else ('', '')
         if range_type == 'data':
-            return ('', y0, '', y1)
+            return (x0, y0, x1, y1)
 
         padding = 0 if self.overlaid else self.padding
         _, ypad, _ = get_axis_padding(padding)
         y0, y1 = util.dimension_range(y0, y1, ranges[vdim]['hard'], ranges[vdim]['soft'], ypad, self.logy)
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
-        return ('', y0, '', y1)
+        return (x0, y0, x1, y1)
 
     def _get_coords(self, element, ranges, as_string=True):
         """

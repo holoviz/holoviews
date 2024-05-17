@@ -128,8 +128,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             raise Exception("Keyword options {} must be one of  {}".format(groups,
                             ','.join(repr(g) for g in groups)))
         elif not all(isinstance(v, dict) for v in kwargs.values()):
-            raise Exception("The %s options must be specified using dictionary groups" %
-                            ','.join(repr(k) for k in kwargs.keys()))
+            options_str = ','.join([repr(k) for k in kwargs.keys()])
+            msg = f"The {options_str} options must be specified using dictionary groups"
+            raise Exception(msg)
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
         targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
@@ -139,9 +140,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('{}.{}.{}'.format(
-                    obj.__class__.__name__, sanitized_group,
-                    util.label_sanitizer(obj.label)))
+                identifier = (f'{obj.__class__.__name__}.{sanitized_group}.{util.label_sanitizer(obj.label)}')
             elif  sanitized_group != obj.__class__.__name__:
                 identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
@@ -307,7 +306,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         if backend and not used_fallback:
             cls.param.warning("All supplied Options objects already define a backend, "
-                              "backend override %r will be ignored." % backend)
+                              f"backend override {backend!r} will be ignored.")
 
         return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
 
@@ -333,10 +332,10 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              "holoviews.plotting before applying any "
                              "options.")
         elif current_backend not in Store.renderers:
-            raise ValueError("Currently selected plotting extension {ext} "
+            raise ValueError(f"Currently selected plotting extension {current_backend!r} "
                              "has not been loaded, ensure you load it "
-                             "with hv.extension({ext}) before setting "
-                             "options".format(ext=repr(current_backend)))
+                             f"with hv.extension({current_backend!r}) before setting "
+                             "options")
 
         try:
             backend_options = Store.options(backend=backend or current_backend)
@@ -872,7 +871,7 @@ class Dynamic(param.ParameterizedFunction):
 
     link_inputs = param.Boolean(default=True, doc="""
          If Dynamic is applied to another DynamicMap, determines whether
-         linked streams attached to its Callable inputs are
+         linked streams and links attached to its Callable inputs are
          transferred to the output of the utility.
 
          For example if the Dynamic utility is applied to a DynamicMap
@@ -891,8 +890,8 @@ class Dynamic(param.ParameterizedFunction):
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
-    streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
-        List of streams to attach to the returned DynamicMap""", **util.disallow_refs)
+    streams = param.ClassSelector(default=[], class_=(list, dict), allow_refs=False, doc="""
+        List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
         watch = params.pop('watch', True)
@@ -900,8 +899,12 @@ class Dynamic(param.ParameterizedFunction):
         callback = self._dynamic_operation(map_obj)
         streams = self._get_streams(map_obj, watch)
         if isinstance(map_obj, DynamicMap):
-            dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
-                                 streams=streams)
+            kwargs = dict(
+                shared_data=self.p.shared_data, callback=callback, streams=streams
+            )
+            if self.p.link_inputs:
+                kwargs['plot_id'] = map_obj._plot_id
+            dmap = map_obj.clone(**kwargs)
             if self.p.shared_data:
                 dmap.data = dict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
@@ -918,14 +921,15 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        from panel.widgets.base import Widget
+
         if isinstance(self.p.streams, dict):
             streams = defaultdict(dict)
             stream_specs, params = [], {}
             for name, p in self.p.streams.items():
                 if not isinstance(p, param.Parameter):
                     raise ValueError("Stream dictionary must map operation keywords "
-                                     "to parameter names. Cannot handle %r type."
-                                     % type(p))
+                                     f"to parameter names. Cannot handle {type(p)!r} type.")
                 if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
                     if p.name != name:
                         streams[p.owner][p.name] = name
@@ -947,8 +951,7 @@ class Dynamic(param.ParameterizedFunction):
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
-                raise ValueError('Streams must be Stream classes or instances, found %s type' %
-                                 type(stream).__name__)
+                raise ValueError(f'Streams must be Stream classes or instances, found {type(stream).__name__} type')
             if isinstance(op, Operation):
                 updates = {k: op.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in op.p}
@@ -960,10 +963,8 @@ class Dynamic(param.ParameterizedFunction):
 
         params = {}
         for k, v in self.p.kwargs.items():
-            if 'panel' in sys.modules:
-                from panel.widgets.base import Widget
-                if isinstance(v, Widget):
-                    v = v.param.value
+            if isinstance(v, Widget):
+                v = v.param.value
             if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = v
         streams += Params.from_params(params)
