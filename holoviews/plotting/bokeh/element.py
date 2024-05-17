@@ -1,4 +1,5 @@
 import warnings
+from collections import defaultdict
 from itertools import chain
 from types import FunctionType
 
@@ -7,6 +8,7 @@ import bokeh.plotting
 import numpy as np
 import param
 from bokeh.document.events import ModelChangedEvent
+from bokeh.model import Model
 from bokeh.models import (
     BinnedTicker,
     ColorBar,
@@ -500,7 +502,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
-                properties = tool.properties_with_values(include_defaults=False)
+                properties = {
+                    p: v.clone() if isinstance(v, Model) else v
+                    for p, v in tool.properties_with_values(include_defaults=False).items()
+                }
                 tool = type(tool)(**properties)
             copied_tools.append(tool)
 
@@ -631,10 +636,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
 
+        if pos == 1 and 'subcoordinate_y' in range_tags_extras and dim and dim.range != (None, None):
+            dims = [dim]
+            v0, v1 = dim.range
+            axis_label = str(dim)
+            specs = ((dim.name, dim.label, dim.unit),)
         # For y-axes check if we explicitly passed in a dimension.
         # This is used by certain plot types to create an axis from
         # a synthetic dimension and exclusively supported for y-axes.
-        if pos == 1 and dim:
+        elif pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([
                 elrange.get(dim.name, {'combined': (None, None)})['combined']
@@ -653,11 +663,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = b, l, t, r
             if pos == 1 and self._subcoord_overlaid:
                 if isinstance(self.subcoordinate_y, bool):
-                    offset = self.subcoordinate_scale / 2.
-                    # This sum() is equal to n+1, n being the number of elements contained
-                    # in the overlay with subcoordinate_y=True, as the traversal goes through
-                    # the root overlay that has subcoordinate_y=True too since it's propagated.
-                    v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
+                    if self.ylim and all(np.isfinite(val) for val in self.ylim):
+                        v0, v1 = self.ylim
+                    else:
+                        offset = self.subcoordinate_scale / 2.
+                        # This sum() is equal to n+1, where n is the number of elements contained
+                        # in the overlay with subcoordinate_y=True (including the the root overlay,
+                        # which has subcoordinate_y=True due to option propagation)
+                        v0, v1 = 0-offset, sum(self.traverse(lambda p: p.subcoordinate_y))-2+offset
                 else:
                     v0, v1 = 0, 1
             else:
@@ -1283,8 +1296,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
-                               'axes are %s, the option will '
-                               'be ignored.' % ax_type)
+                               f'axes are {ax_type}, the option will '
+                               'be ignored.')
         elif data_aspect:
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
@@ -1429,7 +1442,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
-                "lower bound to override default of %.3f." % low)
+                f"lower bound to override default of {low:.3f}.")
         updates = {}
         if util.isfinite(low):
             updates['start'] = (axis_range.start, low)
@@ -1932,7 +1945,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
-                key = '@{%s}' % k
+                key = f'@{{{k}}}'
                 if (
                     (len(values) and isinstance(values[0], util.datetime_types)) or
                     (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
@@ -2630,9 +2643,8 @@ class ColorbarPlot(ElementPlot):
         color = style.get(name, None)
         if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
-                "Cannot declare style mapping for '%s' option and "
-                "declare a color_index; ignoring the color_index."
-                % name)
+                f"Cannot declare style mapping for '{name}' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if not cdim:
             return data, mapping
@@ -3025,8 +3037,76 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 subplot.handles['zooms_subcoordy'].values(),
                 self.handles['zooms_subcoordy'].values(),
             ):
-                renderers = list(util.unique_iterator(subplot_zoom.renderers + overlay_zoom.renderers))
+                renderers = list(util.unique_iterator(overlay_zoom.renderers + subplot_zoom.renderers))
                 overlay_zoom.renderers = renderers
+
+    def _postprocess_subcoordinate_y_groups(self, overlay, plot):
+        """
+        Add a zoom tool per group to the overlay.
+        """
+        # First, just process and validate the groups and their content.
+        groups = defaultdict(list)
+
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            raise ValueError(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
+        for el in overlay:
+            # group is the Element type per default (e.g. Curve, Spike).
+            if el.group == type(el).__name__:
+                continue
+            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
+                raise ValueError(
+                    f"All elements in group {el.group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
+            groups[el.group].append(el)
+
+        # No need to go any further if there's just one group.
+        if len(groups) <= 1:
+            return
+
+        # At this stage, there's only one zoom tool (e.g. 1 wheel_zoom) that
+        # has all the renderers (e.g. all the curves in the overlay).
+        # We want to create as many zoom tools as groups, for each group
+        # the zoom tool must have the renderers of the elements of the group.
+        zoom_tools = self.handles['zooms_subcoordy']
+        for zoom_tool_name, zoom_tool in zoom_tools.items():
+            renderers_per_group = defaultdict(list)
+            # We loop through each overlay sub-elements and empty the list of
+            # renderers of the initial tool.
+            for el in overlay:
+                if el.group not in groups:
+                    continue
+                renderers_per_group[el.group].append(zoom_tool.renderers.pop(0))
+
+            if zoom_tool.renderers:
+                raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
+
+            new_ztools = []
+            # Create a new tool per group with the right renderers and a custom description.
+            for grp, grp_renderers in renderers_per_group.items():
+                new_tool = zoom_tool.clone()
+                new_tool.renderers = grp_renderers
+                new_tool.description = f"{zoom_tool_name.replace('_', ' ').title()} ({grp})"
+                new_ztools.append(new_tool)
+            # Revert tool order so the upper tool in the toolbar corresponds to the
+            # upper group in the overlay.
+            new_ztools = new_ztools[::-1]
+
+            # Update the handle for good measure.
+            zoom_tools[zoom_tool_name] = new_ztools
+
+            # Replace the original tool by the new ones
+            idx = plot.tools.index(zoom_tool)
+            plot.tools[idx:idx+1] = new_ztools
 
     def _get_dimension_factors(self, overlay, ranges, dimension):
         factors = []
@@ -3131,6 +3211,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 else:
                     reordered.append(reversed_renderers.pop(0))
             plot.renderers = reordered
+
+        if self.subcoordinate_y:
+            self._postprocess_subcoordinate_y_groups(element, plot)
 
         if self.tabs:
             self.handles['plot'] = Tabs(

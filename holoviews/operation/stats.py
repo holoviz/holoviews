@@ -85,9 +85,8 @@ class univariate_kde(Operation):
             else:
                 dimensions = element.vdims+element.kdims
                 if not dimensions:
-                    raise ValueError("%s element does not declare any dimensions "
-                                     "to compute the kernel density estimate on." %
-                                     type(element).__name__)
+                    raise ValueError(f"{type(element).__name__} element does not declare any dimensions "
+                                     "to compute the kernel density estimate on.")
                 selected_dim = dimensions[0]
             vdim_name = f'{selected_dim.name}_density'
             vdims = [Dimension(vdim_name, label='Density')]

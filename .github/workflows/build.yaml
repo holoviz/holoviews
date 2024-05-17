@@ -15,7 +15,6 @@ defaults:
     shell: bash -el {0}
 
 env:
-  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
   PYTHON_VERSION: "3.11"
   PACKAGE: "holoviews"
 
@@ -30,31 +29,29 @@ jobs:
     steps:
       - run: echo "All builds have finished, have been approved, and ready to publish"
 
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
   conda_build:
     name: Build Conda
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-      - name: conda setup
-        run: |
-          # pyct is for running setup.py
-          conda install -y conda-build build pyct -c pyviz/label/dev
+          environments: "build"
+          download-data: false
+          install: false
       - name: conda build
-        run: |
-          source ./scripts/build_conda.sh
-          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
+        run: pixi run -e build build-conda
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: conda
-          path: ${{ env.CONDA_FILE }}
+          path: dist/*tar.bz2
           if-no-files-found: error
 
   conda_publish:
@@ -88,21 +85,16 @@ jobs:
 
   pip_build:
     name: Build PyPI
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install build
-        run: |
-          python -m pip install build
+          environments: "build"
+          download-data: false
+          install: false
       - name: Build package
-        run: python -m build .
+        run: pixi run -e build build-pip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -124,8 +116,12 @@ jobs:
           path: dist/
       - name: Install package
         run: python -m pip install dist/*.whl
-      - name: Test package
+      - name: Import package
         run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
+      - name: Install test dependencies
+        run: python -m pip install "$(ls dist/*whl)[tests]"
+      - name: Test package
+        run: python -m pytest --pyargs $PACKAGE --color=yes
 
   pip_publish:
     name: Publish PyPI

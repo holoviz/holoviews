@@ -4,24 +4,35 @@ from collections.abc import Callable
 
 import panel as pn
 import pytest
-from panel.tests.conftest import (  # noqa: F401
-    optional_markers,
-    port,
-    pytest_addoption,
-    pytest_configure,
-    server_cleanup,
-)
+from panel.tests.conftest import port, server_cleanup  # noqa: F401
 from panel.tests.util import serve_and_wait
 
 import holoviews as hv
 
+CUSTOM_MARKS = ("ui", "gpu")
+
+
+def pytest_addoption(parser):
+    for marker in CUSTOM_MARKS:
+        parser.addoption(
+            f"--{marker}",
+            action="store_true",
+            default=False,
+            help=f"Run {marker} related tests",
+        )
+
+
+def pytest_configure(config):
+    for marker in CUSTOM_MARKS:
+        config.addinivalue_line("markers", f"{marker}: {marker} test marker")
+
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
-    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    markers = [m for m in CUSTOM_MARKS if config.getoption(f"--{m}")]
     empty = not markers
     for item in items:
-        if empty and any(m in item.keywords for m in optional_markers):
+        if empty and any(m in item.keywords for m in CUSTOM_MARKS):
             skipped.append(item)
         elif empty:
             selected.append(item)
@@ -63,31 +74,30 @@ def ibis_sqlite_backend():
         ibis.set_backend(None)
 
 
-@pytest.fixture
-def bokeh_backend():
-    hv.renderer("bokeh")
+def _plotting_backend(backend):
+    pytest.importorskip(backend)
+    if not hv.extension._loaded:
+        hv.extension(backend)
+    hv.renderer(backend)
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = "bokeh"
+    hv.Store.current_backend = backend
     yield
     hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
+def bokeh_backend():
+    yield from _plotting_backend("bokeh")
 
 
 @pytest.fixture
 def mpl_backend():
-    hv.renderer("matplotlib")
-    prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = "matplotlib"
-    yield
-    hv.Store.current_backend = prev_backend
+    yield from _plotting_backend("matplotlib")
 
 
 @pytest.fixture
 def plotly_backend():
-    hv.renderer("plotly")
-    prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = "plotly"
-    yield
-    hv.Store.current_backend = prev_backend
+    yield from _plotting_backend("plotly")
 
 
 @pytest.fixture

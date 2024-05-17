@@ -76,7 +76,7 @@ class ArrayInterface(Interface):
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
             raise DataError("Supplied data does not match specified "
-                            "dimensions, expected at least %s columns." % ndims, cls)
+                            f"dimensions, expected at least {ndims} columns.", cls)
 
 
     @classmethod

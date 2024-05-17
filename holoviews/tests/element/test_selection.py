@@ -682,6 +682,24 @@ class TestSpatialSelectColumnar:
             mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, _method)
             assert np.array_equal(mask, pt_mask)
 
+        @pytest.mark.gpu
+        def test_cudf(self, geometry, pt_mask, pandas_df, _method, unimport):
+            import cudf
+            import cupy as cp
+            unimport('cuspatial')
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
+
+        @pytest.mark.gpu
+        def test_cuspatial(self, geometry, pt_mask, pandas_df, _method):
+            import cudf
+            import cupy as cp
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
 
     @pytest.mark.parametrize("geometry", [geometry_encl, geometry_noencl])
     class TestSpatialSelectColumnarDaskMeta:

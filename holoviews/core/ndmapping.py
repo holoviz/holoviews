@@ -942,8 +942,7 @@ class UniformNdMapping(NdMapping):
     @group.setter
     def group(self, group):
         if group is not None and not sanitize_identifier.allowable(group):
-            raise ValueError("Supplied group %s contains invalid "
-                             "characters." % self.group)
+            raise ValueError(f"Supplied group {self.group} contains invalid characters.")
         self._group = group
 
 
@@ -962,8 +961,7 @@ class UniformNdMapping(NdMapping):
     @label.setter
     def label(self, label):
         if label is not None and not sanitize_identifier.allowable(label):
-            raise ValueError("Supplied group %s contains invalid "
-                             "characters." % self.group)
+            raise ValueError(f"Supplied group {self.group} contains invalid characters.")
         self._label = label
 
     @property
@@ -991,9 +989,8 @@ class UniformNdMapping(NdMapping):
         from .overlay import Overlay
         if isinstance(other, type(self)):
             if self.kdims != other.kdims:
-                raise KeyError("Can only overlay two %ss with "
-                               "non-matching key dimensions."
-                               % type(self).__name__)
+                raise KeyError(f"Can only overlay two {type(self).__name__}s with "
+                               "non-matching key dimensions.")
             items = []
             self_keys = list(self.data.keys())
             other_keys = list(other.data.keys())

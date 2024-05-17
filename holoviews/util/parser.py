@@ -233,7 +233,7 @@ class OptsSpec(Parser):
         for normopt in options:
             if opts.count(normopt) > 1:
                 raise SyntaxError("Normalization specification must not"
-                                  " contain repeated %r" % normopt)
+                                  f" contain repeated {normopt!r}")
 
         if not all(opt in options for opt in opts):
             raise SyntaxError(f"Normalization option not one of {', '.join(options)}")
@@ -434,8 +434,7 @@ class CompositorSpec(Parser):
             spec = ' '.join(group['spec'].asList()[0])
 
             if  group['op'] not in opmap:
-                raise SyntaxError("Operation %s not available for use with compositors."
-                                  % group['op'])
+                raise SyntaxError("Operation {} not available for use with compositors.".format(group['op']))
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets', ns=ns)
 

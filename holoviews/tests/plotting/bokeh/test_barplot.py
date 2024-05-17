@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from bokeh.models import CategoricalColorMapper, LinearAxis, LinearColorMapper
 
 from holoviews.core.overlay import NdOverlay, Overlay
@@ -276,3 +277,67 @@ class TestBarPlot(TestBokehPlot):
             "mapping for 'color' option and declare a color_index; ignoring the color_index.\n"
         )
         self.assertEqual(log_msg, warning)
+
+    def test_bars_continuous_data_list_same_interval(self):
+        bars = Bars(([0, 1, 2], [10, 20, 30]))
+        plot = bokeh_renderer.get_plot(bars)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.8)
+
+    def test_bars_continuous_data_list_same_interval_custom_width(self):
+        bars = Bars(([0, 1, 2], [10, 20, 30])).opts(bar_width=0.5)
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 0.5
+
+    def test_bars_continuous_data_list_diff_interval(self):
+        bars = Bars(([0, 3, 10], [10, 20, 30]))
+        plot = bokeh_renderer.get_plot(bars)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.11428571)
+
+    def test_bars_continuous_datetime(self):
+        bars = Bars((pd.date_range("1/1/2000", periods=10), np.random.rand(10)))
+        plot = bokeh_renderer.get_plot(bars)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
+
+    def test_bars_not_continuous_data_list(self):
+        bars = Bars([("A", 1), ("B", 2), ("C", 3)])
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 0.8
+
+    def test_bars_not_continuous_data_list_custom_width(self):
+        bars = Bars([("A", 1), ("B", 2), ("C", 3)]).opts(bar_width=1)
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 1
+
+    def test_bars_group(self):
+        samples = 100
+
+        pets = ["Cat", "Dog", "Hamster", "Rabbit"]
+        genders = ["Female", "Male", "N/A"]
+
+        np.random.seed(100)
+        pets_sample = np.random.choice(pets, samples)
+        gender_sample = np.random.choice(genders, samples)
+
+        bars = Bars(
+            (pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"]
+        ).aggregate(function=np.sum)
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 0.8
+
+    def test_bar_group_stacked(self):
+        samples = 100
+
+        pets = ["Cat", "Dog", "Hamster", "Rabbit"]
+        genders = ["Female", "Male", "N/A"]
+
+        np.random.seed(100)
+        pets_sample = np.random.choice(pets, samples)
+        gender_sample = np.random.choice(genders, samples)
+
+        bars = (
+            Bars((pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"])
+            .aggregate(function=np.sum)
+            .opts(stacked=True)
+        )
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 0.8
