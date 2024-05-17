@@ -64,15 +64,13 @@ class Scatter(Selection2DExpr, Chart):
     dependent relationships between the x and y axes in two-dimensional space,
     such as Chart types like `Curve`.
     
-    Reference: [Bokeh](http://holoviews.org/reference/elements/bokeh/Scatter.html), [Matplotlib](http://holoviews.org/reference/elements/matplotlib/Scatter.html), [Plotly](http://holoviews.org/reference/elements/plotly/Scatter.html)
+    Reference: `Bokeh <http://holoviews.org/reference/elements/bokeh/Scatter.html>`_, `Matplotlib <http://holoviews.org/reference/elements/matplotlib/Scatter.html>`_, `Plotly <http://holoviews.org/reference/elements/plotly/Scatter.html>`_
 
     Example:
 
     >>> scatter = hv.Scatter(data, kdims="x", vdims="y")
     >>> scatter.opts(color='black', marker='s', size=10, tools=["hover"])
     >>> scatter
-
-    ![Scatter Reference](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmxagf9BtB3Rc1Y98w4lvreN-keSk0_YHytg&usqp=CAU)
 
     For full documentation and the available style and plot options, use
 
