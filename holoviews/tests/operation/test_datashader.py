@@ -48,6 +48,7 @@ try:
         datashade,
         directly_connect_edges,
         ds_version,
+        dynspread,
         inspect,
         inspect_points,
         inspect_polygons,
@@ -1562,4 +1563,11 @@ def test_imagestack_datashade_count_cat():
     # Test for https://github.com/holoviz/holoviews/issues/6154
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
     op = datashade(Points(df), aggregator=ds.count_cat("c"))
+    render(op)  # should not error out
+
+
+def test_imagestack_dynspread():
+    df = pd.DataFrame({'x':[-16.8, 7.3], 'y': [-0.42, 13.6], 'language':['Marathi', 'Luganda']})
+    points = Points(df, ['x','y'], ['language'])
+    op = dynspread(rasterize(points, aggregator=ds.by('language', ds.count())))
     render(op)  # should not error out
