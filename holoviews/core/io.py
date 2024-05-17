@@ -482,7 +482,7 @@ class Unpickler(Importer):
                 kval = key[files.get_dimension_index(odim)]
                 if kval != mdata[odim]:
                     raise KeyError("Metadata supplies inconsistent "
-                                   "value for dimension %s" % odim)
+                                   f"value for dimension {odim}")
             mkey = tuple(mdata.get(d, None) for d in added_dims)
             key = mkey if aslist else key + mkey
             if isinstance(fname, tuple) and len(fname) == 1:

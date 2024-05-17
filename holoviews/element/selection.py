@@ -80,26 +80,53 @@ def spatial_select_gridded(xvals, yvals, geometry):
         sel_mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
         return sel_mask.reshape(xvals.shape)
 
+def _cuspatial_old(xvals, yvals, geometry):
+    import cudf
+    import cuspatial
+
+    result = cuspatial.point_in_polygon(
+        xvals,
+        yvals,
+        cudf.Series([0], index=["selection"]),
+        [0],
+        geometry[:, 0],
+        geometry[:, 1],
+    )
+    return result.values
+
+
+def _cuspatial_new(xvals, yvals, geometry):
+    import cudf
+    import cuspatial
+    import geopandas
+    from shapely.geometry import Polygon
+
+    df = cudf.DataFrame({'x':xvals, 'y':yvals})
+    points = cuspatial.GeoSeries.from_points_xy(
+       df.interleave_columns().astype('float')
+    )
+    polygons = cuspatial.GeoSeries(
+       geopandas.GeoSeries(Polygon(geometry)), index=["selection"]
+    )
+    result = cuspatial.point_in_polygon(points,polygons)
+    return result.values.ravel()
+
+
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
     if 'cudf' in sys.modules:
         import cudf
+        import cupy as cp
         if isinstance(xvals, cudf.Series):
             xvals = xvals.values.astype('float')
             yvals = yvals.values.astype('float')
             try:
-                import cuspatial
-                result = cuspatial.point_in_polygon(
-                    xvals,
-                    yvals,
-                    cudf.Series([0], index=["selection"]),
-                    [0],
-                    geometry[:, 0],
-                    geometry[:, 1],
-                )
-                return result.values
+                try:
+                    return _cuspatial_old(xvals, yvals, geometry)
+                except TypeError:
+                    return _cuspatial_new(xvals, yvals, geometry)
             except ImportError:
-                xvals = np.asarray(xvals)
-                yvals = np.asarray(yvals)
+                xvals = cp.asnumpy(xvals)
+                yvals = cp.asnumpy(yvals)
     if 'dask' in sys.modules:
         import dask.dataframe as dd
         if isinstance(xvals, dd.Series):

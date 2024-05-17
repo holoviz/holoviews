@@ -284,12 +284,13 @@ def test_stream_popup_visible(serve_hv, points):
     # initial appearance
     locator = page.locator(".bk-btn")
     expect(locator).to_have_count(2)
+    expect(locator.first).to_be_visible()
 
     # click custom button to hide
     locator = page.locator(".custom-button")
     locator.click()
     locator = page.locator(".bk-btn")
-    expect(locator).to_have_count(0)
+    expect(locator.first).not_to_be_visible()
 
 
 

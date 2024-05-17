@@ -102,7 +102,7 @@ class IbisInterface(Interface):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {not_found!r}", cls)
 
     @classmethod
     def compute(cls, dataset):
@@ -235,8 +235,7 @@ class IbisInterface(Interface):
         import ibis
         if not cls.has_rowid():
             raise ValueError(
-                "iloc expressions are not supported for ibis version %s."
-                % ibis.__version__
+                f"iloc expressions are not supported for ibis version {ibis.__version__}."
             )
 
         if "hv_row_id__" in data.columns:
@@ -358,9 +357,8 @@ class IbisInterface(Interface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not isinstance(values, ibis.Expr) and not np.isscalar(values):
-                raise ValueError("Cannot assign %s type as a Ibis table column, "
-                                 "expecting either ibis.Expr or scalar."
-                                 % type(values).__name__)
+                raise ValueError(f"Cannot assign {type(values).__name__} type as a Ibis table column, "
+                                 "expecting either ibis.Expr or scalar.")
             data = data.mutate(**{dimension.name: values})
         return data
 

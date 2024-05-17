@@ -42,8 +42,6 @@ masked_types = ()
 
 anonymous_dimension_label = '_'
 
-disallow_refs = {'allow_refs': False} if param_version > Version('2.0.0rc1') else {}
-
 # Argspec was removed in Python 3.11
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
@@ -82,7 +80,7 @@ try:
         masked_types = (BaseMaskedArray,)
 except Exception as e:
     param.main.param.warning('pandas could not register all extension types '
-                                'imports failed with the following error: %s' % e)
+                                f'imports failed with the following error: {e}')
 
 try:
     import cftime
@@ -807,8 +805,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         "Accumulate blocks of hex and separate blocks by underscores"
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception(r"Please use a raw string or escape control code '\%s'"
-                            % invalid[cc])
+            raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:
@@ -1614,6 +1611,8 @@ def resolve_dependent_value(value):
        A new value where any parameter dependencies have been
        resolved.
     """
+    from panel.widgets import RangeSlider
+
     range_widget = False
     if isinstance(value, list):
         value = [resolve_dependent_value(v) for v in value]
@@ -1630,14 +1629,8 @@ def resolve_dependent_value(value):
             resolve_dependent_value(value.step),
         )
 
-    if 'panel' in sys.modules:
-        from panel.depends import param_value_if_widget
-        from panel.widgets import RangeSlider
-        range_widget = isinstance(value, RangeSlider)
-        if param_version > Version('2.0.0rc1'):
-            value = param.parameterized.resolve_value(value)
-        else:
-            value = param_value_if_widget(value)
+    range_widget = isinstance(value, RangeSlider)
+    value = param.parameterized.resolve_value(value)
 
     if is_param_method(value, has_deps=True):
         value = value()

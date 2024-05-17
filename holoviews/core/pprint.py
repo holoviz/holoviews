@@ -191,13 +191,13 @@ class InfoPrinter:
         if len(element_set) == 1:
             element_info = f'Element: {next(iter(element_set))}'
         elif len(element_set) > 1:
-            element_info = 'Elements:\n   %s'  % '\n   '.join(sorted(element_set))
+            element_info = 'Elements:\n   {}'.format('\n   '.join(sorted(element_set)))
 
         container_info = None
         if len(container_set) == 1:
             container_info = f'Container: {next(iter(container_set))}'
         elif len(container_set) > 1:
-            container_info = 'Containers:\n   %s'  % '\n   '.join(sorted(container_set))
+            container_info = 'Containers:\n   {}'.format('\n   '.join(sorted(container_set)))
         heading = cls.heading('Target Specifications', ansi=ansi, char="-")
 
         target_header = '\nTargets in this object available for customization:\n'
@@ -215,8 +215,8 @@ class InfoPrinter:
     @classmethod
     def object_info(cls, obj, name, backend, ansi=False):
         element = not getattr(obj, '_deep_indexable', False)
-        element_url ='http://holoviews.org/reference/elements/{backend}/{obj}.html'
-        container_url ='http://holoviews.org/reference/containers/{backend}/{obj}.html'
+        element_url ='https://holoviews.org/reference/elements/{backend}/{obj}.html'
+        container_url ='https://holoviews.org/reference/containers/{backend}/{obj}.html'
         url = element_url if element else container_url
         link = url.format(obj=name, backend=backend)
 
