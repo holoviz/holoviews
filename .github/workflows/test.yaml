@@ -85,7 +85,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-312"]
+              "environment": ["test-39", "test-312", "test-numpy"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -187,7 +187,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        environment: ["test-core", "test-numpy"]
+        environment: ["test-core"]
     timeout-minutes: 120
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
