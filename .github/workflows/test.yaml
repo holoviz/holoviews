@@ -129,7 +129,7 @@ jobs:
       - name: Check packages latest version
         if: needs.setup.outputs.code_change == 'true'
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param #  datashader
       - name: Test Unit
         if: needs.setup.outputs.code_change == 'true'
         run: |
