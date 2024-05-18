@@ -15,7 +15,7 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
-test-np2 = ["py312", "test-core", "test-unit-task", "np2"]
+test-numpy = ["py312", "test-core", "test-unit-task", "np2"]
 test-gpu = ["py311", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -49,11 +49,6 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
-[feature.np2]
-channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "conda-forge"]
-
-[feature.np2.dependencies]
-numpy = "2.*"
 
 [feature.example.dependencies]
 cftime = "*"
@@ -140,6 +135,27 @@ rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
 test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
+
+[feature.np2]
+channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "conda-forge"]
+
+[feature.np2.dependencies]
+numpy = "2.*"
+
+# test dependencies without Numba
+cftime = "*"
+contourpy = "*"
+dask-core = "*"
+ffmpeg = "*"
+ibis-sqlite = "*"
+nbconvert = "*"
+networkx = "*"
+pillow = "*"
+scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
+selenium = "*"
+shapely = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
 
 # =============================================
 # =================== DOCS ====================
