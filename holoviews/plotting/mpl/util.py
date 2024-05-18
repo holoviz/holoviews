@@ -1,49 +1,49 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import inspect
 import re
 import warnings
 
+import matplotlib as mpl
 import numpy as np
-import matplotlib
-from matplotlib import units as munits
-from matplotlib import ticker
+from matplotlib import (
+    ticker,
+    units as munits,
+)
 from matplotlib.colors import Normalize, cnames
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
-from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-from matplotlib.rcsetup import (
-    validate_fontsize, validate_fonttype, validate_hatch)
+from matplotlib.rcsetup import validate_fontsize, validate_fonttype, validate_hatch
+from matplotlib.transforms import Affine2D, Bbox, TransformedBbox
+from packaging.version import Version
 
 try:  # starting Matplotlib 3.4.0
-    from matplotlib._enums import CapStyle as validate_capstyle
-    from matplotlib._enums import JoinStyle as validate_joinstyle
-except:  # before Matplotlib 3.4.0
-    from matplotlib.rcsetup import (
-    validate_capstyle, validate_joinstyle)
+    from matplotlib._enums import (
+        CapStyle as validate_capstyle,
+        JoinStyle as validate_joinstyle,
+    )
+except ImportError:  # before Matplotlib 3.4.0
+    from matplotlib.rcsetup import validate_capstyle, validate_joinstyle
 
 try:
-    from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
+    from nc_time_axis import CalendarDateTime, NetCDFTimeConverter
     nc_axis_available = True
-except:
+except ImportError:
     from matplotlib.dates import DateConverter
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
-from ...core.util import (
-    LooseVersion, _getargspec, arraylike_types, basestring,
-    cftime_types, is_number,)
-from ...element import Raster, RGB, Polygons
+from ...core.util import arraylike_types, cftime_types, is_number
+from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
-mpl_version = LooseVersion(matplotlib.__version__)
+mpl_version = Version(mpl.__version__)
 
 
 def is_color(color):
     """
     Checks if supplied object is a valid color spec.
     """
-    if not isinstance(color, basestring):
+    if not isinstance(color, str):
         return False
     elif RGB_HEX_REGEX.match(color):
         return True
@@ -61,10 +61,11 @@ validators = {
     'fonttype': validate_fonttype,
     'hatch': validate_hatch,
     'joinstyle': validate_joinstyle,
-    'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
-                         or isinstance(x, Path) or
-                         (isinstance(x, basestring) and x.startswith('$')
-                          and x.endswith('$'))),
+    'marker': lambda x: (
+        x in Line2D.markers
+        or isinstance(x, (MarkerStyle, Path))
+        or (isinstance(x, str) and x.startswith('$') and x.endswith('$'))
+    ),
     's': lambda x: is_number(x) and (x >= 0)
 }
 
@@ -84,8 +85,8 @@ def get_old_rcparams():
         'savefig.jpeg_quality' # deprecated in MPL 3.3.1
     ]
     old_rcparams = {
-        k: v for k, v in matplotlib.rcParams.items()
-        if mpl_version < '3.0' or k not in deprecated_rcparams
+        k: v for k, v in mpl.rcParams.items()
+        if mpl_version < Version('3.0') or k not in deprecated_rcparams
     }
     return old_rcparams
 
@@ -122,11 +123,11 @@ def validate(style, value, vectorized=True):
     try:
         valid = validator(value)
         return False if valid == False else True
-    except:
+    except Exception:
         return False
 
 
-def filter_styles(style, group, other_groups, blacklist=[]):
+def filter_styles(style, group, other_groups, blacklist=None):
     """
     Filters styles which are specific to a particular artist, e.g.
     for a GraphPlot this will filter options specific to the nodes and
@@ -148,6 +149,8 @@ def filter_styles(style, group, other_groups, blacklist=[]):
     filtered: dict
         Filtered dictionary of styles
     """
+    if blacklist is None:
+        blacklist = []
     group = group+'_'
     filtered = {}
     for k, v in style.items():
@@ -170,14 +173,14 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        args = [arg for arg in _getargspec(formatter).args
+        args = [arg for arg in inspect.getfullargspec(formatter).args
                 if arg != 'self']
         wrapped = formatter
         if len(args) == 1:
             def wrapped(val, pos=None):
                 return formatter(val)
         return ticker.FuncFormatter(wrapped)
-    elif isinstance(formatter, basestring):
+    elif isinstance(formatter, str):
         if re.findall(r"\{(\w+)\}", formatter):
             return ticker.StrMethodFormatter(formatter)
         else:
@@ -186,9 +189,9 @@ def wrap_formatter(formatter):
 def unpack_adjoints(ratios):
     new_ratios = {}
     offset = 0
-    for k, (num, ratios) in sorted(ratios.items()):
+    for k, (num, ratio_values) in sorted(ratios.items()):
         unpacked = [[] for _ in range(num)]
-        for r in ratios:
+        for r in ratio_values:
             nr = len(r)
             for i in range(num):
                 unpacked[i].append(r[i] if i < nr else np.nan)
@@ -246,12 +249,14 @@ def resolve_rows(rows):
         return resolve_rows(merged_rows)
 
 
-def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
+def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
                vspace=0.2, hspace=0.2):
     """
     Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
     """
+    if extra_artists is None:
+        extra_artists = []
     fig.canvas.draw()
     w, h = fig.get_size_inches()
 
@@ -283,13 +288,15 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
         bbox = get_tight_bbox(fig, extra_artists)
         top = bbox.intervaly[1]
         if title and title.get_text():
-            title.set_y((top/(w*aspect)))
+            title.set_y(top/(w*aspect))
 
 
-def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
+def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
     """
     Compute a tight bounding box around all the artists in the figure.
     """
+    if bbox_extra_artists is None:
+        bbox_extra_artists = []
     renderer = fig.canvas.get_renderer()
     bbox_inches = fig.get_tightbbox(renderer)
     bbox_artists = bbox_extra_artists[:]
@@ -308,8 +315,11 @@ def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
                 clip_path = clip_path.get_fully_transformed_path()
                 bbox = Bbox.intersection(bbox,
                                          clip_path.get_extents())
-        if bbox is not None and (bbox.width != 0 or
-                                 bbox.height != 0):
+        if (
+            bbox is not None and
+            (bbox.width != 0 or bbox.height != 0) and
+            np.isfinite(bbox).all()
+        ):
             bbox_filtered.append(bbox)
     if bbox_filtered:
         _bbox = Bbox.union(bbox_filtered)
@@ -399,57 +409,60 @@ class CFTimeConverter(NetCDFTimeConverter):
             value = CalendarDateTime(value.datetime, value.calendar)
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
-        return super(CFTimeConverter, cls).convert(value, unit, axis)
+        return super().convert(value, unit, axis)
 
 
 class EqHistNormalize(Normalize):
 
-    def __init__(self, vmin=None, vmax=None, clip=False, nbins=256**2, ncolors=256):
-        super(EqHistNormalize, self).__init__(vmin, vmax, clip)
+    def __init__(self, vmin=None, vmax=None, clip=False, rescale_discrete_levels=True, nbins=256**2, ncolors=256):
+        super().__init__(vmin, vmax, clip)
         self._nbins = nbins
         self._bin_edges = None
         self._ncolors = ncolors
-        self._color_bins = np.linspace(0, 1, ncolors)
+        self._color_bins = np.linspace(0, 1, ncolors+1)
+        self._rescale = rescale_discrete_levels
 
     def binning(self, data, n=256):
         low = data.min() if self.vmin is None else self.vmin
         high = data.max() if self.vmax is None else self.vmax
         nbins = self._nbins
         eq_bin_edges = np.linspace(low, high, nbins+1)
-        hist, _ = np.histogram(data, eq_bin_edges)
+        full_hist, _ = np.histogram(data, eq_bin_edges)
 
-        eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
-        cdf = np.cumsum(hist)
-        cdf_max = cdf[-1]
-        norm_cdf = cdf/cdf_max
-
-        # Iteratively find as many finite bins as there are colors
-        finite_bins = n-1
-        binning = []
-        iterations = 0
-        guess = n*2
-        while ((finite_bins != n) and (iterations < 4) and (finite_bins != 0)):
-            ratio = guess/finite_bins
-            if (ratio > 1000):
-                #Abort if distribution is extremely skewed
-                break
-            guess = np.round(max(n*ratio, n))
-
-            # Interpolate
-            palette_edges = np.arange(0, guess)
-            palette_cdf = norm_cdf*(guess-1)
-            binning = np.interp(palette_edges, palette_cdf, eq_bin_centers)
-
-            # Evaluate binning
-            uniq_bins = np.unique(binning)
-            finite_bins = len(uniq_bins)-1
-            iterations += 1
-        if (finite_bins == 0):
-            binning = [low]+[high]*(n-1)
+        # Remove zeros, leaving extra element at beginning for rescale_discrete_levels
+        nonzero = np.nonzero(full_hist)[0]
+        nhist = len(nonzero)
+        if nhist > 1:
+            hist = np.zeros(nhist+1)
+            hist[1:] = full_hist[nonzero]
+            eq_bin_centers = np.concatenate([[0.], (eq_bin_edges[nonzero] + eq_bin_edges[nonzero+1]) / 2.])
+            eq_bin_centers[0] = 2*eq_bin_centers[1] - eq_bin_centers[-1]
         else:
-            binning = binning[-n:]
-            if (finite_bins != n):
-                warnings.warn("EqHistColorMapper warning: Histogram equalization did not converge.")
+            hist = full_hist
+            eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
+
+        # CDF scaled from 0 to 1 except for first value
+        cdf = np.cumsum(hist)
+        lo = cdf[1]
+        diff = cdf[-1] - lo
+        with np.errstate(divide='ignore', invalid='ignore'):
+            cdf = (cdf - lo) / diff
+        cdf[0] = -1.0
+
+        lower_span = 0
+        if self._rescale:
+            discrete_levels = nhist
+            m = -0.5/98.0
+            c = 1.5 - 2*m
+            multiple = m*discrete_levels + c
+            if (multiple > 1):
+                lower_span = 1 - multiple
+
+        cdf_bins = np.linspace(lower_span, 1, n+1)
+        binning = np.interp(cdf_bins, cdf, eq_bin_centers)
+        if not self._rescale:
+            binning[0] = low
+        binning[-1] = high
         return binning
 
     def __call__(self, data, clip=None):

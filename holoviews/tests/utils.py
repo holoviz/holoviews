@@ -1,6 +1,8 @@
-import os, sys
-import param
 import logging
+import os
+import sys
+
+import param
 
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -29,7 +31,7 @@ class MockLoggingHandler(logging.Handler):
             'INFO':'param.param.message()',
             'VERBOSE':'param.param.verbose()',
             'DEBUG':'param.param.debug()'}
-        super(MockLoggingHandler, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def emit(self, record):
         "Store a message to the instance's messages dictionary"
@@ -57,15 +59,14 @@ class MockLoggingHandler(logging.Handler):
         msg='\n\n{method}: {last_line}\ndoes not end with:\n{substring}'
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError('Missing {method} output: {substring}'.format(
-                method=self.param_methods[level], substring=repr(substring)))
+            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
         if not last_line[0].endswith(substring):
             raise AssertionError(msg.format(method=self.param_methods[level],
                                             last_line=repr(last_line[0]),
                                             substring=repr(substring)))
         else:
             self.messages[level].pop(-1)
-            
+
 
     def assertContains(self, level, substring):
         """
@@ -75,8 +76,7 @@ class MockLoggingHandler(logging.Handler):
         msg='\n\n{method}: {last_line}\ndoes not contain:\n{substring}'
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError('Missing {method} output: {substring}'.format(
-                method=self.param_methods[level], substring=repr(substring)))
+            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
         if substring not in last_line[0]:
             raise AssertionError(msg.format(method=self.param_methods[level],
                                             last_line=repr(last_line[0]),
@@ -95,7 +95,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super(LoggingComparisonTestCase, self).setUp()
+        super().setUp()
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
@@ -103,7 +103,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
         log.addHandler(self.log_handler)
 
     def tearDown(self):
-        super(LoggingComparisonTestCase, self).tearDown()
+        super().tearDown()
         log = param.parameterized.get_logger()
         log.handlers = self.handlers
         messages = self.log_handler.messages

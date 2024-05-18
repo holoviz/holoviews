@@ -40,8 +40,8 @@ text = gapminder_ds.clone({yr: hv.Text(1.2, 25, str(int(yr)), fontsize=30)
 # Define options
 # Combine Points and Text
 hvgapminder = (gapminder_ds * text).opts(
-    opts.Points(alpha=0.6, color='Group', cmap='Set1', line_color='black', 
-                size=np.sqrt(dim('Population'))*0.005, 
+    opts.Points(alpha=0.6, color='Group', cmap='Set1', line_color='black',
+                size=np.sqrt(dim('Population'))*0.005,
                 tools=['hover'], title='Gapminder Demo', responsive=True,
                 show_grid=True),
     opts.Text(text_font_size='52pt', text_color='lightgray')

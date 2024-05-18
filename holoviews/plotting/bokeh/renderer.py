@@ -1,12 +1,9 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import base64
 import logging
 from io import BytesIO
 
-import param
 import bokeh
-
+import param
 from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.models import Model
@@ -15,11 +12,10 @@ from panel.io.notebook import render_mimebundle
 from panel.io.state import state
 from param.parameterized import bothmethod
 
-from ...core import Store, HoloMap
+from ...core import HoloMap, Store
 from ..plot import Plot
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .util import compute_plot_size
-
 
 default_theme = Theme(json={
     'attrs': {
@@ -47,7 +43,7 @@ class BokehRenderer(Renderer):
                                 allow_None=True, doc="""
        The applicable Bokeh Theme object (if any).""")
 
-    webgl = param.Boolean(default=False, doc="""
+    webgl = param.Boolean(default=True, doc="""
         Whether to render plots with WebGL if available""")
 
     # Defines the valid output formats for each mode.
@@ -62,7 +58,6 @@ class BokehRenderer(Renderer):
         "Hook to prefix content for instance JS when saving HTML"
         return
 
-
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None, **kwargs):
         """
@@ -70,12 +65,12 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
-        plot = super(BokehRenderer, self_or_cls).get_plot(obj, doc, renderer, **kwargs)
+        plot = super().get_plot(obj, doc, renderer, **kwargs)
         if plot.document is None:
             plot.document = Document() if self_or_cls.notebook_context else curdoc()
-        plot.document.theme = self_or_cls.theme
+        if self_or_cls.theme:
+            plot.document.theme = self_or_cls.theme
         return plot
-
 
     def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):
         """
@@ -146,7 +141,6 @@ class BokehRenderer(Renderer):
         else:
             return data
 
-
     @classmethod
     def plot_options(cls, obj, percent_size):
         """
@@ -175,7 +169,6 @@ class BokehRenderer(Renderer):
             options['height'] = int(height)
         return dict(options)
 
-
     @bothmethod
     def get_size(self_or_cls, plot):
         """
@@ -191,7 +184,6 @@ class BokehRenderer(Renderer):
             raise ValueError('Can only compute sizes for HoloViews '
                              'and bokeh plot objects.')
         return compute_plot_size(plot)
-
 
     @classmethod
     def load_nb(cls, inline=True):

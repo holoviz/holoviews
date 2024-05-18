@@ -1,10 +1,9 @@
-from collections import OrderedDict
 
 from . import util
 from .pprint import PrettyPrinter
 
 
-class AttrTree(object):
+class AttrTree:
     """
     An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined
@@ -59,13 +58,20 @@ class AttrTree(object):
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
-        self.__dict__['data'] = OrderedDict()
-        items = items.items() if isinstance(items, OrderedDict) else items
+        self.__dict__['data'] = {}
+        items = items.items() if isinstance(items, dict) else items
         # Python 3
         items = list(items) if items else items
         items = [] if not items else items
         for path, item in items:
             self.set_path(path, item)
+
+    @property
+    def root(self):
+        root = self
+        while root.parent is not None:
+            root = root.parent
+        return root
 
     @property
     def path(self):
@@ -113,7 +119,7 @@ class AttrTree(object):
         disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
             raise Exception("Attribute strings in path elements cannot be "
-                            "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))
+                            "correctly escaped : {}".format(','.join(repr(el) for el in disallowed)))
         if len(path) > 1:
             attrtree = self.__getattr__(path[0])
             attrtree.set_path(path[1:], val)
@@ -150,7 +156,7 @@ class AttrTree(object):
             else:
                 items = [(key, v) for key, v in self.data.items()
                          if not all(k==p for k, p in zip(key, path))]
-                self.data = OrderedDict(items)
+                self.data = dict(items)
         else:
             self.data[path] = val
         if self.parent is not None:
@@ -208,7 +214,7 @@ class AttrTree(object):
             self._propagate(split_label, '_DELETE')
         else:
             path_item = self
-            for i, identifier in enumerate(split_label[:-1]):
+            for identifier in split_label[:-1]:
                 path_item = path_item[identifier]
             del path_item[split_label[-1]]
 
@@ -220,10 +226,10 @@ class AttrTree(object):
         if util.tree_attribute(identifier) and self.fixed and shallow:
             raise AttributeError(self._fixed_error % identifier)
 
-        super(AttrTree, self).__setattr__(identifier, val)
+        super().__setattr__(identifier, val)
 
         if util.tree_attribute(identifier):
-            if not identifier in self.children:
+            if identifier not in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
 
@@ -234,12 +240,13 @@ class AttrTree(object):
         with the chosen attribute path.
         """
         try:
-            return super(AttrTree, self).__getattr__(identifier)
-        except AttributeError: pass
+            return super().__getattr__(identifier)
+        except AttributeError:
+            pass
 
         # Attributes starting with __ get name mangled
-        if identifier.startswith('_' + type(self).__name__) or identifier.startswith('__'):
-            raise AttributeError('Attribute %s not found.' % identifier)
+        if identifier.startswith(('_' + type(self).__name__, '__')):
+            raise AttributeError(f'Attribute {identifier} not found.')
         elif self.fixed==True:
             raise AttributeError(self._fixed_error % identifier)
 
@@ -262,8 +269,7 @@ class AttrTree(object):
             self.__dict__[sanitized] = child_tree
             return child_tree
         else:
-            raise AttributeError('%r object has no attribute %s.' %
-                                 (type(self).__name__, identifier))
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {identifier}.')
 
 
     def __iter__(self):

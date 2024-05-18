@@ -1,10 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import param
 import numpy as np
-
-from matplotlib.collections import PatchCollection, LineCollection
-from matplotlib.dates import date2num, DateFormatter
+import param
+from matplotlib.collections import LineCollection, PatchCollection
+from matplotlib.dates import DateFormatter, date2num
 
 from ...core import util
 from ...core.dimension import Dimension
@@ -20,7 +17,7 @@ class PathPlot(ColorbarPlot):
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""")
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -36,7 +33,7 @@ class PathPlot(ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
-        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+        if 'array' not in plot_kwargs and 'cmap' in plot_kwargs:
             del plot_kwargs['cmap']
         collection = self._collection(*plot_args, **plot_kwargs)
         ax.add_collection(collection)
@@ -110,7 +107,7 @@ class PathPlot(ColorbarPlot):
 
 class ContourPlot(PathPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=0, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -139,9 +136,7 @@ class ContourPlot(PathPlot):
             style[color_prop] = style.pop('color')
 
         # Process deprecated color_index
-        if None not in [element.level, self.color_index]:
-            cdim = element.vdims[0]
-        elif 'array' not in style:
+        if 'array' not in style:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
         else:
@@ -150,15 +145,12 @@ class ContourPlot(PathPlot):
         if cdim is None:
             return (paths,), style, {}
 
-        if element.level is not None:
-            array = np.full(len(paths), element.level)
-        else:
-            array = element.dimension_values(cdim, expanded=False)
-            if len(paths) != len(array):
-                # If there are multi-geometries the list of scalar values
-                # will not match the list of paths and has to be expanded
-                array = np.array([v for v, sps in zip(array, subpaths)
-                                  for _ in range(len(sps))])
+        array = element.dimension_values(cdim, expanded=False)
+        if len(paths) != len(array):
+            # If there are multi-geometries the list of scalar values
+            # will not match the list of paths and has to be expanded
+            array = np.array([v for v, sps in zip(array, subpaths)
+                              for _ in range(len(sps))])
 
         if array.dtype.kind not in 'uif':
             array = util.search_indices(array, util.unique_array(array))

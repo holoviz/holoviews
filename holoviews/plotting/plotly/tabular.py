@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from ...selection import ColorListSelectionDisplay
@@ -29,7 +27,7 @@ class TablePlot(ElementPlot):
         return [{'header': header, 'cells': cells}]
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(TablePlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
 
         # Transpose fill_color array so values apply by rows not column
         if 'fill' in opts.get('cells', {}):

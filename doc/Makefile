@@ -4,7 +4,7 @@
 PROJECT = 'holoviews'
 MODULE = 'holoviews'
 
-include ./builder/Makefile 
+include ./builder/Makefile
 export
 
 %:

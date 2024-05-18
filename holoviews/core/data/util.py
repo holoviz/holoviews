@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import numpy as np
 
 from .. import util
@@ -17,7 +15,7 @@ def finite_range(column, cmin, cmax):
     if (min_inf or max_inf):
         column = column[np.isfinite(column)]
         if len(column):
-            cmin = np.nanmin(column) if min_inf else cmin 
+            cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax
             if is_dask(column):
                 import dask.array as da
@@ -48,7 +46,7 @@ def dask_array_module():
     try:
         import dask.array as da
         return da
-    except:
+    except ImportError:
         return None
 
 def is_dask(array):
@@ -62,7 +60,7 @@ def cached(method):
     Decorates an Interface method and using a cached version
     """
     def cached(*args, **kwargs):
-        cache = getattr(args[1], '_cached')
+        cache = args[1]._cached
         if cache is None:
             return method(*args, **kwargs)
         else:

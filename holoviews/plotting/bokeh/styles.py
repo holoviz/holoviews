@@ -3,19 +3,23 @@ Defines valid style options, validation and utilities
 """
 
 import numpy as np
-
 from bokeh.core.properties import (
-    Angle, Color, DashPattern, FontSize, MarkerType, Percent, Size
+    Angle,
+    Color,
+    DashPattern,
+    FontSize,
+    MarkerType,
+    Percent,
+    Size,
 )
 
 try:
-    from matplotlib import colors
-    import matplotlib.cm as cm
+    from matplotlib import cm, colors
 except ImportError:
     cm, colors = None, None
 
 from ...core.options import abbreviated_exception
-from ...core.util import basestring, arraylike_types
+from ...core.util import arraylike_types
 from ...util.transform import dim
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
 
@@ -25,14 +29,22 @@ property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
 base_properties = ['visible', 'muted']
 
-line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
-                   'line_join', 'line_cap', 'line_dash']
-line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
-                    for prefix in property_prefixes]
+line_base_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
+                        'line_join', 'line_cap', 'line_dash', 'line_dash_offset']
+line_properties = line_base_properties + [f'{prefix}_{prop}'
+                                          for prop in line_base_properties
+                                          for prefix in property_prefixes]
 
-fill_properties = ['fill_color', 'fill_alpha']
-fill_properties += ['_'.join([prefix, prop]) for prop in fill_properties
-                    for prefix in property_prefixes]
+fill_base_properties = ['fill_color', 'fill_alpha']
+fill_properties = fill_base_properties + [f'{prefix}_{prop}'
+                                          for prop in fill_base_properties
+                                          for prefix in property_prefixes]
+
+border_properties = ['border_' + prop for prop in line_base_properties + ['radius']]
+
+hatch_properties = ['hatch_color', 'hatch_scale', 'hatch_weight',
+                    'hatch_extra', 'hatch_pattern', 'hatch_alpha']
+background_properties = ['background_' + prop for prop in fill_base_properties + hatch_properties]
 
 text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
                    'text_alpha', 'text_align', 'text_baseline']
@@ -100,7 +112,7 @@ validators = {
     'angle'     : angle.is_valid,
     'alpha'     : alpha.is_valid,
     'color'     : lambda x: (
-        color.is_valid(x) or (isinstance(x, basestring) and RGB_HEX_REGEX.match(x))
+        color.is_valid(x) or (isinstance(x, str) and RGB_HEX_REGEX.match(x))
     ),
     'font_size' : font_size.is_valid,
     'line_dash' : dash_pattern.is_valid,
@@ -122,7 +134,7 @@ def validate(style, value, scalar=False):
     ---------
     style: str
        The style to validate (e.g. 'color', 'size' or 'marker')
-    value: 
+    value:
        The style value to validate
     scalar: bool
 

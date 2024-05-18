@@ -1,30 +1,35 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
-import param
 import numpy as np
+import param
 from bokeh.models import (
-    StaticLayoutProvider, NodesAndLinkedEdges, EdgesAndLinkedNodes,
-    Patches, Bezier, ColumnDataSource, NodesOnly
+    Bezier,
+    ColumnDataSource,
+    EdgesAndLinkedNodes,
+    NodesAndLinkedEdges,
+    NodesOnly,
+    Patches,
+    StaticLayoutProvider,
 )
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import basestring, dimension_sanitizer, unique_array
-from ...element import Graph
+from ...core.util import dimension_sanitizer, unique_array
 from ...util.transform import dim
-from ..mixins import ChordMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..mixins import ChordMixin, GraphMixin
+from ..util import get_directed_graph_paths, process_cmap
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
 from .styles import (
-    base_properties, line_properties, fill_properties, text_properties,
-    rgba_tuple
+    base_properties,
+    fill_properties,
+    line_properties,
+    rgba_tuple,
+    text_properties,
 )
 
 
-class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     arrowhead_length = param.Number(default=0.025, doc="""
       If directed option is enabled this determines the length of the
@@ -47,11 +52,11 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
 
-    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    edge_color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
 
@@ -89,23 +94,12 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = element.nodes.dimensions()
             dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
         elif self.inspection_policy == 'edges':
-            kdims = [(kd.pprint_label, '@{%s_values}' % kd)
+            kdims = [(kd.pprint_label, f'@{{{kd}_values}}')
                      if kd in ('start', 'end') else kd for kd in element.kdims]
             dims = kdims+element.vdims
         else:
             dims = []
         return dims, {}
-
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
-
-
-    def _get_axis_dims(self, element):
-        if isinstance(element, Graph):
-            element = element.nodes
-        return element.dimensions()[:2]
-
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
         cdim = element.get_dimension(self.edge_color_index)
@@ -192,12 +186,13 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if nodes.dtype.kind not in 'uif':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
-            layout = {str(node_indices[k]): (y, x) if self.invert_axes else (x, y)
+            layout = {node_indices[k]: (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(nodes, node_positions)}
         else:
             index = nodes.astype(np.int32)
-            layout = {str(k): (y, x) if self.invert_axes else (x, y)
+            layout = {k: (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(index, node_positions)}
+
         point_data = {'index': index}
 
         # Handle node colors
@@ -376,12 +371,17 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             if self.handles['hover'].renderers == 'auto':
                 self.handles['hover'].renderers = []
             self.handles['hover'].renderers.append(renderer)
+        if self.colorbar:
+            for k, v in list(self.handles.items()):
+                if not k.endswith('color_mapper'):
+                    continue
+                self._draw_colorbar(plot, v, k.replace('color_mapper', ''))
 
 
 
 class ChordPlot(ChordMixin, GraphPlot):
 
-    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+    labels = param.ClassSelector(class_=(str, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
     show_frame = param.Boolean(default=False, doc="""
@@ -389,7 +389,7 @@ class ChordPlot(ChordMixin, GraphPlot):
 
     # Deprecated options
 
-    label_index = param.ClassSelector(default=None, class_=(basestring, int),
+    label_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the node labels will be drawn""")
 
@@ -414,7 +414,7 @@ class ChordPlot(ChordMixin, GraphPlot):
             arc_glyph.update(**styles)
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(ChordPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
         # Ensure that arc glyph matches node style
         if 'multi_line_2_glyph' in self.handles:
             arc_renderer = self.handles['multi_line_2_glyph_renderer']
@@ -427,11 +427,11 @@ class ChordPlot(ChordMixin, GraphPlot):
     def _update_glyphs(self, element, ranges, style):
         if 'multi_line_2_glyph' in self.handles:
             self._sync_arcs()
-        super(ChordPlot, self)._update_glyphs(element, ranges, style)
+        super()._update_glyphs(element, ranges, style)
 
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)
-        data, mapping, style = super(ChordPlot, self).get_data(element, ranges, style)
+        data, mapping, style = super().get_data(element, ranges, style)
         angles = element._angles
         arcs = defaultdict(list)
         for i in range(len(element.nodes)):
@@ -452,7 +452,7 @@ class ChordPlot(ChordMixin, GraphPlot):
                 "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
-        elif isinstance(labels, basestring):
+        elif isinstance(labels, str):
             labels = element.nodes.get_dimension(labels)
 
         if labels is None:
@@ -512,13 +512,13 @@ class TriMeshPlot(GraphPlot):
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
-        element.edgepaths
+        element._initialize_edgepaths()
         return element
 
     def _init_glyphs(self, plot, element, ranges, source):
         element = self._process_vertices(element)
-        super(TriMeshPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
 
     def _update_glyphs(self, element, ranges, style):
         element = self._process_vertices(element)
-        super(TriMeshPlot, self)._update_glyphs(element, ranges, style)
+        super()._update_glyphs(element, ranges, style)

@@ -1,7 +1,7 @@
 About Us
 ========
 
-HoloViews is an `open-source <https://github.com/holoviz/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
+HoloViews is an `open-source <https://github.com/holoviz/holoviews/blob/main/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
 HoloViews is part of the `HoloViz <https://holoviz.org>`_ family of tools. The `holoviz.org <https://holoviz.org>`_ website shows how to use HoloViews together with other libraries to solve complex problems, with detailed tutorials and examples. You can see a variety of projects using HoloViews at `examples.pyviz.org <https://examples.pyviz.org>`_, and you can compare HoloViews to other available tools at `pyviz.org <https://pyviz.org>`_.
 
@@ -20,9 +20,9 @@ Prior Funding
    :align: left
    :target: http://www.anc.ed.ac.uk
 
-The original development of HoloViews was supported in part by Grants EP/F500385/1 and BB/F529254/1 
-to the `University of Edinburgh 
-Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <http://www.anc.ed.ac.uk/dtc>`_ 
-from the UK Engineering and Physical Sciences Research Council, 
+The original development of HoloViews was supported in part by Grants EP/F500385/1 and BB/F529254/1
+to the `University of Edinburgh
+Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <http://www.anc.ed.ac.uk/dtc>`_
+from the UK Engineering and Physical Sciences Research Council,
 Biotechnology and Biological Sciences Research Council, and
 Medical Research Council.

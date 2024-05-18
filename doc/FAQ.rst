@@ -15,7 +15,7 @@ potential pitfalls we hope to help users avoid:
 which for a Pandas dataframe will default to the name of that column.
 If you want to define your own specific label to display for a
 dimension, you can provide a tuple containing the column name and your
-preferred label for it. For instance, if the column is named `x_col`,
+preferred label for it. For instance, if the column is named ``x_col``,
 you can make the label 'X Label' using:
 
 .. code:: python
@@ -33,7 +33,7 @@ passing arguments (or an unpacked dictionary) to ``redim.label``:
   curve = curve.redim.label(x_col='X Label', y_col='Label for Y')
 
 To override a label for plotting it is also possible to use the
-`xlabel` and `ylabel` plot options:
+``xlabel`` and ``ylabel`` plot options:
 
 .. code:: python
 
@@ -45,7 +45,7 @@ To override a label for plotting it is also possible to use the
 **A:** Pass an unpacked dictionary containing the kdims/vdims' names
 as keys and a tuple of the bounds as values into ``redim.range``.
 
-This constrains the bounds of x_col to `(0, max(x_col))`.
+This constrains the bounds of x_col to ``(0, max(x_col))``.
 
 .. code:: python
 
@@ -74,13 +74,13 @@ across all objects that are presented together, so that they can be
 compared directly. If you don't want objects that share a dimension to
 be normalized together in your layout, you can change the ``axiswise``
 normalization option to True, making each object be normalized
-independently, e.g. for a layout of `Curve` objects use:
+independently, e.g. for a layout of ``Curve`` objects use:
 
 .. code:: python
 
     your_layout.opts(opts.Curve(axiswise=True))
 
-Alternatively you may also set `shared_axes=False` on the Layout itself:
+Alternatively you may also set ``shared_axes=False`` on the Layout itself:
 
 .. code:: python
 
@@ -93,6 +93,18 @@ normalized independently by changing ``framewise`` to True:
 .. code:: python
 
     your_holomap.opts(framewise=True)
+
+**Q: How do I make only a single axis be shared across a layout?**
+
+**A:** Even when ``shared_axes=True``, HoloViews will only share axes
+that have the same Dimension, so just make sure that axes that you
+want to be independent have a different name or label. Here, the x
+axis should be shared, but the y should be independent:
+
+.. code:: python
+
+    xs = range(-10,11) ; ys = [100-x**2 for x in xs]
+    hv.Curve((xs, ys), 'x', 'y') + hv.Curve((xs, ys), 'x', 'z')
 
 
 **Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for axis normalization across frames?**
@@ -353,7 +365,7 @@ to the return value of that cell, if it's a HoloViews object. So, if you
 want a given object to get customized, you need to make sure it is
 returned from the cell, or the options won't ever be applied, and you
 should only access it after it has been returned, or the options won't
-*yet* have been applied. For instance, if you use `renderer.save()`
+*yet* have been applied. For instance, if you use ``renderer.save()``
 to export an object and only then return that object as the output of
 a cell, the exported object won't have the options applied, because
 they don't get applied until the object is returned

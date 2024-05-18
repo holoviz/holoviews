@@ -10,11 +10,6 @@ from operator import itemgetter
 from .dimension import Dimension
 from .util import merge_dimensions
 
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 
 def create_ndkey(length, indexes, values):
     key = [None] * length
@@ -79,9 +74,9 @@ def unique_dimkeys(obj, default_dim='Frame'):
 
     ndims = len(all_dims)
     unique_keys = []
-    for group, keys in zip(dim_groups, keys):
+    for group, subkeys in zip(dim_groups, keys):
         dim_idxs = [all_dims.index(dim) for dim in group]
-        for key in keys:
+        for key in subkeys:
             padded_key = create_ndkey(ndims, dim_idxs, key)
             matches = [item for item in unique_keys
                        if padded_key == tuple(k if k is None else i

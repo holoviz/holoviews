@@ -5,15 +5,13 @@ any third-party plotting/rendering package.
 This file defines the HTML tags used to wrap rendered output for
 display in the IPython Notebook (optional).
 """
-from __future__ import absolute_import
-
-from ..core.options import Cycle, Compositor
-from ..element import Area, Image, QuadMesh, Polygons, Raster
-from ..element.sankey import _layout_sankey, Sankey
+from ..core.options import Compositor, Cycle
+from ..element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster
+from ..element.sankey import Sankey, _layout_sankey
+from ..operation.stats import bivariate_kde, univariate_kde
 from .plot import Plot
-from .renderer import Renderer, HTML_TAGS # noqa (API import)
-from .util import apply_nodata, list_cmaps # noqa (API import)
-from ..operation.stats import univariate_kde, bivariate_kde
+from .renderer import HTML_TAGS, Renderer  # noqa (API import)
+from .util import apply_nodata, flatten_stack, list_cmaps  # noqa (API import)
 
 Compositor.register(Compositor("Image", apply_nodata, None,
                                'data', transfer_options=True,
@@ -45,6 +43,18 @@ Compositor.register(Compositor("Sankey", _layout_sankey, None,
                                transfer_parameters=True,
                                output_type=Sankey))
 
+Compositor.register(Compositor("ImageStack", apply_nodata, None,
+                               'data', transfer_options=True,
+                               transfer_parameters=True,
+                               output_type=ImageStack,
+                               backends=['bokeh']))
+
+Compositor.register(Compositor("ImageStack", flatten_stack, None,
+                               'data', transfer_options=True,
+                               transfer_parameters=True,
+                               output_type=RGB,
+                               backends=['matplotlib', 'plotly']))
+
 
 DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
                  '#9467bd', '#d62728', '#1f77b4', '#e377c2', '#8c564b', '#bcbd22']
@@ -57,5 +67,5 @@ def public(obj):
     is_renderer = any([issubclass(obj, bc) for bc in [Renderer]])
     return (is_plot_or_cycle or is_renderer)
 
-_public = list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = list({_k for _k, _v in locals().items() if public(_v)})
 __all__ = _public

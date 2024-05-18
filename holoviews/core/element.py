@@ -1,13 +1,14 @@
 from itertools import groupby
-import numpy as np
 
+import numpy as np
+import pandas as pd
 import param
 
 from .dimension import Dimensioned, ViewableElement, asdim
 from .layout import Composable, Layout, NdLayout
-from .ndmapping import OrderedDict, NdMapping
-from .overlay import Overlayable, NdOverlay, CompositeOverlay
-from .spaces import HoloMap, GridSpace
+from .ndmapping import NdMapping
+from .overlay import CompositeOverlay, NdOverlay, Overlayable
+from .spaces import GridSpace, HoloMap
 from .tree import AttrTree
 from .util import get_param_values
 
@@ -74,10 +75,9 @@ class Element(ViewableElement, Composable, Overlayable):
         if key == ():
             return self
         else:
-            raise NotImplementedError("%s currently does not support getitem" %
-                                      type(self).__name__)
+            raise NotImplementedError(f"{type(self).__name__} currently does not support getitem")
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Indicates whether the element is empty.
 
         Subclasses may override this to signal that the Element
@@ -85,28 +85,13 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         return True
 
-
     def __contains__(self, dimension):
         "Whether element contains the Dimension"
         return dimension in self.dimensions()
 
-
     def __iter__(self):
         "Disable iterator interface."
         raise NotImplementedError('Iteration on Elements is not supported.')
-
-
-    __bool__ = __nonzero__
-
-
-    @classmethod
-    def collapse_data(cls, data, function=None, kdims=None, **kwargs):
-        """
-        Deprecated method to perform collapse operations, which may
-        now be performed through concatenation and aggregation.
-        """
-        raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
-
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.
@@ -123,8 +108,7 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         raise NotImplementedError
 
-
-    def sample(self, samples=[], bounds=None, closest=False, **sample_values):
+    def sample(self, samples=None, bounds=None, closest=False, **sample_values):
         """Samples values at supplied coordinates.
 
         Allows sampling of element with a list of coordinates matching
@@ -156,10 +140,12 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             Element containing the sampled coordinates
         """
+        if samples is None:
+            samples = []
         raise NotImplementedError
 
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduction):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reduction):
         """Applies reduction along the specified dimension(s).
 
         Allows reducing the values along one or more key dimension
@@ -187,6 +173,8 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             The element after reductions have been applied.
         """
+        if dimensions is None:
+            dimensions = []
         raise NotImplementedError
 
 
@@ -222,13 +210,12 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             DataFrame of columns corresponding to each dimension
         """
-        import pandas as pd
         if dimensions is None:
             dimensions = [d.name for d in self.dimensions()]
         else:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
         column_names = dimensions
-        dim_vals = OrderedDict([(dim, self.dimension_values(dim)) for dim in column_names])
+        dim_vals = dict([(dim, self.dimension_values(dim)) for dim in column_names])
         df = pd.DataFrame(dim_vals)
         if multi_index:
             df = df.set_index([d for d in dimensions if d in self.kdims])
@@ -257,48 +244,6 @@ class Element(ViewableElement, Composable, Overlayable):
         if len(set(types)) > 1:
             columns = [c.astype('object') for c in columns]
         return np.column_stack(columns)
-
-
-    ######################
-    #    Deprecations    #
-    ######################
-
-    def table(self, datatype=None):
-        "Deprecated method to convert any Element to a Table."
-        self.param.warning(
-            "The table method is deprecated and should no "
-            "longer be used. Instead cast the %s to a "
-            "a Table directly." % type(self).__name__)
-
-        if datatype and not isinstance(datatype, list):
-            datatype = [datatype]
-        from ..element import Table
-        return Table(self, **(dict(datatype=datatype) if datatype else {}))
-
-
-    def mapping(self, kdims=None, vdims=None, **kwargs):
-        "Deprecated method to convert data to dictionary"
-        self.param.warning(
-            "The mapping method is deprecated and should no "
-            "longer be used. Use another one of the common "
-            "formats instead, e.g. .dframe, .array or .columns.")
-
-        length = len(self)
-        if not kdims: kdims = self.kdims
-        if kdims:
-            keys = zip(*[self.dimension_values(dim.name)
-                         for dim in self.kdims])
-        else:
-            keys = [()]*length
-
-        if not vdims: vdims = self.vdims
-        if vdims:
-            values = zip(*[self.dimension_values(dim.name)
-                           for dim in vdims])
-        else:
-            values = [()]*length
-        return OrderedDict(zip(keys, values))
-
 
 
 class Tabular(Element):
@@ -438,7 +383,7 @@ class Collator(NdMapping):
             if 'vdims' not in params:
                 params['vdims'] = data.vdims
             data = data.mapping()
-        super(Collator, self).__init__(data, **params)
+        super().__init__(data, **params)
 
 
     def __call__(self):
@@ -528,5 +473,5 @@ class Collator(NdMapping):
         return new_item
 
 
-__all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+__all__ = list({_k for _k, _v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)})

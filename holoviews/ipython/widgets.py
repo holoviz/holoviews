@@ -1,17 +1,10 @@
-import sys, math, time
-from unittest import SkipTest
-
-try:
-    import IPython
-    from IPython.core.display import clear_output
-except:
-    clear_output = None
-    raise SkipTest("IPython extension requires IPython >= 0.12")
-
-# IPython 0.13 does not have version_info
-ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
+import math
+import sys
+import time
 
 import param
+from IPython.core.display import clear_output
+
 from ..core.util import ProgressIndicator
 
 
@@ -29,7 +22,7 @@ class ProgressBar(ProgressIndicator):
         Parameter to control display of the progress bar. By default,
         progress is shown on stdout but this may be disabled e.g. for
         jobs that log standard output to file.
- 
+
         If the output mode is set to 'broadcast', a socket is opened on
         a stated port to broadcast the completion percentage. The
         RemoteProgress class may then be used to view the progress from
@@ -56,7 +49,7 @@ class ProgressBar(ProgressIndicator):
         self.start_time = None
         self._stdout_display(0, False)
         ProgressBar.current_progress.append(self)
-        super(ProgressBar,self).__init__(**params)
+        super().__init__(**params)
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
@@ -69,8 +62,8 @@ class ProgressBar(ProgressIndicator):
         elif self.display == 'stdout':
             if percentage==100 and self.elapsed_time:
                 elapsed = time.time() -  self.start_time
-                if clear_output and not ipython2: clear_output()
-                if clear_output and ipython2: clear_output(wait=True)
+                if clear_output:
+                    clear_output()
                 self.out = '\r' + ('100%% %s %02d:%02d:%02d'
                                    % (self.label.lower(), elapsed//3600,
                                       elapsed//60, elapsed%60))
@@ -86,19 +79,18 @@ class ProgressBar(ProgressIndicator):
             self.cache['socket'] = self._get_socket()
 
         if self.cache['socket'] is not None:
-            self.cache['socket'].send('%s|%s' % (percentage, self.label))
+            self.cache['socket'].send(f'{percentage}|{self.label}')
 
 
     def _stdout_display(self, percentage, display=True):
-        if clear_output and not ipython2: clear_output()
-        if clear_output and ipython2: clear_output(wait=True)
+        if clear_output:
+            clear_output()
         percent_per_char = 100.0 / self.width
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)
         blank_count = self.width - char_count
         prefix = '\n' if len(self.current_progress) > 1 else ''
-        self.out =  prefix + ("%s[%s%s] %0.1f%%" %
-                              (self.label+':\n' if self.label else '',
+        self.out =  prefix + ("{}[{}{}] {:0.1f}%".format(self.label+':\n' if self.label else '',
                                self.fill_char * char_count,
                                ' '*len(self.fill_char) * blank_count,
                                percentage))
@@ -119,7 +111,7 @@ class ProgressBar(ProgressIndicator):
                                             max_tries=max_tries)
             self.param.message("Progress broadcast bound to port %d" % port)
             return sock
-        except:
+        except Exception:
             self.param.message("No suitable port found for progress broadcast.")
             return None
 
@@ -136,7 +128,7 @@ class RemoteProgress(ProgressBar):
     port = param.Integer(default=8080, doc="Target port on hostname.")
 
     def __init__(self, port, **params):
-        super(RemoteProgress, self).__init__(port=port, **params)
+        super().__init__(port=port, **params)
 
     def __call__(self):
         import zmq
@@ -152,14 +144,13 @@ class RemoteProgress(ProgressBar):
                 [percent_str, label] = message.split('|')
                 percent = float(percent_str)
                 self.label = label
-                super(RemoteProgress, self).__call__(percent)
+                super().__call__(percent)
             except KeyboardInterrupt:
                 if percent is not None:
-                    self.param.message("Exited at %.3f%% completion" % percent)
+                    self.param.message(f"Exited at {percent:.3f}% completion")
                 break
-            except:
-                self.param.message("Could not process socket message: %r"
-                                  % message)
+            except Exception:
+                self.param.message(f"Could not process socket message: {message!r}")
 
 
 class RunProgress(ProgressBar):
@@ -188,7 +179,7 @@ class RunProgress(ProgressBar):
 
 
     def __init__(self, **params):
-        super(RunProgress,self).__init__(**params)
+        super().__init__(**params)
 
     def __call__(self, value):
         """
@@ -199,11 +190,11 @@ class RunProgress(ProgressBar):
         while (value - completed) >= self.interval:
             self.run_hook(self.interval)
             completed += self.interval
-            super(RunProgress, self).__call__(100 * (completed / float(value)))
+            super().__call__(100 * (completed / float(value)))
         remaining = value - completed
         if remaining != 0:
             self.run_hook(remaining)
-            super(RunProgress, self).__call__(100)
+            super().__call__(100)
 
 
 def progress(iterator, enum=False, length=None):

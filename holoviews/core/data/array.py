@@ -1,15 +1,10 @@
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 import numpy as np
 
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
+from .interface import DataError, Interface
 
 
 class ArrayInterface(Interface):
@@ -35,7 +30,7 @@ class ArrayInterface(Interface):
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
             dataset = [d if isinstance(d, np.ndarray) else np.asarray(data[d]) for d in dimensions]
-            if len(set(d.dtype.kind for d in dataset)) > 1:
+            if len({d.dtype.kind for d in dataset}) > 1:
                 raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             data = np.column_stack(dataset)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
@@ -45,7 +40,7 @@ class ArrayInterface(Interface):
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
-            if len(set(d.dtype.kind for d in data)) > 1:
+            if len({d.dtype.kind for d in data}) > 1:
                 raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             elif cls.expanded(data):
                 data = np.column_stack(data)
@@ -57,7 +52,7 @@ class ArrayInterface(Interface):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
                 data = np.array(data)
-            except:
+            except Exception:
                 data = None
 
         if kdims is None:
@@ -81,7 +76,7 @@ class ArrayInterface(Interface):
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
             raise DataError("Supplied data does not match specified "
-                            "dimensions, expected at least %s columns." % ndims, cls)
+                            f"dimensions, expected at least {ndims} columns.", cls)
 
 
     @classmethod
@@ -111,7 +106,9 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         data = dataset.data
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
@@ -215,7 +212,9 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         mask = False
         for sample in samples:
@@ -271,7 +270,7 @@ class ArrayInterface(Interface):
     def iloc(cls, dataset, index):
         rows, cols = index
         if np.isscalar(cols):
-            if isinstance(cols, util.basestring):
+            if isinstance(cols, str):
                 cols = dataset.get_dimension_index(cols)
             if np.isscalar(rows):
                 return dataset.data[rows, cols]

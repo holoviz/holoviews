@@ -1,14 +1,11 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import param
 import numpy as np
+import param
 
-from .selection import PlotlyOverlaySelectionDisplay
-from ...core import util
-from ...operation import interpolate_curve
 from ...element import Tiles
+from ...operation import interpolate_curve
 from ..mixins import AreaMixin, BarsMixin
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class ChartPlot(ElementPlot):
@@ -36,7 +33,7 @@ class ChartPlot(ElementPlot):
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -67,7 +64,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
             return {'type': 'scatter', 'mode': 'markers'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(ScatterPlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         cdim = element.get_dimension(self.color_index)
         if cdim:
             copts = self.get_color_opts(cdim, element, ranges, style)
@@ -111,7 +108,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
     def get_data(self, element, ranges, style, **kwargs):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return super(CurvePlot, self).get_data(element, ranges, style, **kwargs)
+        return super().get_data(element, ranges, style, **kwargs)
 
 
 class AreaPlot(AreaMixin, ChartPlot):
@@ -129,7 +126,7 @@ class AreaPlot(AreaMixin, ChartPlot):
     def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         if len(element.vdims) == 1:
-            kwargs = super(AreaPlot, self).get_data(element, ranges, style, **kwargs)[0]
+            kwargs = super().get_data(element, ranges, style, **kwargs)[0]
             kwargs['fill'] = 'tozero'+y
             return [kwargs]
         xs = element.dimension_values(0)
@@ -201,7 +198,6 @@ class BarPlot(BarsMixin, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    stacked = param.Boolean(default=False)
 
     style_opts = ['visible']
 
@@ -218,7 +214,7 @@ class BarPlot(BarsMixin, ElementPlot):
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
         if range_type not in ('data', 'combined'):
             return x0, y0, x1, y1
@@ -259,8 +255,8 @@ class BarPlot(BarsMixin, ElementPlot):
                 values.append(sel.iloc[0, 1] if len(sel) else 0)
             bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in xvals],
-                y: values})
+                x: xvals,
+                y: np.nan_to_num(values)})
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
             order = list(svals if stack_dim else gvals)
@@ -274,18 +270,20 @@ class BarPlot(BarsMixin, ElementPlot):
                     values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in xvals],
-                    y: values})
+                    x: xvals,
+                    y: np.nan_to_num(values)})
         else:
+            values = element.dimension_values(vdim)
             bars.append({
                 'orientation': orientation,
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
-                y: element.dimension_values(vdim)})
+                y: np.nan_to_num(values)})
+
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(BarPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         stack_dim = None
         if element.ndims > 1 and self.stacked:
             stack_dim = element.get_dimension(1)
@@ -328,6 +326,6 @@ class HistogramPlot(ElementPlot):
         return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(HistogramPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         layout['barmode'] = 'overlay'
         return layout

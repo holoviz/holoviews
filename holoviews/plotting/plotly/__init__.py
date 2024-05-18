@@ -1,37 +1,30 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import plotly
-
+from packaging.version import Version
 from param import concrete_descendents
 
-from ...core import (
-    Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
-)
-from ...core.options import Store, Cycle, Options
-from ...core.util import LooseVersion, VersionError
-from ...element import *              # noqa (Element import for registration)
-
+from ...core import GridMatrix, GridSpace, Layout, NdLayout, NdOverlay, Overlay, config
+from ...core.options import Cycle, Options, Store
+from ...core.util import VersionError
+from ...element import *
+from .annotation import *
+from .callbacks import *
+from .chart import *
+from .chart3d import *
+from .element import *
 from .element import ElementPlot
+from .images import *
+from .plot import *
+from .raster import *
 from .renderer import PlotlyRenderer
+from .shapes import *
+from .stats import *
+from .tabular import *
+from .tiles import *
 
-from .annotation import *            # noqa (API import)
-from .tiles import *                 # noqa (API import)
-from .element import *               # noqa (API import)
-from .chart import *                 # noqa (API import)
-from .chart3d import *               # noqa (API import)
-from .raster import *                # noqa (API import)
-from .plot import *                  # noqa (API import)
-from .stats import *                 # noqa (API import)
-from .tabular import *               # noqa (API import)
-from .callbacks import *             # noqa (API import)
-from .shapes import *                # noqa (API import)
-from .images import *                # noqa (API import)
-
-if LooseVersion(plotly.__version__) < '4.0.0':
+if Version(plotly.__version__) < Version('4.0.0'):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
-        "please upgrade from plotly %s to a more recent version."
-        % plotly.__version__, plotly.__version__, '4.0.0')
+        f"please upgrade from plotly {plotly.__version__} to a more recent version.", plotly.__version__, '4.0.0')
 
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 
@@ -56,6 +49,7 @@ Store.register({Points: ScatterPlot,
                 # Raster plots
                 Raster: RasterPlot,
                 Image: RasterPlot,
+                ImageStack: RGBPlot,
                 HeatMap: HeatMapPlot,
                 QuadMesh: QuadMeshPlot,
                 RGB: RGBPlot,
@@ -65,7 +59,6 @@ Store.register({Points: ScatterPlot,
                 Surface: SurfacePlot,
                 Path3D: Path3DPlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 
                 # Tabular
                 Table: TablePlot,
@@ -137,6 +130,7 @@ options.Scatter3D = Options('style', color=Cycle(), size=6)
 # Annotations
 options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
+options.Labels = Options('style', color=Cycle())
 
 # Shapes
 options.Rectangles = Options('style', line_color=dflt_shape_line_color)

@@ -1,26 +1,27 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
-
 from bokeh.models import Column
 from bokeh.models.widgets import (
-    DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
-    DateEditor, StringFormatter, StringEditor, IntEditor
+    DataTable,
+    DateEditor,
+    DateFormatter,
+    IntEditor,
+    NumberEditor,
+    NumberFormatter,
+    StringEditor,
+    StringFormatter,
+    TableColumn,
 )
 
 from ...core import Dataset, Dimension
+from ...core.util import dimension_sanitizer, isdatetime
 from ...element import ItemTable
 from ...streams import Buffer
-from ...core.util import dimension_sanitizer, isdatetime
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 from .selection import TabularSelectionDisplay
 
 
 class TablePlot(BokehPlot, GenericElementPlot):
-
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
 
     hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a plot. The
@@ -44,7 +45,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
     _stream_data = True
 
     def __init__(self, element, plot=None, **params):
-        super(TablePlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
@@ -55,7 +56,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
     def get_data(self, element, ranges, style):
         return ({dimension_sanitizer(d.name): element.dimension_values(d)
                  for d in element.dimensions()}, {}, style)
-
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -128,7 +128,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         element = self._get_frame(key)
-        self.param.set_param(**self.lookup_options(element, 'plot').options)
+        self.param.update(**self.lookup_options(element, 'plot').options)
         self._get_title_div(key, '12pt')
 
         # Cache frame object id to skip updating data if unchanged

@@ -1,34 +1,42 @@
-from __future__ import absolute_import
-
 # standard library imports
-import uuid
-import copy
-from collections import OrderedDict, namedtuple
-import pickle
 import base64
+import copy
+import pickle
+import uuid
+from collections import namedtuple
+
+from dash.exceptions import PreventUpdate
 
 # Holoviews imports
 import holoviews as hv
-from dash.exceptions import PreventUpdate
-from holoviews.plotting.plotly import PlotlyRenderer, DynamicMap
-from holoviews.plotting.plotly.util import clean_internal_figure_properties
 from holoviews.core.decollate import (
-    initialize_dynamic, to_expr_extract_streams, expr_to_fn_of_stream_contents
+    expr_to_fn_of_stream_contents,
+    initialize_dynamic,
+    to_expr_extract_streams,
 )
-from holoviews.streams import Derived, History
+from holoviews.plotting.plotly import DynamicMap, PlotlyRenderer
 from holoviews.plotting.plotly.callbacks import (
-    Selection1DCallback, RangeXYCallback, RangeXCallback, RangeYCallback,
-    BoundsXYCallback, BoundsXCallback, BoundsYCallback
+    BoundsXCallback,
+    BoundsXYCallback,
+    BoundsYCallback,
+    RangeXCallback,
+    RangeXYCallback,
+    RangeYCallback,
+    Selection1DCallback,
 )
+from holoviews.plotting.plotly.util import clean_internal_figure_properties
+from holoviews.streams import Derived, History
 
 # Dash imports
-import dash_core_components as dcc
-import dash_html_components as html
-from dash import callback_context
-from dash.dependencies import Output, Input, State
-
+try:
+    from dash import dcc, html
+except ImportError:
+    import dash_core_components as dcc
+    import dash_html_components as html
 # plotly.py imports
 import plotly.graph_objects as go
+from dash import callback_context
+from dash.dependencies import Input, Output, State
 
 # Activate plotly as current HoloViews extension
 hv.extension("plotly")
@@ -46,7 +54,7 @@ def get_layout_ranges(plot):
     layout_ranges = {}
     fig_dict = plot.state
     for k in fig_dict['layout']:
-        if k.startswith('xaxis') or k.startswith('yaxis'):
+        if k.startswith(("xaxis", "yaxis")):
             if "range" in fig_dict['layout'][k]:
                 layout_ranges[k] = {"range": fig_dict['layout'][k]["range"]}
 
@@ -86,7 +94,7 @@ def plot_to_figure(
     # Remove range specification so plotly.js autorange + uirevision is in control
     if layout_ranges and use_ranges:
         for k in fig_dict['layout']:
-            if k.startswith('xaxis') or k.startswith('yaxis'):
+            if k.startswith(("xaxis", "yaxis")):
                 fig_dict['layout'][k].pop('range', None)
             if k.startswith('mapbox'):
                 fig_dict['layout'][k].pop('zoom', None)
@@ -137,7 +145,7 @@ def to_function_spec(hvobj):
 
     # Check for unbounded dimensions
     if isinstance(hvobj, DynamicMap) and hvobj.unbounded:
-        dims = ', '.join('%r' % dim for dim in hvobj.unbounded)
+        dims = ', '.join(f'{dim!r}' for dim in hvobj.unbounded)
         msg = ('DynamicMap cannot be displayed without explicit indexing '
                'as {dims} dimension(s) are unbounded. '
                '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -146,7 +154,7 @@ def to_function_spec(hvobj):
 
     # Build mapping from kdims to values/range
     dimensions_dict = {d.name: d for d in hvobj.dimensions()}
-    kdims = OrderedDict()
+    kdims = {}
     for k in kdims_list:
         dim = dimensions_dict[k.name]
         label = dim.label or dim.name
@@ -226,13 +234,13 @@ def build_history_callback(history_stream):
 
 def populate_stream_callback_graph(stream_callbacks, streams):
     """
-    Populate the stream_callbacks OrderedDict with StreamCallback instances
+    Populate the stream_callbacks dict with StreamCallback instances
     associated with all of the History and Derived streams in input stream list.
 
     Input streams to any History or Derived streams are processed recursively
 
     Args:
-        stream_callbacks:  OrderedDict from id(stream) to StreamCallbacks the should
+        stream_callbacks:  dict from id(stream) to StreamCallbacks the should
             be populated. Order will be a breadth-first traversal of the provided
             streams list, and any input streams that these depend on.
 
@@ -340,7 +348,7 @@ def to_dash(
     plots = []
     graph_ids = []
     initial_fig_dicts = []
-    all_kdims = OrderedDict()
+    all_kdims = {}
     kdims_per_fig = []
 
     # Initialize stream mappings
@@ -425,7 +433,7 @@ def to_dash(
     #    breadth-first order so all inputs to a triple are guaranteed to be earlier
     #    in the list. History streams will input and output their own id, which is
     #    fine.
-    stream_callbacks = OrderedDict()
+    stream_callbacks = {}
     for fn_spec in fig_to_fn_stream.values():
         populate_stream_callback_graph(stream_callbacks, fn_spec.streams)
 
@@ -532,7 +540,7 @@ def to_dash(
                 any_change = True
 
         # Update store_data with interactive stream values
-        for fig_ind, fig_dict in enumerate(initial_fig_dicts):
+        for fig_ind in range(len(initial_fig_dicts)):
             graph_id = graph_ids[fig_ind]
             # plotly_stream_types
             for plotly_stream_type, uid_to_streams_for_type in uid_to_stream_ids.items():
@@ -616,9 +624,7 @@ def to_dash(
             [Input(component_id=kdim_slider_id, component_property="value")]
         )
         def update_kdim_label(value, kdim_label=kdim_label):
-            return "{kdim_label}: {value:.2f}".format(
-                kdim_label=kdim_label, value=value
-            )
+            return f"{kdim_label}: {value:.2f}"
 
     # Collect Dash components into DashComponents namedtuple
     components = DashComponents(

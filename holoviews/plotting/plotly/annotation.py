@@ -1,9 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
-from .chart import ScatterPlot
 from ...element import Tiles
+from .chart import ScatterPlot
 
 
 class LabelPlot(ScatterPlot):

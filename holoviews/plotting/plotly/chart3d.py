@@ -1,15 +1,12 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import param
 import numpy as np
-
+import param
 from plotly import colors
 from plotly.figure_factory._trisurf import trisurf as trisurface
 
-from .selection import PlotlyOverlaySelectionDisplay
 from ...core.options import SkipRendering
-from .element import ElementPlot, ColorbarPlot
-from .chart import ScatterPlot, CurvePlot
+from .chart import CurvePlot, ScatterPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class Chart3DPlot(ElementPlot):
@@ -49,7 +46,7 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
         return {'type': 'surface'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(SurfacePlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         return dict(opts, **copts)
 
@@ -85,7 +82,7 @@ class Path3DPlot(Chart3DPlot, CurvePlot):
         return {'type': 'scatter3d', 'mode': 'lines'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(Path3DPlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         opts['line'].pop('showscale', None)
         return opts
 
@@ -104,8 +101,8 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
     def get_data(self, element, ranges, style, **kwargs):
         try:
             from scipy.spatial import Delaunay
-        except:
-            raise SkipRendering("SciPy not available, cannot plot TriSurface")
+        except ImportError:
+            raise SkipRendering("SciPy not available, cannot plot TriSurface") from None
         x, y, z = (element.dimension_values(i) for i in range(3))
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
@@ -113,7 +110,7 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         return [dict(x=x, y=y, z=z, simplices=simplices)]
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(TriSurfacePlot, self).graph_options(
+        opts = super().graph_options(
             element, ranges, style, **kwargs
         )
         copts = self.get_color_opts(element.dimensions()[2], element, ranges, style)

@@ -1,9 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import param
 import numpy as np
+import param
 
-from ...element import HLine, VLine, HSpan, VSpan, Tiles
+from ...element import HLine, HSpan, Tiles, VLine, VSpan
 from ..mixins import GeomMixin
 from .element import ElementPlot
 
@@ -37,10 +35,9 @@ class ShapePlot(ElementPlot):
 
     @staticmethod
     def build_path(xs, ys, closed=True):
-        line_tos = ''.join(['L{x} {y}'.format(x=x, y=y)
+        line_tos = ''.join([f'L{x} {y}'
                             for x, y in zip(xs[1:], ys[1:])])
-        path = 'M{x0} {y0}{line_tos}'.format(
-            x0=xs[0], y0=ys[0], line_tos=line_tos)
+        path = f'M{xs[0]} {ys[0]}{line_tos}'
 
         if closed:
             path += 'Z'

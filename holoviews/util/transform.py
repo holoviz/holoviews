@@ -1,16 +1,13 @@
-from __future__ import division
-
 import operator
-import sys
-
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import pandas as pd
 import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import basestring, pd, resolve_dependent_value, unique_iterator
+from ..core.util import flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -25,14 +22,13 @@ def _maybe_map(numpy_fn):
                                       index=s.index))
             else:
                 return map_fn(lambda s: numpy_fn(s, *args, **kwargs))
+        elif series_like:
+            return type(values)(
+                numpy_fn(values, *args, **kwargs),
+                index=values.index,
+            )
         else:
-            if series_like:
-                return type(values)(
-                    numpy_fn(values, *args, **kwargs),
-                    index=values.index,
-                )
-            else:
-                return numpy_fn(values, *args, **kwargs)
+            return numpy_fn(values, *args, **kwargs)
     return fn
 
 
@@ -71,7 +67,7 @@ def lognorm(values, min=None, max=None):
     return (np.log(values) - min) / (max-min)
 
 
-class iloc(object):
+class iloc:
     """Implements integer array indexing for dim expressions.
     """
 
@@ -86,7 +82,28 @@ class iloc(object):
         return dim(self.expr, self)
 
     def __call__(self, values):
-        return values[self.index]
+        if isinstance(values, (pd.Series, pd.DataFrame)):
+            return values.iloc[resolve_dependent_value(self.index)]
+        else:
+            return values[resolve_dependent_value(self.index)]
+
+
+class loc:
+    """Implements loc for dim expressions.
+    """
+
+    __name__ = 'loc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values.loc[resolve_dependent_value(self.index)]
 
 
 @_maybe_map
@@ -153,8 +170,19 @@ def categorize(values, categories, default=None):
     return result
 
 
+if hasattr(np, 'isin'):
+    isin = _maybe_map(np.isin)
+else:
+    # for 1.4 <= numpy < 1.13; in1d() available since 1.4
+    def _isin(element, test_elements, assume_unique=False, invert=False):
+        # from 1.13's numpy.lib.arraysetops
+        element = np.asarray(element)
+        return np.in1d(element, test_elements, assume_unique=assume_unique,
+                invert=invert).reshape(element.shape)
+    isin = _maybe_map(_isin)
+    del _isin
+
 digitize = _maybe_map(np.digitize)
-isin = _maybe_map(np.isin)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
@@ -163,13 +191,15 @@ def _python_isin(array, values):
 
 python_isin = _maybe_map(_python_isin)
 
+# Type of numpy function like np.max changed in Numpy 1.25
+# from function to a numpy._ArrayFunctionDispatcher.
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc
+    MethodType, np.ufunc, iloc, loc, type(np.max)
 )
 
 
-class dim(object):
+class dim:
     """
     dim transform objects are a way to express deferred transforms on
     Datasets. dim transforms support all mathematical and bitwise
@@ -198,6 +228,7 @@ class dim(object):
         astype: 'astype',
         round_: 'round',
         iloc: 'iloc',
+        loc: 'loc',
     }
 
     _numpy_funcs = {
@@ -219,28 +250,32 @@ class dim(object):
     _accessor = None
 
     def __init__(self, obj, *args, **kwargs):
-        ops = []
+        from panel.widgets import Widget
+        self.ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
-        if isinstance(obj, basestring):
+        if isinstance(obj, str):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
             self.dimension = obj
+        elif isinstance(obj, param.Parameter):
+            self.dimension = obj
+        elif isinstance(obj, Widget):
+            self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
-            ops = obj.ops
+            self.ops = obj.ops
         if args:
             fn = args[0]
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types+(basestring,)) or
+            if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
-                                 'found %s type' % type(fn))
-            ops = ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
+                                 f'found {type(fn)} type')
+            self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
-        self.ops = ops
 
     def __getstate__(self):
         return self.__dict__
@@ -254,12 +289,12 @@ class dim(object):
             return self.ops[-1]['fn']
 
     def __call__(self, *args, **kwargs):
-        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot call method on %r expression. "
-                             "Only methods accessed via namspaces, "
+            raise ValueError(f"Cannot call method on {self!r} expression. "
+                             "Only methods accessed via namespaces, "
                              "e.g. dim(...).df or dim(...).xr), "
-                             "can be called. " % self)
+                             "can be called.")
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
@@ -267,11 +302,25 @@ class dim(object):
             new_op = dict(op, args=args, kwargs=kwargs)
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
-    def __getattr__(self, attr):
-        if attr in dir(self):
+    def __getattribute__(self, attr):
+        self_dict = super().__getattribute__('__dict__')
+        if '_ns' not in self_dict: # Not yet initialized
+            return super().__getattribute__(attr)
+        ns = self_dict['_ns']
+        ops = super().__getattribute__('ops')
+        if ops and ops[-1]['kwargs'].get('accessor'):
+            try:
+                ns = getattr(ns, ops[-1]['fn'])
+            except Exception:
+                # If the namespace doesn't know the method we are
+                # calling then we are using custom API of the dim
+                # transform itself, so set namespace to None
+                ns = None
+        extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
+        if attr in extras and attr not in super().__dir__():
             return type(self)(self, attr, accessor=True)
-        raise AttributeError("%r object has no attribute %r" %
-                             (type(self).__name__, attr))
+        else:
+            return super().__getattribute__(attr)
 
     def __dir__(self):
         ns = self._ns
@@ -279,7 +328,7 @@ class dim(object):
             ns = getattr(ns, self._current_accessor)
         extras = {attr for attr in dir(ns) if not attr.startswith('_')}
         try:
-            return sorted(set(super(dim, self).__dir__()) | extras)
+            return sorted(set(super().__dir__()) | extras)
         except Exception:
             return sorted(set(dir(type(self))) | set(self.__dict__) | extras)
 
@@ -310,24 +359,41 @@ class dim(object):
 
     @property
     def params(self):
+        from panel.widgets.base import Widget
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
+            if hasattr(op['fn'], 'index'):
+                # Special case for loc and iloc to check for parameters
+                op_args += [op['fn'].index]
+            op_args = flatten(op_args)
             for op_arg in op_args:
-                if 'panel' in sys.modules:
-                    from panel.widgets.base import Widget
-                    if isinstance(op_arg, Widget):
-                        op_arg = op_arg.param.value
+                if isinstance(op_arg, Widget):
+                    op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
+                elif isinstance(op_arg, slice):
+                    (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
+                    if isinstance(start, Widget):
+                        start = start.param.value
+                    if isinstance(stop, Widget):
+                        stop = stop.param.value
+                    if isinstance(step, Widget):
+                        step = step.param.value
+
+                    if isinstance(start, param.Parameter):
+                        params[start.name+str(id(start))] = start
+                    if isinstance(stop, param.Parameter):
+                        params[stop.name+str(id(stop))] = stop
+                    if isinstance(step, param.Parameter):
+                        params[step.name+str(id(step))] = step
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
-                    params[op_arg.name+str(id(op))] = op_arg
-                
+                    params[op_arg.name+str(id(op_arg))] = op_arg
+
         return params
 
     # Namespace properties
-
     @property
     def df(self):
         return self.clone(dim_type=df_dim)
@@ -339,6 +405,9 @@ class dim(object):
     @property
     def xr(self):
         return self.clone(dim_type=xr_dim)
+
+    def __getitem__(self, *index):
+        return type(self)(self, operator.getitem, *index)
 
     # Builtin functions
     def __abs__(self):            return type(self)(self, abs)
@@ -485,7 +554,7 @@ class dim(object):
         """
         args = list(args) # make mutable
         for k, arg in enumerate(args):
-            if isinstance(arg, basestring):
+            if isinstance(arg, str):
                 args[k] = cls(arg)
         return cls(args[0], func, *args[1:], **kwargs)
 
@@ -504,7 +573,9 @@ class dim(object):
         """
         from ..element import Graph
 
-        if isinstance(self.dimension, dim):
+        if isinstance(self.dimension, param.Parameter):
+            applies = True
+        elif isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         elif self.dimension.name == '*':
             applies = True
@@ -541,7 +612,7 @@ class dim(object):
                 kwargs['axis'] = None
             fn = fn_name
 
-        if isinstance(fn, basestring):
+        if isinstance(fn, str):
             accessor = kwargs.pop('accessor', None)
             fn_args = []
         else:
@@ -572,14 +643,13 @@ class dim(object):
         if (((fn is norm) or (fn is lognorm)) and drange != {} and
             not ('min' in kwargs and 'max' in kwargs)):
             data = fn(data, *drange)
-        elif isinstance(fn, basestring):
+        elif isinstance(fn, str):
             method = getattr(data, fn, None)
             if method is None:
                 mtype = 'attribute' if accessor else 'method'
                 raise AttributeError(
-                    "%r could not be applied to '%r', '%s' %s "
-                    "does not exist on %s type."
-                    % (self, dataset, fn, mtype, type(data).__name__)
+                    f"{self!r} could not be applied to '{dataset!r}', '{fn}' {mtype} "
+                    f"does not exist on {type(data).__name__} type."
                 )
             if accessor:
                 data = method
@@ -613,7 +683,7 @@ class dim(object):
         """
         return data
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+    def apply(self, dataset, flat=False, expanded=None, ranges=None, all_values=False,
               keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
@@ -638,27 +708,28 @@ class dim(object):
         """
         from ..element import Graph
 
+        if ranges is None:
+            ranges = {}
+
         dimension = self.dimension
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
 
         if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
-            raise KeyError("One or more dimensions in the expression %r "
-                           "could not resolve on '%s'. Ensure all "
+            raise KeyError(f"One or more dimensions in the expression {self!r} "
+                           f"could not resolve on '{dataset}'. Ensure all "
                            "dimensions referenced by the expression are "
-                           "present on the supplied object." % (self, dataset))
+                           "present on the supplied object.")
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
-                raise ValueError("The expression %r assumes a %s-like "
-                                 "API but the dataset contains %s data "
-                                 "and cannot be coerced." %
-                                 (self, self.namespace, dataset.interface.datatype))
+                raise ValueError(f"The expression {self!r} assumes a {self.namespace}-like "
+                                 f"API but the dataset contains {dataset.interface.datatype} data "
+                                 "and cannot be coerced.")
             else:
-                raise ValueError("The expression %r assumes a %s-like "
-                                 "API but the dataset contains %s data "
-                                 "and coercion is disabled." %
-                                 (self, self.namespace, dataset.interface.datatype))
+                raise ValueError(f"The expression {self!r} assumes a {self.namespace}-like "
+                                 f"API but the dataset contains {dataset.interface.datatype} data "
+                                 "and coercion is disabled.")
 
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
@@ -675,6 +746,9 @@ class dim(object):
 
         if dimension.name == '*':
             data = dataset.data
+            eldim = None
+        elif isinstance(dimension, param.Parameter):
+            data = getattr(dimension.owner, dimension.name)
             eldim = None
         else:
             lookup = dimension if strict else dimension.name
@@ -699,7 +773,7 @@ class dim(object):
         return data
 
     def __repr__(self):
-        op_repr = "'%s'" % self.dimension
+        op_repr = f"'{self.dimension}'"
         accessor = False
         for i, o in enumerate(self.ops):
             if i == 0:
@@ -715,7 +789,7 @@ class dim(object):
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
+            kwargs = ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
@@ -728,14 +802,14 @@ class dim(object):
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
             else:
-                if isinstance(fn, basestring):
+                if isinstance(fn, str):
                     fn_name = fn
                 else:
                     fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
-                elif isinstance(fn, basestring):
+                elif isinstance(fn, str):
                     if accessor:
                         sep = '' if op_repr.endswith(')') or prev_accessor else ')'
                         format_string = prev+sep+'.{fn}'
@@ -745,7 +819,9 @@ class dim(object):
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
-                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
+                    format_string = prev+f').iloc[{fn.index!r}]'
+                elif isinstance(fn, loc):
+                    format_string = prev+f').loc[{fn.index!r}]'
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+').{fn}('
@@ -773,7 +849,7 @@ class dim(object):
                     format_string += '{kwargs}'
 
             # Insert accessor
-            if i == 0 and self._accessor:
+            if i == 0 and self._accessor and ')' in format_string:
                 idx = format_string.index(')')
                 format_string = ''.join([
                     format_string[:idx], ').', self._accessor,
@@ -785,7 +861,7 @@ class dim(object):
             if op_repr.count('(') - op_repr.count(')') > 0:
                 op_repr += ')'
         if not self.ops:
-            op_repr = 'dim({repr})'.format(repr=op_repr)
+            op_repr = f'dim({op_repr})'
         if op_repr.count('(') - op_repr.count(')') > 0:
             op_repr += ')'
         return op_repr
@@ -803,7 +879,7 @@ class df_dim(dim):
     _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
-        super(df_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = pd.Series
 
     def interface_applies(self, dataset, coerce):
@@ -827,6 +903,9 @@ class df_dim(dim):
                      if dataset.interface.multi == intfc.multi]
         return dataset.clone(datatype=datatypes)
 
+    @property
+    def loc(self):
+        return loc(self)
 
 
 class xr_dim(dim):
@@ -845,8 +924,8 @@ class xr_dim(dim):
             import xarray as xr
         except ImportError:
             raise ImportError("XArray could not be imported, dim().xr "
-                              "requires the xarray to be available.")
-        super(xr_dim, self).__init__(obj, *args, **kwargs)
+                              "requires the xarray to be available.") from None
+        super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 
     def interface_applies(self, dataset, coerce):

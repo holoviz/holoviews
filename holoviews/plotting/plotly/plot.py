@@ -1,18 +1,20 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from holoviews.plotting.util import attach_streams
-from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
-                     HoloMap, GridSpace, GridMatrix)
-from ...element import Histogram
+
+from ...core import AdjointLayout, Empty, GridMatrix, GridSpace, HoloMap, NdLayout
 from ...core.options import Store
 from ...core.util import wrap_tuple
+from ...element import Histogram
 from ..plot import (
-    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+    CallbackPlot,
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
 )
-from .util import figure_grid, configure_matching_axes_from_dims
+from .util import configure_matching_axes_from_dims, figure_grid
 
 
 class PlotlyPlot(DimensionedPlot, CallbackPlot):
@@ -61,14 +63,11 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     adjoint_spacing = param.Number(default=20, bounds=(0, None))
 
     shared_axes = param.Boolean(default=True, doc="""
-            Whether axes should be shared across plots""")
-
-    shared_axes = param.Boolean(default=True, doc="""
         Whether axes ranges should be shared across the layout, if
         disabled switches axiswise normalization option on globally.""")
 
     def __init__(self, layout, **params):
-        super(LayoutPlot, self).__init__(layout, **params)
+        super().__init__(layout, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
@@ -85,7 +84,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
@@ -108,7 +107,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
             # to create the correct subaxes for all plots in the layout
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -174,8 +173,8 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
             if plot_type is None:
                 self.param.warning(
-                    "Plotly plotting class for %s type not found, "
-                    "object will not be rendered." % vtype.__name__)
+                    f"Plotly plotting class for {vtype.__name__} type not found, "
+                    "object will not be rendered.")
                 continue
             num = num if len(self.coords) > 1 else 0
             subplot = plot_type(element, keys=self.keys,
@@ -252,8 +251,7 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, is_geo=False):
         """
@@ -264,7 +262,6 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         empty axes as necessary.
         """
         return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
-
 
     def generate_plot(self, key, ranges=None, is_geo=False):
         adjoined_plots = []
@@ -298,7 +295,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
@@ -309,12 +306,12 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
 
     def _create_subplots(self, layout, ranges):
-        subplots = OrderedDict()
+        subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
-        for i, coord in enumerate(layout.keys(full_grid=True)):
+        for coord in layout.keys(full_grid=True):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             # Create subplot
@@ -335,8 +332,8 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             if plotting_class is None:
                 if view is not None:
                     self.param.warning(
-                        "Plotly plotting class for %s type not found, "
-                        "object will not be rendered." % vtype.__name__)
+                        f"Plotly plotting class for {vtype.__name__} type not found, "
+                        "object will not be rendered.")
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,

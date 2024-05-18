@@ -1,10 +1,9 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
-from .selection import PlotlyOverlaySelectionDisplay
+from ..mixins import MultiDistributionMixin
 from .chart import ChartPlot
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class BivariatePlot(ChartPlot, ColorbarPlot):
@@ -24,7 +23,7 @@ class BivariatePlot(ChartPlot, ColorbarPlot):
         return {'type': 'histogram2dcontour'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(BivariatePlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
 
         if self.ncontours:
@@ -77,10 +76,7 @@ class DistributionPlot(ElementPlot):
         return {'type': 'scatter', 'mode': 'lines'}
 
 
-class MultiDistributionPlot(ElementPlot):
-
-    def _get_axis_dims(self, element):
-        return element.kdims, element.vdims[0]
+class MultiDistributionPlot(MultiDistributionMixin, ElementPlot):
 
     def get_data(self, element, ranges, style, **kwargs):
         if element.kdims:
@@ -91,6 +87,8 @@ class MultiDistributionPlot(ElementPlot):
         axis = 'x' if self.invert_axes else 'y'
         for key, group in groups:
             if element.kdims:
+                if isinstance(key, str):
+                    key = (key,)
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
@@ -98,10 +96,6 @@ class MultiDistributionPlot(ElementPlot):
             plots.append(data)
         return plots
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super(MultiDistributionPlot, self).get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
 
 
 class BoxWhiskerPlot(MultiDistributionPlot):
@@ -135,14 +129,13 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         return {'type': 'box'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        options = super(BoxWhiskerPlot, self).graph_options(element, ranges, style, **kwargs)
+        options = super().graph_options(element, ranges, style, **kwargs)
         options['boxmean'] = self.mean
         options['jitter'] = self.jitter
         return options
 
 
 class ViolinPlot(MultiDistributionPlot):
-
 
     box = param.Boolean(default=True, doc="""
         Whether to draw a boxplot inside the violin""")
@@ -161,7 +154,7 @@ class ViolinPlot(MultiDistributionPlot):
         return {'type': 'violin'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        options = super(ViolinPlot, self).graph_options(
+        options = super().graph_options(
             element, ranges, style, **kwargs
         )
         options['meanline'] = {'visible': self.meanline}

@@ -1,15 +1,18 @@
 from weakref import WeakValueDictionary
 
-from param.parameterized import add_metaclass
-
-from ...streams import (
-    Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY,
-    SelectionXY
-)
-
-from .util import _trace_to_subplot
-
 from ...element import Tiles
+from ...streams import (
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    RangeX,
+    RangeXY,
+    RangeY,
+    Selection1D,
+    SelectionXY,
+    Stream,
+)
+from .util import _trace_to_subplot
 
 
 class PlotlyCallbackMetaClass(type):
@@ -21,25 +24,24 @@ class PlotlyCallbackMetaClass(type):
     """
 
     def __init__(cls, name, bases, attrs):
-        super(PlotlyCallbackMetaClass, cls).__init__(name, bases, attrs)
+        super().__init__(name, bases, attrs)
 
         # Create weak-value dictionary to hold instances of the class
         cls.instances = WeakValueDictionary()
 
     def __call__(cls, *args, **kwargs):
-        inst = super(PlotlyCallbackMetaClass, cls).__call__(*args, **kwargs)
+        inst = super().__call__(*args, **kwargs)
 
         # Store weak reference to the callback instance in the _instances
         # WeakValueDictionary. This will allow instances to be garbage collected and
-        # the references will be automatically removed from the colleciton when this
+        # the references will be automatically removed from the collection when this
         # happens.
         cls.instances[inst.plot.trace_uid] = inst
 
         return inst
 
 
-@add_metaclass(PlotlyCallbackMetaClass)
-class PlotlyCallback(object):
+class PlotlyCallback(metaclass=PlotlyCallbackMetaClass):
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -114,7 +116,7 @@ class BoundsCallback(PlotlyCallback):
 
         # Initialize event data by clearing box selection on everything
         event_data = {}
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_uid = trace.get('uid', None)
             if cls.boundsx and cls.boundsy:
                 stream_data = dict(bounds=None)
@@ -123,7 +125,7 @@ class BoundsCallback(PlotlyCallback):
             elif cls.boundsy:
                 stream_data = dict(boundsy=None)
             else:
-                stream_data = dict()
+                stream_data = {}
 
             event_data[trace_uid] = stream_data
 
@@ -136,7 +138,7 @@ class BoundsCallback(PlotlyCallback):
     @classmethod
     def update_event_data_xyaxis(cls, range_data, traces, event_data):
         # Process traces
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
@@ -159,14 +161,14 @@ class BoundsCallback(PlotlyCallback):
                 elif cls.boundsy:
                     stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    stream_data = dict()
+                    stream_data = {}
 
                 event_data[trace_uid] = stream_data
 
     @classmethod
     def update_event_data_mapbox(cls, range_data, traces, event_data):
         # Process traces
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
@@ -188,7 +190,7 @@ class BoundsCallback(PlotlyCallback):
                 elif cls.boundsy:
                     stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    stream_data = dict()
+                    stream_data = {}
 
                 event_data[trace_uid] = stream_data
 
@@ -226,7 +228,7 @@ class RangeCallback(PlotlyCallback):
     def build_event_data_from_viewport(cls, traces, property_value):
         # Process traces
         event_data = {}
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
@@ -235,8 +237,8 @@ class RangeCallback(PlotlyCallback):
 
             xaxis = trace.get('xaxis', 'x').replace('x', 'xaxis')
             yaxis = trace.get('yaxis', 'y').replace('y', 'yaxis')
-            xprop = '{xaxis}.range'.format(xaxis=xaxis)
-            yprop = '{yaxis}.range'.format(yaxis=yaxis)
+            xprop = f'{xaxis}.range'
+            yprop = f'{yaxis}.range'
 
             if not property_value:
                 x_range = None
@@ -265,7 +267,7 @@ class RangeCallback(PlotlyCallback):
     def build_event_data_from_relayout_data(cls, traces, property_value):
         # Process traces
         event_data = {}
-        for trace_ind, trace in enumerate(traces):
+        for trace in traces:
             trace_type = trace.get('type', 'scattermapbox')
             trace_uid = trace.get('uid', None)
 
@@ -332,4 +334,3 @@ callbacks[BoundsY] = BoundsYCallback
 callbacks[RangeXY] = RangeXYCallback
 callbacks[RangeX] = RangeXCallback
 callbacks[RangeY] = RangeYCallback
-

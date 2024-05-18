@@ -1,42 +1,122 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import itertools
 from collections import defaultdict
+from html import escape
 
-import param
 import numpy as np
-
-from bokeh.models import BoxAnnotation, Span, Arrow, Slope
+import pandas as pd
+import param
+from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
+from bokeh.transform import dodge
 from panel.models import HTML
 
-try:
-    from bokeh.models.arrow_heads import TeeHead, NormalHead
-    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
-                 '-': None}
-except:
-    from bokeh.models.arrow_heads import OpenHead, NormalHead
-    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
-                 '-': None}
-from bokeh.transform import dodge
-
-from ...core.util import datetime_types, dimension_sanitizer, basestring
-from ...element import HLine, VLine, VSpan
+from ...core.util import datetime_types, dimension_sanitizer
+from ...element import HLine, HLines, HSpans, VLine, VLines, VSpan, VSpans
 from ..plot import GenericElementPlot
-from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
-from .selection import BokehOverlaySelectionDisplay
-from .styles import base_properties, fill_properties, line_properties, text_properties
+from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
 from .plot import BokehPlot
-from .util import date_to_integer
+from .selection import BokehOverlaySelectionDisplay
+from .styles import (
+    background_properties,
+    base_properties,
+    border_properties,
+    fill_properties,
+    line_properties,
+    text_properties,
+)
+from .util import bokeh32, date_to_integer
+
+arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
+arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
+                '-': None}
+
+
+class _SyntheticAnnotationPlot(ColorbarPlot):
+
+    apply_ranges = param.Boolean(default=True, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = [*line_properties, 'level', 'visible']
+    _allow_implicit_categories = False
+
+    def __init__(self, element, **kwargs):
+        if not bokeh32:
+            name = type(getattr(element, "last", element)).__name__
+            msg = f'{name} element requires Bokeh >=3.2'
+            raise ImportError(msg)
+        super().__init__(element, **kwargs)
+
+    def _init_glyph(self, plot, mapping, properties):
+        self._plot_methods = {"single": self._methods[self.invert_axes]}
+        return super()._init_glyph(plot, mapping, properties)
+
+    def get_data(self, element, ranges, style):
+        data = element.columns(element.kdims)
+        self._get_hover_data(data, element)
+        default = self._element_default[self.invert_axes].kdims
+        mapping = {str(d): str(k) for d, k in zip(default, element.kdims)}
+        return data, mapping, style
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        figure = super().initialize_plot(ranges=ranges, plot=plot, plots=plots, source=source)
+        # Only force labels if no other ranges are set
+        if self.overlaid and set(itertools.chain.from_iterable(ranges)) - {"HSpans", "VSpans", "VLines", "HLines"}:
+            return figure
+        labels = [self.xlabel or "x", self.ylabel or "y"]
+        labels = labels[::-1] if self.invert_axes else labels
+        for ax, label in zip(figure.axis, labels):
+            ax.axis_label = label
+        return figure
+
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        extents = super().get_extents(element, ranges, range_type)
+        if isinstance(element, HLines):
+            extents = np.nan, extents[0], np.nan, extents[2]
+        elif isinstance(element, VLines):
+            extents = extents[0], np.nan, extents[2], np.nan
+        elif isinstance(element, HSpans):
+            extents = pd.array(extents)
+            extents = np.nan, extents[:2].min(), np.nan, extents[2:].max()
+        elif isinstance(element, VSpans):
+            extents = pd.array(extents)
+            extents = extents[:2].min(), np.nan, extents[2:].max(), np.nan
+        return extents
+
+class HLinesAnnotationPlot(_SyntheticAnnotationPlot):
+
+    # If invert_axes is False we use the first method,
+    # and if True the second as _plot_methods(single=...)
+    _methods = ('hspan', 'vspan')
+    _element_default = (HLines, VLines)
+
+
+class VLinesAnnotationPlot(_SyntheticAnnotationPlot):
+
+    _methods = ('vspan', 'hspan')
+    _element_default = (VLines, HLines)
+
+
+class HSpansAnnotationPlot(_SyntheticAnnotationPlot):
+
+    _methods = ('hstrip', 'vstrip')
+    _element_default = (HSpans, VSpans)
+    style_opts = [*fill_properties, *line_properties, 'level', 'visible']
+
+
+class VSpansAnnotationPlot(_SyntheticAnnotationPlot):
+
+    _methods = ('vstrip', 'hstrip')
+    _element_default = (VSpans, HSpans)
+    style_opts = [*fill_properties, *line_properties, 'level', 'visible']
 
 
 class TextPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = text_properties+['color', 'angle', 'visible']
+    style_opts = (text_properties + background_properties
+                  + border_properties + ['color', 'angle', 'visible'])
     _plot_methods = dict(single='text', batched='text')
 
     selection_display = None
-    
+
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y', text='text')
         if self.static_source:
@@ -62,7 +142,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
-        for (key, el), zorder in zip(element.data.items(), zorders):
+        for (_key, el), zorder in zip(element.data.items(), zorders):
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -70,7 +150,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
                 data[k].extend(eld)
         return data, elmapping, style
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         return None, None, None, None
 
 
@@ -89,18 +169,19 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = base_properties + text_properties + ['cmap', 'angle']
+    style_opts = (base_properties + text_properties
+                  + background_properties + border_properties + ['cmap', 'angle'])
 
     _nonvectorized_styles = base_properties + ['cmap']
 
     _plot_methods = dict(single='text', batched='text')
-    _batched_style_opts = text_properties
+    _batched_style_opts = text_properties + background_properties + border_properties
 
     def get_data(self, element, ranges, style):
         style = self.style[self.cyclic_index]
@@ -167,7 +248,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         plot.renderers.append(box)
         return None, box
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         loc = element.data
         if isinstance(element, VLine):
             dim = 'x'
@@ -176,7 +257,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         if self.invert_axes:
             dim = 'x' if dim == 'y' else 'x'
         ranges[dim]['soft'] = loc, loc
-        return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
 
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
@@ -192,7 +273,8 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
     selection_display = None
 
     def get_data(self, element, ranges, style):
-        data, mapping = {}, {}
+        data = {}
+        mapping = {k: None for k in ('left', 'right', 'bottom', 'top')}
         kwd_dim1 = 'left' if isinstance(element, VSpan) else 'bottom'
         kwd_dim2 = 'right' if isinstance(element, VSpan) else 'top'
         if self.invert_axes:
@@ -205,6 +287,10 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         mapping[kwd_dim1] = locs[0]
         mapping[kwd_dim2] = locs[1]
         return (data, mapping, style)
+
+    def _update_glyph(self, renderer, properties, mapping, glyph, source, data):
+        glyph.visible = any(v is not None for v in mapping.values())
+        return super()._update_glyph(renderer, properties, mapping, glyph, source, data)
 
     def _init_glyph(self, plot, mapping, properties):
         """
@@ -243,7 +329,7 @@ class SlopePlot(ElementPlot, AnnotationPlot):
         plot.add_layout(slope)
         return None, slope
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         return None, None, None, None
 
 
@@ -286,7 +372,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
-    style_opts = (['arrow_%s' % p for p in line_properties+fill_properties+['size']] +
+    style_opts = ([f'arrow_{p}' for p in line_properties+fill_properties+['size']] +
                   text_properties)
 
     _style_groups = {'arrow': 'arrow', 'text': 'text'}
@@ -351,7 +437,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
                 for t in ('line', 'fill'):
                     if v is None:
                         continue
-                    key = '_'.join([t, p])
+                    key = f'{t}_{p}'
                     if key not in properties:
                         properties[key] = v
             start = arrow_start(**properties) if arrow_start else None
@@ -363,12 +449,12 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         else:
             properties = {p if p == 'source' else 'text_'+p: v
                           for p, v in properties.items()}
-            renderer, glyph = super(ArrowPlot, self)._init_glyph(
+            renderer, glyph = super()._init_glyph(
                 plot, mapping, properties, key)
         plot.renderers.append(renderer)
         return renderer, glyph
 
-    def get_extents(self, element, ranges=None, range_type='combined'):
+    def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         return None, None, None, None
 
 
@@ -418,9 +504,6 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
           aspect ratio.
     """)
 
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
-
     hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a plot. The
         hook is passed the plot object and the displayed element, and
@@ -431,7 +514,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
     selection_display = None
 
     def __init__(self, element, plot=None, **params):
-        super(DivPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.callbacks = []
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
@@ -450,7 +533,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         self.current_key = key
 
         data, _, _ = self.get_data(element, ranges, {})
-        div = HTML(text=data, width=self.width, height=self.height,
+        div = HTML(text=escape(data), width=self.width, height=self.height,
                    sizing_mode=self.sizing_mode)
         self.handles['plot'] = div
         self._execute_hooks(element)

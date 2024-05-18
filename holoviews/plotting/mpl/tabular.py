@@ -1,15 +1,11 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import param
-
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
 from .element import ElementPlot
 from .plot import mpl_rc_context
-
 
 
 class TablePlot(ElementPlot):
@@ -50,12 +46,11 @@ class TablePlot(ElementPlot):
     _has_axes = False
 
     def __init__(self, table, **params):
-        super(TablePlot, self).__init__(table, **params)
+        super().__init__(table, **params)
         if not self.dynamic:
             self.cell_widths = self._format_table()
         else:
             self.cell_widths = None
-
 
     def _format_table(self):
         cell_widths = defaultdict(int)
@@ -65,7 +60,6 @@ class TablePlot(ElementPlot):
                 continue
             self._update_cell_widths(element, cell_widths)
         return cell_widths
-
 
     def _update_cell_widths(self, element, cell_widths):
         # Mapping from the cell coordinates to the dictionary key.
@@ -86,7 +80,6 @@ class TablePlot(ElementPlot):
                 if len(cell_text) + 2 > cell_widths[col]:
                     cell_widths[col] = len(cell_text) + 2
 
-
     def _cell_value(self, element, row, col):
         summarize = element.rows > self.max_rows
         half_rows = self.max_rows//2
@@ -99,7 +92,6 @@ class TablePlot(ElementPlot):
             if len(cell_text) > self.max_value_len:
                 cell_text = cell_text[:(self.max_value_len-3)]+'...'
         return cell_text
-
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -114,7 +106,6 @@ class TablePlot(ElementPlot):
         axes.set_axis_off()
         axes.add_table(table)
         return self._finalize_axis(self.keys[-1], element=element)
-
 
     def _render_table(self, element, axes):
         if self.dynamic:
@@ -146,7 +137,6 @@ class TablePlot(ElementPlot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
         return table
-
 
     def update_handles(self, key, axes, element, ranges, style):
         table = self._render_table(element, axes)

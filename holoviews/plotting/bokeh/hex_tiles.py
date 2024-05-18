@@ -1,22 +1,17 @@
-from __future__ import absolute_import, division, unicode_literals
-import types
+from collections.abc import Callable
 
-import param
 import numpy as np
-
-try:
-    from bokeh.util.hex import cartesian_to_axial
-except:
-    cartesian_to_axial = None
+import param
+from bokeh.util.hex import cartesian_to_axial
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
-from ...core.util import basestring, isfinite, max_range
+from ...core.util import isfinite, max_range
 from ...element import HexTiles
 from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import base_properties, line_properties, fill_properties
+from .styles import base_properties, fill_properties, line_properties
 
 
 class hex_binning(Operation):
@@ -24,11 +19,11 @@ class hex_binning(Operation):
     Applies hex binning by computing aggregates on a hexagonal grid.
 
     Should not be user facing as the returned element is not directly
-    useable.
+    usable.
     """
 
     aggregator = param.ClassSelector(
-        default=np.size, class_=(types.FunctionType, tuple), doc="""
+        default=np.size, class_=(Callable, tuple), doc="""
       Aggregation function or dimension transform used to compute bin
       values. Defaults to np.size to count the number of values
       in each bin.""")
@@ -105,7 +100,7 @@ Compositor.register(compositor)
 class HexTilesPlot(ColorbarPlot):
 
     aggregator = param.ClassSelector(
-        default=np.size, class_=(types.FunctionType, tuple), doc="""
+        default=np.size, class_=(Callable, tuple), doc="""
       Aggregation function or dimension transform used to compute
       bin values.  Defaults to np.size to count the number of values
       in each bin.""")
@@ -126,7 +121,7 @@ class HexTilesPlot(ColorbarPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+    color_index = param.ClassSelector(default=2, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
@@ -142,7 +137,7 @@ class HexTilesPlot(ColorbarPlot):
       smallest bin will match the size of bins when scaling is disabled.
       Setting value larger than 1 will result in overlapping bins.""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -153,7 +148,7 @@ class HexTilesPlot(ColorbarPlot):
     _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         xdim, ydim = element.kdims[:2]
         ranges[xdim.name]['data'] = xdim.range
         ranges[ydim.name]['data'] = ydim.range
@@ -165,7 +160,7 @@ class HexTilesPlot(ColorbarPlot):
         if yd and ydim.name in ranges:
             ranges[ydim.name]['hard'] = yd.range
             ranges[ydim.name]['hard'] = max_range([yd.soft_range, ranges[ydim.name]['soft']])
-        return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:
@@ -207,7 +202,7 @@ class HexTilesPlot(ColorbarPlot):
         style['aspect_scale'] = scale
         scale_dim = element.get_dimension(self.size_index)
         scale = style.get('scale')
-        if (scale_dim and ((isinstance(scale, basestring) and scale in element) or
+        if (scale_dim and ((isinstance(scale, str) and scale in element) or
                            isinstance(scale, dim_transform))):
             self.param.warning("Cannot declare style mapping for 'scale' option "
                                "and declare a size_index; ignoring the size_index.")

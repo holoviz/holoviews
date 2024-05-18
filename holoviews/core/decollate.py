@@ -1,13 +1,21 @@
-import param
-from .operation import OperationCallable
-from .. import (
-    Layout, DynamicMap, Element, Callable, Overlay, GridSpace, NdOverlay, HoloMap
-)
-from . import ViewableTree, AdjointLayout
 from collections import namedtuple
-from ..streams import Stream, Derived
 
+import param
+
+from .. import (
+    Callable,
+    DynamicMap,
+    Element,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdOverlay,
+    Overlay,
+)
 from ..plotting.util import initialize_dynamic
+from ..streams import Derived, Stream
+from . import AdjointLayout, ViewableTree
+from .operation import OperationCallable
 
 Expr = namedtuple("HoloviewsExpr", ["fn", "args", "kwargs"])
 StreamIndex = namedtuple("StreamIndex", ["index"])
@@ -42,7 +50,7 @@ def to_expr_extract_streams(
             not in a container
     Returns:
         HoloviewsExpr expression representing hvobj if hvobj is dynamic. Otherwise,
-        reutrn hvobj itself
+        return hvobj itself
     """
     if isinstance(hvobj, DynamicMap):
         args = []
@@ -93,10 +101,9 @@ def to_expr_extract_streams(
                 expand_kwargs = False
                 if "kwargs" in hvobj.callback.operation_kwargs:
                     kwargs.append(hvobj.callback.operation_kwargs["kwargs"])
-            else:
+            elif hvobj.callback.operation_kwargs:
                 # Preserve custom operation kwargs
-                if hvobj.callback.operation_kwargs:
-                    kwargs.append(hvobj.callback.operation_kwargs)
+                kwargs.append(hvobj.callback.operation_kwargs)
         else:
             fn = hvobj.callback.callable
             args.extend(kdim_args)
@@ -177,7 +184,7 @@ def to_expr_extract_streams(
     elif isinstance(hvobj, Element):
         return hvobj.clone(link=False)
     else:
-        raise NotImplementedError("Type {typ} not implemented".format(typ=type(hvobj)))
+        raise NotImplementedError(f"Type {type(hvobj)} not implemented")
 
 
 def expr_to_fn_of_stream_contents(expr, nkdims):
@@ -187,7 +194,7 @@ def expr_to_fn_of_stream_contents(expr, nkdims):
             args = [eval_expr(arg, kdim_values, stream_values) for arg in expr.args]
             kwargs_list = [eval_expr(kwarg, kdim_values, stream_values) for kwarg in
                            expr.kwargs]
-            kwargs = dict()
+            kwargs = {}
             for kwargs_el in kwargs_list:
                 kwargs.update(**eval_expr(kwargs_el, kdim_values, stream_values))
             # For a ParameterizedFunction (e.g. an Operation), drop keys that are not

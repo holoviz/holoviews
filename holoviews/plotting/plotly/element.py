@@ -1,9 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import re
 import uuid
+
 import numpy as np
 import param
-import re
 
 from ... import Tiles
 from ...core import util
@@ -15,7 +14,12 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key
 from .plot import PlotlyPlot
 from .util import (
-    STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types, merge_layout)
+    STYLE_ALIASES,
+    get_colorscale,
+    legend_trace_types,
+    merge_figure,
+    merge_layout,
+)
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
@@ -109,7 +113,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     _nonvectorized_styles = []
 
     def __init__(self, element, plot=None, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.trace_uid = str(uuid.uuid4())
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks, self.source_streams = self._construct_callbacks()
@@ -142,8 +146,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if is_geo and not self._supports_geo:
             raise ValueError(
-                "Elements of type {typ} cannot be overlaid with Tiles elements "
-                "using the plotly backend".format(typ=type(element))
+                f"Elements of type {type(element)} cannot be overlaid "
+                "with Tiles elements using the plotly backend"
             )
 
         if element is None:
@@ -151,7 +155,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         # Set plot options
         plot_opts = self.lookup_options(element, 'plot').options
-        self.param.set_param(**{k: v for k, v in plot_opts.items()
+        self.param.update(**{k: v for k, v in plot_opts.items()
                                 if k in self.param})
 
         # Get ranges
@@ -170,11 +174,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             ]
             if unsupported_opts:
                 raise ValueError(
-                    "The following {typ} style options are not supported by the Plotly "
-                    "backend when overlaid on Tiles:\n"
-                    "    {unsupported_opts}".format(
-                        typ=type(element).__name__, unsupported_opts=unsupported_opts
-                    )
+                    f"The following {type(element).__name__} style options are not supported by the Plotly "
+                    f"backend when overlaid on Tiles:\n    {unsupported_opts}"
                 )
 
         # Get data and options and merge them
@@ -246,7 +247,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if self.trace_kwargs(is_geo=is_geo).get('type', None) in legend_trace_types:
             opts.update(
-                showlegend=self.show_legend, legendgroup=element.group)
+                showlegend=self.show_legend, legendgroup=element.group+'_'+legend) # make legendgroup unique for single trace enable/disable
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
@@ -268,7 +269,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             opts.update({STYLE_ALIASES.get(k, k): v
                          for k, v in style.items() if k != 'cmap'})
-
         return opts
 
     def init_graph(self, datum, options, index=0, **kwargs):
@@ -336,20 +336,20 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if k == 'marker' and v in 'xsdo':
                     continue
                 elif v in element:
                     v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
-                    v = dim([d for d in self.overlay_dims if d==v][0])
+                    v = dim(next(d for d in self.overlay_dims if d==v))
 
             if not isinstance(v, dim):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.param.warning('Specified %s dim transform %r could not be applied, as not all '
-                             'dimensions could be resolved.' % (k, v))
+                self.param.warning(f'Specified {k} dim transform {v!r} could not be applied, as not all '
+                             'dimensions could be resolved.')
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -358,20 +358,18 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 val = v.apply(element, ranges=ranges, flat=True)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1
-                and not 'color' in k):
+                and 'color' not in k):
                 val = val[0]
 
             if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
-                    raise ValueError('Mapping a dimension to the "{style}" '
+                    raise ValueError(f'Mapping a dimension to the "{k}" '
                                      'style option is not supported by the '
-                                     '{element} element using the {backend} '
-                                     'backend. To map the "{dim}" dimension '
-                                     'to the {style} use a groupby operation '
-                                     'to overlay your data along the dimension.'.format(
-                                         style=k, dim=v.dimension, element=element,
-                                         backend=self.renderer.backend))
+                                     f'{element} element using the {self.renderer.backend} '
+                                     f'backend. To map the "{v.dimension}" dimension '
+                                     f'to the {k} use a groupby operation '
+                                     'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
@@ -441,6 +439,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             xaxis = dict(range=xrange, title=xlabel)
             if self.logx:
                 xaxis['type'] = 'log'
+                xaxis['range'] = np.log10(xaxis['range'])
             self._get_ticks(xaxis, self.xticks)
 
             if self.projection != '3d' and self.xaxis:
@@ -448,10 +447,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
                 # Create dimension string used to compute matching axes
                 if isinstance(xdim, (list, tuple)):
-                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
                                         for d in xdim])
                 else:
-                    dim_str = "%s^%s^%s" % (xdim.name, xdim.label, xdim.unit)
+                    dim_str = f"{xdim.name}^{xdim.label}^{xdim.unit}"
 
                 xaxis['_dim'] = dim_str
 
@@ -478,6 +477,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             yaxis = dict(range=yrange, title=ylabel)
             if self.logy:
                 yaxis['type'] = 'log'
+                yaxis['range'] = np.log10(yaxis['range'])
             self._get_ticks(yaxis, self.yticks)
 
             if self.projection != '3d' and self.yaxis:
@@ -485,10 +485,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
                 # Create dimension string used to compute matching axes
                 if isinstance(ydim, (list, tuple)):
-                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
                                         for d in ydim])
                 else:
-                    dim_str = "%s^%s^%s" % (ydim.name, ydim.label, ydim.unit)
+                    dim_str = f"{ydim.name}^{ydim.label}^{ydim.unit}"
 
                 yaxis['_dim'] = dim_str,
                 if 'bare' in self.yaxis:
@@ -520,14 +520,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 x_delta = r - l
                 y_delta = t - b
 
-                max_x_zoom = (np.log2(max_delta / x_delta) -
-                              np.log2(mapbox_tile_size / viewport_width))
-                max_y_zoom = (np.log2(max_delta / y_delta) -
-                              np.log2(mapbox_tile_size / viewport_height))
+                with np.errstate(divide="ignore"):
+                    max_x_zoom = (np.log2(max_delta / x_delta) -
+                                np.log2(mapbox_tile_size / viewport_width))
+                    max_y_zoom = (np.log2(max_delta / y_delta) -
+                                np.log2(mapbox_tile_size / viewport_height))
                 mapbox["zoom"] = min(max_x_zoom, max_y_zoom)
             layout["mapbox"] = mapbox
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             scene = dict(xaxis=xaxis, yaxis=yaxis)
             if zdim:
                 zrange = [z1, z0] if self.invert_zaxis else [z0, z1]
@@ -556,7 +557,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
                 ticks, labels = zip(*ticker)
-                labels = [l if isinstance(l, util.basestring) else str(l)
+                labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
                 axis_props['tickvals'] = ticks
                 axis_props['ticktext'] = labels
@@ -603,11 +604,19 @@ class ColorbarPlot(ElementPlot):
         opts = {}
         dim_name = dim_range_key(eldim)
         if self.colorbar:
-            if isinstance(eldim, dim):
-                title = str(eldim) if eldim.ops else str(eldim)[1:-1]
-            else:
-                title = eldim.pprint_label
-            opts['colorbar'] = dict(title=title, **self.colorbar_opts)
+            opts['colorbar'] = dict(**self.colorbar_opts)
+            if 'title' not in opts['colorbar']:
+                if isinstance(eldim, dim):
+                    title = str(eldim)
+                    if eldim.ops:
+                        pass
+                    elif title.startswith("dim('") and title.endswith("')"):
+                        title = title[5:-2]
+                    else:
+                        title = title[1:-1]
+                else:
+                    title = eldim.pprint_label
+                opts['colorbar']['title']=title
             opts['showscale'] = True
         else:
             opts['showscale'] = False
@@ -673,7 +682,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        return self.generate_plot(list(self.hmap.data.keys())[0], ranges, is_geo=is_geo)
+        return self.generate_plot(next(iter(self.hmap.data.keys())), ranges, is_geo=is_geo)
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
         if element is None:
@@ -686,12 +695,12 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                                            self._propagate_options,
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.param.set_param(**plot_opts)
+        self.param.update(**plot_opts)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
 
-        # Check if elements should be overlayed in geographic coordinates using mapbox
+        # Check if elements should be overlaid in geographic coordinates using mapbox
         #
         # Pass this through to generate_plot to build geo version of plot
         for _, el in items:
@@ -710,7 +719,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                 el = None
 
             # propagate plot options to subplots
-            subplot.param.set_param(**plot_opts)
+            subplot.param.update(**plot_opts)
 
             fig = subplot.generate_plot(key, ranges, el, is_geo=is_geo)
             if figure is None:

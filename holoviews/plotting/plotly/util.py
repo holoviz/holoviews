@@ -1,5 +1,3 @@
-from __future__ import division
-
 import copy
 import re
 
@@ -120,7 +118,7 @@ STYLE_ALIASES = {'alpha': 'opacity',
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
-_subplot_re = re.compile('\D*(\d+)')
+_subplot_re = re.compile(r'\D*(\d+)')
 
 
 def _get_subplot_number(subplot_val):
@@ -589,15 +587,14 @@ def merge_layout(obj, subobj):
 
             # append
             obj[prop].extend(val)
-        else:
+        elif prop == "style" and val == "white-bg" and obj.get("style", None):
             # Handle special cases
-            if prop == "style" and val == "white-bg" and obj.get("style", None):
-                # Don't let layout.mapbox.style of "white-bg" override other
-                # background
-                pass
-            elif val is not None:
-                # init/overwrite
-                obj[prop] = copy.deepcopy(val)
+            # Don't let layout.mapbox.style of "white-bg" override other
+            # background
+            pass
+        elif val is not None:
+            # init/overwrite
+            obj[prop] = copy.deepcopy(val)
 
 
 def _compute_subplot_domains(widths, spacing):
@@ -608,7 +605,7 @@ def _compute_subplot_domains(widths, spacing):
     Parameters
     ----------
     widths: list of float
-        List of the desired withs of each subplot. The length of this list
+        List of the desired widths of each subplot. The length of this list
         is also the specification of the number of desired subplots
     spacing: float
         Spacing between subplots in normalized coordinates
@@ -653,7 +650,7 @@ def figure_grid(figures_grid,
         produce the resulting figure.  None values maybe used to leave empty
         grid cells
     row_spacing: float (default 50)
-        Vertical spacing between rows in the gird in pixels
+        Vertical spacing between rows in the grid in pixels
     column_spacing: float (default 50)
         Horizontal spacing between columns in the grid in pixels
         coordinates
@@ -751,8 +748,8 @@ def figure_grid(figures_grid,
                 if responsive:
                     scale_x = 1./ncols
                     scale_y = 1./nrows
-                    px = ((0.2/(ncols) if ncols > 1 else 0))
-                    py = ((0.2/(nrows) if nrows > 1 else 0))
+                    px = (0.2/(ncols) if ncols > 1 else 0)
+                    py = (0.2/(nrows) if nrows > 1 else 0)
                     sx = scale_x-px
                     sy = scale_y-py
                     _scale_translate(fig, sx, sy, scale_x*c+px/2., scale_y*r+py/2.)
@@ -875,7 +872,7 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
             # Get axis reference as used by matching ('xaxis3' -> 'x3')
             axis_ref = k.replace('axis', '')
 
-            # Append axis entry to maping
+            # Append axis entry to mapping
             axis_pair = (axis_ref, v)
             axis_map[matching_val].append(axis_pair)
 

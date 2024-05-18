@@ -1,7 +1,5 @@
-from __future__ import absolute_import, division, unicode_literals
-
-import param
 import numpy as np
+import param
 
 from .element import ColorbarPlot
 

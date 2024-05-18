@@ -1,16 +1,9 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
-
-try:
-    import itertools.izip as zip
-except ImportError:
-    pass
-
 from itertools import product
 
 import numpy as np
+import pandas as pd
 
 from .. import util
 from ..dimension import dimension_name
@@ -55,7 +48,6 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import cudf
-        import pandas as pd
 
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
@@ -116,9 +108,9 @@ class cuDFInterface(PandasInterface):
             d = dimension_name(d)
             if len([c for c in columns if c == d]) > 1:
                 raise DataError('Dimensions may not reference duplicated DataFrame '
-                                'columns (found duplicate %r columns). If you want to plot '
+                                f'columns (found duplicate {d!r} columns). If you want to plot '
                                 'a column against itself simply declare two dimensions '
-                                'with the same name. '% d, cls)
+                                'with the same name.', cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -129,7 +121,7 @@ class cuDFInterface(PandasInterface):
         if dimension.nodata is not None:
             column = cls.replace_value(column, dimension.nodata)
         if column.dtype.kind == 'O':
-            return np.NaN, np.NaN
+            return np.nan, np.nan
         else:
             return finite_range(column, column.min(), column.max())
 
@@ -201,10 +193,10 @@ class cuDFInterface(PandasInterface):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim, keep_index=True)
-            if util.isdatetime(arr) and util.pd:
+            if util.isdatetime(arr):
                 try:
                     sel = util.parse_datetime_selection(sel)
-                except:
+                except Exception:
                     pass
 
             new_masks = []
@@ -239,6 +231,21 @@ class cuDFInterface(PandasInterface):
                 mask &= new_mask
         return mask
 
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection).to_cupy()
+        extra = (mask[1:] ^ mask[:-1])
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -248,17 +255,15 @@ class cuDFInterface(PandasInterface):
 
         indexed = cls.indexed(dataset, selection)
         if selection_mask is not None:
-            df = df[selection_mask]
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
-
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
         import cudf
         return cudf.concat(dataframes, **kwargs)
-
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -266,7 +271,6 @@ class cuDFInterface(PandasInterface):
         if dimension.name not in data:
             data[dimension.name] = values
         return data
-
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
@@ -280,16 +284,22 @@ class cuDFInterface(PandasInterface):
             agg = agg_map.get(agg, agg)
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             df = getattr(grouped, agg)().reset_index()
         else:
             agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
             agg = agg_map.get(agg, agg)
             if not hasattr(reindexed, agg):
-                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
+                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
-            data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
-            df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
+            try:
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy())}
+            except Exception:
+                # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
+                # Consider using `to_numpy` instead.'
+                # Seen in cudf=21.12.01
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array())}
+            df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
         for vd in vdims:
@@ -331,7 +341,9 @@ class cuDFInterface(PandasInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 
