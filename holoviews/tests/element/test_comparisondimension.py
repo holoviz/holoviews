@@ -1,7 +1,6 @@
 """
 Test cases for Dimension and Dimensioned object comparison.
 """
-
 from holoviews.core import Dimension, Dimensioned
 from holoviews.core.util import NUMPY_GE_200
 from holoviews.element.comparison import ComparisonTestCase
