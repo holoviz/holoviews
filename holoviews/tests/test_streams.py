@@ -11,7 +11,7 @@ from panel.widgets import IntSlider
 
 import holoviews as hv
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import Version
+from holoviews.core.util import NUMPY_GE_200, Version
 from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import *  # noqa (Test all available streams)
@@ -1421,6 +1421,7 @@ class TestExprSelectionStream(ComparisonTestCase):
 
 
     def test_selection_expr_stream_polygon_index_cols(self):
+        # TODO: Should test both spatialpandas and shapely
         # Create SelectionExpr on element
         try: import shapely # noqa
         except ImportError:
@@ -1444,10 +1445,12 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
 
+        format = lambda x: list(map(np.str_, x)) if NUMPY_GE_200 else x
+
         expr_stream.input_streams[2].event(index=[0, 1])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b']))
+            repr(dim('cat').isin(format(['a', 'b'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 1)
@@ -1456,7 +1459,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b']))
+            repr(dim('cat').isin(format(['a', 'b'])))
         )
         self.assertEqual(len(events), 1)
 
@@ -1464,7 +1467,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b', 'c']))
+            repr(dim('cat').isin(format(['a', 'b', 'c'])))
         )
         self.assertEqual(len(events), 2)
 
@@ -1472,7 +1475,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[2].event(index=[1, 2])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['b', 'c']))
+            repr(dim('cat').isin(format(['b', 'c'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 3)

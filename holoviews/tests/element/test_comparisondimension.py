@@ -1,10 +1,9 @@
 """
 Test cases for Dimension and Dimensioned object comparison.
 """
-import numpy as np
-from packaging.version import Version
 
 from holoviews.core import Dimension, Dimensioned
+from holoviews.core.util import NUMPY_GE_200
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -77,7 +76,7 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension4, self.dimension8)
         except AssertionError as e:
-            if Version(np.__version__) >= Version('2.0.0a0'):
+            if NUMPY_GE_200:
                 msg = "Dimension parameter 'values' mismatched: [] != [np.str_('a'), np.str_('b')]"
             else:
                 msg = "Dimension parameter 'values' mismatched: [] != ['a', 'b']"
