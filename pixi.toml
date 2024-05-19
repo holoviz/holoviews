@@ -15,7 +15,7 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
-test-numpy = ["py312", "test-core", "test-unit-task", "np2", "test-example"]
+test-numpy = ["py312", "test-core", "test-unit-task", "numpy2", "test-example"]
 test-gpu = ["py311", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -135,10 +135,10 @@ rmm = { version = "*", channel = "rapidsai" }
 [feature.test-gpu.tasks]
 test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
 
-[feature.np2]
+[feature.numpy2]
 channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "conda-forge"]
 
-[feature.np2.dependencies]
+[feature.numpy2.dependencies]
 numpy = "2.*"
 
 # test dependencies
