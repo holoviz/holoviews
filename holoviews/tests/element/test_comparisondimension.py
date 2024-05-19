@@ -80,6 +80,7 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
             else:
                 msg = "Dimension parameter 'values' mismatched: [] != ['a', 'b']"
             self.assertEqual(str(e), msg)
+
     def test_dimension_comparison_types_unequal(self):
         try:
             self.assertEqual(self.dimension9, self.dimension10)
