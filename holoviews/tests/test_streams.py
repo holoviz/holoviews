@@ -1445,12 +1445,12 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
 
-        format = lambda x: list(map(np.str_, x)) if NUMPY_GE_200 else x
+        fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_200 else x
 
         expr_stream.input_streams[2].event(index=[0, 1])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(format(['a', 'b'])))
+            repr(dim('cat').isin(fmt(['a', 'b'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 1)
@@ -1459,7 +1459,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(format(['a', 'b'])))
+            repr(dim('cat').isin(fmt(['a', 'b'])))
         )
         self.assertEqual(len(events), 1)
 
@@ -1467,7 +1467,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(format(['a', 'b', 'c'])))
+            repr(dim('cat').isin(fmt(['a', 'b', 'c'])))
         )
         self.assertEqual(len(events), 2)
 
@@ -1475,7 +1475,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[2].event(index=[1, 2])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(format(['b', 'c'])))
+            repr(dim('cat').isin(fmt(['b', 'c'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 3)
