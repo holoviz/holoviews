@@ -225,8 +225,12 @@ class Callback:
             streams.append(stream)
 
         try:
+            self.plot.document.hold()
             with set_curdoc(self.plot.document):
                 Stream.trigger(streams)
+                if self.plot.comm:
+                    push_on_root(self.plot.root.ref['id'])
+            self.plot.document.unhold()
         except CallbackError as e:
             if self.plot.root and self.plot.root.ref['id'] in state._handles:
                 handle, _ = state._handles[self.plot.root.ref['id']]
