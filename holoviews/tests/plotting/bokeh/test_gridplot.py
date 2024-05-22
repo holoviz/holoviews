@@ -1,22 +1,20 @@
 import numpy as np
+from bokeh.layouts import Column
+from bokeh.models import Div, Toolbar
 
-from holoviews.core import (HoloMap, GridSpace, NdOverlay, Dataset,
-                            DynamicMap, GridMatrix)
+from holoviews.core import (
+    Dataset,
+    DynamicMap,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    NdOverlay,
+)
 from holoviews.element import Curve, Image, Points
 from holoviews.operation import gridmatrix
 from holoviews.streams import Stream
-from holoviews.plotting.bokeh.util import bokeh3
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.layouts import Column
-from bokeh.models import Div
-
-if bokeh3:
-    from bokeh.models import Toolbar
-else:
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
-
 
 
 class TestGridPlot(TestBokehPlot):
@@ -104,17 +102,14 @@ class TestGridPlot(TestBokehPlot):
         plot.update((1,))
         self.assertEqual(data['A'], hmap1[1].dimension_values(0))
         self.assertEqual(data['B'], hmap1[1].dimension_values(1))
-        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
-        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.nan))
+        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
     def test_grid_set_toolbar_location(self):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         self.assertIsInstance(plot.state, Column)
-        if bokeh3:
-            self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
-        else:
-            self.assertIsInstance(plot.state.children[0].children[0], Toolbar)
+        self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
 
 
     def test_grid_disable_toolbar(self):

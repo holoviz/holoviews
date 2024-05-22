@@ -1,13 +1,13 @@
 import os
 
-from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from param import concrete_descendents
 from colorcet import kbc, register_cmap
+from matplotlib import rc_params_from_file
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from packaging.version import Version
+from param import concrete_descendents
 
-from ...core import Layout, Collator, GridMatrix, config
-from ...core.options import Cycle, Palette, Options
+from ...core import Collator, GridMatrix, Layout, config
+from ...core.options import Cycle, Options, Palette
 from ...core.overlay import NdOverlay, Overlay
 from ...element import *
 from ..plot import PlotSelector
@@ -23,12 +23,10 @@ from .hex_tiles import *
 from .path import *
 from .plot import *
 from .raster import *
+from .renderer import MPLRenderer
 from .sankey import *
 from .stats import *
 from .tabular import *
-
-from .renderer import MPLRenderer
-
 
 mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
 
@@ -152,6 +150,7 @@ Store.register({Curve: CurvePlot,
                                        False: HeatMapPlot},
                                       True),
                 Image: RasterPlot,
+                ImageStack: RGBPlot,
                 RGB: RGBPlot,
                 HSV: RGBPlot,
 
@@ -164,6 +163,10 @@ Store.register({Curve: CurvePlot,
                 Sankey: SankeyPlot,
 
                 # Annotation plots
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 VLine: VLinePlot,
                 HLine: HLinePlot,
                 VSpan: VSpanPlot,
@@ -270,6 +273,11 @@ options.Slope = Options('style', color=Cycle())
 options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.Spline = Options('style', edgecolor=Cycle())
+options.HLines = Options('style', color=Cycle())
+options.VLines = Options('style', color=Cycle())
+options.VSpans = Options('style', alpha=0.5, facecolor=Cycle())
+options.HSpans = Options('style', alpha=0.5, facecolor=Cycle())
+options.Labels = Options('style', color=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 # Paths

@@ -1,10 +1,10 @@
 import datetime as dt
 
 import numpy as np
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
+
 from holoviews.core import NdOverlay
 from holoviews.element import Spikes
-
-from bokeh.models import CategoricalColorMapper, LinearColorMapper
 from holoviews.plotting.bokeh.util import property_to_dict
 
 from ..utils import ParamLogStream

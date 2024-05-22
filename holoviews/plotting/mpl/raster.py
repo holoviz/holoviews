@@ -1,17 +1,16 @@
 import sys
 
-import param
 import numpy as np
+import param
 from packaging.version import Version
 
-from ...core import CompositeOverlay, Element
-from ...core import traversal
+from ...core import CompositeOverlay, Element, traversal
 from ...core.util import isfinite, match_spec, max_range, unique_iterator
-from ...element.raster import Image, Raster, RGB
+from ...element.raster import RGB, Image, Raster
 from ..util import categorical_legend
 from .chart import PointPlot
-from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
-from .plot import MPLPlot, GridPlot, mpl_rc_context
+from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
+from .plot import GridPlot, MPLPlot, mpl_rc_context
 from .util import get_raster_array, mpl_version
 
 
@@ -191,6 +190,9 @@ class QuadMeshPlot(ColorbarPlot):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
+        if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
+            plot_kwargs.pop('vmin', None)
+            plot_kwargs.pop('vmax', None)
         if colorbar and mpl_version < Version('3.1'):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):

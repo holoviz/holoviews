@@ -1,12 +1,14 @@
 """
 Test cases for Dimension and Dimensioned object behaviour.
 """
-from holoviews.core import Dimensioned, Dimension
-from holoviews.element.comparison import ComparisonTestCase
-from ..utils import LoggingComparisonTestCase
-
 import numpy as np
 import pandas as pd
+
+from holoviews.core import Dimension, Dimensioned
+from holoviews.element.comparison import ComparisonTestCase
+
+from ..utils import LoggingComparisonTestCase
+
 
 class DimensionNameLabelTest(LoggingComparisonTestCase):
 
@@ -36,7 +38,7 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
 
     def test_dimension_dict_empty(self):
         with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
-            Dimension(dict())
+            Dimension({})
 
     def test_dimension_dict_label(self):
         with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):

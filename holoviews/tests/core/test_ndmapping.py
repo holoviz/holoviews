@@ -1,15 +1,17 @@
-from collections import OrderedDict
 
 import numpy as np
 
+from holoviews import Dataset, HoloMap
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import (
-    MultiDimensionalMapping, NdMapping, UniformNdMapping
+    MultiDimensionalMapping,
+    NdMapping,
+    UniformNdMapping,
 )
 from holoviews.core.overlay import Overlay
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import HoloMap, Dataset
+
 
 class DimensionTest(ComparisonTestCase):
 
@@ -41,7 +43,7 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def setUp(self):
         self.init_items_1D_list = [(1, 'a'), (5, 'b')]
         self.init_item_list = [((1, 2.0), 'a'), ((5, 3.0), 'b')]
-        self.init_item_odict = OrderedDict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
+        self.init_item_odict = dict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
         self.dimension_labels = ['intdim', 'floatdim']
         self.dim1 = Dimension('intdim', type=int)
         self.dim2 = Dimension('floatdim', type=float)

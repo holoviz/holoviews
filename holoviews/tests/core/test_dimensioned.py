@@ -4,7 +4,9 @@ import pickle
 from holoviews.element.chart import Curve
 from holoviews.core.spaces import HoloMap
 from holoviews.core.element import Element
-from holoviews.core.options import Store, Keywords, Options, OptionTree
+from holoviews.core.options import Keywords, Options, OptionTree, Store
+from holoviews.core.spaces import HoloMap
+
 from ..utils import LoggingComparisonTestCase
 
 
@@ -42,7 +44,11 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         Store.renderers.pop('backend_2')
 
     @classmethod
-    def register_custom(cls, objtype, backend, custom_plot=[], custom_style=[]):
+    def register_custom(cls, objtype, backend, custom_plot=None, custom_style=None):
+        if custom_style is None:
+            custom_style = []
+        if custom_plot is None:
+            custom_plot = []
         groups = Options._option_groups
         if backend not in Store._options:
             Store._options[backend] = OptionTree([], groups=groups)

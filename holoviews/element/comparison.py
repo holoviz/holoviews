@@ -17,20 +17,33 @@ methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
+import contextlib
 from functools import partial
+from unittest import TestCase
+from unittest.util import safe_repr
+
 import numpy as np
 import pandas as pd
-from unittest.util import safe_repr
-from unittest import TestCase
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from . import *    # noqa (All Elements need to support comparison)
-from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
-                    HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix, OrderedDict)
-from ..core.options import Options, Cycle
-from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
-                         is_float)
+from ..core import (
+    AdjointLayout,
+    Dimension,
+    Dimensioned,
+    DynamicMap,
+    Element,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
+)
+from ..core.options import Cycle, Options
+from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
+from . import *  # noqa (All Elements need to support comparison)
 
 
 class ComparisonInterface:
@@ -112,7 +125,6 @@ class Comparison(ComparisonInterface):
 
         # Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
-        cls.equality_type_funcs[OrderedDict] =  cls.compare_dictionaries
 
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray]          = cls.compare_arrays
@@ -229,8 +241,8 @@ class Comparison(ComparisonInterface):
             cls.assertEqual(len(l1), len(l2))
             for v1, v2 in zip(l1, l2):
                 cls.assertEqual(v1, v2)
-        except AssertionError:
-            raise AssertionError(msg or f'{l1!r} != {l2!r}')
+        except AssertionError as e:
+            raise AssertionError(msg or f'{l1!r} != {l2!r}') from e
 
 
     @classmethod
@@ -239,8 +251,8 @@ class Comparison(ComparisonInterface):
             cls.assertEqual(len(t1), len(t2))
             for i1, i2 in zip(t1, t2):
                 cls.assertEqual(i1, i2)
-        except AssertionError:
-            raise AssertionError(msg or f'{t1!r} != {t2!r}')
+        except AssertionError as e:
+            raise AssertionError(msg or f'{t1!r} != {t2!r}') from e
 
 
     #=====================#
@@ -263,7 +275,7 @@ class Comparison(ComparisonInterface):
             try:
                 cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:
-                raise cls.failureException(msg + str(e)[11:])
+                raise cls.failureException(msg + str(e)[11:]) from e
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
@@ -276,8 +288,8 @@ class Comparison(ComparisonInterface):
                 if isinstance(v2, datetime_types):
                     v2 = dt_to_int(v2)
                 cls.assert_array_almost_equal_fn(v1, v2)
-        except AssertionError:
-            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.")
+        except AssertionError as e:
+            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.") from e
 
 
     #=======================================#
@@ -309,7 +321,7 @@ class Comparison(ComparisonInterface):
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
                 msg = f'Dimension parameter {k!r} mismatched: '
-                raise cls.failureException(f"{msg}{e!s}")
+                raise cls.failureException(f"{msg}{e!s}") from e
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -523,12 +535,20 @@ class Comparison(ComparisonInterface):
             raise AssertionError("%s not of matching length, %d vs. %d."
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
+            with contextlib.suppress(Exception):
+                np.testing.assert_equal(d1, d2)
+                continue  # if equal, no need to check further
+
             if d1.dtype != d2.dtype:
-                cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                     + f" First has type {d1}, and second has type {d2}.")
+                failure_msg = (
+                    f"{msg} {dim.pprint_label} columns have different type. "
+                    f"First has type {d1}, and second has type {d2}."
+                )
+                raise cls.failureException(failure_msg)
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
-                    cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
+                    failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
+                    raise cls.failureException(failure_msg)
             else:
                 cls.compare_arrays(d1, d2, msg)
 
@@ -692,7 +712,7 @@ class Comparison(ComparisonInterface):
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:
-            raise cls.failureException(msg+': '+str(e))
+            raise cls.failureException(f'{msg}: {e}') from e
 
     #============#
     # Statistics #
@@ -757,3 +777,16 @@ class ComparisonTestCase(Comparison, TestCase):
         registry = Comparison.register()
         for k, v in registry.items():
             self.addTypeEqualityFunc(k, v)
+
+
+_assert_element_equal = ComparisonTestCase().assertEqual
+
+def assert_element_equal(element1, element2):
+    # Filter non-holoviews elements
+    hv_types = (Element, Layout)
+    if not isinstance(element1, hv_types):
+        raise TypeError(f"First argument is not an allowed type but a {type(element1).__name__!r}.")
+    if not isinstance(element2, hv_types):
+        raise TypeError(f"Second argument is not an allowed type but a {type(element2).__name__!r}.")
+
+    _assert_element_equal(element1, element2)

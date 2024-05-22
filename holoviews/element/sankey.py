@@ -2,16 +2,15 @@ import math
 from functools import cmp_to_key
 from itertools import cycle
 
-import param
 import numpy as np
+import param
 
-from ..core.dimension import Dimension
 from ..core.data import Dataset
+from ..core.dimension import Dimension
 from ..core.operation import Operation
 from ..core.util import get_param_values, unique_array
-from .graphs import Graph, Nodes, EdgePaths
+from .graphs import EdgePaths, Graph, Nodes
 from .util import quadratic_bezier
-
 
 _Y_N_DECIMAL_DIGITS = 6
 _Y_EPS = 10 ** -_Y_N_DECIMAL_DIGITS
@@ -445,8 +444,7 @@ class Sankey(Graph):
                 raise TypeError(f"Expected Nodes object in data, found {type(nodes)}.")
             self._nodes = nodes
             if not isinstance(edgepaths, self.edge_type):
-                raise TypeError("Expected EdgePaths object in data, found %s."
-                                % type(edgepaths))
+                raise TypeError(f"Expected EdgePaths object in data, found {type(edgepaths)}.")
             self._edgepaths = edgepaths
             self._sankey = sankey_graph
         self._validate()

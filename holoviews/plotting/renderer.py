@@ -4,43 +4,42 @@ regardless of plotting package or backend.
 """
 import base64
 import os
-
-from io import BytesIO, StringIO
 from contextlib import contextmanager
 from functools import partial
+from io import BytesIO, StringIO
 
-import param
 import panel as pn
-
+import param
 from bokeh.document import Document
-from bokeh.io import curdoc
 from bokeh.embed import file_html
+from bokeh.io import curdoc
 from bokeh.resources import CDN, INLINE
 from packaging.version import Version
 from panel import config
-from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
+from panel.io.notebook import ipywidget, load_notebook, render_mimebundle, render_model
 from panel.io.state import state
 from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
-from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
+from panel.widgets.player import PlayerBase
 from pyviz_comms import CommManager
+
 try:
     # Added in Panel 1.0 to support JS -> Python binary comms
     from panel.io.notebook import JupyterCommManagerBinary as JupyterCommManager
 except ImportError:
     from pyviz_comms import JupyterCommManager
 
-from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
+from param.parameterized import bothmethod
+
+from ..core import AdjointLayout, DynamicMap, HoloMap, Layout
 from ..core.data import disable_pipeline
 from ..core.io import Exporter
-from ..core.options import Store, StoreOptions, SkipRendering, Compositor
+from ..core.options import Compositor, SkipRendering, Store, StoreOptions
 from ..core.util import unbound_dimensions
 from ..streams import Stream
 from . import Plot
-from .util import displayable, collate, initialize_dynamic
-
-from param.parameterized import bothmethod
+from .util import collate, displayable, initialize_dynamic
 
 panel_version = Version(pn.__version__)
 
@@ -409,7 +408,8 @@ class Renderer(Exporter):
         client_comm = self.comm_manager.get_client_comm(
             on_msg=partial(plot._on_msg, ref, manager),
             on_error=partial(plot._on_error, ref),
-            on_stdout=partial(plot._on_stdout, ref)
+            on_stdout=partial(plot._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         manager.client_comm_id = client_comm.id
         return render_mimebundle(model, doc, comm, manager)
@@ -542,7 +542,7 @@ class Renderer(Exporter):
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise SkipRendering(f"No plotting class for {element_type.__name__} found.")
+            raise SkipRendering(f"No plotting class for {element_type.__name__} found.") from None
         return plotclass
 
     @classmethod
@@ -558,12 +558,16 @@ class Renderer(Exporter):
         raise NotImplementedError
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
+    def save(self_or_cls, obj, basename, fmt='auto', key=None, info=None,
              options=None, resources='inline', title=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
 

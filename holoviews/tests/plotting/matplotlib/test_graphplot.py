@@ -1,14 +1,13 @@
 import numpy as np
 import pytest
-
-from holoviews.core.data import Dataset
-from holoviews.core.options import Cycle
-from holoviews.core.spaces import HoloMap
-from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
-from holoviews.util.transform import dim
-from holoviews.core.options import AbbreviatedException
 from matplotlib.collections import LineCollection, PolyCollection
 from packaging.version import Version
+
+from holoviews.core.data import Dataset
+from holoviews.core.options import AbbreviatedException, Cycle
+from holoviews.core.spaces import HoloMap
+from holoviews.element import Chord, Graph, Nodes, TriMesh, circular_layout
+from holoviews.util.transform import dim
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -206,7 +205,8 @@ class TestMplGraphPlot(TestMPLPlot):
 
         if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
-            with self.assertRaises(Exception):
+            msg = 'TypeError: alpha must be a float or None'
+            with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(graph)
         else:
             plot = mpl_renderer.get_plot(graph)
@@ -400,7 +400,8 @@ class TestMplTriMeshPlot(TestMPLPlot):
 
         if Version(mpl.__version__) < Version("3.4.0"):
             # Python 3.6 only support up to matplotlib 3.3
-            with self.assertRaises(Exception):
+            msg = "TypeError: alpha must be a float or None"
+            with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(trimesh)
         else:
             plot = mpl_renderer.get_plot(trimesh)

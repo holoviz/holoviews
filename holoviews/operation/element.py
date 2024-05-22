@@ -3,26 +3,43 @@ Collection of either extremely generic or simple Operation
 examples.
 """
 import warnings
+from functools import partial
 
 import numpy as np
 import param
-
 from packaging.version import Version
 from param import _is_number
 
-from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
-                    HoloMap, Dataset, Element, Collator, Dimension)
+from ..core import (
+    Collator,
+    Dataset,
+    Dimension,
+    Element,
+    GridMatrix,
+    HoloMap,
+    NdOverlay,
+    Operation,
+    Overlay,
+)
 from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
-    group_sanitizer, label_sanitizer, datetime_types, isfinite,
-    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+    datetime_types,
+    dt_to_int,
+    group_sanitizer,
+    is_cupy_array,
+    is_dask_array,
+    is_ibis_expr,
+    isdatetime,
+    isfinite,
+    label_sanitizer,
 )
 from ..element.chart import Histogram, Scatter
-from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
-from ..element.util import categorical_aggregate2d # noqa (API import)
+from ..element.raster import RGB, Image
+from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
+from ..util.locator import MaxNLocator
 
 column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
@@ -545,13 +562,14 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from matplotlib.contour import QuadContourSet
-            from matplotlib.axes import Axes
-            from matplotlib.figure import Figure
-            from matplotlib.dates import num2date, date2num
+            from contourpy import (
+                FillType,
+                LineType,
+                __version__ as contourpy_version,
+                contour_generator,
+            )
         except ImportError:
-            raise ImportError("contours operation requires matplotlib.")
-        extent = element.range(0) + element.range(1)[::-1]
+            raise ImportError("contours operation requires contourpy.") from None
 
         xs = element.dimension_values(0, True, flat=False)
         ys = element.dimension_values(1, True, flat=False)
@@ -571,6 +589,15 @@ class contours(Operation):
         # if any data is a datetime, transform to matplotlib's numerical format
         data_is_datetime = tuple(isdatetime(arr) for k, arr in enumerate(data))
         if any(data_is_datetime):
+            if any(data_is_datetime[:2]) and self.p.filled:
+                raise RuntimeError("Datetime spatial coordinates are not supported "
+                                   "for filled contour calculations.")
+
+            try:
+                from matplotlib.dates import date2num, num2date
+            except ImportError:
+                raise ImportError("contours operation using datetimes requires matplotlib.") from None
+
             data = tuple(
                 date2num(d) if is_datetime else d
                 for d, is_datetime in zip(data, data_is_datetime)
@@ -583,61 +610,117 @@ class contours(Operation):
             contour_type = Contours
         vdims = element.vdims[:1]
 
-        kwargs = {}
         levels = self.p.levels
         zmin, zmax = element.range(2)
-        if isinstance(self.p.levels, int):
+        if isinstance(levels, int):
             if zmin == zmax:
                 contours = contour_type([], [xdim, ydim], vdims)
                 return (element * contours) if self.p.overlaid else contours
-            data += (levels,)
+            else:
+                # The +1 is consistent with Matplotlib's use of MaxNLocator for contours.
+                locator = MaxNLocator(levels + 1)
+                levels = locator.tick_values(zmin, zmax)
         else:
-            kwargs = {'levels': levels}
+            levels = np.array(levels)
 
-        fig = Figure()
-        ax = Axes(fig, [0, 0, 1, 1])
-        contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
-                                     extent=extent, **kwargs)
-        levels = np.array(contour_set.get_array())
+        if data_is_datetime[2]:
+            levels = date2num(levels)
+
         crange = levels.min(), levels.max()
         if self.p.filled:
-            levels = levels[:-1] + np.diff(levels)/2.
             vdims = [vdims[0].clone(range=crange)]
 
+        if Version(contourpy_version) >= Version('1.2'):
+            line_type = LineType.ChunkCombinedNan
+        else:
+            line_type = LineType.ChunkCombinedOffset
+
+        cont_gen = contour_generator(
+            *data,
+            line_type=line_type,
+            fill_type=FillType.ChunkCombinedOffsetOffset,
+        )
+
+        def coords_to_datetime(coords):
+            # coords is a 1D numpy array containing floats and possibly nans.
+            # Cannot pass nans to matplotlib's num2date.
+            nan_mask = np.isnan(coords)
+            any_nan = np.any(nan_mask)
+            if any_nan:
+                coords[nan_mask] = 0
+            coords = np.array(num2date(coords))
+            if any_nan:
+                coords[nan_mask] = np.nan
+            return coords
+
+        def points_to_datetime(points):
+            # transform x/y coordinates back to datetimes
+            xs, ys = np.split(points, 2, axis=1)
+            if data_is_datetime[0]:
+                xs = coords_to_datetime(xs)
+            if data_is_datetime[1]:
+                ys = coords_to_datetime(ys)
+            return np.concatenate((xs, ys), axis=1)
+
         paths = []
-        empty = np.array([[np.nan, np.nan]])
-        for level, cset in zip(levels, contour_set.collections):
-            exteriors = []
-            interiors = []
-            for geom in cset.get_paths():
-                interior = []
-                polys = geom.to_polygons(closed_only=False)
-                for ncp, cp in enumerate(polys):
-                    if any(data_is_datetime[0:2]):
-                        # transform x/y coordinates back to datetimes
-                        xs, ys = np.split(cp, 2, axis=1)
-                        if data_is_datetime[0]:
-                            xs = np.array(num2date(xs))
-                        if data_is_datetime[1]:
-                            ys = np.array(num2date(ys))
-                        cp = np.concatenate((xs, ys), axis=1)
-                    if ncp == 0:
-                        exteriors.append(cp)
+        if self.p.filled:
+            empty = np.array([[np.nan, np.nan]])
+            for lower_level, upper_level in zip(levels[:-1], levels[1:]):
+                filled = cont_gen.filled(lower_level, upper_level)
+                # Only have to consider last index 0 as we are using contourpy without chunking
+                if (points := filled[0][0]) is None:
+                    continue
+
+                exteriors = []
+                interiors = []
+                if any(data_is_datetime[0:2]):
+                    points = points_to_datetime(points)
+
+                offsets = filled[1][0]
+                outer_offsets = filled[2][0]
+
+                # Loop through exterior polygon boundaries.
+                for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
+                    if exteriors:
                         exteriors.append(empty)
-                    else:
-                        interior.append(cp)
-                if len(polys):
+                    exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])
+
+                    # Loop over the (jend-jstart-1) interior boundaries.
+                    interior = [points[offsets[j]:offsets[j + 1]] for j in range(jstart+1, jend)]
                     interiors.append(interior)
-            if not exteriors:
-                continue
-            geom = {
-                element.vdims[0].name:
-                num2date(level) if data_is_datetime[2] else level,
-                (xdim, ydim): np.concatenate(exteriors[:-1])
-            }
-            if self.p.filled and interiors:
-                geom['holes'] = interiors
-            paths.append(geom)
+                level = (lower_level + upper_level) / 2
+                geom = {
+                    element.vdims[0].name:
+                    num2date(level) if data_is_datetime[2] else level,
+                    (xdim, ydim): np.concatenate(exteriors) if exteriors else [],
+                }
+                if interiors:
+                    geom['holes'] = interiors
+                paths.append(geom)
+        else:
+            for level in levels:
+                lines = cont_gen.lines(level)
+                # Only have to consider last index 0 as we are using contourpy without chunking
+                if (points := lines[0][0]) is None:
+                    continue
+
+                if any(data_is_datetime[0:2]):
+                    points = points_to_datetime(points)
+
+                # If line_type == LineType.ChunkCombinedNan then points are already in
+                # the correct nan-separated format.
+                if line_type == LineType.ChunkCombinedOffset:
+                    offsets = lines[1][0]
+                    if offsets is not None and len(offsets) > 2:
+                        # Casting offsets to int64 to avoid possible numpy UFuncOutputCastingError
+                        offsets = offsets[1:-1].astype(np.int64)
+                        points = np.insert(points, offsets, np.nan, axis=0)
+                geom = {
+                    element.vdims[0].name:
+                    num2date(level) if data_is_datetime[2] else level,
+                    (xdim, ydim): points if points is not None else [],
+                }
+                paths.append(geom)
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         if self.p.overlaid:
             contours = element * contours
@@ -672,6 +755,9 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
+    groupby_range = param.Selector(default="shared", objects=["shared", "separated"], doc="""
+        Whether to group the histograms along the same range or separate them.""")
+
     log = param.Boolean(default=False, doc="""
       Whether to use base 10 logarithmic samples for the bin edges.""")
 
@@ -699,15 +785,7 @@ class histogram(Operation):
     style_prefix = param.String(default=None, allow_None=None, doc="""
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
-    def _process(self, element, key=None):
-        if self.p.groupby:
-            if not isinstance(element, Dataset):
-                raise ValueError('Cannot use histogram groupby on non-Dataset Element')
-            grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
-            self.p.groupby = None
-            return grouped.map(self._process, Dataset)
-
-        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
+    def _get_dim_and_data(self, element):
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
@@ -718,6 +796,21 @@ class histogram(Operation):
             data = element.interface.values(element, selected_dim, compute=False)
         else:
             data = element.dimension_values(selected_dim)
+        return dim, data
+
+    def _process(self, element, key=None, groupby=False):
+        if self.p.groupby:
+            if not isinstance(element, Dataset):
+                raise ValueError('Cannot use histogram groupby on non-Dataset Element')
+            grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
+            if self.p.groupby_range == 'shared' and not self.p.bin_range:
+                _, data = self._get_dim_and_data(element)
+                self.p.bin_range = (data.min(), data.max())
+            self.p.groupby = None
+            return grouped.map(partial(self._process, groupby=True), Dataset)
+
+        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
+        dim, data = self._get_dim_and_data(element)
 
         is_datetime = isdatetime(data)
         if is_datetime:
@@ -737,10 +830,16 @@ class histogram(Operation):
 
         # Mask data
         if is_ibis_expr(data):
+            from ..core.data.ibis import ibis5
+
             mask = data.notnull()
             if self.p.nonzero:
                 mask = mask & (data != 0)
-            data = data.to_projection()
+            if ibis5():
+                data = data.as_table()
+            else:
+                # to_projection removed in ibis 5.0.0
+                data = data.to_projection()
             data = data[mask]
             no_data = not len(data.head(1).execute())
             data = data[dim.name]
@@ -771,7 +870,7 @@ class histogram(Operation):
             if isdatetime(edges):
                 edges = edges.astype('datetime64[ns]').astype('int64')
         else:
-            hist_range = self.p.bin_range or element.range(selected_dim)
+            hist_range = self.p.bin_range or element.range(dim)
             # Suppress a warning emitted by Numpy when datetime or timedelta scalars
             # are compared. See https://github.com/numpy/numpy/issues/10095 and
             # https://github.com/numpy/numpy/issues/9210.
@@ -820,7 +919,7 @@ class histogram(Operation):
             if normed == 'height':
                 hist /= hist.max()
         else:
-            hist, edges = np.histogram(data, normed=normed, weights=weights, bins=edges)
+            hist, edges = np.histogram(data, density=normed, weights=weights, bins=edges)
             if self.p.weight_dimension and self.p.mean_weighted:
                 hist_mean, _ = np.histogram(data, density=False, bins=self.p.num_bins)
                 hist /= hist_mean
@@ -851,8 +950,9 @@ class histogram(Operation):
         # Save off the computed bin edges so that if this operation instance
         # is used to compute another histogram, it will default to the same
         # bin edges.
-        self.bins = list(edges)
-        return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
+        if not groupby:
+            self.bins = list(edges)
+        return Histogram((edges, hist), kdims=[dim],
                          label=element.label, **params)
 
 
@@ -1069,9 +1169,11 @@ class gridmatrix(param.ParameterizedFunction):
             return GridMatrix(data)
 
 
-    def _process(self, p, element, ranges={}):
+    def _process(self, p, element, ranges=None):
         # Creates a unified Dataset.data attribute
         # to draw the data from
+        if ranges is None:
+            ranges = {}
         if isinstance(element.data, np.ndarray):
             el_data = element.table(default_datatype)
         else:

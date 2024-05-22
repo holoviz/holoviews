@@ -5,26 +5,33 @@ OR
 holoviews Conversion_Example.ipynb
 """
 
-import sys
-import os
 import argparse
+import os
+import sys
 from argparse import RawTextHelpFormatter
 
 try:
-    import nbformat
     import nbconvert
+    import nbformat
 except ImportError:
     print('nbformat, nbconvert and ipython need to be installed to use the holoviews command')
     sys.exit()
 try:
-    from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
-    from ..ipython.preprocessors import StripMagicsProcessor
+    from ..ipython.preprocessors import (
+        OptsMagicProcessor,
+        OutputMagicProcessor,
+        StripMagicsProcessor,
+    )
 except ImportError:
-    from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
-    from holoviews.ipython.preprocessors import StripMagicsProcessor
+    from holoviews.ipython.preprocessors import (
+        OptsMagicProcessor,
+        OutputMagicProcessor,
+        StripMagicsProcessor,
+    )
 
 from . import examples
 
+_PREPROCESSORS = [OptsMagicProcessor(), OutputMagicProcessor(), StripMagicsProcessor()]
 
 def main():
     if len(sys.argv) < 2:
@@ -56,11 +63,9 @@ def main():
         examples(path=examples_dir, root=root)
 
 
-def export_to_python(filename=None,
-         preprocessors=[OptsMagicProcessor(),
-                        OutputMagicProcessor(),
-                        StripMagicsProcessor()]):
-
+def export_to_python(filename=None, preprocessors=None):
+    if preprocessors is None:
+        preprocessors = _PREPROCESSORS.copy()
     filename = filename if filename else sys.argv[1]
     with open(filename) as f:
         nb = nbformat.read(f, nbformat.NO_CONVERT)

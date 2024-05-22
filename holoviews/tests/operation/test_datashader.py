@@ -1,40 +1,65 @@
 import datetime as dt
-
 from unittest import SkipTest, skipIf
 
+import colorcet as cc
 import numpy as np
 import pandas as pd
 import pytest
-
-from holoviews import (
-    Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
-    QuadMesh, NdOverlay, Contours, Spikes, Spread, Area, Rectangles,
-    Segments, Polygons, Nodes, DynamicMap, Overlay
-)
-from holoviews.util import render
-from holoviews.streams import Tap
-from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
-from holoviews.operation import apply_when
 from packaging.version import Version
 
+from holoviews import (
+    RGB,
+    Area,
+    Contours,
+    Curve,
+    Dataset,
+    Dimension,
+    DynamicMap,
+    Graph,
+    Image,
+    ImageStack,
+    NdOverlay,
+    Nodes,
+    Overlay,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Segments,
+    Spikes,
+    Spread,
+    TriMesh,
+)
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.operation import apply_when
+from holoviews.streams import Tap
+from holoviews.util import render
+
 try:
-    import datashader as ds
     import dask.dataframe as dd
+    import datashader as ds
     import xarray as xr
+
     from holoviews.operation.datashader import (
-        aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, spread, rasterize, datashade, AggregationOperation,
-        inspect, inspect_points, inspect_polygons
+        AggregationOperation,
+        aggregate,
+        datashade,
+        directly_connect_edges,
+        ds_version,
+        dynspread,
+        inspect,
+        inspect_points,
+        inspect_polygons,
+        rasterize,
+        regrid,
+        shade,
+        spread,
+        stack,
     )
 except ImportError:
     raise SkipTest('Datashader not available')
-
-try:
-    import cudf
-    import cupy
-except ImportError:
-    cudf = None
 
 try:
     import spatialpandas
@@ -42,7 +67,6 @@ except ImportError:
     spatialpandas = None
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
-cudf_skip = skipIf(cudf is None, "cuDF not available")
 
 
 import logging
@@ -98,22 +122,25 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(img, expected)
 
     def test_aggregate_points_count_column(self):
-        points = Points([(0.2, 0.3, np.NaN), (0.4, 0.7, 22), (0, 0.99,np.NaN)], vdims='z')
+        points = Points([(0.2, 0.3, np.nan), (0.4, 0.7, 22), (0, 0.99,np.nan)], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count('z'))
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [1, 0]]),
                          vdims=[Dimension('z Count', nodata=0)])
         self.assertEqual(img, expected)
 
-    @cudf_skip
+    @pytest.mark.gpu
     def test_aggregate_points_cudf(self):
+        import cudf
+        import cupy
+
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)], datatype=['cuDF'])
-        self.assertIsInstance(points.data, cudf.DataFrame)
+        assert isinstance(points.data, cudf.DataFrame)
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
                          vdims=[Dimension('Count', nodata=0)])
-        self.assertIsInstance(img.data.Count.data, cupy.ndarray)
+        assert isinstance(img.data.Count.data, cupy.ndarray)
         self.assertEqual(img, expected)
 
     def test_aggregate_zero_range_points(self):
@@ -143,12 +170,18 @@ class DatashaderAggregateTests(ComparisonTestCase):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count_cat('z'))
-        xs, ys = [0.25, 0.75], [0.25, 0.75]
-        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0))},
-                             kdims=['z'])
-        self.assertEqual(img, expected)
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[1, 0], [0, 0]])
+        b = np.array([[0, 1], [0, 0]])
+        c = np.array([[0, 1], [0, 0]])
+        xrds = xr.Dataset(
+            coords={"x": x, "y": y},
+            data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_zero_range(self):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
@@ -185,7 +218,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_aggregate_curve_datetimes_dask(self):
         df = pd.DataFrame(
             data=np.arange(1000), columns=['a'],
-            index=pd.date_range('2019-01-01', freq='1T', periods=1000),
+            index=pd.date_range('2019-01-01', freq='1min', periods=1000),
         )
         ddf = dd.from_pandas(df, npartitions=4)
         curve = Curve(ddf, kdims=['index'], vdims=['a'])
@@ -234,7 +267,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(imgs[1], expected2)
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
-        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
         img = rasterize(Curve(df), dynamic=False, width=3)
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
@@ -458,7 +491,6 @@ class DatashaderAggregateTests(ComparisonTestCase):
         agg = rasterize(rects, width=4, height=4, aggregator='sum', dynamic=False)
         xs = [0.375, 1.125, 1.875, 2.625]
         ys = [0.25, 0.75, 1.25, 1.75]
-        nan = np.nan
         arr = np.array([
             [0.5, 0.5, nan, nan],
             [0.5, 0.5, nan, nan],
@@ -763,25 +795,35 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('z', ds.count()))
-        xs, ys = [0.25, 0.75], [0.25, 0.75]
-        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0)),
-                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims=Dimension('z Count', nodata=0))},
-                             kdims=['z'])
-        self.assertEqual(img, expected)
-
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[1, 0], [0, 0]])
+        b = np.array([[0, 1], [0, 0]])
+        c = np.array([[0, 1], [0, 0]])
+        xrds = xr.Dataset(
+            coords={"x": x, "y": y},
+            data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_mean(self):
         points = Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('cat', ds.mean('z')))
-        xs, ys = [0.25, 0.75], [0.25, 0.75]
-        expected = NdOverlay({'A': Image((xs, ys, [[0.1, nan], [nan, nan]]), vdims='z'),
-                              'B': Image((xs, ys, [[nan, nan], [0.2, nan]]), vdims='z'),
-                              'C': Image((xs, ys, [[nan, nan], [0.3, nan]]), vdims='z')},
-                             kdims=['cat'])
-        self.assertEqual(img, expected)
-
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[0.1, np.nan], [np.nan, np.nan]])
+        b = np.array([[np.nan, 0.2], [np.nan, np.nan]])
+        c = np.array([[np.nan, 0.3], [np.nan, np.nan]])
+        xrds = xr.Dataset(
+            coords={"x": x, "y": y},
+            data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        np.testing.assert_equal(expected.data.to_array("z").values, actual.T.values)
 
 
 class DatashaderShadeTests(ComparisonTestCase):
@@ -823,7 +865,7 @@ class DatashaderShadeTests(ComparisonTestCase):
         self.assertEqual(shaded, expected)
 
     def test_shade_dt_xaxis_constant_yaxis(self):
-        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
         rgb = shade(rasterize(Curve(df), dynamic=False, width=3))
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
@@ -860,7 +902,7 @@ class DatashaderRegridTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
     def test_regrid_rgb_mean(self):
-        arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('f')
+        arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('float64')
         rgb = RGB((range(10), range(5), arr, arr*2, arr*2))
         regridded = regrid(rgb, width=2, height=2, dynamic=False)
         new_arr = np.array([[1.6, 5.6], [6.4, 22.4]])
@@ -1294,6 +1336,21 @@ def test_rasterize_selector(point_plot, sel_fn):
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
 
+def test_rasterize_with_datetime_column():
+    n = 4
+    df = pd.DataFrame({
+        "x": np.random.uniform(-180, 180, n),
+        "y": np.random.uniform(-90, 90, n),
+        "Timestamp": pd.date_range(start="2023-01-01", periods=n, freq="D"),
+        "Value": np.random.rand(n) * 100,
+    })
+    point_plot = Points(df)
+    rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
+    img_agg = rasterize(point_plot, selector=ds.first("Value"), **rast_input)
+
+    assert img_agg["Timestamp"].dtype == np.dtype("datetime64[ns]")
+
+
 
 class DatashaderSpreadTests(ComparisonTestCase):
 
@@ -1486,3 +1543,31 @@ def test_uint64_dtype():
     curve = Curve(df)
     with pytest.raises(TypeError, match="Dtype of uint64 for column A is not supported."):
         rasterize(curve, dynamic=False, height=10, width=10)
+
+
+def test_imagestack_datashader_color_key():
+    d = np.arange(23)
+    df = pd.DataFrame({"x": d, "y": d, "language": list(map(str, d))})
+    points = Points(df, ["x", "y"], ["language"])
+
+    # This will run rasterize which outputs an ImageStack
+    op = datashade(
+        points,
+        aggregator=ds.by("language", ds.count()),
+        color_key=cc.glasbey_light,
+    )
+    render(op)  # should not error out
+
+
+def test_imagestack_datashade_count_cat():
+    # Test for https://github.com/holoviz/holoviews/issues/6154
+    df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
+    op = datashade(Points(df), aggregator=ds.count_cat("c"))
+    render(op)  # should not error out
+
+
+def test_imagestack_dynspread():
+    df = pd.DataFrame({'x':[-16.8, 7.3], 'y': [-0.42, 13.6], 'language':['Marathi', 'Luganda']})
+    points = Points(df, ['x','y'], ['language'])
+    op = dynspread(rasterize(points, aggregator=ds.by('language', ds.count())))
+    render(op)  # should not error out

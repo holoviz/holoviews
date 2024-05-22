@@ -1,27 +1,24 @@
+import asyncio
 import time
 
 import param
 import pytest
-
-from holoviews.core.spaces import DynamicMap
-from holoviews.core.options import Store
-from holoviews.element import Curve, Polygons, Path, HLine
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting import Renderer
-from holoviews.streams import Stream, RangeXY, PlotReset
-
 from bokeh.client import pull_session
 from bokeh.document import Document
 from bokeh.io.doc import curdoc, set_curdoc
 from bokeh.models import ColumnDataSource
-
-from holoviews.plotting.bokeh.callbacks import (
-    Callback, RangeXYCallback, ResetCallback
-)
-from holoviews.plotting.bokeh.renderer import BokehRenderer
-from panel.widgets import DiscreteSlider, FloatSlider
-from panel.io.state import state
 from panel import serve
+from panel.io.state import state
+from panel.widgets import DiscreteSlider, FloatSlider
+
+from holoviews.core.options import Store
+from holoviews.core.spaces import DynamicMap
+from holoviews.element import Curve, HLine, Path, Polygons
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import Renderer
+from holoviews.plotting.bokeh.callbacks import Callback, RangeXYCallback, ResetCallback
+from holoviews.plotting.bokeh.renderer import BokehRenderer
+from holoviews.streams import PlotReset, RangeXY, Stream
 
 bokeh_renderer = BokehRenderer.instance(mode='server')
 
@@ -97,6 +94,13 @@ class TestBokehServer(ComparisonTestCase):
         time.sleep(1)
 
     def _launcher(self, obj, threaded=True, port=6001):
+        try:
+            # In Python 3.12 this will raise a:
+            # `DeprecationWarning: There is no current event loop`
+            asyncio.get_event_loop()
+        except Exception:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+
         self._port = port
         server = serve(obj, threaded=threaded, show=False, port=port)
         time.sleep(0.5)
@@ -124,7 +128,7 @@ class TestBokehServer(ComparisonTestCase):
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in plot.state._event_callbacks
 
-    @pytest.mark.flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=3)
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
         overlay = dmap * HLine(0)
@@ -159,6 +163,9 @@ class TestBokehServer(ComparisonTestCase):
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 2)
+        def loaded():
+            state._schedule_on_load(doc, None)
+        doc.add_next_tick_callback(loaded)
         def run():
             stream.event(y=3)
         doc.add_next_tick_callback(run)
@@ -176,6 +183,9 @@ class TestBokehServer(ComparisonTestCase):
 
         orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(orig_cds.data['y'][2], 2)
+        def loaded():
+            state._schedule_on_load(doc, None)
+        doc.add_next_tick_callback(loaded)
         def run():
             stream.event(y=3)
         doc.add_next_tick_callback(run)

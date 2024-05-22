@@ -6,7 +6,7 @@ import pandas as pd
 from .. import util
 from ..dimension import Dimension
 from ..element import Element
-from ..ndmapping import NdMapping, item_check, OrderedDict, sorted_context
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import Interface
 from .pandas import PandasInterface
 
@@ -82,15 +82,20 @@ class DaskInterface(PandasInterface):
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
-            column = np.sort(column[column.notnull()].compute())
-            return (column[0], column[-1]) if len(column) else (None, None)
+            try:
+                column = np.sort(column[column.notnull()].compute())
+                return (column[0], column[-1]) if len(column) else (None, None)
+            except TypeError:
+                return (None, None)
         else:
             if dimension.nodata is not None:
                 column = cls.replace_value(column, dimension.nodata)
             return dd.compute(column.min(), column.max())
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         dataset.param.warning('Dask dataframes do not support sorting')
         return dataset.data
 
@@ -152,6 +157,9 @@ class DaskInterface(PandasInterface):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is not None:
+            import dask.array as da
+            if isinstance(selection_mask, da.Array):
+                return df.loc[selection_mask]
             return df[selection_mask]
         selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
@@ -159,6 +167,23 @@ class DaskInterface(PandasInterface):
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].compute().iloc[0]
         return df
+
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection)
+        mask = mask.to_dask_array().compute_chunk_sizes()
+        extra = mask[1:] ^ mask[:-1]
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -249,7 +274,9 @@ class DaskInterface(PandasInterface):
         return data.iat[0,0]
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         dims = dataset.dimensions('key', label='name')
         mask = None
@@ -310,7 +337,7 @@ class DaskInterface(PandasInterface):
         if np.isscalar(rows):
             rows = [rows]
 
-        data = OrderedDict()
+        data = {}
         for c in cols:
             data[c] = dataset.data[c].compute().iloc[rows].values
         if scalar:

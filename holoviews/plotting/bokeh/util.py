@@ -1,67 +1,69 @@
 import calendar
 import datetime as dt
-import inspect
 import re
 import time
-
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from itertools import permutations
-from types import FunctionType
 
-import param
 import bokeh
 import numpy as np
 import pandas as pd
-
-from bokeh.core.json_encoder import serialize_json # noqa (API import)
+from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
-from bokeh.layouts import Row, Column
-from bokeh.models import tools
+from bokeh.layouts import Column, Row, group_tools
 from bokeh.models import (
-    Model, DataRange1d, FactorRange, Range1d, Plot, Spacer, CustomJS,
-    GridBox, DatetimeAxis, CategoricalAxis, LinearAxis, LogAxis, MercatorAxis
+    CategoricalAxis,
+    CopyTool,
+    CustomJS,
+    DataRange1d,
+    DatetimeAxis,
+    ExamineTool,
+    FactorRange,
+    FullscreenTool,
+    GridBox,
+    GridPlot,
+    LayoutDOM,
+    LinearAxis,
+    LogAxis,
+    MercatorAxis,
+    Model,
+    Plot,
+    Range1d,
+    SaveTool,
+    Spacer,
+    Tabs,
+    Toolbar,
+    tools,
 )
-from bokeh.models.formatters import (
-    TickFormatter, PrintfTickFormatter
-)
+from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.widgets import DataTable, Div
-from bokeh.themes.theme import Theme
+from bokeh.plotting import figure
 from bokeh.themes import built_in_themes
+from bokeh.themes.theme import Theme
 from packaging.version import Version
 
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
-from ...core.overlay import Overlay, NdOverlay
+from ...core.overlay import NdOverlay, Overlay
+from ...core.spaces import DynamicMap, get_nested_dmaps
 from ...core.util import (
-    arraylike_types, callable_name, cftime_types,
-    cftime_to_timestamp, isnumeric, unique_array
+    arraylike_types,
+    callable_name,
+    cftime_to_timestamp,
+    cftime_types,
+    isnumeric,
+    unique_array,
 )
-from ...core.spaces import get_nested_dmaps, DynamicMap
 from ...util.warnings import warn
 from ..util import dim_axis_label
-from ...util.warnings import deprecated
 
-bokeh_version = Version(bokeh.__version__)
-bokeh3 = bokeh_version >= Version("3.0")
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 bokeh32 = bokeh_version >= Version("3.2")
-
-if bokeh3:
-    from bokeh.layouts import group_tools
-    from bokeh.models.formatters import CustomJSTickFormatter
-    from bokeh.models import Toolbar, Tabs, GridPlot, SaveTool, CopyTool, ExamineTool, FullscreenTool, LayoutDOM
-    from bokeh.plotting import figure
-    class WidgetBox: pass  # Does not exist in Bokeh 3
-
-else:
-    from bokeh.layouts import WidgetBox
-    from bokeh.models.formatters import FuncTickFormatter as CustomJSTickFormatter
-    from bokeh.models.widgets import Tabs
-    from bokeh.models import ToolbarBox as Toolbar  # Not completely correct
-    from bokeh.plotting import Figure as figure
-    class GridPlot: pass  # Does not exist in Bokeh 2
+bokeh33 = bokeh_version >= Version("3.3")
+bokeh34 = bokeh_version >= Version("3.4")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -175,7 +177,7 @@ def compute_plot_size(plot):
     elif isinstance(plot, (Div, Toolbar)):
         # Cannot compute size for Div or Toolbar
         return 0, 0
-    elif isinstance(plot, (Row, Column, Tabs, WidgetBox)):
+    elif isinstance(plot, (Row, Column, Tabs)):
         if not plot.children: return 0, 0
         if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
@@ -296,11 +298,11 @@ def compute_layout_properties(
                 aspect = None
                 if logger:
                     logger.warning(
-                        "%s value was ignored because absolute width and "
+                        f"{aspect_type} value was ignored because absolute width and "
                         "height values were provided. Either supply "
                         "explicit frame_width and frame_height to achieve "
                         "desired aspect OR supply a combination of width "
-                        "or height and an aspect value." % aspect_type)
+                        "or height and an aspect value.")
         elif fixed_width and responsive:
             height = None
             responsive = False
@@ -382,7 +384,7 @@ def compute_layout_properties(
     return aspect_info, dimension_info
 
 
-def merge_tools(plot_grid, disambiguation_properties=None):
+def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False):
     """
     Merges tools defined on a grid of plots into a single toolbar.
     All tools of the same type are merged unless they define one
@@ -395,6 +397,8 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
+            if hide_toolbar and hasattr(item, 'toolbar_location'):
+                item.toolbar_location = None
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
 
@@ -413,20 +417,18 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if p not in disambiguation_properties:
                 ignore.add(p)
 
-    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore)) if tools else Toolbar()
 
 
 def sync_legends(bokeh_layout):
     """This syncs the legends of all plots in a grid based on their name.
-
-    Only works for Bokeh 3 and above.
 
     Parameters
     ----------
     bokeh_layout : bokeh.models.{GridPlot, Row, Column}
         Gridplot to sync legends of.
     """
-    if not bokeh3 or len(bokeh_layout.children) < 2:
+    if len(bokeh_layout.children) < 2:
         return
 
     # Collect all glyph with names
@@ -664,7 +666,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, DataTable):
         width = model.width
         model.width = int(table_padding*width)
-    elif isinstance(model, (WidgetBox, Div)):
+    elif isinstance(model, Div):
         width = model.width
     elif model:
         width = model.width
@@ -687,8 +689,7 @@ def pad_plots(plots):
             row_widths.append(width)
         widths.append(row_widths)
 
-    layout = Column if bokeh3 else WidgetBox
-    plots = [[layout(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+    plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     return plots
 
@@ -706,34 +707,6 @@ def filter_toolboxes(plots):
         plots.children = [filter_toolboxes(child) for child in plots.children
                           if not isinstance(child, Toolbar)]
     return plots
-
-
-def py2js_tickformatter(formatter, msg=''):
-    """
-    Uses py2js to compile a python tick formatter to JS code
-    """
-    deprecated("1.18", "py2js_tickformatter")
-    try:
-        from pscript import py2js
-    except ImportError:
-        param.main.param.warning(
-            msg+'Ensure pscript is installed ("conda install pscript" '
-            'or "pip install pscript")')
-        return
-    try:
-        jscode = py2js(formatter, 'formatter')
-    except Exception as e:
-        error = f'Pyscript raised an error: {e}'
-        error = error.replace('%', '%%')
-        param.main.param.warning(msg+error)
-        return
-
-    args = inspect.getfullargspec(formatter).args
-    arg_define = f'var {args[0]} = tick;' if args else ''
-    return_js = 'return formatter();\n'
-    jsfunc = f"{arg_define}\n{jscode}\n{return_js}"
-    match = re.search(r'(formatter \= function flx_formatter \(.*\))', jsfunc)
-    return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
 
 def get_tab_title(key, frame, overlay):
@@ -874,7 +847,7 @@ def update_shared_sources(f):
         for source in shared_sources:
             expected = source_cols[id(source)]
             found = [c for c in expected if c in source.data]
-            empty = np.full_like(source.data[found[0]], np.NaN) if found else []
+            empty = np.full_like(source.data[found[0]], np.nan) if found else []
             patch = {c: empty for c in expected if c not in source.data}
             source.data.update(patch)
         return ret
@@ -998,7 +971,7 @@ def date_to_integer(date):
     return dt_int
 
 
-def glyph_order(keys, draw_order=[]):
+def glyph_order(keys, draw_order=None):
     """
     Orders a set of glyph handles using regular sort and an explicit
     sort order. The explicit draw order must take the form of a list
@@ -1006,6 +979,8 @@ def glyph_order(keys, draw_order=[]):
     suffix. The draw order may only match subset of the keys and any
     matched items will take precedence over other entries.
     """
+    if draw_order is None:
+        draw_order = []
     keys = sorted(keys)
     def order_fn(glyph):
         matches = [item for item in draw_order if glyph.startswith(item)]
@@ -1155,13 +1130,6 @@ def wrap_formatter(formatter, axis):
     """
     if isinstance(formatter, TickFormatter):
         pass
-    elif isinstance(formatter, FunctionType):
-        msg = f'{axis}formatter could not be converted to tick formatter. '
-        jsfunc = py2js_tickformatter(formatter, msg)
-        if jsfunc:
-            formatter = CustomJSTickFormatter(code=jsfunc)
-        else:
-            formatter = None
     else:
         formatter = PrintfTickFormatter(format=formatter)
     return formatter
@@ -1170,8 +1138,6 @@ def wrap_formatter(formatter, axis):
 def property_to_dict(x):
     """
     Convert Bokeh's property Field and Value to a dictionary
-
-    Was added in bokeh 3.0
     """
 
     try:
@@ -1189,16 +1155,15 @@ def dtype_fix_hook(plot, element):
     # Work-around for problems seen in:
     # https://github.com/holoviz/holoviews/issues/5722
     # https://github.com/holoviz/holoviews/issues/5726
-    # Should be fixed in Bokeh 3.2
+    # https://github.com/holoviz/holoviews/issues/5941
+    # Should be fixed in Bokeh:
+    # https://github.com/bokeh/bokeh/issues/13155
 
-    if not bokeh3:
-        return
-    try:
+    with suppress(Exception):
         renderers = plot.handles["plot"].renderers
         for renderer in renderers:
-            data = renderer.data_source.data
-            for k, v in data.items():
-                if hasattr(v, "dtype") and v.dtype.kind == "U":
-                    data[k] = v.tolist()
-    except Exception:
-        pass
+            with suppress(Exception):
+                data = renderer.data_source.data
+                for k, v in data.items():
+                    if hasattr(v, "dtype") and v.dtype.kind == "U":
+                        data[k] = v.tolist()

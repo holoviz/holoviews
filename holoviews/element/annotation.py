@@ -1,10 +1,45 @@
 from numbers import Number
+
 import numpy as np
 import param
 
-from ..core.util import datetime_types
-from ..core import Dimension, Element2D, Element
+from ..core import Dimension, Element, Element2D
 from ..core.data import Dataset
+from ..core.util import datetime_types
+
+
+class VectorizedAnnotation(Dataset, Element2D):
+
+    _auto_indexable_1d = False
+
+
+class VLines(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
+    group = param.String(default='VLines', constant=True)
+
+
+class HLines(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('y')], bounds=(1, 1))
+    group = param.String(default='HLines', constant=True)
+
+
+class HSpans(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('y0'), Dimension('y1')],
+                       bounds=(2, 2))
+
+    group = param.String(default='HSpans', constant=True)
+
+
+class VSpans(VectorizedAnnotation):
+
+    kdims = param.List(default=[Dimension('x0'), Dimension('x1')],
+                       bounds=(2, 2))
+
+    group = param.String(default='VSpans', constant=True)
+
 
 
 class Annotation(Element2D):
@@ -443,7 +478,7 @@ class Div(Element):
             data = ''
         if not isinstance(data, str):
             raise ValueError("Div element html data must be a string "
-                             "type, found %s type." % type(data).__name__)
+                             f"type, found {type(data).__name__} type.")
         super().__init__(data, **params)
 
 

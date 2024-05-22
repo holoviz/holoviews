@@ -1,24 +1,24 @@
 """
 Test cases for rendering exporters
 """
+import os
 import subprocess
-
-from collections import OrderedDict
+import sys
 from unittest import SkipTest
 
 import numpy as np
-import param
 import panel as pn
+import param
+import pytest
 from matplotlib import style
-
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
-                       GridSpace, Table, Curve)
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream
-from holoviews.plotting.mpl import MPLRenderer, CurvePlot
-from holoviews.plotting.renderer import Renderer
-from panel.widgets import DiscreteSlider, Player, FloatSlider
+from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
+
+from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, ItemTable, Table
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.mpl import CurvePlot, MPLRenderer
+from holoviews.plotting.renderer import Renderer
+from holoviews.streams import Stream
 
 
 class MPLRendererTest(ComparisonTestCase):
@@ -57,13 +57,15 @@ class MPLRendererTest(ComparisonTestCase):
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 257))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (576, 257) or (w, h) == (576, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 509))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
@@ -81,6 +83,7 @@ class MPLRendererTest(ComparisonTestCase):
         data, metadata = self.renderer.components(self.map1, 'gif')
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
+    @pytest.mark.skipif(sys.platform == 'win32' and os.environ.get('GITHUB_RUN_ID'), reason='Skip on Windows CI')
     def test_render_mp4(self):
         devnull = subprocess.DEVNULL
         try:
@@ -105,7 +108,7 @@ class MPLRendererTest(ComparisonTestCase):
         widgets = obj.layout.select(DiscreteSlider)
         self.assertEqual(len(widgets), 1)
         slider = widgets[0]
-        self.assertEqual(slider.options, OrderedDict([(str(i), i) for i in range(5)]))
+        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})

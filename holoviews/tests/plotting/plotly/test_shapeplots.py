@@ -1,7 +1,16 @@
-from holoviews.element import (
-    VLine, HLine, Bounds, Box, Rectangles, Segments, Tiles, Path
-)
 import numpy as np
+
+from holoviews.element import (
+    Bounds,
+    Box,
+    HLine,
+    Path,
+    Rectangles,
+    Segments,
+    Tiles,
+    VLine,
+)
+
 from .test_plot import TestPlotlyPlot
 
 default_shape_color = '#2a3f5f'

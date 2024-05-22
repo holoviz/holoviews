@@ -1,48 +1,121 @@
 import sys
 
 import numpy as np
-
 from bokeh.palettes import all_palettes
 from param import concrete_descendents
 
-from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, GridMatrix, NdLayout, config)
-from ...element import (Curve, Points, Scatter, Image, Raster, Path,
-                        RGB, Histogram, Spread, HeatMap, Contours, Bars,
-                        Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
-                        ErrorBars, Text, HLine, VLine, HSpan, VSpan, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh, VectorField,
-                        Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Rectangles)
-from ...core.options import Options, Cycle, Palette
-
-from .annotation import (
-    TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
-    DivPlot, LabelsPlot, SlopePlot
+from ...core import (
+    AdjointLayout,
+    GridMatrix,
+    GridSpace,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
+    Store,
+    config,
+)
+from ...core.options import Cycle, Options, Palette
+from ...element import (
+    HSV,
+    RGB,
+    Area,
+    Arrow,
+    Bars,
+    Bivariate,
+    Bounds,
+    Box,
+    BoxWhisker,
+    Chord,
+    Contours,
+    Curve,
+    Distribution,
+    Div,
+    EdgePaths,
+    Ellipse,
+    ErrorBars,
+    Graph,
+    HeatMap,
+    HexTiles,
+    Histogram,
+    HLine,
+    HLines,
+    HSpan,
+    HSpans,
+    Image,
+    ImageStack,
+    ItemTable,
+    Labels,
+    Nodes,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Raster,
+    Rectangles,
+    Sankey,
+    Scatter,
+    Segments,
+    Slope,
+    Spikes,
+    Spline,
+    Spread,
+    Table,
+    Text,
+    Tiles,
+    TriMesh,
+    VectorField,
+    Violin,
+    VLine,
+    VLines,
+    VSpan,
+    VSpans,
 )
 from ..plot import PlotSelector
 from ..util import fire
-from .callbacks import Callback # noqa (API import)
-from .element import OverlayPlot, ElementPlot
-from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
-                    AreaPlot, VectorFieldPlot)
-from .geometry import SegmentPlot, RectanglesPlot
-from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
+from .annotation import (
+    ArrowPlot,
+    BoxAnnotationPlot,
+    DivPlot,
+    HLinesAnnotationPlot,
+    HSpansAnnotationPlot,
+    LabelsPlot,
+    LineAnnotationPlot,
+    SlopePlot,
+    SplinePlot,
+    TextPlot,
+    VLinesAnnotationPlot,
+    VSpansAnnotationPlot,
+)
+from .callbacks import Callback  # noqa (API import)
+from .chart import (
+    AreaPlot,
+    BarPlot,
+    CurvePlot,
+    ErrorPlot,
+    HistogramPlot,
+    PointPlot,
+    SideHistogramPlot,
+    SideSpikesPlot,
+    SpikesPlot,
+    SpreadPlot,
+    VectorFieldPlot,
+)
+from .element import ElementPlot, OverlayPlot
+from .geometry import RectanglesPlot, SegmentPlot
+from .graphs import ChordPlot, GraphPlot, NodePlot, TriMeshPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
-from .links import LinkCallback # noqa (API import)
-from .path import PathPlot, PolygonPlot, ContourPlot
-from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
+from .links import LinkCallback  # noqa (API import)
+from .path import ContourPlot, PathPlot, PolygonPlot
+from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot
+from .raster import HSVPlot, ImageStackPlot, QuadMeshPlot, RasterPlot, RGBPlot
 from .renderer import BokehRenderer
 from .sankey import SankeyPlot
-from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
+from .stats import BivariatePlot, BoxWhiskerPlot, DistributionPlot, ViolinPlot
 from .tabular import TablePlot
 from .tiles import TilePlot
-from .util import bokeh_version # noqa (API import)
-
+from .util import bokeh_version  # noqa (API import)
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
@@ -79,6 +152,7 @@ associations = {Overlay: OverlayPlot,
                                        False: HeatMapPlot},
                                       True),
                 QuadMesh: QuadMeshPlot,
+                ImageStack: ImageStackPlot,
 
                 # Paths
                 Path: PathPlot,
@@ -93,6 +167,10 @@ associations = {Overlay: OverlayPlot,
                 Segments: SegmentPlot,
 
                 # Annotations
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
                 HSpan: BoxAnnotationPlot,
@@ -205,6 +283,11 @@ options.VSpan = Options('style', color=Cycle(), alpha=0.5)
 options.HSpan = Options('style', color=Cycle(), alpha=0.5)
 options.Arrow = Options('style', arrow_size=10)
 options.Labels = Options('style', text_align='center', text_baseline='middle')
+options.HLines = Options('style', color=Cycle(), line_width=3, alpha=1, muted_alpha=0.2)
+options.VLines = Options('style', color=Cycle(), line_width=3, alpha=1, muted_alpha=0.2)
+options.VSpans = Options('style', color=Cycle(), alpha=0.5, muted_alpha=0.2)
+options.HSpans = Options('style', color=Cycle(), alpha=0.5, muted_alpha=0.2)
+options.Labels = Options('style', text_color=Cycle(), text_align='center', text_baseline='middle')
 
 # Graphs
 options.Graph = Options(

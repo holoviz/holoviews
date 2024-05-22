@@ -1,5 +1,5 @@
-from unittest import SkipTest
 import unittest
+from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
@@ -11,8 +11,8 @@ except ImportError:
     raise SkipTest("Could not import dask, skipping DaskInterface tests.")
 
 from holoviews.core.data import Dataset
-from holoviews.util.transform import dim
 from holoviews.core.util import pandas_version
+from holoviews.util.transform import dim
 
 from .test_pandasinterface import BasePandasInterfaceTests
 

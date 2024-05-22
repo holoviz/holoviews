@@ -1,11 +1,10 @@
 import pandas as pd
+from bokeh.models import FactorRange
 
 from holoviews.core import NdOverlay
 from holoviews.element import Segments
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import FactorRange
 
 
 class TestSegmentPlot(TestBokehPlot):

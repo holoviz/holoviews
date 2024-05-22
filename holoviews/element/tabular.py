@@ -1,10 +1,8 @@
-from collections import OrderedDict
 
 import numpy as np
-
 import param
 
-from ..core import Element, Dataset, Tabular
+from ..core import Dataset, Element, Tabular
 from ..core.dimension import Dimension, dimension_name
 from .selection import SelectionIndexExpr
 
@@ -12,10 +10,9 @@ from .selection import SelectionIndexExpr
 class ItemTable(Element):
     """
     A tabular element type to allow convenient visualization of either
-    a standard Python dictionary, an OrderedDict or a list of tuples
-    (i.e. input suitable for an OrderedDict constructor). If an
-    OrderedDict is used, the headings will be kept in the correct
-    order. Tables store heterogeneous data with different labels.
+    a standard Python dictionary or a list of tuples
+    (i.e. input suitable for an dict constructor).
+    Tables store heterogeneous data with different labels.
 
     Dimension objects are also accepted as keys, allowing dimensional
     information (e.g. type and units) to be associated per heading.
@@ -44,12 +41,12 @@ class ItemTable(Element):
         if isinstance(data, dict):
             pass
         elif isinstance(data, list):
-            data = OrderedDict(data)
+            data = dict(data)
         else:
-            data = OrderedDict(list(data)) # Python 3
+            data = dict(list(data))
         if "vdims" not in params:
             params['vdims'] = list(data.keys())
-        str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
+        str_keys = dict((dimension_name(k), v) for (k,v) in data.items())
         super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
@@ -60,21 +57,23 @@ class ItemTable(Element):
             return self
         if heading not in self.vdims:
             raise KeyError(f"{heading!r} not in available headings.")
-        return np.array(self.data.get(heading, np.NaN))
+        return np.array(self.data.get(heading, np.nan))
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
-            return np.array([self.data.get(dimension, np.NaN)])
+            return np.array([self.data.get(dimension, np.nan)])
         else:
             return super().dimension_values(dimension)
 
-    def sample(self, samples=[]):
+    def sample(self, samples=None):
+        if samples is None:
+            samples = []
         if callable(samples):
-            sampled_data = OrderedDict(item for item in self.data.items()
+            sampled_data = dict(item for item in self.data.items()
                                        if samples(item))
         else:
-            sampled_data = OrderedDict((s, self.data.get(s, np.NaN)) for s in samples)
+            sampled_data = dict((s, self.data.get(s, np.nan)) for s in samples)
         return self.clone(sampled_data)
 
 
@@ -95,7 +94,7 @@ class ItemTable(Element):
         else:
             dim = self.get_dimension(row)
             heading = self.vdims[row]
-            return dim.pprint_value(self.data.get(heading.name, np.NaN))
+            return dim.pprint_value(self.data.get(heading.name, np.nan))
 
     def hist(self, *args, **kwargs):
         raise NotImplementedError("ItemTables are not homogeneous and "

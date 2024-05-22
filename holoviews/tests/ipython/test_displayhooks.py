@@ -1,5 +1,9 @@
-from holoviews import Store, Curve
-from holoviews.ipython import notebook_extension, IPTestCase
+import pytest
+
+pytest.importorskip("IPython")
+
+from holoviews import Curve, Store
+from holoviews.ipython import IPTestCase, notebook_extension
 
 
 class TestDisplayHooks(IPTestCase):

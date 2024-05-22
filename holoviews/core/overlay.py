@@ -7,15 +7,15 @@ Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
 
-from collections import OrderedDict
 from functools import reduce
-import numpy as np
 
+import numpy as np
 import param
+
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
+from .layout import AdjointLayout, Composable, Layout, Layoutable
 from .ndmapping import UniformNdMapping
-from .layout import Composable, Layout, AdjointLayout, Layoutable
-from .util import sanitize_identifier, unique_array, dimensioned_streams
+from .util import dimensioned_streams, sanitize_identifier, unique_array
 
 
 class Overlayable:
@@ -98,7 +98,7 @@ class CompositeOverlay(ViewableElement, Composable):
             dimension = [dim.name for dim in self.values()[main_layer_int_index].kdims]
         # Compute histogram for each dimension and each element in OverLay
         hists_per_dim = {
-            dim: OrderedDict([  # All histograms for a given dimension
+            dim: dict([  # All histograms for a given dimension
                 (
                     elem_key, elem.hist(
                         adjoin=False, dimension=dim, bin_range=bin_range,
@@ -286,6 +286,11 @@ class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
     @property
     def shape(self):
         raise NotImplementedError
+
+    def clone(self, data=None, shared_data=True, new_type=None, link=True, **overrides):
+        if data is None and link:
+            overrides['plot_id'] = self._plot_id
+        return super().clone(data, shared_data=shared_data, new_type=new_type, link=link, **overrides)
 
 
 class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):

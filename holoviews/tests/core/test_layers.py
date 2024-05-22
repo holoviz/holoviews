@@ -2,7 +2,8 @@ import unittest
 
 import numpy as np
 
-from holoviews import NdOverlay, Element
+from holoviews import Element, NdOverlay
+
 
 class CompositeTest(unittest.TestCase):
     "For testing of basic composite element types"

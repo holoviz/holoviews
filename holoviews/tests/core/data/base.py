@@ -5,17 +5,14 @@ Tests for the Dataset Element types.
 import datetime
 
 import numpy as np
+import pandas as pd
 
-from holoviews import Dataset, HoloMap, Dimension
+from holoviews import Dataset, Dimension, HoloMap
 from holoviews.core.data import concat
 from holoviews.core.data.interface import DataError
-from holoviews.element import Scatter, Curve
+from holoviews.element import Curve, Scatter
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
-
-from collections import OrderedDict
-
-import pandas as pd
 
 
 class DatatypeContext:
@@ -380,7 +377,7 @@ class HomogeneousColumnTests:
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
-        self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes[0]))
+        self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes.iloc[0]))
 
     def test_dataset_transform_replace_hm(self):
         transformed = self.dataset_hm.transform(y=dim('y')*2)
@@ -488,11 +485,11 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init(self):
-        dataset = Dataset(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        dataset = Dataset(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init_alias(self):
-        dataset = Dataset(OrderedDict(zip(self.xs, self.ys)),
+        dataset = Dataset(dict(zip(self.xs, self.ys)),
                           kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
@@ -861,6 +858,12 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                              kdims=self.kdims, vdims=self.vdims+['combined'])
         self.assertEqual(transformed, expected)
 
+    def test_select_with_neighbor(self):
+        select = self.table.interface.select_mask(self.table.dataset, {"Weight": 18})
+        select_neighbor = self.table.interface._select_mask_neighbor(self.table.dataset, dict(Weight=18))
+
+        np.testing.assert_almost_equal(select, [False, True, False])
+        np.testing.assert_almost_equal(select_neighbor, [True, True, True])
 
 
 class ScalarColumnTests:

@@ -3,11 +3,11 @@ import numpy as np
 from holoviews.element import VectorField
 from holoviews.plotting.bokeh.util import property_to_dict
 
-from .test_plot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
-    from bokeh.models import LinearColorMapper, CategoricalColorMapper
+    from bokeh.models import CategoricalColorMapper, LinearColorMapper
 except ImportError:
     pass
 

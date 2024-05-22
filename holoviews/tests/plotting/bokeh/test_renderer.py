@@ -1,26 +1,23 @@
-from collections import OrderedDict
 from io import BytesIO
 from unittest import SkipTest
 
 import numpy as np
+import panel as pn
 import param
-
-from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve
-from holoviews.streams import Stream
-from holoviews.plotting import Renderer
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.bokeh.util import bokeh3
-
+import pytest
+from bokeh.io import curdoc
+from bokeh.themes.theme import Theme
+from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
-import panel as pn
-
-from bokeh.io import curdoc
+from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, Table
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh import BokehRenderer
-from bokeh.themes.theme import Theme
+from holoviews.streams import Stream
 
-from panel.widgets import DiscreteSlider, Player, FloatSlider
 
+@pytest.mark.usefixtures("bokeh_backend")
 class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):
@@ -82,10 +79,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (800, 300))
 
     def test_theme_rendering(self):
-        if bokeh3:
-            attrs = {'figure': {'outline_line_color': '#444444'}}
-        else:
-            attrs = {'Figure': {'outline_line_color': '#444444'}}
+        attrs = {'figure': {'outline_line_color': '#444444'}}
         theme = Theme(json={'attrs' : attrs})
         self.renderer.theme = theme
         plot = self.renderer.get_plot(Curve([]))
@@ -120,7 +114,7 @@ class BokehRendererTest(ComparisonTestCase):
         widgets = obj.layout.select(DiscreteSlider)
         self.assertEqual(len(widgets), 1)
         slider = widgets[0]
-        self.assertEqual(slider.options, OrderedDict([(str(i), i) for i in range(5)]))
+        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -162,6 +156,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
@@ -174,6 +169,7 @@ class BokehRendererTest(ComparisonTestCase):
         slider.value = 3.1
         self.assertEqual(cds.data['y'][2], 3.1)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
@@ -186,6 +182,7 @@ class BokehRendererTest(ComparisonTestCase):
         stream.event(y=3)
         self.assertEqual(cds.data['y'][2], 3)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],

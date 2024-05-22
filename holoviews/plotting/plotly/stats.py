@@ -1,9 +1,9 @@
 import param
 
 from ..mixins import MultiDistributionMixin
-from .selection import PlotlyOverlaySelectionDisplay
 from .chart import ChartPlot
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class BivariatePlot(ChartPlot, ColorbarPlot):
@@ -87,6 +87,8 @@ class MultiDistributionPlot(MultiDistributionMixin, ElementPlot):
         axis = 'x' if self.invert_axes else 'y'
         for key, group in groups:
             if element.kdims:
+                if isinstance(key, str):
+                    key = (key,)
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key

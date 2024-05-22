@@ -6,12 +6,11 @@ quickly draw common shapes.
 """
 
 import numpy as np
-
 import param
+
 from ..core import Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension
-from ..core.util import OrderedDict
 from .geom import Geometry
 from .selection import SelectionPolyExpr
 
@@ -56,7 +55,7 @@ class Path(SelectionPolyExpr, Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=[
+    datatype = param.List(default=[
         'multitabular', 'spatialpandas', 'dask_spatialpandas']
     )
 
@@ -479,5 +478,5 @@ class Bounds(BaseShape):
         super().__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
         xdim, ydim = self.kdims
-        self.data = [OrderedDict([(xdim.name, np.array([l, l, r, r, l])),
+        self.data = [dict([(xdim.name, np.array([l, l, r, r, l])),
                                   (ydim.name, np.array([b, t, t, b, b]))])]

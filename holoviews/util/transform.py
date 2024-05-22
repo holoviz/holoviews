@@ -1,6 +1,4 @@
 import operator
-import sys
-
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -275,7 +273,7 @@ class dim:
             if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
-                                 'found %s type' % type(fn))
+                                 f'found {type(fn)} type')
             self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
 
@@ -293,10 +291,10 @@ class dim:
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot call method on %r expression. "
+            raise ValueError(f"Cannot call method on {self!r} expression. "
                              "Only methods accessed via namespaces, "
                              "e.g. dim(...).df or dim(...).xr), "
-                             "can be called. " % self)
+                             "can be called.")
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
@@ -361,11 +359,7 @@ class dim:
 
     @property
     def params(self):
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-        else:
-            Widget = None
-
+        from panel.widgets.base import Widget
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
@@ -374,18 +368,17 @@ class dim:
                 op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
-                if Widget and isinstance(op_arg, Widget):
+                if isinstance(op_arg, Widget):
                     op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
                 elif isinstance(op_arg, slice):
                     (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
-
-                    if Widget and isinstance(start, Widget):
+                    if isinstance(start, Widget):
                         start = start.param.value
-                    if Widget and isinstance(stop, Widget):
+                    if isinstance(stop, Widget):
                         stop = stop.param.value
-                    if Widget and isinstance(step, Widget):
+                    if isinstance(step, Widget):
                         step = step.param.value
 
                     if isinstance(start, param.Parameter):
@@ -690,7 +683,7 @@ class dim:
         """
         return data
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+    def apply(self, dataset, flat=False, expanded=None, ranges=None, all_values=False,
               keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
@@ -715,6 +708,9 @@ class dim:
         """
         from ..element import Graph
 
+        if ranges is None:
+            ranges = {}
+
         dimension = self.dimension
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
@@ -727,13 +723,13 @@ class dim:
                            "present on the supplied object.")
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:
-                raise ValueError("The expression {!r} assumes a {}-like "
-                                 "API but the dataset contains {} data "
-                                 "and cannot be coerced.".format(self, self.namespace, dataset.interface.datatype))
+                raise ValueError(f"The expression {self!r} assumes a {self.namespace}-like "
+                                 f"API but the dataset contains {dataset.interface.datatype} data "
+                                 "and cannot be coerced.")
             else:
-                raise ValueError("The expression {!r} assumes a {}-like "
-                                 "API but the dataset contains {} data "
-                                 "and coercion is disabled.".format(self, self.namespace, dataset.interface.datatype))
+                raise ValueError(f"The expression {self!r} assumes a {self.namespace}-like "
+                                 f"API but the dataset contains {dataset.interface.datatype} data "
+                                 "and coercion is disabled.")
 
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
@@ -793,7 +789,7 @@ class dim:
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
+            kwargs = ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
@@ -928,7 +924,7 @@ class xr_dim(dim):
             import xarray as xr
         except ImportError:
             raise ImportError("XArray could not be imported, dim().xr "
-                              "requires the xarray to be available.")
+                              "requires the xarray to be available.") from None
         super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 

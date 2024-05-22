@@ -1,4 +1,3 @@
-from collections import OrderedDict
 
 from . import util
 from .pprint import PrettyPrinter
@@ -59,8 +58,8 @@ class AttrTree:
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
-        self.__dict__['data'] = OrderedDict()
-        items = items.items() if isinstance(items, OrderedDict) else items
+        self.__dict__['data'] = {}
+        items = items.items() if isinstance(items, dict) else items
         # Python 3
         items = list(items) if items else items
         items = [] if not items else items
@@ -120,7 +119,7 @@ class AttrTree:
         disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
             raise Exception("Attribute strings in path elements cannot be "
-                            "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))
+                            "correctly escaped : {}".format(','.join(repr(el) for el in disallowed)))
         if len(path) > 1:
             attrtree = self.__getattr__(path[0])
             attrtree.set_path(path[1:], val)
@@ -157,7 +156,7 @@ class AttrTree:
             else:
                 items = [(key, v) for key, v in self.data.items()
                          if not all(k==p for k, p in zip(key, path))]
-                self.data = OrderedDict(items)
+                self.data = dict(items)
         else:
             self.data[path] = val
         if self.parent is not None:

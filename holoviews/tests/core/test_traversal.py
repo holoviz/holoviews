@@ -1,4 +1,4 @@
-from holoviews import HoloMap, DynamicMap, Curve
+from holoviews import Curve, DynamicMap, HoloMap
 from holoviews.core.traversal import unique_dimkeys
 from holoviews.element.comparison import ComparisonTestCase
 
