@@ -749,7 +749,7 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)
-        super().__setstate__({})
+        super().__setstate__(d)
 
 
 class Dimensioned(LabelledData):
