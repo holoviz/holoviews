@@ -136,16 +136,18 @@ rmm = { version = "*", channel = "rapidsai" }
 test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
 
 [feature.numpy2]
-channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "conda-forge"]
+channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "numba/label/dev", "conda-forge"]
 
 [feature.numpy2.dependencies]
 numpy = "2.*"
+numba = { version = "0.60.*", channel = "numba/label/dev" }
+llvmlite = { version = "*", channel = "numba/label/dev" }
 
 # test dependencies
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
-# datashader = ">=0.11.1"
+datashader = ">=0.11.1"
 ffmpeg = "*"
 ibis-sqlite = "*"
 nbconvert = "*"
@@ -159,7 +161,7 @@ xarray = ">=0.10.4"
 xyzservices = "*"
 
 # Examples (removed duplicates)
-netcdf4 = "*"
+# netcdf4 = "*"
 notebook = "*"
 pooch = "*"
 # pyarrow = "*"
