@@ -1,6 +1,7 @@
 import os
 import platform
 import sys
+from importlib.util import find_spec
 
 import bokeh
 import pandas as pd
@@ -60,6 +61,22 @@ if Version(bokeh.__version__) < Version("3.2.0"):
 if system == "Windows" and os.environ.get("GITHUB_RUN_ID"):
     collect_ignore_glob += [
         "user_guide/Plotting_with_Matplotlib.ipynb",
+    ]
+
+# 2024-05: Numpy 2.0
+if find_spec("datashader") is None:
+    collect_ignore_glob += [
+        "reference/elements/matplotlib/ImageStack.ipynb",
+        "reference/elements/plotly/ImageStack.ipynb",
+        "user_guide/15-Large_Data.ipynb",
+        "user_guide/16-Streaming_Data.ipynb",
+        "user_guide/Linked_Brushing.ipynb",
+        "user_guide/Network_Graphs.ipynb",
+    ]
+
+if find_spec("scikit-image"):
+    collect_ignore_glob += [
+        "user_guide/Network_Graphs.ipynb",
     ]
 
 
