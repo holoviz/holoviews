@@ -74,6 +74,11 @@ if find_spec("datashader") is None:
         "user_guide/Network_Graphs.ipynb",
     ]
 
+if find_spec("scikit-image"):
+    collect_ignore_glob += [
+        "user_guide/Network_Graphs.ipynb",
+    ]
+
 
 def pytest_runtest_makereport(item, call):
     """
