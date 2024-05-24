@@ -132,10 +132,12 @@ def serve_hv(page, port):  # noqa: F811
 def reset_store():
     _custom_options = deepcopy(hv.Store._custom_options)
     _options = hv.Store._options.copy()
+    _weakrefs = hv.Store._weakrefs.copy()
     current_backend = hv.Store.current_backend
     renderers = hv.Store.renderers
     yield
     hv.Store._custom_options = _custom_options
     hv.Store._options = _options
+    hv.Store._weakrefs = _weakrefs
     hv.Store.current_backend = current_backend
     hv.Store.renderers = renderers
