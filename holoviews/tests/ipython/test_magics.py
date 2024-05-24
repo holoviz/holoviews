@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import pytest
 from pyviz_comms import CommManager
 
@@ -13,21 +11,18 @@ except ImportError:
     pytest.skip("IPython required to test IPython magics", allow_module_level=True)
 
 
-@pytest.mark.xdist_group(name="ipython-magic")
 class ExtensionTestCase(IPTestCase):
 
     def setUp(self):
-        self.old_custom_options = deepcopy(Store._custom_options)
         super().setUp()
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
         for renderer in Store.renderers.values():
-            renderer.comm_manager = CommManager
+            renderer.comm_manager = CommManager  # TODO: Should set it back
 
     def tearDown(self):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
         super().tearDown()
-        Store._custom_options = self.old_custom_options
 
 
 class TestOptsMagic(ExtensionTestCase):

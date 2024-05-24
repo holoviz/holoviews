@@ -1,7 +1,6 @@
 import contextlib
 import sys
 from collections.abc import Callable
-from copy import deepcopy
 
 import panel as pn
 import pytest
@@ -130,14 +129,13 @@ def serve_hv(page, port):  # noqa: F811
 
 @pytest.fixture(autouse=True)
 def reset_store():
-    _custom_options = deepcopy(hv.Store._custom_options)
+    _custom_options = {k: v.copy() for k, v in hv.Store._custom_options.items()}
     _options = hv.Store._options.copy()
-    _weakrefs = hv.Store._weakrefs.copy()
     current_backend = hv.Store.current_backend
     renderers = hv.Store.renderers
     yield
     hv.Store._custom_options = _custom_options
     hv.Store._options = _options
-    hv.Store._weakrefs = _weakrefs
-    hv.Store.current_backend = current_backend
+    hv.Store._weakrefs = {}
     hv.Store.renderers = renderers
+    hv.Store.set_current_backend(current_backend)
