@@ -56,7 +56,7 @@ class CallbackTestCase(ComparisonTestCase):
         Store.current_backend = self.previous_backend
         bokeh_server_renderer.last_plot = None
         bokeh_renderer.last_plot = None
-        Callback._callbacks = {}
+        Callback._callbacks.clear()
         bokeh_renderer.comm_manager = self.comm_manager
 
 
