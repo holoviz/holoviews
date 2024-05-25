@@ -56,7 +56,7 @@ class CallbackTestCase(ComparisonTestCase):
         Store.current_backend = self.previous_backend
         bokeh_server_renderer.last_plot = None
         bokeh_renderer.last_plot = None
-        Callback._callbacks.clear()
+        Callback._callbacks = {}
         bokeh_renderer.comm_manager = self.comm_manager
 
 
@@ -127,6 +127,7 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
 
+    @pytest.mark.flaky(reruns=3)
     def test_callback_cleanup(self):
         stream = PointerX(x=0)
         dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])

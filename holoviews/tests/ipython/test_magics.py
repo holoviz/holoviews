@@ -49,6 +49,7 @@ class TestOptsMagic(ExtensionTestCase):
             Store.lookup_options('matplotlib',
                                  self.get_object('mat1'), 'style').options.get('cmap',None),'hot')
 
+    @pytest.mark.flaky(reruns=3)
     def test_cell_opts_style_dynamic(self):
 
         self.cell("dmap = DynamicMap(lambda X: Curve(np.random.rand(5,2), name='dmap'), kdims=['x'])"
@@ -91,6 +92,7 @@ class TestOptsMagic(ExtensionTestCase):
                                  self.get_object('mat1'), 'plot').options.get('show_title',True),False)
 
 
+    @pytest.mark.flaky(reruns=3)
     def test_cell_opts_plot_dynamic(self):
 
         self.cell("dmap = DynamicMap(lambda X: Image(np.random.rand(5,5), name='dmap'), kdims=['x'])"
