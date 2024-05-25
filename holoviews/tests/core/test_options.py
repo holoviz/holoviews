@@ -958,6 +958,7 @@ class TestLookupOptions(ComparisonTestCase):
             self.assertNotIn("muted_alpha", options_matplotlib.keys())
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestCrossBackendOptionSpecification(ComparisonTestCase):
     """
     Test the style system can style a single object across backends.
