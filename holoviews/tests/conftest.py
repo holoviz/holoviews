@@ -129,7 +129,7 @@ def serve_hv(page, port):  # noqa: F811
 
 @pytest.fixture(autouse=True)
 def reset_store():
-    _custom_options = {k: v.copy() for k, v in hv.Store._custom_options.items()}
+    _custom_options = {k: {} for k in hv.Store._custom_options}
     _options = hv.Store._options.copy()
     current_backend = hv.Store.current_backend
     renderers = hv.Store.renderers.copy()
