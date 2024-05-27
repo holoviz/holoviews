@@ -85,7 +85,6 @@ test-unit = 'pytest holoviews/tests'
 [feature.test.dependencies]
 cftime = "*"
 contourpy = "*"
-# dash >=1.16
 dask-core = "*"
 datashader = ">=0.11.1"
 ffmpeg = "*"
