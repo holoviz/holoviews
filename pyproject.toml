@@ -160,7 +160,6 @@ ignore = [
     "RUF005", # Consider {expr} instead of concatenation
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
 ]
-
 extend-unsafe-fixes = [
     "F401", # Unused imports
     "F841", # Unused variables
