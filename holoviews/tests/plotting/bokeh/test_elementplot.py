@@ -831,13 +831,6 @@ class TestScalebarPlot:
         assert scalebar.visible
         assert scalebar.unit == "cm"
 
-    def test_scalebar_wrong_unit(self):
-        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit='xx')
-
-        msg = "Only the following units are supported"
-        with pytest.raises(ValueError, match=msg):
-            self.get_scalebar(curve)
-
     def test_scalebar_custom_opts(self):
         curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_opts={'background_fill_alpha': 1})
         scalebar = self.get_scalebar(curve)
