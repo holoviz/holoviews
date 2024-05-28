@@ -65,21 +65,21 @@ def collate(obj):
         nested_type = next(type(o).__name__ for o in obj
                        if isinstance(o, (HoloMap, GridSpace, AdjointLayout)))
         display_warning.param.warning(
-            "Nesting %ss within an Overlay makes it difficult to "
+            f"Nesting {nested_type}s within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
             "calling .collate() on the Overlay in order to follow the "
             "recommended nesting structure shown in the Composing Data "
-            "user guide (http://goo.gl/2YS8LJ)" % nested_type)
+            "user guide (http://goo.gl/2YS8LJ)")
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
         if obj.type in [DynamicMap, HoloMap]:
             obj_name = obj.type.__name__
-            raise Exception("Nesting a %s inside a DynamicMap is not "
+            raise Exception(f"Nesting a {obj_name} inside a DynamicMap is not "
                             "supported. Ensure that the DynamicMap callback "
                             "returns an Element or (Nd)Overlay. If you have "
                             "applied an operation ensure it is not dynamic by "
-                            "setting dynamic=False." % obj_name)
+                            "setting dynamic=False.")
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.param.warning(
@@ -346,7 +346,7 @@ def undisplayable_info(obj, html=False):
         return f'{error}\n{remedy}\n{info}'
     else:
         return "<center>{msg}</center>".format(msg=('<br>'.join(
-            ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
+            [f'<b>{error}</b>', remedy, f'<i>{info}</i>'])))
 
 
 def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):

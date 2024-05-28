@@ -109,7 +109,7 @@ class NotebookArchive(FileArchive):
         self._timestamp = tuple(time.localtime())
         kernel = r'var kernel = IPython.notebook.kernel; '
         nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
-        nbcmd = (r"var name_cmd = '%s.notebook_name = \"' + nbname + '\"'; " % self.namespace)
+        nbcmd = (rf"var name_cmd = '{self.namespace}.notebook_name = \"' + nbname + '\"'; ")
         cmd = (kernel + nbname + nbcmd + "kernel.execute(name_cmd); ")
         display(Javascript(cmd))
         time.sleep(0.5)
@@ -136,7 +136,7 @@ class NotebookArchive(FileArchive):
         self.export_success = None
         name = self.get_namespace()
         # Unfortunate javascript hacks to get at notebook data
-        capture_cmd = ((r"var capture = '%s._notebook_data=r\"\"\"'" % name)
+        capture_cmd = ((rf"var capture = '{name}._notebook_data=r\"\"\"'")
                        + r"+json_string+'\"\"\"'; ")
         cmd = (r'var kernel = IPython.notebook.kernel; '
                + r'var json_data = IPython.notebook.toJSON(); '

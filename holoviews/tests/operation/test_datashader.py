@@ -48,6 +48,7 @@ try:
         datashade,
         directly_connect_edges,
         ds_version,
+        dynspread,
         inspect,
         inspect_points,
         inspect_polygons,
@@ -61,18 +62,11 @@ except ImportError:
     raise SkipTest('Datashader not available')
 
 try:
-    import cudf
-    import cupy
-except ImportError:
-    cudf = None
-
-try:
     import spatialpandas
 except ImportError:
     spatialpandas = None
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
-cudf_skip = skipIf(cudf is None, "cuDF not available")
 
 
 import logging
@@ -135,15 +129,18 @@ class DatashaderAggregateTests(ComparisonTestCase):
                          vdims=[Dimension('z Count', nodata=0)])
         self.assertEqual(img, expected)
 
-    @cudf_skip
+    @pytest.mark.gpu
     def test_aggregate_points_cudf(self):
+        import cudf
+        import cupy
+
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)], datatype=['cuDF'])
-        self.assertIsInstance(points.data, cudf.DataFrame)
+        assert isinstance(points.data, cudf.DataFrame)
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
                          vdims=[Dimension('Count', nodata=0)])
-        self.assertIsInstance(img.data.Count.data, cupy.ndarray)
+        assert isinstance(img.data.Count.data, cupy.ndarray)
         self.assertEqual(img, expected)
 
     def test_aggregate_zero_range_points(self):
@@ -1566,4 +1563,11 @@ def test_imagestack_datashade_count_cat():
     # Test for https://github.com/holoviz/holoviews/issues/6154
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
     op = datashade(Points(df), aggregator=ds.count_cat("c"))
+    render(op)  # should not error out
+
+
+def test_imagestack_dynspread():
+    df = pd.DataFrame({'x':[-16.8, 7.3], 'y': [-0.42, 13.6], 'language':['Marathi', 'Luganda']})
+    points = Points(df, ['x','y'], ['language'])
+    op = dynspread(rasterize(points, aggregator=ds.by('language', ds.count())))
     render(op)  # should not error out

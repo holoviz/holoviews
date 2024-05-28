@@ -178,7 +178,7 @@ class Interface(param.Parameterized):
     @classmethod
     def error(cls):
         info = dict(interface=cls.__name__)
-        url = "http://holoviews.org/user_guide/%s_Datasets.html"
+        url = "https://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
             datatype = 'a list of tabular'
             info['url'] = url % 'Tabular'
@@ -278,7 +278,7 @@ class Interface(param.Parameterized):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {not_found!r}", cls)
 
     @classmethod
     def persist(cls, dataset):
@@ -440,7 +440,7 @@ class Interface(param.Parameterized):
             dimensions, keys = [], [()]*len(datasets)
         else:
             raise DataError('Concatenation only supported for NdMappings '
-                            'and lists of Datasets, found %s.' % type(datasets).__name__)
+                            f'and lists of Datasets, found {type(datasets).__name__}.')
 
         template = datasets[0]
         datatype = datatype or template.interface.datatype
@@ -452,10 +452,10 @@ class Interface(param.Parameterized):
             datatype = 'grid'
 
         if len(datasets) > 1 and not dimensions and cls.interfaces[datatype].gridded:
-            raise DataError('Datasets with %s datatype cannot be concatenated '
+            raise DataError(f'Datasets with {datatype} datatype cannot be concatenated '
                             'without defining the dimensions to concatenate along. '
                             'Ensure you pass in a NdMapping (e.g. a HoloMap) '
-                            'of Dataset types, not a list.' % datatype)
+                            'of Dataset types, not a list.')
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]

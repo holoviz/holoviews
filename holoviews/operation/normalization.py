@@ -12,13 +12,15 @@ operations per element type. Unlike display normalization, data
 normalizations result in transformations to the stored data within
 each element.
 """
+from collections import defaultdict
 
+import numpy as np
 import param
 
 from ..core import Overlay
 from ..core.operation import Operation
 from ..core.util import match_spec
-from ..element import Raster
+from ..element import Chart, Raster
 
 
 class Normalization(Operation):
@@ -175,3 +177,61 @@ class raster_normalization(Normalization):
                 if range:
                     norm_raster.data[:,:,depth] /= range
         return norm_raster
+
+
+class subcoordinate_group_ranges(Operation):
+    """
+    Compute the data range group-wise in a subcoordinate_y overlay,
+    and set the dimension range of each Chart element based on the
+    value computed for its group.
+
+    This operation is useful to visually apply a group-wise min-max
+    normalisation.
+    """
+
+    def _process(self, overlay, key=None):
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            self.param.warning(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
+        vmins = defaultdict(list)
+        vmaxs = defaultdict(list)
+        include_chart = False
+        for el in overlay:
+            # Only applies to Charts.
+            # `group` is the Element type per default (e.g. Curve, Spike).
+            if not isinstance(el, Chart) or el.group == type(el).__name__:
+                continue
+            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
+                self.param.warning(
+                    f"All elements in group {el.group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
+            vmin, vmax = el.range(1)
+            vmins[el.group].append(vmin)
+            vmaxs[el.group].append(vmax)
+            include_chart = True
+
+        if not include_chart or not vmins:
+            return overlay
+
+        minmax = {
+            group: (np.min(vmins[group]), np.max(vmaxs[group]))
+            for group in vmins
+        }
+        new = []
+        for el in overlay:
+            if not isinstance(el, Chart):
+                new.append(el)
+                continue
+            y_dimension = el.vdims[0]
+            y_dimension = y_dimension.clone(range=minmax[el.group])
+            new.append(el.redim(**{y_dimension.name: y_dimension}))
+        return overlay.clone(data=new)

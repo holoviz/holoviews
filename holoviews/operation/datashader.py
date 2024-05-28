@@ -71,6 +71,7 @@ from .resample import LinkableOperation, ResampleOperation2D
 
 ds_version = Version(ds.__version__)
 ds15 = ds_version >= Version('0.15.1')
+ds16 = ds_version >= Version('0.16.0')
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -133,7 +134,7 @@ class AggregationOperation(ResampleOperation2D):
             not isinstance(agg, agg_types)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
-                                 '%s operation to.' % cls.__name__)
+                                 f'{cls.__name__} operation to.')
             inner_element = elements[0]
             if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
                 field = inner_element.nodes.vdims[0].name
@@ -143,9 +144,9 @@ class AggregationOperation(ResampleOperation2D):
                 field = element.kdims[0].name
             else:
                 raise ValueError("Could not determine dimension to apply "
-                                 "'%s' operation to. Declare the dimension "
+                                 f"'{cls.__name__}' operation to. Declare the dimension "
                                  "to aggregate as part of the datashader "
-                                 "aggregator." % cls.__name__)
+                                 "aggregator.")
             agg = type(agg)(field)
         return agg
 
@@ -1388,7 +1389,8 @@ class geometry_rasterize(LineAggregationOperation):
         if element._plot_id in self._precomputed:
             data, col = self._precomputed[element._plot_id]
         else:
-            if 'spatialpandas' not in element.interface.datatype:
+            if (('spatialpandas' not in element.interface.datatype) and
+                (not (ds16 and 'geodataframe' in element.interface.datatype))):
                 element = element.clone(datatype=['spatialpandas'])
             data = element.data
             col = element.interface.geo_column(data)
@@ -1521,8 +1523,7 @@ class rasterize(AggregationOperation):
 
         unused_params = list(all_supplied_kws - all_allowed_kws)
         if unused_params:
-            self.param.warning('Parameter(s) [%s] not consumed by any element rasterizer.'
-                         % ', '.join(unused_params))
+            self.param.warning('Parameter(s) [{}] not consumed by any element rasterizer.'.format(', '.join(unused_params)))
         return element
 
 
@@ -1576,7 +1577,7 @@ class stack(Operation):
         for rgb in overlay:
             if not isinstance(rgb, RGB):
                 raise TypeError("The stack operation expects elements of type RGB, "
-                                "not '%s'." % type(rgb).__name__)
+                                f"not '{type(rgb).__name__}'.")
             rgb = rgb.rgb
             dims = [kd.name for kd in rgb.kdims][::-1]
             coords = {kd.name: rgb.dimension_values(kd, False)
@@ -1643,11 +1644,13 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
+        elif isinstance(element, ImageStack):
+            data = element.data
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
             raise ValueError('spreading can only be applied to Image or RGB Elements. '
-                             'Received object of type %s' % str(type(element)))
+                             f'Received object of type {type(element)!s}')
 
         kwargs = {}
         array = self._apply_spreading(data)

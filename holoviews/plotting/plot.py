@@ -349,8 +349,9 @@ class PlotSelector:
         try:
             return super().__setattr__(label, value)
         except Exception as e:
-            raise Exception("Please set class parameters directly on classes %s"
-                            % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())) from e
+            plot_cls_str = ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())
+            msg = f"Please set class parameters directly on classes {plot_cls_str}"
+            raise Exception(msg) from e
 
     def params(self):
         return self.plot_options
@@ -1118,7 +1119,7 @@ class GenericElementPlot(DimensionedPlot):
        If specified, takes precedence over data and dimension ranges.""")
 
     ylim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       User-specified y-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
     zlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
@@ -1423,7 +1424,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, **kwargs):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, lims_as_soft_ranges=False, **kwargs):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
@@ -1444,6 +1445,12 @@ class GenericElementPlot(DimensionedPlot):
 
         This allows Overlay plots to obtain each range and combine them
         appropriately for all the objects in the overlay.
+
+        If lims_as_soft_ranges is set to True, the xlim and ylim will be treated as
+        soft ranges instead of the default case as hard ranges while computing the extents.
+        This is used e.g. when apply_hard_bounds is True and xlim/ylim is set, in which
+        case we limit the initial viewable range to xlim/ylim, but allow navigation up to
+        the abs max between the data range and xlim/ylim.
         """
         num = 6 if (isinstance(self.projection, str) and self.projection == '3d') else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
@@ -1486,8 +1493,15 @@ class GenericElementPlot(DimensionedPlot):
         else:
             x0, y0, x1, y1 = combined
 
-        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if lims_as_soft_ranges:
+            # run x|ylim through max_range to ensure datetime-dtype matching with ranges
+            xlim_soft_ranges = util.max_range([self.xlim])
+            ylim_soft_ranges = util.max_range([self.ylim])
+            x0, x1 = util.dimension_range(x0, x1, (None, None), xlim_soft_ranges)
+            y0, y1 = util.dimension_range(y0, y1, (None, None), ylim_soft_ranges)
+        else:
+            x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+            y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
@@ -1796,8 +1810,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 self.zoffset += len(subplot.subplots.keys()) - 1
 
         if not subplots:
-            raise SkipRendering("%s backend could not plot any Elements "
-                                "in the Overlay." % self.renderer.backend)
+            raise SkipRendering(f"{self.renderer.backend} backend could not plot any Elements "
+                                "in the Overlay.")
         return subplots
 
     def _create_subplot(self, key, obj, streams, ranges):
@@ -1846,8 +1860,8 @@ class GenericOverlayPlot(GenericElementPlot):
             opts['group_counter'] = self.group_counter
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
-                self.param.warning('%s is empty and will be skipped '
-                                   'during plotting' % obj.last)
+                self.param.warning(f'{obj.last} is empty and will be skipped '
+                                   'during plotting')
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
             param_vals = self.param.values()

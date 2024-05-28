@@ -1,0 +1,208 @@
+[project]
+name = "holoviews"
+channels = ["pyviz/label/dev", "conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[tasks]
+check-latest-packages = 'python scripts/check_latest_packages.py'
+download-data = 'python scripts/download_data.py'
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+
+[environments]
+test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-ui = ["py312", "test-core", "test", "test-ui"]
+test-core = ["py312", "test-core", "test-unit-task"]
+test-numpy = ["py312", "test-core", "test-unit-task", "numpy2", "test-example"]
+test-gpu = ["py311", "test-core", "test", "test-gpu"]
+docs = ["py311", "example", "doc"]
+build = ["py311", "build"]
+lint = ["py311", "lint"]
+
+[dependencies]
+colorcet = "*"
+numpy = ">=1.0"
+packaging = "*"
+pandas = ">=0.20.0"
+panel = ">=1.0"
+param = ">=2.0,<3.0"
+pip = "*"
+pyviz_comms = ">=2.1"
+# Recommended
+bokeh = ">=3.1"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+notebook = "*"
+plotly = ">=4.0"
+
+[feature.py39.dependencies]
+python = "3.9.*"
+
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.example.dependencies]
+cftime = "*"
+dask-core = "*"
+datashader = ">=0.11.1"
+ffmpeg = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = "*"
+pillow = "*"
+pooch = "*"
+pyarrow = "*"
+scikit-image = "*"
+scipy = "*"
+shapely = "*"
+streamz = ">=0.5.0"
+xarray = ">=0.10.4"
+
+# =============================================
+# =================== TESTS ===================
+# =============================================
+[feature.test-core.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-github-actions-annotate-failures = "*"
+pytest-rerunfailures = "*"
+
+[feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
+test-unit = 'pytest holoviews/tests'
+
+[feature.test.dependencies]
+cftime = "*"
+contourpy = "*"
+# dash >=1.16
+dask-core = "*"
+datashader = ">=0.11.1"
+ffmpeg = "*"
+ibis-sqlite = "*"
+nbconvert = "*"
+networkx = "*"
+pillow = "*"
+scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
+selenium = "*"
+shapely = "*"
+spatialpandas = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
+[feature.test.target.unix.dependencies]
+tsdownsample = "*" # currently not available on Windows
+
+[feature.test-example.tasks]
+test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+
+[feature.test-example.dependencies]
+psutil = "*"
+nbval = "*"
+pytest-xdist = "*"
+
+[feature.test-ui]
+channels = ["pyviz/label/dev", "microsoft", "conda-forge"]
+
+[feature.test-ui.dependencies]
+playwright = "*"
+pytest-playwright = "*"
+
+[feature.test-ui.tasks]
+_install-ui = 'playwright install chromium'
+
+[feature.test-ui.tasks.test-ui]
+cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
+depends_on = ["_install-ui"]
+
+[feature.test-gpu]
+channels = ["pyviz/label/dev", "rapidsai", "conda-forge"]
+platforms = ["linux-64"]
+
+[feature.test-gpu.dependencies]
+cuda-version = "12.2.*"
+cudf = "24.04.*"
+cupy = "*"
+cuspatial = "*"
+rmm = { version = "*", channel = "rapidsai" }
+
+[feature.test-gpu.tasks]
+test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
+
+[feature.numpy2]
+channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "numba/label/dev", "conda-forge"]
+
+[feature.numpy2.dependencies]
+numpy = "2.*"
+numba = { version = "0.60.*", channel = "numba/label/dev" }
+llvmlite = { version = "*", channel = "numba/label/dev" }
+
+# test dependencies
+cftime = "*"
+contourpy = "*"
+dask-core = "*"
+datashader = ">=0.11.1"
+ffmpeg = "*"
+ibis-sqlite = "*"
+nbconvert = "*"
+networkx = "*"
+pillow = "*"
+scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
+selenium = "*"
+shapely = "*"
+# spatialpandas = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
+# Examples (removed duplicates)
+# netcdf4 = "*"
+notebook = "*"
+pooch = "*"
+# pyarrow = "*"
+# scikit-image = "*"
+streamz = ">=0.5.0"
+
+# =============================================
+# =================== DOCS ====================
+# =============================================
+[feature.doc.dependencies]
+graphviz = "*"
+nbsite = ">=0.8.4,<0.9.0"
+pooch = "*"
+python-kaleido = "*"
+selenium = "*"
+
+[feature.doc.tasks]
+_docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
+_docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
+_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
+
+[feature.doc.tasks.docs-build]
+depends_on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
+
+# =============================================
+# ================== BUILD ====================
+# =============================================
+[feature.build.dependencies]
+python-build = "*"
+conda-build = "*"
+
+[feature.build.tasks]
+build-conda = 'bash scripts/conda/build.sh'
+build-pip = 'python -m build .'
+
+# =============================================
+# =================== LINT ====================
+# =============================================
+[feature.lint.dependencies]
+pre-commit = "*"
+
+[feature.lint.tasks]
+lint = 'pre-commit run --all-files'
+lint-install = 'pre-commit install'

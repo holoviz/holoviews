@@ -2,10 +2,12 @@ import asyncio
 import base64
 import time
 from collections import defaultdict
+from functools import partial
 
 import numpy as np
 from bokeh.models import (
     BoxEditTool,
+    Button,
     CustomJS,
     DataRange1d,
     DatetimeAxis,
@@ -16,10 +18,24 @@ from bokeh.models import (
     PolyEditTool,
     Range1d,
 )
+from panel.io.notebook import push_on_root
 from panel.io.state import set_curdoc, state
+from panel.pane import panel
 
+try:
+    from bokeh.models import XY, Panel
+except Exception:
+    Panel = XY = None
+
+from ...core.data import Dataset
 from ...core.options import CallbackError
-from ...core.util import datetime_types, dimension_sanitizer, dt64_to_dt, isequal
+from ...core.util import (
+    VersionError,
+    datetime_types,
+    dimension_sanitizer,
+    dt64_to_dt,
+    isequal,
+)
 from ...element import Table
 from ...streams import (
     BoundsX,
@@ -308,9 +324,7 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            task = asyncio.create_task(self.process_on_change())
-            self._background_task.add(task)
-            task.add_done_callback(self._background_task.discard)
+            await self.process_on_change()
 
     async def on_event(self, event):
         """
@@ -321,9 +335,7 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            task = asyncio.create_task(self.process_on_event())
-            self._background_task.add(task)
-            task.add_done_callback(self._background_task.discard)
+            await self.process_on_event()
 
     async def process_on_event(self, timeout=None):
         """
@@ -337,7 +349,7 @@ class Callback:
 
         # Get unique event types in the queue
         events = list(dict([(event.event_name, event)
-                                   for event, dt in self._queue]).values())
+                            for event, dt in self._queue]).values())
         self._queue = []
 
         # Process event types
@@ -349,9 +361,7 @@ class Callback:
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        task = asyncio.create_task(self.process_on_event())
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
+        await self.process_on_event()
 
     async def process_on_change(self):
         # Give on_change time to process new events
@@ -387,30 +397,39 @@ class Callback:
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             self._prev_msg = msg
-        task = asyncio.create_task(self.process_on_change())
-        self._background_task.add(task)
-        task.add_done_callback(self._background_task.discard)
+        await self.process_on_change()
+
+    def _schedule_event(self, event):
+        if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
+            task = asyncio.create_task(self.on_event(event))
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
+        else:
+            self.plot.document.add_next_tick_callback(partial(self.on_event, event))
+
+    def _schedule_change(self, attr, old, new):
+        if not self.plot.document:
+            return
+        if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
+            task = asyncio.create_task(self.on_change(attr, old, new))
+            self._background_task.add(task)
+            task.add_done_callback(self._background_task.discard)
+        else:
+            self.plot.document.add_next_tick_callback(partial(self.on_change, attr, old, new))
 
     def set_callback(self, handle):
         """
         Set up on_change events for bokeh server interactions.
         """
         if self.on_events:
-            event_handler = lambda event: (
-                asyncio.create_task(self.on_event(event))
-            )
             for event in self.on_events:
-                handle.on_event(event, event_handler)
+                handle.on_event(event, self._schedule_event)
         if self.on_changes:
-            change_handler = lambda attr, old, new: (
-                asyncio.create_task(self.on_change(attr, old, new))
-                if self.plot.document else None
-            )
             for change in self.on_changes:
                 if change in ['patching', 'streaming']:
                     # Patch and stream events do not need handling on server
                     continue
-                handle.on_change(change, change_handler)
+                handle.on_change(change, self._schedule_change)
 
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
@@ -547,13 +566,194 @@ class DrawCallback(PointerXYCallback):
         return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
-class TapCallback(PointerXYCallback):
+class PopupMixin:
+
+    geom_type = 'any'
+
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id=plot_id)
+        if not self.streams:
+            return
+
+        self._selection_event = None
+        self._processed_event = True
+        self._skipped_partial_event = False
+        self._existing_popup = None
+        stream = self.streams[0]
+        if not getattr(stream, 'popup', None):
+            return
+        elif Panel is None:
+            raise VersionError("Popup requires Bokeh >= 3.4")
+
+        close_button = Button(label="", stylesheets=[r"""
+        :host(.bk-Button) {
+            width: 100%;
+            height: 100%;
+            top: -1em;
+        }
+        .bk-btn, .bk-btn:hover, .bk-btn:active, .bk-btn:focus {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0.5em;
+            margin: -0.5em;
+            outline: none;
+            box-shadow: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        .bk-btn::after {
+            content: '\2715';
+        }
+        """],
+        css_classes=["popup-close-btn"])
+        self._panel = Panel(
+            position=XY(x=np.nan, y=np.nan),
+            anchor="top_left",
+            elements=[close_button],
+            visible=False
+        )
+        close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
+
+        self.plot.state.elements.append(self._panel)
+        self._watch_position()
+
+    def _watch_position(self):
+        geom_type = self.geom_type
+        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
+        self.plot.state.js_on_event('selectiongeometry', CustomJS(
+            args=dict(panel=self._panel),
+            code=f"""
+            export default ({{panel}}, cb_obj, _) => {{
+              const el = panel.elements[1]
+              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                 return
+              }}
+              let pos;
+              if (cb_obj.geometry.type === 'point') {{
+                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
+              }} else if (cb_obj.geometry.type === 'rect') {{
+                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
+              }} else if (cb_obj.geometry.type === 'poly') {{
+                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
+              }}
+              if (pos) {{
+                panel.position.setv(pos)
+              }}
+            }}""",
+        ))
+
+    def _get_position(self, event):
+        if self.geom_type not in ('any', event.geometry['type']):
+            return
+        elif event.geometry['type'] == 'point':
+            return dict(x=event.geometry['x'], y=event.geometry['y'])
+        elif event.geometry['type'] == 'rect':
+            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
+        elif event.geometry['type'] == 'poly':
+            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
+
+    def _update_selection_event(self, event):
+        if (((prev:= self._selection_event) and prev.final and not self._processed_event) or
+            self.geom_type not in (event.geometry["type"], "any")):
+            return
+        self._selection_event = event
+        self._processed_event = not event.final
+        if event.final and self._skipped_partial_event:
+            self._process_selection_event()
+            self._skipped_partial_event = False
+
+    def on_msg(self, msg):
+        super().on_msg(msg)
+        if hasattr(self, '_panel'):
+            self._process_selection_event()
+
+    def _process_selection_event(self):
+        event = self._selection_event
+        if event is not None:
+            if self.geom_type not in (event.geometry["type"], "any"):
+                return
+            elif not event.final:
+                self._skipped_partial_event = True
+                return
+
+        if event:
+            self._processed_event = True
+        for stream in self.streams:
+            popup = stream.popup
+            if popup is not None:
+                break
+
+        if callable(popup):
+            popup = popup(**stream.contents)
+
+        # If no popup is defined, hide the panel
+        if popup is None:
+            if self._panel.visible:
+                self._panel.visible = False
+            return
+
+        if event is not None:
+            position = self._get_position(event)
+        else:
+            position = None
+
+        popup_pane = panel(popup)
+        if not popup_pane.visible:
+            return
+
+        if not popup_pane.stylesheets:
+            self._panel.stylesheets = [
+                """
+                :host {
+                    padding: 1em;
+                    border-radius: 0.5em;
+                    border: 1px solid lightgrey;
+                }
+                """,
+            ]
+        else:
+            self._panel.stylesheets = []
+
+        self._panel.visible = True
+        # for existing popup, important to check if they're visible
+        # otherwise, UnknownReferenceError: can't resolve reference 'p...'
+        # meaning the popup has already been removed; we need to regenerate
+        if self._existing_popup and not self._existing_popup.visible:
+            if position:
+                self._panel.position = XY(**position)
+                if self.plot.comm:  # update Jupyter Notebook
+                    push_on_root(self.plot.root.ref['id'])
+            return
+
+        model = popup_pane.get_root(self.plot.document, self.plot.comm)
+        model.js_on_change('visible', CustomJS(
+            args=dict(panel=self._panel),
+            code="""
+            export default ({panel}, event, _) => {
+              if (!event.visible) {
+                panel.visible = false;
+              }
+            }""",
+        ))
+        # the first element is the close button
+        self._panel.elements = [self._panel.elements[0], model]
+        if self.plot.comm:  # update Jupyter Notebook
+            push_on_root(self.plot.root.ref['id'])
+        self._existing_popup = popup_pane
+
+
+class TapCallback(PopupMixin, PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
 
     Note: As of bokeh 0.12.5, there is no way to distinguish the
     individual tap events within a doubletap event.
     """
+
+    geom_type = 'point'
 
     on_events = ['tap', 'doubletap']
 
@@ -576,6 +776,7 @@ class TapCallback(PointerXYCallback):
         if v < s or v > e:
             value = None
         return value
+
 
 
 class SingleTapCallback(TapCallback):
@@ -751,7 +952,7 @@ class SelectModeCallback(Callback):
         return msg
 
 
-class BoundsCallback(Callback):
+class BoundsCallback(PopupMixin, Callback):
     """
     Returns the bounds of a box_select tool.
     """
@@ -759,6 +960,7 @@ class BoundsCallback(Callback):
                   'x1': 'cb_obj.geometry.x1',
                   'y0': 'cb_obj.geometry.y0',
                   'y1': 'cb_obj.geometry.y1'}
+    geom_type = 'rect'
     models = ['plot']
     on_events = ['selectiongeometry']
 
@@ -870,11 +1072,13 @@ class BoundsYCallback(Callback):
             return {}
 
 
-class LassoCallback(Callback):
+class LassoCallback(PopupMixin, Callback):
 
     attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
+    geom_type = 'poly'
     models = ['plot']
     on_events = ['selectiongeometry']
+
     skip_events = [lambda event: event.geometry['type'] != 'poly',
                    lambda event: not event.final]
 
@@ -893,7 +1097,7 @@ class LassoCallback(Callback):
         return {'geometry': np.column_stack([xs, ys])}
 
 
-class Selection1DCallback(Callback):
+class Selection1DCallback(PopupMixin, Callback):
     """
     Returns the current selection on a ColumnDataSource.
     """
@@ -901,6 +1105,64 @@ class Selection1DCallback(Callback):
     attributes = {'index': 'cb_obj.indices'}
     models = ['selected']
     on_changes = ['indices']
+
+    def _watch_position(self):
+        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
+        source = self.plot.handles['source']
+        renderer = self.plot.handles['glyph_renderer']
+        selected = self.plot.handles['selected']
+        self.plot.state.js_on_event('selectiongeometry', CustomJS(
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
+            code="""
+            export default ({panel, renderer, source, selected}, cb_obj, _) => {
+              const el = panel.elements[1]
+              if ((el && !el.visible) || !cb_obj.final) {
+                 return
+              }
+              let x, y, xs, ys;
+              let indices = selected.indices;
+              if (cb_obj.geometry.type == 'point') {
+                indices = indices.slice(-1)
+              }
+              if (renderer.glyph.x && renderer.glyph.y) {
+                xs = source.get_column(renderer.glyph.x.field)
+                ys = source.get_column(renderer.glyph.y.field)
+              } else if (renderer.glyph.right && renderer.glyph.top) {
+                xs = source.get_column(renderer.glyph.right.field)
+                ys = source.get_column(renderer.glyph.top.field)
+              } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                xs = source.get_column(renderer.glyph.x1.field)
+                ys = source.get_column(renderer.glyph.y1.field)
+              } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                xs = source.get_column(renderer.glyph.xs.field)
+                ys = source.get_column(renderer.glyph.ys.field)
+              }
+              if (!xs || !ys) { return }
+              for (const i of indices) {
+                const tx = xs[i]
+                if (!x || (tx > x)) {
+                  x = xs[i]
+                }
+                const ty = ys[i]
+                if (!y || (ty > y)) {
+                  y = ys[i]
+                }
+              }
+              if (x && y) {
+                panel.position.setv({x, y})
+              }
+            }""",
+        ))
+
+    def _get_position(self, event):
+        el = self.plot.current_frame
+        if isinstance(el, Dataset):
+            s = self.streams[0]
+            sel = el.iloc[s.index]
+            # get the most top-right point
+            (_, x1), (_, y1) = sel.range(0), sel.range(1)
+            return dict(x=x1, y=y1)
+        return super()._get_position(event)
 
     def _process_msg(self, msg):
         el = self.plot.current_frame

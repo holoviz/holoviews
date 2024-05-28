@@ -187,7 +187,7 @@ class GridInterface(DictInterface):
         if not_found and tuple(not_found) not in dataset.data:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {not_found!r}", cls)
 
 
     @classmethod
@@ -446,8 +446,7 @@ class GridInterface(DictInterface):
         invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
         if invalid:
             if len(invalid) == 1: invalid = f"'{invalid[0]}'"
-            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
-                             % invalid)
+            raise ValueError(f"Cannot groupby irregularly sampled dimension(s) {invalid}.")
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}

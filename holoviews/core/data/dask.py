@@ -82,8 +82,11 @@ class DaskInterface(PandasInterface):
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
-            column = np.sort(column[column.notnull()].compute())
-            return (column[0], column[-1]) if len(column) else (None, None)
+            try:
+                column = np.sort(column[column.notnull()].compute())
+                return (column[0], column[-1]) if len(column) else (None, None)
+            except TypeError:
+                return (None, None)
         else:
             if dimension.nodata is not None:
                 column = cls.replace_value(column, dimension.nodata)
