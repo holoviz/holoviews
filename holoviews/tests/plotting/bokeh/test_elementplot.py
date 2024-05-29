@@ -843,6 +843,28 @@ class TestScalebarPlot:
         assert scalebar.visible
         assert scalebar.label == 'Test'
 
+    def test_scalebar_icon(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True)
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 1
+
+    def test_scalebar_no_icon(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=False)
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 0
+
+    def test_scalebar_icon_multiple_overlay(self):
+        curve1 = Curve([1, 2, 3]).opts(scalebar=True)
+        curve2 = Curve([1, 2, 3]).opts(scalebar=True)
+        plot = bokeh_renderer.get_plot(curve1 * curve2)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 1
+
 
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
 
