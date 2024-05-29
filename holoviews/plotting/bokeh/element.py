@@ -228,7 +228,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     scalebar_tool = param.Boolean(default=True, doc="""
         Whether to show scalebar tools in the toolbar,
-        the tools are used to control scalebars visibility.""")
+        the tools are used to control scalebars visibility.
+
+        The scalebar_tool is only used if scalebar is True.""")
 
     scalebar_opts = param.Dict(
         default={}, doc="""
