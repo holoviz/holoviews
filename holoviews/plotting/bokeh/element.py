@@ -226,6 +226,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         The scalebar_label is only used if scalebar is True.""")
 
+    scalebar_tool = param.Boolean(default=True, doc="""
+        Whether to show scalebar tools in the toolbar,
+        the tools are used to control scalebars visibility.""")
+
     scalebar_opts = param.Dict(
         default={}, doc="""
         Allows setting specific styling options for the scalebar.
@@ -2363,27 +2367,31 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['scalebar'] = scale_bar
         plot.add_layout(scale_bar)
 
-        if plot.toolbar:
-            check_existing = [i for i, t in enumerate(plot.toolbar.tools) if t.description == "Toggle ScaleBar"]
-            if check_existing:
-                plot.toolbar.tools[check_existing[0]].callback.args["scale_bars"] = plot.select(ScaleBar)
+        if plot.toolbar and self.scalebar_tool:
+            existing_tool = [t for t in plot.toolbar.tools if t.description == "Toggle ScaleBar"]
+            if existing_tool:
+                existing_tool[0].callback.args["scale_bars"] = plot.select(ScaleBar)
             else:
                 ruler_icon = """\
-                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                <svg fill="#a1a6a9" height="52" width="52" version="1.1" id="Layer_1" viewBox="0 0 33.28 33.28" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
-                  <defs id="defs11" />
-                  <g id="g6" transform="matrix(0.0640868,0,0,0.06483537,0.18634319,0)">
-                    <g id="g4">
-                      <path d="M 505.528,100.039 411.952,6.46 C 407.816,2.325 402.206,0 396.357,0 390.506,0 384.896,2.325 380.76,6.461 l -62.342,62.347 c -0.013,0.013 -0.029,0.025 -0.041,0.038 -0.013,0.013 -0.025,0.029 -0.038,0.043 l -62.224,62.231 c -0.038,0.038 -0.084,0.072 -0.122,0.11 -0.04,0.04 -0.072,0.082 -0.11,0.122 l -62.109,62.117 c -0.053,0.051 -0.112,0.096 -0.163,0.148 -0.053,0.053 -0.097,0.112 -0.15,0.165 l -61.999,62.006 c -0.078,0.075 -0.16,0.138 -0.237,0.215 -0.076,0.076 -0.14,0.16 -0.215,0.237 l -61.85,61.855 c -0.103,0.101 -0.218,0.187 -0.322,0.291 -0.103,0.104 -0.191,0.218 -0.293,0.323 L 6.47,380.791 c -8.612,8.614 -8.611,22.578 0.001,31.191 l 93.559,93.559 c 4.307,4.307 9.952,6.46 15.595,6.46 5.645,0 11.29,-2.153 15.595,-6.46 L 505.528,131.232 c 8.614,-8.615 8.614,-22.579 0,-31.193 z m -389.904,358.713 -62.367,-62.367 31.191,-31.194 25.978,25.978 c 4.307,4.307 9.952,6.461 15.595,6.461 5.643,0 11.29,-2.154 15.595,-6.46 8.614,-8.614 8.614,-22.578 0,-31.192 l -25.979,-25.979 31.192,-31.195 15.584,15.584 c 4.307,4.307 9.952,6.461 15.595,6.461 5.645,0 11.29,-2.153 15.595,-6.461 8.614,-8.614 8.614,-22.578 0,-31.192 l -15.585,-15.585 31.191,-31.194 25.984,25.984 c 4.307,4.307 9.952,6.46 15.595,6.46 5.643,0 11.29,-2.154 15.595,-6.46 8.614,-8.614 8.614,-22.578 0,-31.192 l -25.985,-25.987 31.192,-31.195 15.589,15.589 c 4.307,4.307 9.952,6.461 15.597,6.461 5.645,0 11.29,-2.153 15.595,-6.461 8.614,-8.614 8.614,-22.578 0,-31.192 l -15.591,-15.591 31.191,-31.195 25.991,25.991 c 4.307,4.307 9.952,6.461 15.595,6.461 5.645,0 11.29,-2.153 15.597,-6.461 8.614,-8.614 8.614,-22.578 0,-31.192 l -25.993,-25.993 31.192,-31.195 62.384,62.386 z" id="path2" />
+                <?xml version="1.0" encoding="iso-8859-1"?>
+                <svg fill="#a1a6a9" height="52px" width="52px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+                     xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
+                <g>
+                    <g>
+                        <path d="M402.826,0L0.001,402.827L109.174,512l402.826-402.826L402.826,0z M43.671,402.827l25.789-25.789l32.752,32.752
+                            l21.834-21.834l-32.752-32.752l25.789-25.789l21.834,21.834l21.834-21.834l-21.834-21.834l25.789-25.789l21.834,21.834
+                            l21.834-21.834l-21.834-21.834l25.79-25.79l32.752,32.752l21.834-21.834l-32.752-32.752l25.789-25.789l21.834,21.834
+                            l21.834-21.834l-21.834-21.834l25.789-25.789l21.835,21.834l21.834-21.834l-21.834-21.834l25.79-25.79l32.752,32.752
+                            l21.834-21.834L377.037,69.46l25.789-25.789l65.504,65.504L109.174,468.33L43.671,402.827z"/>
                     </g>
-                  </g>
+                </g>
                 </svg>"""
                 encoded_icon = base64.b64encode(dedent(ruler_icon).encode()).decode('ascii')
                 scalebar_tool = CustomAction(
                     icon=f"data:image/svg+xml;base64,{encoded_icon}",
                     description="Toggle ScaleBar",
                     callback=CustomJS(
-                        args=dict(scale_bars=plot.select(ScaleBar)),
+                        args={"scale_bars": plot.select(ScaleBar)},
                         code="""
                         export default ({scale_bars}) => {
                             for (let i = 0; i < scale_bars.length; i++) {
