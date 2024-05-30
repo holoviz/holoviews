@@ -188,6 +188,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     scalebar = param.Boolean(default=False, doc="""
         Whether to display a scalebar.""")
 
+    scalebar_range =param.Selector(default="x", objects=["x", "y"], doc="""
+        Whether to have the scalebar on the x or y axis.""")
+
     scalebar_unit = param.ClassSelector(default=None, class_=(str, tuple), doc="""
         Unit of the scalebar. The order of how this will be done is by:
 
@@ -200,7 +203,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         The scalebar_unit is only used if scalebar is True.""")
 
-    scalebar_location = param.ObjectSelector(
+    scalebar_location = param.Selector(
         default="bottom_right",
         objects=[
             "top_left", "top_center", "top_right",
@@ -2358,6 +2361,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         opts = dict(_default_scalebar_opts, **self.scalebar_opts)
 
         scale_bar = ScaleBar(
+            range=plot.x_range if self.scalebar_range == "x" else plot.y_range,
+            orientation="horizontal" if self.scalebar_range == "x" else "vertical",
             unit=unit,
             dimensional=Metric(base_unit=base_unit),
             location=self.scalebar_location,
