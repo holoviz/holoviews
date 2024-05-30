@@ -34,9 +34,7 @@ defaults:
 
 env:
   DISPLAY: ":99.0"
-  PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  DASK_DATAFRAME__QUERY_PLANNING: false
   COV: "--cov=./holoviews --cov-report=xml"
 
 jobs:
