@@ -50,6 +50,9 @@ _NP_SAMPLE_SIZE = 1_000_000
 _PANDAS_ROWS_LARGE = 1_000_000
 _PANDAS_SAMPLE_SIZE = 1_000_000
 
+numpy_version = Version(Version(np.__version__).base_version)
+NUMPY_GE_200 = numpy_version >= Version("2")
+
 pandas_version = Version(pd.__version__)
 try:
     if pandas_version >= Version('1.3.0'):

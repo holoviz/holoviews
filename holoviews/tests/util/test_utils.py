@@ -93,7 +93,6 @@ class TestOptsUtil(LoggingComparisonTestCase):
     def tearDown(self):
         Store.current_backend = self.backend
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def test_opts_builder_repr(self):
