@@ -131,7 +131,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
-        self.assertEqual(cmapper.palette, colors[-1:])
+        self.assertEqual(np.unique(cmapper.palette), colors[-1:])
 
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]

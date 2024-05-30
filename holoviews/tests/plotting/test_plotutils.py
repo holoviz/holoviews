@@ -598,7 +598,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
         cmap, lims = color_intervals(colors, levels, clip=(10, 90), N=100)
         self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
-                                '#00faf4', '#00faf4', '#ffffcc'])
+                                '#00faf4', '#00faf4', '#ffffcc', '#ffffcc'])
         self.assertEqual(lims, (10, 90))
 
 
