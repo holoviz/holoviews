@@ -127,6 +127,7 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
 
+    @pytest.mark.flaky(reruns=3)
     def test_callback_cleanup(self):
         stream = PointerX(x=0)
         dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])

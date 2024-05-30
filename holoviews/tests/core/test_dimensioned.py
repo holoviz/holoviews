@@ -29,17 +29,6 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         self.register_custom(ExampleElement, 'backend_2', ['plot_custom2'])
         Store.set_current_backend('backend_1')
 
-    def tearDown(self):
-        super().tearDown()
-        Store._weakrefs = {}
-        Store._options.pop('backend_1')
-        Store._options.pop('backend_2')
-        Store._custom_options.pop('backend_1')
-        Store._custom_options.pop('backend_2')
-        Store.set_current_backend(self.current_backend)
-        Store.renderers.pop('backend_1')
-        Store.renderers.pop('backend_2')
-
     @classmethod
     def register_custom(cls, objtype, backend, custom_plot=None, custom_style=None):
         if custom_style is None:

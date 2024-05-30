@@ -79,10 +79,10 @@ def _plotting_backend(backend):
     if not hv.extension._loaded:
         hv.extension(backend)
     hv.renderer(backend)
-    prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = backend
+    curent_backend = hv.Store.current_backend
+    hv.Store.set_current_backend(backend)
     yield
-    hv.Store.current_backend = prev_backend
+    hv.Store.set_current_backend(curent_backend)
 
 
 @pytest.fixture
@@ -125,3 +125,17 @@ def serve_hv(page, port):  # noqa: F811
         return page
 
     return serve_and_return_page
+
+
+@pytest.fixture(autouse=True)
+def reset_store():
+    _custom_options = {k: {} for k in hv.Store._custom_options}
+    _options = hv.Store._options.copy()
+    current_backend = hv.Store.current_backend
+    renderers = hv.Store.renderers.copy()
+    yield
+    hv.Store._custom_options = _custom_options
+    hv.Store._options = _options
+    hv.Store._weakrefs = {}
+    hv.Store.renderers = renderers
+    hv.Store.set_current_backend(current_backend)
