@@ -32,6 +32,7 @@ class TestCurvePlot(TestBokehPlot):
     def test_batched_curve_subscribers_correctly_linked(self):
         # Checks if a stream callback is created to link batched plot
         # to the stream
+        Callback._callbacks.clear()  # Reset to not be sensitive to other test
         posx = PointerX()
         opts = {'NdOverlay': dict(legend_limit=0),
                 'Curve': dict(line_color=Cycle(values=['red', 'blue']))}

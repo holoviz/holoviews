@@ -1253,7 +1253,7 @@ class Store:
         parameterized_class = (isinstance(obj,type)
                                and  issubclass(obj,param.Parameterized))
         info = None
-        if parameterized_object or parameterized_class:
+        if InfoPrinter.store and (parameterized_object or parameterized_class):
             info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
                                     visualization=visualization,
                                     pattern=pattern, elements=elements)

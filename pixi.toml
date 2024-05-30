@@ -8,6 +8,10 @@ check-latest-packages = 'python scripts/check_latest_packages.py'
 download-data = 'python scripts/download_data.py'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
+[activation.env]
+DASK_DATAFRAME__QUERY_PLANNING = "False"
+PYTHONIOENCODING = "utf-8"
+
 [environments]
 test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
@@ -70,18 +74,19 @@ xarray = ">=0.10.4"
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
+psutil = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
+pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
-test-unit = 'pytest holoviews/tests'
+test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
 [feature.test.dependencies]
 cftime = "*"
 contourpy = "*"
-# dash >=1.16
 dask-core = "*"
 datashader = ">=0.11.1"
 ffmpeg = "*"
@@ -103,9 +108,7 @@ tsdownsample = "*" # currently not available on Windows
 test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 
 [feature.test-example.dependencies]
-psutil = "*"
 nbval = "*"
-pytest-xdist = "*"
 
 [feature.test-ui]
 channels = ["pyviz/label/dev", "microsoft", "conda-forge"]
@@ -125,6 +128,9 @@ depends_on = ["_install-ui"]
 channels = ["pyviz/label/dev", "rapidsai", "conda-forge"]
 platforms = ["linux-64"]
 
+[feature.test-gpu.activation.env]
+NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
+
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
 cudf = "24.04.*"
@@ -133,7 +139,7 @@ cuspatial = "*"
 rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
-test-gpu = { cmd = "pytest holoviews/tests --gpu", env = { NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = '0' } }
+test-gpu = "pytest holoviews/tests --gpu"
 
 [feature.numpy2]
 channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "numba/label/dev", "conda-forge"]
@@ -177,6 +183,13 @@ nbsite = ">=0.8.4,<0.9.0"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
+
+[feature.doc.activation.env]
+MOZ_HEADLESS = "1"
+MPLBACKEND = "Agg"
+PANEL_EMBED = "true"
+PANEL_EMBED_JSON = "true"
+PANEL_EMBED_JSON_PREFIX = "json"
 
 [feature.doc.tasks]
 _docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'

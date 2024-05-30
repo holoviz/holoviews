@@ -1,5 +1,4 @@
 import contextlib
-import os
 import pickle
 from unittest import SkipTest
 
@@ -301,7 +300,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def initialize_option_tree(self):
@@ -504,7 +502,6 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def lookup_options(self, obj, group):
@@ -574,7 +571,6 @@ class TestOptionsMethod(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def lookup_options(self, obj, group):
@@ -627,7 +623,6 @@ class TestOptsMethod(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def lookup_options(self, obj, group):
@@ -733,7 +728,6 @@ class TestOptionTreeFind(ComparisonTestCase):
     def tearDown(self):
         Options._option_groups = self.original_option_groups
         Store.options(val=self.original_options)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
     def test_optiontree_find1(self):
         self.assertEqual(self.options.find('MyType').options('group').options,
@@ -814,7 +808,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
@@ -965,6 +958,7 @@ class TestLookupOptions(ComparisonTestCase):
             self.assertNotIn("muted_alpha", options_matplotlib.keys())
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestCrossBackendOptionSpecification(ComparisonTestCase):
     """
     Test the style system can style a single object across backends.
@@ -989,7 +983,6 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
@@ -1121,8 +1114,6 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
 
-    cleanup = ['test_raw_pickle.pkl', 'test_pickle_mpl_bokeh.pkl']
-
     def setUp(self):
         super().setUp()
         self.raw = Image(np.random.rand(10,10))
@@ -1131,19 +1122,24 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Purple'}})
 
-    def tearDown(self):
-        super().tearDown()
-        for f in self.cleanup:
-            try:
-                os.remove(f)
-            except Exception:
-                pass
+    def _create_tmp_path(self):
+        # Remove this when we use pytest
+        import tempfile
+        from pathlib import Path
+
+        tmp_dir = tempfile.TemporaryDirectory()
+        tmp_path = Path(tmp_dir.name)
+
+        return tmp_dir, tmp_path
+
 
     def test_raw_pickle(self):
         """
         Test usual pickle saving and loading (no style information preserved)
         """
-        fname= 'test_raw_pickle.pkl'
+        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
+
+        fname= tmp_path / 'test_raw_pickle.pkl'
         with open(fname,'wb') as handle:
             pickle.dump(self.raw, handle)
         self.clear_options()
@@ -1160,11 +1156,15 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {})
 
+        tmp_dir.cleanup()  # Pytest remove
+
     def test_pickle_mpl_bokeh(self):
         """
         Test pickle saving and loading with Store (style information preserved)
         """
-        fname = 'test_pickle_mpl_bokeh.pkl'
+        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
+
+        fname = tmp_path / 'test_pickle_mpl_bokeh.pkl'
         with open(fname,'wb') as handle:
             Store.dump(self.raw, handle)
         self.clear_options()
@@ -1180,3 +1180,5 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
+
+        tmp_dir.cleanup()  # Pytest remove
