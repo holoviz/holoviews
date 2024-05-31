@@ -21,7 +21,7 @@ from holoviews import opts
 from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
-from holoviews.plotting.bokeh.util import bokeh33
+from holoviews.plotting.bokeh.util import bokeh34
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
@@ -798,7 +798,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.skipif(not bokeh33, reason="requires Bokeh >= 3.3")
+@pytest.mark.skipif(not bokeh34, reason="requires Bokeh >= 3.4")
 class TestScalebarPlot:
 
     def get_scalebar(self, element):
