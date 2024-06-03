@@ -195,8 +195,7 @@ class PandasInterface(Interface, PandasAPI):
         else:
             column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
-            if (not isinstance(dataset.data, pd.DataFrame) or
-                util.pandas_version < Version('0.17.0')):
+            if not isinstance(dataset.data, pd.DataFrame):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
@@ -221,9 +220,7 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
-        if util.pandas_version >= Version('0.23.0'):
-            kwargs['sort'] = False
-        return pd.concat(dataframes, **kwargs)
+        return pd.concat(dataframes, sort=False)
 
 
     @classmethod
@@ -346,8 +343,7 @@ class PandasInterface(Interface, PandasAPI):
             by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
-        if (not isinstance(dataset.data, pd.DataFrame) or
-            util.pandas_version < Version('0.17.0')):
+        if not isinstance(dataset.data, pd.DataFrame):
             return dataset.data.sort(columns=cols, ascending=not reverse)
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 
