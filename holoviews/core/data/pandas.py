@@ -220,7 +220,7 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
-        return pd.concat(dataframes, sort=False)
+        return pd.concat(dataframes, sort=False, **kwargs)
 
 
     @classmethod
