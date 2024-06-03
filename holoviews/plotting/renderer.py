@@ -16,21 +16,20 @@ from bokeh.io import curdoc
 from bokeh.resources import CDN, INLINE
 from packaging.version import Version
 from panel import config
-from panel.io.notebook import ipywidget, load_notebook, render_mimebundle, render_model
+from panel.io.notebook import (
+    JupyterCommManagerBinary,
+    ipywidget,
+    load_notebook,
+    render_mimebundle,
+    render_model,
+)
 from panel.io.state import state
 from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.viewable import Viewable
 from panel.widgets.player import PlayerBase
-from pyviz_comms import CommManager
-
-try:
-    # Added in Panel 1.0 to support JS -> Python binary comms
-    from panel.io.notebook import JupyterCommManagerBinary as JupyterCommManager
-except ImportError:
-    from pyviz_comms import JupyterCommManager
-
 from param.parameterized import bothmethod
+from pyviz_comms import CommManager
 
 from ..core import AdjointLayout, DynamicMap, HoloMap, Layout
 from ..core.data import disable_pipeline
@@ -665,8 +664,8 @@ class Renderer(Exporter):
             if not ip or not hasattr(ip, 'kernel'):
                 return
             cls.notebook_context = True
-            cls.comm_manager = JupyterCommManager
-            state._comm_manager = JupyterCommManager
+            cls.comm_manager = JupyterCommManagerBinary
+            state._comm_manager = JupyterCommManagerBinary
 
     @classmethod
     def _delete_plot(cls, plot_id):
