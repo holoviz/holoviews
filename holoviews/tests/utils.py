@@ -126,10 +126,10 @@ def dask_switcher(*, query=False, extras=None):
     Using a context manager as it is an easy way to
     change the function to a decorator.
     """
-    import dask
-
     if query and EXPR_UNAVAILABLE:
         pytest.skip("dask-expr is not available")
+
+    import dask
 
     dask.config.set(**{"dataframe.query-planning": query})
     for module in ("dask.dataframe", *(extras or ())):
