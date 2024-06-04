@@ -318,14 +318,24 @@ class VectorFieldPlot(ColorbarPlot):
         elif cdim:
             color = cdata.get(cdim.name)
 
-        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
+        data = {
+            'x0': x0s,
+            'x1': x1s,
+            'y0': y0s,
+            'y1': y1s,
+            # tile to match the length of the segments
+            "x": np.tile(xs, 3),
+            "y": np.tile(ys, 3),
+            "Angle": np.tile(rads, 3),
+            "Magnitude": np.tile(lens, 3)
+        }
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
         if cdim and color is not None:
             data[cdim.name] = color
             mapping.update(cmapping)
 
+        print(data, mapping)
         return (data, mapping, style)
-
 
 
 class CurvePlot(ElementPlot):
