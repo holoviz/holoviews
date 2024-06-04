@@ -1132,15 +1132,13 @@ class GenericElementPlot(DimensionedPlot):
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
 
-    xticks = param.Parameter(default=None, doc="""
+    xticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray), default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations, or bokeh Ticker object. If set to None default
-        bokeh ticking behavior is applied.""")
+        tick locations. If set to None default ticking behavior is applied.""")
 
-    yticks = param.Parameter(default=None, doc="""
+    yticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray), default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations, or bokeh Ticker object. If set to None
-        default bokeh ticking behavior is applied.""")
+        tick locations. If set to None default ticking behavior is applied.""")
 
     # A dictionary mapping of the plot methods used to draw the
     # glyphs corresponding to the ElementPlot, can support two
