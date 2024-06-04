@@ -858,7 +858,10 @@ class RangeXYCallback(Callback):
             x_range = self.plot.handles['x_range']
             msg['x0'], msg['x1'] = x_range.start, x_range.end
         if self.plot.state.y_range is not self.plot.handles['y_range']:
-            y_range = self.plot.handles['y_range']
+            if 'subcoordinate_y_range' in self.plot.handles:
+                y_range = self.plot.handles['subcoordinate_y_range']
+            else:
+                y_range = self.plot.handles['y_range']
             msg['y0'], msg['y1'] = y_range.start, y_range.end
         data = {}
         if 'x0' in msg and 'x1' in msg:

@@ -141,25 +141,30 @@ class RangeToolLinkCallback(LinkCallback):
             if axis not in link.axes:
                 continue
 
-            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
+            range_name = f'{axis}_range'
+            if f'subcoordinate_{axis}_range' in target_plot.handles:
+                target_range_name = f'subcoordinate_{range_name}'
+            else:
+                target_range_name = range_name
+            axes[range_name] = target_plot.handles[target_range_name]
             interval = getattr(link, f'intervals{axis}', None)
             if interval is not None and bokeh34:
                 min, max = interval
                 if min is not None:
-                    axes[f'{axis}_range'].min_interval = min
+                    axes[range_name].min_interval = min
                 if max is not None:
-                    axes[f'{axis}_range'].max_interval = max
-                    self._set_range_for_interval(axes[f'{axis}_range'], max)
+                    axes[range_name].max_interval = max
+                    self._set_range_for_interval(axes[range_name], max)
 
             bounds = getattr(link, f'bounds{axis}', None)
             if bounds is not None:
                 start, end = bounds
                 if start is not None:
-                    axes[f'{axis}_range'].start = start
-                    axes[f'{axis}_range'].reset_start = start
+                    axes[range_name].start = start
+                    axes[range_name].reset_start = start
                 if end is not None:
-                    axes[f'{axis}_range'].end = end
-                    axes[f'{axis}_range'].reset_end = end
+                    axes[range_name].end = end
+                    axes[range_name].reset_end = end
 
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)

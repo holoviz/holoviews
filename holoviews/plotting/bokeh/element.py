@@ -2051,6 +2051,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
             if self._subcoord_overlaid:
                 if style_element.label in plot.extra_y_ranges:
+                    self.handles['subcoordinate_y_range'] = plot.y_range
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
 
         if self.apply_hard_bounds:
