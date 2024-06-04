@@ -899,6 +899,20 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         ticker = colorbar.ticker
         assert ticker.ticks == [1, 2]
 
+    def test_cticks_tuple(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=(1, 2), colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
+    def test_cticks_np_array(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=np.array([1, 2]), colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
     def test_cticks_labels(self):
         img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=[(1, "A"), (2, "B")], colorbar=True)
         plot = bokeh_renderer.get_plot(img)
@@ -906,6 +920,15 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         assert colorbar.major_label_overrides == {1: "A", 2: "B"}
         ticker = colorbar.ticker
         assert ticker.ticks == [1, 2]
+
+    def test_cticks_ticker(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(
+            cticks=FixedTicker(ticks=[0, 1]), colorbar=True
+        )
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [0, 1]
 
 
 class TestOverlayPlot(TestBokehPlot):

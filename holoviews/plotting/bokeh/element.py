@@ -40,6 +40,7 @@ from bokeh.models.tickers import (
     FixedTicker,
     LogTicker,
     MercatorTicker,
+    Ticker,
 )
 from bokeh.models.tools import Tool
 from packaging.version import Version
@@ -2450,7 +2451,7 @@ class ColorbarPlot(ElementPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
-    cticks = param.Parameter(default=None, doc="""
+    cticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray, Ticker), default=None, doc="""
         Ticks along colorbar-axis specified as an integer, explicit list of
         tick locations, or bokeh Ticker object. If set to None default
         bokeh ticking behavior is applied.""")
