@@ -334,7 +334,6 @@ class VectorFieldPlot(ColorbarPlot):
             data[cdim.name] = color
             mapping.update(cmapping)
 
-        print(data, mapping)
         return (data, mapping, style)
 
 
