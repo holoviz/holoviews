@@ -39,11 +39,7 @@ from bokeh.models import (
 )
 from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
-from bokeh.models.tickers import (
-    BasicTicker,
-    FixedTicker,
-    Ticker,
-)
+from bokeh.models.tickers import BasicTicker, FixedTicker, Ticker
 from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
 from bokeh.themes import built_in_themes

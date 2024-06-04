@@ -1053,7 +1053,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ticker = self.xticks if axis == 'x' else self.yticks
             if not (self._subcoord_overlaid and axis == 'y'):
                 axis_props.update(get_ticker_axis_props(ticker))
-            elif self._subcoord_overlaid and axis == 'y':
+            else:
                 ticks, labels = [], []
                 idx = 0
                 for el, sp in zip(self.current_frame, self.subplots.values()):
