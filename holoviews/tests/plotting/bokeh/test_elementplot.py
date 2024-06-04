@@ -904,7 +904,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(img)
         colorbar = plot.handles["colorbar"]
         ticker = colorbar.ticker
-        assert ticker.ticks == [1, 2]
+        assert ticker.ticks == (1, 2)
 
     def test_cticks_np_array(self):
         img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=np.array([1, 2]), colorbar=True)
