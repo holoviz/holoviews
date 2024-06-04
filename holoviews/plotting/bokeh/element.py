@@ -247,6 +247,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     hover_mode = param.ObjectSelector(default='mouse', objects=['mouse', 'vline', 'hline'], doc="""
         The hover mode determines how the hover tool is activated.""")
 
+    xticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray, Ticker), default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations, or bokeh Ticker object. If set to None default
+        bokeh ticking behavior is applied.""")
+
+    yticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray, Ticker), default=None, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations, or bokeh Ticker object. If set to None default
+        bokeh ticking behavior is applied.""")
+
     toolbar = param.ObjectSelector(default='right',
                                    objects=["above", "below",
                                             "left", "right", "disable", None],
