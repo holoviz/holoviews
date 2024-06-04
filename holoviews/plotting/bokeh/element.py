@@ -40,7 +40,6 @@ from bokeh.models.tickers import (
     FixedTicker,
     LogTicker,
     MercatorTicker,
-    Ticker,
 )
 from bokeh.models.tools import Tool
 from packaging.version import Version
@@ -76,6 +75,7 @@ from .util import (
     get_axis_class,
     get_scale,
     get_tab_title,
+    get_ticker_axis_props,
     glyph_order,
     hold_policy,
     match_ax_type,
@@ -1051,28 +1051,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)
             ticker = self.xticks if axis == 'x' else self.yticks
-            if isinstance(ticker, np.ndarray):
-                ticker = list(ticker)
-            if isinstance(ticker, Ticker):
-                axis_props['ticker'] = ticker
-            elif isinstance(ticker, int):
-                axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
-            elif isinstance(ticker, (tuple, list)):
-                if all(isinstance(t, tuple) for t in ticker):
-                    ticks, labels = zip(*ticker)
-                    # Ensure floats which are integers are serialized as ints
-                    # because in JS the lookup fails otherwise
-                    ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
-                             for t in ticks]
-                    labels = [l if isinstance(l, str) else str(l)
-                              for l in labels]
-                else:
-                    ticks, labels = ticker, None
-                if ticks and util.isdatetime(ticks[0]):
-                    ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
-                axis_props['ticker'] = FixedTicker(ticks=ticks)
-                if labels is not None:
-                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+            if not (self._subcoord_overlaid and axis == 'y'):
+                axis_props = get_ticker_axis_props(ticker)
             elif self._subcoord_overlaid and axis == 'y':
                 ticks, labels = [], []
                 idx = 0
@@ -2470,6 +2450,11 @@ class ColorbarPlot(ElementPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
+    cticks = param.Parameter(default=None, doc="""
+        Ticks along colorbar-axis specified as an integer, explicit list of
+        tick locations, or bokeh Ticker object. If set to None default
+        bokeh ticking behavior is applied.""")
+
     logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
@@ -2512,6 +2497,9 @@ class ColorbarPlot(ElementPlot):
 
         if self.cformatter is not None:
             self.colorbar_opts.update({'formatter': wrap_formatter(self.cformatter, 'c')})
+
+        if self.cticks is not None:
+            self.colorbar_opts.update(get_ticker_axis_props(self.cticks))
 
         for tk in ['cticks', 'ticks']:
             ticksize = self._fontsize(tk, common=False).get('fontsize')

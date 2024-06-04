@@ -885,6 +885,28 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(cmapper.factors, ['0', '1', '2', '3'])
         self.assertEqual(cmapper.palette, ['blue', 'red', 'green', 'purple'])
 
+    def test_cticks_int(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=3, colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.desired_num_ticks == 3
+
+    def test_cticks_list(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=[1, 2], colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
+    def test_cticks_labels(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=[(1, "A"), (2, "B")], colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        assert colorbar.major_label_overrides == {1: "A", 2: "B"}
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
 
 class TestOverlayPlot(TestBokehPlot):
 
