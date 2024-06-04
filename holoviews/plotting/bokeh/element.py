@@ -1052,7 +1052,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['major_label_orientation'] = np.radians(rotation)
             ticker = self.xticks if axis == 'x' else self.yticks
             if not (self._subcoord_overlaid and axis == 'y'):
-                axis_props = get_ticker_axis_props(ticker)
+                axis_props.update(get_ticker_axis_props(ticker))
             elif self._subcoord_overlaid and axis == 'y':
                 ticks, labels = [], []
                 idx = 0
