@@ -40,6 +40,7 @@ from .test_multiinterface import GeomTests
 
 @pytest.fixture(autouse=True)
 def _classic_dd():
+    if not dd: return
     with dask_switcher(query=False, extras=["spatialpandas.dask"]): ...
 
 class RoundTripTests(ComparisonTestCase):

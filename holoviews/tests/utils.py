@@ -116,6 +116,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
             for msg in msgs:
                 log.log(LEVELS[level], msg)
 
+
 EXPR_UNAVAILABLE = find_spec("dask_expr") is None
 
 
