@@ -9,7 +9,6 @@ download-data = 'python scripts/download_data.py'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [activation.env]
-DASK_DATAFRAME__QUERY_PLANNING = "False"
 PYTHONIOENCODING = "utf-8"
 
 [environments]
@@ -88,6 +87,7 @@ test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
+dask-expr = "*"
 datashader = ">=0.11.1"
 ffmpeg = "*"
 ibis-sqlite = "*"
@@ -105,7 +105,7 @@ xyzservices = "*"
 tsdownsample = "*" # currently not available on Windows
 
 [feature.test-example.tasks]
-test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', env = { DASK_DATAFRAME__QUERY_PLANNING = "False" } }
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -185,6 +185,7 @@ python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.activation.env]
+DASK_DATAFRAME__QUERY_PLANNING = "False"
 MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"

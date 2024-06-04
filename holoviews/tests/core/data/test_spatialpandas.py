@@ -4,6 +4,7 @@ Tests for the spatialpandas interface.
 from unittest import SkipTest
 
 import numpy as np
+import pytest
 
 try:
     import spatialpandas
@@ -33,8 +34,13 @@ from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 
+from ...utils import dask_switcher
 from .test_multiinterface import GeomTests
 
+
+@pytest.fixture(autouse=True)
+def _classic_dd():
+    with dask_switcher(query=False, extras=["spatialpandas.dask"]): ...
 
 class RoundTripTests(ComparisonTestCase):
 

@@ -14,18 +14,23 @@ from holoviews.core.data import Dataset
 from holoviews.core.util import pandas_version
 from holoviews.util.transform import dim
 
+from ...utils import dask_switcher
 from .test_pandasinterface import BasePandasInterfaceTests
 
+try:
+    import dask_expr
+except ImportError:
+    dask_expt = None
 
-class DaskDatasetTest(BasePandasInterfaceTests):
+
+class _DaskDatasetTest(BasePandasInterfaceTests):
     """
     Test of the pandas DaskDataset interface.
     """
 
     datatype = 'dask'
-    data_type = dd.DataFrame
 
-    __test__ = True
+    __test__ = False
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -128,3 +133,27 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         # Make sure that selecting by expression didn't cause evaluation
         self.assertIsInstance(new_ds.data, dd.DataFrame)
         self.assertEqual(new_ds.data.compute(), df[df.b == 10])
+
+
+class DaskClassicDatasetBaseTest(_DaskDatasetTest):
+
+    data_type = dd.core.DataFrame
+
+    __test__ = True
+
+    @dask_switcher(query=False)
+    def setUp(self):
+        return super().setUp()
+
+
+class DaskExprDatasetBaseTest(_DaskDatasetTest):
+
+    __test__ = True if dask_expr else False
+
+    @property
+    def data_type(self):
+        return dask_expr.DataFrame
+
+    @dask_switcher(query=True)
+    def setUp(self):
+        return super().setUp()
