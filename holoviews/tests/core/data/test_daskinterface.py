@@ -21,7 +21,7 @@ from .test_pandasinterface import BasePandasInterfaceTests
 try:
     import dask_expr
 except ImportError:
-    dask_expt = None
+    dask_expr = None
 
 
 class _DaskDatasetTest(BasePandasInterfaceTests):

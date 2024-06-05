@@ -114,6 +114,8 @@ filterwarnings = [
     "ignore:No data was collected:coverage.exceptions.CoverageWarning", # https://github.com/pytest-dev/pytest-cov/issues/627
     # 2024-05
     "ignore:backend2gui is deprecated since IPython 8.24:DeprecationWarning", # https://github.com/holoviz/holoviews/pull/6227#issuecomment-2104401396
+    # 2024-06
+    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning",
 ]
 
 [tool.coverage]
