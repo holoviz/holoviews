@@ -23,7 +23,7 @@ from panel.io.state import set_curdoc, state
 from panel.pane import panel
 
 try:
-    from bokeh.models import XY, Panel
+    from bokeh.models import XY, Panel, Tooltip
 except Exception:
     Panel = XY = None
 
@@ -464,7 +464,245 @@ class Callback:
         self._callbacks[cb_hash] = self
 
 
-class PointerXYCallback(Callback):
+
+class ModalMixin:
+
+    geom_type = 'any'
+    modal_types = [
+        ('popup', Panel, 'elements'),
+        ('tooltip', Tooltip, 'content')
+    ]
+    modal_event = 'selectiongeometry'
+
+    def initialize(self, plot_id=None):
+        super().initialize(plot_id=plot_id)
+        if not self.streams:
+            return
+
+        self._selection_event = None
+        self._processed_event = True
+        self._skipped_partial_event = False
+        self._existing = {}
+        stream = self.streams[0]
+        self._modals = {}
+        for attr, modal_type, prop in self.modal_types:
+            if not getattr(stream, attr, None):
+                continue
+            elif modal_type is None:
+                raise VersionError(f"{attr.upper()} requires Bokeh >= 3.4")
+
+            content = getattr(self, f'_construct_{attr}', lambda: None)()
+            props = {}
+            if content is not None:
+                props[prop] = content
+            modal = modal_type(
+                position=XY(x=np.nan, y=np.nan),
+                visible=False,
+                **props
+            )
+            self._modals[attr] = modal
+            self.plot.state.elements.append(modal)
+            getattr(self, f'_setup_{attr}', lambda _: None)(modal)
+            self._watch_position(modal, prop)
+
+    def _construct_popup(self):
+        close_button = Button(label="", stylesheets=[r"""
+        :host(.bk-Button) {
+            width: 100%;
+            height: 100%;
+            top: -1em;
+        }
+        .bk-btn, .bk-btn:hover, .bk-btn:active, .bk-btn:focus {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0.5em;
+            margin: -0.5em;
+            outline: none;
+            box-shadow: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        .bk-btn::after {
+            content: '\2715';
+        }
+        """],
+        css_classes=["popup-close-btn"])
+        return [close_button]
+
+    def _setup_tooltip(self, modal):
+        for stream in self.streams:
+            content = stream.tooltip
+            if content is not None:
+                break
+
+        try:
+            if callable(content):
+                content = content(**stream.contents)
+        except Exception:
+            modal.content = ''
+            return
+
+        content_pane = panel(content)
+        model = content_pane.get_root(self.plot.document, self.plot.comm)
+        modal.content = model
+        self._existing['tooltip'] = model
+
+    def _setup_popup(self, modal):
+        close_button = modal.elements[0]
+        close_button.js_on_click(CustomJS(args=dict(modal=modal), code="modal.visible = false"))
+
+    def _watch_position(self, modal, prop):
+        geom_type = self.geom_type
+        self.plot.state.on_event(self.modal_event, self._update_selection_event)
+        self.plot.state.js_on_event(self.modal_event, CustomJS(
+            args=dict(modal=modal),
+            code=f"""
+            export default ({{modal}}, cb_obj, _) => {{
+              const els = modal[{prop!r}]
+              const el = Array.isArray(els) ? els[1]: els
+              console.log(cb_obj, el)
+              if ((el && (el.visible === false)) || (cb_obj.final === false) || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                 return
+              }}
+              let pos;
+              if (cb_obj.x && cb_obj.y) {{
+                pos = {{x: cb_obj.x, y: cb_obj.y}}
+              }} else if (cb_obj.geometry.type === 'point') {{
+                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
+              }} else if (cb_obj.geometry.type === 'rect') {{
+                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
+              }} else if (cb_obj.geometry.type === 'poly') {{
+                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
+              }}
+              if (pos) {{
+                modal.position.setv(pos)
+              }}
+            }}""",
+        ))
+
+    def _get_position(self, event):
+        if self.geom_type not in ('any', getattr(event, 'geometry', {'type': 'point'})['type']):
+            return
+        elif hasattr(event, 'x'):
+            return dict(x=event.x, y=event.y)
+        elif event.geometry['type'] == 'point':
+            return dict(x=event.geometry['x'], y=event.geometry['y'])
+        elif event.geometry['type'] == 'rect':
+            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
+        elif event.geometry['type'] == 'poly':
+            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
+
+    def _update_selection_event(self, event):
+        if (((prev:= self._selection_event) and getattr(prev, 'final', True) and not self._processed_event) or
+            self.geom_type not in (getattr(event, 'geometry', {'type': 'point'})['type'], "any")):
+            return
+        final = getattr(event, 'final', True)
+        self._selection_event = event
+        self._processed_event = not final
+        if final and self._skipped_partial_event:
+            self._process_selection_event()
+            self._skipped_partial_event = False
+
+    def on_msg(self, msg):
+        super().on_msg(msg)
+        if self._modals:
+            self._process_selection_event()
+
+    def _process_selection_event(self):
+        event = self._selection_event
+        if event is not None:
+            if self.geom_type not in (getattr(event, 'geometry', {'type': 'point'})["type"], "any"):
+                return
+            elif not getattr(event, 'final', True):
+                self._skipped_partial_event = True
+                return
+
+        if event:
+            self._processed_event = True
+            position = self._get_position(event)
+        else:
+            position = None
+
+        for attr, _, prop in enumerate(self.modal_types):
+            for stream in self.streams:
+                content = getattr(stream, attr)
+                if content is not None:
+                    break
+
+            if attr not in self._modals:
+                continue
+
+            if callable(content):
+                content = content(**stream.contents)
+
+            # If no popup is defined, hide the panel
+            modal = self._modals[attr]
+            if content is None:
+                if modal.visible:
+                    modal.visible = False
+                continue
+
+            content_pane = panel(content)
+
+            if not content_pane.visible:
+                continue
+
+            updates = {}
+            if not content_pane.stylesheets:
+                updates['stylesheets'] = [
+                    """
+                    :host {
+                      padding: 1em;
+                      border-radius: 0.5em;
+                      border: 1px solid lightgrey;
+                    }
+                    """,
+                ]
+            else:
+                updates['stylesheets'] = []
+
+            updates['visible'] = True
+            # for existing popup, important to check if they're visible
+            # otherwise, UnknownReferenceError: can't resolve reference 'p...'
+            # meaning the popup has already been removed; we need to regenerate
+            existing = self._existing.get(attr)
+            if existing and not existing.visible:
+                if position:
+                    updates['position'] = XY(**position)
+                    modal.update(updates)
+                    continue
+
+            model = content_pane.get_root(self.plot.document, self.plot.comm)
+            model.js_on_change('visible', CustomJS(
+                args=dict(panel=modal),
+                code="""
+                export default ({modal}, event, _) => {
+                  if (!event.visible) {
+                    modal.visible = false;
+                  }
+                }""",
+            ))
+            # the first element is the close button
+
+            old_content = getattr(modal, prop)
+            if not isinstance(old_content, list):
+                updates[prop] = model
+            elif len(old_content) > 1:
+                updates[prop] = old_content[:-1] + [model]
+            else:
+                updates[prop] = [model]
+            self._last_update = updates
+            modal.update(**updates)
+            self._existing[attr] = content_pane
+
+        if self.plot.comm:  # update Jupyter Notebook
+            push_on_root(self.plot.root.ref['id'])
+
+
+class PointerXYCallback(ModalMixin, Callback):
     """
     Returns the mouse x/y-position on mousemove event.
     """
@@ -472,6 +710,7 @@ class PointerXYCallback(Callback):
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot']
     on_events = ['mousemove']
+    modal_event = 'mousemove'
 
     def _process_out_of_bounds(self, value, start, end):
         "Clips out of bounds values"
@@ -566,186 +805,8 @@ class DrawCallback(PointerXYCallback):
         return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
-class PopupMixin:
 
-    geom_type = 'any'
-
-    def initialize(self, plot_id=None):
-        super().initialize(plot_id=plot_id)
-        if not self.streams:
-            return
-
-        self._selection_event = None
-        self._processed_event = True
-        self._skipped_partial_event = False
-        self._existing_popup = None
-        stream = self.streams[0]
-        if not getattr(stream, 'popup', None):
-            return
-        elif Panel is None:
-            raise VersionError("Popup requires Bokeh >= 3.4")
-
-        close_button = Button(label="", stylesheets=[r"""
-        :host(.bk-Button) {
-            width: 100%;
-            height: 100%;
-            top: -1em;
-        }
-        .bk-btn, .bk-btn:hover, .bk-btn:active, .bk-btn:focus {
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            padding: 0.5em;
-            margin: -0.5em;
-            outline: none;
-            box-shadow: none;
-            position: absolute;
-            top: 0;
-            right: 0;
-        }
-        .bk-btn::after {
-            content: '\2715';
-        }
-        """],
-        css_classes=["popup-close-btn"])
-        self._panel = Panel(
-            position=XY(x=np.nan, y=np.nan),
-            anchor="top_left",
-            elements=[close_button],
-            visible=False
-        )
-        close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
-
-        self.plot.state.elements.append(self._panel)
-        self._watch_position()
-
-    def _watch_position(self):
-        geom_type = self.geom_type
-        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
-        self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel),
-            code=f"""
-            export default ({{panel}}, cb_obj, _) => {{
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
-                 return
-              }}
-              let pos;
-              if (cb_obj.geometry.type === 'point') {{
-                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
-              }} else if (cb_obj.geometry.type === 'rect') {{
-                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
-              }} else if (cb_obj.geometry.type === 'poly') {{
-                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
-              }}
-              if (pos) {{
-                panel.position.setv(pos)
-              }}
-            }}""",
-        ))
-
-    def _get_position(self, event):
-        if self.geom_type not in ('any', event.geometry['type']):
-            return
-        elif event.geometry['type'] == 'point':
-            return dict(x=event.geometry['x'], y=event.geometry['y'])
-        elif event.geometry['type'] == 'rect':
-            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
-        elif event.geometry['type'] == 'poly':
-            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
-
-    def _update_selection_event(self, event):
-        if (((prev:= self._selection_event) and prev.final and not self._processed_event) or
-            self.geom_type not in (event.geometry["type"], "any")):
-            return
-        self._selection_event = event
-        self._processed_event = not event.final
-        if event.final and self._skipped_partial_event:
-            self._process_selection_event()
-            self._skipped_partial_event = False
-
-    def on_msg(self, msg):
-        super().on_msg(msg)
-        if hasattr(self, '_panel'):
-            self._process_selection_event()
-
-    def _process_selection_event(self):
-        event = self._selection_event
-        if event is not None:
-            if self.geom_type not in (event.geometry["type"], "any"):
-                return
-            elif not event.final:
-                self._skipped_partial_event = True
-                return
-
-        if event:
-            self._processed_event = True
-        for stream in self.streams:
-            popup = stream.popup
-            if popup is not None:
-                break
-
-        if callable(popup):
-            popup = popup(**stream.contents)
-
-        # If no popup is defined, hide the panel
-        if popup is None:
-            if self._panel.visible:
-                self._panel.visible = False
-            return
-
-        if event is not None:
-            position = self._get_position(event)
-        else:
-            position = None
-
-        popup_pane = panel(popup)
-        if not popup_pane.visible:
-            return
-
-        if not popup_pane.stylesheets:
-            self._panel.stylesheets = [
-                """
-                :host {
-                    padding: 1em;
-                    border-radius: 0.5em;
-                    border: 1px solid lightgrey;
-                }
-                """,
-            ]
-        else:
-            self._panel.stylesheets = []
-
-        self._panel.visible = True
-        # for existing popup, important to check if they're visible
-        # otherwise, UnknownReferenceError: can't resolve reference 'p...'
-        # meaning the popup has already been removed; we need to regenerate
-        if self._existing_popup and not self._existing_popup.visible:
-            if position:
-                self._panel.position = XY(**position)
-                if self.plot.comm:  # update Jupyter Notebook
-                    push_on_root(self.plot.root.ref['id'])
-            return
-
-        model = popup_pane.get_root(self.plot.document, self.plot.comm)
-        model.js_on_change('visible', CustomJS(
-            args=dict(panel=self._panel),
-            code="""
-            export default ({panel}, event, _) => {
-              if (!event.visible) {
-                panel.visible = false;
-              }
-            }""",
-        ))
-        # the first element is the close button
-        self._panel.elements = [self._panel.elements[0], model]
-        if self.plot.comm:  # update Jupyter Notebook
-            push_on_root(self.plot.root.ref['id'])
-        self._existing_popup = popup_pane
-
-
-class TapCallback(PopupMixin, PointerXYCallback):
+class TapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
 
@@ -952,7 +1013,7 @@ class SelectModeCallback(Callback):
         return msg
 
 
-class BoundsCallback(PopupMixin, Callback):
+class BoundsCallback(ModalMixin, Callback):
     """
     Returns the bounds of a box_select tool.
     """
@@ -1072,7 +1133,7 @@ class BoundsYCallback(Callback):
             return {}
 
 
-class LassoCallback(PopupMixin, Callback):
+class LassoCallback(ModalMixin, Callback):
 
     attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
     geom_type = 'poly'
@@ -1097,7 +1158,7 @@ class LassoCallback(PopupMixin, Callback):
         return {'geometry': np.column_stack([xs, ys])}
 
 
-class Selection1DCallback(PopupMixin, Callback):
+class Selection1DCallback(ModalMixin, Callback):
     """
     Returns the current selection on a ColumnDataSource.
     """
