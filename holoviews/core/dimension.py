@@ -347,7 +347,7 @@ class Dimension(param.Parameterized):
         "Implements equals operator including sanitized comparison."
 
         if isinstance(other, Dimension):
-            return self.spec == other.spec
+            return self.label == other.label
 
         # For comparison to strings. Name may be sanitized.
         return other in [self.name, self.label, util.dimension_sanitizer(self.name)]

@@ -711,7 +711,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if self.subcoordinate_y:
             categorical = False
-        elif dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
+        elif dims is not None and any(dim.label in ranges and 'factors' in ranges[dim.label] for dim in dims):
             categorical = True
         else:
             categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))

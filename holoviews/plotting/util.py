@@ -1116,7 +1116,7 @@ def dim_range_key(eldim):
         if dim_name.startswith("dim('") and dim_name.endswith("')"):
             dim_name = dim_name[5:-2]
     else:
-        dim_name = eldim.name
+        dim_name = eldim.label
     return dim_name
 
 

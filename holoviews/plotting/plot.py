@@ -788,7 +788,7 @@ class DimensionedPlot(Plot):
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
-                dim_name = el_dim.name
+                dim_name = el_dim.label
                 if dim_name in prev_ranges and not framewise:
                     continue
                 data_range = data_ranges[(el, el_dim)]
