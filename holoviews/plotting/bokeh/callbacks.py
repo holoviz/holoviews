@@ -17,6 +17,7 @@ from bokeh.models import (
     PolyDrawTool,
     PolyEditTool,
     Range1d,
+    Row,
 )
 from panel.io.notebook import push_on_root
 from panel.io.state import set_curdoc, state
@@ -532,23 +533,8 @@ class ModalMixin:
         css_classes=["popup-close-btn"])
         return [close_button]
 
-    def _setup_tooltip(self, modal):
-        for stream in self.streams:
-            content = stream.tooltip
-            if content is not None:
-                break
-
-        try:
-            if callable(content):
-                content = content(**stream.contents)
-        except Exception:
-            modal.content = ''
-            return
-
-        content_pane = panel(content)
-        model = content_pane.get_root(self.plot.document, self.plot.comm)
-        modal.content = model
-        self._existing['tooltip'] = model
+    def _construct_tooltip(self):
+        return Row()
 
     def _setup_popup(self, modal):
         close_button = modal.elements[0]
@@ -563,7 +549,6 @@ class ModalMixin:
             export default ({{modal}}, cb_obj, _) => {{
               const els = modal[{prop!r}]
               const el = Array.isArray(els) ? els[1]: els
-              console.log(cb_obj, el)
               if ((el && (el.visible === false)) || (cb_obj.final === false) || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
                  return
               }}
@@ -626,7 +611,7 @@ class ModalMixin:
         else:
             position = None
 
-        for attr, _, prop in enumerate(self.modal_types):
+        for attr, _, prop in self.modal_types:
             for stream in self.streams:
                 content = getattr(stream, attr)
                 if content is not None:
@@ -646,11 +631,10 @@ class ModalMixin:
                 continue
 
             content_pane = panel(content)
-
             if not content_pane.visible:
                 continue
 
-            updates = {}
+            updates = {'visible': True}
             if not content_pane.stylesheets:
                 updates['stylesheets'] = [
                     """
@@ -663,38 +647,50 @@ class ModalMixin:
                 ]
             else:
                 updates['stylesheets'] = []
+            if position:
+                updates['position'] = XY(**position)
 
-            updates['visible'] = True
             # for existing popup, important to check if they're visible
             # otherwise, UnknownReferenceError: can't resolve reference 'p...'
             # meaning the popup has already been removed; we need to regenerate
             existing = self._existing.get(attr)
-            if existing and not existing.visible:
-                if position:
-                    updates['position'] = XY(**position)
+            if existing is not None and not existing.visible:
+                if updates:
                     modal.update(updates)
                     continue
 
-            model = content_pane.get_root(self.plot.document, self.plot.comm)
-            model.js_on_change('visible', CustomJS(
-                args=dict(panel=modal),
-                code="""
-                export default ({modal}, event, _) => {
-                  if (!event.visible) {
-                    modal.visible = false;
-                  }
-                }""",
-            ))
-            # the first element is the close button
-
             old_content = getattr(modal, prop)
-            if not isinstance(old_content, list):
-                updates[prop] = model
-            elif len(old_content) > 1:
-                updates[prop] = old_content[:-1] + [model]
+            new_model = None
+            if prop == 'content':
+                if type(existing) is type(content_pane):
+                    props = existing._process_param_change(content_pane.param.values())
+                    modal.content.children[0].update(**props)
+                    content_pane = existing
+                else:
+                    if existing is not None:
+                        existing._cleanup(modal.content)
+                    new_model = content_pane._get_model(
+                        self.plot.document, modal.content, modal.content, self.plot.comm
+                    )
+                    modal.content.children = [new_model]
             else:
-                updates[prop] = [model]
-            self._last_update = updates
+                new_model = content_pane.get_root(self.plot.document, self.plot.comm)
+
+                # the first element is the close button
+                if len(old_content) > 1:
+                    updates[prop] = old_content[:-1] + [new_model]
+                else:
+                    updates[prop] = [new_model]
+            if new_model is not None:
+                new_model.js_on_change('visible', CustomJS(
+                    args=dict(panel=modal),
+                    code="""
+                    export default ({modal}, event, _) => {
+                      if (!event.visible) {
+                        modal.visible = false;
+                      }
+                    }""",
+                ))
             modal.update(**updates)
             self._existing[attr] = content_pane
 
@@ -702,15 +698,7 @@ class ModalMixin:
             push_on_root(self.plot.root.ref['id'])
 
 
-class PointerXYCallback(ModalMixin, Callback):
-    """
-    Returns the mouse x/y-position on mousemove event.
-    """
-
-    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
-    models = ['plot']
-    on_events = ['mousemove']
-    modal_event = 'mousemove'
+class MousePositionCallback(Callback):
 
     def _process_out_of_bounds(self, value, start, end):
         "Clips out of bounds values"
@@ -773,6 +761,35 @@ class PointerXYCallback(ModalMixin, Callback):
         return self._transform(msg)
 
 
+class PointerXYCallback(ModalMixin, MousePositionCallback):
+    """
+    Returns the mouse x/y-position on mousemove event.
+    """
+
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
+    models = ['plot']
+    on_events = ['mousemove']
+    modal_event = 'mousemove'
+
+    def _watch_position(self, modal, prop):
+        super()._watch_position(modal, prop)
+        self.plot.state.js_on_event('mouseleave', CustomJS(
+            args=dict(modal=modal),
+            code="""
+            export default ({modal}) => {
+              modal.visible = false
+            }"""
+        ))
+        self.plot.state.js_on_event('mouseenter', CustomJS(
+            args=dict(modal=modal),
+            code="""
+            export default ({modal}) => {
+              modal.visible = true
+            }"""
+        ))
+
+
+
 class PointerXCallback(PointerXYCallback):
     """
     Returns the mouse x-position on mousemove event.
@@ -789,7 +806,7 @@ class PointerYCallback(PointerXYCallback):
     attributes = {'y': 'cb_obj.y'}
 
 
-class DrawCallback(PointerXYCallback):
+class DrawCallback(MousePositionCallback):
     on_events = ['pan', 'panstart', 'panend']
     models = ['plot']
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
@@ -806,7 +823,7 @@ class DrawCallback(PointerXYCallback):
 
 
 
-class TapCallback(PointerXYCallback):
+class TapCallback(MousePositionCallback):
     """
     Returns the mouse x/y-position on tap event.
 
