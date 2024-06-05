@@ -157,3 +157,11 @@ class DaskExprDatasetTest(_DaskDatasetTest):
     @dask_switcher(query=True)
     def setUp(self):
         return super().setUp()
+
+    def test_dataset_groupby(self):
+        # Dask-expr unique sort the order when running unique on column
+        super().test_dataset_groupby(sort=True)
+
+    def test_dataset_groupby_alias(self):
+        # Dask-expr unique sort the order when running unique on column
+        super().test_dataset_groupby_alias(sort=True)

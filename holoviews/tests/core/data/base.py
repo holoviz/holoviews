@@ -607,22 +607,22 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         aggregated = Dataset([], kdims=self.kdims[:1], vdims=[d for vd in self.vdims for d in [vd, vd+'_std']])
         self.compare_dataset(dataset.aggregate(['Gender'], np.mean, np.std), aggregated)
 
-    def test_dataset_groupby(self):
+    def test_dataset_groupby(self, sort=False):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
-                          kdims=['Gender'], sort=False)
+                          kdims=['Gender'], sort=sort)
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
-    def test_dataset_groupby_alias(self):
+    def test_dataset_groupby_alias(self, sort=False):
         group1 = {'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]}
         group2 = {'age':[12], 'weight':[10], 'height':[0.8]}
         grouped = HoloMap([('M', Dataset(group1, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims)),
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
-                          kdims=[('gender', 'Gender')], sort=False)
+                          kdims=[('gender', 'Gender')], sort=sort)
         self.assertEqual(self.alias_table.groupby('Gender'), grouped)
 
     def test_dataset_groupby_second_dim(self):
