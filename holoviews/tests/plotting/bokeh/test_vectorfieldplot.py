@@ -88,12 +88,8 @@ class TestVectorFieldPlot(TestBokehPlot):
         vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(tools=[])
         plot = bokeh_renderer.get_plot(vectorfield)
-        keys = plot.handles["cds"].data.keys()
-        assert len(keys) == 4
-        assert "x0" in keys
-        assert "y0" in keys
-        assert "x1" in keys
-        assert "y1" in keys
+        keys = sorted(plot.handles["cds"].data)
+        assert keys == ["x0", "x1", "y0", "y1"]
 
     def test_vectorfield_hover_columns(self):
         vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
