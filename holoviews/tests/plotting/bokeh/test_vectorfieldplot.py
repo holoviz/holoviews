@@ -97,11 +97,4 @@ class TestVectorFieldPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(vectorfield)
         keys = plot.handles["cds"].data.keys()
         assert len(keys) == 8
-        assert "x0" in keys
-        assert "y0" in keys
-        assert "x1" in keys
-        assert "y1" in keys
-        assert "x" in keys
-        assert "y" in keys
-        assert "Angle" in keys
-        assert "Magnitude" in keys
+        assert keys == ["Angle", "Magnitude", "x", "x0", "x1", "y", "y0", "y1"]
