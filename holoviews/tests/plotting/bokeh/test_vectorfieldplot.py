@@ -95,6 +95,6 @@ class TestVectorFieldPlot(TestBokehPlot):
         vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(vectorfield)
-        keys = plot.handles["cds"].data.keys()
+        keys = sorted(plot.handles["cds"].data)
         assert len(keys) == 8
         assert keys == ["Angle", "Magnitude", "x", "x0", "x1", "y", "y0", "y1"]
