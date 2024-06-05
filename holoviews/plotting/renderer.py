@@ -433,8 +433,6 @@ class Renderer(Exporter):
             from IPython.display import display
             display(data, raw=True)
             return {'text/html': '<div style="display: none"></div>'}, {}
-        elif config.comms == 'colab':
-            load_notebook(config.inline)
         return data, {}
 
     def static_html(self, obj, fmt=None, template=None):
