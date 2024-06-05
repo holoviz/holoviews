@@ -135,7 +135,7 @@ class _DaskDatasetTest(BasePandasInterfaceTests):
         self.assertEqual(new_ds.data.compute(), df[df.b == 10])
 
 
-class DaskClassicDatasetBaseTest(_DaskDatasetTest):
+class DaskClassicDatasetTest(_DaskDatasetTest):
 
     data_type = dd.core.DataFrame
 
@@ -146,9 +146,9 @@ class DaskClassicDatasetBaseTest(_DaskDatasetTest):
         return super().setUp()
 
 
-class DaskExprDatasetBaseTest(_DaskDatasetTest):
+class DaskExprDatasetTest(_DaskDatasetTest):
 
-    __test__ = True if dask_expr else False
+    __test__ = bool(dask_expr)
 
     @property
     def data_type(self):

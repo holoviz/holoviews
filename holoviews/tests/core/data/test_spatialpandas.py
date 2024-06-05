@@ -4,7 +4,6 @@ Tests for the spatialpandas interface.
 from unittest import SkipTest
 
 import numpy as np
-import pytest
 
 try:
     import spatialpandas
@@ -37,11 +36,6 @@ from holoviews.element.comparison import ComparisonTestCase
 from ...utils import dask_switcher
 from .test_multiinterface import GeomTests
 
-
-@pytest.fixture(autouse=True)
-def _classic_dd():
-    if not dd: return
-    with dask_switcher(query=False, extras=["spatialpandas.dask"]): ...
 
 class RoundTripTests(ComparisonTestCase):
 
@@ -266,6 +260,7 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     __test__ = True
 
+    @dask_switcher(query=False, extras=["spatialpandas.dask"])
     def setUp(self):
         if spatialpandas is None:
             raise SkipTest('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
