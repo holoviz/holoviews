@@ -30,7 +30,9 @@ requirements:
     - {{ dep }}
     {% endfor %}
     {% for dep in project['optional-dependencies']['recommended'] %}
-    - {{ dep }}
+    {% if dep.startswith('matplotlib') %}
+    - {{ dep.replace('matplotlib', 'matplotlib-base') }}
+    {% endif %}
     {% endfor %}
 
 test:

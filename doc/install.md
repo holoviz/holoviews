@@ -8,12 +8,10 @@ provided by the [Anaconda](https://docs.anaconda.com/anaconda/install/)
 or [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 scientific Python distributions:
 
-    conda install -c pyviz holoviews
+    conda install holoviews
 
-This recommended installation includes the default
-[Matplotlib](http://matplotlib.org) plotting library backend, the more
-interactive [Bokeh](http://bokeh.pydata.org) plotting library backend,
-and the [Jupyter Notebook](http://jupyter.org).
+This installation includes the default [Matplotlib](http://matplotlib.org)
+plotting library backend, the more interactive [Bokeh](http://bokeh.pydata.org) plotting library backend.
 
 A similar set of packages can be installed using `pip`, if that command
 is available on your system:
