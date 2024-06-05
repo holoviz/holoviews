@@ -1073,7 +1073,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
-            elif self._subcoord_overlaid and axis == 'y':
+            elif self._subcoord_overlaid and axis == 'y' and not self.drawn:
                 ticks, labels = [], []
                 idx = 0
                 for el, sp in zip(self.current_frame, self.subplots.values()):
