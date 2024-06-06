@@ -76,9 +76,9 @@ outside of the actual matrix.
 """
 
 import numpy as np
+
 from .boundingregion import BoundingBox
 from .util import datetime_types
-
 
 # Note about the 'bounds-master' approach we have adopted
 # =======================================================
@@ -365,7 +365,7 @@ class Slice(np.ndarray):
         else:
             slicespec=Slice._boundsspec2slicespec(bounds.lbrt(),sheet_coordinate_system)
         # Using numpy.int32 for legacy reasons
-        a = np.array(slicespec, dtype=np.int32, copy=False).view(cls)
+        a = np.asarray(slicespec, dtype=np.int32).view(cls)
         return a
 
 

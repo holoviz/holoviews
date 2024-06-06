@@ -3,7 +3,7 @@ Test cases for the composite types built with + and *, i.e. Layout
 and Overlay (does *not* test HoloMaps).
 """
 
-from holoviews import Element, Layout, Overlay, HoloMap
+from holoviews import Element, HoloMap, Layout, Overlay
 from holoviews.element.comparison import ComparisonTestCase
 
 

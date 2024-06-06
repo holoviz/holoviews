@@ -1,18 +1,23 @@
-from types import FunctionType
 from collections import defaultdict
+from types import FunctionType
 
-import param
 import numpy as np
 import pandas as pd
+import param
 
-from ..core import Dimension, Dataset, Element2D
+from ..core import Dataset, Dimension, Element2D
 from ..core.accessors import Redim
-from ..core.util import is_dataframe, max_range, search_indices
 from ..core.operation import Operation
+from ..core.util import is_dataframe, max_range, search_indices
 from .chart import Points
 from .path import Path
-from .util import (split_path, circular_layout,
-                   connect_edges_pd, quadratic_bezier, connect_tri_edges_pd)
+from .util import (
+    circular_layout,
+    connect_edges_pd,
+    connect_tri_edges_pd,
+    quadratic_bezier,
+    split_path,
+)
 
 
 class RedimGraph(Redim):
@@ -204,7 +209,7 @@ class Graph(Dataset, Element2D):
                 mismatch.append(f'{kd1} != {kd2}')
         if mismatch:
             raise ValueError('Ensure that the first two key dimensions on '
-                             'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
+                             'Nodes and EdgePaths match: {}'.format(', '.join(mismatch)))
         npaths = len(self._edgepaths.data)
         nedges = len(self)
         if nedges != npaths:
@@ -264,7 +269,7 @@ argument to specify a selection specification""")
 
         index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims+self.vdims
-        node_selection = {index_dim: v for k, v in selection.items()
+        node_selection = {index_dim: v for k, v in selection.items()  # noqa: RUF011
                           if k in self.kdims}
         if selection_expr:
             mask = selection_expr.apply(self.nodes, compute=False, keep_index=True)
@@ -523,11 +528,11 @@ class TriMesh(Graph):
                     points = self.point_type(nodes)
                     ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
                     nodes = self.node_type(ds)
-                except Exception:
+                except Exception as e:
                     raise ValueError(
                         "Nodes argument could not be interpreted, expected "
                         "data with two or three columns representing the "
-                        "x/y positions and optionally the node indices.")
+                        "x/y positions and optionally the node indices.") from e
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
 
@@ -544,7 +549,7 @@ class TriMesh(Graph):
             from scipy.spatial import Delaunay
         except ImportError:
             raise ImportError("Generating triangles from points requires "
-                              "SciPy to be installed.")
+                              "SciPy to be installed.") from None
         if not isinstance(data, Points):
             data = Points(data)
         if not len(data):
@@ -552,8 +557,7 @@ class TriMesh(Graph):
         tris = Delaunay(data.array([0, 1]))
         return cls((tris.simplices, data))
 
-    @property
-    def edgepaths(self):
+    def _initialize_edgepaths(self):
         """
         Returns the EdgePaths by generating a triangle for each simplex.
         """
@@ -576,6 +580,13 @@ class TriMesh(Graph):
         self._edgepaths = edgepaths
         return edgepaths
 
+    @property
+    def edgepaths(self):
+        """
+        Returns the EdgePaths by generating a triangle for each simplex.
+        """
+        return self._initialize_edgepaths()
+
     def select(self, selection_specs=None, **selection):
         """
         Allows selecting data by the slices, sets and scalar values
@@ -586,8 +597,7 @@ class TriMesh(Graph):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
-        # Ensure that edgepaths are initialized so they can be selected on
-        self.edgepaths
+        self._initialize_edgepaths()
         return super().select(selection_specs=None,
                               selection_mode='nodes',
                               **selection)
@@ -676,7 +686,7 @@ class layout_chords(Operation):
 
         # Draw each chord by interpolating quadratic splines
         # Separate chords in each edge by NaNs
-        empty = np.array([[np.NaN, np.NaN]])
+        empty = np.array([[np.nan, np.nan]])
         paths = []
         for i in range(len(element)):
             sidx, tidx = src_idx[i], tgt_idx[i]
@@ -770,8 +780,7 @@ class Chord(Graph):
                 raise TypeError(f"Expected Nodes object in data, found {type(nodes)}.")
             self._nodes = nodes
             if not isinstance(edgepaths, EdgePaths):
-                raise TypeError("Expected EdgePaths object in data, found %s."
-                                % type(edgepaths))
+                raise TypeError(f"Expected EdgePaths object in data, found {type(edgepaths)}.")
             self._edgepaths = edgepaths
         self._validate()
 

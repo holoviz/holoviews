@@ -1,5 +1,4 @@
 import datetime as dt
-
 from unittest import SkipTest
 
 import numpy as np
@@ -10,16 +9,17 @@ try:
 except ImportError:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
 
-from holoviews.core.data import Dataset, concat, XArrayInterface
+from holoviews.core.data import Dataset, XArrayInterface, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Image, RGB, HSV, QuadMesh, ImageStack
+from holoviews.element import HSV, RGB, Image, ImageStack, QuadMesh
 
-from .test_imageinterface import (
-    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
-    BaseHSVElementInterfaceTests
-)
 from .test_gridinterface import BaseGridInterfaceTests
+from .test_imageinterface import (
+    BaseHSVElementInterfaceTests,
+    BaseImageElementInterfaceTests,
+    BaseRGBElementInterfaceTests,
+)
 
 
 class XArrayInterfaceTests(BaseGridInterfaceTests):
@@ -201,7 +201,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ds1 = Dataset(([0, 1], [1, 2, 3], arr1), ['x', 'y'], 'z')
         ds2 = Dataset(([0, 1, 2], [1, 2], arr2), ['x', 'y'], 'z')
         hmap = HoloMap({1: ds1, 2: ds2})
-        arr = np.full((3, 3, 2), np.NaN)
+        arr = np.full((3, 3, 2), np.nan)
         arr[:, :2, 0] = arr1
         arr[:2, :, 1] = arr2
         ds = Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')
@@ -249,8 +249,16 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             coords=dict(chain=range(d.shape[0]), value=range(d.shape[1])))
         ds = Dataset(da)
         t = ds.select(chain=0)
-        self.assertEqual(t.data.dims , dict(chain=1,value=8))
-        self.assertEqual(t.data.stuff.shape , (1,8))
+        if hasattr(t.data, "sizes"):
+            # Started to warn in xarray 2023.12.0:
+            # The return type of `Dataset.dims` will be changed to return a
+            # set of dimension names in future, in order to be more consistent
+            # with `DataArray.dims`. To access a mapping from dimension names to
+            # lengths, please use `Dataset.sizes`.
+            assert t.data.sizes == dict(chain=1, value=8)
+        else:
+            assert t.data.dims == dict(chain=1, value=8)
+        assert t.data.stuff.shape == (1, 8)
 
     def test_mask_2d_array_transposed(self):
         array = np.random.rand(4, 3)

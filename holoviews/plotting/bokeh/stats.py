@@ -1,25 +1,28 @@
 from collections import defaultdict
 from functools import partial
 
-import param
 import numpy as np
+import param
+from bokeh.models import Circle, FactorRange, HBar, VBar
 
-from bokeh.models import FactorRange, Circle, VBar, HBar
-
-from .selection import BokehOverlaySelectionDisplay
 from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
-    dimension_sanitizer, wrap_tuple, unique_iterator, isfinite,
-    is_dask_array, is_cupy_array
+    dimension_sanitizer,
+    is_cupy_array,
+    is_dask_array,
+    isfinite,
+    unique_iterator,
+    wrap_tuple,
 )
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
 from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot
-from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .path import PolygonPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties
 from .util import decode_bytes
 
@@ -68,6 +71,9 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    outlier_radius = param.Number(default=0.01, doc="""
+        The radius of the circle marker for the outliers.""")
 
     # Deprecated options
 
@@ -188,11 +194,11 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
-            out_map = {'y': 'index', 'x': vdim}
+            out_map = {'y': 'index', 'x': vdim, 'radius': self.outlier_radius}
         else:
             vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-            out_map = {'x': 'index', 'y': vdim}
+            out_map = {'x': 'index', 'y': vdim, 'radius': self.outlier_radius}
         vbar2_map = dict(vbar_map)
 
         # Get color values
@@ -203,7 +209,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             cdim, cidx = None, None
 
         factors = []
-        vdim = element.vdims[0].name
+        vdim = dimension_sanitizer(element.vdims[0].name)
         for key, g in groups.items():
             # Compute group label
             if element.kdims:

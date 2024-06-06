@@ -1,10 +1,10 @@
 import numpy as np
 
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
+from .interface import DataError, Interface
 
 
 class ArrayInterface(Interface):
@@ -76,7 +76,7 @@ class ArrayInterface(Interface):
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
             raise DataError("Supplied data does not match specified "
-                            "dimensions, expected at least %s columns." % ndims, cls)
+                            f"dimensions, expected at least {ndims} columns.", cls)
 
 
     @classmethod
@@ -106,7 +106,9 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         data = dataset.data
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
@@ -210,7 +212,9 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        if samples is None:
+            samples = []
         data = dataset.data
         mask = False
         for sample in samples:

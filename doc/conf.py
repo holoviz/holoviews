@@ -51,7 +51,6 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
-    "analytics": {"google_analytics_id": 'G-91EZMMHSF7'}
 }
 
 nbbuild_cell_timeout = 360
@@ -59,7 +58,18 @@ nbbuild_cell_timeout = 360
 extensions += [
     'nbsite.gallery',
     'sphinx_copybutton',
+    'nbsite.analytics',
 ]
+
+myst_enable_extensions = ["colon_fence", "deflist"]
+
+nbsite_analytics = {
+    'goatcounter_holoviz': True,
+}
+
+rediraffe_redirects = {
+    'gallery/demos/bokeh/eeg_viewer': 'gallery/demos/bokeh/multichannel_timeseries_viewer',
+}
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
@@ -85,7 +95,8 @@ if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
             'elements',
             'containers',
             'streams',
-            'apps'
+            'apps',
+            'features',
         ]
     }
 

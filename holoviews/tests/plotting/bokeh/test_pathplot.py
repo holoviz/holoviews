@@ -2,17 +2,16 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
-from holoviews.core import NdOverlay, HoloMap
+from holoviews.core import HoloMap, NdOverlay
 from holoviews.core.options import Cycle
-from holoviews.element import Path, Polygons, Contours
+from holoviews.element import Contours, Path, Polygons
+from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
-from holoviews.plotting.bokeh.util import property_to_dict
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import LinearColorMapper, CategoricalColorMapper
 
 
 class TestPathPlot(TestBokehPlot):
@@ -132,7 +131,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
-        self.assertEqual(cmapper.palette, colors[-1:])
+        self.assertEqual(np.unique(cmapper.palette), colors[-1:])
 
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]

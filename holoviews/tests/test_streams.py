@@ -6,13 +6,15 @@ from unittest import SkipTest
 
 import pandas as pd
 import param
+import pytest
 from panel.widgets import IntSlider
 
+import holoviews as hv
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import Version
-from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
+from holoviews.core.util import NUMPY_GE_200, Version
+from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import * # noqa (Test all available streams)
+from holoviews.streams import *  # noqa (Test all available streams)
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 
@@ -594,6 +596,24 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(values_x, [])
         self.assertEqual(values_y, [{}])
 
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_dynamicmap_partial_bind_and_streams():
+    # Ref: https://github.com/holoviz/holoviews/issues/6008
+
+    def make_plot(z, x_range, y_range):
+        return Curve([1, 2, 3, 4, z])
+
+    slider = IntSlider(name='Slider', start=0, end=10)
+    range_xy = RangeXY()
+
+    dmap = DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
+
+    bk_figure = hv.render(dmap)
+
+    assert bk_figure.renderers[0].data_source.data["y"][-1] == 0
+    assert range_xy.x_range == (0, 4)
+    assert range_xy.y_range == (-0.4, 4.4)
 
 
 class TestSubscribers(ComparisonTestCase):
@@ -1401,6 +1421,7 @@ class TestExprSelectionStream(ComparisonTestCase):
 
 
     def test_selection_expr_stream_polygon_index_cols(self):
+        # TODO: Should test both spatialpandas and shapely
         # Create SelectionExpr on element
         try: import shapely # noqa
         except ImportError:
@@ -1424,10 +1445,12 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
 
+        fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_200 else x
+
         expr_stream.input_streams[2].event(index=[0, 1])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b']))
+            repr(dim('cat').isin(fmt(['a', 'b'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 1)
@@ -1436,7 +1459,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b']))
+            repr(dim('cat').isin(fmt(['a', 'b'])))
         )
         self.assertEqual(len(events), 1)
 
@@ -1444,7 +1467,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b', 'c']))
+            repr(dim('cat').isin(fmt(['a', 'b', 'c'])))
         )
         self.assertEqual(len(events), 2)
 
@@ -1452,7 +1475,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[2].event(index=[1, 2])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['b', 'c']))
+            repr(dim('cat').isin(fmt(['b', 'c'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 3)

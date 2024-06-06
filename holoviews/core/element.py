@@ -1,14 +1,14 @@
 from itertools import groupby
-import numpy as np
 
-import param
+import numpy as np
 import pandas as pd
+import param
 
 from .dimension import Dimensioned, ViewableElement, asdim
 from .layout import Composable, Layout, NdLayout
 from .ndmapping import NdMapping
-from .overlay import Overlayable, NdOverlay, CompositeOverlay
-from .spaces import HoloMap, GridSpace
+from .overlay import CompositeOverlay, NdOverlay, Overlayable
+from .spaces import GridSpace, HoloMap
 from .tree import AttrTree
 from .util import get_param_values
 
@@ -75,8 +75,7 @@ class Element(ViewableElement, Composable, Overlayable):
         if key == ():
             return self
         else:
-            raise NotImplementedError("%s currently does not support getitem" %
-                                      type(self).__name__)
+            raise NotImplementedError(f"{type(self).__name__} currently does not support getitem")
 
     def __bool__(self):
         """Indicates whether the element is empty.
@@ -109,7 +108,7 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         raise NotImplementedError
 
-    def sample(self, samples=[], bounds=None, closest=False, **sample_values):
+    def sample(self, samples=None, bounds=None, closest=False, **sample_values):
         """Samples values at supplied coordinates.
 
         Allows sampling of element with a list of coordinates matching
@@ -141,10 +140,12 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             Element containing the sampled coordinates
         """
+        if samples is None:
+            samples = []
         raise NotImplementedError
 
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduction):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reduction):
         """Applies reduction along the specified dimension(s).
 
         Allows reducing the values along one or more key dimension
@@ -172,6 +173,8 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns:
             The element after reductions have been applied.
         """
+        if dimensions is None:
+            dimensions = []
         raise NotImplementedError
 
 

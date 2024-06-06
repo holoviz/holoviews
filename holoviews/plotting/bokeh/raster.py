@@ -2,8 +2,7 @@ import sys
 
 import numpy as np
 import param
-
-from bokeh.models import DatetimeAxis, CustomJSHover
+from bokeh.models import CustomJSHover, DatetimeAxis
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
@@ -12,7 +11,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import bokeh3, colormesh
+from .util import bokeh33, bokeh34, colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -44,7 +43,7 @@ class RasterPlot(ColorbarPlot):
         tooltips.append((vdims[0].pprint_label, '@image'))
         for vdim in vdims[1:]:
             vname = dimension_sanitizer(vdim.name)
-            tooltips.append((vdim.pprint_label, f'@{vname}'))
+            tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
@@ -53,8 +52,6 @@ class RasterPlot(ColorbarPlot):
         if not (hover and isinstance(hover.tooltips, list)):
             return
 
-        element = self.current_frame
-        xdim, ydim = (dimension_sanitizer(kd.name) for kd in element.kdims)
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
@@ -74,6 +71,21 @@ class RasterPlot(ColorbarPlot):
                 formatters['$y'] = yhover
                 formatter += '{custom}'
             tooltips.append((name, formatter))
+
+        if not bokeh34:  # https://github.com/bokeh/bokeh/issues/13598
+            datetime_code = """
+            if (value === -9223372036854776) {
+                return "NaN"
+            } else {
+                const date = new Date(value);
+                return date.toISOString().slice(0, 19).replace('T', ' ')
+            }
+            """
+            for key in formatters:
+                formatter = formatters[key]
+                if isinstance(formatter, str) and formatter.lower() == "datetime":
+                    formatters[key] = CustomJSHover(code=datetime_code)
+
         hover.tooltips = tooltips
         hover.formatters = formatters
 
@@ -102,10 +114,6 @@ class RasterPlot(ColorbarPlot):
                 l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis and not bokeh3:
-            l, r = r, l
-        if self.invert_yaxis and not bokeh3:
-            b, t = t, b
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
         for i, vdim in enumerate(element.vdims, 2):
@@ -115,13 +123,9 @@ class RasterPlot(ColorbarPlot):
             if img.dtype.kind == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
-                img = np.array([[np.NaN]])
+                img = np.array([[np.nan]])
             if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
-            if self.invert_xaxis and not bokeh3:
-                img = img[:, ::-1]
-            if self.invert_yaxis and not bokeh3:
-                img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
 
@@ -212,12 +216,6 @@ class RGBPlot(LegendPlot):
             l, b, r, t = b, l, t, r
 
         dh, dw = t-b, r-l
-        if self.invert_xaxis and not bokeh3:
-            l, r = r, l
-            img = img[:, ::-1]
-        if self.invert_yaxis and not bokeh3:
-            img = img[::-1]
-            b, t = t, b
 
         if 0 in img.shape:
             img = np.zeros((1, 1), dtype=np.uint32)
@@ -260,13 +258,31 @@ class ImageStackPlot(RasterPlot):
 
     def _get_colormapper(self, eldim, element, ranges, style, factors=None,
                          colors=None, group=None, name='color_mapper'):
+        indices = None
+        vdims = element.vdims
+        if isinstance(style.get("cmap"), dict):
+            dict_cmap = style["cmap"]
+            missing = [vd.name for vd in vdims if vd.name not in dict_cmap]
+            if missing:
+                missing_str = "', '".join(sorted(missing))
+                raise ValueError(
+                    "The supplied cmap dictionary must have the same "
+                    f"value dimensions as the element. Missing: '{missing_str}'"
+                )
+            keys, values = zip(*dict_cmap.items())
+            style["cmap"] = list(values)
+            indices = [keys.index(vd.name) for vd in vdims]
+
         cmapper = super()._get_colormapper(
             eldim, element, ranges, style, factors=factors,
             colors=colors, group=group, name=name
         )
-        num_elements = len(element.vdims)
-        step_size = len(cmapper.palette) // num_elements
-        indices = np.arange(num_elements) * step_size
+
+        if indices is None:
+            num_elements = len(vdims)
+            step_size = len(cmapper.palette) // num_elements
+            indices = np.arange(num_elements) * step_size
+
         cmapper.palette = np.array(cmapper.palette)[indices].tolist()
         return cmapper
 
@@ -302,11 +318,16 @@ class ImageStackPlot(RasterPlot):
         return (data, mapping, style)
 
     def _hover_opts(self, element):
-        xdim, ydim = element.kdims
-        # TODO: Bokeh 3.3 not yet released; it has support for multi hover
+        # Bokeh 3.3 has simple support for multi hover in a tuple.
         # https://github.com/bokeh/bokeh/pull/13193
         # https://github.com/bokeh/bokeh/pull/13366
-        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
+        if bokeh33:
+            xdim, ydim = element.kdims
+            vdim = ", ".join([d.pprint_label for d in element.vdims])
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}
+        else:
+            xdim, ydim = element.kdims
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
 
 
 class HSVPlot(RGBPlot):

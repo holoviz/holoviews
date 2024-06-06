@@ -3,11 +3,11 @@ import datetime as dt
 import numpy as np
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.overlay import NdOverlay
 from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
-from holoviews.core.options import AbbreviatedException
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer

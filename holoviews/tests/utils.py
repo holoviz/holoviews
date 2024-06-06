@@ -1,7 +1,12 @@
+import logging
 import os
 import sys
+from contextlib import contextmanager
+from importlib import reload
+from importlib.util import find_spec
+
 import param
-import logging
+import pytest
 
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -58,8 +63,7 @@ class MockLoggingHandler(logging.Handler):
         msg='\n\n{method}: {last_line}\ndoes not end with:\n{substring}'
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError('Missing {method} output: {substring}'.format(
-                method=self.param_methods[level], substring=repr(substring)))
+            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
         if not last_line[0].endswith(substring):
             raise AssertionError(msg.format(method=self.param_methods[level],
                                             last_line=repr(last_line[0]),
@@ -76,8 +80,7 @@ class MockLoggingHandler(logging.Handler):
         msg='\n\n{method}: {last_line}\ndoes not contain:\n{substring}'
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError('Missing {method} output: {substring}'.format(
-                method=self.param_methods[level], substring=repr(substring)))
+            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
         if substring not in last_line[0]:
             raise AssertionError(msg.format(method=self.param_methods[level],
                                             last_line=repr(last_line[0]),
@@ -112,3 +115,28 @@ class LoggingComparisonTestCase(ComparisonTestCase):
         for level, msgs in messages.items():
             for msg in msgs:
                 log.log(LEVELS[level], msg)
+
+
+DASK_UNAVAILABLE = find_spec("dask") is None
+EXPR_UNAVAILABLE = find_spec("dask_expr") is None
+
+
+@contextmanager
+def dask_switcher(*, query=False, extras=()):
+    """
+    Context manager to switch on/off dask-expr query planning.
+    Using a context manager as it is an easy way to
+    change the function to a decorator.
+    """
+    if DASK_UNAVAILABLE:
+        pytest.skip("dask is not available")
+    if query and EXPR_UNAVAILABLE:
+        pytest.skip("dask-expr is not available")
+
+    import dask
+
+    dask.config.set(**{"dataframe.query-planning": query})
+    for module in ("dask.dataframe", *extras):
+        if module in sys.modules:
+            reload(sys.modules[module])
+    yield

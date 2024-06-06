@@ -1,37 +1,38 @@
-import types
 import copy
-
+import types
 from contextlib import contextmanager
 from functools import wraps
 
 import numpy as np
+import pandas as pd  # noqa
 import param
-import pandas as pd # noqa
-
 from param.parameterized import ParameterizedMetaclass
 
+from .. import util as core_util
 from ..accessors import Redim
 from ..dimension import (
-    Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
+    Dimension,
+    Dimensioned,
+    LabelledData,
+    dimension_name,
+    process_dimensions,
 )
 from ..element import Element
 from ..ndmapping import MultiDimensionalMapping
-from ..spaces import HoloMap, DynamicMap
-from .. import util as core_util
-
+from ..spaces import DynamicMap, HoloMap
 from .array import ArrayInterface
-from .cudf import cuDFInterface               # noqa (API import)
-from .dask import DaskInterface               # noqa (API import)
-from .dictionary import DictInterface         # noqa (API import)
-from .grid import GridInterface               # noqa (API import)
-from .ibis import IbisInterface               # noqa (API import)
+from .cudf import cuDFInterface  # noqa (API import)
+from .dask import DaskInterface  # noqa (API import)
+from .dictionary import DictInterface  # noqa (API import)
+from .grid import GridInterface  # noqa (API import)
+from .ibis import IbisInterface  # noqa (API import)
+from .image import ImageInterface  # noqa (API import)
 from .interface import Interface, iloc, ndloc
-from .multipath import MultiInterface         # noqa (API import)
-from .image import ImageInterface             # noqa (API import)
-from .pandas import PandasAPI, PandasInterface        # noqa (API import)
-from .spatialpandas import SpatialPandasInterface     # noqa (API import)
-from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
-from .xarray import XArrayInterface           # noqa (API import)
+from .multipath import MultiInterface  # noqa (API import)
+from .pandas import PandasAPI, PandasInterface  # noqa (API import)
+from .spatialpandas import SpatialPandasInterface  # noqa (API import)
+from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
+from .xarray import XArrayInterface  # noqa (API import)
 
 default_datatype = 'dataframe'
 
@@ -289,7 +290,8 @@ class Dataset(Element, metaclass=PipelineMeta):
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
-            chain as chain_op, factory
+            chain as chain_op,
+            factory,
         )
         self._in_method = False
         input_data = data
@@ -431,7 +433,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         self._cached = persisted
         return self
 
-    def closest(self, coords=[], **kwargs):
+    def closest(self, coords=None, **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
 
         Args:
@@ -444,6 +446,8 @@ class Dataset(Element, metaclass=PipelineMeta):
         Raises:
             NotImplementedError: Raised if snapping is not supported
         """
+        if coords is None:
+            coords = []
         if self.ndims > 1:
             raise NotImplementedError("Closest method currently only "
                                       "implemented for 1D Elements")
@@ -503,7 +507,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         elif dim in self.dimensions() and data_range and bool(self):
             lower, upper = self.interface.range(self, dim)
         else:
-            lower, upper = (np.NaN, np.NaN)
+            lower, upper = (np.nan, np.nan)
         if not dimension_range:
             return lower, upper
         return core_util.dimension_range(lower, upper, dim.range, dim.soft_range)
@@ -717,7 +721,7 @@ argument to specify a selection specification""")
         return data
 
 
-    def sample(self, samples=[], bounds=None, closest=True, **kwargs):
+    def sample(self, samples=None, bounds=None, closest=True, **kwargs):
         """Samples values at supplied coordinates.
 
         Allows sampling of element with a list of coordinates matching
@@ -749,6 +753,8 @@ argument to specify a selection specification""")
         Returns:
             Element containing the sampled coordinates
         """
+        if samples is None:
+            samples = []
         if kwargs and samples != []:
             raise Exception('Supply explicit list of samples or kwargs, not both.')
         elif kwargs:
@@ -785,7 +791,7 @@ argument to specify a selection specification""")
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
-        from ...element import Table, Curve
+        from ...element import Curve, Table
         datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
@@ -824,7 +830,7 @@ argument to specify a selection specification""")
         return self.clone(sampled, new_type=Table, datatype=datatype)
 
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **reductions):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reductions):
         """Applies reduction along the specified dimension(s).
 
         Allows reducing the values along one or more key dimension
@@ -852,6 +858,8 @@ argument to specify a selection specification""")
         Returns:
             The Dataset after reductions have been applied.
         """
+        if dimensions is None:
+            dimensions = []
         if any(dim in self.vdims for dim in dimensions):
             raise Exception("Reduce cannot be applied to value dimensions")
         function, dims = self._reduce_map(dimensions, function, reductions)
@@ -941,7 +949,7 @@ argument to specify a selection specification""")
                                   new_type=new_type, datatype=datatype)
 
 
-    def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
+    def groupby(self, dimensions=None, container_type=HoloMap, group_type=None,
                 dynamic=False, **kwargs):
         """Groups object by one or more dimensions
 
@@ -960,6 +968,8 @@ argument to specify a selection specification""")
             Returns object of supplied container_type containing the
             groups. If dynamic=True returns a DynamicMap instead.
         """
+        if dimensions is None:
+            dimensions = []
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
@@ -1089,7 +1099,7 @@ argument to specify a selection specification""")
         values = self.interface.values(self, dim, expanded, flat)
         if dim.nodata is not None:
             # Ensure nodata applies to boolean data in py2
-            values = np.where(values==dim.nodata, np.NaN, values)
+            values = np.where(values==dim.nodata, np.nan, values)
         return values
 
     def get_dimension_type(self, dim):

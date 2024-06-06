@@ -1,11 +1,11 @@
 from numbers import Number
+
 import numpy as np
 import param
 
-from ..core.util import datetime_types
-from ..core import Dimension, Element2D, Element
+from ..core import Dimension, Element, Element2D
 from ..core.data import Dataset
-
+from ..core.util import datetime_types
 
 
 class VectorizedAnnotation(Dataset, Element2D):
@@ -478,7 +478,7 @@ class Div(Element):
             data = ''
         if not isinstance(data, str):
             raise ValueError("Div element html data must be a string "
-                             "type, found %s type." % type(data).__name__)
+                             f"type, found {type(data).__name__} type.")
         super().__init__(data, **params)
 
 

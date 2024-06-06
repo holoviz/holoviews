@@ -1,8 +1,7 @@
 import numpy as np
-
-from holoviews.element import HeatMap, Points, Image
-
 from bokeh.models import FactorRange, HoverTool, Range1d
+
+from holoviews.element import HeatMap, Image, Points
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

@@ -4,19 +4,17 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
-import sys
 import weakref
-from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 from itertools import groupby
+from numbers import Number
 from types import FunctionType
-from packaging.version import Version
 
-import param
-import pandas as pd
 import numpy as np
+import pandas as pd
+import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
@@ -49,12 +47,7 @@ def streams_list_from_dict(streams):
     "Converts a streams dictionary into a streams list"
     params = {}
     for k, v in streams.items():
-        if 'panel' in sys.modules:
-            if util.param_version > util.Version('2.0.0rc1'):
-                v = param.parameterized.transform_reference(v)
-            else:
-                from panel.depends import param_value_if_widget
-                v = param_value_if_widget(v)
+        v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
@@ -225,10 +218,7 @@ class Stream(param.Parameterized):
                 rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
-                if util.param_version > util.Version('2.0.0rc1'):
-                    deps = param.parameterized.resolve_ref(s)
-                else:
-                    deps = None
+                deps = param.parameterized.resolve_ref(s)
                 if deps:
                     s = Params(parameters=deps)
                 else:
@@ -240,18 +230,19 @@ class Stream(param.Parameterized):
                 if overlap:
                     pname = type(s.parameterized).__name__
                     param.main.param.warning(
-                        'The {} parameter(s) on the {} object have '
+                        f'The {sorted([p.name for p in overlap])} parameter(s) '
+                        f'on the {pname} object have '
                         'already been supplied in another stream. '
                         'Ensure that the supplied streams only specify '
                         'each parameter once, otherwise multiple '
-                        'events will be triggered when the parameter '
-                        'changes.'.format(sorted([p.name for p in overlap]), pname))
+                        'events will be triggered when the parameter changes.'
+                    )
                 parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
 
 
-    def __init__(self, rename={}, source=None, subscribers=[], linked=False,
+    def __init__(self, rename=None, source=None, subscribers=None, linked=False,
                  transient=False, **params):
         """
         The rename argument allows multiple streams with similar event
@@ -266,6 +257,10 @@ class Stream(param.Parameterized):
         """
 
         # Source is stored as a weakref to allow it to be garbage collected
+        if subscribers is None:
+            subscribers = []
+        if rename is None:
+            rename = {}
         self._source = None if source is None else weakref.ref(source)
 
         self._subscribers = []
@@ -356,8 +351,8 @@ class Stream(param.Parameterized):
             if k not in param_names:
                 raise KeyError(f'Cannot rename {k!r} as it is not a stream parameter')
             if k != v and v in param_names:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
 
@@ -554,7 +549,10 @@ class Buffer(Pipe):
                 loaded = True
             except ImportError:
                 try:
-                    from streamz.dataframe import DataFrame as StreamingDataFrame, Series as StreamingSeries
+                    from streamz.dataframe import (
+                        DataFrame as StreamingDataFrame,
+                        Series as StreamingSeries,
+                    )
                     loaded = True
                 except ImportError:
                     loaded = False
@@ -681,16 +679,13 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, doc="""
-        Parameterized instance to watch for parameter changes.""", **util.disallow_refs)
+                                        constant=True, allow_None=True, allow_refs=False, doc="""
+        Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-        if util.param_version < Version('1.8.0') and watch:
-            raise RuntimeError('Params stream requires param version >= 1.8.0, '
-                               'to support watching parameters.')
         if parameters is None:
             parameters = [parameterized.param[p] for p in parameterized.param if p != 'name']
         else:
@@ -760,8 +755,8 @@ class Params(Stream):
             if n not in pnames:
                 raise KeyError(f'Cannot rename {n!r} as it is not a stream parameter')
             if n != v and v in pnames:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
     def _watcher(self, *events):
@@ -835,8 +830,7 @@ class ParamMethod(Params):
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
             raise ValueError('ParamMethod stream expects a method on a '
-                             'parameterized class, found %s.'
-                             % type(parameterized).__name__)
+                             f'parameterized class, found {type(parameterized).__name__}.')
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
@@ -988,8 +982,8 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
-        from .element import Element
         from .core.spaces import DynamicMap
+        from .element import Element
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)
@@ -1266,8 +1260,9 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, **params):
+    def __init__(self, linked=True, popup=None, **params):
         super().__init__(linked=linked, **params)
+        self.popup = popup
 
 
 class PointerX(LinkedStream):
@@ -1473,6 +1468,10 @@ class RangeX(LinkedStream):
     x_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
+    def _set_stream_parameters(self, **kwargs):
+        kwargs.pop("y_range", None)
+        super()._set_stream_parameters(**kwargs)
+
 
 class RangeY(LinkedStream):
     """
@@ -1481,6 +1480,10 @@ class RangeY(LinkedStream):
 
     y_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
+
+    def _set_stream_parameters(self, **kwargs):
+        kwargs.pop("x_range", None)
+        super()._set_stream_parameters(**kwargs)
 
 
 class BoundsXY(LinkedStream):
@@ -1613,7 +1616,9 @@ class PointDraw(CDSStream):
         path-like data).""")
 
     def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
-                 styles={}, tooltip=None, **params):
+                 styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.add = add
         self.drag = drag
         self.empty_value = empty_value
@@ -1656,7 +1661,9 @@ class CurveEdit(PointDraw):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, style={}, tooltip=None, **params):
+    def __init__(self, style=None, tooltip=None, **params):
+        if style is None:
+            style = {}
         self.style = style or {'size': 10}
         self.tooltip = tooltip
         super(PointDraw, self).__init__(**params)
@@ -1700,8 +1707,12 @@ class PolyDraw(CDSStream):
         path-like data).""")
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style={}, styles={},
+                 show_vertices=False, vertex_style=None, styles=None,
                  tooltip=None, **params):
+        if styles is None:
+            styles = {}
+        if vertex_style is None:
+            vertex_style = {}
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
@@ -1758,7 +1769,9 @@ class FreehandDraw(CDSStream):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
@@ -1812,7 +1825,9 @@ class BoxEdit(CDSStream):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
+        if styles is None:
+            styles = {}
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
@@ -1821,7 +1836,7 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Rectangles, Polygons
+        from .element import Polygons, Rectangles
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1874,6 +1889,17 @@ class PolyEdit(PolyDraw):
         (for point-like data) or list of lists of values (for
         path-like data).""")
 
-    def __init__(self, vertex_style={}, shared=True, **params):
+    def __init__(self, vertex_style=None, shared=True, **params):
+        if vertex_style is None:
+            vertex_style = {}
         self.shared = shared
         super().__init__(vertex_style=vertex_style, **params)
+
+
+def _streams_transform(obj):
+    if isinstance(obj, Pipe):
+        return obj.param.data
+    return obj
+
+
+param.reactive.register_reference_transform(_streams_transform)

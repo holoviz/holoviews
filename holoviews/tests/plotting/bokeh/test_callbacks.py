@@ -1,5 +1,4 @@
 import datetime as dt
-
 from collections import deque, namedtuple
 from unittest import SkipTest
 
@@ -7,24 +6,39 @@ import numpy as np
 import pandas as pd
 import pytest
 import pyviz_comms as comms
+from bokeh.events import Tap
+from bokeh.io.doc import set_curdoc
+from bokeh.models import ColumnDataSource, Plot, PolyEditTool, Range1d, Selection
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
+from holoviews.element import Box, Curve, Points, Polygons, Rectangles, Table
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import (
-    PointDraw, PolyDraw, PolyEdit, BoxEdit, PointerXY, PointerX,
-    PlotReset, Selection1D, RangeXY, PlotSize, CDSStream, SingleTap
-)
-
-from bokeh.events import Tap
-from bokeh.io.doc import set_curdoc
-from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
 from holoviews.plotting.bokeh.callbacks import (
-    Callback, CDSCallback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-    BoxEditCallback, PointerXCallback, TapCallback
+    BoxEditCallback,
+    Callback,
+    CDSCallback,
+    PointDrawCallback,
+    PointerXCallback,
+    PolyDrawCallback,
+    PolyEditCallback,
+    TapCallback,
 )
 from holoviews.plotting.bokeh.renderer import BokehRenderer
+from holoviews.streams import (
+    BoxEdit,
+    CDSStream,
+    PlotReset,
+    PlotSize,
+    PointDraw,
+    PointerX,
+    PointerXY,
+    PolyDraw,
+    PolyEdit,
+    RangeXY,
+    Selection1D,
+    SingleTap,
+)
 
 bokeh_server_renderer = BokehRenderer.instance(mode='server')
 bokeh_renderer = BokehRenderer.instance()
@@ -98,7 +112,8 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['y'], np.array([0.4]))
 
     def test_stream_callback_single_call(self):
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
         stream = PointerX(x=0)
@@ -112,6 +127,7 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
 
+    @pytest.mark.flaky(reruns=3)
     def test_callback_cleanup(self):
         stream = PointerX(x=0)
         dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])
@@ -287,7 +303,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
-    @pytest.mark.flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=3)
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
@@ -407,7 +423,12 @@ class TestServerCallbacks(CallbackTestCase):
                                     'value': points.columns()})
 
     def test_rangexy_datetime(self):
-        curve = Curve(pd._testing.makeTimeDataFrame(), 'index', 'C')
+        df = pd.DataFrame(
+            data = np.random.default_rng(2).standard_normal((30, 4)),
+            columns=list('ABCD'),
+            index=pd.date_range('2018-01-01', freq='D', periods=30),
+        )
+        curve = Curve(df, 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]
@@ -447,13 +468,14 @@ def test_msg_with_base64_array():
     assert np.equal(data_expected, data_after).all()
 
 
+@pytest.mark.usefixtures('bokeh_backend')
 def test_rangexy_multi_yaxes():
     c1 = Curve(np.arange(100).cumsum(), vdims='y')
     c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
     RangeXY(source=c1)
     RangeXY(source=c2)
 
-    overlay = (c1 * c2).opts(backend='bokeh', multi_y=True)
+    overlay = (c1 * c2).opts(multi_y=True)
     plot = bokeh_server_renderer.get_plot(overlay)
 
     p1, p2 = plot.subplots.values()

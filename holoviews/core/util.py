@@ -1,29 +1,31 @@
 import builtins
-import sys
-import warnings
-import operator
+import datetime as dt
 import hashlib
-import json
-import time
-import types
-import numbers
-import pickle
 import inspect
 import itertools
+import json
+import numbers
+import operator
+import pickle
 import string
+import sys
+import time
+import types
 import unicodedata
-import datetime as dt
-
+import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-from packaging.version import Version
 from functools import partial
-from threading import Thread, Event
+from threading import Event, Thread
 from types import FunctionType
 
 import numpy as np
 import pandas as pd
 import param
+from packaging.version import Version
+from pandas.core.arrays.masked import BaseMaskedArray
+from pandas.core.dtypes.dtypes import DatetimeTZDtype
+from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
 # Python 2 builtins
 basestring = str
@@ -32,55 +34,22 @@ unicode = str
 cmp = lambda a, b: (a>b)-(a<b)
 
 get_keywords = operator.attrgetter('varkw')
-generator_types = (zip, range, types.GeneratorType)
-numpy_version = Version(np.__version__)
+
+# Versions
+numpy_version = Version(Version(np.__version__).base_version)
 param_version = Version(param.__version__)
-
-datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time)
-timedelta_types = (np.timedelta64, dt.timedelta,)
-arraylike_types = (np.ndarray,)
-masked_types = ()
-
-anonymous_dimension_label = '_'
-
-disallow_refs = {'allow_refs': False} if param_version > Version('2.0.0rc1') else {}
-
-# Argspec was removed in Python 3.11
-ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
-
-_NP_SIZE_LARGE = 1_000_000
-_NP_SAMPLE_SIZE = 1_000_000
-_PANDAS_ROWS_LARGE = 1_000_000
-_PANDAS_SAMPLE_SIZE = 1_000_000
-
 pandas_version = Version(pd.__version__)
-try:
-    if pandas_version >= Version('1.3.0'):
-        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
-    elif pandas_version >= Version('0.24.0'):
-        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-    elif pandas_version > Version('0.20.0'):
-        from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-    else:
-        from pandas.types.dtypes import DatetimeTZDtypeType
-        from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
-    pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
-    pandas_timedelta_types = (pd.Timedelta,)
-    datetime_types = datetime_types + pandas_datetime_types
-    timedelta_types = timedelta_types + pandas_timedelta_types
-    arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-    if pandas_version > Version('0.23.0'):
-        from pandas.core.dtypes.generic import ABCExtensionArray
-        arraylike_types = arraylike_types + (ABCExtensionArray,)
-    if pandas_version > Version('1.0'):
-        from pandas.core.arrays.masked import BaseMaskedArray
-        masked_types = (BaseMaskedArray,)
-except Exception as e:
-    param.main.param.warning('pandas could not register all extension types '
-                                'imports failed with the following error: %s' % e)
+
+NUMPY_GE_200 = numpy_version >= Version("2")
+
+# Types
+generator_types = (zip, range, types.GeneratorType)
+pandas_datetime_types = (pd.Timestamp, DatetimeTZDtype, pd.Period)
+pandas_timedelta_types = (pd.Timedelta,)
+datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time, *pandas_datetime_types)
+timedelta_types = (np.timedelta64, dt.timedelta, *pandas_timedelta_types)
+arraylike_types = (np.ndarray, ABCSeries, ABCIndex, ABCExtensionArray)
+masked_types = (BaseMaskedArray,)
 
 try:
     import cftime
@@ -90,6 +59,15 @@ except ImportError:
     cftime_types = ()
 _STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
 
+anonymous_dimension_label = '_'
+
+# Argspec was removed in Python 3.11
+ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
+
+_NP_SIZE_LARGE = 1_000_000
+_NP_SAMPLE_SIZE = 1_000_000
+_PANDAS_ROWS_LARGE = 1_000_000
+_PANDAS_SAMPLE_SIZE = 1_000_000
 
 # To avoid pandas warning about using DataFrameGroupBy.function
 # introduced in Pandas 2.1.
@@ -443,6 +421,8 @@ def argspec(callable_obj):
         arglen = len(callable_obj.args)
         spec = inspect.getfullargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
+        if inspect.ismethod(callable_obj.func):
+            args = args[1:]
     elif inspect.ismethod(callable_obj):    # instance and class methods
         spec = inspect.getfullargspec(callable_obj)
         args = spec.args[1:]
@@ -732,12 +712,18 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return chars
 
     @param.parameterized.bothmethod
-    def shortened_character_name(self_or_cls, c, eliminations=[], substitutions={}, transforms=[]):
+    def shortened_character_name(self_or_cls, c, eliminations=None, substitutions=None, transforms=None):
         """
         Given a unicode character c, return the shortened unicode name
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
         """
+        if transforms is None:
+            transforms = []
+        if substitutions is None:
+            substitutions = {}
+        if eliminations is None:
+            eliminations = []
         name = unicodedata.name(c).lower()
         # Filtering
         for elim in eliminations:
@@ -797,8 +783,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         "Accumulate blocks of hex and separate blocks by underscores"
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception(r"Please use a raw string or escape control code '\%s'"
-                            % invalid[cc])
+            raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:
@@ -880,10 +865,7 @@ def isnat(val):
     """
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
-        if numpy_version >= Version('1.13'):
-            return np.isnat(val)
-        else:
-            return val.view('i8') == nat_as_integer
+        return np.isnat(val)
     elif val is pd.NaT:
         return True
     elif isinstance(val, pandas_datetime_types+pandas_timedelta_types):
@@ -918,19 +900,16 @@ def isfinite(val):
         elif val.dtype.kind in 'US':
             return ~pd.isna(val)
         finite = np.isfinite(val)
-        if pandas_version >= Version('1.0.0'):
-            finite &= ~pd.isna(val)
+        finite &= ~pd.isna(val)
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
     finite = np.isfinite(val)
-    if pandas_version >= Version('1.0.0'):
-        if finite is pd.NA:
-            return False
-        return finite & (~pd.isna(val))
-    return finite
+    if finite is pd.NA:
+        return False
+    return finite & ~pd.isna(np.asarray(val))
 
 
 def isdatetime(value):
@@ -955,16 +934,18 @@ def find_minmax(lims, olims):
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except Exception:
-        limits = (np.NaN, np.NaN)
+        limits = (np.nan, np.nan)
     return limits
 
 
-def find_range(values, soft_range=[]):
+def find_range(values, soft_range=None):
     """
     Safely finds either the numerical min and max of
     a set of values, falling back to the first and
     the last value in the sorted list of values.
     """
+    if soft_range is None:
+        soft_range = []
     try:
         values = np.array(values)
         values = np.squeeze(values) if len(values.shape) > 1 else values
@@ -999,7 +980,7 @@ def max_range(ranges, combined=True):
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
+            values = [tuple(np.nan if v is None else v for v in r) for r in ranges]
             if any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
@@ -1015,7 +996,7 @@ def max_range(ranges, combined=True):
 
             arr = np.array(values)
             if not len(arr):
-                return np.NaN, np.NaN
+                return np.nan, np.nan
             elif arr.dtype.kind in 'OSU':
                 arr = list(python2sort([
                     v for r in values for v in r
@@ -1031,7 +1012,7 @@ def max_range(ranges, combined=True):
             else:
                 return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except Exception:
-        return (np.NaN, np.NaN)
+        return (np.nan, np.nan)
 
 
 def range_pad(lower, upper, padding=None, log=False):
@@ -1101,7 +1082,7 @@ def max_extents(extents, zrange=False):
         num = 4
         inds = [(0, 2), (1, 3)]
     arr = list(zip(*extents)) if extents else []
-    extents = [np.NaN] * num
+    extents = [np.nan] * num
     if len(arr) == 0:
         return extents
     with warnings.catch_warnings():
@@ -1208,8 +1189,10 @@ def unique_array(arr):
         if (isinstance(v, datetime_types) and
             not isinstance(v, cftime_types)):
             v = pd.Timestamp(v).to_datetime64()
+        elif isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
+            v = v.dtype.categories
         values.append(v)
-    return pd.unique(np.asarray(values))
+    return pd.unique(np.asarray(values).ravel())
 
 
 def match_spec(element, specification):
@@ -1238,7 +1221,7 @@ def python2sort(x,key=None):
             try:
                 item_precedence = item if key is None else key(item)
                 group_precedence = group[0] if key is None else key(group[0])
-                item_precedence < group_precedence  # exception if not comparable
+                item_precedence < group_precedence  # noqa: B015, TypeError if not comparable
                 group.append(item)
                 break
             except TypeError:
@@ -1299,7 +1282,8 @@ def dimension_sort(odict, kdims, vdims, key_index):
 # Copied from param should make param version public
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
-    elif isinstance(obj, (np.str_, np.unicode_)): return False
+    elif isinstance(obj, np.str_): return False
+    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_): return False  # noqa: NPY201
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
@@ -1599,6 +1583,8 @@ def resolve_dependent_value(value):
        A new value where any parameter dependencies have been
        resolved.
     """
+    from panel.widgets import RangeSlider
+
     range_widget = False
     if isinstance(value, list):
         value = [resolve_dependent_value(v) for v in value]
@@ -1615,14 +1601,8 @@ def resolve_dependent_value(value):
             resolve_dependent_value(value.step),
         )
 
-    if 'panel' in sys.modules:
-        from panel.depends import param_value_if_widget
-        from panel.widgets import RangeSlider
-        range_widget = isinstance(value, RangeSlider)
-        if param_version > Version('2.0.0rc1'):
-            value = param.parameterized.resolve_value(value)
-        else:
-            value = param_value_if_widget(value)
+    range_widget = isinstance(value, RangeSlider)
+    value = param.parameterized.resolve_value(value)
 
     if is_param_method(value, has_deps=True):
         value = value()
@@ -1698,7 +1678,7 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
-def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
+def stream_name_mapping(stream, exclude_params=None, reverse=False):
     """
     Return a complete dictionary mapping between stream parameter names
     to their applicable renames, excluding parameters listed in
@@ -1707,6 +1687,8 @@ def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
     If reverse is True, the mapping is from the renamed strings to the
     original stream parameter names.
     """
+    if exclude_params is None:
+        exclude_params = ['name']
     from ..streams import Params
     if isinstance(stream, Params):
         mapping = {}
@@ -1743,7 +1725,7 @@ def rename_stream_kwargs(stream, kwargs, reverse=False):
     return mapped_kwargs
 
 
-def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_key']):
+def stream_parameters(streams, no_duplicates=True, exclude=None):
     """
     Given a list of streams, return a flat list of parameter name,
     excluding those listed in the exclude list.
@@ -1751,6 +1733,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_ke
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
+    if exclude is None:
+        exclude = ['name', '_memoize_key']
     from ..streams import Params
     param_groups = {}
     for s in streams:
@@ -1776,8 +1760,8 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_ke
         clashes = sorted(clashes)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
-            raise Exception('The supplied stream objects {} and {} '
-                            'clash on the following parameters: {!r}'.format(clashing, clash_streams[-1], clashes))
+            raise Exception(f'The supplied stream objects {clashing} and {clash_streams[-1]} '
+                            f'clash on the following parameters: {clashes!r}')
     return [name for group in param_groups.values() for name in group
             if name not in exclude]
 
@@ -2258,9 +2242,9 @@ def numpy_scalar_to_python(scalar):
     Converts a NumPy scalar to a regular python type.
     """
     scalar_type = type(scalar)
-    if np.issubclass_(scalar_type, np.float_):
+    if issubclass(scalar_type, np.float64):
         return float(scalar)
-    elif np.issubclass_(scalar_type, np.int_):
+    elif issubclass(scalar_type, np.int_):
         return int(scalar)
     return scalar
 

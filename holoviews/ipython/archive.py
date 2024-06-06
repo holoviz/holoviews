@@ -3,23 +3,20 @@ Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
 
-import time
-import sys
 import os
+import sys
+import time
 import traceback
 
-from IPython.display import Javascript, display
-from .preprocessors import Substitute
-
-from nbformat import reader
-from nbconvert import HTMLExporter
-
-from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
-from nbconvert import NotebookExporter
-
 import param
+from IPython.display import Javascript, display
+from nbconvert import HTMLExporter, NotebookExporter
+from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
+from nbformat import reader
+
 from ..core.io import FileArchive, Pickler
 from ..plotting.renderer import HTML_TAGS, MIME_TYPES
+from .preprocessors import Substitute
 
 
 class NotebookArchive(FileArchive):
@@ -112,7 +109,7 @@ class NotebookArchive(FileArchive):
         self._timestamp = tuple(time.localtime())
         kernel = r'var kernel = IPython.notebook.kernel; '
         nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
-        nbcmd = (r"var name_cmd = '%s.notebook_name = \"' + nbname + '\"'; " % self.namespace)
+        nbcmd = (rf"var name_cmd = '{self.namespace}.notebook_name = \"' + nbname + '\"'; ")
         cmd = (kernel + nbname + nbcmd + "kernel.execute(name_cmd); ")
         display(Javascript(cmd))
         time.sleep(0.5)
@@ -139,7 +136,7 @@ class NotebookArchive(FileArchive):
         self.export_success = None
         name = self.get_namespace()
         # Unfortunate javascript hacks to get at notebook data
-        capture_cmd = ((r"var capture = '%s._notebook_data=r\"\"\"'" % name)
+        capture_cmd = ((rf"var capture = '{name}._notebook_data=r\"\"\"'")
                        + r"+json_string+'\"\"\"'; ")
         cmd = (r'var kernel = IPython.notebook.kernel; '
                + r'var json_data = IPython.notebook.toJSON(); '
@@ -150,14 +147,15 @@ class NotebookArchive(FileArchive):
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':self.notebook_name})
-        print(('Export name: {!r}\nDirectory    {!r}'.format(export_name,
-                                                     os.path.join(os.path.abspath(self.root))))
+        print((f'Export name: {export_name!r}\nDirectory    {os.path.join(os.path.abspath(self.root))!r}')
                + '\n\nIf no output appears, please check holoviews.archive.last_export_status()')
         display(Javascript(cmd))
 
 
-    def add(self, obj=None, filename=None, data=None, info={}, html=None):
+    def add(self, obj=None, filename=None, data=None, info=None, html=None):
         "Similar to FileArchive.add but accepts html strings for substitution"
+        if info is None:
+            info = {}
         initial_last_key = list(self._files.keys())[-1] if len(self) else None
         if self._auto:
             exporters = self.exporters[:]

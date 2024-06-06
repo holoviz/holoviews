@@ -36,19 +36,16 @@ import difflib
 import inspect
 import pickle
 import traceback
-
-from contextlib import contextmanager
 from collections import defaultdict
+from contextlib import contextmanager
 
 import numpy as np
 import param
 
-from .accessors import Opts # noqa (clean up in 2.0)
-from .tree import AttrTree
-from .util import (
-    group_sanitizer, label_sanitizer, sanitize_identifier
-)
+from .accessors import Opts  # noqa (clean up in 2.0)
 from .pprint import InfoPrinter
+from .tree import AttrTree
+from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 
 
 def cleanup_custom_options(id, weakref=None):
@@ -81,7 +78,7 @@ def cleanup_custom_options(id, weakref=None):
             f"Cleanup of custom options tree with id '{id}' failed "
             f"with the following exception: {e}, an unreferenced "
             "orphan tree may persist in memory."
-        )
+        ) from e
 
 
 def lookup_options(obj, group, backend):
@@ -258,8 +255,10 @@ class Keywords(param.Parameterized):
     target = param.String(allow_None=True, doc="""
        Optional string description of what the keywords apply to.""")
 
-    def __init__(self, values=[], target=None):
+    def __init__(self, values=None, target=None):
 
+        if values is None:
+            values = []
         strings = [isinstance(v, str) for v in values]
         if False in strings:
             raise ValueError(f'All keywords must be strings: {values}')
@@ -459,9 +458,11 @@ class Options:
 
     _output_allowed_kws = ['backend']
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True,
+    def __init__(self, key=None, allowed_keywords=None, merge_keywords=True,
                  max_cycles=None, **kwargs):
 
+        if allowed_keywords is None:
+            allowed_keywords = []
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
@@ -659,7 +660,7 @@ class OptionTree(AttrTree):
             raise OptionError(e.invalid_keyword,
                               e.allowed_keywords,
                               group_name=group_name,
-                              path = self.path)
+                              path = self.path) from e
 
     def __getitem__(self, item):
         if item in self.groups:
@@ -926,7 +927,7 @@ class Compositor(param.Parameterized):
         Finds any applicable compositor and applies it.
         """
         from .element import Element
-        from .overlay import Overlay, CompositeOverlay
+        from .overlay import CompositeOverlay, Overlay
         unpack = False
         if not isinstance(overlay, CompositeOverlay):
             overlay = Overlay([overlay])
@@ -1240,17 +1241,19 @@ class Store:
 
     @classmethod
     def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
-             recursive=False, pattern=None, elements=[]):
+             recursive=False, pattern=None, elements=None):
         """
         Show information about a particular object or component class
         including the applicable style and plot options. Returns None if
         the object is not parameterized.
         """
+        if elements is None:
+            elements = []
         parameterized_object = isinstance(obj, param.Parameterized)
         parameterized_class = (isinstance(obj,type)
                                and  issubclass(obj,param.Parameterized))
         info = None
-        if parameterized_object or parameterized_class:
+        if InfoPrinter.store and (parameterized_object or parameterized_class):
             info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
                                     visualization=visualization,
                                     pattern=pattern, elements=elements)
@@ -1291,7 +1294,7 @@ class Store:
         elif len(ids) != 1:
             idlist = ",".join([str(el) for el in sorted(ids)])
             raise Exception("Object contains elements combined across "
-                            "multiple custom trees (ids %s)" % idlist)
+                            f"multiple custom trees (ids {idlist})")
         return cls._custom_options[backend][next(iter(ids))]
 
     @classmethod
@@ -1352,11 +1355,13 @@ class Store:
         )
 
     @classmethod
-    def register(cls, associations, backend, style_aliases={}):
+    def register(cls, associations, backend, style_aliases=None):
         """
         Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
         """
+        if style_aliases is None:
+            style_aliases = {}
         if backend not in cls.registry:
             cls.registry[backend] = {}
         cls.registry[backend].update(associations)

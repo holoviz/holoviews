@@ -1,5 +1,7 @@
 import numpy as np
-from holoviews.element import HLines, VLines, HSpans, VSpans
+
+import holoviews as hv
+from holoviews.element import HLines, HSpans, VLines, VSpans
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -191,6 +193,21 @@ class TestHVSpansPlot(TestMPLPlot):
             assert np.allclose(source.xy[:, 1], [0, 1, 1, 0, 0])
             assert np.allclose(source.xy[:, 0], [v0, v0, v1, v1, v0])
 
+    def test_dynamicmap_overlay_hspans(self):
+        el = HSpans(data=[[1, 3], [2, 4]])
+        dmap = hv.DynamicMap(lambda: hv.Overlay([el]))
+
+        plot_el = mpl_renderer.get_plot(el)
+        plot_dmap = mpl_renderer.get_plot(dmap)
+
+        xlim_el = plot_el.handles["fig"].axes[0].get_xlim()
+        ylim_el = plot_el.handles["fig"].axes[0].get_ylim()
+        xlim_dmap = plot_dmap.handles["fig"].axes[0].get_xlim()
+        ylim_dmap = plot_dmap.handles["fig"].axes[0].get_ylim()
+
+        assert np.allclose(xlim_el, xlim_dmap)
+        assert np.allclose(ylim_el, ylim_dmap)
+
     def test_hspans_nondefault_kdim(self):
         hspans = HSpans(
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
@@ -299,3 +316,18 @@ class TestHVSpansPlot(TestMPLPlot):
         for source, v0, v1 in zip(sources[3:6], vspans.data["x0"], vspans.data["x1"]):
             assert np.allclose(source.xy[:, 1], [0, 1, 1, 0, 0])
             assert np.allclose(source.xy[:, 0], [v0, v0, v1, v1, v0])
+
+    def test_dynamicmap_overlay_vspans(self):
+        el = VSpans(data=[[1, 3], [2, 4]])
+        dmap = hv.DynamicMap(lambda: hv.Overlay([el]))
+
+        plot_el = mpl_renderer.get_plot(el)
+        plot_dmap = mpl_renderer.get_plot(dmap)
+
+        xlim_el = plot_el.handles["fig"].axes[0].get_xlim()
+        ylim_el = plot_el.handles["fig"].axes[0].get_ylim()
+        xlim_dmap = plot_dmap.handles["fig"].axes[0].get_xlim()
+        ylim_dmap = plot_dmap.handles["fig"].axes[0].get_ylim()
+
+        assert np.allclose(xlim_el, xlim_dmap)
+        assert np.allclose(ylim_el, ylim_dmap)

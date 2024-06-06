@@ -12,35 +12,36 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-import re
-import os
-import time
-import string
-import zipfile
-import tarfile
-import shutil
 import itertools
+import os
 import pickle
+import re
+import shutil
+import string
+import tarfile
+import time
+import zipfile
 from collections import defaultdict
-
-from io import BytesIO
 from hashlib import sha256
+from io import BytesIO
 
 import param
 from param.parameterized import bothmethod
 
 from .dimension import LabelledData
 from .element import Collator, Element
-from .overlay import Overlay, Layout
 from .ndmapping import NdMapping, UniformNdMapping
 from .options import Store
-from .util import unique_iterator, group_sanitizer, label_sanitizer
+from .overlay import Layout, Overlay
+from .util import group_sanitizer, label_sanitizer, unique_iterator
 
 
-def sanitizer(name, replacements=[(':','_'), ('/','_'), ('\\','_')]):
+def sanitizer(name, replacements=None):
     """
     String sanitizer to avoid problematic characters in filenames.
     """
+    if replacements is None:
+        replacements = [(':', '_'), ('/', '_'), ('\\', '_')]
     for old,new in replacements:
         name = name.replace(old,new)
     return name
@@ -129,6 +130,7 @@ class Exporter(param.ParameterizedFunction):
     @bothmethod
     def _filename(self_or_cls, filename):
         "Add the file extension if not already present"
+        filename = os.fspath(filename)
         if not filename.endswith(self_or_cls.file_ext):
             return f'{filename}.{self_or_cls.file_ext}'
         else:
@@ -160,7 +162,7 @@ class Exporter(param.ParameterizedFunction):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, **kwargs):
+    def save(self_or_cls, obj, basename, fmt=None, key=None, info=None, **kwargs):
         """
         Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
@@ -171,6 +173,10 @@ class Exporter(param.ParameterizedFunction):
         to update the output of the relevant key and info functions
         which is then saved (if supported).
         """
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         raise NotImplementedError("Exporter save method not implemented.")
 
 
@@ -250,7 +256,11 @@ class Serializer(Exporter):
         return data, {'file-ext': self.file_ext, 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, filename, info={}, key={}, **kwargs):
+    def save(self_or_cls, obj, filename, info=None, key=None, **kwargs):
+        if key is None:
+            key = {}
+        if info is None:
+            info = {}
         data, base_info = self_or_cls(obj, **kwargs)
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
@@ -331,20 +341,28 @@ class Pickler(Exporter):
     file_ext = 'hvz'
 
 
-    def __call__(self, obj, key={}, info={}, **kwargs):
+    def __call__(self, obj, key=None, info=None, **kwargs):
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         buff = BytesIO()
         self.save(obj, buff, key=key, info=info, **kwargs)
         buff.seek(0)
         return buff.read(), {'file-ext': 'hvz', 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, filename, key={}, info={}, **kwargs):
+    def save(self_or_cls, obj, filename, key=None, info=None, **kwargs):
+        if info is None:
+            info = {}
+        if key is None:
+            key = {}
         base_info = {'file-ext': 'hvz', 'mime_type':self_or_cls.mime_type}
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         compression = zipfile.ZIP_STORED if self_or_cls.compress else zipfile.ZIP_DEFLATED
 
-        filename = self_or_cls._filename(filename) if isinstance(filename, str) else filename
+        filename = self_or_cls._filename(filename) if isinstance(filename, (str, os.PathLike)) else filename
         with zipfile.ZipFile(filename, 'w', compression=compression) as f:
 
             if isinstance(obj, Layout) and not isinstance(obj, Overlay):
@@ -352,8 +370,7 @@ class Pickler(Exporter):
                 components = list(obj.data.values())
                 entries = entries if len(entries) > 1 else [entries[0]+'(L)']
             else:
-                entries = ['{}.{}'.format(group_sanitizer(obj.group, False),
-                                      label_sanitizer(obj.label, False))]
+                entries = [f'{group_sanitizer(obj.group, False)}.{label_sanitizer(obj.label, False)}']
                 components = [obj]
 
             for component, entry in zip(components, entries):
@@ -421,7 +438,7 @@ class Unpickler(Importer):
             return [el for el in f.namelist() if el != 'metadata']
 
     @bothmethod
-    def collect(self_or_cls, files, drop=[], metadata=True):
+    def collect(self_or_cls, files, drop=None, metadata=True):
         """
         Given a list or NdMapping type containing file paths return a
         Layout of Collators, which can be called to load a given set
@@ -433,6 +450,8 @@ class Unpickler(Importer):
         they do not clash with the file metadata. Any key dimension
         may be dropped by name by supplying a drop argument.
         """
+        if drop is None:
+            drop = []
         aslist = not isinstance(files, (NdMapping, Element))
         if isinstance(files, Element):
             files = Collator(files)
@@ -463,7 +482,7 @@ class Unpickler(Importer):
                 kval = key[files.get_dimension_index(odim)]
                 if kval != mdata[odim]:
                     raise KeyError("Metadata supplies inconsistent "
-                                   "value for dimension %s" % odim)
+                                   f"value for dimension {odim}")
             mkey = tuple(mdata.get(d, None) for d in added_dims)
             key = mkey if aslist else key + mkey
             if isinstance(fname, tuple) and len(fname) == 1:
@@ -615,8 +634,8 @@ class FileArchive(Archive):
         try:
             parse = list(string.Formatter().parse(formatter))
             return {f for f in list(zip(*parse))[1] if f is not None}
-        except Exception:
-            raise SyntaxError(f"Could not parse formatter {formatter!r}")
+        except Exception as e:
+            raise SyntaxError(f"Could not parse formatter {formatter!r}") from e
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -654,11 +673,11 @@ class FileArchive(Archive):
             raise Exception(f"Valid export fields are: {','.join(sorted(self.efields))}")
         try:
             time.strftime(self.timestamp_format, tuple(time.localtime()))
-        except Exception:
-            raise Exception("Timestamp format invalid")
+        except Exception as e:
+            raise Exception("Timestamp format invalid") from e
 
 
-    def add(self, obj=None, filename=None, data=None, info={}, **kwargs):
+    def add(self, obj=None, filename=None, data=None, info=None, **kwargs):
         """
         If a filename is supplied, it will be used. Otherwise, a
         filename will be generated from the supplied object. Note that
@@ -668,6 +687,8 @@ class FileArchive(Archive):
         The data to be archived is either supplied explicitly as
         'data' or automatically rendered from the object.
         """
+        if info is None:
+            info = {}
         if [filename, obj] == [None, None]:
             raise Exception("Either filename or a HoloViews object is "
                             "needed to create an entry in the archive.")
@@ -810,10 +831,12 @@ class FileArchive(Archive):
         return basename.replace(' ', '_')
 
 
-    def export(self, timestamp=None, info={}):
+    def export(self, timestamp=None, info=None):
         """
         Export the archive, directory or file.
         """
+        if info is None:
+            info = {}
         tval = tuple(time.localtime()) if timestamp is None else timestamp
         tstamp = time.strftime(self.timestamp_format, tval)
 

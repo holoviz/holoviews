@@ -1,29 +1,33 @@
-import param
-import numpy as np
 import matplotlib as mpl
-from packaging.version import Version
-
+import numpy as np
+import param
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
+from packaging.version import Version
 
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
-    unique_array, isscalar, isdatetime
+    dt64_to_dt,
+    dt_to_int,
+    isdatetime,
+    isfinite,
+    isscalar,
+    match_spec,
+    search_indices,
+    unique_array,
 )
-from ...element import Raster, HeatMap
+from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..plot import PlotSelector
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
-from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
-from .element import ElementPlot, ColorbarPlot, LegendPlot
-from .path  import PathPlot
+from ..plot import PlotSelector
+from ..util import compute_sizes, get_min_distance, get_sideplot_ranges
+from .element import ColorbarPlot, ElementPlot, LegendPlot
+from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
 from .util import mpl_version
-
 
 
 class ChartPlot(ElementPlot):
@@ -922,6 +926,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     def _create_bars(self, axis, element, ranges, style):
         # Get values dimensions, and style information
         (gdim, cdim, sdim), values = self._get_values(element, ranges)
+
+        cats = None
         style_dim = None
         if sdim:
             cats = values['stack']
@@ -937,7 +943,23 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             style_map = {None: {}}
 
         # Compute widths
-        width = (1-(2.*self.bar_padding)) / len(values.get('category', [None]))
+        xvals = element.dimension_values(0)
+        is_dt = isdatetime(xvals)
+        continuous = True
+        if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
+            xdiff_vals = date2num(xvals) if is_dt else xvals
+            xdiff = np.abs(np.diff(xdiff_vals))
+            if len(np.unique(xdiff)) == 1:
+                # if all are same
+                xdiff = 1
+            else:
+                xdiff = np.min(xdiff)
+            width = (1 - self.bar_padding) * xdiff
+        else:
+            xdiff = len(values.get('category', [None]))
+            width = (1 - self.bar_padding) / xdiff
+            continuous = False
+
         if self.invert_axes:
             plot_fn = 'barh'
             x, y, w, bottom = 'y', 'width', 'height', 'left'
@@ -948,6 +970,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Iterate over group, category and stack dimension values
         # computing xticks and drawing bars and applying styles
         xticks, labels, bar_data = [], [], {}
+        categories = values.get('category', [None])
+        num_categories = len(categories)
         for gidx, grp in enumerate(values.get('group', [None])):
             sel_key = {}
             label = None
@@ -955,14 +979,21 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 grp_label = gdim.pprint_value(grp)
                 sel_key[gdim.name] = [grp]
                 yalign = -0.04 if cdim and self.multi_level else 0
-                xticks.append((gidx+0.5, grp_label, yalign))
-            for cidx, cat in enumerate(values.get('category', [None])):
-                xpos = gidx+self.bar_padding+(cidx*width)
+                goffset = width * (num_categories / 2 - 0.5)
+                if num_categories > 1:
+                    # mini offset needed or else combines with non-continuous
+                    goffset += width / 1000
+
+                xpos = gidx+goffset if not continuous else xvals[gidx]
+                if not continuous:
+                    xticks.append(((xpos), grp_label, yalign))
+            for cidx, cat in enumerate(categories):
+                xpos = gidx+(cidx*width) if not continuous else xvals[gidx]
                 if cat is not None:
                     label = cdim.pprint_value(cat)
                     sel_key[cdim.name] = [cat]
-                    if self.multi_level:
-                        xticks.append((xpos+width/2., label, 0))
+                    if self.multi_level and not continuous:
+                        xticks.append((xpos, label, 0))
                 prev = 0
                 for stk in values.get('stack', [None]):
                     if stk is not None:
@@ -970,8 +1001,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                         sel_key[sdim.name] = [stk]
                     el = element.select(**sel_key)
                     vals = el.dimension_values(element.vdims[0].name)
-                    val = float(vals[0]) if len(vals) else np.NaN
-                    xval = xpos+width/2.
+                    val = float(vals[0]) if len(vals) else np.nan
+                    xval = xpos
+
                     if label in bar_data:
                         group = bar_data[label]
                         group[x].append(xval)
@@ -1010,8 +1042,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             legend_opts.update(**leg_spec)
             axis.legend(title=title, **legend_opts)
 
-        return bars, xticks, ax_dims
-
+        x_range = ranges[gdim.name]["data"]
+        if continuous and not is_dt:
+            if style.get('align', 'center') == 'center':
+                left_multiplier = 0.5
+                right_multiplier = 0.5
+            else:
+                left_multiplier = 0
+                right_multiplier = 1
+            ranges[gdim.name]["data"] = (
+                x_range[0] - width * left_multiplier,
+                x_range[1] + width * right_multiplier
+            )
+        return bars, xticks if not continuous else None, ax_dims
 
 
 class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):

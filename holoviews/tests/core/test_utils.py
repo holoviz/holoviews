@@ -4,21 +4,35 @@ Unit tests of the helper functions in core.utils
 import datetime
 import math
 import unittest
-
 from itertools import product
 
 import numpy as np
 import pandas as pd
 
-from holoviews.core.util import (
-    sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
-    deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match,
-    dimension_range, tree_attribute, search_indices
-)
 from holoviews import Dimension, Element
-from holoviews.streams import PointerXY
+from holoviews.core.util import (
+    closest_match,
+    compute_density,
+    compute_edges,
+    cross_index,
+    date_range,
+    deephash,
+    dimension_range,
+    dt_to_int,
+    find_range,
+    get_path,
+    isfinite,
+    make_path_unique,
+    max_range,
+    merge_dimensions,
+    sanitize_identifier_fn,
+    search_indices,
+    tree_attribute,
+    unique_array,
+    wrap_tuple_streams,
+)
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.streams import PointerXY
 
 sanitize_identifier = sanitize_identifier_fn.instance()
 
@@ -294,7 +308,7 @@ class TestFindRange(unittest.TestCase):
     def setUp(self):
         self.int_vals = [1, 5, 3, 9, 7, 121, 14]
         self.float_vals = [0.38, 0.121, -0.1424, 5.12]
-        self.nan_floats = [np.NaN, 0.32, 1.42, -0.32]
+        self.nan_floats = [np.nan, 0.32, 1.42, -0.32]
         self.str_vals = ["Aardvark", "Zebra", "Platypus", "Wallaby"]
 
     def test_int_range(self):
@@ -310,7 +324,7 @@ class TestFindRange(unittest.TestCase):
         self.assertEqual(find_range(self.str_vals), ("Aardvark",  "Zebra"))
 
     def test_soft_range(self):
-        self.assertEqual(find_range(self.float_vals, soft_range=(np.NaN, 100)), (-0.1424, 100))
+        self.assertEqual(find_range(self.float_vals, soft_range=(np.nan, 100)), (-0.1424, 100))
 
 
 class TestDimensionRange(unittest.TestCase):
@@ -341,8 +355,8 @@ class TestMaxRange(unittest.TestCase):
     """
 
     def setUp(self):
-        self.ranges1 = [(-0.2, 0.5), (0, 1), (-0.37, 1.02), (np.NaN, 0.3)]
-        self.ranges2 = [(np.NaN, np.NaN), (np.NaN, np.NaN)]
+        self.ranges1 = [(-0.2, 0.5), (0, 1), (-0.37, 1.02), (np.nan, 0.3)]
+        self.ranges2 = [(np.nan, np.nan), (np.nan, np.nan)]
 
     def test_max_range1(self):
         self.assertEqual(max_range(self.ranges1), (-0.37, 1.02))
@@ -583,7 +597,7 @@ class TestNumericUtilities(ComparisonTestCase):
         self.assertTrue(isfinite(1.2))
 
     def test_isfinite_float_array_nan(self):
-        array = np.array([1.2, 3.0, np.NaN])
+        array = np.array([1.2, 3.0, np.nan])
         self.assertEqual(isfinite(array), np.array([True, True, False]))
 
     def test_isfinite_float_array_inf(self):
@@ -786,3 +800,9 @@ def test_seach_indices_dtype_object():
     values = np.array(["c0", "c0", np.nan], dtype=object)
     source = np.array(["c0", np.nan], dtype=object)
     search_indices(values, source)
+
+
+def test_unique_array_categorial():
+    ser = pd.Series(np.random.choice(["a", "b", "c"], 100)).astype("category")
+    res = unique_array([ser])
+    assert sorted(res) == ["a", "b", "c"]

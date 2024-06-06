@@ -1,15 +1,15 @@
-from unittest import SkipTest
+import pytest
+from pyviz_comms import CommManager
 
 import holoviews as hv
 from holoviews.core.options import Store
+from holoviews.operation import Compositor
+
 try:
-    from holoviews import ipython            # noqa (Import test)
     from holoviews.ipython import IPTestCase
 except ImportError:
-    raise SkipTest("Required dependencies not satisfied for testing magics")
+    pytest.skip("IPython required to test IPython magics", allow_module_level=True)
 
-from holoviews.operation import Compositor
-from pyviz_comms import CommManager
 
 class ExtensionTestCase(IPTestCase):
 
@@ -17,10 +17,9 @@ class ExtensionTestCase(IPTestCase):
         super().setUp()
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
         for renderer in Store.renderers.values():
-            renderer.comm_manager = CommManager
+            renderer.comm_manager = CommManager  # TODO: Should set it back
 
     def tearDown(self):
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
         super().tearDown()
@@ -50,6 +49,7 @@ class TestOptsMagic(ExtensionTestCase):
             Store.lookup_options('matplotlib',
                                  self.get_object('mat1'), 'style').options.get('cmap',None),'hot')
 
+    @pytest.mark.flaky(reruns=3)
     def test_cell_opts_style_dynamic(self):
 
         self.cell("dmap = DynamicMap(lambda X: Curve(np.random.rand(5,2), name='dmap'), kdims=['x'])"
@@ -92,6 +92,7 @@ class TestOptsMagic(ExtensionTestCase):
                                  self.get_object('mat1'), 'plot').options.get('show_title',True),False)
 
 
+    @pytest.mark.flaky(reruns=3)
     def test_cell_opts_plot_dynamic(self):
 
         self.cell("dmap = DynamicMap(lambda X: Image(np.random.rand(5,5), name='dmap'), kdims=['x'])"

@@ -1,16 +1,20 @@
 import param
 
 from holoviews.plotting.util import attach_streams
-from ...core import (NdLayout, AdjointLayout, Empty,
-                     HoloMap, GridSpace, GridMatrix)
-from ...element import Histogram
+
+from ...core import AdjointLayout, Empty, GridMatrix, GridSpace, HoloMap, NdLayout
 from ...core.options import Store
 from ...core.util import wrap_tuple
+from ...element import Histogram
 from ..plot import (
-    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+    CallbackPlot,
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
 )
-from .util import figure_grid, configure_matching_axes_from_dims
+from .util import configure_matching_axes_from_dims, figure_grid
 
 
 class PlotlyPlot(DimensionedPlot, CallbackPlot):
@@ -169,8 +173,8 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
             if plot_type is None:
                 self.param.warning(
-                    "Plotly plotting class for %s type not found, "
-                    "object will not be rendered." % vtype.__name__)
+                    f"Plotly plotting class for {vtype.__name__} type not found, "
+                    "object will not be rendered.")
                 continue
             num = num if len(self.coords) > 1 else 0
             subplot = plot_type(element, keys=self.keys,
@@ -328,8 +332,8 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             if plotting_class is None:
                 if view is not None:
                     self.param.warning(
-                        "Plotly plotting class for %s type not found, "
-                        "object will not be rendered." % vtype.__name__)
+                        f"Plotly plotting class for {vtype.__name__} type not found, "
+                        "object will not be rendered.")
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,

@@ -5,7 +5,6 @@ of this Plot baseclass.
 """
 import uuid
 import warnings
-
 from ast import literal_eval
 from collections import Counter, defaultdict
 from functools import partial
@@ -13,32 +12,42 @@ from itertools import groupby, product
 
 import numpy as np
 import param
-
 from panel.config import config
 from panel.io.document import unlocked
 from panel.io.notebook import push
 from panel.io.state import state
 from pyviz_comms import JupyterComm
-from ..selection import NoOpSelectionDisplay
-from ..core import util, traversal
+
+from ..core import traversal, util
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
-from ..core.overlay import Overlay, CompositeOverlay
-from ..core.layout import Empty, NdLayout, Layout
-from ..core.options import Store, Compositor, SkipRendering, lookup_options
-from ..core.overlay import NdOverlay
-from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph
-from ..streams import Stream, RangeXY, RangeX, RangeY
+from ..core.layout import Empty, Layout, NdLayout
+from ..core.options import Compositor, SkipRendering, Store, lookup_options
+from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
+from ..core.spaces import DynamicMap, HoloMap
+from ..core.util import isfinite, stream_parameters
+from ..element import Graph, Table
+from ..selection import NoOpSelectionDisplay
+from ..streams import RangeX, RangeXY, RangeY, Stream
 from ..util.transform import dim
 from .util import (
-    get_dynamic_mode, initialize_unbounded, dim_axis_label,
-    attach_streams, traverse_setter, get_nested_streams,
-    compute_overlayable_zorders, get_nested_plot_frame,
-    split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
-    get_plot_frame, scale_fontsize, dynamic_update
+    attach_streams,
+    compute_overlayable_zorders,
+    dim_axis_label,
+    dynamic_update,
+    get_axis_padding,
+    get_dynamic_mode,
+    get_minimum_span,
+    get_nested_plot_frame,
+    get_nested_streams,
+    get_plot_frame,
+    get_range,
+    initialize_unbounded,
+    scale_fontsize,
+    split_dmap_overlay,
+    traverse_setter,
 )
+
 
 class Plot(param.Parameterized):
     """
@@ -205,15 +214,17 @@ class Plot(param.Parameterized):
         """
         if self.renderer.mode == 'server' and not state._unblocked(self.document):
             # If we do not have the Document lock, schedule refresh as callback
-            self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
+            self._triggering += [(s, dict(s._metadata)) for p in self.traverse(lambda x: x, [Plot])
                                  for s in getattr(p, 'streams', []) if s._triggering]
+
             if self.document and self.document.session_context:
                 self.document.add_next_tick_callback(self.refresh)
                 return
 
         # Ensure that server based tick callbacks maintain stream triggering state
-        for s in self._triggering:
+        for s, metadata in self._triggering:
             s._triggering = True
+            s._metadata.update(metadata)
         try:
             traverse_setter(self, '_force', True)
             key = self.current_key if self.current_key else self.keys[0]
@@ -232,8 +243,9 @@ class Plot(param.Parameterized):
             raise e
         finally:
             # Reset triggering state
-            for s in self._triggering:
+            for s, _ in self._triggering:
                 s._triggering = False
+                s._metadata.clear()
             self._triggering = []
 
 
@@ -336,9 +348,10 @@ class PlotSelector:
     def __setattr__(self, label, value):
         try:
             return super().__setattr__(label, value)
-        except Exception:
-            raise Exception("Please set class parameters directly on classes %s"
-                            % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
+        except Exception as e:
+            plot_cls_str = ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())
+            msg = f"Please set class parameters directly on classes {plot_cls_str}"
+            raise Exception(msg) from e
 
     def params(self):
         return self.plot_options
@@ -752,7 +765,7 @@ class DimensionedPlot(Plot):
                     elif values.dtype.kind in 'US':
                         factors = util.unique_array(values)
                     elif len(values) == 0:
-                        drange = np.NaN, np.NaN
+                        drange = np.nan, np.nan
                     else:
                         try:
                             with warnings.catch_warnings():
@@ -847,7 +860,7 @@ class DimensionedPlot(Plot):
                 # Filter out ranges of updated elements and append new ranges
                 merged = {}
                 for g, drange in dranges['values'].items():
-                    filtered = [r for i, r in zip(ids, values[g]) if i not in prev_ids]
+                    filtered = [r for i, r in zip(ids, values.get(g, [])) if i not in prev_ids]
                     filtered += drange
                     merged[g] = filtered
                 prev_ranges[d] = cls._merge_group_ranges(merged)
@@ -913,7 +926,7 @@ class DimensionedPlot(Plot):
             for opt, v in opts.items():
                 if opt not in options[key]:
                     options[key][opt] = v
-        return options if keyfn else options[None]
+        return options if keyfn else options.get(None, {})
 
     def _get_projection(cls, obj):
         """
@@ -1106,7 +1119,7 @@ class GenericElementPlot(DimensionedPlot):
        If specified, takes precedence over data and dimension ranges.""")
 
     ylim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       User-specified y-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
     zlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
@@ -1119,15 +1132,13 @@ class GenericElementPlot(DimensionedPlot):
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
 
-    xticks = param.Parameter(default=None, doc="""
+    xticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray), default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations, or bokeh Ticker object. If set to None default
-        bokeh ticking behavior is applied.""")
+        tick locations. If set to None default ticking behavior is applied.""")
 
-    yticks = param.Parameter(default=None, doc="""
+    yticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray), default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations, or bokeh Ticker object. If set to None
-        default bokeh ticking behavior is applied.""")
+        tick locations. If set to None default ticking behavior is applied.""")
 
     # A dictionary mapping of the plot methods used to draw the
     # glyphs corresponding to the ElementPlot, can support two
@@ -1170,7 +1181,11 @@ class GenericElementPlot(DimensionedPlot):
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
-                 overlay_dims={}, stream_sources={}, streams=None, **params):
+                 overlay_dims=None, stream_sources=None, streams=None, **params):
+        if stream_sources is None:
+            stream_sources = {}
+        if overlay_dims is None:
+            overlay_dims = {}
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
@@ -1384,7 +1399,7 @@ class GenericElementPlot(DimensionedPlot):
         elif ydim == 'categorical':
             y0, y1 = '', ''
         elif ydim is None:
-            y0, y1 = np.NaN, np.NaN
+            y0, y1 = np.nan, np.nan
 
         if isinstance(self.projection, str) and self.projection == '3d':
             if range_type == 'soft':
@@ -1396,7 +1411,7 @@ class GenericElementPlot(DimensionedPlot):
             elif zdim == 'categorical':
                 z0, z1 = '', ''
             elif zdim is None:
-                z0, z1 = np.NaN, np.NaN
+                z0, z1 = np.nan, np.nan
             return (x0, y0, z0, x1, y1, z1)
 
         if not self.drawn:
@@ -1407,7 +1422,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, **kwargs):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, lims_as_soft_ranges=False, **kwargs):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
@@ -1428,6 +1443,12 @@ class GenericElementPlot(DimensionedPlot):
 
         This allows Overlay plots to obtain each range and combine them
         appropriately for all the objects in the overlay.
+
+        If lims_as_soft_ranges is set to True, the xlim and ylim will be treated as
+        soft ranges instead of the default case as hard ranges while computing the extents.
+        This is used e.g. when apply_hard_bounds is True and xlim/ylim is set, in which
+        case we limit the initial viewable range to xlim/ylim, but allow navigation up to
+        the abs max between the data range and xlim/ylim.
         """
         num = 6 if (isinstance(self.projection, str) and self.projection == '3d') else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
@@ -1441,7 +1462,7 @@ class GenericElementPlot(DimensionedPlot):
                     isinstance(self.projection, str) and self.projection == '3d'
                 )
         else:
-            extents = (np.NaN,) * num
+            extents = (np.nan,) * num
 
         if range_type == 'extents':
             return extents
@@ -1449,7 +1470,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.apply_ranges:
             range_extents = self._get_range_extents(element, ranges, range_type, xdim, ydim, zdim)
         else:
-            range_extents = (np.NaN,) * num
+            range_extents = (np.nan,) * num
 
         if getattr(self, 'shared_axes', False) and self.subplot:
             combined = util.max_extents(
@@ -1470,8 +1491,15 @@ class GenericElementPlot(DimensionedPlot):
         else:
             x0, y0, x1, y1 = combined
 
-        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if lims_as_soft_ranges:
+            # run x|ylim through max_range to ensure datetime-dtype matching with ranges
+            xlim_soft_ranges = util.max_range([self.xlim])
+            ylim_soft_ranges = util.max_range([self.ylim])
+            x0, x1 = util.dimension_range(x0, x1, (None, None), xlim_soft_ranges)
+            y0, y1 = util.dimension_range(y0, y1, (None, None), ylim_soft_ranges)
+        else:
+            x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+            y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
@@ -1780,8 +1808,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 self.zoffset += len(subplot.subplots.keys()) - 1
 
         if not subplots:
-            raise SkipRendering("%s backend could not plot any Elements "
-                                "in the Overlay." % self.renderer.backend)
+            raise SkipRendering(f"{self.renderer.backend} backend could not plot any Elements "
+                                "in the Overlay.")
         return subplots
 
     def _create_subplot(self, key, obj, streams, ranges):
@@ -1812,8 +1840,9 @@ class GenericOverlayPlot(GenericElementPlot):
         plottype = registry.get(vtype, None)
         if plottype is None:
             self.param.warning(
-                "No plotting class for {} type and {} backend "
-                "found. ".format(vtype.__name__, self.renderer.backend))
+                f"No plotting class for {vtype.__name__} type "
+                f"and {self.renderer.backend} backend found. "
+            )
             return None
 
         # Get zorder and style counter
@@ -1829,8 +1858,8 @@ class GenericOverlayPlot(GenericElementPlot):
             opts['group_counter'] = self.group_counter
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
-                self.param.warning('%s is empty and will be skipped '
-                                   'during plotting' % obj.last)
+                self.param.warning(f'{obj.last} is empty and will be skipped '
+                                   'during plotting')
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
             param_vals = self.param.values()
@@ -1982,7 +2011,7 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, x1, y1 = extents['data']
             sx0, sy0, sx1, sy1 = extents['soft']
             hx0, hy0, hx1, hy1 = extents['hard']
-            z0, z1 = np.NaN, np.NaN
+            z0, z1 = np.nan, np.nan
 
         # Apply minimum span
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))

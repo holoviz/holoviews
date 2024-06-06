@@ -1,10 +1,10 @@
-import param
 import numpy as np
+import param
 
-from ...operation import interpolate_curve
 from ...element import Tiles
+from ...operation import interpolate_curve
 from ..mixins import AreaMixin, BarsMixin
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 
 
@@ -255,7 +255,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 values.append(sel.iloc[0, 1] if len(sel) else 0)
             bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in xvals],
+                x: xvals,
                 y: np.nan_to_num(values)})
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
@@ -270,7 +270,7 @@ class BarPlot(BarsMixin, ElementPlot):
                     values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in xvals],
+                    x: xvals,
                     y: np.nan_to_num(values)})
         else:
             values = element.dimension_values(vdim)
@@ -279,6 +279,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
                 y: np.nan_to_num(values)})
+
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):

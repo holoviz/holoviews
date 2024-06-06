@@ -4,22 +4,21 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 import builtins
-import re
 import datetime as dt
+import re
 import weakref
-
-from operator import itemgetter
-from collections import defaultdict, Counter
-from itertools import chain
-from functools import partial
+from collections import Counter, defaultdict
 from collections.abc import Iterable
+from functools import partial
+from itertools import chain
+from operator import itemgetter
 
-import param
 import numpy as np
+import param
 
 from . import util
-from .accessors import Opts, Apply, Redim
-from .options import Store, Options, cleanup_custom_options
+from .accessors import Apply, Opts, Redim
+from .options import Options, Store, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import bytes_to_unicode
@@ -82,10 +81,9 @@ def dimension_name(dimension):
     elif dimension is None:
         return None
     else:
-        raise ValueError('%s type could not be interpreted as Dimension. '
+        raise ValueError(f'{type(dimension).__name__} type could not be interpreted as Dimension. '
                          'Dimensions must be declared as a string, tuple, '
-                         'dictionary or Dimension type.'
-                         % type(dimension).__name__)
+                         'dictionary or Dimension type.')
 
 
 def process_dimensions(kdims, vdims):
@@ -110,10 +108,12 @@ def process_dimensions(kdims, vdims):
         elif isinstance(dims, (tuple, str, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
-            raise ValueError("{} argument expects a Dimension or list of dimensions, "
-                             "specified as tuples, strings, dictionaries or Dimension "
-                             "instances, not a {} type. Ensure you passed the data as the "
-                             "first argument.".format(group, type(dims).__name__))
+            raise ValueError(
+                f"{group} argument expects a Dimension or list of dimensions, "
+                "specified as tuples, strings, dictionaries or Dimension "
+                f"instances, not a {type(dims).__name__} type. "
+                "Ensure you passed the data as the first argument."
+            )
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 
@@ -251,7 +251,7 @@ class Dimension(param.Parameterized):
             except ValueError as exc:
                 raise ValueError(
                     "Dimensions specified as a tuple must be a tuple "
-                    "consisting of the name and label not: %s" % str(spec)
+                    f"consisting of the name and label not: {spec}"
                 ) from exc
             if 'label' in params and params['label'] != all_params['label']:
                 self.param.warning(
@@ -267,9 +267,8 @@ class Dimension(param.Parameterized):
                 ) from exc
         else:
             raise ValueError(
-                '%s type could not be interpreted as Dimension.  Dimensions must be '
+                f'{type(spec).__name__} type could not be interpreted as Dimension.  Dimensions must be '
                 'declared as a string, tuple, dictionary or Dimension type.'
-                % type(spec).__name__
             )
         all_params.update(params)
 
@@ -500,11 +499,9 @@ class LabelledData(param.Parameterized):
 
         super().__init__(**params)
         if not util.group_sanitizer.allowable(self.group):
-            raise ValueError("Supplied group %r contains invalid characters." %
-                             self.group)
+            raise ValueError(f"Supplied group {self.group!r} contains invalid characters.")
         elif not util.label_sanitizer.allowable(self.label):
-            raise ValueError("Supplied label %r contains invalid characters." %
-                             self.label)
+            raise ValueError(f"Supplied label {self.label!r} contains invalid characters.")
 
     @property
     def id(self):
@@ -929,8 +926,8 @@ class Dimensioned(LabelledData):
             key_traversal = self.traverse(lmbd, **kwargs)
             dims = [dim for keydims in key_traversal for dim in keydims]
         else:
-            raise KeyError("Invalid selection %r, valid selections include"
-                           "'all', 'value' and 'key' dimensions" % repr(selection))
+            raise KeyError(f"Invalid selection {repr(selection)!r}, valid selections include"
+                           "'all', 'value' and 'key' dimensions")
         return [(dim.label if label == 'long' else dim.name)
                 if label else dim for dim in dims]
 
@@ -949,7 +946,7 @@ class Dimensioned(LabelledData):
         if dimension is not None and not isinstance(dimension, (int, str, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
                             'and Dimension instances, cannot lookup '
-                            'Dimensions using %s type.' % type(dimension).__name__)
+                            f'Dimensions using {type(dimension).__name__} type.')
         all_dims = self.dimensions()
         if isinstance(dimension, int):
             if 0 <= dimension < len(all_dims):
@@ -999,7 +996,7 @@ class Dimensioned(LabelledData):
             dimensions = self.kdims+self.vdims
             return next(i for i, d in enumerate(dimensions) if d == dim)
         except StopIteration:
-            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.")
+            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 
 
     def get_dimension_type(self, dim):
@@ -1187,7 +1184,7 @@ class Dimensioned(LabelledData):
                 ranges = self.traverse(range_fn, [match_fn])
                 lower, upper = util.max_range(ranges)
         else:
-            lower, upper = (np.NaN, np.NaN)
+            lower, upper = (np.nan, np.nan)
         if not dimension_range:
             return lower, upper
         return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
@@ -1274,7 +1271,8 @@ class Dimensioned(LabelledData):
 
         obj = self
         for backend, expanded in expanded_backends:
-            obj = obj.opts._dispatch_opts(expanded, backend=backend, clone=clone)
+            if expanded is not None:
+                obj = obj.opts._dispatch_opts(expanded, backend=backend, clone=clone)
         return obj
 
     def _repr_mimebundle_(self, include=None, exclude=None):

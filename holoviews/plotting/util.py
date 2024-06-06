@@ -1,26 +1,38 @@
+import bisect
 import re
 import traceback
 import warnings
-import bisect
-
 from collections import defaultdict, namedtuple
-from packaging.version import Version
 
 import numpy as np
 import param
+from packaging.version import Version
 
 from ..core import (
-    HoloMap, DynamicMap, CompositeOverlay, Layout, Overlay, GridSpace,
-    NdLayout, NdOverlay, AdjointLayout
+    AdjointLayout,
+    CompositeOverlay,
+    DynamicMap,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
 )
-from ..core.options import CallbackError, Cycle
-from ..core.operation import Operation
 from ..core.ndmapping import item_check
+from ..core.operation import Operation
+from ..core.options import CallbackError, Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (
-    match_spec, wrap_tuple, get_overlay_spec, unique_iterator,
-    closest_match, is_number, isfinite, disable_constant,
-    arraylike_types
+    arraylike_types,
+    closest_match,
+    disable_constant,
+    get_overlay_spec,
+    is_number,
+    isfinite,
+    match_spec,
+    unique_iterator,
+    wrap_tuple,
 )
 from ..element import Points
 from ..streams import LinkedStream, Params
@@ -53,30 +65,30 @@ def collate(obj):
         nested_type = next(type(o).__name__ for o in obj
                        if isinstance(o, (HoloMap, GridSpace, AdjointLayout)))
         display_warning.param.warning(
-            "Nesting %ss within an Overlay makes it difficult to "
+            f"Nesting {nested_type}s within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
             "calling .collate() on the Overlay in order to follow the "
             "recommended nesting structure shown in the Composing Data "
-            "user guide (http://goo.gl/2YS8LJ)" % nested_type)
+            "user guide (http://goo.gl/2YS8LJ)")
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
         if obj.type in [DynamicMap, HoloMap]:
             obj_name = obj.type.__name__
-            raise Exception("Nesting a %s inside a DynamicMap is not "
+            raise Exception(f"Nesting a {obj_name} inside a DynamicMap is not "
                             "supported. Ensure that the DynamicMap callback "
                             "returns an Element or (Nd)Overlay. If you have "
                             "applied an operation ensure it is not dynamic by "
-                            "setting dynamic=False." % obj_name)
+                            "setting dynamic=False.")
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.param.warning(
-            "Nesting {0}s within a {1} makes it difficult to access "
-            "your data or control how it appears; we recommend "
-            "calling .collate() on the {1} in order to follow the "
-            "recommended nesting structure shown in the Composing "
-            "Data user guide (https://goo.gl/2YS8LJ)".format(
-                obj.type.__name__, type(obj).__name__))
+            f"Nesting {obj.type.__name__}s within a {type(obj).__name__} "
+            "makes it difficult to access your data or control how it appears; "
+            f"we recommend calling .collate() on the {type(obj).__name__} "
+            "in order to follow the recommended nesting structure shown "
+            "in the Composing Data user guide (https://goo.gl/2YS8LJ)"
+        )
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
@@ -92,8 +104,8 @@ def collate(obj):
                     collated_layout = Layout(el.collate())
                     expanded.extend(collated_layout.values())
             return Layout(expanded)
-        except Exception:
-            raise Exception(undisplayable_info(obj))
+        except Exception as e:
+            raise Exception(undisplayable_info(obj)) from e
     else:
         raise Exception(undisplayable_info(obj))
 
@@ -120,7 +132,7 @@ def overlay_depth(obj):
         return 1
 
 
-def compute_overlayable_zorders(obj, path=[]):
+def compute_overlayable_zorders(obj, path=None):
     """
     Traverses an overlayable composite container to determine which
     objects are associated with specific (Nd)Overlay layers by
@@ -131,6 +143,8 @@ def compute_overlayable_zorders(obj, path=[]):
     Used to determine which overlaid subplots should be linked with
     Stream callbacks.
     """
+    if path is None:
+        path = []
     path = path+[obj]
     zorder_map = defaultdict(list)
 
@@ -223,14 +237,14 @@ def split_dmap_overlay(obj, depth=0):
     if isinstance(obj, DynamicMap):
         initialize_dynamic(obj)
         if issubclass(obj.type, NdOverlay) and not depth:
-            for v in obj.last.values():
+            for _ in obj.last.values():
                 layers.append(obj)
         elif issubclass(obj.type, Overlay):
             if obj.callback.inputs and is_dynamic_overlay(obj):
                 for inp in obj.callback.inputs:
                     layers += split_dmap_overlay(inp, depth+1)
             else:
-                for v in obj.last.values():
+                for _ in obj.last.values():
                     layers.append(obj)
         else:
             layers.append(obj)
@@ -332,7 +346,7 @@ def undisplayable_info(obj, html=False):
         return f'{error}\n{remedy}\n{info}'
     else:
         return "<center>{msg}</center>".format(msg=('<br>'.join(
-            ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
+            [f'<b>{error}</b>', remedy, f'<i>{info}</i>'])))
 
 
 def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
@@ -402,7 +416,7 @@ def get_range(element, ranges, dimension):
             srange = dimension.soft_range
             hrange = dimension.range
     else:
-        drange = srange = hrange = (np.NaN, np.NaN)
+        drange = srange = hrange = (np.nan, np.nan)
     return drange, srange, hrange
 
 
@@ -722,7 +736,7 @@ def _list_cmaps(provider=None, records=False):
             pass
     if 'colorcet' in provider:
         try:
-            from colorcet import palette_n, glasbey_hv
+            from colorcet import glasbey_hv, palette_n
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
             cmaps += info('colorcet', cet_maps)
@@ -975,8 +989,7 @@ def color_intervals(colors, levels, clip=None, N=255):
     if clip is not None:
         clmin, clmax = clip
         lidx = int(round(N*((clmin-cmin)/interval)))
-        uidx = int(round(N*((cmax-clmax)/interval)))
-        uidx = N-uidx
+        uidx = len(cmap) - int(round(N*((cmax-clmax)/interval)))
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]
@@ -1115,6 +1128,8 @@ def hex2rgb(hex):
 
 class apply_nodata(Operation):
 
+    link_inputs = param.Boolean(default=True)
+
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
@@ -1125,8 +1140,8 @@ class apply_nodata(Operation):
         data = data.astype('float64')
         mask = data!=self.p.nodata
         if hasattr(data, 'where'):
-            return data.where(mask, np.NaN)
-        return np.where(mask, data, np.NaN)
+            return data.where(mask, np.nan)
+        return np.where(mask, data, np.nan)
 
     def _process(self, element, key=None):
         if self.p.nodata is None:
@@ -1310,7 +1325,8 @@ class categorical_legend(Operation):
 
     def _process(self, element, key=None):
         import datashader as ds
-        from ..operation.datashader import shade, rasterize, datashade
+
+        from ..operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
         if isinstance(rasterize_op, datashade):
             shade_op = rasterize_op

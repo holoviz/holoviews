@@ -8,8 +8,13 @@ import numpy as np
 try:
     import spatialpandas
     from spatialpandas.geometry import (
-        MultiPolygonArray, LineDtype, PointDtype, PolygonDtype,
-        MultiLineDtype, MultiPointDtype, MultiPolygonDtype
+        LineDtype,
+        MultiLineDtype,
+        MultiPointDtype,
+        MultiPolygonArray,
+        MultiPolygonDtype,
+        PointDtype,
+        PolygonDtype,
     )
 except ImportError:
     spatialpandas = None
@@ -20,12 +25,15 @@ except ImportError:
     dd = None
 
 from holoviews.core.data import (
-    Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
+    DaskSpatialPandasInterface,
+    Dataset,
+    SpatialPandasInterface,
 )
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 
+from ...utils import dask_switcher
 from .test_multiinterface import GeomTests
 
 
@@ -252,6 +260,7 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     __test__ = True
 
+    @dask_switcher(query=False, extras=["spatialpandas.dask"])
     def setUp(self):
         if spatialpandas is None:
             raise SkipTest('DaskSpatialPandasInterface requires spatialpandas, skipping tests')

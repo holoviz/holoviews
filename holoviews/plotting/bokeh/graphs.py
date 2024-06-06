@@ -1,10 +1,15 @@
 from collections import defaultdict
 
-import param
 import numpy as np
+import param
 from bokeh.models import (
-    StaticLayoutProvider, NodesAndLinkedEdges, EdgesAndLinkedNodes,
-    Patches, Bezier, ColumnDataSource, NodesOnly
+    Bezier,
+    ColumnDataSource,
+    EdgesAndLinkedNodes,
+    NodesAndLinkedEdges,
+    NodesOnly,
+    Patches,
+    StaticLayoutProvider,
 )
 
 from ...core.data import Dataset
@@ -12,14 +17,16 @@ from ...core.options import Cycle, abbreviated_exception
 from ...core.util import dimension_sanitizer, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..util import get_directed_graph_paths, process_cmap
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
 from .styles import (
-    base_properties, line_properties, fill_properties, text_properties,
-    rgba_tuple
+    base_properties,
+    fill_properties,
+    line_properties,
+    rgba_tuple,
+    text_properties,
 )
-from .util import bokeh3
 
 
 class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
@@ -87,7 +94,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = element.nodes.dimensions()
             dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
         elif self.inspection_policy == 'edges':
-            kdims = [(kd.pprint_label, '@{%s_values}' % kd)
+            kdims = [(kd.pprint_label, f'@{{{kd}_values}}')
                      if kd in ('start', 'end') else kd for kd in element.kdims]
             dims = kdims+element.vdims
         else:
@@ -185,8 +192,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             index = nodes.astype(np.int32)
             layout = {k: (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(index, node_positions)}
-        if not bokeh3:
-            layout = {str(k): v for k, v in layout.items()}
 
         point_data = {'index': index}
 
@@ -507,7 +512,7 @@ class TriMeshPlot(GraphPlot):
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
-        element.edgepaths
+        element._initialize_edgepaths()
         return element
 
     def _init_glyphs(self, plot, element, ranges, source):

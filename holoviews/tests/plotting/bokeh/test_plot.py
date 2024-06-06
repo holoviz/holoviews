@@ -1,20 +1,20 @@
 import numpy as np
-import pytest
 import pyviz_comms as comms
-
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    HoverTool,
+    LinearColorMapper,
+    LogColorMapper,
+)
 from param import concrete_descendents
 
+from holoviews import Curve
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import Curve
-
-from bokeh.models import (
-    ColumnDataSource, CustomJS, LinearColorMapper, LogColorMapper, HoverTool
-)
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
-from holoviews.plotting.bokeh.util import bokeh3
 
 bokeh_renderer = Store.renderers['bokeh']
 
@@ -59,7 +59,9 @@ class TestBokehPlot(ComparisonTestCase):
         mapper_type = LogColorMapper if log else LinearColorMapper
         self.assertTrue(isinstance(cmapper, mapper_type))
 
-    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters={}):
+    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters=None):
+        if formatters is None:
+            formatters = {}
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
@@ -83,7 +85,6 @@ class TestBokehPlot(ComparisonTestCase):
             self.assertTrue(any(renderer in h.renderers for h in hover))
 
 
-@pytest.mark.skipif(not bokeh3, reason="Bokeh>=3.0 required")
 def test_sync_two_plots():
     curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)
@@ -103,7 +104,6 @@ def test_sync_two_plots():
                 assert v[0].code == "dst.muted = src.muted"
 
 
-@pytest.mark.skipif(not bokeh3, reason="Bokeh>=3.0 required")
 def test_sync_three_plots():
     curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)

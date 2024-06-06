@@ -1,57 +1,77 @@
 import warnings
-
 from collections.abc import Callable, Iterable
 from functools import partial
 
-import param
-import numpy as np
-import pandas as pd
-import xarray as xr
+import dask.dataframe as dd
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
-import dask.dataframe as dd
-
+import numpy as np
+import pandas as pd
+import param
+import xarray as xr
 from datashader.colors import color_lookup
-from param.parameterized import bothmethod
 from packaging.version import Version
+from param.parameterized import bothmethod
 
 try:
-    from datashader.bundling import (directly_connect_edges as connect_edges,
-                                     hammer_bundle)
+    from datashader.bundling import (
+        directly_connect_edges as connect_edges,
+        hammer_bundle,
+    )
 except ImportError:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (
-    CompositeOverlay, Dimension, Element, Operation, Overlay, NdOverlay, Store
+    CompositeOverlay,
+    Dimension,
+    Element,
+    NdOverlay,
+    Operation,
+    Overlay,
+    Store,
 )
 from ..core.data import (
-    Dataset, PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
+    DaskInterface,
+    Dataset,
+    PandasInterface,
+    XArrayInterface,
+    cuDFInterface,
 )
 from ..core.util import (
-    cast_array_to_int64, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, get_param_values
+    cast_array_to_int64,
+    cftime_to_timestamp,
+    cftime_types,
+    datetime_types,
+    dt_to_int,
+    get_param_values,
 )
 from ..element import (
-    Image, ImageStack, Path, Curve, RGB, Graph, TriMesh, QuadMesh,
-    Contours, Spikes, Area, Rectangles, Spread, Segments, Scatter,
-    Points, Polygons
+    RGB,
+    Area,
+    Contours,
+    Curve,
+    Graph,
+    Image,
+    ImageStack,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Rectangles,
+    Scatter,
+    Segments,
+    Spikes,
+    Spread,
+    TriMesh,
 )
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
-
-def __getattr__(name):
-    if name == "ResamplingOperation":
-        from ..util.warnings import deprecated
-        deprecated("1.18", "ResamplingOperation", "ResampleOperation2D")
-        return ResampleOperation2D
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 ds_version = Version(ds.__version__)
 ds15 = ds_version >= Version('0.15.1')
+ds16 = ds_version >= Version('0.16.0')
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -114,7 +134,7 @@ class AggregationOperation(ResampleOperation2D):
             not isinstance(agg, agg_types)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
-                                 '%s operation to.' % cls.__name__)
+                                 f'{cls.__name__} operation to.')
             inner_element = elements[0]
             if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
                 field = inner_element.nodes.vdims[0].name
@@ -124,16 +144,16 @@ class AggregationOperation(ResampleOperation2D):
                 field = element.kdims[0].name
             else:
                 raise ValueError("Could not determine dimension to apply "
-                                 "'%s' operation to. Declare the dimension "
+                                 f"'{cls.__name__}' operation to. Declare the dimension "
                                  "to aggregate as part of the datashader "
-                                 "aggregator." % cls.__name__)
+                                 "aggregator.")
             agg = type(agg)(field)
         return agg
 
     def _empty_agg(self, element, x, y, width, height, xs, ys, agg_fn, **params):
         x = x.name if x else 'x'
         y = y.name if x else 'y'
-        xarray = xr.DataArray(np.full((height, width), np.NaN),
+        xarray = xr.DataArray(np.full((height, width), np.nan),
                               dims=[y, x], coords={x: xs, y: ys})
         if width == 0:
             params['xdensity'] = 1
@@ -175,9 +195,10 @@ class AggregationOperation(ResampleOperation2D):
         elif column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
-                raise ValueError("Aggregation column '{}' not found on '{}' element. "
-                                 "Ensure the aggregator references an existing "
-                                 "dimension.".format(column,element))
+                raise ValueError(
+                    f"Aggregation column '{column}' not found on '{element}' element. "
+                    "Ensure the aggregator references an existing dimension."
+                )
             if isinstance(agg_fn, (ds.count, ds.count_cat)):
                 if vdim_prefix:
                     vdim_name = f'{vdim_prefix}{column} Count'
@@ -285,7 +306,7 @@ class aggregate(LineAggregationOperation):
                 if isinstance(path, dd.DataFrame):
                     path = path.compute()
                 empty = path.copy()
-                empty.iloc[0, :] = (np.NaN,) * empty.shape[1]
+                empty.iloc[0, :] = (np.nan,) * empty.shape[1]
                 paths = [elem for p in paths for elem in (p, empty)][:-1]
             if all(isinstance(path, dd.DataFrame) for path in paths):
                 df = dd.concat(paths)
@@ -348,7 +369,7 @@ class aggregate(LineAggregationOperation):
         if x is None or y is None or width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
         elif getattr(data, "interface", None) is not DaskInterface and not len(data):
-            empty_val = 0 if isinstance(agg_fn, ds.count) else np.NaN
+            empty_val = 0 if isinstance(agg_fn, ds.count) else np.nan
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
             return self.p.element_type(xarray, **params)
@@ -386,7 +407,7 @@ class aggregate(LineAggregationOperation):
             eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
             return self.p.element_type(eldata, **params)
         else:
-            params['vdims'] = list(agg.coords[agg_fn.column].data)
+            params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
@@ -419,12 +440,26 @@ class aggregate(LineAggregationOperation):
                     val[neg1] = "-"
                 elif val.dtype.kind == "O":
                     val[neg1] = "-"
+                elif val.dtype.kind == "M":
+                    val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
         return agg
 
+class curve_aggregate(aggregate):
+    """
+    Optimized aggregation for Curve objects by setting the default
+    of the aggregator to self_intersect=False to be more consistent
+    with the appearance of non-aggregated curves.
+    """
+    aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
+                                     default=rd.count(self_intersect=False), doc="""
+        Datashader reduction function used for aggregating the data.
+        The aggregator may also define a column to aggregate; if
+        no column is defined the first value dimension of the element
+        will be used. May also be defined as a string.""")
 
 class overlay_aggregate(aggregate):
     """
@@ -535,7 +570,7 @@ class overlay_aggregate(aggregate):
 
         # Fill masked with with NaNs
         if is_sum:
-            agg.data[column].values[mask] = np.NaN
+            agg.data[column].values[mask] = np.nan
 
         return agg.clone(bounds=bbox)
 
@@ -1269,15 +1304,15 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        if element.ndims > 2:
-            kdims = element.kdims[1:]
+        if element.ndims > 2 or isinstance(element, ImageStack):
+            kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
             if not self.p.color_key:
                 pass
             elif isinstance(self.p.color_key, dict):
                 shade_opts['color_key'] = self.p.color_key
             elif isinstance(self.p.color_key, Iterable):
-                shade_opts['color_key'] = [c for i, c in
+                shade_opts['color_key'] = [c for _, c in
                                            zip(range(categories), self.p.color_key)]
             else:
                 colors = [self.p.color_key(s) for s in np.linspace(0, 1, categories)]
@@ -1354,7 +1389,8 @@ class geometry_rasterize(LineAggregationOperation):
         if element._plot_id in self._precomputed:
             data, col = self._precomputed[element._plot_id]
         else:
-            if 'spatialpandas' not in element.interface.datatype:
+            if (('spatialpandas' not in element.interface.datatype) and
+                (not (ds16 and 'geodataframe' in element.interface.datatype))):
                 element = element.clone(datatype=['spatialpandas'])
             data = element.data
             col = element.interface.geo_column(data)
@@ -1438,7 +1474,7 @@ class rasterize(AggregationOperation):
                    (Graph, aggregate),
                    (Scatter, aggregate),
                    (Points, aggregate),
-                   (Curve, aggregate),
+                   (Curve, curve_aggregate),
                    (Path, aggregate),
                    (type(None), shade) # To handle parameters of datashade
     ]
@@ -1487,8 +1523,7 @@ class rasterize(AggregationOperation):
 
         unused_params = list(all_supplied_kws - all_allowed_kws)
         if unused_params:
-            self.param.warning('Parameter(s) [%s] not consumed by any element rasterizer.'
-                         % ', '.join(unused_params))
+            self.param.warning('Parameter(s) [{}] not consumed by any element rasterizer.'.format(', '.join(unused_params)))
         return element
 
 
@@ -1542,7 +1577,7 @@ class stack(Operation):
         for rgb in overlay:
             if not isinstance(rgb, RGB):
                 raise TypeError("The stack operation expects elements of type RGB, "
-                                "not '%s'." % type(rgb).__name__)
+                                f"not '{type(rgb).__name__}'.")
             rgb = rgb.rgb
             dims = [kd.name for kd in rgb.kdims][::-1]
             coords = {kd.name: rgb.dimension_values(kd, False)
@@ -1551,9 +1586,9 @@ class stack(Operation):
 
         try:
             imgs = xr.align(*imgs, join='exact')
-        except ValueError:
+        except ValueError as e:
             raise ValueError('RGB inputs to the stack operation could not be aligned; '
-                             'ensure they share the same grid sampling.')
+                             'ensure they share the same grid sampling.') from e
 
         stacked = tf.stack(*imgs, how=self.p.compositor)
         arr = shade.uint32_to_uint8(stacked.data)[::-1]
@@ -1609,11 +1644,13 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
+        elif isinstance(element, ImageStack):
+            data = element.data
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
             raise ValueError('spreading can only be applied to Image or RGB Elements. '
-                             'Received object of type %s' % str(type(element)))
+                             f'Received object of type {type(element)!s}')
 
         kwargs = {}
         array = self._apply_spreading(data)

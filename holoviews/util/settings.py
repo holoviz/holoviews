@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 from ..core import Store
 
 
@@ -94,7 +95,7 @@ class KeywordSettings:
             try:
                 items.update(eval(f'dict({keyword})'))
             except Exception:
-                raise SyntaxError(f"Could not evaluate keyword: {keyword}")
+                raise SyntaxError(f"Could not evaluate keyword: {keyword}") from None
         return items
 
 
@@ -215,14 +216,11 @@ class OutputSettings(KeywordSettings):
         holomap = "holomap      : The display type for holomaps"
         widgets = "widgets      : The widget mode for widgets"
         fps =    "fps          : The frames per second used for animations"
-        max_frames=  ("max_frames   : The max number of frames rendered (default %r)"
-                      % cls.defaults['max_frames'])
+        max_frames=  ("max_frames   : The max number of frames rendered (default {!r})".format(cls.defaults['max_frames']))
         size =   "size         : The percentage size of displayed output"
         dpi =    "dpi          : The rendered dpi of the figure"
-        filename =  ("filename    : The filename of the saved output, if any (default %r)"
-                     % cls.defaults['filename'])
-        info = ("info    : The information to page about the displayed objects (default %r)"
-                % cls.defaults['info'])
+        filename =  ("filename    : The filename of the saved output, if any (default {!r})".format(cls.defaults['filename']))
+        info = ("info    : The information to page about the displayed objects (default {!r})".format(cls.defaults['info']))
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
         widget_location = "widget_location : The position of the widgets relative to the plot"
 
@@ -231,14 +229,14 @@ class OutputSettings(KeywordSettings):
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         if signature:
-            doc_signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
+            doc_signature = '\noutput({})\n'.format(', '.join(f'{kw}=None' for kw in keywords))
             return '\n'.join([doc_signature] + intro + descriptions)
         else:
             return '\n'.join(intro + descriptions)
 
     @classmethod
     def _generate_signature(cls):
-        from inspect import Signature, Parameter
+        from inspect import Parameter, Signature
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         return Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])
@@ -320,7 +318,7 @@ class OutputSettings(KeywordSettings):
                 raise ValueError(f"The selected plotting extension {backend!r} "
                                  "has not been loaded, ensure you load it "
                                  f"with hv.extension({backend!r}) before using "
-                                 "hv.output.")
+                                 "hv.output.") from e
             print(f'Error: {e}')
             if help_prompt:
                 print(help_prompt)

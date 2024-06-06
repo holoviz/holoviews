@@ -2,18 +2,22 @@ from collections import namedtuple
 
 import numpy as np
 import param
-
 from param.parameterized import bothmethod
 
 from .core.data import Dataset
 from .core.element import Element, Layout
+from .core.layout import AdjointLayout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
-from .core.layout import AdjointLayout
 from .core.spaces import GridSpace
 from .streams import (
-    Stream, SelectionExprSequence, CrossFilterSet,
-    Derived, PlotReset, SelectMode, Pipe
+    CrossFilterSet,
+    Derived,
+    Pipe,
+    PlotReset,
+    SelectionExprSequence,
+    SelectMode,
+    Stream,
 )
 from .util import DynamicMap
 
@@ -137,10 +141,10 @@ class _base_link_selections(param.ParameterizedFunction):
 
         if Store.current_backend not in Store.renderers:
             raise RuntimeError("Cannot perform link_selections operation "
-                               "since the selected backend %r is not "
+                               f"since the selected backend {Store.current_backend!r} is not "
                                "loaded. Load the plotting extension with "
                                "hv.extension or import the plotting "
-                               "backend explicitly." % Store.current_backend)
+                               "backend explicitly.")
 
         # Perform transform
         return self._selection_transform(hvobj.clone())
@@ -474,11 +478,15 @@ class SelectionDisplay:
     def __call__(self, element):
         return self
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         raise NotImplementedError()
 
     @staticmethod
-    def _select(element, selection_expr, cache={}):
+    def _select(element, selection_expr, cache=None):
+        if cache is None:
+            cache = {}
         from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
@@ -512,10 +520,10 @@ class SelectionDisplay:
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: {} on '{!r}'.".format(key_error, element))
+                                    f"display selection for all elements: {key_error} on '{element!r}'.") from e
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s." % e)
+                                    f"display selection for all elements: {e}.") from e
             ds_cache[selection_expr] = mask
         else:
             selection = element
@@ -645,7 +653,9 @@ class ColorListSelectionDisplay(SelectionDisplay):
         self.alpha_props = [alpha_prop]
         self.backend = backend
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         def _build_selection(el, colors, alpha, exprs, **kwargs):
             from .plotting.util import linear_gradient
             ds = el.dataset

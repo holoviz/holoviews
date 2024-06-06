@@ -3,8 +3,12 @@ import pytest
 import holoviews as hv
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.bokeh.util import filter_batched_data, glyph_order, select_legends
 from holoviews.plotting.bokeh.styles import expand_batched_style
+from holoviews.plotting.bokeh.util import (
+    filter_batched_data,
+    glyph_order,
+    select_legends,
+)
 
 bokeh_renderer = Store.renderers['bokeh']
 
@@ -78,7 +82,7 @@ class TestBokehUtilsInstantiation(ComparisonTestCase):
                             ['scatter', 'patch'])
         self.assertEqual(order, ['scatter_1', 'patch_1', 'rect_1'])
 
-
+@pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
     "figure_index,expected",
     [

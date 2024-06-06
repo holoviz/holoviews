@@ -1,15 +1,15 @@
-import param
-import numpy as np
 import matplotlib as mpl
-
+import numpy as np
+import pandas as pd
+import param
 from matplotlib import patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec
 from ...core.options import abbreviated_exception
-from .element import ElementPlot, ColorbarPlot
+from ...core.util import match_spec
+from ...element import HLines, HSpans, VLines, VSpans
+from .element import ColorbarPlot, ElementPlot
 from .plot import mpl_rc_context
-from ...element import HLines, VLines, HSpans, VSpans
 
 
 class ABLine2D(Line2D):
@@ -229,7 +229,7 @@ class LabelsPlot(ColorbarPlot):
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:
-                    color = colors.index(color) if color in colors else np.NaN
+                    color = colors.index(color) if color in colors else np.nan
                     plot_kwargs['color'] = cmap(color)
             kwargs = dict(plot_kwargs, **{k: v[i] for k, v in vectorized.items()})
             texts.append(ax.text(x, y, text, **kwargs))
@@ -312,9 +312,11 @@ class _SyntheticAnnotationPlot(AnnotationPlot):
         elif isinstance(element, VLines):
             extents = extents[0], np.nan, extents[2], np.nan
         elif isinstance(element, HSpans):
-            extents = np.nan, min(extents[:2]), np.nan, max(extents[2:])
+            extents = pd.array(extents)
+            extents = np.nan, extents[:2].min(), np.nan, extents[2:].max()
         elif isinstance(element, VSpans):
-            extents = min(extents[:2]), np.nan, max(extents[2:]), np.nan
+            extents = pd.array(extents)
+            extents = extents[:2].min(), np.nan, extents[2:].max(), np.nan
         return extents
 
     def initialize_plot(self, ranges=None):

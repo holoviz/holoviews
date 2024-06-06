@@ -2,22 +2,20 @@ import os
 from unittest import SkipTest
 
 import param
-import holoviews as hv
-
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
 
-from ..core.dimension import LabelledData
-from ..core.tree import AttrTree
-from ..core.options import Store
-from ..element.comparison import ComparisonTestCase
-from ..util import extension
-from ..plotting.renderer import Renderer
-from .magics import load_magics
-from .display_hooks import display
-from .display_hooks import pprint_display, png_display, svg_display
+import holoviews as hv
 
+from ..core.dimension import LabelledData
+from ..core.options import Store
+from ..core.tree import AttrTree
+from ..element.comparison import ComparisonTestCase
+from ..plotting.renderer import Renderer
+from ..util import extension
+from .display_hooks import display, png_display, pprint_display, svg_display
+from .magics import load_magics
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
@@ -43,9 +41,10 @@ class IPTestCase(ComparisonTestCase):
             self.ip = IPython.InteractiveShell()
             if self.ip is None:
                 raise TypeError()
-        except Exception:
-                raise SkipTest("IPython could not be started")
+        except Exception as e:
+            raise SkipTest("IPython could not be started") from e
 
+        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
         self.addTypeEqualityFunc(HTML, self.skip_comparison)
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
 
@@ -154,7 +153,7 @@ class notebook_extension(extension):
         if 'html' not in p.display_formats and len(p.display_formats) > 1:
             msg = ('Output magic unable to control displayed format '
                    'as IPython notebook uses fixed precedence '
-                   'between %r' % p.display_formats)
+                   f'between {p.display_formats!r}')
             display(HTML(f'<b>Warning</b>: {msg}'))
 
         loaded = notebook_extension._loaded
@@ -169,7 +168,7 @@ class notebook_extension(extension):
 
         css = ''
         if p.width is not None:
-            css += '<style>div.container { width: %s%% }</style>' % p.width
+            css += f'<style>div.container {{ width: {p.width}% }}</style>'
         if p.css:
             css += f'<style>{p.css}</style>'
 
@@ -179,14 +178,17 @@ class notebook_extension(extension):
         resources = list(resources)
         if len(resources) == 0: return
 
-        from panel import config
+        from panel import config, extension as panel_extension
         if hasattr(config, 'comms') and comms:
             config.comms = comms
 
-        same_cell_execution = getattr(self, '_repeat_execution_in_cell', False)
+        same_cell_execution = published = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
         Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
+
+        if not published and hasattr(panel_extension, "_display_globals"):
+            panel_extension._display_globals()
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
@@ -237,8 +239,7 @@ class notebook_extension(extension):
 
         unmatched_args = set(args) - set(resources)
         if unmatched_args:
-            display(HTML("<b>Warning:</b> Unrecognized resources '%s'"
-                         % "', '".join(unmatched_args)))
+            display(HTML("<b>Warning:</b> Unrecognized resources '{}'".format("', '".join(unmatched_args))))
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):

@@ -1,5 +1,5 @@
-from io import StringIO
 import logging
+from io import StringIO
 
 import param
 

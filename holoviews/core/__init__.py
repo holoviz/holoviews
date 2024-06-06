@@ -6,14 +6,14 @@ from .boundingregion import *
 from .data import *
 from .dimension import *
 from .element import *
+from .io import FileArchive
 from .layout import *
 from .operation import *
 from .overlay import *
 from .sheetcoords import *
 from .spaces import *
 from .tree import *
-from .util import config       # noqa (API import)
-from .io import FileArchive
+from .util import config  # noqa (API import)
 
 archive = FileArchive()
 

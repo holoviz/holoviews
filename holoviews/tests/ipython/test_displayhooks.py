@@ -1,5 +1,9 @@
-from holoviews import Store, Curve
-from holoviews.ipython import notebook_extension, IPTestCase
+import pytest
+
+pytest.importorskip("IPython")
+
+from holoviews import Curve, Store
+from holoviews.ipython import IPTestCase, notebook_extension
 
 
 class TestDisplayHooks(IPTestCase):
@@ -12,7 +16,6 @@ class TestDisplayHooks(IPTestCase):
         Store.display_formats = self.format
 
     def tearDown(self):
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
         Store.display_hooks = self.backup
