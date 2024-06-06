@@ -291,7 +291,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks, self.source_streams = self._construct_callbacks()
+        if isinstance(self, GenericOverlayPlot):
+            self.callbacks, self.source_streams = [], []
+        else:
+            self.callbacks, self.source_streams = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
@@ -2840,6 +2843,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
         super().__init__(overlay, **kwargs)
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self._multi_y_propagation = False
 
     @property

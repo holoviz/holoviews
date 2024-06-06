@@ -979,10 +979,18 @@ class CallbackPlot:
         registry = list(Stream.registry.items())
         callbacks = Stream._callbacks[self.backend]
         for source in self.link_sources:
-            streams = [
-                s for src, streams in registry for s in streams
-                if src is source or (src._plot_id is not None and
-                                     src._plot_id == source._plot_id)]
+            streams = []
+            for src, src_streams in registry:
+                # Skip if source identities do not match
+                if (src is not source and (src._plot_id is None or src._plot_id != source._plot_id)):
+                    continue
+                for stream in src_streams:
+                    # Skip if Stream.source is an overlay but the plot isn't
+                    if (isinstance(stream.source, DynamicMap) and
+                        isinstance(stream.source.last, CompositeOverlay) and
+                        not isinstance(self, GenericOverlayPlot)):
+                        continue
+                    streams.append(stream)
             cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
                            if type(stream) in callbacks and stream.linked
                            and stream.source is not None}
@@ -1007,7 +1015,13 @@ class CallbackPlot:
             zorders = [self.zorder]
 
         if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = [self.hmap.last]
+            if self.overlaid:
+                sources = [self.hmap.last]
+            else:
+                sources = [
+                    o for i, inputs in self.stream_sources.items()
+                    for o in inputs
+                ]
         elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]

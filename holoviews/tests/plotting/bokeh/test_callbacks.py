@@ -487,3 +487,42 @@ def test_rangexy_multi_yaxes():
     # Ensure both callbacks are attached
     assert p1.callbacks[0].plot is p1
     assert p2.callbacks[0].plot is p2
+
+
+@pytest.mark.usefixtures('bokeh_backend')
+def test_rangexy_subcoordinate_y():
+    c1 = Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True)
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+
+    overlay = (c1 * c2)
+    RangeXY(source=overlay)
+
+    plot = bokeh_server_renderer.get_plot(overlay)
+
+    p1, p2 = plot.subplots.values()
+
+    assert not (p1.callbacks or p2.callbacks)
+    assert len(plot.callbacks) == 1
+    callback = plot.callbacks[0]
+    assert callback._process_msg({}) == {}
+
+
+@pytest.mark.usefixtures('bokeh_backend')
+def test_rangexy_subcoordinate_y_dynamic():
+
+    def cb(x_range, y_range):
+        return (
+            Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
+            Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+        )
+
+    stream = RangeXY()
+    dmap = DynamicMap(cb, streams=[stream])
+    plot = bokeh_server_renderer.get_plot(dmap)
+
+    p1, p2 = plot.subplots.values()
+
+    assert not (p1.callbacks or p2.callbacks)
+    assert len(plot.callbacks) == 1
+    callback = plot.callbacks[0]
+    assert callback._process_msg({}) == {}

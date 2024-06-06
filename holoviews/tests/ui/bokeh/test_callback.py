@@ -376,3 +376,33 @@ def test_stream_popup_selection1d_lasso_select(serve_hv, points):
     locator = page.locator("#lasso")
     expect(locator).to_have_count(1)
     expect(locator).not_to_have_text("lasso\n0")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_subcoordinate_y_range(serve_hv, points):
+    def cb(x_range, y_range):
+        return (
+            Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
+            Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+        )
+
+    stream = RangeXY()
+    dmap = DynamicMap(cb, streams=[stream]).opts(active_tools=['box_zoom'])
+
+    page = serve_hv(dmap)
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    bbox = hv_plot.bounding_box()
+    hv_plot.click()
+
+    page.mouse.move(bbox['x']+60, bbox['y']+60)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+190, bbox['y']+190, steps=5)
+    page.mouse.up()
+
+    expected_xrange = (7.008849557522124, 63.95575221238938)
+    expected_yrange = (0.030612244897959183, 1.0918367346938775)
+    wait_until(lambda: stream.x_range == expected_xrange and stream.y_range == expected_yrange, page)
