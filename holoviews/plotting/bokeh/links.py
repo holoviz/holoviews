@@ -108,20 +108,19 @@ class LinkCallback:
         """
         Searches a GenericElementPlot for a Link.
         """
-        registry = Link.registry.items()
+        if link is None:
+            candidates = list(Link.registry.items())
+        else:
+            candidates = [(link.target, [link])]
         for source in plot.link_sources:
-            if link is None:
-                candidates = registry
-            else:
-                candidates = [(link.source, [link])]
             for link_src, src_links in candidates:
                 if (link_src is not source and (link_src._plot_id is None or link_src._plot_id != source._plot_id)):
                     continue
                 links = []
                 for link in src_links:
-                    # Skip if Link.source is an overlay but the plot isn't
-                    # or if the source is an element but the plot isn't
-                    src_el = link.source.last if isinstance(link.source, HoloMap) else link.source
+                    # Skip if Link.target is an overlay but the plot isn't
+                    # or if the target is an element but the plot isn't
+                    src_el = link.target.last if isinstance(link.target, HoloMap) else link.target
                     if (
                         (isinstance(src_el, CompositeOverlay) and not (isinstance(plot, GenericOverlayPlot) or plot.batched)) or
                         (isinstance(src_el, Element) and isinstance(plot, GenericOverlayPlot))
