@@ -2229,7 +2229,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         if isinstance(s, RangeXY) and not s._triggering:
                             s.reset()
 
-    @hold_render()
+    @hold_render
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
@@ -3381,7 +3381,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         return self.handles['plot']
 
-    @hold_render()
+    @hold_render
     def update_frame(self, key, ranges=None, element=None):
         """
         Update the internal state of the Plot to represent the given

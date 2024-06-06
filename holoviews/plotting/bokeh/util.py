@@ -868,6 +868,7 @@ def hold_render(f):
             f(self, *args, **kwargs)
         finally:
             self.state.hold_render = hold
+        return wrapper
 
 
 def categorize_array(array, dim):
