@@ -39,13 +39,7 @@ jobs:
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
     env:
-      MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      MOZ_HEADLESS: 1
-      PANEL_EMBED: "true"
-      PANEL_EMBED_JSON: "true"
-      PANEL_EMBED_JSON_PREFIX: "json"
-      DASK_DATAFRAME__QUERY_PLANNING: false
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:

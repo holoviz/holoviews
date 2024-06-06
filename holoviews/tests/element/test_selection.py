@@ -31,6 +31,8 @@ from holoviews.element import (
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.selection import spatial_select_columnar
 
+from ..utils import dask_switcher
+
 try:
     import datashader as ds
 except ImportError:
@@ -658,9 +660,10 @@ class TestSpatialSelectColumnar:
         }, dtype=float)
 
 
-    @pytest.fixture(scope="function")
-    def dask_df(self, pandas_df):
-        return dd.from_pandas(pandas_df, npartitions=2)
+    @pytest.fixture(scope="function", params=[pytest.param(True, id='dask-classic'), pytest.param(False, id='dask-expr')])
+    def dask_df(self, pandas_df, request):
+        with dask_switcher(query=request.param):
+            return dd.from_pandas(pandas_df, npartitions=2)
 
     @pytest.fixture(scope="function")
     def _method(self):

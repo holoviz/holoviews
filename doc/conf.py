@@ -67,6 +67,10 @@ nbsite_analytics = {
     'goatcounter_holoviz': True,
 }
 
+rediraffe_redirects = {
+    'gallery/demos/bokeh/eeg_viewer': 'gallery/demos/bokeh/multichannel_timeseries_viewer',
+}
+
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
     'galleries': {},
@@ -91,7 +95,8 @@ if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
             'elements',
             'containers',
             'streams',
-            'apps'
+            'apps',
+            'features',
         ]
     }
 

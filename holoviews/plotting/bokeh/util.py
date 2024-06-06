@@ -39,12 +39,14 @@ from bokeh.models import (
 )
 from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
+from bokeh.models.tickers import BasicTicker, FixedTicker, Ticker
 from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
 from bokeh.themes import built_in_themes
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
+from ...core import util
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
 from ...core.overlay import NdOverlay, Overlay
@@ -1167,3 +1169,30 @@ def dtype_fix_hook(plot, element):
                 for k, v in data.items():
                     if hasattr(v, "dtype") and v.dtype.kind == "U":
                         data[k] = v.tolist()
+
+
+def get_ticker_axis_props(ticker):
+    axis_props = {}
+    if isinstance(ticker, np.ndarray):
+        ticker = list(ticker)
+    if isinstance(ticker, Ticker):
+        axis_props['ticker'] = ticker
+    elif isinstance(ticker, int):
+        axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
+    elif isinstance(ticker, (tuple, list)):
+        if all(isinstance(t, tuple) for t in ticker):
+            ticks, labels = zip(*ticker)
+            # Ensure floats which are integers are serialized as ints
+            # because in JS the lookup fails otherwise
+            ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
+                        for t in ticks]
+            labels = [l if isinstance(l, str) else str(l)
+                        for l in labels]
+        else:
+            ticks, labels = ticker, None
+        if ticks and util.isdatetime(ticks[0]):
+            ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
+        axis_props['ticker'] = FixedTicker(ticks=ticks)
+        if labels is not None:
+            axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+    return axis_props

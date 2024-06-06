@@ -30,13 +30,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "param >=2.0,<3.0",
-    "numpy >=1.0",
-    "pyviz_comms >=2.1",
-    "panel >=1.0",
+    "bokeh >=3.1",
     "colorcet",
+    "numpy >=1.21",
     "packaging",
-    "pandas >=0.20.0",
+    "pandas >=1.3",
+    "panel >=1.0",
+    "param >=2.0,<3.0",
+    "pyviz_comms >=2.1",
 ]
 
 [project.urls]
@@ -45,7 +46,7 @@ Source = "https://github.com/holoviz/holoviews"
 HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
-recommended = ["ipython >=5.4.0", "notebook", "matplotlib >=3", "bokeh >=3.1", "plotly >=4.0"]
+recommended = ["matplotlib >=3", "plotly >=4.0"]
 tests = ["pytest", "pytest-rerunfailures"]
 
 [project.scripts]
@@ -90,7 +91,7 @@ filterwarnings = [
     # 2023-01: Sqlalchemy 2.0 warning:
     "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy", # https://github.com/ibis-project/ibis/issues/5048
     # 2023-03: Already handling the nested sequence
-    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas",
+    "ignore:Creating an ndarray from ragged nested sequences::holoviews.core.data.spatialpandas",
     # 2023-09: Dash needs to update their code to use the comm module and pkg_resources
     "ignore:The `.+?` class has been deprecated:DeprecationWarning:dash._jupyter",
     "ignore:pkg_resources is deprecated as an API:DeprecationWarning:dash.dash",
@@ -110,12 +111,12 @@ filterwarnings = [
     "ignore:When grouping with a length-1 list::dask.dataframe.groupby", # https://github.com/dask/dask/issues/10572
     "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning", # Will go away by itself in Pandas 3.0
     "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning", # https://github.com/holoviz/spatialpandas/issues/137
-    # 2024-02
-    "ignore:The current Dask DataFrame implementation is deprecated:DeprecationWarning", # https://github.com/dask/dask/issues/10917
     # 2024-04
     "ignore:No data was collected:coverage.exceptions.CoverageWarning", # https://github.com/pytest-dev/pytest-cov/issues/627
     # 2024-05
     "ignore:backend2gui is deprecated since IPython 8.24:DeprecationWarning", # https://github.com/holoviz/holoviews/pull/6227#issuecomment-2104401396
+    # 2024-06
+    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning",
 ]
 
 [tool.coverage]
@@ -160,7 +161,7 @@ ignore = [
     "RUF005", # Consider {expr} instead of concatenation
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
 ]
-unfixable = [
+extend-unsafe-fixes = [
     "F401", # Unused imports
     "F841", # Unused variables
 ]
@@ -180,6 +181,6 @@ known-first-party = ["holoviews"]
 combine-as-imports = true
 
 [tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser"
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn"
 skip = "doc/generate_modules.py"
 write-changes = true

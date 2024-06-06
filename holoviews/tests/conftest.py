@@ -54,12 +54,9 @@ with contextlib.suppress(ImportError):
 with contextlib.suppress(Exception):
     # From Dask 2023.7.1 they now automatically convert strings
     # https://docs.dask.org/en/stable/changelog.html#v2023-7-1
-    # From Dask 2024.3.0 they now use `dask_expr` by default
-    # https://github.com/dask/dask/issues/10995
     import dask
 
     dask.config.set({"dataframe.convert-string": False})
-    dask.config.set({"dataframe.query-planning": False})
 
 
 @pytest.fixture
@@ -79,10 +76,10 @@ def _plotting_backend(backend):
     if not hv.extension._loaded:
         hv.extension(backend)
     hv.renderer(backend)
-    prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = backend
+    curent_backend = hv.Store.current_backend
+    hv.Store.set_current_backend(backend)
     yield
-    hv.Store.current_backend = prev_backend
+    hv.Store.set_current_backend(curent_backend)
 
 
 @pytest.fixture
@@ -125,3 +122,17 @@ def serve_hv(page, port):  # noqa: F811
         return page
 
     return serve_and_return_page
+
+
+@pytest.fixture(autouse=True)
+def reset_store():
+    _custom_options = {k: {} for k in hv.Store._custom_options}
+    _options = hv.Store._options.copy()
+    current_backend = hv.Store.current_backend
+    renderers = hv.Store.renderers.copy()
+    yield
+    hv.Store._custom_options = _custom_options
+    hv.Store._options = _options
+    hv.Store._weakrefs = {}
+    hv.Store.renderers = renderers
+    hv.Store.set_current_backend(current_backend)
