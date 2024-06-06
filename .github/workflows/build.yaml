@@ -51,7 +51,7 @@ jobs:
         if: always()
         with:
           name: conda
-          path: dist/*tar.bz2
+          path: dist/*.conda
           if-no-files-found: error
 
   conda_publish:
@@ -67,7 +67,7 @@ jobs:
       - name: Set environment variables
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "CONDA_FILE=$(ls dist/*.tar.bz2)" >> $GITHUB_ENV
+          echo "CONDA_FILE=$(ls dist/*.conda)" >> $GITHUB_ENV
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
