@@ -865,10 +865,10 @@ def hold_render(f):
         hold = self.state.hold_render
         self.state.hold_render = True
         try:
-            f(self, *args, **kwargs)
+            return f(self, *args, **kwargs)
         finally:
             self.state.hold_render = hold
-        return wrapper
+    return wrapper
 
 
 def categorize_array(array, dim):
