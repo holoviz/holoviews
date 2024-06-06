@@ -715,36 +715,6 @@ class LabelledData(param.Parameterized):
     def __setstate__(self, d):
         "Restores options applied to this object."
         d = param_aliases(d)
-
-        # Backwards compatibility for objects before id was made a property
-        opts_id = d['_id'] if '_id' in d else d.pop('id', None)
-        try:
-            load_options = Store.load_counter_offset is not None
-            if load_options:
-                matches = [k for k in d if k.startswith('_custom_option')]
-                for match in matches:
-                    custom_id = int(match.split('_')[-1])+Store.load_counter_offset
-                    if not isinstance(d[match], dict):
-                        # Backward compatibility before multiple backends
-                        backend_info = {'matplotlib':d[match]}
-                    else:
-                        backend_info = d[match]
-                    for backend, info in  backend_info.items():
-                        if backend not in Store._custom_options:
-                            Store._custom_options[backend] = {}
-                        Store._custom_options[backend][custom_id] = info
-                    if backend_info:
-                        if custom_id not in Store._weakrefs:
-                            Store._weakrefs[custom_id] = []
-                        ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
-                        Store._weakrefs[opts_id].append(ref)
-                    d.pop(match)
-
-                if opts_id is not None:
-                    opts_id += Store.load_counter_offset
-        except Exception:
-            self.param.warning("Could not unpickle custom style information.")
-        d['_id'] = opts_id
         self.__dict__.update(d)
         super().__setstate__(d)
 
