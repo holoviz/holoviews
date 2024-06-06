@@ -856,6 +856,20 @@ def update_shared_sources(f):
     return wrapper
 
 
+def hold_render(f):
+    """
+    Decorator that will hold render on a Bokeh ElementPlot until after
+    the method has been called.
+    """
+    def wrapper(self, *args, **kwargs):
+        hold = self.state.hold_render
+        self.state.hold_render = True
+        try:
+            f(self, *args, **kwargs)
+        finally:
+            self.state.hold_render = hold
+
+
 def categorize_array(array, dim):
     """
     Uses a Dimension instance to convert an array of values to categorical
