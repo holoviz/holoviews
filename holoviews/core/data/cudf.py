@@ -4,6 +4,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import dimension_name
@@ -285,7 +286,11 @@ class cuDFInterface(PandasInterface):
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
-            df = getattr(grouped, agg)().reset_index()
+            numeric_cols = [
+                c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                if is_numeric_dtype(d) and c not in cols
+            ]
+            df = getattr(grouped[numeric_cols], agg)().reset_index()
         else:
             agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
             agg = agg_map.get(agg, agg)
