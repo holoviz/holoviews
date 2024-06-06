@@ -111,12 +111,12 @@ filterwarnings = [
     "ignore:When grouping with a length-1 list::dask.dataframe.groupby", # https://github.com/dask/dask/issues/10572
     "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning", # Will go away by itself in Pandas 3.0
     "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning", # https://github.com/holoviz/spatialpandas/issues/137
-    # 2024-02
-    "ignore:The current Dask DataFrame implementation is deprecated:DeprecationWarning", # https://github.com/dask/dask/issues/10917
     # 2024-04
     "ignore:No data was collected:coverage.exceptions.CoverageWarning", # https://github.com/pytest-dev/pytest-cov/issues/627
     # 2024-05
     "ignore:backend2gui is deprecated since IPython 8.24:DeprecationWarning", # https://github.com/holoviz/holoviews/pull/6227#issuecomment-2104401396
+    # 2024-06
+    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning",
 ]
 
 [tool.coverage]
