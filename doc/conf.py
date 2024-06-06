@@ -95,7 +95,8 @@ if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
             'elements',
             'containers',
             'streams',
-            'apps'
+            'apps',
+            'features',
         ]
     }
 

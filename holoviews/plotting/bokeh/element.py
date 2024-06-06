@@ -1,6 +1,8 @@
+import base64
 import warnings
 from collections import defaultdict
 from itertools import chain
+from textwrap import dedent
 from types import FunctionType
 
 import bokeh
@@ -13,6 +15,7 @@ from bokeh.models import (
     BinnedTicker,
     ColorBar,
     ColorMapper,
+    CustomAction,
     CustomJS,
     EqHistColorMapper,
     GlyphRenderer,
@@ -43,7 +46,6 @@ from bokeh.models.tickers import (
     Ticker,
 )
 from bokeh.models.tools import Tool
-from packaging.version import Version
 
 from ...core import CompositeOverlay, Dataset, Dimension, DynamicMap, Element, util
 from ...core.options import Keywords, SkipRendering, abbreviated_exception
@@ -67,7 +69,7 @@ from .tabular import TablePlot
 from .util import (
     TOOL_TYPES,
     bokeh32,
-    bokeh_version,
+    bokeh34,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,
@@ -183,6 +185,62 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        When enabled, axis options are no longer propagated between the
        elements and the overlay container, allowing customization on a
        per-axis basis.""")
+
+    scalebar = param.Boolean(default=False, doc="""
+        Whether to display a scalebar.""")
+
+    scalebar_range =param.Selector(default="x", objects=["x", "y"], doc="""
+        Whether to have the scalebar on the x or y axis.""")
+
+    scalebar_unit = param.ClassSelector(default=None, class_=(str, tuple), doc="""
+        Unit of the scalebar. The order of how this will be done is by:
+
+        1. This value if it is set.
+        2. The elements kdim unit (if exist).
+        3. Meter
+
+        If the value is a tuple, the first value will be the unit and the
+        second will be the base unit.
+
+        The scalebar_unit is only used if scalebar is True.""")
+
+    scalebar_location = param.Selector(
+        default="bottom_right",
+        objects=[
+            "top_left", "top_center", "top_right",
+            "center_left", "center_center", "center_right",
+            "bottom_left", "bottom_center", "bottom_right",
+            "top", "left", "center", "right","bottom"
+        ],
+        doc="""
+            Location anchor for positioning scale bar.
+
+            The scalebar_location is only used if scalebar is True.""")
+
+    scalebar_label = param.String(
+        default="@{value} @{unit}", doc="""
+        The label template.
+
+        This can use special variables:
+        * ``@{value}`` The current value. Optionally can provide a number
+            formatter with e.g. ``@{value}{%.2f}``.
+        * ``@{unit}`` The unit of measure.
+
+        The scalebar_label is only used if scalebar is True.""")
+
+    scalebar_tool = param.Boolean(default=True, doc="""
+        Whether to show scalebar tools in the toolbar,
+        the tools are used to control scalebars visibility.
+
+        The scalebar_tool is only used if scalebar is True.""")
+
+    scalebar_opts = param.Dict(
+        default={}, doc="""
+        Allows setting specific styling options for the scalebar.
+        See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.ScaleBar
+        for more information.
+
+        The scalebar_opts is only used if scalebar is True.""")
 
     subcoordinate_y = param.ClassSelector(default=False, class_=(bool, tuple), doc="""
        Enables sub-coordinate systems for this plot. Accepts also a numerical
@@ -1982,6 +2040,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self._postprocess_hover(renderer, source)
 
+        if self.scalebar:
+            self._draw_scalebar(plot)
+
         zooms_subcoordy = self.handles.get('zooms_subcoordy')
         if zooms_subcoordy is not None:
             for zoom in zooms_subcoordy.values():
@@ -2264,6 +2325,78 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         current_frames = util.unique_iterator(current_frames)
         return any(self.lookup_options(frame, 'norm').options.get('framewise')
                    for frame in current_frames)
+
+    def _draw_scalebar(self, plot):
+        """Draw scalebar on the plot
+
+        This will draw a scalebar on the plot. See the documentation for
+        the parameters: `scalebar`, `scalebar_location`, `scalebar_label`,
+        `scalebar_opts`, and `scalebar_unit` for more information.
+
+        Requires Bokeh 3.4
+        """
+
+        if not bokeh34:
+            raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
+
+        from bokeh.models import Metric, ScaleBar
+
+        kdims = self.current_frame.kdims
+        unit = self.scalebar_unit or kdims[0].unit or "m"
+        if isinstance(unit, tuple):
+            unit, base_unit = unit[:2]
+        else:
+            base_unit = unit
+
+        _default_scalebar_opts = {"background_fill_alpha": 0.8}
+        opts = dict(_default_scalebar_opts, **self.scalebar_opts)
+
+        scale_bar = ScaleBar(
+            range=plot.x_range if self.scalebar_range == "x" else plot.y_range,
+            orientation="horizontal" if self.scalebar_range == "x" else "vertical",
+            unit=unit,
+            dimensional=Metric(base_unit=base_unit),
+            location=self.scalebar_location,
+            label=self.scalebar_label,
+            **opts,
+        )
+        self.handles['scalebar'] = scale_bar
+        plot.add_layout(scale_bar)
+
+        if plot.toolbar and self.scalebar_tool:
+            existing_tool = [t for t in plot.toolbar.tools if t.description == "Toggle ScaleBar"]
+            if existing_tool:
+                existing_tool[0].callback.args["scale_bars"] = plot.select(ScaleBar)
+            else:
+                ruler_icon = """\
+                <?xml version="1.0" encoding="iso-8859-1"?>
+                <svg fill="#a1a6a9" height="52px" width="52px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+                     xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
+                <g>
+                    <g>
+                        <path d="M402.826,0L0.001,402.827L109.174,512l402.826-402.826L402.826,0z M43.671,402.827l25.789-25.789l32.752,32.752
+                            l21.834-21.834l-32.752-32.752l25.789-25.789l21.834,21.834l21.834-21.834l-21.834-21.834l25.789-25.789l21.834,21.834
+                            l21.834-21.834l-21.834-21.834l25.79-25.79l32.752,32.752l21.834-21.834l-32.752-32.752l25.789-25.789l21.834,21.834
+                            l21.834-21.834l-21.834-21.834l25.789-25.789l21.835,21.834l21.834-21.834l-21.834-21.834l25.79-25.79l32.752,32.752
+                            l21.834-21.834L377.037,69.46l25.789-25.789l65.504,65.504L109.174,468.33L43.671,402.827z"/>
+                    </g>
+                </g>
+                </svg>"""
+                encoded_icon = base64.b64encode(dedent(ruler_icon).encode()).decode('ascii')
+                scalebar_tool = CustomAction(
+                    icon=f"data:image/svg+xml;base64,{encoded_icon}",
+                    description="Toggle ScaleBar",
+                    callback=CustomJS(
+                        args={"scale_bars": plot.select(ScaleBar)},
+                        code="""
+                        export default ({scale_bars}) => {
+                            for (let i = 0; i < scale_bars.length; i++) {
+                                scale_bars[i].visible = !scale_bars[i].visible
+                            }
+                        }""",
+                    )
+                )
+                plot.toolbar.tools.append(scalebar_tool)
 
 
 class CompositeElementPlot(ElementPlot):
@@ -2699,8 +2832,7 @@ class ColorbarPlot(ElementPlot):
                     )
             elif self.cnorm == 'eq_hist':
                 colormapper = EqHistColorMapper
-                if bokeh_version > Version('2.4.2'):
-                    opts['rescale_discrete_levels'] = self.rescale_discrete_levels
+                opts['rescale_discrete_levels'] = self.rescale_discrete_levels
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
