@@ -380,20 +380,24 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             new_style[k] = val
         return new_style
 
+    def _format_title(self, key, separator=' '):
+      """
+      Formats the title of the plot.
+      """
+      title = super()._format_title(key, separator)
+
+      if self.fontsize is not None and "title" in self.fontsize:
+          title = {"text": title, "font": {"size": self.fontsize["title"]}}
+
+      return title
 
     def init_layout(self, key, element, ranges, is_geo=False):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
-        formatted_title = self._format_title(key, separator=' ')
         layout = dict(
-            title=formatted_title,
+            title=self._format_title(key, separator=' '),
             plot_bgcolor=self.bgcolor, uirevision=True
         )
-        if self.fontsize is not None :  # plotly title is a dict with text and fontsize etc
-            layout = dict(title=dict(text=formatted_title, font=dict(size=self.fontsize['title'])) ,
-            plot_bgcolor=self.bgcolor, uirevision=True
-            )
-
         if not self.responsive:
             layout['width'] = self.width
             layout['height'] = self.height

@@ -34,6 +34,11 @@ class TestElementPlot(TestPlotlyPlot):
         plot = plotly_renderer.get_plot(curve)
         self.assertEqual(plot.state['layout']['title'], 'Called')
 
+    def test_title_fontsize(self):
+        curve = Curve([1, 2, 3]).opts(title='Test',fontsize={'title': 42})
+        plot = plotly_renderer.get_plot(curve)
+        assert plot.state["layout"]["title"]["font"]["size"] == 42
+
     ### Axis labelling ###
 
     def test_element_plot_xlabel(self):
