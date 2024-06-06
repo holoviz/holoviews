@@ -715,6 +715,26 @@ class LabelledData(param.Parameterized):
     def __setstate__(self, d):
         "Restores options applied to this object."
         d = param_aliases(d)
+
+        load_options = Store.load_counter_offset is not None
+        if load_options:
+            matches = [k for k in d if k.startswith('_custom_option')]
+            for match in matches:
+                custom_id = int(match.split('_')[-1])+Store.load_counter_offset
+                for backend, info in d[match].items():
+                    if backend not in Store._custom_options:
+                        Store._custom_options[backend] = {}
+                    Store._custom_options[backend][custom_id] = info
+                if d[match]:
+                    if custom_id not in Store._weakrefs:
+                        Store._weakrefs[custom_id] = []
+                    ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
+                    Store._weakrefs[d["_id"]].append(ref)
+                d.pop(match)
+
+            if d["_id"] is not None:
+                d["_id"] += Store.load_counter_offset
+
         self.__dict__.update(d)
         super().__setstate__(d)
 
