@@ -523,7 +523,7 @@ def test_rangexy_subcoordinate_y_dynamic():
 
     p1, p2 = plot.subplots.values()
 
-    assert not p1.callbacks 
+    assert not p1.callbacks
     assert not p2.callbacks
     assert len(plot.callbacks) == 1
     callback = plot.callbacks[0]
