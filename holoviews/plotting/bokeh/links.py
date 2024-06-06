@@ -97,21 +97,22 @@ class LinkCallback:
                     # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
-                potentials = [cls.find_link(p, link) for p in plots]
+                potentials = [cls.find_link(p, link, target=True) for p in plots]
                 tgt_links = [p for p in potentials if p is not None]
                 if tgt_links:
                     found.append((link, plot, tgt_links[0][0]))
         return found
 
     @classmethod
-    def find_link(cls, plot, link=None):
+    def find_link(cls, plot, link=None, target=False):
         """
         Searches a GenericElementPlot for a Link.
         """
+        attr = 'target' if target else 'source'
         if link is None:
             candidates = list(Link.registry.items())
         else:
-            candidates = [(link.target, [link])]
+            candidates = [(getattr(link, attr), [link])]
         for source in plot.link_sources:
             for link_src, src_links in candidates:
                 if (link_src is not source and (link_src._plot_id is None or link_src._plot_id != source._plot_id)):
@@ -120,7 +121,8 @@ class LinkCallback:
                 for link in src_links:
                     # Skip if Link.target is an overlay but the plot isn't
                     # or if the target is an element but the plot isn't
-                    src_el = link.target.last if isinstance(link.target, HoloMap) else link.target
+                    src = getattr(link, attr)
+                    src_el = src.last if isinstance(src, HoloMap) else src
                     if (
                         (isinstance(src_el, CompositeOverlay) and not (isinstance(plot, GenericOverlayPlot) or plot.batched)) or
                         (isinstance(src_el, Element) and isinstance(plot, GenericOverlayPlot))
