@@ -980,18 +980,18 @@ class CallbackPlot:
         callbacks = Stream._callbacks[self.backend]
         for source in self.link_sources:
             streams = []
-            for src, src_streams in registry:
+            for stream_src, src_streams in registry:
                 # Skip if source identities do not match
-                if (src is not source and (src._plot_id is None or src._plot_id != source._plot_id)):
+                if (stream_src is not source and (stream_src._plot_id is None or stream_src._plot_id != source._plot_id)):
                     continue
                 for stream in src_streams:
                     # Skip if Stream.source is an overlay but the plot isn't
                     # or if the source is an element but the plot isn't
                     src_el = stream.source.last if isinstance(stream.source, HoloMap) else stream.source
-                    if ((isinstance(src_el, CompositeOverlay) and
-                        not isinstance(self, GenericOverlayPlot)) or
-                        (isinstance(src_el, Element) and
-                         isinstance(self, GenericOverlayPlot))):
+                    if (
+                        (isinstance(src_el, CompositeOverlay) and not (isinstance(self, GenericOverlayPlot) or self.batched)) or
+                        (isinstance(src_el, Element) and isinstance(self, GenericOverlayPlot))
+                    ):
                         continue
                     streams.append(stream)
             cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
@@ -1005,7 +1005,6 @@ class CallbackPlot:
                 if cb_stream not in source_streams:
                     source_streams.append(cb_stream)
             cbs.append(cb(self, cb_streams, source))
-            print(cbs[-1], type(self))
         return cbs, source_streams
 
     @property

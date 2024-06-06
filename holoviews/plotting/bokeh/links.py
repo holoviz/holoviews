@@ -146,25 +146,25 @@ class RangeToolLinkCallback(LinkCallback):
                 target_range_name = f'subcoordinate_{range_name}'
             else:
                 target_range_name = range_name
-            axes[range_name] = target_plot.handles[target_range_name]
+            axes[range_name] = ax = target_plot.handles[target_range_name]
             interval = getattr(link, f'intervals{axis}', None)
             if interval is not None and bokeh34:
                 min, max = interval
                 if min is not None:
-                    axes[range_name].min_interval = min
+                    ax.min_interval = min
                 if max is not None:
-                    axes[range_name].max_interval = max
-                    self._set_range_for_interval(axes[range_name], max)
+                    ax.max_interval = max
+                    self._set_range_for_interval(ax, max)
 
             bounds = getattr(link, f'bounds{axis}', None)
             if bounds is not None:
                 start, end = bounds
                 if start is not None:
-                    axes[range_name].start = start
-                    axes[range_name].reset_start = start
+                    ax.start = start
+                    ax.reset_start = start
                 if end is not None:
-                    axes[range_name].end = end
-                    axes[range_name].reset_end = end
+                    ax.end = end
+                    ax.reset_end = end
 
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
