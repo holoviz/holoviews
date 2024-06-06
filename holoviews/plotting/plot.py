@@ -986,9 +986,12 @@ class CallbackPlot:
                     continue
                 for stream in src_streams:
                     # Skip if Stream.source is an overlay but the plot isn't
-                    if (isinstance(stream.source, DynamicMap) and
-                        isinstance(stream.source.last, CompositeOverlay) and
-                        not isinstance(self, GenericOverlayPlot)):
+                    # or if the source is an element but the plot isn't
+                    src_el = stream.source.last if isinstance(stream.source, HoloMap) else stream.source
+                    if ((isinstance(src_el, CompositeOverlay) and
+                        not isinstance(self, GenericOverlayPlot)) or
+                        (isinstance(src_el, Element) and
+                         isinstance(self, GenericOverlayPlot))):
                         continue
                     streams.append(stream)
             cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
@@ -1002,6 +1005,7 @@ class CallbackPlot:
                 if cb_stream not in source_streams:
                     source_streams.append(cb_stream)
             cbs.append(cb(self, cb_streams, source))
+            print(cbs[-1], type(self))
         return cbs, source_streams
 
     @property
