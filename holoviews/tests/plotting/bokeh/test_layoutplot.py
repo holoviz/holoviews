@@ -369,8 +369,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIs(p1.handles['y_range'], p2.handles['y_range'])
 
-    def test_layout_axis_not_linked_mismatching_name(self):
-        layout = Curve([1, 2, 3], vdims=('b', 'A')) + Curve([1, 2, 3], vdims=('a', 'A'))
+    def test_layout_axis_not_linked_mismatching_label(self):
+        layout = Curve([1, 2, 3], vdims=('a', 'A')) + Curve([1, 2, 3], vdims=('a', 'B'))
         plot = bokeh_renderer.get_plot(layout)
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIsNot(p1.handles['y_range'], p2.handles['y_range'])
