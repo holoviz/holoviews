@@ -54,8 +54,8 @@ class SankeyPlot(GraphPlot):
             return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
-        x0, x1 = ranges[xdim.name][range_type]
-        y0, y1 = ranges[ydim.name][range_type]
+        x0, x1 = ranges[xdim.label][range_type]
+        y0, y1 = ranges[ydim.label][range_type]
         xdiff = (x1-x0)
         ydiff = (y1-y0)
         if self.label_position == 'right':

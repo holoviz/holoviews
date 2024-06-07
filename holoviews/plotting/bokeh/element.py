@@ -713,7 +713,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dims = [dim]
             v0, v1 = dim.range
             axis_label = str(dim)
-            specs = ((dim.name, dim.label, dim.unit),)
+            specs = ((dim.label, dim.unit),)
         # For y-axes check if we explicitly passed in a dimension.
         # This is used by certain plot types to create an axis from
         # a synthetic dimension and exclusively supported for y-axes.
@@ -724,7 +724,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 for elrange in ranges.values()
             ])
             axis_label = str(dim)
-            specs = ((dim.name, dim.label, dim.unit),)
+            specs = ((dim.label, dim.unit),)
         else:
             try:
                 l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
@@ -756,7 +756,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dims:
                 if not isinstance(dims, list):
                     dims = [dims]
-                specs = tuple((d.name, d.label, d.unit) for d in dims)
+                specs = tuple((d.label, d.unit) for d in dims)
             else:
                 specs = None
 
@@ -773,7 +773,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if self.subcoordinate_y:
             categorical = False
-        elif dims is not None and any(dim.name in ranges and 'factors' in ranges[dim.name] for dim in dims):
+        elif dims is not None and any(dim.label in ranges and 'factors' in ranges[dim.label] for dim in dims):
             categorical = True
         else:
             categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))
@@ -1663,8 +1663,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _get_dimension_factors(self, element, ranges, dimension):
         if dimension.values:
             values = dimension.values
-        elif 'factors' in ranges.get(dimension.name, {}):
-            values = ranges[dimension.name]['factors']
+        elif 'factors' in ranges.get(dimension.label, {}):
+            values = ranges[dimension.label]['factors']
         else:
             values = element.dimension_values(dimension, False)
         values = np.asarray(values)

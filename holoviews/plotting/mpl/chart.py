@@ -6,7 +6,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 from packaging.version import Version
 
-from ...core.dimension import Dimension, dimension_name
+from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     dt64_to_dt,
@@ -23,7 +23,7 @@ from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..plot import PlotSelector
-from ..util import compute_sizes, get_min_distance, get_sideplot_ranges
+from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
@@ -396,10 +396,10 @@ class HistogramPlot(ColorbarPlot):
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
-        s0, s1 = ranges[ydim.name]['soft']
+        s0, s1 = ranges[ydim.label]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
-        ranges[ydim.name]['soft'] = (s0, s1)
+        ranges[ydim.label]['soft'] = (s0, s1)
         return super().get_extents(element, ranges, range_type)
 
     def _process_axsettings(self, hist, lims, ticks):
@@ -644,11 +644,11 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
         paths = self.handles['artist']
         (xs, ys), style, _ = self.get_data(element, ranges, style)
         xdim, ydim = element.dimensions()[:2]
-        if 'factors' in ranges.get(xdim.name, {}):
-            factors = list(ranges[xdim.name]['factors'])
+        if 'factors' in ranges.get(xdim.label, {}):
+            factors = list(ranges[xdim.label]['factors'])
             xs = [factors.index(x) for x in xs if x in factors]
-        if 'factors' in ranges.get(ydim.name, {}):
-            factors = list(ranges[ydim.name]['factors'])
+        if 'factors' in ranges.get(ydim.label, {}):
+            factors = list(ranges[ydim.label]['factors'])
             ys = [factors.index(y) for y in ys if y in factors]
         paths.set_offsets(np.column_stack([xs, ys]))
         if 's' in style:
@@ -752,7 +752,7 @@ class VectorFieldPlot(ColorbarPlot):
                 magnitudes = mag_dim.apply(element, flat=True)
             else:
                 magnitudes = element.dimension_values(mag_dim)
-                _, max_magnitude = ranges[dimension_name(mag_dim)]['combined']
+                _, max_magnitude = ranges[dim_range_key(mag_dim)]['combined']
                 if self.normalize_lengths and max_magnitude != 0:
                     magnitudes = magnitudes / max_magnitude
         else:
@@ -873,8 +873,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             dimensions = [kdims[0], None, stack_dim]
             if stack_dim.values:
                 stack_order = stack_dim.values
-            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
-                stack_order = ranges[stack_dim]['factors']
+            elif stack_dim in ranges and ranges[stack_dim.label].get('factors'):
+                stack_order = ranges[stack_dim.label]['factors']
             else:
                 stack_order = element.dimension_values(1, False)
             stack_order = list(stack_order)
@@ -1042,7 +1042,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             legend_opts.update(**leg_spec)
             axis.legend(title=title, **legend_opts)
 
-        x_range = ranges[gdim.name]["data"]
+        x_range = ranges[gdim.label]["data"]
         if continuous and not is_dt:
             if style.get('align', 'center') == 'center':
                 left_multiplier = 0.5
@@ -1050,7 +1050,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 left_multiplier = 0
                 right_multiplier = 1
-            ranges[gdim.name]["data"] = (
+            ranges[gdim.label]["data"] = (
                 x_range[0] - width * left_multiplier,
                 x_range[1] + width * right_multiplier
             )

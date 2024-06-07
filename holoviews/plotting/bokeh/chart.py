@@ -447,10 +447,10 @@ class HistogramPlot(ColorbarPlot):
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
-        s0, s1 = ranges[ydim.name]['soft']
+        s0, s1 = ranges[ydim.label]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
-        ranges[ydim.name]['soft'] = (s0, s1)
+        ranges[ydim.label]['soft'] = (s0, s1)
         return super().get_extents(element, ranges, range_type)
 
 
@@ -888,8 +888,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             stack_dim = element.get_dimension(1)
             if stack_dim.values:
                 stack_order = stack_dim.values
-            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
-                stack_order = ranges[stack_dim]['factors']
+            elif stack_dim in ranges and ranges[stack_dim.label].get('factors'):
+                stack_order = ranges[stack_dim.label]['factors']
             else:
                 stack_order = element.dimension_values(1, False)
             stack_order = list(stack_order)
@@ -904,7 +904,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         color_index = (group_dim or stack_dim) if no_cidx else self.color_index
         color_dim = element.get_dimension(color_index)
         if color_dim:
-            self.color_index = color_dim.name
+            self.color_index = color_dim.label
 
         # Define style information
         width = style.get('bar_width', style.get('width', 1))
@@ -935,7 +935,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       datatype=['dataframe', 'dictionary'])
 
         width = abs(width)
-        y0, y1 = ranges.get(ydim.name, {'combined': (None, None)})['combined']
+        y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
         if self.logy:
             bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))
         else:

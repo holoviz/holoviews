@@ -131,8 +131,8 @@ class GraphPlot(GraphMixin, ColorbarPlot):
 
         if self.directed:
             xdim, ydim = element.nodes.kdims[:2]
-            x_range = ranges[xdim.name]['combined']
-            y_range = ranges[ydim.name]['combined']
+            x_range = ranges[xdim.label]['combined']
+            y_range = ranges[ydim.label]['combined']
             arrow_len = np.hypot(y_range[1]-y_range[0], x_range[1]-x_range[0])*self.arrowhead_length
             paths = get_directed_graph_paths(element, arrow_len)
         else:

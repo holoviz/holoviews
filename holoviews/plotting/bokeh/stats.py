@@ -509,7 +509,7 @@ class ViolinPlot(BoxWhiskerPlot):
             groups = dict([((element.label,), element)])
 
         if split_dim:
-            split_name = split_dim.dimension.name
+            split_name = split_dim.dimension.label
             if split_name in ranges and not split_dim.ops and 'factors' in ranges[split_name]:
                 split_cats = ranges[split_name].get('factors')
             elif split_dim:
