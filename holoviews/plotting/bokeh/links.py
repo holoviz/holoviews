@@ -2,8 +2,6 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
-from ...core.element import Element
-from ...core.overlay import CompositeOverlay
 from ...core.spaces import HoloMap
 from ...core.util import isscalar
 from ..links import (
@@ -123,10 +121,7 @@ class LinkCallback:
                     # or if the target is an element but the plot isn't
                     src = getattr(link, attr)
                     src_el = src.last if isinstance(src, HoloMap) else src
-                    if (
-                        (isinstance(src_el, CompositeOverlay) and not (isinstance(plot, GenericOverlayPlot) or plot.batched)) or
-                        (isinstance(src_el, Element) and isinstance(plot, GenericOverlayPlot))
-                    ):
+                    if not plot._matching_plot_type(src_el):
                         continue
                     links.append(link)
                 if links:

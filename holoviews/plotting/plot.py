@@ -969,6 +969,15 @@ class CallbackPlot:
 
     backend = None
 
+    def _matching_plot_type(self, element):
+        """
+        Checks if the plot type matches the element type.
+        """
+        return (
+            (not isinstance(element, CompositeOverlay) or isinstance(self, GenericOverlayPlot) or self.batched) and
+            (not isinstance(element, Element) or not isinstance(self, GenericOverlayPlot))
+        )
+
     def _construct_callbacks(self):
         """
         Initializes any callbacks for streams which have defined
@@ -988,10 +997,7 @@ class CallbackPlot:
                     # Skip if Stream.source is an overlay but the plot isn't
                     # or if the source is an element but the plot isn't
                     src_el = stream.source.last if isinstance(stream.source, HoloMap) else stream.source
-                    if (
-                        (isinstance(src_el, CompositeOverlay) and not (isinstance(self, GenericOverlayPlot) or self.batched)) or
-                        (isinstance(src_el, Element) and isinstance(self, GenericOverlayPlot))
-                    ):
+                    if not self._matching_plot_type(src_el):
                         continue
                     streams.append(stream)
             cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
