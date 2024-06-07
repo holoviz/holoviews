@@ -104,7 +104,15 @@ class LinkCallback:
     @classmethod
     def find_link(cls, plot, link=None, target=False):
         """
-        Searches a GenericElementPlot for a Link.
+        Searches a plot for any Links declared on the sources of the plot.
+
+        Args:
+            plot: The plot to search for Links
+            link: A Link instance to check for matches
+            target: Whether to check against the Link.target
+
+        Returns:
+            A tuple containing the matched plot and list of matching Links.
         """
         attr = 'target' if target else 'source'
         if link is None:
