@@ -350,7 +350,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks, self.source_streams = self._construct_callbacks()
+        if isinstance(self, GenericOverlayPlot):
+            self.callbacks, self.source_streams = [], []
+        else:
+            self.callbacks, self.source_streams = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
@@ -1123,7 +1126,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ticker = self.xticks if axis == 'x' else self.yticks
             if not (self._subcoord_overlaid and axis == 'y'):
                 axis_props.update(get_ticker_axis_props(ticker))
-            else:
+            elif not self.drawn:
                 ticks, labels = [], []
                 idx = 0
                 for el, sp in zip(self.current_frame, self.subplots.values()):
@@ -2104,6 +2107,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
             if self._subcoord_overlaid:
                 if style_element.label in plot.extra_y_ranges:
+                    self.handles['subcoordinate_y_range'] = plot.y_range
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
 
         if self.apply_hard_bounds:
@@ -2973,6 +2977,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
         super().__init__(overlay, **kwargs)
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self._multi_y_propagation = False
 
     @property
