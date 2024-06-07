@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from bokeh.models.tools import WheelZoomTool, ZoomInTool, ZoomOutTool
 
-from holoviews.core import Overlay
+from holoviews.core import NdOverlay, Overlay
 from holoviews.element import Curve
 from holoviews.element.annotation import VSpan
 from holoviews.operation.normalization import subcoordinate_group_ranges
@@ -76,11 +76,35 @@ class TestSubcoordinateY(TestBokehPlot):
             assert plot.handles['y_range'].start == ytarget[0]
             assert plot.handles['y_range'].end == ytarget[1]
 
+    def test_ndoverlay_labels(self):
+        overlay = NdOverlay({
+            f'Data {i}': Curve(np.arange(10)*i).opts(subcoordinate_y=True)
+            for i in range(3)
+        }, 'Channel')
+        plot = bokeh_renderer.get_plot(overlay)
+        assert plot.state.yaxis.ticker.ticks == [0, 1, 2]
+        assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1', 2: 'Data 2'}
+        for i, sp in enumerate(plot.subplots.values()):
+            assert sp.handles['glyph_renderer'].coordinates.y_target.start == (i-0.5)
+            assert sp.handles['glyph_renderer'].coordinates.y_target.end == (i+0.5)
+
+    def test_ndoverlay_nd_labels(self):
+        overlay = NdOverlay({
+            ('A', f'Data {i}'): Curve(np.arange(10)*i).opts(subcoordinate_y=True)
+            for i in range(3)
+        }, ['Group', 'Channel'])
+        plot = bokeh_renderer.get_plot(overlay)
+        assert plot.state.yaxis.ticker.ticks == [0, 1, 2]
+        assert plot.state.yaxis.major_label_overrides == {0: 'A, Data 0', 1: 'A, Data 1', 2: 'A, Data 2'}
+        for i, sp in enumerate(plot.subplots.values()):
+            assert sp.handles['glyph_renderer'].coordinates.y_target.start == (i-0.5)
+            assert sp.handles['glyph_renderer'].coordinates.y_target.end == (i+0.5)
+
     def test_no_label(self):
         overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
         with pytest.raises(
             ValueError,
-            match='Every element wrapped in a subcoordinate_y overlay must have a label'
+            match='Every Element plotted on a subcoordinate_y axis must have a label or be part of an NdOverlay.'
         ):
             bokeh_renderer.get_plot(overlay)
 

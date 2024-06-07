@@ -3301,10 +3301,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 pass
             elif any(not label for label in labels):
                 raise ValueError(
-                    'Every element wrapped in a subcoordinate_y overlay must have '
-                    'a label.'
+                    'Every Element plotted on a subcoordinate_y axis must have '
+                    'a label or be part of an NdOverlay.'
                 )
-            elif len(set(labels)) == 1:
+            elif len(set(labels)) != len(labels):
                 raise ValueError(
                     'Elements wrapped in a subcoordinate_y overlay must all have '
                     'a unique label.'
