@@ -389,8 +389,9 @@ class Renderer(Exporter):
                 src is source or (src._plot_id is not None and src._plot_id == source._plot_id)
                 for src, streams in registry for s in streams
             )
+        if config.comms == 'colab':
+            load_notebook(config.inline)
         embed = (not (dynamic or streams or self.widget_mode == 'live') or config.embed)
-
         if embed or config.comms == 'default':
             return self._render_panel(plot, embed, comm)
         return self._render_ipywidget(plot)
