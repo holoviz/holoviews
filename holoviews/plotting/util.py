@@ -407,10 +407,10 @@ def get_range(element, ranges, dimension):
     an element and a dictionary of ranges.
     """
     if dimension and dimension != 'categorical':
-        if ranges and dimension.name in ranges:
-            drange = ranges[dimension.name]['data']
-            srange = ranges[dimension.name]['soft']
-            hrange = ranges[dimension.name]['hard']
+        if ranges and dimension.label in ranges:
+            drange = ranges[dimension.label]['data']
+            srange = ranges[dimension.label]['soft']
+            hrange = ranges[dimension.label]['hard']
         else:
             drange = element.range(dimension, dimension_range=False)
             srange = dimension.soft_range
@@ -439,8 +439,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
 
-    if dim.name in ranges:
-        main_range = ranges[dim.name]['combined']
+    if dim.label in ranges:
+        main_range = ranges[dim.label]['combined']
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):

@@ -268,8 +268,8 @@ class ContourPlot(PathPlot):
         data[dim_name] = values
 
         factors = None
-        if cdim.name in ranges and 'factors' in ranges[cdim.name]:
-            factors = ranges[cdim.name]['factors']
+        if cdim.name in ranges and 'factors' in ranges[cdim.label]:
+            factors = ranges[cdim.label]['factors']
         elif values.dtype.kind in 'SUO' and len(values):
             if isinstance(values[0], np.ndarray):
                 values = np.concatenate(values)

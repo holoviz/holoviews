@@ -173,8 +173,8 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             yvals = aggregate.dimension_values(ydim, expanded=False)
             yvals = GridInterface._infer_interval_breaks(yvals)
 
-        xfactors = list(ranges.get(xdim.name, {}).get('factors', []))
-        yfactors = list(ranges.get(ydim.name, {}).get('factors', []))
+        xfactors = list(ranges.get(xdim.label, {}).get('factors', []))
+        yfactors = list(ranges.get(ydim.label, {}).get('factors', []))
         xticks, yticks = self._compute_ticks(element, xvals, yvals, xfactors, yfactors)
 
         style['xfactors'] = xfactors

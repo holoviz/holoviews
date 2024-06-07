@@ -1601,8 +1601,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _get_dimension_factors(self, element, ranges, dimension):
         if dimension.values:
             values = dimension.values
-        elif 'factors' in ranges.get(dimension.name, {}):
-            values = ranges[dimension.name]['factors']
+        elif 'factors' in ranges.get(dimension.label, {}):
+            values = ranges[dimension.label]['factors']
         else:
             values = element.dimension_values(dimension, False)
         values = np.asarray(values)
