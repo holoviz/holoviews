@@ -1839,13 +1839,13 @@ class GenericOverlayPlot(GenericElementPlot):
                                 "in the Overlay.")
         return subplots
 
-    def _create_subplot(self, key, obj, streams, ranges):
+    def _create_subplot(self, key, obj, streams, ranges, **kwargs):
         registry = Store.registry[self.renderer.backend]
         ordering = util.layer_sort(self.hmap)
         overlay_type = 1 if self.hmap.type == Overlay else 2
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
 
-        opts = {'overlaid': overlay_type}
+        opts = dict(kwargs, overlaid=overlay_type)
         if self.hmap.type == Overlay:
             style_key = (obj.type.__name__,) + key
             if self.overlay_dims:

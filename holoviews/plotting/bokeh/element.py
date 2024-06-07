@@ -249,6 +249,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        two-tuple that must be a range between 0 and 1, the plot will be
        rendered on this vertical range of the axis.""")
 
+    subcoordinate_group = param.String(default=None, doc="""
+       Dimension in the data to group subcoordinates by.""")
+
     subcoordinate_scale = param.Number(default=1, bounds=(0, None), inclusive_bounds=(False, True), doc="""
        Scale factor for subcoordinate ranges to control the level of overlap.""")
 
@@ -1142,7 +1145,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if el.label or not self.current_frame.kdims:
                         labels.append(el.label)
                     else:
-                        labels.append(', '.join(d.pprint_value(k) for d, k in zip(self.current_frame.kdims, sp_key)))
+                        labels.append(', '.join(
+                            d.pprint_value(k) for d, k in zip(self.current_frame.kdims, sp_key)
+                            if d != self.subcoordinate_group
+                        ))
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
@@ -2982,7 +2988,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale', 'autorange']
+                          'subcoordinate_scale', 'autorange', 'subcoordinate_group']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
@@ -3195,27 +3201,36 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         # First, just process and validate the groups and their content.
         groups = defaultdict(list)
 
-        # If there are groups AND there are subcoordinate_y elements without a group.
-        if any(el.group != type(el).__name__ for el in overlay) and any(
-            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
-            and el.group == type(el).__name__
-            for el in overlay
-        ):
+        missing_group = False
+        for sp in self.subplots.values():
+            # group is the Element type per default (e.g. Curve, Spike).
+            el = sp.current_frame
+            subcoord_enabled = el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            subcoord_group = sp.subcoordinate_group or self.subcoordinate_group
+            if sp.overlay_dims and subcoord_group:
+                coord_groups = [v for d, v in sp.overlay_dims.items() if d == subcoord_group]
+                group = coord_groups[0] if coord_groups else None
+            else:
+                group = None if el.group == type(el).__name__ else el.group
+
+            if group is None:
+                # If there are groups AND there are subcoordinate_y elements without a group.
+                if subcoord_enabled:
+                    missing_group = True
+                continue
+
+            if not subcoord_enabled:
+                raise ValueError(
+                    f"All elements in group {group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
+            groups[group].append(el)
+
+        if groups and missing_group:
             raise ValueError(
                 'The subcoordinate_y overlay contains elements with a defined group, each '
                 'subcoordinate_y element in the overlay must have a defined group.'
             )
-
-        for el in overlay:
-            # group is the Element type per default (e.g. Curve, Spike).
-            if el.group == type(el).__name__:
-                continue
-            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
-                raise ValueError(
-                    f"All elements in group {el.group!r} must set the option "
-                    f"'subcoordinate_y=True'. Not found for: {el}"
-                )
-            groups[el.group].append(el)
 
         # No need to go any further if there's just one group.
         if len(groups) <= 1:
@@ -3230,10 +3245,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             renderers_per_group = defaultdict(list)
             # We loop through each overlay sub-elements and empty the list of
             # renderers of the initial tool.
-            for el in overlay:
-                if el.group not in groups:
+            for sp in self.subplots.values():
+                el = sp.current_frame
+                subcoord_group = sp.subcoordinate_group or self.subcoordinate_group
+                if sp.overlay_dims and subcoord_group:
+                    coord_groups = [v for d, v in sp.overlay_dims.items() if d == subcoord_group]
+                    group = coord_groups[0] if coord_groups else None
+                else:
+                    group = None if el.group == type(el).__name__ else el.group
+
+                if group is None or group not in groups:
                     continue
-                renderers_per_group[el.group].append(zoom_tool.renderers.pop(0))
+                renderers_per_group[group].append(zoom_tool.renderers.pop(0))
 
             if zoom_tool.renderers:
                 raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
@@ -3290,6 +3313,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             return subplots[0]._get_axis_dims(element)
         return super()._get_axis_dims(element)
 
+    def _create_subplot(self, key, obj, streams, ranges, **kwargs):
+        sp = super()._create_subplot(key, obj, streams, ranges, **kwargs)
+        if sp is not None and not sp.subcoordinate_group and self.subcoordinate_group:
+            sp.subcoordinate_group = self.subcoordinate_group
+        return sp
+
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         if self.multi_y and self.subcoordinate_y:
             raise ValueError('multi_y and subcoordinate_y are not supported together.')
@@ -3332,6 +3361,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             frame = None
             if self.tabs:
                 subplot.overlaid = False
+            if subplot.subcoordinate_group is None and self.subcoordinate_group:
+                subplot.subcoordinate_group = self.subcoordinate_group
             child = subplot.initialize_plot(ranges, plot, plots)
             if isinstance(element, CompositeOverlay):
                 # Ensure that all subplots are in the same state
