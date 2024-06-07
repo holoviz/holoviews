@@ -969,6 +969,10 @@ class CallbackPlot:
 
     backend = None
 
+    @staticmethod
+    def _sources_match(src1, src2):
+        return src1 is src2 or (src1._plot_id is not None and src1._plot_id == src2._plot_id)
+
     def _matching_plot_type(self, element):
         """
         Checks if the plot type matches the element type.
@@ -991,7 +995,7 @@ class CallbackPlot:
             streams = []
             for stream_src, src_streams in registry:
                 # Skip if source identities do not match
-                if (stream_src is not source and (stream_src._plot_id is None or stream_src._plot_id != source._plot_id)):
+                if not self._sources_match(stream_src, source):
                     continue
                 for stream in src_streams:
                     # Skip if Stream.source is an overlay but the plot isn't

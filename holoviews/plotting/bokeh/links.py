@@ -113,7 +113,7 @@ class LinkCallback:
             candidates = [(getattr(link, attr), [link])]
         for source in plot.link_sources:
             for link_src, src_links in candidates:
-                if (link_src is not source and (link_src._plot_id is None or link_src._plot_id != source._plot_id)):
+                if not plot._sources_match(link_src, source):
                     continue
                 links = []
                 for link in src_links:
