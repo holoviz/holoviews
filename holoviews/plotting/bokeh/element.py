@@ -651,7 +651,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dims = [dim]
             v0, v1 = dim.range
             axis_label = str(dim)
-            specs = ((dim.name, dim.label, dim.unit),)
+            specs = ((dim.label, dim.unit),)
         # For y-axes check if we explicitly passed in a dimension.
         # This is used by certain plot types to create an axis from
         # a synthetic dimension and exclusively supported for y-axes.
@@ -662,7 +662,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 for elrange in ranges.values()
             ])
             axis_label = str(dim)
-            specs = ((dim.name, dim.label, dim.unit),)
+            specs = ((dim.label, dim.unit),)
         else:
             try:
                 l, b, r, t = self.get_extents(range_el, ranges, dimension=dim)
@@ -694,7 +694,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dims:
                 if not isinstance(dims, list):
                     dims = [dims]
-                specs = tuple((d.name, d.label, d.unit) for d in dims)
+                specs = tuple((d.label, d.unit) for d in dims)
             else:
                 specs = None
 
