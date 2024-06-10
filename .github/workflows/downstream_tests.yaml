@@ -16,8 +16,9 @@ on:
 
 jobs:
   downstream_tests:
-    uses: holoviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@main
+    uses: holoviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@downstream_tests_payload
     with:
       downstream_repos_as_json: '{"downstream_repo":["hvplot", "geoviews"]}'
+      client_payload: '{"target": "downstream", "cache": false}'
     secrets:
       ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
