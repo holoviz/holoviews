@@ -256,8 +256,7 @@ class downsample1d(ResampleOperation1D):
 
         if len(element) <= self.p.width:
             return element
-        xs, ys = (element.dimension_values(i) for i in range(2))
-        ys = np.ascontiguousarray(ys)
+        xs, ys = (np.ascontiguousarray(element.dimension_values(i)) for i in range(2))
         if ys.dtype == np.bool_:
             ys = ys.astype(np.int8)
         downsample = _ALGORITHMS[self.p.algorithm]
