@@ -287,6 +287,45 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         assert plot.batched == False
         assert len(plot.subplots) == 10
 
+    def test_ndoverlay_subcoordinate_y_ranges(self):
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        overlay = NdOverlay({
+            'A': Curve(data, 'x', ('A', 'y')).opts(subcoordinate_y=True),
+            'B': Curve(data, 'x', ('B', 'y')).opts(subcoordinate_y=True),
+            'C': Curve(data, 'x', ('C', 'y')).opts(subcoordinate_y=True),
+        })
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            assert sp.handles['y_range'].start == 0
+            assert sp.handles['y_range'].end == 27
+
+    def test_overlay_subcoordinate_y_ranges(self):
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        overlay = Overlay([
+            Curve(data, 'x', ('A', 'y'), label='A').opts(subcoordinate_y=True),
+            Curve(data, 'x', ('B', 'y'), label='B').opts(subcoordinate_y=True),
+            Curve(data, 'x', ('C', 'y'), label='C').opts(subcoordinate_y=True),
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            assert sp.handles['y_range'].start == 0
+            assert sp.handles['y_range'].end == 27
 
 
 class TestLegends(TestBokehPlot):
