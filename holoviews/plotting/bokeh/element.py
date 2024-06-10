@@ -2113,6 +2113,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['xaxis'], self.handles['yaxis'] = axes
             self.handles['x_range'], self.handles['y_range'] = plot_ranges
             if self._subcoord_overlaid:
+
                 if style_element.label in plot.extra_y_ranges:
                     self.handles['subcoordinate_y_range'] = plot.y_range
                     self.handles['y_range'] = plot.extra_y_ranges.pop(style_element.label)
@@ -3003,6 +3004,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if not isinstance(v._y_range_type, Range1d):
                 return v._y_range_type
         return self._y_range_type
+
+    @property
+    def _is_batched(self):
+        return super()._is_batched and not self.subcoordinate_y
 
     def _process_legend(self, overlay):
         plot = self.handles['plot']
