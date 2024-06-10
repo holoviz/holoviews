@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import holoviews as hv
+from holoviews.core.overlay import NdOverlay, Overlay
+from holoviews.element import Curve
 from holoviews.operation.downsample import _ALGORITHMS, downsample1d
 
 try:
@@ -20,14 +21,24 @@ def test_downsample1d_multi(plottype):
     assert N > downsample1d.width
 
     if plottype == "overlay":
-        figure = hv.Overlay([hv.Curve(range(N)), hv.Curve(range(N))])
+        figure = Overlay([Curve(range(N)), Curve(range(N))])
     elif plottype == "ndoverlay":
-        figure = hv.NdOverlay({"A": hv.Curve(range(N)), "B": hv.Curve(range(N))})
+        figure = NdOverlay({"A": Curve(range(N)), "B": Curve(range(N))})
 
     figure_values = downsample1d(figure, dynamic=False).data.values()
     for n in figure_values:
         for value in n.data.values():
             assert value.size == downsample1d.width
+
+
+def test_downsample1d_non_contiguous():
+    x = np.arange(10)
+    y = np.arange(20).reshape(1, 20)[0, ::2]
+
+    downsampled = downsample1d(Curve((x, y), datatype=['array']), dynamic=False, width=5)
+
+    np.testing.assert_equal(downsampled['x'], np.array([0, 1, 3, 6, 9]))
+    np.testing.assert_equal(downsampled['y'], np.array([ 0,  2,  6, 12, 18]))
 
 
 def test_downsample1d_shared_data():
@@ -42,7 +53,7 @@ def test_downsample1d_shared_data():
 
     N = 1000
     df = pd.DataFrame({c: range(N) for c in "xyz"})
-    figure = hv.Overlay([hv.Curve(df, kdims="x", vdims=c) for c in "yz"])
+    figure = Overlay([Curve(df, kdims="x", vdims=c) for c in "yz"])
 
     # We set x_range to trigger _compute_mask
     mocksample(figure, dynamic=False, x_range=(0, 500))
@@ -61,7 +72,7 @@ def test_downsample1d_shared_data_index():
 
     N = 1000
     df = pd.DataFrame({c: range(N) for c in "xyz"})
-    figure = hv.Overlay([hv.Curve(df, kdims="index", vdims=c) for c in "xyz"])
+    figure = Overlay([Curve(df, kdims="index", vdims=c) for c in "xyz"])
 
     # We set x_range to trigger _compute_mask
     mocksample(figure, dynamic=False, x_range=(0, 500))
