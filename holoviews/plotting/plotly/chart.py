@@ -231,8 +231,8 @@ class BarPlot(BarsMixin, ElementPlot):
             stack_dim = element.get_dimension(1)
             if stack_dim.values:
                 svals = stack_dim.values
-            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
-                svals = ranges[stack_dim]['factors']
+            elif stack_dim in ranges and ranges[stack_dim.label].get('factors'):
+                svals = ranges[stack_dim.label]['factors']
             else:
                 svals = element.dimension_values(1, False)
         else:

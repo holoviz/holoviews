@@ -788,7 +788,7 @@ class DimensionedPlot(Plot):
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
-                dim_name = el_dim.name
+                dim_name = el_dim.label
                 if dim_name in prev_ranges and not framewise:
                     continue
                 data_range = data_ranges[(el, el_dim)]
@@ -969,6 +969,19 @@ class CallbackPlot:
 
     backend = None
 
+    @staticmethod
+    def _sources_match(src1, src2):
+        return src1 is src2 or (src1._plot_id is not None and src1._plot_id == src2._plot_id)
+
+    def _matching_plot_type(self, element):
+        """
+        Checks if the plot type matches the element type.
+        """
+        return (
+            (not isinstance(element, CompositeOverlay) or isinstance(self, GenericOverlayPlot) or self.batched) and
+            (not isinstance(element, Element) or not isinstance(self, GenericOverlayPlot))
+        )
+
     def _construct_callbacks(self):
         """
         Initializes any callbacks for streams which have defined
@@ -979,10 +992,18 @@ class CallbackPlot:
         registry = list(Stream.registry.items())
         callbacks = Stream._callbacks[self.backend]
         for source in self.link_sources:
-            streams = [
-                s for src, streams in registry for s in streams
-                if src is source or (src._plot_id is not None and
-                                     src._plot_id == source._plot_id)]
+            streams = []
+            for stream_src, src_streams in registry:
+                # Skip if source identities do not match
+                if not self._sources_match(stream_src, source):
+                    continue
+                for stream in src_streams:
+                    # Skip if Stream.source is an overlay but the plot isn't
+                    # or if the source is an element but the plot isn't
+                    src_el = stream.source.last if isinstance(stream.source, HoloMap) else stream.source
+                    if not self._matching_plot_type(src_el):
+                        continue
+                    streams.append(stream)
             cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
                            if type(stream) in callbacks and stream.linked
                            and stream.source is not None}
@@ -1007,7 +1028,13 @@ class CallbackPlot:
             zorders = [self.zorder]
 
         if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = [self.hmap.last]
+            if self.overlaid:
+                sources = [self.hmap.last]
+            else:
+                sources = [
+                    o for i, inputs in self.stream_sources.items()
+                    for o in inputs
+                ]
         elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]
@@ -1770,10 +1797,14 @@ class GenericOverlayPlot(GenericElementPlot):
             collapsed = Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
         return collapsed
 
+    @property
+    def _is_batched(self):
+        return self.batched and type(self.hmap.last) is NdOverlay
+
     def _create_subplots(self, ranges):
         # Check if plot should be batched
         ordering = util.layer_sort(self.hmap)
-        batched = self.batched and type(self.hmap.last) is NdOverlay
+        batched = self._is_batched
         if batched:
             backend = self.renderer.backend
             batchedplot = Store.registry[backend].get(self.hmap.last.type)

@@ -58,16 +58,6 @@ The source code for the HoloViews project is hosted on [GitHub](https://github.c
 The instructions for cloning above created a `holoviews` directory at your file system location.
 This `holoviews` directory is the _source checkout_ for the remainder of this document, and your current working directory is this directory.
 
-### Fetch tags from upstream
-
-The version number of the package depends on [`git tags`](https://git-scm.com/book/en/v2/Git-Basics-Tagging), so you need to fetch the tags from the upstream repository:
-
-```bash
-git remote add upstream https://github.com/holoviz/holoviews.git
-git fetch --tags upstream
-git push --tags
-```
-
 ## Start developing
 
 To start developing, run the following command
@@ -84,6 +74,16 @@ pixi run download-data
 ```
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
+
+### Syncing Git tags with upstream repository
+
+If you are working from a forked repository of HoloViews, you will need to sync the tags with the upstream repo.
+This is needed because the HoloViews version number depends on [`git tags`](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
+Syncing the git tags can be done with:
+
+```bash
+pixi run sync-git-tags
+```
 
 ### Editable install
 

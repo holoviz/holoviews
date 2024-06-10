@@ -318,14 +318,26 @@ class VectorFieldPlot(ColorbarPlot):
         elif cdim:
             color = cdata.get(cdim.name)
 
-        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
+        data = {
+            'x0': x0s,
+            'x1': x1s,
+            'y0': y0s,
+            'y1': y1s,
+        }
+        if 'hover' in self.handles:
+            data.update({
+                # tile to match the length of the segments
+                "x": np.tile(xs, 3),
+                "y": np.tile(ys, 3),
+                "Angle": np.tile(rads, 3),
+                "Magnitude": np.tile(lens, 3)
+            })
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
         if cdim and color is not None:
             data[cdim.name] = color
             mapping.update(cmapping)
 
         return (data, mapping, style)
-
 
 
 class CurvePlot(ElementPlot):
@@ -435,10 +447,10 @@ class HistogramPlot(ColorbarPlot):
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
-        s0, s1 = ranges[ydim.name]['soft']
+        s0, s1 = ranges[ydim.label]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
-        ranges[ydim.name]['soft'] = (s0, s1)
+        ranges[ydim.label]['soft'] = (s0, s1)
         return super().get_extents(element, ranges, range_type)
 
 
@@ -876,8 +888,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             stack_dim = element.get_dimension(1)
             if stack_dim.values:
                 stack_order = stack_dim.values
-            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
-                stack_order = ranges[stack_dim]['factors']
+            elif stack_dim in ranges and ranges[stack_dim.label].get('factors'):
+                stack_order = ranges[stack_dim.label]['factors']
             else:
                 stack_order = element.dimension_values(1, False)
             stack_order = list(stack_order)
@@ -892,7 +904,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         color_index = (group_dim or stack_dim) if no_cidx else self.color_index
         color_dim = element.get_dimension(color_index)
         if color_dim:
-            self.color_index = color_dim.name
+            self.color_index = color_dim.label
 
         # Define style information
         width = style.get('bar_width', style.get('width', 1))
@@ -923,7 +935,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       datatype=['dataframe', 'dictionary'])
 
         width = abs(width)
-        y0, y1 = ranges.get(ydim.name, {'combined': (None, None)})['combined']
+        y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
         if self.logy:
             bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))
         else:

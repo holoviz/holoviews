@@ -2,6 +2,7 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
+from ...core.spaces import HoloMap
 from ...core.util import isscalar
 from ..links import (
     DataLink,
@@ -94,31 +95,45 @@ class LinkCallback:
                     # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
-                potentials = [cls.find_link(p, link) for p in plots]
+                potentials = [cls.find_link(p, link, target=True) for p in plots]
                 tgt_links = [p for p in potentials if p is not None]
                 if tgt_links:
                     found.append((link, plot, tgt_links[0][0]))
         return found
 
     @classmethod
-    def find_link(cls, plot, link=None):
+    def find_link(cls, plot, link=None, target=False):
         """
-        Searches a GenericElementPlot for a Link.
+        Searches a plot for any Links declared on the sources of the plot.
+
+        Args:
+            plot: The plot to search for Links
+            link: A Link instance to check for matches
+            target: Whether to check against the Link.target
+
+        Returns:
+            A tuple containing the matched plot and list of matching Links.
         """
-        registry = Link.registry.items()
+        attr = 'target' if target else 'source'
+        if link is None:
+            candidates = list(Link.registry.items())
+        else:
+            candidates = [(getattr(link, attr), [link])]
         for source in plot.link_sources:
-            if link is None:
-                links = [
-                    l for src, links in registry for l in links
-                    if src is source or (src._plot_id is not None and
-                                         src._plot_id == source._plot_id)]
+            for link_src, src_links in candidates:
+                if not plot._sources_match(link_src, source):
+                    continue
+                links = []
+                for link in src_links:
+                    # Skip if Link.target is an overlay but the plot isn't
+                    # or if the target is an element but the plot isn't
+                    src = getattr(link, attr)
+                    src_el = src.last if isinstance(src, HoloMap) else src
+                    if not plot._matching_plot_type(src_el):
+                        continue
+                    links.append(link)
                 if links:
                     return (plot, links)
-            elif ((link.target is source) or
-                (link.target is not None and
-                    link.target._plot_id is not None and
-                    link.target._plot_id == source._plot_id)):
-                return (plot, [link])
 
     def validate(self):
         """
@@ -141,25 +156,30 @@ class RangeToolLinkCallback(LinkCallback):
             if axis not in link.axes:
                 continue
 
-            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
+            range_name = f'{axis}_range'
+            if f'subcoordinate_{axis}_range' in target_plot.handles:
+                target_range_name = f'subcoordinate_{range_name}'
+            else:
+                target_range_name = range_name
+            axes[range_name] = ax = target_plot.handles[target_range_name]
             interval = getattr(link, f'intervals{axis}', None)
             if interval is not None and bokeh34:
                 min, max = interval
                 if min is not None:
-                    axes[f'{axis}_range'].min_interval = min
+                    ax.min_interval = min
                 if max is not None:
-                    axes[f'{axis}_range'].max_interval = max
-                    self._set_range_for_interval(axes[f'{axis}_range'], max)
+                    ax.max_interval = max
+                    self._set_range_for_interval(ax, max)
 
             bounds = getattr(link, f'bounds{axis}', None)
             if bounds is not None:
                 start, end = bounds
                 if start is not None:
-                    axes[f'{axis}_range'].start = start
-                    axes[f'{axis}_range'].reset_start = start
+                    ax.start = start
+                    ax.reset_start = start
                 if end is not None:
-                    axes[f'{axis}_range'].end = end
-                    axes[f'{axis}_range'].reset_end = end
+                    ax.end = end
+                    ax.reset_end = end
 
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)

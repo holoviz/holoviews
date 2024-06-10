@@ -1,8 +1,10 @@
 import gc
+import pickle
 
 from holoviews.core.element import Element
 from holoviews.core.options import Keywords, Options, OptionTree, Store
 from holoviews.core.spaces import HoloMap
+from holoviews.element.chart import Curve
 
 from ..utils import LoggingComparisonTestCase
 
@@ -247,3 +249,11 @@ class TestOptionsCleanup(CustomBackendTestCase):
         ExampleElement([]).opts(style_opt1='A').opts.clear()
         custom_options = Store._custom_options['backend_1']
         self.assertEqual(len(custom_options), 0)
+
+class TestGetSetState:
+
+    def test_pickle_roundtrip(self):
+        curve = Curve([0, 1, 2], kdims=["XAXIS"])
+        roundtrip_curve = pickle.loads(pickle.dumps(curve))
+        assert curve.kdims == roundtrip_curve.kdims
+        assert curve.vdims == roundtrip_curve.vdims

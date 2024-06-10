@@ -18,9 +18,10 @@ from bokeh.models import (
 )
 
 from holoviews import opts
-from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
+from holoviews.plotting.bokeh.util import bokeh34
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
@@ -794,6 +795,76 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains(
             "WARNING", "cb model could not be"
         )
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.skipif(not bokeh34, reason="requires Bokeh >= 3.4")
+class TestScalebarPlot:
+
+    def get_scalebar(self, element):
+        plot = bokeh_renderer.get_plot(element)
+        return plot.handles.get('scalebar')
+
+    def test_scalebar(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True)
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.location == 'bottom_right'
+        assert scalebar.background_fill_alpha == 0.8
+        assert scalebar.unit == "m"
+
+    def test_no_scalebar(self):
+        curve = Curve([1, 2, 3])
+        scalebar = self.get_scalebar(curve)
+        assert scalebar is None
+
+    def test_scalebar_unit(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit='cm')
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.unit == "cm"
+
+    def test_dim_unit(self):
+        dim = Dimension("dim", unit="cm")
+        curve = Curve([1, 2, 3], kdims=dim).opts(scalebar=True)
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.unit == "cm"
+
+    def test_scalebar_custom_opts(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_opts={'background_fill_alpha': 1})
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.background_fill_alpha == 1
+
+    def test_scalebar_label(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_label='Test')
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.label == 'Test'
+
+    def test_scalebar_icon(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True)
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 1
+
+    def test_scalebar_no_icon(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=False)
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 0
+
+    def test_scalebar_icon_multiple_overlay(self):
+        curve1 = Curve([1, 2, 3]).opts(scalebar=True)
+        curve2 = Curve([1, 2, 3]).opts(scalebar=True)
+        plot = bokeh_renderer.get_plot(curve1 * curve2)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 1
+
 
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
 
