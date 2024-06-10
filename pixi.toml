@@ -114,7 +114,7 @@ nbval = "*"
 channels = ["pyviz/label/dev", "microsoft", "conda-forge"]
 
 [feature.test-ui.dependencies]
-playwright = "*"
+playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = "*"
 
 [feature.test-ui.tasks]
