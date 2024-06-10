@@ -278,11 +278,15 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         _, vline_plot = plot.subplots.values()
         assert vline_plot.handles['glyph'].location == 1
 
-    def test_overlay_iterable(self):
-        # Related to https://github.com/holoviz/holoviews/issues/5315
-        c1 = Curve([0, 1])
-        c2 = Curve([10, 20])
-        Overlay({'a': c1, 'b': c2}.values())
+    def test_ndoverlay_subcoordinate_y_no_batching(self):
+        overlay = NdOverlay({
+            i: Curve(np.arange(10)*i).opts(subcoordinate_y=True) for i in range(10)
+        }).opts(legend_limit=1)
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.batched == False
+        assert len(plot.subplots) == 10
+
 
 
 class TestLegends(TestBokehPlot):

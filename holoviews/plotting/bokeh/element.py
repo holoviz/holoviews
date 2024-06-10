@@ -3004,6 +3004,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 return v._y_range_type
         return self._y_range_type
 
+    @property
+    def _is_batched(self):
+        return super()._is_batched and not self.subcoordinate_y
+
     def _process_legend(self, overlay):
         plot = self.handles['plot']
         subplots = self.traverse(lambda x: x, [lambda x: x is not self])
