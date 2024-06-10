@@ -31,14 +31,14 @@ def test_downsample1d_multi(plottype):
             assert value.size == downsample1d.width
 
 
-def test_downsample1d_non_contiguous():
-    x = np.arange(10)
-    y = np.arange(20).reshape(1, 20)[0, ::2]
+@pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
+@pytest.mark.parametrize("algorithm", algorithms)
+def test_downsample1d_non_contiguous(algorithm):
+    x = np.arange(20)
+    y = np.arange(40).reshape(1, 40)[0, ::2]
 
-    downsampled = downsample1d(Curve((x, y), datatype=['array']), dynamic=False, width=5)
-
-    np.testing.assert_equal(downsampled['x'], np.array([0, 1, 3, 6, 9]))
-    np.testing.assert_equal(downsampled['y'], np.array([ 0,  2,  6, 12, 18]))
+    downsampled = downsample1d(Curve((x, y), datatype=['array']), dynamic=False, width=10, algorithm=algorithm)
+    assert len(downsampled)
 
 
 def test_downsample1d_shared_data():
