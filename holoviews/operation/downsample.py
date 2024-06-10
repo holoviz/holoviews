@@ -100,6 +100,13 @@ def _lttb_inner(x, y, n_out, sampled_x, offset):
     )
 
 
+def _ensure_contiguous(x, y):
+    """
+    Ensures the arrays are contiguous in memory (required by tsdownsample).
+    """
+    return np.ascontiguousarray(x), np.ascontiguousarray(y)
+
+
 def _lttb(x, y, n_out, **kwargs):
     """
     Downsample the data using the LTTB algorithm.
@@ -115,6 +122,7 @@ def _lttb(x, y, n_out, **kwargs):
     """
     try:
         from tsdownsample import LTTBDownsampler
+        x, y = _ensure_contiguous(x, y)
         return LTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
     except ModuleNotFoundError:
         pass
@@ -168,6 +176,7 @@ def _min_max(x, y, n_out, **kwargs):
             'The min-max downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
+    x, y = _ensure_contiguous(x, y)
     return MinMaxDownsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 def _min_max_lttb(x, y, n_out, **kwargs):
@@ -178,6 +187,7 @@ def _min_max_lttb(x, y, n_out, **kwargs):
             'The minmax-lttb downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
+    x, y = _ensure_contiguous(x, y)
     return MinMaxLTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 def _m4(x, y, n_out, **kwargs):
@@ -188,6 +198,7 @@ def _m4(x, y, n_out, **kwargs):
             'The m4 downsampling algorithm requires the tsdownsample '
             'library to be installed.'
         ) from None
+    x, y = _ensure_contiguous(x, y)
     n_out = n_out - (n_out % 4)  # n_out must be a multiple of 4
     return M4Downsampler().downsample(x, y, n_out=n_out, **kwargs)
 
