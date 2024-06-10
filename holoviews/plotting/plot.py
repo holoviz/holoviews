@@ -1797,10 +1797,14 @@ class GenericOverlayPlot(GenericElementPlot):
             collapsed = Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
         return collapsed
 
+    @property
+    def _is_batched(self):
+        return self.batched and type(self.hmap.last) is NdOverlay
+
     def _create_subplots(self, ranges):
         # Check if plot should be batched
         ordering = util.layer_sort(self.hmap)
-        batched = self.batched and type(self.hmap.last) is NdOverlay
+        batched = self._is_batched
         if batched:
             backend = self.renderer.backend
             batchedplot = Store.registry[backend].get(self.hmap.last.type)
