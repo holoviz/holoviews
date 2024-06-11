@@ -721,7 +721,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([
-                elrange.get(dim.name, {'combined': (None, None)})['combined']
+                elrange.get(dim.label, {'combined': (None, None)})['combined']
                 for elrange in ranges.values()
             ])
             axis_label = str(dim)
@@ -843,7 +843,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self._subcoord_overlaid:
                 if opts.get('subcoordinate_y') is None:
                     continue
-                if element.kdims:
+                if sp.overlay_dims:
                     ax_name = ', '.join(d.pprint_value(k) for d, k in zip(element.kdims, sp_key))
                 else:
                     ax_name = el.label
