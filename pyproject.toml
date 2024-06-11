@@ -116,7 +116,8 @@ filterwarnings = [
     # 2024-05
     "ignore:backend2gui is deprecated since IPython 8.24:DeprecationWarning", # https://github.com/holoviz/holoviews/pull/6227#issuecomment-2104401396
     # 2024-06
-    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning",
+    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning", # OK
+    "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
 ]
 
 [tool.coverage]
