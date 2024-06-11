@@ -1,5 +1,136 @@
 # Releases
 
+## Version 1.19
+
+### Version 1.19.0
+
+**June 13, 2024**
+
+Contributors: @ahuang11, @douglas-raillard-arm, @droumis, @hoxbro, @jj-github-jj, @maximlt, @mirage007, @philippjfr, @TheoMathurin, @WesleyTheGeolien
+
+- @mirage007 made their first contribution in https://github.com/holoviz/holoviews/pull/6212
+- @WesleyTheGeolien made their first contribution in https://github.com/holoviz/holoviews/pull/4898
+
+### New features
+
+- Add support for popups on selection streams ([#6168](https://github.com/holoviz/holoviews/pull/6168))
+- Add scalebar support ([#6002](https://github.com/holoviz/holoviews/pull/6002))
+
+### Enhancements
+
+- Override Curve's count aggregator default to `self_intersect=False` ([#6030](https://github.com/holoviz/holoviews/pull/6030))
+- Zoom tools automatically vertically scaled on subcoordinate_y overlays ([#6051](https://github.com/holoviz/holoviews/pull/6051))
+- Use tsdownsample library for downsampling if available ([#6059](https://github.com/holoviz/holoviews/pull/6059))
+- Add test for downsample algorithms ([#6083](https://github.com/holoviz/holoviews/pull/6083))
+- Add viewport downsample algorithm ([#6017](https://github.com/holoviz/holoviews/pull/6017))
+- Optimize downsample1d when data is shared between layers ([#6075](https://github.com/holoviz/holoviews/pull/6075))
+- Support dictionary cmaps for ImageStack ([#6025](https://github.com/holoviz/holoviews/pull/6025))
+- Expose hit_dilation in PointPlot ([#6121](https://github.com/holoviz/holoviews/pull/6121))
+- Improve autocompletion for lazy module ([#6174](https://github.com/holoviz/holoviews/pull/6174))
+- Subcoordinate_y: reverse the renderers by default ([#6194](https://github.com/holoviz/holoviews/pull/6194))
+- Add hover_tooltips, hover_mode, hover_formatters opts to easily modify hover ([#6180](https://github.com/holoviz/holoviews/pull/6180))
+- Expose setting hard navigable bounds ([#6056](https://github.com/holoviz/holoviews/pull/6056))
+- Add a zoom tool per subcoordinate_y group ([#6122](https://github.com/holoviz/holoviews/pull/6122))
+- Support all Bokeh Text style opts in hv.Labels and hv.Text ([#6198](https://github.com/holoviz/holoviews/pull/6198))
+- Implement support for retaining Pandas index ([#6061](https://github.com/holoviz/holoviews/pull/6061))
+- Add operation for group-wise normalisation ([#6124](https://github.com/holoviz/holoviews/pull/6124))
+- Cleanup popup ([#6207](https://github.com/holoviz/holoviews/pull/6207))
+- Bump minimum version of param to 2.0 and add stream transform ([#6230](https://github.com/holoviz/holoviews/pull/6230))
+- Allow Bars to be plotted on continuous axes ([#6145](https://github.com/holoviz/holoviews/pull/6145))
+- Add min_interval and max_interval to the RangeToolLink ([#6134](https://github.com/holoviz/holoviews/pull/6134))
+- Add support for rasterizing geopandas dataframes directly ([#5958](https://github.com/holoviz/holoviews/pull/5958))
+- Allow options for non-enabled backends ([#6196](https://github.com/holoviz/holoviews/pull/6196))
+- Support ImageStack in dynspread ([#6024](https://github.com/holoviz/holoviews/pull/6024))
+- Add support for cticks ([#6257](https://github.com/holoviz/holoviews/pull/6257))
+- Plotly title font size fix ([#5920](https://github.com/holoviz/holoviews/pull/5920))
+- Hold rendering until a plot has been fully updated ([#6265](https://github.com/holoviz/holoviews/pull/6265))
+- Make Dimension.label source of truth for Dimension identity ([#6262](https://github.com/holoviz/holoviews/pull/6262))
+- Allow subcoordinates to be drawn from NdOverlay dimensions ([#6209](https://github.com/holoviz/holoviews/pull/6209))
+
+### Bug fixes
+
+- Don't show figures toolbar on GridSpace ([#6127](https://github.com/holoviz/holoviews/pull/6127))
+- Update merge_tool ([#6141](https://github.com/holoviz/holoviews/pull/6141))
+- Don't raise KeyError if options don't contain None ([#6153](https://github.com/holoviz/holoviews/pull/6153))
+- Force vdims to strings for ImageStack ([#6155](https://github.com/holoviz/holoviews/pull/6155))
+- Fixes to Bokeh BoxWhisker ([#6169](https://github.com/holoviz/holoviews/pull/6169))
+- Improve groupby behavior for operation histogram ([#6172](https://github.com/holoviz/holoviews/pull/6172))
+- Ensure plot ranges for all renderers are combined in auto-ranging ([#6173](https://github.com/holoviz/holoviews/pull/6173))
+- Ensure that the downsample algorithm m4 n_out is always a multiple of 4 ([#6195](https://github.com/holoviz/holoviews/pull/6195))
+- Fix flaky pop up ui tests ([#6199](https://github.com/holoviz/holoviews/pull/6199))
+- Subcoordinate_y: respect `ylim` ([#6190](https://github.com/holoviz/holoviews/pull/6190))
+- Bug fix for player example pause button ([#6212](https://github.com/holoviz/holoviews/pull/6212))
+- Clone model if Tool is model ([#6220](https://github.com/holoviz/holoviews/pull/6220))
+- Fix violin plot in Plotly ([#6237](https://github.com/holoviz/holoviews/pull/6237))
+- Don't error on TypeError in DaskInterface when sorting ([#6221](https://github.com/holoviz/holoviews/pull/6221))
+- Fix `hv.help` if `Info.store` is `None` ([#6250](https://github.com/holoviz/holoviews/pull/6250))
+- Change how upper limit is taken for color_levels ([#4898](https://github.com/holoviz/holoviews/pull/4898))
+- Fix vectorfield hover ([#6258](https://github.com/holoviz/holoviews/pull/6258))
+- Ensure Range streams and RangeToolLink respect subcoordinate axis range ([#6256](https://github.com/holoviz/holoviews/pull/6256))
+- Fix pickling state ([#6245](https://github.com/holoviz/holoviews/pull/6245))
+- Fix colab ([#6269](https://github.com/holoviz/holoviews/pull/6269))
+- Disable batching when subcoordinate_y is enabled ([#6272](https://github.com/holoviz/holoviews/pull/6272))
+- Ensure downsample works with non-contiguous arrays ([#6271](https://github.com/holoviz/holoviews/pull/6271))
+- Fix issue with range lookups in (y)-axis creation ([#6274](https://github.com/holoviz/holoviews/pull/6274))
+
+### Compatibility
+
+- Update test for Bokeh 3.4 ([#6130](https://github.com/holoviz/holoviews/pull/6130))
+- Add dask setting to disable query-planning for now ([#6149](https://github.com/holoviz/holoviews/pull/6149))
+- Update server tests to simulate loaded event ([#6157](https://github.com/holoviz/holoviews/pull/6157))
+- Bump CI tests to use Python 3.12 ([#5978](https://github.com/holoviz/holoviews/pull/5978))
+- Numpy 2.0 compatibility ([#6238](https://github.com/holoviz/holoviews/pull/6238))
+- Update to support cudf 2024.06 ([#6263](https://github.com/holoviz/holoviews/pull/6263))
+- Test with dask-expr ([#6259](https://github.com/holoviz/holoviews/pull/6259))
+- Use playwright from the Microsoft channel ([#6273](https://github.com/holoviz/holoviews/pull/6273))
+
+### Documentation
+
+- Add v1.18.2 to changelog ([#6094](https://github.com/holoviz/holoviews/pull/6094))
+- Changelog 1.18.3 ([#6111](https://github.com/holoviz/holoviews/pull/6111))
+- Fix changelog for 1.18.2 release ([#6114](https://github.com/holoviz/holoviews/pull/6114))
+- Minor typo in customizing plots ([#6179](https://github.com/holoviz/holoviews/pull/6179))
+- Fix name of tsdownsample ([#6193](https://github.com/holoviz/holoviews/pull/6193))
+- Update CSS for documentation ([#6228](https://github.com/holoviz/holoviews/pull/6228))
+- Fix links ([#6246](https://github.com/holoviz/holoviews/pull/6246))
+- Document subcoordinate_group_ranges by extending the EEG Viewer demo ([#6243](https://github.com/holoviz/holoviews/pull/6243))
+
+### Maintenance
+
+- Only run test-suite on code change ([#6035](https://github.com/holoviz/holoviews/pull/6035))
+- Add skip statement to all steps to work with required ([#6037](https://github.com/holoviz/holoviews/pull/6037))
+- Update links and instructions in readme ([#6036](https://github.com/holoviz/holoviews/pull/6036))
+- Add prettier to markdown and yaml ([#6040](https://github.com/holoviz/holoviews/pull/6040))
+- Dynamic generate unit test matrix and add cache option ([#6043](https://github.com/holoviz/holoviews/pull/6043))
+- Add true if inputs.cache is not set ([#6050](https://github.com/holoviz/holoviews/pull/6050))
+- Disable always on warnings ([#6077](https://github.com/holoviz/holoviews/pull/6077))
+- Update ruff in pre-commit ([#6091](https://github.com/holoviz/holoviews/pull/6091))
+- General maintenance ([#6144](https://github.com/holoviz/holoviews/pull/6144))
+- General maintenance ([#6146](https://github.com/holoviz/holoviews/pull/6146))
+- Simplify dev pull ([#6147](https://github.com/holoviz/holoviews/pull/6147))
+- Bump ruff and remove Bokeh rc workarounds ([#6152](https://github.com/holoviz/holoviews/pull/6152))
+- Package update - build and publish ([#6031](https://github.com/holoviz/holoviews/pull/6031))
+- Update test ci ([#6160](https://github.com/holoviz/holoviews/pull/6160))
+- Update holoviz_tasks version ([#6163](https://github.com/holoviz/holoviews/pull/6163))
+- Add `xyzservices` as a test dependency ([#6181](https://github.com/holoviz/holoviews/pull/6181))
+- Switch to Pixi for development / CI and hatchling for build system ([#6182](https://github.com/holoviz/holoviews/pull/6182))
+- Update documentation and small Pixi improvements ([#6200](https://github.com/holoviz/holoviews/pull/6200))
+- Use psutil for pytest-xdist logical option ([#6213](https://github.com/holoviz/holoviews/pull/6213))
+- General maintenance ([#6214](https://github.com/holoviz/holoviews/pull/6214))
+- Merge CHANGELOG.md and releases.rst ([#6218](https://github.com/holoviz/holoviews/pull/6218))
+- Add `test-gpu` task ([#6217](https://github.com/holoviz/holoviews/pull/6217))
+- Update pre-commit prettier repo ([#6219](https://github.com/holoviz/holoviews/pull/6219))
+- Add toml formatter ([#6227](https://github.com/holoviz/holoviews/pull/6227))
+- General maintenance ([#6235](https://github.com/holoviz/holoviews/pull/6235))
+- No nighly lock for forks ([#6239](https://github.com/holoviz/holoviews/pull/6239))
+- Update pre-commit ([#6249](https://github.com/holoviz/holoviews/pull/6249))
+- Parallelize unit test ([#6234](https://github.com/holoviz/holoviews/pull/6234))
+- Move environment variables into Pixi.toml ([#6251](https://github.com/holoviz/holoviews/pull/6251))
+- Update dependencies ([#6253](https://github.com/holoviz/holoviews/pull/6253))
+- Use the new conda package format ([#6216](https://github.com/holoviz/holoviews/pull/6216))
+- Add task to sync git tags with upstream ([#6215](https://github.com/holoviz/holoviews/pull/6215))
+- Maintenance ([#6278](https://github.com/holoviz/holoviews/pull/6278))
+
 ## Version 1.18
 
 ### Version 1.18.3
