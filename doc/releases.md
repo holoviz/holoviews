@@ -6,10 +6,13 @@
 
 **June 13, 2024**
 
-Contributors: @ahuang11, @douglas-raillard-arm, @droumis, @hoxbro, @jj-github-jj, @maximlt, @mirage007, @philippjfr, @TheoMathurin, @WesleyTheGeolien
+This release includes an exciting new feature popups, this will make it easier to dive deeper and interact with your data.
+A major focus of this release has also been to improve the time it takes to plot large datasets, both by updating the data pipeline and reducing the amount of data send to the browser.
+Furthermore, we have improved the developer experience, making it easier to contribute to HoloViews, see the [developer guide](https://holoviews.org/developer_guide/index.html).
+Lastly bugs have been squashed and enhancements made to the existing features.
 
-- @mirage007 made their first contribution in https://github.com/holoviz/holoviews/pull/6212
-- @WesleyTheGeolien made their first contribution in https://github.com/holoviz/holoviews/pull/4898
+Thank you to @mirage007 and @WesleyTheGeolien for their first contributions and to the returning contributors @douglas-raillard-arm, @jj-github-jj, and @TheoMathurin.
+Another thanks to the maintainers @ahuang11, @droumis, @maximlt, @philippjfr, and @hoxbro.
 
 ### New features
 
