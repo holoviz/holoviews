@@ -943,11 +943,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if axis_label and axis in self.labelled:
                         properties[f'{axis}_axis_label'] = axis_label
                     locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
-                    if axis_position is None:
+                    if axis_position in (None, False):
                         axis_props[axis]['visible'] = False
                     axis_props[axis].update(fontsize)
                     for loc, pos in locs.items():
-                        if axis_position and loc in axis_position:
+                        if isinstance(axis_position, str) and loc in axis_position:
                             properties[f'{axis}_axis_location'] = pos
 
         if not self.show_frame:
