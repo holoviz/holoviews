@@ -433,7 +433,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 name = ttp[0]
                 tuple_ = (ttp[0], ttp[1])
             elif isinstance(ttp, Dimension):
-                name = ttp.name
+                name = ttp.label
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
                 unit = f" ({ttp.unit})" if ttp.unit else ""
