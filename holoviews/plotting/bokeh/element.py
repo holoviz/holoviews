@@ -421,7 +421,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips, hover_opts = self._hover_opts(element)
 
         dim_aliases = {
-            f"{dim.label} ({dim.unit})" if dim.unit else dim.label: dim.name
+            f"{dim.label} ({dim.unit})" if dim.unit else dim.label: dim.label
             for dim in element.kdims + element.vdims
         }
 

@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from bokeh.models import FactorRange, FixedTicker
 
-from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay
 from holoviews.core.options import AbbreviatedException, Cycle, Palette
 from holoviews.element import Curve
 from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
@@ -108,6 +108,18 @@ class TestCurvePlot(TestBokehPlot):
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')], 'nearest')
+
+    def test_curve_hover_dimension(self):
+        obj = Curve(
+            range(10), Dimension('name', label='label')
+        ).opts(hover_tooltips=['label'])
+        self._test_hover_info(obj, [('label', '@{name}')], 'nearest')
+
+    def test_curve_hover_dimension_unit(self):
+        obj = Curve(
+            range(10), Dimension('name', label='label', unit='unit')
+        ).opts(hover_tooltips=['label'])
+        self._test_hover_info(obj, [('label (unit)', '@{name}')], 'nearest')
 
     def test_curve_categorical_xaxis(self):
         curve = Curve((['A', 'B', 'C'], [1,2,3]))
