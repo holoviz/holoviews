@@ -430,10 +430,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         units_dict = {}
         for ttp in tooltips:
             if isinstance(ttp, tuple):
-                name = ttp[0]
+                label = ttp[0]
                 tuple_ = (ttp[0], ttp[1])
             elif isinstance(ttp, Dimension):
-                name = ttp.label
+                label = ttp.label
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
                 unit = f" ({ttp.unit})" if ttp.unit else ""
@@ -441,19 +441,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     ttp.pprint_label,
                     f"@{{{util.dimension_sanitizer(ttp.name)}}}"
                 )
-                units_dict[name] = unit
+                units_dict[label] = unit
             elif isinstance(ttp, str):
-                name = ttp
+                label = ttp
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
                 tuple_ = (ttp.name, f"@{{{util.dimension_sanitizer(ttp)}}}")
 
-            if name in dim_aliases:
-                name = dim_aliases[name]
+            if label in dim_aliases:
+                label = dim_aliases[label]
 
             # key is the vanilla data column/dimension name
             # value should always be a tuple (label, value)
-            tooltips_dict[name] = tuple_
+            tooltips_dict[label] = tuple_
 
         # subset the tooltips to only the ones user wants
         if self.hover_tooltips:
