@@ -446,7 +446,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 label = ttp
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
-                tuple_ = (ttp.name, f"@{{{util.dimension_sanitizer(ttp)}}}")
+                tuple_ = (ttp, f"@{{{util.dimension_sanitizer(ttp)}}}")
 
             if label in dim_aliases:
                 label = dim_aliases[label]
