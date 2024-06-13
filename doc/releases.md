@@ -6,7 +6,8 @@
 
 **June 13, 2024**
 
-This release includes an exciting new feature popups, this will make it easier to dive deeper and interact with your data.
+This release introduces a number of major new features and enhancements, including the ability to add popups to your Bokeh figures, which allows you to drill down into subsets of your data easily.
+Additionally, this release retains and uses pandas (multi-)indexes without unnecessary copies, providing significant benefits for working with wide data.
 A major focus of this release has also been to improve the time it takes to plot large datasets, both by updating the data pipeline and reducing the amount of data send to the browser.
 Furthermore, we have improved the developer experience, making it easier to contribute to HoloViews, see the [developer guide](https://holoviews.org/developer_guide/index.html).
 Lastly bugs have been squashed and enhancements made to the existing features.
