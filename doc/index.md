@@ -6,8 +6,8 @@ itself.**
 <div style="display: flex">
   <div style="width: 95%"></div>
 </div>
-HoloViews is an
-[open-source](https://github.com/holoviz/holoviews/blob/main/LICENSE.txt)
+
+HoloViews is an [open-source](https://github.com/holoviz/holoviews/blob/main/LICENSE.txt)
 Python library designed to make data analysis and visualization seamless
 and simple. With HoloViews, you can usually express what you want to do
 in very few lines of code, letting you focus on what you are trying to
