@@ -3243,12 +3243,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
 
             if zoom_tool_name == 'wheel_zoom' and bokeh35:
-                from bokeh.models import GroupByModels
-
                 zoom_tool.update(
                     hit_test=True,
                     hit_test_mode='hline',
-                    hit_test_behavior=GroupByModels(groups=list(renderers_per_group.values())),
+                    hit_test_behavior=list(renderers_per_group.values()),
                     renderers=list(chain(*renderers_per_group.values())),
                 )
             else:
