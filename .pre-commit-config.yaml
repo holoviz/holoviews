@@ -20,7 +20,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.8
+    rev: v0.4.9
     hooks:
       - id: ruff
         files: holoviews/|scripts/
@@ -46,7 +46,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: v3.3.1
+    rev: v3.3.2
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml
