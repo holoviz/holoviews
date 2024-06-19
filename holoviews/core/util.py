@@ -2031,7 +2031,7 @@ def is_nan(x):
     Checks whether value is NaN on arbitrary types
     """
     try:
-        return np.isnan(x)
+        return bool(pd.isna(x))
     except Exception:
         return False
 
