@@ -3,7 +3,6 @@ from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
-import pytest
 from packaging.version import Version
 
 try:
@@ -166,7 +165,3 @@ class DaskExprDatasetTest(_DaskDatasetTest):
     def test_dataset_groupby_alias(self):
         # Dask-expr unique sort the order when running unique on column
         super().test_dataset_groupby_alias(sort=True)
-
-    @pytest.mark.xfail(reason="Not supported yet, see https://github.com/dask/dask-expr/issues/1076")
-    def test_multi_dimension_groupby(self):
-        super().test_multi_dimension_groupby()
