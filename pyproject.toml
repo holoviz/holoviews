@@ -54,12 +54,13 @@ holoviews = "holoviews.util.command:main"
 
 [tool.hatch.version]
 source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
 
 [tool.hatch.build.targets.wheel]
 include = ["holoviews"]
 
 [tool.hatch.build.targets.sdist]
-include = ["holoviews", "CHANGELOG.md"]
+include = ["holoviews", "scripts"]
 
 [tool.hatch.build.targets.sdist.force-include]
 examples = "holoviews/examples"
