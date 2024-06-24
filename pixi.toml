@@ -19,7 +19,6 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
-test-numpy = ["py312", "test-core", "test-unit-task", "numpy2", "test-example"]
 test-gpu = ["py311", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -44,12 +43,15 @@ python = "3.9.*"
 
 [feature.py310.dependencies]
 python = "3.10.*"
+bokeh_sampledata = "*"
 
 [feature.py311.dependencies]
 python = "3.11.*"
+bokeh_sampledata = "*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
+bokeh_sampledata = "*"
 
 [feature.example.dependencies]
 cftime = "*"
@@ -141,39 +143,6 @@ rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
 test-gpu = "pytest holoviews/tests --gpu"
-
-[feature.numpy2]
-channels = ["pyviz/label/dev", "conda-forge/label/numpy_rc", "numba/label/dev", "conda-forge"]
-
-[feature.numpy2.dependencies]
-numpy = "2.*"
-numba = { version = "0.60.*", channel = "numba/label/dev" }
-llvmlite = { version = "*", channel = "numba/label/dev" }
-
-# test dependencies
-cftime = "*"
-contourpy = "*"
-dask-core = "*"
-datashader = ">=0.11.1"
-ffmpeg = "*"
-ibis-sqlite = "*"
-nbconvert = "*"
-networkx = "*"
-pillow = "*"
-scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
-selenium = "*"
-shapely = "*"
-# spatialpandas = "*"
-xarray = ">=0.10.4"
-xyzservices = "*"
-
-# Examples (removed duplicates)
-# netcdf4 = "*"
-notebook = "*"
-pooch = "*"
-# pyarrow = "*"
-# scikit-image = "*"
-streamz = ">=0.5.0"
 
 # =============================================
 # =================== DOCS ====================
