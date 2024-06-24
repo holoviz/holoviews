@@ -19,7 +19,6 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
-test-numpy = ["py312", "test-core", "test", "test-example", "test-unit-task", "numpy2"]
 test-gpu = ["py311", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -144,17 +143,6 @@ rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
 test-gpu = "pytest holoviews/tests --gpu"
-
-[feature.numpy2.dependencies]
-numpy = "2.*"
-
-# Examples (removed duplicates)
-netcdf4 = "*"
-notebook = "*"
-pooch = "*"
-pyarrow = "*"
-# scikit-image = "*"
-streamz = ">=0.5.0"
 
 # =============================================
 # =================== DOCS ====================
