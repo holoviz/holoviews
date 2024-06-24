@@ -145,16 +145,11 @@ rmm = { version = "*", channel = "rapidsai" }
 [feature.test-gpu.tasks]
 test-gpu = "pytest holoviews/tests --gpu"
 
-[feature.numpy2]
-channels = ["pyviz/label/dev", "numba", "conda-forge"]
-
 [feature.numpy2.dependencies]
 numpy = "2.*"
-numba = { version = "0.60.*", channel = "numba" }
-llvmlite = { version = "*", channel = "numba" }
 
 # Examples (removed duplicates)
-# netcdf4 = "*"
+netcdf4 = "*"
 notebook = "*"
 pooch = "*"
 pyarrow = "*"
