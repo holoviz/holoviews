@@ -391,3 +391,9 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         assert list(grouped.keys()) == [0, 1, 2, 3]
         for k, v in grouped.items():
             pd.testing.assert_frame_equal(v.data, ds.select(values=k).data)
+
+    def test_regression_no_auto_index(self):
+        # https://github.com/holoviz/holoviews/issues/6298
+
+        plot = Scatter(self.df, kdims="number")
+        np.testing.assert_equal(plot.dimension_values('number'), self.df.index.get_level_values('number'))
