@@ -308,7 +308,7 @@ class PrettyPrinter(param.Parameterized):
         level, lines = cls_or_slf.node_info(node, attrpath, attrpaths, siblings, level, value_dims)
         attrpaths = ['.'.join(k) for k in node.keys()] if  hasattr(node, 'children') else []
         siblings = [node.get(child) for child in attrpaths]
-        for attrpath in attrpaths:
+        for attrpath in attrpaths:  # noqa: PLR1704
             lines += cls_or_slf.recurse(node.get(attrpath), attrpath, attrpaths=attrpaths,
                                  siblings=siblings, level=level+1, value_dims=value_dims)
         return lines

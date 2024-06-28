@@ -552,7 +552,7 @@ class DimensionedPlot(Plot):
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.param.warning(msg %  (list(unknown_keys), self._fontsize_keys))
-            for key in unknown_keys: fontsize.pop(key, None)
+            for unknown_key in unknown_keys: fontsize.pop(unknown_key, None)
 
         defaults = self._get_fontsize_defaults()
         size = None
@@ -910,11 +910,11 @@ class DimensionedPlot(Plot):
         traversed = obj.traverse(lookup, specs)
         options = {}
         default_opts = defaultdict(lambda: defaultdict(list))
-        for key, opts in traversed:
-            defaults = opts.pop('defaults', {})
+        for key, topts in traversed:
+            defaults = topts.pop('defaults', {})
             if key not in options:
                 options[key] = {}
-            for opt, v in opts.items():
+            for opt, v in topts.items():
                 if opt not in options[key]:
                     options[key][opt] = []
                 options[key][opt].append(v)
@@ -922,8 +922,8 @@ class DimensionedPlot(Plot):
                 default_opts[key][opt].append(v)
 
         # Merge defaults into dictionary if not explicitly specified
-        for key, opts in default_opts.items():
-            for opt, v in opts.items():
+        for key, dopts in default_opts.items():
+            for opt, v in dopts.items():
                 if opt not in options[key]:
                     options[key][opt] = v
         return options if keyfn else options.get(None, {})

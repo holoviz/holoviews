@@ -176,7 +176,7 @@ class OptsCompleter:
         for i, token in enumerate(tokens):
             key_checks =[]
             if i >= 0:  # Undotted key
-                key_checks.append(tokens[i])
+                key_checks.append(token)
             if i >= 1:  # Single dotted key
                 key_checks.append('.'.join([key_checks[-1], tokens[i-1]]))
             if i >= 2:  # Double dotted key
@@ -279,11 +279,11 @@ class OptsMagic(Magics):
         """
         if cell is None: return (line, cell)
         specs, code = [line], []
-        for line in cell.splitlines():
-            if line.strip().startswith('%%opts'):
-                specs.append(line.strip()[7:])
+        for cell_line in cell.splitlines():
+            if cell_line.strip().startswith('%%opts'):
+                specs.append(cell_line.strip()[7:])
             else:
-                code.append(line)
+                code.append(cell_line)
         return ' '.join(specs), '\n'.join(code)
 
 

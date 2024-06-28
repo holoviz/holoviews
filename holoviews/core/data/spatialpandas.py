@@ -735,11 +735,11 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
 
     array_type = None
     hole_arrays, geom_arrays = [], []
-    for geom in data:
-        geom = dict(geom)
-        if xdim not in geom or ydim not in geom:
+    for geom_data in data:
+        geom_data = dict(geom_data)
+        if xdim not in geom_data or ydim not in geom_data:
             raise ValueError('Could not find geometry dimensions')
-        xs, ys = geom.pop(xdim), geom.pop(ydim)
+        xs, ys = geom_data.pop(xdim), geom_data.pop(ydim)
         xscalar, yscalar = isscalar(xs), isscalar(ys)
         if xscalar and yscalar:
             xs, ys = np.array([xs]), np.array([ys])
@@ -754,7 +754,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
 
         splits = np.where(np.isnan(geom_array[:, :2].astype('float')).sum(axis=1))[0]
         split_geoms = np.split(geom_array, splits+1) if len(splits) else [geom_array]
-        split_holes = geom.pop(Polygons._hole_key, None)
+        split_holes = geom_data.pop(Polygons._hole_key, None)
         if split_holes is not None:
             if len(split_holes) != len(split_geoms):
                 raise DataError('Polygons with holes containing multi-geometries '
@@ -776,7 +776,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
             array_type = single_array
 
     converted = defaultdict(list)
-    for geom, arrays, holes in zip(data, geom_arrays, hole_arrays):
+    for geom_data, arrays, holes in zip(data, geom_arrays, hole_arrays):
         parts = []
         for i, g in enumerate(arrays):
             if i != (len(arrays)-1):
@@ -792,7 +792,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
             if poly and holes is not None:
                 subparts += [np.array(h) for h in holes[i]]
 
-        for c, v in geom.items():
+        for c, v in geom_data.items():
             converted[c].append(v)
 
         if array_type is PointArray:

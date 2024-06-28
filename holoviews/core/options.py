@@ -1418,9 +1418,9 @@ class Store:
         class_hierarchy = inspect.getmro(type(obj))
         hooks = []
         for _, type_hooks in cls._display_hooks.items():
-            for cls in class_hierarchy:
-                if cls in type_hooks:
-                    hooks.append(type_hooks[cls])
+            for subcls in class_hierarchy:
+                if subcls in type_hooks:
+                    hooks.append(type_hooks[subcls])
                     break
 
         data, metadata = {}, {}
@@ -1600,9 +1600,9 @@ class StoreOptions:
                 error_info[error_key+(backend,)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
-        for ((keyword, target, group_name), backends) in backend_errors.items():
+        for ((keyword, target, group_name), backend_error) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
-            if set(backends) == set(loaded_backends):
+            if set(backend_error) == set(loaded_backends):
                 key = (keyword, target, group_name, Store.current_backend)
                 raise OptionError(keyword,
                                   group_name=group_name,

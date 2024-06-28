@@ -44,9 +44,6 @@ class NotebookArchive(FileArchive):
         Similar to FileArchive.filename_formatter except with support
         for the notebook name field as {notebook}.""")
 
-
-    auto = param.Boolean(False)
-
     # Used for debugging to view Exceptions raised from Javascript
     traceback = None
 

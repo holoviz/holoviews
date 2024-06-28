@@ -129,11 +129,11 @@ class annotate(param.ParameterizedFunction):
 
         layers = []
         annotator_type = None
-        for element in overlay:
+        for el in overlay:
             matches = []
             for eltype, atype in self._annotator_types.items():
-                if isinstance(element, eltype):
-                    matches.append((getmro(type(element)).index(eltype), atype))
+                if isinstance(el, eltype):
+                    matches.append((getmro(type(el)).index(eltype), atype))
             if matches:
                 if annotator_type is not None:
                     msg = ('An annotate call may only annotate a single element. '
@@ -142,12 +142,12 @@ class annotate(param.ParameterizedFunction):
                            'method to combine them into a single layout.')
                     raise ValueError(msg)
                 annotator_type = sorted(matches)[0][1]
-                self.annotator = annotator_type(element, **params)
+                self.annotator = annotator_type(el, **params)
                 tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
                 layout = (self.annotator.plot + tables)
                 layers.append(layout)
             else:
-                layers.append(element)
+                layers.append(el)
 
         if annotator_type is None:
             obj = overlay if isinstance(overlay, Overlay) else element
