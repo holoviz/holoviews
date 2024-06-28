@@ -613,7 +613,8 @@ class PopupMixin:
             position=XY(x=np.nan, y=np.nan),
             anchor="top_left",
             elements=[close_button],
-            visible=False
+            visible=False,
+            styles={"zIndex": "1000"},
         )
         close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
 
