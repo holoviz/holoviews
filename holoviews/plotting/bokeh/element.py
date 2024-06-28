@@ -1846,7 +1846,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             new_style[k] = key
 
         # Process color/alpha styles and expand to fill/line style
-        for style, val in new_style.items():  # noqa: PLR1704
+        for style, val in new_style.copy().items():  # noqa: PLR1704
             for s in ('alpha', 'color'):
                 if prefix+s != style or style not in data or validate(s, val, True):
                     continue
