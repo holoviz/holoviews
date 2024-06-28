@@ -124,14 +124,14 @@ class LinkCallback:
                 if not plot._sources_match(link_src, source):
                     continue
                 links = []
-                for link in src_links:
+                for src_link in src_links:
                     # Skip if Link.target is an overlay but the plot isn't
                     # or if the target is an element but the plot isn't
-                    src = getattr(link, attr)
+                    src = getattr(src_link, attr)
                     src_el = src.last if isinstance(src, HoloMap) else src
                     if not plot._matching_plot_type(src_el):
                         continue
-                    links.append(link)
+                    links.append(src_link)
                 if links:
                     return (plot, links)
 

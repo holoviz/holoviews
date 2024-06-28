@@ -1175,11 +1175,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if wheel_zoom:
                 wheel_zoom[0].zoom_on_axis = False
         elif isinstance(axis_obj, CategoricalAxis):
-            for key in list(axis_props):
-                if key.startswith('major_label'):
+            for axis_prop in list(axis_props):
+                if axis_prop.startswith('major_label'):
                     # set the group labels equal to major (actually minor)
-                    new_key = key.replace('major_label', 'group')
-                    axis_props[new_key] = axis_props[key]
+                    new_axis_prop = axis_prop.replace('major_label', 'group')
+                    axis_props[new_axis_prop] = axis_props[axis_prop]
 
             # major ticks are actually minor ticks in a categorical
             # so if user inputs minor ticks sizes, then use that;
@@ -1846,7 +1846,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             new_style[k] = key
 
         # Process color/alpha styles and expand to fill/line style
-        for style, val in list(new_style.items()):
+        for style, val in new_style.items():  # noqa: PLR1704
             for s in ('alpha', 'color'):
                 if prefix+s != style or style not in data or validate(s, val, True):
                     continue
