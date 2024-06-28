@@ -1,3 +1,5 @@
+from itertools import chain
+
 import numpy as np
 import pandas as pd
 from packaging.version import Version
@@ -72,7 +74,7 @@ class PandasInterface(Interface, PandasAPI):
 
             if kdims and not (len(kdims) == len(index_names) and {dimension_name(kd) for kd in kdims} == set(index_names)):
                 kdim = dimension_name(kdims[0])
-                if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
+                if eltype._auto_indexable_1d and ncols == 1 and kdim not in chain(data.columns, cls.indexes(data)):
                     data = data.copy()
                     data.insert(0, kdim, np.arange(len(data)))
 
