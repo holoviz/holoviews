@@ -2865,6 +2865,8 @@ class ColorbarPlot(ElementPlot):
         else:
             colormapper = CategoricalColorMapper
             factors = decode_bytes(factors)
+            if np.asarray(factors).dtype.kind == "b":
+                factors = [str(f) for f in factors]
             opts = dict(factors=list(factors))
             if 'NaN' in colors:
                 opts['nan_color'] = colors['NaN']
