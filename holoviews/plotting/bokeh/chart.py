@@ -922,7 +922,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             is_dt = isdatetime(xvals)
             if is_dt or xvals.dtype.kind not in 'OU':
                 xdiff = np.abs(np.diff(xvals))
-                if len(np.unique(xdiff)) == 1 and xdiff[0] == 0:
+                diff_size = len(np.unique(xdiff))
+                if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
                     xdiff = 1
                 if is_dt:
                     width *= xdiff.astype('timedelta64[ms]').astype(np.int64)
