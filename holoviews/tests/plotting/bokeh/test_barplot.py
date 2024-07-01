@@ -159,6 +159,13 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0.01)
         self.assertEqual(y_range.end, 3.3483695221017129)
 
+    def test_bars_boolean_kdims(self):
+        data = pd.DataFrame({"x1": [1, 1, 2, 2], "x2": [False, True, False, True], "y": [3, 1, 2, 2]})
+        bars = Bars(data, kdims=["x1", "x2"])
+        plot = bokeh_renderer.get_plot(bars)
+        x_range = plot.handles['x_range']
+        assert x_range.factors == [('1', 'False'), ('1', 'True'), ('2', 'False'), ('2', 'True')]
+
     ###########################
     #    Styling mapping      #
     ###########################
