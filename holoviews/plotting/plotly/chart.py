@@ -198,6 +198,7 @@ class BarPlot(BarsMixin, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
+    color = param.String(default=None, doc="The color of the bars.")
 
     style_opts = ['visible']
 
@@ -279,6 +280,10 @@ class BarPlot(BarsMixin, ElementPlot):
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
                 y: np.nan_to_num(values)})
+
+        if self.color:
+            for bar in bars:
+                bar['marker_color'] = self.color
 
         return bars
 

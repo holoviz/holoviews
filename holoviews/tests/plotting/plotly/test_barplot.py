@@ -155,3 +155,10 @@ class TestBarsPlot(TestPlotlyPlot):
         plot = self._get_plot_state(bars)
         np.testing.assert_equal(set(plot['data'][0]['x']), set(pets))
         np.testing.assert_equal(plot['data'][0]['y'], np.array([8, 7, 6, 7]))
+
+    def test_bar_color(self):
+        data = pd.DataFrame({"A": range(5)})
+        bars = Bars(data).opts(color="gold")
+        fig = self._get_plot_state(bars)
+        data = fig["data"][0]
+        assert data["marker"]["color"] == "gold"
