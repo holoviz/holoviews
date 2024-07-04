@@ -35,7 +35,7 @@ param = ">=2.0,<3.0"
 pip = "*"
 pyviz_comms = ">=2.1"
 # Recommended
-matplotlib-base = ">=3,<3.9" # upper pin to avoid warnings for now
+matplotlib-base = ">=3" # upper pin to avoid warnings for now
 plotly = ">=4.0"
 
 [feature.py39.dependencies]
