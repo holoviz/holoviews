@@ -1,8 +1,8 @@
+import sys
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
 
-import dask.dataframe as dd
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
@@ -68,6 +68,13 @@ from ..element import (
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
+
+
+def _lazy_dask_dataframe():
+    if "dask" in sys.modules:
+        import dask.dataframe as dd
+        return dd
+    return None
 
 ds_version = Version(ds.__version__)
 ds15 = ds_version >= Version('0.15.1')
@@ -300,15 +307,16 @@ class aggregate(LineAggregationOperation):
         else:
             x, y = dims
 
+        dd = _lazy_dask_dataframe()
         if len(paths) > 1:
             if glyph == 'line':
                 path = paths[0][:1]
-                if isinstance(path, dd.DataFrame):
+                if dd and isinstance(path, dd.DataFrame):
                     path = path.compute()
                 empty = path.copy()
                 empty.iloc[0, :] = (np.nan,) * empty.shape[1]
                 paths = [elem for p in paths for elem in (p, empty)][:-1]
-            if all(isinstance(path, dd.DataFrame) for path in paths):
+            if dd and all(isinstance(path, dd.DataFrame) for path in paths):
                 df = dd.concat(paths)
             else:
                 paths = [p.compute() if isinstance(p, dd.DataFrame) else p for p in paths]
@@ -318,7 +326,7 @@ class aggregate(LineAggregationOperation):
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
-        is_custom = isinstance(df, dd.DataFrame) or cuDFInterface.applies(df)
+        is_custom = (dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
         if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
                df[d.name].dtype.kind in ["M", "u"] for d in (x, y)):
             df = df.copy()
