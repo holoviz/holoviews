@@ -21,6 +21,7 @@ from holoviews.core.util import (
     dt_to_int,
     find_range,
     get_path,
+    is_nan,
     isfinite,
     make_path_unique,
     max_range,
@@ -806,3 +807,13 @@ def test_unique_array_categorial():
     ser = pd.Series(np.random.choice(["a", "b", "c"], 100)).astype("category")
     res = unique_array([ser])
     assert sorted(res) == ["a", "b", "c"]
+
+
+def test_is_nan():
+    assert is_nan(np.nan) == True
+    assert is_nan(None) == True
+    assert is_nan(pd.NA) == True
+    assert is_nan(pd.NaT) == True
+    assert is_nan([1, 1]) == False
+    assert is_nan([np.nan]) == True
+    assert is_nan([np.nan, np.nan]) == False
