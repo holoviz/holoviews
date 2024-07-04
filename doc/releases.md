@@ -18,7 +18,7 @@ Thanks to @maximlt and @hoxbro for their contributions.
 - Ensure no auto index is created when a kdim is part of a multi index ([#6299](https://github.com/holoviz/holoviews/pull/6299))
 - Fix `hv.Bars` with only one value in it ([#6301](https://github.com/holoviz/holoviews/pull/6301))
 - Set `zIndex` of Popup to 1000 ([#6297](https://github.com/holoviz/holoviews/pull/6297))
-- Handle boolean input in by `hv.Bars` ([#6304](https://github.com/holoviz/holoviews/pull/6304))
+- Handle boolean input in categorically grouped `Bars` plots ([#6304](https://github.com/holoviz/holoviews/pull/6304))
 - Also check for `pd.NA` in `is_nan` ([#6290](https://github.com/holoviz/holoviews/pull/6290))
 
 ### Compatibility
