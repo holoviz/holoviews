@@ -184,6 +184,13 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         data = Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
 
+    def test_data_groupby_categorial(self):
+        # Test for https://github.com/holoviz/holoviews/issues/6305
+        df = pd.DataFrame({"y": [1, 2], "by": ["A", "B"]})
+        df["by"] = pd.Categorical(df["by"])
+        ds = Dataset(df, kdims="index", vdims="y").to(Scatter, groupby="by")
+        assert ds.keys() == ["A", "B"]
+
     @pytest.mark.xfail(reason="Breaks hvplot")
     def test_reindex(self):
         ds = Dataset(pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)}))
