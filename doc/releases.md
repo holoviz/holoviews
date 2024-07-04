@@ -2,6 +2,38 @@
 
 ## Version 1.19
 
+### Version 1.19.1
+
+**July 4, 2024**
+
+This micro release includes a number of bug fixes and enhancements, as well as compatibility updates.
+Thanks to @maximlt and @hoxbro for their contributions.
+
+### Enhancements
+
+- Add color to bars for Plotly backend ([#6294](https://github.com/holoviz/holoviews/pull/6294))
+
+### Bug fixes
+
+- Ensure no auto index is created when a kdim is part of a multi index ([#6299](https://github.com/holoviz/holoviews/pull/6299))
+- Fix `hv.Bars` with only one value in it ([#6301](https://github.com/holoviz/holoviews/pull/6301))
+- Set `zIndex` of Popup to 1000 ([#6297](https://github.com/holoviz/holoviews/pull/6297))
+- Handle boolean input in by `hv.Bars` ([#6304](https://github.com/holoviz/holoviews/pull/6304))
+- Also check for `pd.NA` in `is_nan` ([#6290](https://github.com/holoviz/holoviews/pull/6290))
+
+### Compatibility
+
+- Compatibility with Bokeh 3.5 ([#6267](https://github.com/holoviz/holoviews/pull/6267))
+- Compatibility with Matplotlib 3.9 ([#6307](https://github.com/holoviz/holoviews/pull/6307))
+- pandas: Fix observed FutureWarning for categorial groupby ([#6306](https://github.com/holoviz/holoviews/pull/6306))
+- Lazy load `dask.dataframe` in `operations.datashader` ([#6309](https://github.com/holoviz/holoviews/pull/6309))
+
+### Maintenance
+
+- Update pre-commit and conda-build script ([#6287](https://github.com/holoviz/holoviews/pull/6287))
+- Update hatchling options to match other packages ([#6291](https://github.com/holoviz/holoviews/pull/6291))
+- Update `hv.show_versions` with more relevant packages ([#6293](https://github.com/holoviz/holoviews/pull/6293))
+
 ### Version 1.19.0
 
 **June 13, 2024**
