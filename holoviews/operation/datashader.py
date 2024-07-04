@@ -1,7 +1,7 @@
-import sys
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
+from importlib.util import find_spec
 
 import datashader as ds
 import datashader.reductions as rd
@@ -71,7 +71,7 @@ from .resample import LinkableOperation, ResampleOperation2D
 
 
 def _lazy_dask_dataframe():
-    if "dask" in sys.modules:
+    if find_spec("dask"):
         import dask.dataframe as dd
         return dd
     return None
