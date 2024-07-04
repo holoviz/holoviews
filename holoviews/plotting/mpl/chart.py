@@ -1,7 +1,6 @@
 import matplotlib as mpl
 import numpy as np
 import param
-from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 from packaging.version import Version
@@ -27,7 +26,7 @@ from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
-from .util import MPL_GE_3_9, mpl_version
+from .util import MPL_GE_3_7, MPL_GE_3_9, mpl_version
 
 
 class ChartPlot(ElementPlot):
@@ -504,7 +503,12 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         # Get colormapping options
         if isinstance(range_item, (HeatMap, Raster)) or (cdim and cdim in element):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
-            cmap = cm.get_cmap(style.get('cmap'))
+            if MPL_GE_3_7:
+                # https://github.com/matplotlib/matplotlib/pull/28355
+                cmap = mpl.colormaps.get_cmap(style.get('cmap'))
+            else:
+                from matplotlib import cm
+                cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
         else:
             cmap = None
