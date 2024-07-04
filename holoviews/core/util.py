@@ -2031,6 +2031,8 @@ def is_nan(x):
     Checks whether value is NaN on arbitrary types
     """
     try:
+        # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
+        # Call bool() to raise an error if x is pd.NA, an array, etc.
         return bool(pd.isna(x))
     except Exception:
         return False
