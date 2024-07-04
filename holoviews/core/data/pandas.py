@@ -257,7 +257,7 @@ class PandasInterface(Interface, PandasAPI):
             # Don't supply a list with a single grouper to avoid this warning.
             group_by = group_by[0]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                dataset.data.groupby(group_by, sort=False)]
+                dataset.data.groupby(group_by, sort=False, observed=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
