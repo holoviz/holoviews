@@ -37,6 +37,8 @@ from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 mpl_version = Version(mpl.__version__)
+MPL_GE_3_7 = mpl_version >= Version('3.7')
+MPL_GE_3_9 = mpl_version >= Version('3.9')
 
 
 def is_color(color):
