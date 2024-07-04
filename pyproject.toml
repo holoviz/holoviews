@@ -119,6 +119,8 @@ filterwarnings = [
     # 2024-06
     "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning", # OK
     "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
+    # 2024-07
+    "ignore:The (non_)?interactive_bk attribute was deprecated in Matplotlib 3.9", # OK - Only happening in debug mode
 ]
 
 [tool.coverage]
