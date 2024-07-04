@@ -312,7 +312,7 @@ class aggregate(LineAggregationOperation):
                 import dask.dataframe as dd
                 df = dd.concat(paths)
             else:
-                paths = [p.compute() if lazy_isinstance(path, "dask.dataframe:DataFrame") else p for p in paths]
+                paths = [p.compute() if lazy_isinstance(p, "dask.dataframe:DataFrame") else p for p in paths]
                 df = pd.concat(paths)
         else:
             df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
