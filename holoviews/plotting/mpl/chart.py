@@ -27,7 +27,7 @@ from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
-from .util import mpl_version
+from .util import MPL_GE_3_9, mpl_version
 
 
 class ChartPlot(ElementPlot):
@@ -95,7 +95,10 @@ class CurvePlot(ChartPlot):
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
         if isdatetime(xs):
-            artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
+            if MPL_GE_3_9:
+                artist = ax.plot(xs, ys, '-', **plot_kwargs)[0]
+            else:
+                artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
         else:
             artist = ax.plot(xs, ys, **plot_kwargs)[0]
         return {'artist': artist}
