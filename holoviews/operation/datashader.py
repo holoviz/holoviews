@@ -35,6 +35,7 @@ from ..core.data import (
     Dataset,
     PandasInterface,
     XArrayInterface,
+    cuDFInterface,
 )
 from ..core.util import (
     cast_array_to_int64,
@@ -318,7 +319,7 @@ class aggregate(LineAggregationOperation):
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
-        is_custom = lazy_isinstance(path, ("dask.dataframe:DataFrame", "cudf:DataFrame", "cudf:Series"))
+        is_custom = lazy_isinstance(df, "dask.dataframe:DataFrame") or cuDFInterface.applies(df)
         if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
                df[d.name].dtype.kind in ["M", "u"] for d in (x, y)):
             df = df.copy()

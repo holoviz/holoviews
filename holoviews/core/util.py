@@ -2352,7 +2352,7 @@ def lazy_isinstance(obj, class_or_tuple):
     obj_mod_name = obj.__module__.split('.')[0]
     for cls in class_or_tuple:
         mod_name, _, attr_name = cls.partition(':')
-        if obj_mod_name != mod_name.split(".")[0]:
+        if not obj_mod_name.startswith(mod_name.split(".")[0]):
             continue
         mod = importlib.import_module(mod_name)
         if isinstance(obj, functools.reduce(getattr, attr_name.split('.'), mod)):
