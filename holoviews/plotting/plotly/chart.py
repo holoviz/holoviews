@@ -198,9 +198,7 @@ class BarPlot(BarsMixin, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    color = param.String(default=None, doc="The color of the bars.")
-
-    style_opts = ['visible']
+    style_opts = ['visible', 'color']
 
     selection_display = PlotlyOverlaySelectionDisplay()
 
@@ -281,11 +279,13 @@ class BarPlot(BarsMixin, ElementPlot):
                     for d in (xdim, group_dim)],
                 y: np.nan_to_num(values)})
 
-        if self.color:
-            for bar in bars:
-                bar['marker_color'] = self.color
-
         return bars
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        if 'color' in style:
+            style['marker_color'] = style.pop('color')
+        opts = super().graph_options(element, ranges, style, **kwargs)
+        return opts
 
     def init_layout(self, key, element, ranges, **kwargs):
         layout = super().init_layout(key, element, ranges)
