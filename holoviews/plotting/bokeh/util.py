@@ -863,11 +863,13 @@ def hold_render(f):
     """
     def wrapper(self, *args, **kwargs):
         hold = self.state.hold_render
+        doc = self.state.document
         self.state.hold_render = True
-        try:
-            return f(self, *args, **kwargs)
-        finally:
-            self.state.hold_render = hold
+        with doc.models.freeze():
+            try:
+                return f(self, *args, **kwargs)
+            finally:
+                self.state.hold_render = hold
     return wrapper
 
 
