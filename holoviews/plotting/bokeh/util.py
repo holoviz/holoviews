@@ -865,7 +865,13 @@ def hold_render(f):
         hold = self.state.hold_render
         doc = self.state.document
         self.state.hold_render = True
-        with doc.models.freeze():
+        if doc:
+            with doc.models.freeze():
+                try:
+                    return f(self, *args, **kwargs)
+                finally:
+                    self.state.hold_render = hold
+        else:
             try:
                 return f(self, *args, **kwargs)
             finally:
