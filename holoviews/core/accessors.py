@@ -518,7 +518,7 @@ class Opts(metaclass=AccessorPipelineMeta):
         keywords = {}
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
-        for group in groups:
+        for group in groups:  # noqa: PLR1704
             optsobj = Store.lookup_options(backend, self._obj, group,
                                            defaults=defaults)
             keywords = dict(keywords, **optsobj.kwargs)
