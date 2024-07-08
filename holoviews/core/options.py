@@ -1550,7 +1550,6 @@ class StoreOptions:
         """
         Apply the given option specs to the supplied options tree.
         """
-        print(spec, options)
         for key in sorted(spec.keys()):
             if isinstance(spec[key], (list, tuple)):
                 customization = {v.key: v for v in spec[key]}
