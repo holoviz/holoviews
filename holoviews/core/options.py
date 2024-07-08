@@ -236,7 +236,7 @@ def options_policy(skip_invalid, warn_on_skip):
         (Options.skip_invalid, Options.warn_on_skip) = settings
 
 
-class Keywords(param.Parameterized):
+class Keywords:
     """
     A keywords objects represents a set of Python keywords. It is
     list-like and ordered but it is also a set without duplicates. When
@@ -250,20 +250,15 @@ class Keywords(param.Parameterized):
     namespace.
     """
 
-    values = param.List(doc="Set of keywords as a sorted list.")
-
-    target = param.String(allow_None=True, doc="""
-       Optional string description of what the keywords apply to.""")
-
     def __init__(self, values=None, target=None):
-
         if values is None:
             values = []
-        strings = [isinstance(v, str) for v in values]
-        if False in strings:
+        if any(not isinstance(v, str) for v in values):
             raise ValueError(f'All keywords must be strings: {values}')
-        super().__init__(values=sorted(values),
-                                              target=target)
+        self.values = sorted(values)
+        if target is not None and not isinstance(target, str):
+            raise ValueError("Keywords target must be a string type.")
+        self.target = target
 
     def __add__(self, other):
         if (self.target and other.target) and (self.target != other.target):
