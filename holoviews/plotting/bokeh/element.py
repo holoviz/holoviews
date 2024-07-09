@@ -1018,16 +1018,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return fig
 
     def _disable_follow(self, event):
-        self._events.append(event)
-        self.state.hold_render = True
+        hold = self.state.hold_render
         for stream in self.streaming:
             stream.following = False
+        if not hold:
+            stream.trigger(self.streaming)
+            self.state.hold_render = True
 
     def _reset_follow(self, event):
-        self._events.append(event)
         self.state.hold_render = False
         for stream in self.streaming:
             stream.following = True
+        stream.trigger(self.streaming)
 
     def _plot_properties(self, key, element):
         """

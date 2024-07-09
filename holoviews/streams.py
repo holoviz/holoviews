@@ -662,7 +662,7 @@ class Buffer(Pipe):
 
     @property
     def hashkey(self):
-        return {'hash': self._count}
+        return {'hash': (self._count, self._memoize_counter)}
 
 
 
