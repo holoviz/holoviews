@@ -368,6 +368,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Flag to check whether plot has been updated
         self._updated = False
+        # Counter to keep track of last stream update
+        self._stream_count = None
 
     def _hover_opts(self, element):
         if self.batched:
@@ -989,6 +991,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         fig.xaxis[0].update(**axis_props['x'])
         fig.yaxis[0].update(**axis_props['y'])
 
+        # Set up handlers to configure following behavior on streaming plots
+        if self.streaming:
+            fig.on_event('rangesupdate', self._disable_follow)
+            fig.on_event('reset', self._reset_follow)
+            code = "export default (_, cb_obj) => { cb_obj.origin.hold_render = false }"
+            fig.js_on_event('reset', CustomJS(code=code))
+
         # Do not add the extra axes to the layout if subcoordinates are used
         if self._subcoord_overlaid:
             return fig
@@ -1007,6 +1016,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ax = ax_cls(**ax_kwargs)
             fig.add_layout(ax, axis_position)
         return fig
+
+    def _disable_follow(self, event):
+        self._events.append(event)
+        self.state.hold_render = True
+        for stream in self.streaming:
+            stream.following = False
+
+    def _reset_follow(self, event):
+        self._events.append(event)
+        self.state.hold_render = False
+        for stream in self.streaming:
+            stream.following = True
 
     def _plot_properties(self, key, element):
         """

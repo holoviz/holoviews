@@ -177,9 +177,10 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         if (self.streaming and self.streaming[0].data is self.current_frame.data
             and self._stream_data and not empty):
             stream = self.streaming[0]
-            if stream._triggering:
+            if stream._triggering and stream._count == ((self._stream_count or 0) + 1):
                 data = {k: v[-stream._chunk_length:] for k, v in data.items()}
                 source.stream(data, stream.length)
+                self._stream_count = stream._count
             return
 
         if cds_column_replace(source, data):
