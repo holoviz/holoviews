@@ -565,8 +565,6 @@ class Buffer(Pipe):
             data.stream.sink(self.send)
             self.sdf = data
 
-        if index and isinstance(example, pd.DataFrame):
-            example = example.reset_index()
         params['data'] = example
         super().__init__(**params)
         self.length = length
@@ -656,9 +654,6 @@ class Buffer(Pipe):
         """
         data = kwargs.get('data')
         if data is not None:
-            if (isinstance(data, pd.DataFrame) and
-                list(data.columns) != list(self.data.columns) and self._index):
-                data = data.reset_index()
             self.verify(data)
             kwargs['data'] = self._concat(data)
             self._count += 1
