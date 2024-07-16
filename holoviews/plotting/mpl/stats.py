@@ -6,6 +6,7 @@ from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
+from .util import MPL_GE_3_9
 
 
 class DistributionPlot(AreaPlot):
@@ -77,7 +78,10 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
             d = group[group.vdims[0]]
             data.append(d[np.isfinite(d)])
             labels.append(label)
-        style['labels'] = labels
+        if MPL_GE_3_9:
+            style['tick_labels'] = labels
+        else:
+            style['labels'] = labels
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
@@ -157,7 +161,10 @@ class ViolinPlot(BoxPlot):
         stats_color = plot_kwargs.pop('stats_color', 'black')
         facecolors = plot_kwargs.pop('facecolors', [])
         edgecolors = plot_kwargs.pop('edgecolors', 'black')
-        labels = plot_kwargs.pop('labels')
+        if MPL_GE_3_9:
+            labels = {'tick_labels': plot_kwargs.pop('tick_labels')}
+        else:
+            labels = {'labels': plot_kwargs.pop('labels')}
         alpha = plot_kwargs.pop('alpha', 1.)
         showmedians = self.inner == 'medians'
         bw_method = self.bandwidth or 'scott'
@@ -168,7 +175,7 @@ class ViolinPlot(BoxPlot):
                              showfliers=False, showcaps=False, patch_artist=True,
                              boxprops={'facecolor': box_color},
                              medianprops={'color': 'white'}, widths=0.1,
-                             labels=labels)
+                             **labels)
             artists.update(box)
         for body, color in zip(artists['bodies'], facecolors):
             body.set_facecolors(color)
@@ -199,7 +206,10 @@ class ViolinPlot(BoxPlot):
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = list(range(len(data)))
-        style['labels'] = labels
+        if MPL_GE_3_9:
+            style['tick_labels'] = labels
+        else:
+            style['labels'] = labels
         style['facecolors'] = colors
 
         if element.ndims > 0:

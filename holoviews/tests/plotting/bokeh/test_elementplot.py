@@ -111,6 +111,26 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(xaxis.major_tick_line_color, None)
         self.assertTrue(xaxis in plot.state.above)
 
+    def test_element_yaxis_true(self):
+        curve = Curve(range(10)).opts(yaxis=True)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        assert yaxis in plot.state.left
+
+    def test_element_yaxis_false(self):
+        curve = Curve(range(10)).opts(yaxis=False)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        assert yaxis in plot.state.left
+        assert not yaxis.visible
+
+    def test_element_yaxis_none(self):
+        curve = Curve(range(10)).opts(yaxis=None)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        assert yaxis in plot.state.left
+        assert not yaxis.visible
+
     def test_element_yaxis_right(self):
         curve = Curve(range(10)).opts(yaxis='right')
         plot = bokeh_renderer.get_plot(curve)

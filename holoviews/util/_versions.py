@@ -7,7 +7,9 @@ __all__ = ("show_versions",)
 PACKAGES = [
     # Data
     "cudf",
+    "cupy",
     "dask",
+    "dask-expr",
     "ibis-framework",
     "networkx",
     "numpy",
@@ -33,6 +35,7 @@ PACKAGES = [
     # Jupyter
     "IPython",
     "jupyter_bokeh",
+    "ipywidgets_bokeh",
     "jupyterlab",
     "notebook",
     # Misc
@@ -55,9 +58,9 @@ def show_versions():
 
 def _package_version(p):
     try:
-        print(f"{p:20}:  {version(p)}")
+        print(f"{p.replace('_', '-'):20}:  {version(p)}")
     except ImportError:
-        print(f"{p:20}:  -")
+        print(f"{p.replace('_', '-'):20}:  -")
 
 
 def _panel_comms():

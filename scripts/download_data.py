@@ -1,8 +1,12 @@
 from contextlib import suppress
 
-import bokeh.sampledata
+import bokeh
+from packaging.version import Version
 
-bokeh.sampledata.download()
+if Version(Version(bokeh.__version__).base_version) < Version("3.5"):
+    import bokeh.sampledata
+
+    bokeh.sampledata.download()
 
 with suppress(ImportError):
     import pooch  # noqa: F401

@@ -422,7 +422,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips, hover_opts = self._hover_opts(element)
 
         dim_aliases = {
-            f"{dim.label} ({dim.unit})" if dim.unit else dim.label: dim.name
+            f"{dim.label} ({dim.unit})" if dim.unit else dim.label: dim.label
             for dim in element.kdims + element.vdims
         }
 
@@ -431,10 +431,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         units_dict = {}
         for ttp in tooltips:
             if isinstance(ttp, tuple):
-                name = ttp[0]
+                label = ttp[0]
                 tuple_ = (ttp[0], ttp[1])
             elif isinstance(ttp, Dimension):
-                name = ttp.name
+                label = ttp.label
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
                 unit = f" ({ttp.unit})" if ttp.unit else ""
@@ -442,19 +442,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     ttp.pprint_label,
                     f"@{{{util.dimension_sanitizer(ttp.name)}}}"
                 )
-                units_dict[name] = unit
+                units_dict[label] = unit
             elif isinstance(ttp, str):
-                name = ttp
+                label = ttp
                 # three brackets means replacing variable,
                 # and then wrapping in brackets, like @{air}
-                tuple_ = (ttp.name, f"@{{{util.dimension_sanitizer(ttp)}}}")
+                tuple_ = (ttp, f"@{{{util.dimension_sanitizer(ttp)}}}")
 
-            if name in dim_aliases:
-                name = dim_aliases[name]
+            if label in dim_aliases:
+                label = dim_aliases[label]
 
             # key is the vanilla data column/dimension name
             # value should always be a tuple (label, value)
-            tooltips_dict[name] = tuple_
+            tooltips_dict[label] = tuple_
 
         # subset the tooltips to only the ones user wants
         if self.hover_tooltips:
@@ -722,7 +722,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif pos == 1 and dim:
             dims = [dim]
             v0, v1 = util.max_range([
-                elrange.get(dim.name, {'combined': (None, None)})['combined']
+                elrange.get(dim.label, {'combined': (None, None)})['combined']
                 for elrange in ranges.values()
             ])
             axis_label = str(dim)
@@ -844,7 +844,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self._subcoord_overlaid:
                 if opts.get('subcoordinate_y') is None:
                     continue
-                if element.kdims:
+                if sp.overlay_dims:
                     ax_name = ', '.join(d.pprint_value(k) for d, k in zip(element.kdims, sp_key))
                 else:
                     ax_name = el.label
@@ -944,11 +944,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if axis_label and axis in self.labelled:
                         properties[f'{axis}_axis_label'] = axis_label
                     locs = {'left': 'left', 'right': 'right'} if axis == 'y' else {'bottom': 'below', 'top': 'above'}
-                    if axis_position is None:
+                    if axis_position in (None, False):
                         axis_props[axis]['visible'] = False
                     axis_props[axis].update(fontsize)
                     for loc, pos in locs.items():
-                        if axis_position and loc in axis_position:
+                        if isinstance(axis_position, str) and loc in axis_position:
                             properties[f'{axis}_axis_location'] = pos
 
         if not self.show_frame:
@@ -1176,11 +1176,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if wheel_zoom:
                 wheel_zoom[0].zoom_on_axis = False
         elif isinstance(axis_obj, CategoricalAxis):
-            for key in list(axis_props):
-                if key.startswith('major_label'):
+            for axis_prop in list(axis_props):
+                if axis_prop.startswith('major_label'):
                     # set the group labels equal to major (actually minor)
-                    new_key = key.replace('major_label', 'group')
-                    axis_props[new_key] = axis_props[key]
+                    new_axis_prop = axis_prop.replace('major_label', 'group')
+                    axis_props[new_axis_prop] = axis_props[axis_prop]
 
             # major ticks are actually minor ticks in a categorical
             # so if user inputs minor ticks sizes, then use that;
@@ -1847,7 +1847,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             new_style[k] = key
 
         # Process color/alpha styles and expand to fill/line style
-        for style, val in list(new_style.items()):
+        for style, val in new_style.copy().items():  # noqa: PLR1704
             for s in ('alpha', 'color'):
                 if prefix+s != style or style not in data or validate(s, val, True):
                     continue
@@ -2865,7 +2865,7 @@ class ColorbarPlot(ElementPlot):
             opts.update({opt: colors[name] for name, opt in color_opts if name in colors})
         else:
             colormapper = CategoricalColorMapper
-            factors = decode_bytes(factors)
+            factors = map(str, decode_bytes(factors))
             opts = dict(factors=list(factors))
             if 'NaN' in colors:
                 opts['nan_color'] = colors['NaN']
@@ -3004,6 +3004,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if not isinstance(v._y_range_type, Range1d):
                 return v._y_range_type
         return self._y_range_type
+
+    @property
+    def _is_batched(self):
+        return super()._is_batched and not self.subcoordinate_y
 
     def _process_legend(self, overlay):
         plot = self.handles['plot']

@@ -54,12 +54,13 @@ holoviews = "holoviews.util.command:main"
 
 [tool.hatch.version]
 source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
 
 [tool.hatch.build.targets.wheel]
 include = ["holoviews"]
 
 [tool.hatch.build.targets.sdist]
-include = ["holoviews", "CHANGELOG.md"]
+include = ["holoviews", "scripts"]
 
 [tool.hatch.build.targets.sdist.force-include]
 examples = "holoviews/examples"
@@ -116,7 +117,10 @@ filterwarnings = [
     # 2024-05
     "ignore:backend2gui is deprecated since IPython 8.24:DeprecationWarning", # https://github.com/holoviz/holoviews/pull/6227#issuecomment-2104401396
     # 2024-06
-    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning",
+    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning", # OK
+    "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
+    # 2024-07
+    "ignore:The (non_)?interactive_bk attribute was deprecated in Matplotlib 3.9", # OK - Only happening in debug mode
 ]
 
 [tool.coverage]

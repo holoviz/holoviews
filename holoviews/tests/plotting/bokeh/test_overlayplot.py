@@ -278,11 +278,54 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         _, vline_plot = plot.subplots.values()
         assert vline_plot.handles['glyph'].location == 1
 
-    def test_overlay_iterable(self):
-        # Related to https://github.com/holoviz/holoviews/issues/5315
-        c1 = Curve([0, 1])
-        c2 = Curve([10, 20])
-        Overlay({'a': c1, 'b': c2}.values())
+    def test_ndoverlay_subcoordinate_y_no_batching(self):
+        overlay = NdOverlay({
+            i: Curve(np.arange(10)*i).opts(subcoordinate_y=True) for i in range(10)
+        }).opts(legend_limit=1)
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.batched == False
+        assert len(plot.subplots) == 10
+
+    def test_ndoverlay_subcoordinate_y_ranges(self):
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        overlay = NdOverlay({
+            'A': Curve(data, 'x', ('A', 'y')).opts(subcoordinate_y=True),
+            'B': Curve(data, 'x', ('B', 'y')).opts(subcoordinate_y=True),
+            'C': Curve(data, 'x', ('C', 'y')).opts(subcoordinate_y=True),
+        })
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            assert sp.handles['y_range'].start == 0
+            assert sp.handles['y_range'].end == 27
+
+    def test_overlay_subcoordinate_y_ranges(self):
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        overlay = Overlay([
+            Curve(data, 'x', ('A', 'y'), label='A').opts(subcoordinate_y=True),
+            Curve(data, 'x', ('B', 'y'), label='B').opts(subcoordinate_y=True),
+            Curve(data, 'x', ('C', 'y'), label='C').opts(subcoordinate_y=True),
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            assert sp.handles['y_range'].start == 0
+            assert sp.handles['y_range'].end == 27
 
 
 class TestLegends(TestBokehPlot):

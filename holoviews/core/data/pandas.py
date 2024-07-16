@@ -72,7 +72,7 @@ class PandasInterface(Interface, PandasAPI):
 
             if kdims and not (len(kdims) == len(index_names) and {dimension_name(kd) for kd in kdims} == set(index_names)):
                 kdim = dimension_name(kdims[0])
-                if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
+                if eltype._auto_indexable_1d and ncols == 1 and kdim not in [*data.columns, *cls.indexes(data)]:
                     data = data.copy()
                     data.insert(0, kdim, np.arange(len(data)))
 
@@ -256,8 +256,12 @@ class PandasInterface(Interface, PandasAPI):
             # when iterating over a groupby with a grouper equal to a list of length 1.
             # Don't supply a list with a single grouper to avoid this warning.
             group_by = group_by[0]
+        if util.pandas_version >= Version("2.1.0"):
+            groupby_kwargs = {"sort": False, "observed": False}
+        else:
+            groupby_kwargs = {"sort": False}
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                dataset.data.groupby(group_by, sort=False)]
+                dataset.data.groupby(group_by, **groupby_kwargs)]
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
