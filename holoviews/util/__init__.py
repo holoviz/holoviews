@@ -282,9 +282,10 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
-        expanded = cls._expand_options(merge_options_to_dict(options))
+        backend=kwargs.get('backend')
+        expanded = cls._expand_options(merge_options_to_dict(options), backend=backend)
         expanded = expanded or {}
-        cls._linemagic(expanded, backend=kwargs.get('backend'))
+        cls._linemagic(expanded, backend=backend)
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
