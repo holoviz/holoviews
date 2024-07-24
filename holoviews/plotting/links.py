@@ -115,8 +115,16 @@ class RangeToolLink(Link):
     intervalsy = param.Tuple(default=None, length=2, doc="""
         (min, max) intervals for the y-axis""")
 
-    _requires_target = True
+    use_handles = param.Boolean(default=True, doc="""
+        Whether to display handles""")
 
+    start_gesture = param.ObjectSelector(default='tap', objects=['pan', 'tap', 'none'],
+                                         doc="""Gesture to start a range selection""")
+
+    inverted = param.Boolean(default=True, doc="""
+                             Whether to invert the highlighting of the range selection""")
+
+    _requires_target = True
 
 class DataLink(Link):
     """
