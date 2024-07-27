@@ -702,8 +702,7 @@ class PopupMixin:
             position = None
 
         popup_pane = panel(popup)
-        if not popup_pane.visible:
-            return
+        popup_pane.visible=True
 
         if not popup_pane.stylesheets:
             self._panel.stylesheets = [
