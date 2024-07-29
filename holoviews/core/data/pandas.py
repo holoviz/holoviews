@@ -259,7 +259,7 @@ class PandasInterface(Interface, PandasAPI):
             group_by = group_by[0]
         groupby_kwargs = {"sort": False}
         if PANDAS_GE_210:
-            groupby_kwargs["observed"] =  False
+            groupby_kwargs["observed"] = False
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, **groupby_kwargs)]
         if issubclass(container_type, NdMapping):

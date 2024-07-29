@@ -203,7 +203,7 @@ class categorical_aggregate2d(Operation):
         index_cols = [d.name for d in obj.kdims]
         groupby_kwargs = {"sort": False}
         if PANDAS_GE_210:
-            groupby_kwargs["observed"] =  False
+            groupby_kwargs["observed"] = False
         df = obj.data.set_index(index_cols).groupby(index_cols, **groupby_kwargs).first()
         label = 'unique' if len(df) == len(obj) else 'non-unique'
         levels = self._get_coords(obj)
