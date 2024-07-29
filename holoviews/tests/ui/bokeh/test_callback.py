@@ -376,18 +376,18 @@ def test_stream_popup_noncallable_reappear(serve_hv, points):
 
     locator = page.locator("#tap")
     expect(locator).to_have_count(1)
-    locator = page.locator(".bk-btn bk-btn-primary")
+    locator = page.locator(".bk-btn.bk-btn-primary")
     expect(locator).to_have_count(1)
     expect(locator).to_be_visible()
 
-    page.click(".bk-btn bk-btn-primary")
+    page.click(".bk-btn.bk-btn-primary")
     expect(locator).not_to_be_visible()
 
     hv_plot.click()
 
     locator = page.locator("#tap")
     expect(locator).to_have_count(1)
-    locator = page.locator(".bk-btn bk-btn-primary")
+    locator = page.locator(".bk-btn.bk-btn-primary")
     expect(locator).to_have_count(1)
     expect(locator).to_be_visible()
 
