@@ -700,8 +700,8 @@ class PopupMixin:
 
         popup_pane = panel(popup)
         # offer the user ability to control when the popup bk panel shows up
-        # however, if the popup is not callable, we will have to assume
-        # it's always visible else if they make it invisible, it'll never re-appear
+        # however, if the popup is not callable (singleton), we cannot do this
+        # check--else, it'll never re-appear if they set `visible=False` once
         if popup_is_callable and not popup_pane.visible:
             return
 
