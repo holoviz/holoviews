@@ -687,9 +687,8 @@ class PopupMixin:
             if popup is not None:
                 break
 
-        popup_is_callable = False
-        if callable(popup):
-            popup_is_callable = True
+        popup_is_callable = callable(popup)
+        if popup_is_callable:
             with set_curdoc(self.plot.document):
                 popup = popup(**stream.contents)
 
