@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from bokeh.models import FactorRange, HoverTool, Range1d
 
 from holoviews.element import HeatMap, Image, Points
@@ -140,3 +141,18 @@ class TestHeatMapPlot(TestBokehPlot):
         self.assertEqual(cds.data['col'], np.array([1, 1, 2, 2]))
         self.assertEqual(cds.data['alpha'], np.array([0, 1, 0, 0]))
         self.assertEqual(cds.data['zvalues'], np.array([0.5, 0.1, 0.2, 0.6]))
+
+    def test_heatmap_pandas_categorial(self):
+        # Test for https://github.com/holoviz/holoviews/issues/6313
+        df = pd.DataFrame({
+            'X': pd.Series(['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c',], dtype='category'),
+            'Y': pd.Series(['O', 'P', 'Q', 'O', 'P', 'Q', 'O', 'P', 'Q',], dtype='category'),
+            'Z': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        })
+
+        hm = HeatMap(df, ['X', 'Y'], 'Z').aggregate(function=np.mean)
+        plot = bokeh_renderer.get_plot(hm)
+        data = plot.handles["cds"].data
+        np.testing.assert_array_equal(data["X"], df["X"])
+        np.testing.assert_array_equal(data["Y"], df["Y"])
+        np.testing.assert_array_equal(data["zvalues"], df["Z"])
