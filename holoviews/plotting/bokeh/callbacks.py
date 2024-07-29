@@ -609,23 +609,23 @@ class PopupMixin:
         }
         """],
         css_classes=["popup-close-btn"])
-        self._bk_panel = Panel(
+        self._panel = Panel(
             position=XY(x=np.nan, y=np.nan),
             anchor="top_left",
             elements=[close_button],
             visible=False,
             styles={"zIndex": "1000"},
         )
-        close_button.js_on_click(CustomJS(args=dict(panel=self._bk_panel), code="panel.visible = false"))
+        close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
 
-        self.plot.state.elements.append(self._bk_panel)
+        self.plot.state.elements.append(self._panel)
         self._watch_position()
 
     def _watch_position(self):
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._bk_panel),
+            args=dict(panel=self._panel),
             code=f"""
             export default ({{panel}}, cb_obj, _) => {{
               const el = panel.elements[1]
@@ -668,7 +668,7 @@ class PopupMixin:
 
     def on_msg(self, msg):
         super().on_msg(msg)
-        if hasattr(self, '_bk_panel'):
+        if hasattr(self, '_panel'):
             self._process_selection_event()
 
     def _process_selection_event(self):
@@ -695,8 +695,8 @@ class PopupMixin:
 
         # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
-            if self._bk_panel.visible:
-                self._bk_panel.visible = False
+            if self._panel.visible:
+                self._panel.visible = False
             return
 
         popup_pane = panel(popup)
@@ -707,7 +707,7 @@ class PopupMixin:
             return
 
         if not popup_pane.stylesheets:
-            self._bk_panel.stylesheets = [
+            self._panel.stylesheets = [
                 """
                 :host {
                     padding: 1em;
@@ -717,9 +717,9 @@ class PopupMixin:
                 """,
             ]
         else:
-            self._bk_panel.stylesheets = []
+            self._panel.stylesheets = []
 
-        self._bk_panel.visible = True
+        self._panel.visible = True
         # for existing popup, important to check if they're visible
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
@@ -727,14 +727,14 @@ class PopupMixin:
             self._existing_popup.visible = True
             position = self._get_position(event) if event else None
             if position:
-                self._bk_panel.position = XY(**position)
+                self._panel.position = XY(**position)
                 if self.plot.comm:  # update Jupyter Notebook
                     push_on_root(self.plot.root.ref['id'])
             return
 
         model = popup_pane.get_root(self.plot.document, self.plot.comm)
         model.js_on_change('visible', CustomJS(
-            args=dict(panel=self._bk_panel),
+            args=dict(panel=self._panel),
             code="""
             export default ({panel}, event, _) => {
               if (!event.visible) {
@@ -743,7 +743,7 @@ class PopupMixin:
             }""",
         ))
         # the first element is the close button
-        self._bk_panel.elements = [self._bk_panel.elements[0], model]
+        self._panel.elements = [self._panel.elements[0], model]
         if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
@@ -1116,7 +1116,7 @@ class Selection1DCallback(PopupMixin, Callback):
         renderer = self.plot.handles['glyph_renderer']
         selected = self.plot.handles['selected']
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._bk_panel, renderer=renderer, source=source, selected=selected),
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
             code="""
             export default ({panel, renderer, source, selected}, cb_obj, _) => {
               const el = panel.elements[1]
