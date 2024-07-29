@@ -980,7 +980,7 @@ class UniformNdMapping(NdMapping):
     def _item_check(self, dim_vals, data):
         if not self._check_items:
             return
-        elif self.type is not None and (type(data) != self.type):
+        elif self.type is not None and (type(data) is not self.type):
             raise AssertionError(f"{self.__class__.__name__} must only contain one type of object, not both {type(data).__name__} and {self.type.__name__}.")
         super()._item_check(dim_vals, data)
 
