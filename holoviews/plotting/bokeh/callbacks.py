@@ -688,7 +688,8 @@ class PopupMixin:
                 break
 
         if callable(popup):
-            popup = popup(**stream.contents)
+            with set_curdoc(self.plot.document):
+                popup = popup(**stream.contents)
 
         # If no popup is defined, hide the panel
         if popup is None:

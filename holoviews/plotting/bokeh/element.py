@@ -1574,7 +1574,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
           let range_limits = {{}}
           for (const dr of plot.data_renderers) {{
-            const renderer = plot_view.renderer_view(dr)
+            let renderer
+            if (plot_view.renderer_views !== undefined) {{
+              // Changed to a Map in Bokeh 3.5
+              renderer = plot_view.renderer_views.get(dr)
+            }} else {{
+              renderer = plot_view.renderer_view(dr)
+            }}
             const glyph_view = renderer.glyph_view
 
             let [vmin, vmax] = [Infinity, -Infinity]
