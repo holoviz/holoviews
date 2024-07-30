@@ -6,6 +6,7 @@ from holoviews.core import NdOverlay, Overlay
 from holoviews.element import Curve
 from holoviews.element.annotation import VSpan
 from holoviews.operation.normalization import subcoordinate_group_ranges
+from holoviews.plotting.bokeh.util import bokeh35
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -367,6 +368,7 @@ class TestSubcoordinateY(TestBokehPlot):
             2: 'B / 0', 3: 'B / 1',
         }
 
+    @pytest.mark.skipif(bokeh35, reason="test Bokeh < 3.5")
     def test_multiple_groups_wheel_zoom_configured(self):
         # Same as test_tools_default_wheel_zoom_configured
 
@@ -386,6 +388,28 @@ class TestSubcoordinateY(TestBokehPlot):
             assert zoom_tool.dimensions == 'height'
             assert zoom_tool.level == 1
             assert zoom_tool.description == f'Wheel Zoom ({group})'
+
+    @pytest.mark.skipif(not bokeh35, reason="requires Bokeh >= 3.5")
+    def test_multiple_groups_wheel_zoom_configured_35(self):
+        # Same as test_tools_default_wheel_zoom_configured
+
+        groups = ['A', 'B']
+        overlay = Overlay([
+            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+            for group in groups
+            for i in range(2)
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+        zoom_tools = [tool for tool in plot.state.tools if isinstance(tool, WheelZoomTool)]
+        assert len(zoom_tools) == 1
+        zoom_tool = zoom_tools[0]
+        assert zoom_tool == plot.handles['zooms_subcoordy']['wheel_zoom']
+        assert len(zoom_tool.renderers) == 4
+        assert zoom_tool.dimensions == 'height'
+        assert zoom_tool.level == 1
+        assert zoom_tool.hit_test is True
+        assert zoom_tool.hit_test_mode == 'hline'
+        assert len(zoom_tool.hit_test_behavior.groups) == 2
 
     def test_single_group_overlaid_no_error(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
