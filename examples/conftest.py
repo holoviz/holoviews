@@ -36,9 +36,8 @@ if PD2 and system == "Windows":
     ]
 
 
-# 2023-10-25, flaky on Mac CI with timeout
-# 2023-07-29, Gives ValueError: "A Bokeh model must be part of document" on Linux
-if system == "Darwin" or (system == "Linux" and py_version == (3, 9)):
+# 2023-10-25, flaky on CI with timeout
+if system == "Darwin":
     collect_ignore_glob += [
         "user_guide/16-Streaming_Data.ipynb",
     ]
