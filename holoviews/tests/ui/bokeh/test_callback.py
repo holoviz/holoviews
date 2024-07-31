@@ -315,6 +315,11 @@ def test_stream_popup_close_button(serve_hv, points):
     page.click(".bk-btn.bk-btn-default")
     expect(locator).not_to_be_visible()
 
+    hv_plot.click()
+    locator = page.locator(".bk-btn.bk-btn-default")
+    expect(locator).to_have_count(1)
+    expect(locator).to_be_visible()
+
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
@@ -344,6 +349,47 @@ def test_stream_popup_selection1d_tap(serve_hv, points):
 
     locator = page.locator("#tap")
     expect(locator).to_have_count(1)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_noncallable_reappear(serve_hv, points):
+    def popup_form(name):
+        text_input = pn.widgets.TextInput(name='Description')
+        button = pn.widgets.Button(
+            name='Save',
+            on_click=lambda _: layout.param.update(visible=False),
+            button_type="primary"
+        )
+        layout = pn.Column(f'# {name}', text_input, button)
+        return layout
+
+    points = points.opts(hit_dilation=5)
+    hv.streams.Tap(source=points, popup=popup_form('Tap'))
+    points.opts(tools=["tap"], active_tools=["tap"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    hv_plot.click()
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+    locator = page.locator(".bk-btn.bk-btn-primary")
+    expect(locator).to_have_count(1)
+    expect(locator).to_be_visible()
+
+    page.click(".bk-btn.bk-btn-primary")
+    expect(locator).not_to_be_visible()
+
+    hv_plot.click()
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+    locator = page.locator(".bk-btn.bk-btn-primary")
+    expect(locator).to_have_count(1)
+    expect(locator).to_be_visible()
 
 
 @skip_popup
