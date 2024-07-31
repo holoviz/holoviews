@@ -71,6 +71,7 @@ from .util import (
     TOOL_TYPES,
     bokeh32,
     bokeh34,
+    bokeh35,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,
@@ -3233,8 +3234,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         # At this stage, there's only one zoom tool (e.g. 1 wheel_zoom) that
         # has all the renderers (e.g. all the curves in the overlay).
-        # We want to create as many zoom tools as groups, for each group
-        # the zoom tool must have the renderers of the elements of the group.
+        # For the non wheel_zoom tools, we want to create as many zoom tools
+        # as groups, for each group the zoom tool must have the renderers of
+        # the elements of the group.
+        # For the wheel_zoom tool, if Bokeh 3.5 is used, we want to enable
+        # the group hit-testing behavior.
         zoom_tools = self.handles['zooms_subcoordy']
         for zoom_tool_name, zoom_tool in zoom_tools.items():
             renderers_per_group = defaultdict(list)
@@ -3248,23 +3252,31 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if zoom_tool.renderers:
                 raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
 
-            new_ztools = []
-            # Create a new tool per group with the right renderers and a custom description.
-            for grp, grp_renderers in renderers_per_group.items():
-                new_tool = zoom_tool.clone()
-                new_tool.renderers = grp_renderers
-                new_tool.description = f"{zoom_tool_name.replace('_', ' ').title()} ({grp})"
-                new_ztools.append(new_tool)
-            # Revert tool order so the upper tool in the toolbar corresponds to the
-            # upper group in the overlay.
-            new_ztools = new_ztools[::-1]
+            if zoom_tool_name == 'wheel_zoom' and bokeh35:
+                zoom_tool.update(
+                    hit_test=True,
+                    hit_test_mode='hline',
+                    hit_test_behavior=list(renderers_per_group.values()),
+                    renderers=list(chain(*renderers_per_group.values())),
+                )
+            else:
+                new_ztools = []
+                # Create a new tool per group with the right renderers and a custom description.
+                for grp, grp_renderers in renderers_per_group.items():
+                    new_tool = zoom_tool.clone()
+                    new_tool.renderers = grp_renderers
+                    new_tool.description = f"{zoom_tool_name.replace('_', ' ').title()} ({grp})"
+                    new_ztools.append(new_tool)
+                # Revert tool order so the upper tool in the toolbar corresponds to the
+                # upper group in the overlay.
+                new_ztools = new_ztools[::-1]
 
-            # Update the handle for good measure.
-            zoom_tools[zoom_tool_name] = new_ztools
+                # Update the handle for good measure.
+                zoom_tools[zoom_tool_name] = new_ztools
 
-            # Replace the original tool by the new ones
-            idx = plot.tools.index(zoom_tool)
-            plot.tools[idx:idx+1] = new_ztools
+                # Replace the original tool by the new ones
+                idx = plot.tools.index(zoom_tool)
+                plot.tools[idx:idx+1] = new_ztools
 
     def _get_dimension_factors(self, overlay, ranges, dimension):
         factors = []
