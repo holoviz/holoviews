@@ -38,5 +38,3 @@ holoviews/.vscode/settings.json
 dist
 
 examples/getting_started/*.html
-
-scratch
