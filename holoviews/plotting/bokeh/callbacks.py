@@ -687,22 +687,22 @@ class PopupMixin:
             if popup is not None:
                 break
 
-        if callable(popup):
-            popup = popup(**stream.contents)
+        popup_is_callable = callable(popup)
+        if popup_is_callable:
+            with set_curdoc(self.plot.document):
+                popup = popup(**stream.contents)
 
-        # If no popup is defined, hide the panel
+        # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
             if self._panel.visible:
                 self._panel.visible = False
             return
 
-        if event is not None:
-            position = self._get_position(event)
-        else:
-            position = None
-
         popup_pane = panel(popup)
-        if not popup_pane.visible:
+        # offer the user ability to control when the popup bk panel shows up
+        # however, if the popup is not callable (singleton), we cannot do this
+        # check--else, it'll never re-appear if they set `visible=False` once
+        if popup_is_callable and not popup_pane.visible:
             return
 
         if not popup_pane.stylesheets:
@@ -723,6 +723,8 @@ class PopupMixin:
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
         if self._existing_popup and not self._existing_popup.visible:
+            self._existing_popup.visible = True
+            position = self._get_position(event) if event else None
             if position:
                 self._panel.position = XY(**position)
                 if self.plot.comm:  # update Jupyter Notebook
