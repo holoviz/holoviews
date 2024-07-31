@@ -43,6 +43,7 @@ param_version = Version(param.__version__)
 pandas_version = Version(pd.__version__)
 
 NUMPY_GE_200 = numpy_version >= Version("2")
+PANDAS_GE_210 = pandas_version >= Version("2.1")
 
 # Types
 generator_types = (zip, range, types.GeneratorType)

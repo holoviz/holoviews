@@ -184,11 +184,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         xlim = plot.handles["fig"].axes[0].get_xlim()
         ylim = plot.handles["fig"].axes[0].get_ylim()
-        if MPL_GE_3_9:
-            assert np.allclose(xlim, (-0.05, 1.05))
-        else:
-            assert np.allclose(xlim, (-0.055, 0.055))
-
+        assert np.allclose(xlim, (-0.055, 0.055))
         assert np.allclose(ylim, (0, 6.5))
 
         sources = plot.handles["annotations"]
@@ -240,10 +236,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         xlim = plot.handles["fig"].axes[0].get_xlim()
         ylim = plot.handles["fig"].axes[0].get_ylim()
-        if MPL_GE_3_9:
-            assert np.allclose(xlim, (-0.05, 1.05))
-        else:
-            assert np.allclose(xlim, (-0.055, 0.055))
+        assert np.allclose(xlim, (-0.055, 0.055))
         assert np.allclose(ylim, (0, 6.5))
 
         sources = plot.handles["annotations"]
@@ -283,10 +276,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         xlim = plot.handles["fig"].axes[0].get_xlim()
         ylim = plot.handles["fig"].axes[0].get_ylim()
-        if MPL_GE_3_9:
-            assert np.allclose(xlim, (-0.05, 1.05))
-        else:
-            assert np.allclose(xlim, (-0.055, 0.055))
+        assert np.allclose(xlim, (-0.055, 0.055))
         assert np.allclose(ylim, (0, 6.5))
 
         sources = plot.handles["annotations"]
