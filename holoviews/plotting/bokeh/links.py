@@ -184,21 +184,20 @@ class RangeToolLinkCallback(LinkCallback):
         tool = RangeTool(**axes)
 
         use_handles = getattr(link, 'use_handles', True)
-        if use_handles and bokeh35:
+        start_gesture = getattr(link, 'start_gesture', 'tap')
+        inverted = getattr(link, 'inverted', True)
+
+        if bokeh35:
             tool.overlay.use_handles = use_handles
+            tool.start_gesture = start_gesture
+            tool.overlay.inverted = inverted
+
+        if use_handles:
             tool.overlay.handles.all.hover_fill_color = "grey"
             tool.overlay.handles.all.hover_fill_alpha = 0.25
             tool.overlay.handles.all.hover_line_alpha = 0
             tool.overlay.handles.all.fill_alpha = 0.1
             tool.overlay.handles.all.line_alpha = 0.25
-
-        start_gesture = getattr(link, 'start_gesture', 'tap')
-        if start_gesture is not None and bokeh35:
-            tool.start_gesture = start_gesture
-
-        inverted = getattr(link, 'inverted', True)
-        if inverted is not None and bokeh35:
-            tool.overlay.inverted = inverted
 
         source_plot.state.add_tools(tool)
         if toolbars:
