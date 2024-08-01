@@ -107,7 +107,7 @@ xyzservices = "*"
 tsdownsample = "*" # currently not available on Windows
 
 [feature.test-example.tasks]
-test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', env = { DASK_DATAFRAME__QUERY_PLANNING = "False" } }
+test-example = { cmd = 'pytest -s -n logical --dist loadscope --nbval-lax examples', env = { DASK_DATAFRAME__QUERY_PLANNING = "False" } }
 
 [feature.test-example.dependencies]
 nbval = "*"
