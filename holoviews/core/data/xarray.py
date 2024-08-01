@@ -1,5 +1,6 @@
 import sys
 import types
+from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,18 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
+
+LOGLEVELS = (DEBUG, INFO)
+LOGLEVEL = LOGLEVELS[0]
+logger = getLogger(__name__)
+fmt = "%(asctime)s %(levelname)s %(name)s :%(message)s"
+formatter = Formatter(fmt)
+handler = StreamHandler()
+handler.setLevel(LOGLEVEL)
+logger.setLevel(LOGLEVEL)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.propagate = False
 
 
 def is_cupy(array):
@@ -95,6 +108,7 @@ class XArrayInterface(GridInterface):
             vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
             if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
                 packed = True
+                logger.debug(f"packed: {packed}")
             elif vdims:
                 vdim = vdims[0]
             elif data.name:
