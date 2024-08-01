@@ -108,7 +108,6 @@ class XArrayInterface(GridInterface):
             vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
             if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
                 packed = True
-                logger.debug(f"packed: {packed}")
             elif vdims:
                 vdim = vdims[0]
             elif data.name:
@@ -131,6 +130,14 @@ class XArrayInterface(GridInterface):
                                 "dimension. Give the DataArray a name or "
                                 "supply an explicit vdim.",
                                 cls)
+            logger.debug(f"packed: {packed}")
+            if packed:
+                logger.debug(f"vdim_len: {vdim_len}")
+                logger.debug(f"vdims: {vdims}")
+                logger.debug(f"kdim_len: {kdim_len}")
+                logger.debug(f"kdims: {kdims}")
+                logger.debug(f"packed_data.name: {data.name}")
+                logger.debug(f"packed_data: {data}")
             if not packed:
                 if vdim in data.dims:
                     data = data.to_dataset(vdim.name)
