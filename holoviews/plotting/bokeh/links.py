@@ -192,7 +192,7 @@ class RangeToolLinkCallback(LinkCallback):
             tool.start_gesture = start_gesture
             tool.overlay.inverted = inverted
 
-        if use_handles:
+        if bokeh_35 and use_handles:
             tool.overlay.handles.all.hover_fill_color = "grey"
             tool.overlay.handles.all.hover_fill_alpha = 0.25
             tool.overlay.handles.all.hover_line_alpha = 0
