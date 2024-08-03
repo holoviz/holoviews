@@ -12,6 +12,7 @@ from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
 
+
 def is_cupy(array):
     if 'cupy' not in sys.modules:
         return False
