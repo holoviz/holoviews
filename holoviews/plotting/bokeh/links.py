@@ -4,6 +4,7 @@ from bokeh.models.tools import RangeTool
 
 from ...core.spaces import HoloMap
 from ...core.util import isscalar
+from ...util.warnings import warn
 from ..links import (
     DataLink,
     Link,
@@ -182,6 +183,9 @@ class RangeToolLinkCallback(LinkCallback):
                     ax.reset_end = end
 
         tool = RangeTool(**axes)
+
+        if bokeh34:
+            warn("RangeTool styling and interactivity options updated in Bokeh 3.5.")
 
         use_handles = getattr(link, 'use_handles', True)
         start_gesture = getattr(link, 'start_gesture', 'tap')
