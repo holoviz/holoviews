@@ -121,6 +121,7 @@ filterwarnings = [
     "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
     # 2024-07
     "ignore:The (non_)?interactive_bk attribute was deprecated in Matplotlib 3.9", # OK - Only happening in debug mode
+    "ignore: Jitify is performing a one-time only warm::cupy", # OK
 ]
 
 [tool.coverage]
