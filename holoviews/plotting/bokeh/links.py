@@ -13,7 +13,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import bokeh34
+from .util import bokeh34, bokeh35
 
 
 class LinkCallback:
@@ -182,6 +182,23 @@ class RangeToolLinkCallback(LinkCallback):
                     ax.reset_end = end
 
         tool = RangeTool(**axes)
+
+        if bokeh35:
+            use_handles = getattr(link, 'use_handles', True)
+            start_gesture = getattr(link, 'start_gesture', 'tap')
+            inverted = getattr(link, 'inverted', True)
+
+            tool.overlay.use_handles = use_handles
+            tool.start_gesture = start_gesture
+            tool.overlay.inverted = inverted
+
+            if use_handles:
+                tool.overlay.handles.all.hover_fill_color = "grey"
+                tool.overlay.handles.all.hover_fill_alpha = 0.25
+                tool.overlay.handles.all.hover_line_alpha = 0
+                tool.overlay.handles.all.fill_alpha = 0.1
+                tool.overlay.handles.all.line_alpha = 0.25
+
         source_plot.state.add_tools(tool)
         if toolbars:
             toolbars[0].tools.append(tool)

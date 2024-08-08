@@ -115,8 +115,17 @@ class RangeToolLink(Link):
     intervalsy = param.Tuple(default=None, length=2, doc="""
         (min, max) intervals for the y-axis""")
 
-    _requires_target = True
+    use_handles = param.Boolean(default=True, doc="""
+        Whether to display handles. Only available from Bokeh 3.5 onwards.""")
 
+    start_gesture = param.Selector(default='tap', objects=['pan', 'tap', 'none'],
+         doc="Gesture to start a range selection. Only available from Bokeh 3.5 onwards.")
+
+    inverted = param.Boolean(default=True, doc="""
+         Whether to invert the highlighting of the range selection.
+         Only available from Bokeh 3.5 onwards.""")
+
+    _requires_target = True
 
 class DataLink(Link):
     """
