@@ -188,7 +188,6 @@ class RangeToolLinkCallback(LinkCallback):
             start_gesture = getattr(link, 'start_gesture', 'tap')
             inverted = getattr(link, 'inverted', True)
 
-
             tool.overlay.use_handles = use_handles
             tool.start_gesture = start_gesture
             tool.overlay.inverted = inverted
