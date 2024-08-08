@@ -118,13 +118,13 @@ class RangeToolLink(Link):
     use_handles = param.Boolean(default=True, doc="""
         Whether to display handles. Only available from Bokeh 3.5 onwards.""")
 
-    start_gesture = param.ObjectSelector(default='tap', objects=['pan', 'tap', 'none'],
-                                         doc="""Gesture to start a range selection.
-                                         Only available from Bokeh 3.5 onwards.""")
+    start_gesture = param.Selector(default='tap', objects=['pan', 'tap', 'none'],
+         doc="Gesture to start a range selection. Only available from Bokeh 3.5 onwards.")
 
     inverted = param.Boolean(default=True, doc="""
-                             Whether to invert the highlighting of the range selection.
-                             Only available from Bokeh 3.5 onwards.""")
+         Whether to invert the highlighting of the range selection.
+         Only available from Bokeh 3.5 onwards.""")
+
     _requires_target = True
 
 class DataLink(Link):
