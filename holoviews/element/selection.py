@@ -32,10 +32,12 @@ class SelectionIndexExpr:
         self._index_skip = True
         if not index:
             return None, None, None
-        ds = self.clone(kdims=index_cols, new_type=Dataset)
+        clone_vdims = [vdim.name for vdim in self.vdims if vdim.name not in index_cols]
+        cols = clone_vdims + index_cols
+        ds = self.clone(kdims=index_cols, vdims=clone_vdims, new_type=Dataset)
         if len(index_cols) == 1:
             index_dim = index_cols[0]
-            vals = dim(index_dim).apply(ds.iloc[index], expanded=False)
+            vals = dim(index_dim).apply(ds.iloc[index, cols], expanded=False)
             if vals.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in vals):
                 vals = [v for arr in vals for v in util.unique_iterator(arr)]
             expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
@@ -43,7 +45,7 @@ class SelectionIndexExpr:
             get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
             index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                ds.iloc[index], expanded=True, flat=True
+                ds.iloc[index, cols], expanded=True, flat=True
             )
             contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
             expr = dim(contains, np.reshape, get_shape)
