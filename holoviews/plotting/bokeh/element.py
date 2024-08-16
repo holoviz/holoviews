@@ -1342,7 +1342,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self._shared.get(extra_y_range.name, False), log, streaming
             )
 
-    def _update_main_ranges(self, element, x_range, y_range, ranges):
+    def _update_main_ranges(self, element, x_range, y_range, ranges, subcoord=False):
         plot = self.handles['plot']
 
         l, b, r, t = None, None, None, None
@@ -1366,11 +1366,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         framewise = self.framewise
         streaming = (self.streaming and any(stream._triggering and stream.following
                                             for stream in self.streaming))
-        xupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
+        xupdate = not subcoord and ((not (self.model_changed(x_range) or self.model_changed(plot))
                     and (framewise or streaming))
                    or xfactors is not None)
-        yupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
-                    and (framewise or streaming) or yfactors is not None) and not self.subcoordinate_y)
+        yupdate = (not (self.model_changed(x_range) or self.model_changed(plot))
+                    and (framewise or streaming) or yfactors is not None)
 
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options.get('width'))
@@ -1482,7 +1482,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
-        if not (self.drawn or self.subcoordinate_y) or yupdate:
+
+        if self.subcoordinate_y and yupdate and not subcoord:
+            updated = set()
+            for sp in (self.subplots or {}).values():
+                sp_range = sp.handles['y_range']
+                if sp_range.name in updated:
+                    continue
+                updated.add(sp_range.name)
+                sp._update_main_ranges(
+                    sp.current_frame, sp.handles['x_range'], sp.handles['y_range'],
+                    ranges, subcoord=True
+                )
+        elif (not (self.drawn or self.subcoordinate_y) or subcoord) and yupdate:
             self._update_range(
                 y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
                 self._shared['y-main-range'], self.logy, streaming
