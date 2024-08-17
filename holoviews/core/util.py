@@ -813,9 +813,9 @@ dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def isscalar(val):
     """
-    Value is scalar or None
+    Value is scalar, None, or pd.NA
     """
-    return val is None or np.isscalar(val) or isinstance(val, datetime_types)
+    return val in [None, pd.NA] or np.isscalar(val) or isinstance(val, datetime_types)
 
 
 def isnumeric(val):
@@ -1180,6 +1180,8 @@ def unique_array(arr):
     Returns:
        A new array of unique values
     """
+    if arr is pd.NA:
+        return pd.Series([arr])
     if not len(arr):
         return np.asarray(arr)
 
