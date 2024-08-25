@@ -269,7 +269,7 @@ argument to specify a selection specification""")
 
         index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims+self.vdims
-        node_selection = {index_dim: v for k, v in selection.items()  # noqa: RUF011
+        node_selection = {index_dim: v for k, v in selection.items()  # noqa: B035
                           if k in self.kdims}
         if selection_expr:
             mask = selection_expr.apply(self.nodes, compute=False, keep_index=True)

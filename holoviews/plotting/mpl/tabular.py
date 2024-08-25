@@ -77,8 +77,7 @@ class TablePlot(ElementPlot):
                     cell_text = element.pprint_cell(adjusted_row, col)
                     if len(cell_text) > self.max_value_len:
                         cell_text = cell_text[:(self.max_value_len-3)]+'...'
-                if len(cell_text) + 2 > cell_widths[col]:
-                    cell_widths[col] = len(cell_text) + 2
+                cell_widths[col] = max(len(cell_text) + 2, cell_widths[col])
 
     def _cell_value(self, element, row, col):
         summarize = element.rows > self.max_rows
