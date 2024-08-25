@@ -25,6 +25,9 @@ build = ["py311", "build"]
 lint = ["py311", "lint"]
 
 [dependencies]
+nomkl = "*"
+pip = "*"
+# Required
 bokeh = ">=3.1"
 colorcet = "*"
 numpy = ">=1.0"
@@ -32,7 +35,6 @@ packaging = "*"
 pandas = ">=0.20.0"
 panel = ">=1.0"
 param = ">=2.0,<3.0"
-pip = "*"
 pyviz_comms = ">=2.1"
 # Recommended
 matplotlib-base = ">=3"
