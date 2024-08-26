@@ -19,6 +19,8 @@ PD2 = Version(pd.__version__) >= Version("2.0")
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
     "user_guide/Plotting_with_Bokeh.ipynb",
+    # Streaming data use streamz which is no longer maintained
+    "user_guide/16-Streaming_Data.ipynb",
     # Possible timeout error
     "user_guide/17-Dashboards.ipynb",
     # Give file not found
@@ -35,12 +37,6 @@ if PD2 and system == "Windows":
         "user_guide/15-Large_Data.ipynb",
     ]
 
-
-# 2023-10-25, flaky on CI with timeout
-if system == "Darwin":
-    collect_ignore_glob += [
-        "user_guide/16-Streaming_Data.ipynb",
-    ]
 
 # 2024-01-15: See https://github.com/holoviz/holoviews/issues/6069
 if system == "Windows":
