@@ -174,7 +174,7 @@ class BarsMixin:
         else:
             y0, y1 = ranges[vdim]['combined']
 
-        x0, x1 = (l, r) if util.isnumeric(l) and len(element.kdims) == 1 else ('', '')
+        x0, x1 = (l, r) if (util.isnumeric(l) or isinstance(l, util.datetime_types)) and len(element.kdims) == 1 else ('', '')
         if range_type == 'data':
             return (x0, y0, x1, y1)
 
