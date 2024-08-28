@@ -954,10 +954,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         is_dt = isdatetime(xvals)
         continuous = True
         if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
+            xslice = slice(0, len(xvals), len(style_map)) if style_dim else slice(None)
+            xvals = xvals[xslice]
             xdiff_vals = date2num(xvals) if is_dt else xvals
             xdiff = np.abs(np.diff(xdiff_vals))
-            if len(np.unique(xdiff)) == 1:
-                # if all are same
+            diff_size = len(np.unique(xdiff))
+            if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
                 xdiff = 1
             else:
                 xdiff = np.min(xdiff)
