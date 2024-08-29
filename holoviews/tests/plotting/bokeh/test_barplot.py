@@ -384,3 +384,10 @@ class TestBarPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 0.8
+
+    def test_bar_stacked_stack_variable_sorted(self):
+        # Check that if the stack dim is ordered
+        df = pd.DataFrame({"a": [*range(50), *range(50)], "b": sorted("ab" * 50), "c": range(100)})
+        bars = Bars(df, kdims=["a", "b"], vdims=["c"]).opts(stacked=True)
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 0.8

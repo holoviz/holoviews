@@ -893,6 +893,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 stack_order = element.dimension_values(1, False)
             stack_order = list(stack_order)
+            stack_data = element.dimension_values(stack_dim)
+            stack_idx = stack_data == stack_data[0]
         else:
             grouping = 'grouped'
             group_dim = element.get_dimension(1)
@@ -921,7 +923,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             grouped = {0: element}
             is_dt = isdatetime(xvals)
             if is_dt or xvals.dtype.kind not in 'OU':
-                xslice = slice(0, len(xvals), len(stack_order)) if stack_order else slice(None)
+                xslice = stack_idx if stack_order else slice(None)
                 xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
                 if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
