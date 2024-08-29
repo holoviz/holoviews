@@ -1052,16 +1052,23 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             axis.legend(title=title, **legend_opts)
 
         x_range = ranges[gdim.label]["data"]
+        if style.get('align', 'center') == 'center':
+            left_multiplier = 0.5
+            right_multiplier = 0.5
+        else:
+            left_multiplier = 0
+            right_multiplier = 1
         if continuous and not is_dt:
-            if style.get('align', 'center') == 'center':
-                left_multiplier = 0.5
-                right_multiplier = 0.5
-            else:
-                left_multiplier = 0
-                right_multiplier = 1
             ranges[gdim.label]["data"] = (
                 x_range[0] - width * left_multiplier,
                 x_range[1] + width * right_multiplier
+            )
+        elif not continuous:
+            locs = [item[0] for item in xticks]
+            xmin, xmax = min(locs), max(locs)
+            ranges[gdim.label]["data"] = (
+                - width * left_multiplier + xmin,
+                width * right_multiplier + xmax
             )
         return bars, xticks if not continuous else None, ax_dims
 
