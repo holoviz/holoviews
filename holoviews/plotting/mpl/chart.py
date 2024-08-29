@@ -936,9 +936,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         cats = None
         style_dim = None
+        xslice = slice(None)
         if sdim:
             cats = values['stack']
             style_dim = sdim
+            stack_data = element.dimension_values(sdim)
+            xslice = stack_data == stack_data[0]
         elif cdim:
             cats = values['category']
             style_dim = cdim
@@ -954,7 +957,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         is_dt = isdatetime(xvals)
         continuous = True
         if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
-            xslice = slice(0, len(xvals), len(style_map)) if style_dim else slice(None)
             xvals = xvals[xslice]
             xdiff = np.abs(np.diff(xvals))
             diff_size = len(np.unique(xdiff))
