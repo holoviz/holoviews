@@ -956,14 +956,14 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
             xslice = slice(0, len(xvals), len(style_map)) if style_dim else slice(None)
             xvals = xvals[xslice]
-            xdiff_vals = date2num(xvals) if is_dt else xvals
-            xdiff = np.abs(np.diff(xdiff_vals))
+            xdiff = np.abs(np.diff(xvals))
             diff_size = len(np.unique(xdiff))
             if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
                 xdiff = 1
             else:
                 xdiff = np.min(xdiff)
-            width = (1 - self.bar_padding) * xdiff
+            width = (1 - self.bar_padding) * (date2num(xdiff) / 1000 if is_dt else xdiff)
+            data_width = (1 - self.bar_padding) * xdiff
         else:
             xdiff = len(values.get('category', [None]))
             width = (1 - self.bar_padding) / xdiff
@@ -1058,12 +1058,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         else:
             left_multiplier = 0
             right_multiplier = 1
-        if continuous and not is_dt:
+        if continuous:
             ranges[gdim.label]["data"] = (
-                x_range[0] - width * left_multiplier,
-                x_range[1] + width * right_multiplier
+                x_range[0] - data_width * left_multiplier,
+                x_range[1] + data_width * right_multiplier,
             )
-        elif not continuous:
+        else:
             locs = [item[0] for item in xticks]
             xmin, xmax = min(locs), max(locs)
             ranges[gdim.label]["data"] = (
