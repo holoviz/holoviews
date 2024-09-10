@@ -73,6 +73,7 @@ In a notebook or ipython environment the usual
 To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
 """
+import builtins
 import os
 import sys
 import warnings
@@ -119,7 +120,7 @@ from .util.warnings import (  # noqa: F401
 warnings.filterwarnings("ignore",
                         message="elementwise comparison failed; returning scalar instead")
 
-if "IPython" in sys.modules:
+if hasattr(builtins, "__IPYTHON__"):
     from .ipython import notebook_extension
     extension = notebook_extension
 else:
@@ -181,7 +182,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del os, sys, rcfile, warnings
+del os, builtins, rcfile, sys, warnings
 
 def __getattr__(name):
     if name == "annotate":
