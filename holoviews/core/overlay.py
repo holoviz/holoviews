@@ -6,16 +6,22 @@ that allows Views to be overlaid on top of each other.
 Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
+from __future__ import annotations
 
 from functools import reduce
+from typing import TYPE_CHECKING
 
 import numpy as np
 import param
+from panel.pane import HoloViews
 
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .layout import AdjointLayout, Composable, Layout, Layoutable
 from .ndmapping import UniformNdMapping
 from .util import dimensioned_streams, sanitize_identifier, unique_array
+
+if TYPE_CHECKING:
+    from panel.io.server import Server
 
 
 class Overlayable:
@@ -51,6 +57,16 @@ class Overlayable:
                 return Overlay([self, other])
             except NotImplementedError:
                 return NotImplemented
+
+    def show(self, pane_params: dict | None = None, **show_kwargs: dict) -> Server:
+        """
+        Starts a Bokeh server and displays the HoloViews object in a new tab.
+
+        Args:
+            pane_params: Params to pass to `pn.pane.HoloViews`
+            **show_kwargs: Keyword arguments to pass to the `show` method.
+        """
+        return HoloViews(self, **pane_params or {}).show(**show_kwargs)
 
 
 class CompositeOverlay(ViewableElement, Composable):

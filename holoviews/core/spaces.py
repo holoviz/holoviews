@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 import types
 from collections import defaultdict
@@ -6,9 +8,11 @@ from functools import partial
 from itertools import groupby
 from numbers import Number
 from types import FunctionType
+from typing import TYPE_CHECKING
 
 import numpy as np
 import param
+from panel.pane.holoviews import HoloViews
 
 from ..streams import Params, Stream, streams_list_from_dict
 from . import traversal, util
@@ -18,6 +22,9 @@ from .layout import AdjointLayout, Empty, Layout, Layoutable, NdLayout
 from .ndmapping import NdMapping, UniformNdMapping, item_check
 from .options import Store, StoreOptions
 from .overlay import CompositeOverlay, NdOverlay, Overlay, Overlayable
+
+if TYPE_CHECKING:
+    from panel.io.server import Server
 
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):
@@ -424,6 +431,16 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         else:
             return histmaps[0]
 
+    def show(self, pane_params: dict | None = None, **show_kwargs: dict) -> Server:
+        """
+        Starts a Bokeh server and displays the HoloViews object in a new tab.
+
+        Args:
+            pane_params: Params to pass to `pn.pane.HoloViews`
+            **show_kwargs: Keyword arguments to pass to the `show` method.
+        """
+        return HoloViews(self, **pane_params or {}).show(**show_kwargs)
+
 
 class Callable(param.Parameterized):
     """
@@ -595,7 +612,6 @@ class Callable(param.Parameterized):
         if hashed_key is not None:
             self._memoized = {hashed_key : ret}
         return ret
-
 
 
 class Generator(Callable):
