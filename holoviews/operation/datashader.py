@@ -362,7 +362,7 @@ class aggregate(LineAggregationOperation):
 
         if self.p.precompute:
             self._precomputed[element._plot_id] = x, y, data, glyph
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y, apply_pixel_ratio=False)
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
         params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
@@ -371,6 +371,8 @@ class aggregate(LineAggregationOperation):
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
         elif getattr(data, "interface", None) is not DaskInterface and not len(data):
             empty_val = 0 if isinstance(agg_fn, ds.count) else np.nan
+            print(width, height, "NWH")
+            print(len(xs), len(ys), "NXY")
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
             return self.p.element_type(xarray, **params)

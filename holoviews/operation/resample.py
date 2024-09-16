@@ -116,7 +116,7 @@ class ResampleOperation2D(ResampleOperation1D):
         inst._precomputed = {}
         return inst
 
-    def _get_sampling(self, element, x, y, ndim=2, default=None):
+    def _get_sampling(self, element, x, y, ndim=2, default=None, apply_pixel_ratio=True):
         target = self.p.target
         if not isinstance(x, list) and x is not None:
             x = [x]
@@ -159,6 +159,7 @@ class ResampleOperation2D(ResampleOperation1D):
                 y_range = (np.nanmin([np.nanmax([y0, ey0]), ey1]),
                            np.nanmax([np.nanmin([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
+            print(width, height, "WH")
         (xstart, xend), (ystart, yend) = x_range, y_range
 
         xtype = 'numeric'
@@ -201,9 +202,10 @@ class ResampleOperation2D(ResampleOperation1D):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        pixel_ratio = self._get_pixel_ratio()
-        width = int(width * pixel_ratio)
-        height = int(height * pixel_ratio)
+        if apply_pixel_ratio:
+            pixel_ratio = self._get_pixel_ratio()
+            width = int(width * pixel_ratio)
+            height = int(height * pixel_ratio)
         return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
 
     def _get_pixel_ratio(self):
