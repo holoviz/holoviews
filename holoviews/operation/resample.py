@@ -159,7 +159,6 @@ class ResampleOperation2D(ResampleOperation1D):
                 y_range = (np.nanmin([np.nanmax([y0, ey0]), ey1]),
                            np.nanmax([np.nanmin([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
-            print(width, height, "WH")
         (xstart, xend), (ystart, yend) = x_range, y_range
 
         xtype = 'numeric'
