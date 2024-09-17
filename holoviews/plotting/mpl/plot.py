@@ -116,6 +116,10 @@ class MPLPlot(DimensionedPlot):
         plot object and the displayed object; other plotting handles
         can be accessed via plot.handles.""")
 
+    sublabel_index_offset = param.Number(default=0, doc="""
+        Offset added to the sublabel index. When total index is less than 0,
+        the sublabel is skipped.""")
+
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
@@ -208,19 +212,20 @@ class MPLPlot(DimensionedPlot):
 
     def _subplot_label(self, axis):
         layout_num = self.layout_num if self.subplot else 1
-        if self.sublabel_format and not self.adjoined and layout_num > 0:
+        sublabel_num = layout_num + self.sublabel_index_offset
+        if self.sublabel_format and not self.adjoined and sublabel_num > 0:
             from matplotlib.offsetbox import AnchoredText
             labels = {}
             if '{Alpha}' in self.sublabel_format:
-                labels['Alpha'] = int_to_alpha(layout_num-1)
+                labels['Alpha'] = int_to_alpha(sublabel_num-1)
             elif '{alpha}' in self.sublabel_format:
-                labels['alpha'] = int_to_alpha(layout_num-1, upper=False)
+                labels['alpha'] = int_to_alpha(sublabel_num-1, upper=False)
             elif '{numeric}' in self.sublabel_format:
                 labels['numeric'] = self.layout_num
             elif '{Roman}' in self.sublabel_format:
-                labels['Roman'] = int_to_roman(layout_num)
+                labels['Roman'] = int_to_roman(sublabel_num)
             elif '{roman}' in self.sublabel_format:
-                labels['roman'] = int_to_roman(layout_num).lower()
+                labels['roman'] = int_to_roman(sublabel_num).lower()
             at = AnchoredText(self.sublabel_format.format(**labels), loc=3,
                               bbox_to_anchor=self.sublabel_position, frameon=False,
                               prop=dict(size=self.sublabel_size, weight='bold'),
