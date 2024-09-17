@@ -771,6 +771,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_label = ylabel if pos else xlabel
             if dims:
                 dims = dims[:2][::-1]
+            if len(dims) == 1 and not dim:
+                dim = dims[0]
 
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if self.subcoordinate_y:
@@ -806,12 +808,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             pass
         elif categorical:
             axis_type = 'auto'
-            dim_range = FactorRange()
+            dim_range = FactorRange(name=dim.name)
         elif None in [v0, v1] or any(
             True if isinstance(el, (str, bytes)+util.cftime_types)
             else not util.isfinite(el) for el in [v0, v1]
         ):
-            dim_range = range_type()
+            dim_range = range_type(name=dim.name)
         elif issubclass(range_type, FactorRange):
             dim_range = range_type(name=dim.name if dim else None)
         else:
