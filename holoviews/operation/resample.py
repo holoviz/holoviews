@@ -116,7 +116,7 @@ class ResampleOperation2D(ResampleOperation1D):
         inst._precomputed = {}
         return inst
 
-    def _get_sampling(self, element, x, y, ndim=2, default=None, apply_pixel_ratio=True):
+    def _get_sampling(self, element, x, y, ndim=2, default=None):
         target = self.p.target
         if not isinstance(x, list) and x is not None:
             x = [x]
@@ -183,6 +183,11 @@ class ResampleOperation2D(ResampleOperation1D):
             if y and element.get_dimension_type(y[0]) in datetime_types:
                 ytype = 'datetime'
 
+        # Adjust width and height depending on pixel ratio
+        pixel_ratio = self._get_pixel_ratio()
+        width = int(width * pixel_ratio)
+        height = int(height * pixel_ratio)
+
         # Compute highest allowed sampling density
         xspan = xend - xstart
         yspan = yend - ystart
@@ -198,13 +203,11 @@ class ResampleOperation2D(ResampleOperation1D):
             yunit, height = 0, 0
         else:
             yunit = float(yspan)/height
-        xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
-                  np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        if apply_pixel_ratio:
-            pixel_ratio = self._get_pixel_ratio()
-            width = int(width * pixel_ratio)
-            height = int(height * pixel_ratio)
+        xs, ys = (
+            np.linspace(xstart+xunit/2., xend-xunit/2., width),
+            np.linspace(ystart+yunit/2., yend-yunit/2., height)
+        )
         return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
 
     def _get_pixel_ratio(self):

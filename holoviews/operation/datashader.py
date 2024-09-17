@@ -362,7 +362,7 @@ class aggregate(LineAggregationOperation):
 
         if self.p.precompute:
             self._precomputed[element._plot_id] = x, y, data, glyph
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y, apply_pixel_ratio=False)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
         params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
