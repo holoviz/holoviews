@@ -50,6 +50,7 @@ from ...streams import (
     Lasso,
     MouseEnter,
     MouseLeave,
+    MultiAxisTap,
     PanEnd,
     PlotReset,
     PlotSize,
@@ -351,6 +352,10 @@ class Callback:
         events = list(dict([(event.event_name, event)
                             for event, dt in self._queue]).values())
         self._queue = []
+
+        if 'events' not in state.cache:
+            state.cache['events'] = []
+        state.cache['events'].extend(events)
 
         # Process event types
         for event in events:
@@ -780,6 +785,31 @@ class TapCallback(PopupMixin, PointerXYCallback):
             value = None
         return value
 
+
+class MultiAxisTapCallback(TapCallback):
+    """
+    Returns the mouse x/y-positions on tap event.
+    """
+
+    attributes = {'sx': 'cb_obj.sx', 'sy': 'cb_obj.sy'}
+
+    def _process_msg(self, msg):
+        fig = self.plot.handles['plot']
+        x_range = self.plot.handles.get('x_range')
+        extra_x = list(self.plot.handles.get('extra_x_ranges').values())
+        y_range = self.plot.handles.get('y_range')
+        extra_y = list(self.plot.handles.get('extra_y_ranges').values())
+
+        sx, sy = msg['sx'], msg['sy']
+        w, h = fig.outer_width, fig.outer_height
+        xfactor, yfactor = sx/w, sy/h
+        xs, ys = {}, {}
+        for values, factor, ranges, ax in ((xs, xfactor, [x_range]+extra_x, 0), (ys, yfactor, [y_range]+extra_y, 1)):
+            for rng in ranges:
+                span = (rng.end-rng.start) * factor
+                values[rng.name] = rng.end - span if ax else rng.start + span
+
+        return {'xs': xs, 'ys': ys}
 
 
 class SingleTapCallback(TapCallback):
@@ -1585,5 +1615,6 @@ Stream._callbacks['bokeh'].update({
     FreehandDraw: FreehandDrawCallback,
     PolyDraw    : PolyDrawCallback,
     PolyEdit    : PolyEditCallback,
-    SelectMode  : SelectModeCallback
+    SelectMode  : SelectModeCallback,
+    MultiAxisTap: MultiAxisTapCallback
 })
