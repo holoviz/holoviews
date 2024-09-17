@@ -771,7 +771,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_label = ylabel if pos else xlabel
             if dims:
                 dims = dims[:2][::-1]
-            if len(dims) == 1 and not dim:
+            if dims and len(dims) == 1 and not dim:
                 dim = dims[0]
 
         categorical = any(self.traverse(lambda plot: plot._categorical))
