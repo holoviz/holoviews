@@ -353,10 +353,6 @@ class Callback:
                             for event, dt in self._queue]).values())
         self._queue = []
 
-        if 'events' not in state.cache:
-            state.cache['events'] = []
-        state.cache['events'].extend(events)
-
         # Process event types
         for event in events:
             if self.skip_event(event):
