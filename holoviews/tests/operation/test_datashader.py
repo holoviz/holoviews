@@ -121,6 +121,25 @@ class DatashaderAggregateTests(ComparisonTestCase):
                          vdims=[Dimension('Count', nodata=0)])
         self.assertEqual(img, expected)
 
+    def test_aggregate_points_empty(self):
+        points = Points([])
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, pixel_ratio=1)
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [0, 0]]),
+                         vdims=[Dimension('Count', nodata=0)])
+        self.assertEqual(img, expected)
+
+    def test_aggregate_points_empty_with_pixel_ratio(self):
+        points = Points([])
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, pixel_ratio=2)
+        expected = Image((
+            [0.125, 0.375, 0.625, 0.875],
+            [0.125, 0.375, 0.625, 0.875],
+            [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+        ), vdims=[Dimension('Count', nodata=0)])
+        self.assertEqual(img, expected)
+
     def test_aggregate_points_count_column(self):
         points = Points([(0.2, 0.3, np.nan), (0.4, 0.7, 22), (0, 0.99,np.nan)], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
