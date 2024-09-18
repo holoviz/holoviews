@@ -771,8 +771,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_label = ylabel if pos else xlabel
             if dims:
                 dims = dims[:2][::-1]
-            if dims and len(dims) == 1 and not dim:
-                dim = dims[0]
 
         categorical = any(self.traverse(lambda plot: plot._categorical))
         if self.subcoordinate_y:
@@ -804,20 +802,26 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim_range:
                 self._shared[shared_name] = True
 
+        # If we have a single dimension grab it so it can be set as the Range name
+        if dim:
+            name = dim.name
+        elif len(dims) == 1:
+            name = dims[0].name
+
         if self._shared.get(shared_name) and not dim:
             pass
         elif categorical:
             axis_type = 'auto'
-            dim_range = FactorRange(name=dim.name if dim else None)
+            dim_range = FactorRange(name=name)
         elif None in [v0, v1] or any(
             True if isinstance(el, (str, bytes)+util.cftime_types)
             else not util.isfinite(el) for el in [v0, v1]
         ):
-            dim_range = range_type(name=dim.name if dim else None)
+            dim_range = range_type(name=name)
         elif issubclass(range_type, FactorRange):
-            dim_range = range_type(name=dim.name if dim else None)
+            dim_range = range_type(name=name)
         else:
-            dim_range = range_type(start=v0, end=v1, name=dim.name if dim else None)
+            dim_range = range_type(start=v0, end=v1, name=name)
 
         if not dim_range.tags and specs is not None:
             dim_range.tags.append(specs)
