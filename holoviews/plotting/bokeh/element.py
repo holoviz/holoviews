@@ -805,7 +805,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # If we have a single dimension grab it so it can be set as the Range name
         if dim:
             name = dim.name
-        elif len(dims) == 1:
+        elif dims and len(dims) == 1:
             name = dims[0].name
 
         if self._shared.get(shared_name) and not dim:
