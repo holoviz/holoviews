@@ -116,10 +116,6 @@ class MPLPlot(DimensionedPlot):
         plot object and the displayed object; other plotting handles
         can be accessed via plot.handles.""")
 
-    sublabel_index_offset = param.Number(default=0, doc="""
-        Offset added to the sublabel index. When total index is less than 0,
-        the sublabel is skipped.""")
-
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
@@ -129,6 +125,9 @@ class MPLPlot(DimensionedPlot):
 
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
+
+    sublabel_skip = param.List(default=None, doc="""
+        List of elements to skip when labeling subplots.""")
 
     projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
@@ -211,8 +210,13 @@ class MPLPlot(DimensionedPlot):
 
 
     def _subplot_label(self, axis):
+        if self.sublabel_skip and self.layout_num in self.sublabel_skip:
+            return
         layout_num = self.layout_num if self.subplot else 1
-        sublabel_num = layout_num + self.sublabel_index_offset
+        if self.sublabel_skip:
+            sublabel_num = len(set(range(layout_num)) - set(self.sublabel_skip))
+        else:
+            sublabel_num = layout_num
         if self.sublabel_format and not self.adjoined and sublabel_num > 0:
             from matplotlib.offsetbox import AnchoredText
             labels = {}
@@ -221,7 +225,7 @@ class MPLPlot(DimensionedPlot):
             elif '{alpha}' in self.sublabel_format:
                 labels['alpha'] = int_to_alpha(sublabel_num-1, upper=False)
             elif '{numeric}' in self.sublabel_format:
-                labels['numeric'] = self.layout_num
+                labels['numeric'] = sublabel_num
             elif '{Roman}' in self.sublabel_format:
                 labels['Roman'] = int_to_roman(sublabel_num)
             elif '{roman}' in self.sublabel_format:
