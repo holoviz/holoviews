@@ -1856,9 +1856,9 @@ class inspect(Operation):
                                                y=PointerXY.param.y),
                                   class_=(dict, list))
 
-    x = param.Number(default=0, doc="x-position to inspect.")
+    x = param.Number(default=None, doc="x-position to inspect.")
 
-    y = param.Number(default=0, doc="y-position to inspect.")
+    y = param.Number(default=None, doc="y-position to inspect.")
 
     _dispatch = {}
 
@@ -1909,30 +1909,39 @@ class inspect_base(inspect):
 
     def _process(self, raster, key=None):
         self._validate(raster)
-        if isinstance(raster, RGB):
-            raster = raster[..., raster.vdims[-1]]
-        x_range, y_range = raster.range(0), raster.range(1)
-        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
         x, y = self.p.x, self.p.y
-        val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
-        if np.isnan(val):
-            val = self.p.null_value
+        if x is not None and y is not None:
+            if isinstance(raster, RGB):
+                raster = raster[..., raster.vdims[-1]]
+            x_range, y_range = raster.range(0), raster.range(1)
+            xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
+            arr = raster[
+                x-xdelta:x+xdelta, y-ydelta:y+ydelta
+            ].dimension_values(2, flat=False)
+            if arr.size:
+                val = np.nansum(arr)
+            else:
+                val = np.nan
+            if np.isnan(val):
+                val = self.p.null_value
 
-        if ((self.p.value_bounds and
-             not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
-             or val == self.p.null_value):
-            result = self._empty_df(raster.dataset)
+            if ((self.p.value_bounds and
+                 not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
+                or val == self.p.null_value):
+                result = self._empty_df(raster.dataset)
+            else:
+                masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
+                result = self._sort_by_distance(raster, masked, x, y)
+
+            self.hits = result
         else:
-            masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
-            result = self._sort_by_distance(raster, masked, x, y)
-
-        self.hits = result
+            self.hits = result = self._empty_df(raster.dataset)
         df = self.p.transform(result)
         return self._element(raster, df.iloc[:self.p.max_indicators])
 
     @classmethod
-    def _distance_args(cls, element, x_range, y_range,  pixels):
-        ycount, xcount =  element.interface.shape(element, gridded=True)
+    def _distance_args(cls, element, x_range, y_range, pixels):
+        ycount, xcount = element.interface.shape(element, gridded=True)
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
         return (x_delta*pixels, y_delta*pixels)
@@ -1990,9 +1999,17 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        distances = pd.Series(dx*dx + dy*dy)
+        if dx.dtype.kind in 'Mm':
+            if dx.dtype != dy.dtype and len(dx):
+                dx = dx.astype('int64')
+                dx = (dx - dx.min()) / (dx.max() - dx.min())
+                dy = (dy - dy.min()) / (dy.max() - dy.min())
+            else:
+                dx = dx.astype('int64')
+        if dy.dtype.kind in 'Mm':
+            dy = dx.astype('int64')
+        distances = pd.Series(dx**2 + dy**2)
         return df.iloc[distances.argsort().values]
-
 
 
 class inspect_polygons(inspect_base):
@@ -2026,7 +2043,7 @@ class inspect_polygons(inspect_base):
                 xs.append((np.min(gxs)+np.max(gxs))/2)
                 ys.append((np.min(gys)+np.max(gys))/2)
         dx, dy = np.array(xs) - x, np.array(ys) - y
-        distances = pd.Series(dx*dx + dy*dy)
+        distances = pd.Series(dx**2 + dy**2)
         return df.iloc[distances.argsort().values]
 
 
