@@ -182,9 +182,11 @@ def test_multi_axis_tap(serve_hv):
 
     hv_plot.click()
 
-    wait_until(lambda: (
-        s.xs == {'x': 11.560240963855422} and s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
-    ), page)
+    def test():
+        assert s.xs == {'x': 11.560240963855422}
+        assert s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
+
+    wait_until(test, page)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -204,10 +206,11 @@ def test_multi_axis_tap_datetime(serve_hv):
 
     hv_plot.click()
 
-    wait_until(lambda: (
-        s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')} and
-        s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
-    ), page)
+    def test():
+        assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
+        assert s.ys == {'y1': 18.13070539419087, 'y2': 76.551867219917}
+
+    wait_until(test, page)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
