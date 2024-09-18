@@ -25,7 +25,6 @@ import numpy as np
 import pandas as pd
 import param
 from packaging.version import Version
-from panel.io.cache import _generate_hash
 from pandas.core.arrays.masked import BaseMaskedArray
 from pandas.core.dtypes.dtypes import DatetimeTZDtype
 from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
@@ -383,6 +382,8 @@ def deephash(obj):
     Given an object, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.
     """
+    from panel.io.cache import _generate_hash
+
     try:
         hasher = hashlib.new("md5")
         hasher.update(_generate_hash(obj))
