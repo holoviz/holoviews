@@ -1915,13 +1915,7 @@ class inspect_base(inspect):
                 raster = raster[..., raster.vdims[-1]]
             x_range, y_range = raster.range(0), raster.range(1)
             xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
-            arr = raster[
-                x-xdelta:x+xdelta, y-ydelta:y+ydelta
-            ].dimension_values(2, flat=False)
-            if arr.size:
-                val = np.nansum(arr)
-            else:
-                val = np.nan
+            val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
             if np.isnan(val):
                 val = self.p.null_value
 
