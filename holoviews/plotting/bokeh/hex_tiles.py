@@ -150,16 +150,16 @@ class HexTilesPlot(ColorbarPlot):
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         xdim, ydim = element.kdims[:2]
-        ranges[xdim.name]['data'] = xdim.range
-        ranges[ydim.name]['data'] = ydim.range
+        ranges[xdim.label]['data'] = xdim.range
+        ranges[ydim.label]['data'] = ydim.range
         xd = element.cdims.get(xdim.name)
-        if xd and xdim.name in ranges:
-            ranges[xdim.name]['hard'] = xd.range
-            ranges[xdim.name]['soft'] = max_range([xd.soft_range, ranges[xdim.name]['soft']])
+        if xd and xdim.label in ranges:
+            ranges[xdim.label]['hard'] = xd.range
+            ranges[xdim.label]['soft'] = max_range([xd.soft_range, ranges[xdim.label]['soft']])
         yd = element.cdims.get(ydim.name)
-        if yd and ydim.name in ranges:
-            ranges[ydim.name]['hard'] = yd.range
-            ranges[ydim.name]['hard'] = max_range([yd.soft_range, ranges[ydim.name]['soft']])
+        if yd and ydim.label in ranges:
+            ranges[ydim.label]['hard'] = yd.range
+            ranges[ydim.label]['hard'] = max_range([yd.soft_range, ranges[ydim.label]['soft']])
         return super().get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):

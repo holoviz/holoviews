@@ -1,4 +1,4 @@
-from unittest import skip, skipIf
+from unittest import SkipTest, skip, skipIf
 
 import pandas as pd
 import panel as pn
@@ -703,7 +703,10 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
     __test__ = True
 
     def setUp(self):
-        import holoviews.plotting.plotly # noqa
+        try:
+            import holoviews.plotting.plotly  # noqa: F401
+        except ImportError:
+            raise SkipTest("Plotly required to test plotly backend")
         super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('plotly')

@@ -3,6 +3,11 @@ Unit tests relating to notebook processing
 """
 import os
 
+import pytest
+
+pytest.importorskip("nbconvert")
+pytest.importorskip("IPython")
+
 import nbconvert
 import nbformat
 

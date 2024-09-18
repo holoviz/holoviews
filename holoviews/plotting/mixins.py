@@ -16,8 +16,8 @@ class GeomMixin:
         kdims = element.kdims
         # loop over start and end points of segments
         # simultaneously in each dimension
-        for kdim0, kdim1 in zip([kdims[i].name for i in range(2)],
-                                [kdims[i].name for i in range(2,4)]):
+        for kdim0, kdim1 in zip([kdims[i].label for i in range(2)],
+                                [kdims[i].label for i in range(2,4)]):
             new_range = {}
             for kdim in [kdim0, kdim1]:
                 # for good measure, update ranges for both start and end kdim
@@ -85,10 +85,10 @@ class SpikesMixin:
         opts = self.lookup_options(element, 'plot').options
         if len(element.dimensions()) > 1 and 'spike_length' not in opts:
             ydim = element.get_dimension(1)
-            s0, s1 = ranges[ydim.name]['soft']
+            s0, s1 = ranges[ydim.label]['soft']
             s0 = min(s0, 0) if util.isfinite(s0) else 0
             s1 = max(s1, 0) if util.isfinite(s1) else 0
-            ranges[ydim.name]['soft'] = (s0, s1)
+            ranges[ydim.label]['soft'] = (s0, s1)
         proxy_dim = None
         if 'spike_length' in opts or len(element.dimensions()) == 1:
             proxy_dim = Dimension('proxy_dim')
@@ -118,12 +118,12 @@ class AreaMixin:
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         vdims = element.vdims[:2]
-        vdim = vdims[0].name
+        vdim = vdims[0].label
         if len(vdims) > 1:
             new_range = {}
             for r in ranges[vdim]:
                 if r != 'values':
-                    new_range[r] = util.max_range([ranges[vd.name][r] for vd in vdims])
+                    new_range[r] = util.max_range([ranges[vd.label][r] for vd in vdims])
             ranges[vdim] = new_range
         else:
             s0, s1 = ranges[vdim]['soft']
@@ -153,15 +153,16 @@ class BarsMixin:
             element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
                            vdims=element.vdims)
             for kd in overlay.kdims:
-                ranges[kd.name]['combined'] = overlay.range(kd)
+                ranges[kd.label]['combined'] = overlay.range(kd)
 
-        vdim = element.vdims[0].name
+        vdim = element.vdims[0].label
         s0, s1 = ranges[vdim]['soft']
         s0 = min(s0, 0) if util.isfinite(s0) else 0
         s1 = max(s1, 0) if util.isfinite(s1) else 0
         ranges[vdim]['soft'] = (s0, s1)
+        l, b, r, t = super().get_extents(element, ranges, range_type, ydim=element.vdims[0])
         if range_type not in ('combined', 'data'):
-            return super().get_extents(element, ranges, range_type, ydim=element.vdims[0])
+            return l, b, r, t
 
         # Compute stack heights
         xdim = element.kdims[0]
@@ -173,14 +174,15 @@ class BarsMixin:
         else:
             y0, y1 = ranges[vdim]['combined']
 
+        x0, x1 = (l, r) if util.isnumeric(l) and len(element.kdims) == 1 else ('', '')
         if range_type == 'data':
-            return ('', y0, '', y1)
+            return (x0, y0, x1, y1)
 
         padding = 0 if self.overlaid else self.padding
         _, ypad, _ = get_axis_padding(padding)
         y0, y1 = util.dimension_range(y0, y1, ranges[vdim]['hard'], ranges[vdim]['soft'], ypad, self.logy)
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
-        return ('', y0, '', y1)
+        return (x0, y0, x1, y1)
 
     def _get_coords(self, element, ranges, as_string=True):
         """
@@ -207,15 +209,15 @@ class BarsMixin:
             else:
                 if gdim.values:
                     gvals = gdim.values
-                elif ranges.get(gdim.name, {}).get('factors') is not None:
-                    gvals = ranges[gdim.name]['factors']
+                elif ranges.get(gdim.label, {}).get('factors') is not None:
+                    gvals = ranges[gdim.label]['factors']
                 else:
                     gvals = element.dimension_values(gdim, False)
                 gvals = np.asarray(gvals)
                 if xvals:
                     pass
-                elif ranges.get(xdim.name, {}).get('factors') is not None:
-                    xvals = ranges[xdim.name]['factors']
+                elif ranges.get(xdim.label, {}).get('factors') is not None:
+                    xvals = ranges[xdim.label]['factors']
                 else:
                     xvals = element.dimension_values(0, False)
                 xvals = np.asarray(xvals)
@@ -227,8 +229,8 @@ class BarsMixin:
         else:
             if xvals:
                 pass
-            elif ranges.get(xdim.name, {}).get('factors') is not None:
-                xvals = ranges[xdim.name]['factors']
+            elif ranges.get(xdim.label, {}).get('factors') is not None:
+                xvals = ranges[xdim.label]['factors']
             else:
                 xvals = element.dimension_values(0, False)
             xvals = np.asarray(xvals)

@@ -4,7 +4,6 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
-import sys
 import weakref
 from collections import defaultdict
 from contextlib import contextmanager
@@ -16,7 +15,6 @@ from types import FunctionType
 import numpy as np
 import pandas as pd
 import param
-from packaging.version import Version
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
@@ -49,12 +47,7 @@ def streams_list_from_dict(streams):
     "Converts a streams dictionary into a streams list"
     params = {}
     for k, v in streams.items():
-        if 'panel' in sys.modules:
-            if util.param_version > util.Version('2.0.0rc1'):
-                v = param.parameterized.transform_reference(v)
-            else:
-                from panel.depends import param_value_if_widget
-                v = param_value_if_widget(v)
+        v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
@@ -225,10 +218,7 @@ class Stream(param.Parameterized):
                 rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
-                if util.param_version > util.Version('2.0.0rc1'):
-                    deps = param.parameterized.resolve_ref(s)
-                else:
-                    deps = None
+                deps = param.parameterized.resolve_ref(s)
                 if deps:
                     s = Params(parameters=deps)
                 else:
@@ -240,12 +230,13 @@ class Stream(param.Parameterized):
                 if overlap:
                     pname = type(s.parameterized).__name__
                     param.main.param.warning(
-                        'The {} parameter(s) on the {} object have '
+                        f'The {sorted([p.name for p in overlap])} parameter(s) '
+                        f'on the {pname} object have '
                         'already been supplied in another stream. '
                         'Ensure that the supplied streams only specify '
                         'each parameter once, otherwise multiple '
-                        'events will be triggered when the parameter '
-                        'changes.'.format(sorted([p.name for p in overlap]), pname))
+                        'events will be triggered when the parameter changes.'
+                    )
                 parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
@@ -360,8 +351,8 @@ class Stream(param.Parameterized):
             if k not in param_names:
                 raise KeyError(f'Cannot rename {k!r} as it is not a stream parameter')
             if k != v and v in param_names:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
 
@@ -688,16 +679,13 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, doc="""
-        Parameterized instance to watch for parameter changes.""", **util.disallow_refs)
+                                        constant=True, allow_None=True, allow_refs=False, doc="""
+        Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List(default=[], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-        if util.param_version < Version('1.8.0') and watch:
-            raise RuntimeError('Params stream requires param version >= 1.8.0, '
-                               'to support watching parameters.')
         if parameters is None:
             parameters = [parameterized.param[p] for p in parameterized.param if p != 'name']
         else:
@@ -767,8 +755,8 @@ class Params(Stream):
             if n not in pnames:
                 raise KeyError(f'Cannot rename {n!r} as it is not a stream parameter')
             if n != v and v in pnames:
-                raise KeyError('Cannot rename to %r as it clashes with a '
-                               'stream parameter of the same name' % v)
+                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
+                               'stream parameter of the same name')
         return mapping
 
     def _watcher(self, *events):
@@ -842,8 +830,7 @@ class ParamMethod(Params):
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
             raise ValueError('ParamMethod stream expects a method on a '
-                             'parameterized class, found %s.'
-                             % type(parameterized).__name__)
+                             f'parameterized class, found {type(parameterized).__name__}.')
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
@@ -1273,8 +1260,9 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, **params):
+    def __init__(self, linked=True, popup=None, **params):
         super().__init__(linked=linked, **params)
+        self.popup = popup
 
 
 class PointerX(LinkedStream):
@@ -1906,3 +1894,12 @@ class PolyEdit(PolyDraw):
             vertex_style = {}
         self.shared = shared
         super().__init__(vertex_style=vertex_style, **params)
+
+
+def _streams_transform(obj):
+    if isinstance(obj, Pipe):
+        return obj.param.data
+    return obj
+
+
+param.reactive.register_reference_transform(_streams_transform)

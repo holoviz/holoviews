@@ -120,8 +120,7 @@ class annotate(param.ParameterizedFunction):
             elif isinstance(annotator, (HoloMap, ViewableElement)):
                 layers.append(annotator)
             else:
-                raise ValueError("Cannot compose %s type with annotators." %
-                                 type(annotator).__name__)
+                raise ValueError(f"Cannot compose {type(annotator).__name__} type with annotators.")
         tables = Overlay(tables, group='Annotator')
         return (Overlay(layers).collate() + tables)
 
@@ -130,11 +129,11 @@ class annotate(param.ParameterizedFunction):
 
         layers = []
         annotator_type = None
-        for element in overlay:
+        for el in overlay:
             matches = []
             for eltype, atype in self._annotator_types.items():
-                if isinstance(element, eltype):
-                    matches.append((getmro(type(element)).index(eltype), atype))
+                if isinstance(el, eltype):
+                    matches.append((getmro(type(el)).index(eltype), atype))
             if matches:
                 if annotator_type is not None:
                     msg = ('An annotate call may only annotate a single element. '
@@ -143,17 +142,17 @@ class annotate(param.ParameterizedFunction):
                            'method to combine them into a single layout.')
                     raise ValueError(msg)
                 annotator_type = sorted(matches)[0][1]
-                self.annotator = annotator_type(element, **params)
+                self.annotator = annotator_type(el, **params)
                 tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
                 layout = (self.annotator.plot + tables)
                 layers.append(layout)
             else:
-                layers.append(element)
+                layers.append(el)
 
         if annotator_type is None:
             obj = overlay if isinstance(overlay, Overlay) else element
             raise ValueError('Could not find an Element to annotate on'
-                             '%s object.' % type(obj).__name__)
+                             f'{type(obj).__name__} object.')
 
         if len(layers) == 1:
             return layers[0]
@@ -386,7 +385,7 @@ class PathAnnotator(Annotator):
         if validate and len({len(v) for v in poly_data.values()}) != 1:
             raise ValueError('annotations must refer to value dimensions '
                              'which vary per path while at least one of '
-                             '%s varies by vertex.' % validate)
+                             f'{validate} varies by vertex.')
 
         # Add options to element
         tools = [tool() for tool in self._tools]

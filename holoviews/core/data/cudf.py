@@ -4,6 +4,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import dimension_name
@@ -108,9 +109,9 @@ class cuDFInterface(PandasInterface):
             d = dimension_name(d)
             if len([c for c in columns if c == d]) > 1:
                 raise DataError('Dimensions may not reference duplicated DataFrame '
-                                'columns (found duplicate %r columns). If you want to plot '
+                                f'columns (found duplicate {d!r} columns). If you want to plot '
                                 'a column against itself simply declare two dimensions '
-                                'with the same name. '% d, cls)
+                                'with the same name.', cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -241,7 +242,11 @@ class cuDFInterface(PandasInterface):
         select_mask_neighbor = [False, True,  True, True, True,  False]
 
         """
-        raise NotImplementedError
+        mask = cls.select_mask(dataset, selection).to_cupy()
+        extra = (mask[1:] ^ mask[:-1])
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -281,7 +286,11 @@ class cuDFInterface(PandasInterface):
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
-            df = getattr(grouped, agg)().reset_index()
+            numeric_cols = [
+                c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                if is_numeric_dtype(d) and c not in cols
+            ]
+            df = getattr(grouped[numeric_cols], agg)().reset_index()
         else:
             agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
             agg = agg_map.get(agg, agg)

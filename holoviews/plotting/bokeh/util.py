@@ -39,12 +39,14 @@ from bokeh.models import (
 )
 from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
+from bokeh.models.tickers import BasicTicker, FixedTicker, Ticker
 from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
 from bokeh.themes import built_in_themes
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
+from ...core import util
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
 from ...core.overlay import NdOverlay, Overlay
@@ -60,10 +62,11 @@ from ...core.util import (
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
-bokeh_version = Version(bokeh.__version__)
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 bokeh32 = bokeh_version >= Version("3.2")
 bokeh33 = bokeh_version >= Version("3.3")
 bokeh34 = bokeh_version >= Version("3.4")
+bokeh35 = bokeh_version >= Version("3.5")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -298,11 +301,11 @@ def compute_layout_properties(
                 aspect = None
                 if logger:
                     logger.warning(
-                        "%s value was ignored because absolute width and "
+                        f"{aspect_type} value was ignored because absolute width and "
                         "height values were provided. Either supply "
                         "explicit frame_width and frame_height to achieve "
                         "desired aspect OR supply a combination of width "
-                        "or height and an aspect value." % aspect_type)
+                        "or height and an aspect value.")
         elif fixed_width and responsive:
             height = None
             responsive = False
@@ -384,7 +387,7 @@ def compute_layout_properties(
     return aspect_info, dimension_info
 
 
-def merge_tools(plot_grid, disambiguation_properties=None):
+def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False):
     """
     Merges tools defined on a grid of plots into a single toolbar.
     All tools of the same type are merged unless they define one
@@ -397,6 +400,8 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     tools.extend(p.toolbar.tools)
+            if hide_toolbar and hasattr(item, 'toolbar_location'):
+                item.toolbar_location = None
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
 
@@ -415,7 +420,7 @@ def merge_tools(plot_grid, disambiguation_properties=None):
             if p not in disambiguation_properties:
                 ignore.add(p)
 
-    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore) if merge_tools else tools)
+    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore)) if tools else Toolbar()
 
 
 def sync_legends(bokeh_layout):
@@ -852,6 +857,29 @@ def update_shared_sources(f):
     return wrapper
 
 
+def hold_render(f):
+    """
+    Decorator that will hold render on a Bokeh ElementPlot until after
+    the method has been called.
+    """
+    def wrapper(self, *args, **kwargs):
+        hold = self.state.hold_render
+        doc = self.state.document
+        self.state.hold_render = True
+        if doc:
+            with doc.models.freeze():
+                try:
+                    return f(self, *args, **kwargs)
+                finally:
+                    self.state.hold_render = hold
+        else:
+            try:
+                return f(self, *args, **kwargs)
+            finally:
+                self.state.hold_render = hold
+    return wrapper
+
+
 def categorize_array(array, dim):
     """
     Uses a Dimension instance to convert an array of values to categorical
@@ -1165,3 +1193,30 @@ def dtype_fix_hook(plot, element):
                 for k, v in data.items():
                     if hasattr(v, "dtype") and v.dtype.kind == "U":
                         data[k] = v.tolist()
+
+
+def get_ticker_axis_props(ticker):
+    axis_props = {}
+    if isinstance(ticker, np.ndarray):
+        ticker = list(ticker)
+    if isinstance(ticker, Ticker):
+        axis_props['ticker'] = ticker
+    elif isinstance(ticker, int):
+        axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
+    elif isinstance(ticker, (tuple, list)):
+        if all(isinstance(t, tuple) for t in ticker):
+            ticks, labels = zip(*ticker)
+            # Ensure floats which are integers are serialized as ints
+            # because in JS the lookup fails otherwise
+            ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
+                        for t in ticks]
+            labels = [l if isinstance(l, str) else str(l)
+                        for l in labels]
+        else:
+            ticks, labels = ticker, None
+        if ticks and util.isdatetime(ticks[0]):
+            ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
+        axis_props['ticker'] = FixedTicker(ticks=ticks)
+        if labels is not None:
+            axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+    return axis_props

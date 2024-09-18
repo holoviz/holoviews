@@ -236,7 +236,7 @@ def options_policy(skip_invalid, warn_on_skip):
         (Options.skip_invalid, Options.warn_on_skip) = settings
 
 
-class Keywords(param.Parameterized):
+class Keywords:
     """
     A keywords objects represents a set of Python keywords. It is
     list-like and ordered but it is also a set without duplicates. When
@@ -250,20 +250,15 @@ class Keywords(param.Parameterized):
     namespace.
     """
 
-    values = param.List(doc="Set of keywords as a sorted list.")
-
-    target = param.String(allow_None=True, doc="""
-       Optional string description of what the keywords apply to.""")
-
     def __init__(self, values=None, target=None):
-
         if values is None:
             values = []
-        strings = [isinstance(v, str) for v in values]
-        if False in strings:
+        if any(not isinstance(v, str) for v in values):
             raise ValueError(f'All keywords must be strings: {values}')
-        super().__init__(values=sorted(values),
-                                              target=target)
+        self.values = sorted(values)
+        if target is not None and not isinstance(target, str):
+            raise ValueError("Keywords target must be a string type.")
+        self.target = target
 
     def __add__(self, other):
         if (self.target and other.target) and (self.target != other.target):
@@ -1253,7 +1248,7 @@ class Store:
         parameterized_class = (isinstance(obj,type)
                                and  issubclass(obj,param.Parameterized))
         info = None
-        if parameterized_object or parameterized_class:
+        if InfoPrinter.store and (parameterized_object or parameterized_class):
             info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
                                     visualization=visualization,
                                     pattern=pattern, elements=elements)
@@ -1294,7 +1289,7 @@ class Store:
         elif len(ids) != 1:
             idlist = ",".join([str(el) for el in sorted(ids)])
             raise Exception("Object contains elements combined across "
-                            "multiple custom trees (ids %s)" % idlist)
+                            f"multiple custom trees (ids {idlist})")
         return cls._custom_options[backend][next(iter(ids))]
 
     @classmethod
@@ -1418,9 +1413,9 @@ class Store:
         class_hierarchy = inspect.getmro(type(obj))
         hooks = []
         for _, type_hooks in cls._display_hooks.items():
-            for cls in class_hierarchy:
-                if cls in type_hooks:
-                    hooks.append(type_hooks[cls])
+            for subcls in class_hierarchy:
+                if subcls in type_hooks:
+                    hooks.append(type_hooks[subcls])
                     break
 
         data, metadata = {}, {}
@@ -1600,9 +1595,9 @@ class StoreOptions:
                 error_info[error_key+(backend,)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
-        for ((keyword, target, group_name), backends) in backend_errors.items():
+        for ((keyword, target, group_name), backend_error) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
-            if set(backends) == set(loaded_backends):
+            if set(backend_error) == set(loaded_backends):
                 key = (keyword, target, group_name, Store.current_backend)
                 raise OptionError(keyword,
                                   group_name=group_name,

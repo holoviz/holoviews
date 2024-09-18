@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 import param
-from packaging.version import Version
 
 from ..core import Element, Operation
 from ..core.data import PandasInterface
-from ..core.util import _PANDAS_FUNC_LOOKUP, pandas_version
+from ..core.util import _PANDAS_FUNC_LOOKUP
 from ..element import Scatter
 
 
@@ -51,8 +50,7 @@ class rolling(Operation,RollingBase):
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
                                         **self._roll_kwargs())
         if self.p.window_type is None:
-            kwargs = {'raw': True} if pandas_version >= Version('0.23.0') else {}
-            rolled = df.apply(self.p.function, **kwargs)
+            rolled = df.apply(self.p.function, raw=True)
         elif self.p.function is np.mean:
             rolled = df.mean()
         elif self.p.function is np.sum:

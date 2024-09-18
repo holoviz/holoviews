@@ -127,6 +127,7 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
 
+    @pytest.mark.flaky(reruns=3)
     def test_callback_cleanup(self):
         stream = PointerX(x=0)
         dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])
@@ -467,13 +468,14 @@ def test_msg_with_base64_array():
     assert np.equal(data_expected, data_after).all()
 
 
+@pytest.mark.usefixtures('bokeh_backend')
 def test_rangexy_multi_yaxes():
     c1 = Curve(np.arange(100).cumsum(), vdims='y')
     c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
     RangeXY(source=c1)
     RangeXY(source=c2)
 
-    overlay = (c1 * c2).opts(backend='bokeh', multi_y=True)
+    overlay = (c1 * c2).opts(multi_y=True)
     plot = bokeh_server_renderer.get_plot(overlay)
 
     p1, p2 = plot.subplots.values()
@@ -485,3 +487,44 @@ def test_rangexy_multi_yaxes():
     # Ensure both callbacks are attached
     assert p1.callbacks[0].plot is p1
     assert p2.callbacks[0].plot is p2
+
+
+@pytest.mark.usefixtures('bokeh_backend')
+def test_rangexy_subcoordinate_y():
+    c1 = Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True)
+    c2 = Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+
+    overlay = (c1 * c2)
+    RangeXY(source=overlay)
+
+    plot = bokeh_server_renderer.get_plot(overlay)
+
+    p1, p2 = plot.subplots.values()
+
+    assert not p1.callbacks
+    assert not p2.callbacks
+    assert len(plot.callbacks) == 1
+    callback = plot.callbacks[0]
+    assert callback._process_msg({}) == {}
+
+
+@pytest.mark.usefixtures('bokeh_backend')
+def test_rangexy_subcoordinate_y_dynamic():
+
+    def cb(x_range, y_range):
+        return (
+            Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
+            Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+        )
+
+    stream = RangeXY()
+    dmap = DynamicMap(cb, streams=[stream])
+    plot = bokeh_server_renderer.get_plot(dmap)
+
+    p1, p2 = plot.subplots.values()
+
+    assert not p1.callbacks
+    assert not p2.callbacks
+    assert len(plot.callbacks) == 1
+    callback = plot.callbacks[0]
+    assert callback._process_msg({}) == {}

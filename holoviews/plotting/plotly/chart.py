@@ -198,8 +198,7 @@ class BarPlot(BarsMixin, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-
-    style_opts = ['visible']
+    style_opts = ['visible', 'color']
 
     selection_display = PlotlyOverlaySelectionDisplay()
 
@@ -231,8 +230,8 @@ class BarPlot(BarsMixin, ElementPlot):
             stack_dim = element.get_dimension(1)
             if stack_dim.values:
                 svals = stack_dim.values
-            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
-                svals = ranges[stack_dim]['factors']
+            elif stack_dim in ranges and ranges[stack_dim.label].get('factors'):
+                svals = ranges[stack_dim.label]['factors']
             else:
                 svals = element.dimension_values(1, False)
         else:
@@ -255,7 +254,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 values.append(sel.iloc[0, 1] if len(sel) else 0)
             bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in xvals],
+                x: xvals,
                 y: np.nan_to_num(values)})
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
@@ -270,7 +269,7 @@ class BarPlot(BarsMixin, ElementPlot):
                     values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in xvals],
+                    x: xvals,
                     y: np.nan_to_num(values)})
         else:
             values = element.dimension_values(vdim)
@@ -279,7 +278,14 @@ class BarPlot(BarsMixin, ElementPlot):
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
                 y: np.nan_to_num(values)})
+
         return bars
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        if 'color' in style:
+            style['marker_color'] = style.pop('color')
+        opts = super().graph_options(element, ranges, style, **kwargs)
+        return opts
 
     def init_layout(self, key, element, ranges, **kwargs):
         layout = super().init_layout(key, element, ranges)

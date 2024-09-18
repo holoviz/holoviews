@@ -1,5 +1,7 @@
+import os
 import platform
 import sys
+from importlib.util import find_spec
 
 import bokeh
 import pandas as pd
@@ -17,6 +19,8 @@ PD2 = Version(pd.__version__) >= Version("2.0")
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
     "user_guide/Plotting_with_Bokeh.ipynb",
+    # Streaming data use streamz which is no longer maintained
+    "user_guide/16-Streaming_Data.ipynb",
     # Possible timeout error
     "user_guide/17-Dashboards.ipynb",
     # Give file not found
@@ -34,12 +38,6 @@ if PD2 and system == "Windows":
     ]
 
 
-# 2023-10-25, flaky on CI with timeout
-if system == "Darwin":
-    collect_ignore_glob += [
-        "user_guide/16-Streaming_Data.ipynb",
-    ]
-
 # 2024-01-15: See https://github.com/holoviz/holoviews/issues/6069
 if system == "Windows":
     collect_ignore_glob += [
@@ -53,6 +51,28 @@ if Version(bokeh.__version__) < Version("3.2.0"):
         "reference/elements/bokeh/HSpans.ipynb",
         "reference/elements/bokeh/VLines.ipynb",
         "reference/elements/bokeh/VSpans.ipynb",
+    ]
+
+# 2024-03-27: ffmpeg errors on Windows CI
+if system == "Windows" and os.environ.get("GITHUB_RUN_ID"):
+    collect_ignore_glob += [
+        "user_guide/Plotting_with_Matplotlib.ipynb",
+    ]
+
+# 2024-05: Numpy 2.0
+if find_spec("datashader") is None:
+    collect_ignore_glob += [
+        "reference/elements/matplotlib/ImageStack.ipynb",
+        "reference/elements/plotly/ImageStack.ipynb",
+        "user_guide/15-Large_Data.ipynb",
+        "user_guide/16-Streaming_Data.ipynb",
+        "user_guide/Linked_Brushing.ipynb",
+        "user_guide/Network_Graphs.ipynb",
+    ]
+
+if find_spec("scikit-image") is None:
+    collect_ignore_glob += [
+        "user_guide/Network_Graphs.ipynb",
     ]
 
 

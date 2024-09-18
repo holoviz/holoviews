@@ -1,5 +1,4 @@
 import operator
-import sys
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -171,18 +170,7 @@ def categorize(values, categories, default=None):
     return result
 
 
-if hasattr(np, 'isin'):
-    isin = _maybe_map(np.isin)
-else:
-    # for 1.4 <= numpy < 1.13; in1d() available since 1.4
-    def _isin(element, test_elements, assume_unique=False, invert=False):
-        # from 1.13's numpy.lib.arraysetops
-        element = np.asarray(element)
-        return np.in1d(element, test_elements, assume_unique=assume_unique,
-                invert=invert).reshape(element.shape)
-    isin = _maybe_map(_isin)
-    del _isin
-
+isin = _maybe_map(np.isin)
 digitize = _maybe_map(np.digitize)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
@@ -274,7 +262,7 @@ class dim:
             if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
-                                 'found %s type' % type(fn))
+                                 f'found {type(fn)} type')
             self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
 
@@ -292,10 +280,10 @@ class dim:
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot call method on %r expression. "
+            raise ValueError(f"Cannot call method on {self!r} expression. "
                              "Only methods accessed via namespaces, "
                              "e.g. dim(...).df or dim(...).xr), "
-                             "can be called. " % self)
+                             "can be called.")
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
@@ -360,11 +348,7 @@ class dim:
 
     @property
     def params(self):
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-        else:
-            Widget = None
-
+        from panel.widgets.base import Widget
         params = {}
         for op in self.ops:
             op_args = list(op['args'])+list(op['kwargs'].values())
@@ -373,18 +357,17 @@ class dim:
                 op_args += [op['fn'].index]
             op_args = flatten(op_args)
             for op_arg in op_args:
-                if Widget and isinstance(op_arg, Widget):
+                if isinstance(op_arg, Widget):
                     op_arg = op_arg.param.value
                 if isinstance(op_arg, dim):
                     params.update(op_arg.params)
                 elif isinstance(op_arg, slice):
                     (start, stop, step) = (op_arg.start, op_arg.stop, op_arg.step)
-
-                    if Widget and isinstance(start, Widget):
+                    if isinstance(start, Widget):
                         start = start.param.value
-                    if Widget and isinstance(stop, Widget):
+                    if isinstance(stop, Widget):
                         stop = stop.param.value
-                    if Widget and isinstance(step, Widget):
+                    if isinstance(step, Widget):
                         step = step.param.value
 
                     if isinstance(start, param.Parameter):
@@ -795,7 +778,7 @@ class dim:
             prev_accessor = accessor
             accessor = kwargs.pop('accessor', None)
             kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
+            kwargs = ', '.join(['{}={!r}'.format(*item) for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:

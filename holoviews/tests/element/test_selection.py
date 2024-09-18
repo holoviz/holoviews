@@ -31,6 +31,8 @@ from holoviews.element import (
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.selection import spatial_select_columnar
 
+from ..utils import dask_switcher
+
 try:
     import datashader as ds
 except ImportError:
@@ -658,9 +660,10 @@ class TestSpatialSelectColumnar:
         }, dtype=float)
 
 
-    @pytest.fixture(scope="function")
-    def dask_df(self, pandas_df):
-        return dd.from_pandas(pandas_df, npartitions=2)
+    @pytest.fixture(scope="function", params=[pytest.param(True, id='dask-classic'), pytest.param(False, id='dask-expr')])
+    def dask_df(self, pandas_df, request):
+        with dask_switcher(query=request.param):
+            return dd.from_pandas(pandas_df, npartitions=2)
 
     @pytest.fixture(scope="function")
     def _method(self):
@@ -682,6 +685,24 @@ class TestSpatialSelectColumnar:
             mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, _method)
             assert np.array_equal(mask, pt_mask)
 
+        @pytest.mark.gpu
+        def test_cudf(self, geometry, pt_mask, pandas_df, _method, unimport):
+            import cudf
+            import cupy as cp
+            unimport('cuspatial')
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
+
+        @pytest.mark.gpu
+        def test_cuspatial(self, geometry, pt_mask, pandas_df, _method):
+            import cudf
+            import cupy as cp
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
 
     @pytest.mark.parametrize("geometry", [geometry_encl, geometry_noencl])
     class TestSpatialSelectColumnarDaskMeta:

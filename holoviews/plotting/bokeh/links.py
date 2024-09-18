@@ -2,6 +2,7 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
+from ...core.spaces import HoloMap
 from ...core.util import isscalar
 from ..links import (
     DataLink,
@@ -12,6 +13,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .util import bokeh34, bokeh35
 
 
 class LinkCallback:
@@ -93,31 +95,45 @@ class LinkCallback:
                     # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
-                potentials = [cls.find_link(p, link) for p in plots]
+                potentials = [cls.find_link(p, link, target=True) for p in plots]
                 tgt_links = [p for p in potentials if p is not None]
                 if tgt_links:
                     found.append((link, plot, tgt_links[0][0]))
         return found
 
     @classmethod
-    def find_link(cls, plot, link=None):
+    def find_link(cls, plot, link=None, target=False):
         """
-        Searches a GenericElementPlot for a Link.
+        Searches a plot for any Links declared on the sources of the plot.
+
+        Args:
+            plot: The plot to search for Links
+            link: A Link instance to check for matches
+            target: Whether to check against the Link.target
+
+        Returns:
+            A tuple containing the matched plot and list of matching Links.
         """
-        registry = Link.registry.items()
+        attr = 'target' if target else 'source'
+        if link is None:
+            candidates = list(Link.registry.items())
+        else:
+            candidates = [(getattr(link, attr), [link])]
         for source in plot.link_sources:
-            if link is None:
-                links = [
-                    l for src, links in registry for l in links
-                    if src is source or (src._plot_id is not None and
-                                         src._plot_id == source._plot_id)]
+            for link_src, src_links in candidates:
+                if not plot._sources_match(link_src, source):
+                    continue
+                links = []
+                for src_link in src_links:
+                    # Skip if Link.target is an overlay but the plot isn't
+                    # or if the target is an element but the plot isn't
+                    src = getattr(src_link, attr)
+                    src_el = src.last if isinstance(src, HoloMap) else src
+                    if not plot._matching_plot_type(src_el):
+                        continue
+                    links.append(src_link)
                 if links:
                     return (plot, links)
-            elif ((link.target is source) or
-                (link.target is not None and
-                    link.target._plot_id is not None and
-                    link.target._plot_id == source._plot_id)):
-                return (plot, [link])
 
     def validate(self):
         """
@@ -140,23 +156,68 @@ class RangeToolLinkCallback(LinkCallback):
             if axis not in link.axes:
                 continue
 
-            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
-            bounds = getattr(link, f'bounds{axis}', None)
-            if bounds is None:
-                continue
+            range_name = f'{axis}_range'
+            if f'subcoordinate_{axis}_range' in target_plot.handles:
+                target_range_name = f'subcoordinate_{range_name}'
+            else:
+                target_range_name = range_name
+            axes[range_name] = ax = target_plot.handles[target_range_name]
+            interval = getattr(link, f'intervals{axis}', None)
+            if interval is not None and bokeh34:
+                min, max = interval
+                if min is not None:
+                    ax.min_interval = min
+                if max is not None:
+                    ax.max_interval = max
+                    self._set_range_for_interval(ax, max)
 
-            start, end = bounds
-            if start is not None:
-                axes[f'{axis}_range'].start = start
-                axes[f'{axis}_range'].reset_start = start
-            if end is not None:
-                axes[f'{axis}_range'].end = end
-                axes[f'{axis}_range'].reset_end = end
+            bounds = getattr(link, f'bounds{axis}', None)
+            if bounds is not None:
+                start, end = bounds
+                if start is not None:
+                    ax.start = start
+                    ax.reset_start = start
+                if end is not None:
+                    ax.end = end
+                    ax.reset_end = end
 
         tool = RangeTool(**axes)
+
+        if bokeh35:
+            use_handles = getattr(link, 'use_handles', True)
+            start_gesture = getattr(link, 'start_gesture', 'tap')
+            inverted = getattr(link, 'inverted', True)
+
+            tool.overlay.use_handles = use_handles
+            tool.start_gesture = start_gesture
+            tool.overlay.inverted = inverted
+
+            if use_handles:
+                tool.overlay.handles.all.hover_fill_color = "grey"
+                tool.overlay.handles.all.hover_fill_alpha = 0.25
+                tool.overlay.handles.all.hover_line_alpha = 0
+                tool.overlay.handles.all.fill_alpha = 0.1
+                tool.overlay.handles.all.line_alpha = 0.25
+
         source_plot.state.add_tools(tool)
         if toolbars:
             toolbars[0].tools.append(tool)
+
+    def _set_range_for_interval(self, axis, max):
+        # Changes the existing Range1d axis range to be in the interval
+        for n in ("", "reset_"):
+            start = getattr(axis, f"{n}start")
+            try:
+                end = start + max
+            except Exception as e:
+                # Handle combinations of datetime axis and timedelta interval
+                # Likely a better way to do this
+                try:
+                    import pandas as pd
+                    end = (pd.array([start]) + pd.array([max]))[0]
+                except Exception:
+                    raise e from None
+            setattr(axis, f"{n}end", end)
 
 
 class DataLinkCallback(LinkCallback):
@@ -189,8 +250,8 @@ class DataLinkCallback(LinkCallback):
                     (v.dtype.kind not in 'iufc' and (v==col).all()) or
                     np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
                 raise ValueError('DataLink can only be applied if overlapping '
-                                 'dimension values are equal, %s column on source '
-                                 'does not match target' % k)
+                                 f'dimension values are equal, {k} column on source '
+                                 'does not match target')
 
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')

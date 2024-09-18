@@ -408,6 +408,34 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
+    def test_image_stack_dict_cmap(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        img_stack.opts(cmap={"c": "yellow", "a": "red", "b": "green"})
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
+        assert plot.handles["color_mapper"].palette == ["green", "red", "yellow"]
+
+    def test_image_stack_dict_cmap_missing(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        with pytest.raises(ValueError, match="must have the same value dimensions"):
+            img_stack.opts(cmap={"c": "yellow", "a": "red"})
+            bokeh_renderer.get_plot(img_stack)
+
 
 class TestImageStackEven(_ImageStackBase):
     __test__ = True

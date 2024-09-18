@@ -65,30 +65,30 @@ def collate(obj):
         nested_type = next(type(o).__name__ for o in obj
                        if isinstance(o, (HoloMap, GridSpace, AdjointLayout)))
         display_warning.param.warning(
-            "Nesting %ss within an Overlay makes it difficult to "
+            f"Nesting {nested_type}s within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
             "calling .collate() on the Overlay in order to follow the "
             "recommended nesting structure shown in the Composing Data "
-            "user guide (http://goo.gl/2YS8LJ)" % nested_type)
+            "user guide (http://goo.gl/2YS8LJ)")
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
         if obj.type in [DynamicMap, HoloMap]:
             obj_name = obj.type.__name__
-            raise Exception("Nesting a %s inside a DynamicMap is not "
+            raise Exception(f"Nesting a {obj_name} inside a DynamicMap is not "
                             "supported. Ensure that the DynamicMap callback "
                             "returns an Element or (Nd)Overlay. If you have "
                             "applied an operation ensure it is not dynamic by "
-                            "setting dynamic=False." % obj_name)
+                            "setting dynamic=False.")
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.param.warning(
-            "Nesting {0}s within a {1} makes it difficult to access "
-            "your data or control how it appears; we recommend "
-            "calling .collate() on the {1} in order to follow the "
-            "recommended nesting structure shown in the Composing "
-            "Data user guide (https://goo.gl/2YS8LJ)".format(
-                obj.type.__name__, type(obj).__name__))
+            f"Nesting {obj.type.__name__}s within a {type(obj).__name__} "
+            "makes it difficult to access your data or control how it appears; "
+            f"we recommend calling .collate() on the {type(obj).__name__} "
+            "in order to follow the recommended nesting structure shown "
+            "in the Composing Data user guide (https://goo.gl/2YS8LJ)"
+        )
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
@@ -346,7 +346,7 @@ def undisplayable_info(obj, html=False):
         return f'{error}\n{remedy}\n{info}'
     else:
         return "<center>{msg}</center>".format(msg=('<br>'.join(
-            ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
+            [f'<b>{error}</b>', remedy, f'<i>{info}</i>'])))
 
 
 def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
@@ -407,10 +407,10 @@ def get_range(element, ranges, dimension):
     an element and a dictionary of ranges.
     """
     if dimension and dimension != 'categorical':
-        if ranges and dimension.name in ranges:
-            drange = ranges[dimension.name]['data']
-            srange = ranges[dimension.name]['soft']
-            hrange = ranges[dimension.name]['hard']
+        if ranges and dimension.label in ranges:
+            drange = ranges[dimension.label]['data']
+            srange = ranges[dimension.label]['soft']
+            hrange = ranges[dimension.label]['hard']
         else:
             drange = element.range(dimension, dimension_range=False)
             srange = dimension.soft_range
@@ -439,8 +439,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
 
-    if dim.name in ranges:
-        main_range = ranges[dim.name]['combined']
+    if dim.label in ranges:
+        main_range = ranges[dim.label]['combined']
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):
@@ -989,8 +989,7 @@ def color_intervals(colors, levels, clip=None, N=255):
     if clip is not None:
         clmin, clmax = clip
         lidx = int(round(N*((clmin-cmin)/interval)))
-        uidx = int(round(N*((cmax-clmax)/interval)))
-        uidx = N-uidx
+        uidx = len(cmap) - int(round(N*((cmax-clmax)/interval)))
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]
@@ -1117,7 +1116,7 @@ def dim_range_key(eldim):
         if dim_name.startswith("dim('") and dim_name.endswith("')"):
             dim_name = dim_name[5:-2]
     else:
-        dim_name = eldim.name
+        dim_name = eldim.label
     return dim_name
 
 

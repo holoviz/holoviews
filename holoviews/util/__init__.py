@@ -128,8 +128,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             raise Exception("Keyword options {} must be one of  {}".format(groups,
                             ','.join(repr(g) for g in groups)))
         elif not all(isinstance(v, dict) for v in kwargs.values()):
-            raise Exception("The %s options must be specified using dictionary groups" %
-                            ','.join(repr(k) for k in kwargs.keys()))
+            options_str = ','.join([repr(k) for k in kwargs.keys()])
+            msg = f"The {options_str} options must be specified using dictionary groups"
+            raise Exception(msg)
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
         targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
@@ -139,9 +140,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             # Not targets specified - add current object as target
             sanitized_group = util.group_sanitizer(obj.group)
             if obj.label:
-                identifier = ('{}.{}.{}'.format(
-                    obj.__class__.__name__, sanitized_group,
-                    util.label_sanitizer(obj.label)))
+                identifier = (f'{obj.__class__.__name__}.{sanitized_group}.{util.label_sanitizer(obj.label)}')
             elif  sanitized_group != obj.__class__.__name__:
                 identifier = f'{obj.__class__.__name__}.{sanitized_group}'
             else:
@@ -283,7 +282,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
-        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
+        expanded = cls._expand_options(merge_options_to_dict(options))
+        expanded = expanded or {}
+        cls._linemagic(expanded, backend=kwargs.get('backend'))
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
@@ -307,7 +308,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         if backend and not used_fallback:
             cls.param.warning("All supplied Options objects already define a backend, "
-                              "backend override %r will be ignored." % backend)
+                              f"backend override {backend!r} will be ignored.")
 
         return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
 
@@ -316,7 +317,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         """
         Validates and expands a dictionaries of options indexed by
         type[.group][.label] keys into separate style, plot, norm and
-        output options.
+        output options. If the backend is not loaded, ``None`` is returned.
 
             opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
@@ -333,15 +334,16 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                              "holoviews.plotting before applying any "
                              "options.")
         elif current_backend not in Store.renderers:
-            raise ValueError("Currently selected plotting extension {ext} "
+            raise ValueError(f"Currently selected plotting extension {current_backend!r} "
                              "has not been loaded, ensure you load it "
-                             "with hv.extension({ext}) before setting "
-                             "options".format(ext=repr(current_backend)))
+                             f"with hv.extension({current_backend!r}) before setting "
+                             "options")
 
         try:
             backend_options = Store.options(backend=backend or current_backend)
-        except KeyError as e:
-            raise Exception(f'The {e} backend is not loaded. Please load the backend using hv.extension.') from None
+        except KeyError:
+            return None
+
         expanded = {}
         if isinstance(options, list):
             options = merge_options_to_dict(options)
@@ -452,8 +454,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
-                allowed_kws = cls._element_keywords(backend,
-                                                    elements=[element])[element]
+                keywords = cls._element_keywords(backend,
+                                                    elements=[element])
+                allowed_kws = keywords.get(element, keys)
                 invalid = keys - set(allowed_kws)
             else:
                 mismatched = {}
@@ -891,8 +894,8 @@ class Dynamic(param.ParameterizedFunction):
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
-    streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
-        List of streams to attach to the returned DynamicMap""", **util.disallow_refs)
+    streams = param.ClassSelector(default=[], class_=(list, dict), allow_refs=False, doc="""
+        List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
         watch = params.pop('watch', True)
@@ -922,14 +925,15 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        from panel.widgets.base import Widget
+
         if isinstance(self.p.streams, dict):
             streams = defaultdict(dict)
             stream_specs, params = [], {}
             for name, p in self.p.streams.items():
                 if not isinstance(p, param.Parameter):
                     raise ValueError("Stream dictionary must map operation keywords "
-                                     "to parameter names. Cannot handle %r type."
-                                     % type(p))
+                                     f"to parameter names. Cannot handle {type(p)!r} type.")
                 if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
                     if p.name != name:
                         streams[p.owner][p.name] = name
@@ -951,8 +955,7 @@ class Dynamic(param.ParameterizedFunction):
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
-                raise ValueError('Streams must be Stream classes or instances, found %s type' %
-                                 type(stream).__name__)
+                raise ValueError(f'Streams must be Stream classes or instances, found {type(stream).__name__} type')
             if isinstance(op, Operation):
                 updates = {k: op.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in op.p}
@@ -964,10 +967,8 @@ class Dynamic(param.ParameterizedFunction):
 
         params = {}
         for k, v in self.p.kwargs.items():
-            if 'panel' in sys.modules:
-                from panel.widgets.base import Widget
-                if isinstance(v, Widget):
-                    v = v.param.value
+            if isinstance(v, Widget):
+                v = v.param.value
             if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = v
         streams += Params.from_params(params)

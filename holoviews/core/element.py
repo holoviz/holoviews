@@ -75,8 +75,7 @@ class Element(ViewableElement, Composable, Overlayable):
         if key == ():
             return self
         else:
-            raise NotImplementedError("%s currently does not support getitem" %
-                                      type(self).__name__)
+            raise NotImplementedError(f"{type(self).__name__} currently does not support getitem")
 
     def __bool__(self):
         """Indicates whether the element is empty.

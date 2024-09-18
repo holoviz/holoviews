@@ -1,8 +1,10 @@
 import gc
+import pickle
 
 from holoviews.core.element import Element
 from holoviews.core.options import Keywords, Options, OptionTree, Store
 from holoviews.core.spaces import HoloMap
+from holoviews.element.chart import Curve
 
 from ..utils import LoggingComparisonTestCase
 
@@ -28,17 +30,6 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         self.register_custom(ExampleElement, 'backend_1', ['plot_custom1'])
         self.register_custom(ExampleElement, 'backend_2', ['plot_custom2'])
         Store.set_current_backend('backend_1')
-
-    def tearDown(self):
-        super().tearDown()
-        Store._weakrefs = {}
-        Store._options.pop('backend_1')
-        Store._options.pop('backend_2')
-        Store._custom_options.pop('backend_1')
-        Store._custom_options.pop('backend_2')
-        Store.set_current_backend(self.current_backend)
-        Store.renderers.pop('backend_1')
-        Store.renderers.pop('backend_2')
 
     @classmethod
     def register_custom(cls, objtype, backend, custom_plot=None, custom_style=None):
@@ -258,3 +249,11 @@ class TestOptionsCleanup(CustomBackendTestCase):
         ExampleElement([]).opts(style_opt1='A').opts.clear()
         custom_options = Store._custom_options['backend_1']
         self.assertEqual(len(custom_options), 0)
+
+class TestGetSetState:
+
+    def test_pickle_roundtrip(self):
+        curve = Curve([0, 1, 2], kdims=["XAXIS"])
+        roundtrip_curve = pickle.loads(pickle.dumps(curve))
+        assert curve.kdims == roundtrip_curve.kdims
+        assert curve.vdims == roundtrip_curve.vdims

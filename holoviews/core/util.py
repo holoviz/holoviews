@@ -1,6 +1,8 @@
 import builtins
 import datetime as dt
+import functools
 import hashlib
+import importlib
 import inspect
 import itertools
 import json
@@ -24,6 +26,9 @@ import pandas as pd
 import param
 from packaging.version import Version
 from panel.io.cache import _generate_hash
+from pandas.core.arrays.masked import BaseMaskedArray
+from pandas.core.dtypes.dtypes import DatetimeTZDtype
+from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
 # Python 2 builtins
 basestring = str
@@ -32,58 +37,23 @@ unicode = str
 cmp = lambda a, b: (a>b)-(a<b)
 
 get_keywords = operator.attrgetter('varkw')
-generator_types = (zip, range, types.GeneratorType)
-numpy_version = Version(np.__version__)
+
+# Versions
+numpy_version = Version(Version(np.__version__).base_version)
 param_version = Version(param.__version__)
-
-datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time)
-timedelta_types = (np.timedelta64, dt.timedelta,)
-arraylike_types = (np.ndarray,)
-masked_types = ()
-
-anonymous_dimension_label = '_'
-
-disallow_refs = {'allow_refs': False} if param_version > Version('2.0.0rc1') else {}
-
-# Argspec was removed in Python 3.11
-ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
-
-_NP_SIZE_LARGE = 1_000_000
-_NP_SAMPLE_SIZE = 1_000_000
-_PANDAS_ROWS_LARGE = 1_000_000
-_PANDAS_SAMPLE_SIZE = 1_000_000
-
 pandas_version = Version(pd.__version__)
-try:
-    if pandas_version >= Version('1.3.0'):
-        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import (
-            ABCIndex as ABCIndexClass,
-            ABCSeries,
-        )
-    elif pandas_version >= Version('0.24.0'):
-        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCIndexClass, ABCSeries
-    elif pandas_version > Version('0.20.0'):
-        from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCIndexClass, ABCSeries
-    else:
-        from pandas.types.dtypes import DatetimeTZDtypeType
-        from pandas.types.dtypes.generic import ABCIndexClass, ABCSeries
-    pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
-    pandas_timedelta_types = (pd.Timedelta,)
-    datetime_types = datetime_types + pandas_datetime_types
-    timedelta_types = timedelta_types + pandas_timedelta_types
-    arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-    if pandas_version > Version('0.23.0'):
-        from pandas.core.dtypes.generic import ABCExtensionArray
-        arraylike_types = arraylike_types + (ABCExtensionArray,)
-    if pandas_version > Version('1.0'):
-        from pandas.core.arrays.masked import BaseMaskedArray
-        masked_types = (BaseMaskedArray,)
-except Exception as e:
-    param.main.param.warning('pandas could not register all extension types '
-                                'imports failed with the following error: %s' % e)
+
+NUMPY_GE_200 = numpy_version >= Version("2")
+PANDAS_GE_210 = pandas_version >= Version("2.1")
+
+# Types
+generator_types = (zip, range, types.GeneratorType)
+pandas_datetime_types = (pd.Timestamp, DatetimeTZDtype, pd.Period)
+pandas_timedelta_types = (pd.Timedelta,)
+datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time, *pandas_datetime_types)
+timedelta_types = (np.timedelta64, dt.timedelta, *pandas_timedelta_types)
+arraylike_types = (np.ndarray, ABCSeries, ABCIndex, ABCExtensionArray)
+masked_types = (BaseMaskedArray,)
 
 try:
     import cftime
@@ -93,6 +63,15 @@ except ImportError:
     cftime_types = ()
 _STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
 
+anonymous_dimension_label = '_'
+
+# Argspec was removed in Python 3.11
+ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
+
+_NP_SIZE_LARGE = 1_000_000
+_NP_SAMPLE_SIZE = 1_000_000
+_PANDAS_ROWS_LARGE = 1_000_000
+_PANDAS_SAMPLE_SIZE = 1_000_000
 
 # To avoid pandas warning about using DataFrameGroupBy.function
 # introduced in Pandas 2.1.
@@ -810,8 +789,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         "Accumulate blocks of hex and separate blocks by underscores"
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception(r"Please use a raw string or escape control code '\%s'"
-                            % invalid[cc])
+            raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:
@@ -893,10 +871,7 @@ def isnat(val):
     """
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
-        if numpy_version >= Version('1.13'):
-            return np.isnat(val)
-        else:
-            return val.view('i8') == nat_as_integer
+        return np.isnat(val)
     elif val is pd.NaT:
         return True
     elif isinstance(val, pandas_datetime_types+pandas_timedelta_types):
@@ -931,19 +906,16 @@ def isfinite(val):
         elif val.dtype.kind in 'US':
             return ~pd.isna(val)
         finite = np.isfinite(val)
-        if pandas_version >= Version('1.0.0'):
-            finite &= ~pd.isna(val)
+        finite &= ~pd.isna(val)
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
     finite = np.isfinite(val)
-    if pandas_version >= Version('1.0.0'):
-        if finite is pd.NA:
-            return False
-        return finite & ~pd.isna(np.asarray(val))
-    return finite
+    if finite is pd.NA:
+        return False
+    return finite & ~pd.isna(np.asarray(val))
 
 
 def isdatetime(value):
@@ -1617,6 +1589,8 @@ def resolve_dependent_value(value):
        A new value where any parameter dependencies have been
        resolved.
     """
+    from panel.widgets import RangeSlider
+
     range_widget = False
     if isinstance(value, list):
         value = [resolve_dependent_value(v) for v in value]
@@ -1633,14 +1607,8 @@ def resolve_dependent_value(value):
             resolve_dependent_value(value.step),
         )
 
-    if 'panel' in sys.modules:
-        from panel.depends import param_value_if_widget
-        from panel.widgets import RangeSlider
-        range_widget = isinstance(value, RangeSlider)
-        if param_version > Version('2.0.0rc1'):
-            value = param.parameterized.resolve_value(value)
-        else:
-            value = param_value_if_widget(value)
+    range_widget = isinstance(value, RangeSlider)
+    value = param.parameterized.resolve_value(value)
 
     if is_param_method(value, has_deps=True):
         value = value()
@@ -2069,7 +2037,9 @@ def is_nan(x):
     Checks whether value is NaN on arbitrary types
     """
     try:
-        return np.isnan(x)
+        # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
+        # Call bool() to raise an error if x is pd.NA, an array, etc.
+        return bool(pd.isna(x))
     except Exception:
         return False
 
@@ -2367,3 +2337,30 @@ def flatten(line):
             yield from flatten(element)
         else:
             yield element
+
+
+def lazy_isinstance(obj, class_or_tuple):
+    """ Lazy isinstance check
+
+    Will only import the module of the object if the module of the
+    obj matches the first value of an item in class_or_tuple.
+
+    lazy_isinstance(obj, 'dask.dataframe:DataFrame')
+
+    Will:
+        1) check if the first module is dask
+        2) If it dask, import dask.dataframe
+        3) Do an isinstance check for dask.dataframe.DataFrame
+    """
+    if isinstance(class_or_tuple, str):
+        class_or_tuple = (class_or_tuple,)
+
+    obj_mod_name = obj.__module__.split('.')[0]
+    for cls in class_or_tuple:
+        mod_name, _, attr_name = cls.partition(':')
+        if not obj_mod_name.startswith(mod_name.split(".")[0]):
+            continue
+        mod = importlib.import_module(mod_name)
+        if isinstance(obj, functools.reduce(getattr, attr_name.split('.'), mod)):
+            return True
+    return False

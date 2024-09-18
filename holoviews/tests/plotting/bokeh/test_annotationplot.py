@@ -17,7 +17,7 @@ from holoviews.element import (
     VSpan,
     VSpans,
 )
-from holoviews.plotting.bokeh.util import bokeh32, bokeh33
+from holoviews.plotting.bokeh.util import bokeh32, bokeh33, bokeh34
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -29,7 +29,9 @@ if bokeh32:
         VStrip as BkVStrip,
     )
 
-if bokeh33:
+if bokeh34:
+    from bokeh.models import Node
+elif bokeh33:
     from bokeh.models.coordinates import Node
 
 
@@ -619,3 +621,15 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot_el.handles["x_range"].end == plot_dmap.handles["x_range"].end
         assert plot_el.handles["y_range"].start == plot_dmap.handles["y_range"].start
         assert plot_el.handles["y_range"].end == plot_dmap.handles["y_range"].end
+
+    def test_hspans_no_upper_range(self):
+        # Test for: https://github.com/holoviz/holoviews/issues/6289
+
+        dim = hv.Dimension("p", label="prob", range=(0, None))
+        fig = hv.Curve(
+            [(0, 0.6), (1, 0.3), (2, 0.4), (3, 0.45)], kdims="x", vdims=dim
+        )
+        spans = hv.HSpans([(0, 0.2), (0.4, 0.6)], kdims=["x", dim])
+        plot_el = bokeh_renderer.get_plot(spans * fig)
+        assert plot_el.handles["x_range"].start == 0
+        assert plot_el.handles["x_range"].end == 3

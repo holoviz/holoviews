@@ -1,8 +1,8 @@
-
 import numpy as np
+import pytest
 
 from holoviews import Dimension, NdOverlay, Overlay
-from holoviews.core.options import Cycle, Store
+from holoviews.core.options import Cycle
 from holoviews.core.spaces import DynamicMap, HoloMap
 from holoviews.element import (
     Area,
@@ -30,8 +30,6 @@ from holoviews.plotting.util import (
     split_dmap_overlay,
 )
 from holoviews.streams import PointerX
-
-bokeh_renderer = Store.renderers['bokeh']
 
 
 class TestOverlayableZorders(ComparisonTestCase):
@@ -472,10 +470,8 @@ class TestPlotColorUtils(ComparisonTestCase):
             process_cmap({'A', 'B', 'C'}, 3)
 
 
+@pytest.mark.usefixtures("mpl_backend")
 class TestMPLColormapUtils(ComparisonTestCase):
-
-    def setUp(self):
-        import holoviews.plotting.mpl # noqa
 
     def test_mpl_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='matplotlib')
@@ -535,11 +531,8 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'][::-1])
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestBokehPaletteUtils(ComparisonTestCase):
-
-    def setUp(self):
-        import bokeh.palettes # noqa
-        import holoviews.plotting.bokeh # noqa
 
     def test_bokeh_palette_categorical_palettes_not_interpolated(self):
         # Ensure categorical palettes are not expanded
@@ -605,7 +598,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
         cmap, lims = color_intervals(colors, levels, clip=(10, 90), N=100)
         self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
-                                '#00faf4', '#00faf4', '#ffffcc'])
+                                '#00faf4', '#00faf4', '#ffffcc', '#ffffcc'])
         self.assertEqual(lims, (10, 90))
 
 

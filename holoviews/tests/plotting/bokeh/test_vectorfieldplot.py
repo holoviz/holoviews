@@ -83,3 +83,17 @@ class TestVectorFieldPlot(TestBokehPlot):
             "for 'line_color' option and declare a color_index; ignoring the color_index.\n"
         )
         self.assertEqual(log_msg, warning)
+
+    def test_vectorfield_no_hover_columns(self):
+        vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').opts(tools=[])
+        plot = bokeh_renderer.get_plot(vectorfield)
+        keys = sorted(plot.handles["cds"].data)
+        assert keys == ["x0", "x1", "y0", "y1"]
+
+    def test_vectorfield_hover_columns(self):
+        vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').opts(tools=["hover"])
+        plot = bokeh_renderer.get_plot(vectorfield)
+        keys = sorted(plot.handles["cds"].data)
+        assert keys == ["Angle", "Magnitude", "x", "x0", "x1", "y", "y0", "y1"]

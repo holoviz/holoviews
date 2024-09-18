@@ -119,7 +119,7 @@ class AttrTree:
         disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
             raise Exception("Attribute strings in path elements cannot be "
-                            "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))
+                            "correctly escaped : {}".format(','.join(repr(el) for el in disallowed)))
         if len(path) > 1:
             attrtree = self.__getattr__(path[0])
             attrtree.set_path(path[1:], val)

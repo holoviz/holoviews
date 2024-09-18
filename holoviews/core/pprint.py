@@ -191,13 +191,13 @@ class InfoPrinter:
         if len(element_set) == 1:
             element_info = f'Element: {next(iter(element_set))}'
         elif len(element_set) > 1:
-            element_info = 'Elements:\n   %s'  % '\n   '.join(sorted(element_set))
+            element_info = 'Elements:\n   {}'.format('\n   '.join(sorted(element_set)))
 
         container_info = None
         if len(container_set) == 1:
             container_info = f'Container: {next(iter(container_set))}'
         elif len(container_set) > 1:
-            container_info = 'Containers:\n   %s'  % '\n   '.join(sorted(container_set))
+            container_info = 'Containers:\n   {}'.format('\n   '.join(sorted(container_set)))
         heading = cls.heading('Target Specifications', ansi=ansi, char="-")
 
         target_header = '\nTargets in this object available for customization:\n'
@@ -215,8 +215,8 @@ class InfoPrinter:
     @classmethod
     def object_info(cls, obj, name, backend, ansi=False):
         element = not getattr(obj, '_deep_indexable', False)
-        element_url ='http://holoviews.org/reference/elements/{backend}/{obj}.html'
-        container_url ='http://holoviews.org/reference/containers/{backend}/{obj}.html'
+        element_url ='https://holoviews.org/reference/elements/{backend}/{obj}.html'
+        container_url ='https://holoviews.org/reference/containers/{backend}/{obj}.html'
         url = element_url if element else container_url
         link = url.format(obj=name, backend=backend)
 
@@ -308,7 +308,7 @@ class PrettyPrinter(param.Parameterized):
         level, lines = cls_or_slf.node_info(node, attrpath, attrpaths, siblings, level, value_dims)
         attrpaths = ['.'.join(k) for k in node.keys()] if  hasattr(node, 'children') else []
         siblings = [node.get(child) for child in attrpaths]
-        for attrpath in attrpaths:
+        for attrpath in attrpaths:  # noqa: PLR1704
             lines += cls_or_slf.recurse(node.get(attrpath), attrpath, attrpaths=attrpaths,
                                  siblings=siblings, level=level+1, value_dims=value_dims)
         return lines
@@ -355,7 +355,7 @@ class PrettyPrinter(param.Parameterized):
         if len(node.kdims) >= 1:
             info += cls_or_slf.tab + f"[{','.join(d.name for d in node.kdims)}]"
         if value_dims and len(node.vdims) >= 1:
-            info += cls_or_slf.tab + f"({','.join(d.name for d in node.vdims)})"
+            info += cls_or_slf.tab + f"({','.join(d.label for d in node.vdims)})"
         return level, [(level, info)]
 
     @bothmethod

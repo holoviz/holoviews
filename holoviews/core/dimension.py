@@ -81,10 +81,9 @@ def dimension_name(dimension):
     elif dimension is None:
         return None
     else:
-        raise ValueError('%s type could not be interpreted as Dimension. '
+        raise ValueError(f'{type(dimension).__name__} type could not be interpreted as Dimension. '
                          'Dimensions must be declared as a string, tuple, '
-                         'dictionary or Dimension type.'
-                         % type(dimension).__name__)
+                         'dictionary or Dimension type.')
 
 
 def process_dimensions(kdims, vdims):
@@ -109,10 +108,12 @@ def process_dimensions(kdims, vdims):
         elif isinstance(dims, (tuple, str, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
-            raise ValueError("{} argument expects a Dimension or list of dimensions, "
-                             "specified as tuples, strings, dictionaries or Dimension "
-                             "instances, not a {} type. Ensure you passed the data as the "
-                             "first argument.".format(group, type(dims).__name__))
+            raise ValueError(
+                f"{group} argument expects a Dimension or list of dimensions, "
+                "specified as tuples, strings, dictionaries or Dimension "
+                f"instances, not a {type(dims).__name__} type. "
+                "Ensure you passed the data as the first argument."
+            )
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 
@@ -250,7 +251,7 @@ class Dimension(param.Parameterized):
             except ValueError as exc:
                 raise ValueError(
                     "Dimensions specified as a tuple must be a tuple "
-                    "consisting of the name and label not: %s" % str(spec)
+                    f"consisting of the name and label not: {spec}"
                 ) from exc
             if 'label' in params and params['label'] != all_params['label']:
                 self.param.warning(
@@ -266,9 +267,8 @@ class Dimension(param.Parameterized):
                 ) from exc
         else:
             raise ValueError(
-                '%s type could not be interpreted as Dimension.  Dimensions must be '
+                f'{type(spec).__name__} type could not be interpreted as Dimension.  Dimensions must be '
                 'declared as a string, tuple, dictionary or Dimension type.'
-                % type(spec).__name__
             )
         all_params.update(params)
 
@@ -347,7 +347,7 @@ class Dimension(param.Parameterized):
         "Implements equals operator including sanitized comparison."
 
         if isinstance(other, Dimension):
-            return self.spec == other.spec
+            return self.label == other.label
 
         # For comparison to strings. Name may be sanitized.
         return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
@@ -499,11 +499,9 @@ class LabelledData(param.Parameterized):
 
         super().__init__(**params)
         if not util.group_sanitizer.allowable(self.group):
-            raise ValueError("Supplied group %r contains invalid characters." %
-                             self.group)
+            raise ValueError(f"Supplied group {self.group!r} contains invalid characters.")
         elif not util.label_sanitizer.allowable(self.label):
-            raise ValueError("Supplied label %r contains invalid characters." %
-                             self.label)
+            raise ValueError(f"Supplied label {self.label!r} contains invalid characters.")
 
     @property
     def id(self):
@@ -718,37 +716,27 @@ class LabelledData(param.Parameterized):
         "Restores options applied to this object."
         d = param_aliases(d)
 
-        # Backwards compatibility for objects before id was made a property
-        opts_id = d['_id'] if '_id' in d else d.pop('id', None)
-        try:
-            load_options = Store.load_counter_offset is not None
-            if load_options:
-                matches = [k for k in d if k.startswith('_custom_option')]
-                for match in matches:
-                    custom_id = int(match.split('_')[-1])+Store.load_counter_offset
-                    if not isinstance(d[match], dict):
-                        # Backward compatibility before multiple backends
-                        backend_info = {'matplotlib':d[match]}
-                    else:
-                        backend_info = d[match]
-                    for backend, info in  backend_info.items():
-                        if backend not in Store._custom_options:
-                            Store._custom_options[backend] = {}
-                        Store._custom_options[backend][custom_id] = info
-                    if backend_info:
-                        if custom_id not in Store._weakrefs:
-                            Store._weakrefs[custom_id] = []
-                        ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
-                        Store._weakrefs[opts_id].append(ref)
-                    d.pop(match)
+        load_options = Store.load_counter_offset is not None
+        if load_options:
+            matches = [k for k in d if k.startswith('_custom_option')]
+            for match in matches:
+                custom_id = int(match.split('_')[-1])+Store.load_counter_offset
+                for backend, info in d[match].items():
+                    if backend not in Store._custom_options:
+                        Store._custom_options[backend] = {}
+                    Store._custom_options[backend][custom_id] = info
+                if d[match]:
+                    if custom_id not in Store._weakrefs:
+                        Store._weakrefs[custom_id] = []
+                    ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
+                    Store._weakrefs[d["_id"]].append(ref)
+                d.pop(match)
 
-                if opts_id is not None:
-                    opts_id += Store.load_counter_offset
-        except Exception:
-            self.param.warning("Could not unpickle custom style information.")
-        d['_id'] = opts_id
+            if d["_id"] is not None:
+                d["_id"] += Store.load_counter_offset
+
         self.__dict__.update(d)
-        super().__setstate__({})
+        super().__setstate__(d)
 
 
 class Dimensioned(LabelledData):
@@ -928,8 +916,8 @@ class Dimensioned(LabelledData):
             key_traversal = self.traverse(lmbd, **kwargs)
             dims = [dim for keydims in key_traversal for dim in keydims]
         else:
-            raise KeyError("Invalid selection %r, valid selections include"
-                           "'all', 'value' and 'key' dimensions" % repr(selection))
+            raise KeyError(f"Invalid selection {repr(selection)!r}, valid selections include"
+                           "'all', 'value' and 'key' dimensions")
         return [(dim.label if label == 'long' else dim.name)
                 if label else dim for dim in dims]
 
@@ -948,7 +936,7 @@ class Dimensioned(LabelledData):
         if dimension is not None and not isinstance(dimension, (int, str, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
                             'and Dimension instances, cannot lookup '
-                            'Dimensions using %s type.' % type(dimension).__name__)
+                            f'Dimensions using {type(dimension).__name__} type.')
         all_dims = self.dimensions()
         if isinstance(dimension, int):
             if 0 <= dimension < len(all_dims):
@@ -1273,7 +1261,8 @@ class Dimensioned(LabelledData):
 
         obj = self
         for backend, expanded in expanded_backends:
-            obj = obj.opts._dispatch_opts(expanded, backend=backend, clone=clone)
+            if expanded is not None:
+                obj = obj.opts._dispatch_opts(expanded, backend=backend, clone=clone)
         return obj
 
     def _repr_mimebundle_(self, include=None, exclude=None):

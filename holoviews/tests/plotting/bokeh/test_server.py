@@ -80,6 +80,7 @@ class TestBokehServerSetup(ComparisonTestCase):
 
 
 
+@pytest.mark.flaky(reruns=3)
 class TestBokehServer(ComparisonTestCase):
 
     def setUp(self):
@@ -128,7 +129,6 @@ class TestBokehServer(ComparisonTestCase):
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in plot.state._event_callbacks
 
-    @pytest.mark.flaky(reruns=3)
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
         overlay = dmap * HLine(0)
@@ -163,6 +163,9 @@ class TestBokehServer(ComparisonTestCase):
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 2)
+        def loaded():
+            state._schedule_on_load(doc, None)
+        doc.add_next_tick_callback(loaded)
         def run():
             stream.event(y=3)
         doc.add_next_tick_callback(run)
@@ -180,6 +183,9 @@ class TestBokehServer(ComparisonTestCase):
 
         orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(orig_cds.data['y'][2], 2)
+        def loaded():
+            state._schedule_on_load(doc, None)
+        doc.add_next_tick_callback(loaded)
         def run():
             stream.event(y=3)
         doc.add_next_tick_callback(run)

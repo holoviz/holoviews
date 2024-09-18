@@ -124,13 +124,13 @@ class DictInterface(Interface):
         not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
             raise DataError('Following columns specified as dimensions '
-                            'but not found in data: %s' % not_found, cls)
+                            f'but not found in data: {not_found}', cls)
         lengths = [(dim, 1 if isscalar(dataset.data[dim]) else len(dataset.data[dim]))
                    for dim in dimensions]
         if len({l for d, l in lengths if l > 1}) > 1:
             lengths = ', '.join(['%s: %d' % l for l in sorted(lengths)])
             raise DataError('Length of columns must be equal or scalar, '
-                            'columns have lengths: %s' % lengths, cls)
+                            f'columns have lengths: {lengths}', cls)
 
 
     @classmethod

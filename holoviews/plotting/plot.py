@@ -349,8 +349,9 @@ class PlotSelector:
         try:
             return super().__setattr__(label, value)
         except Exception as e:
-            raise Exception("Please set class parameters directly on classes %s"
-                            % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())) from e
+            plot_cls_str = ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values())
+            msg = f"Please set class parameters directly on classes {plot_cls_str}"
+            raise Exception(msg) from e
 
     def params(self):
         return self.plot_options
@@ -551,7 +552,7 @@ class DimensionedPlot(Plot):
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.param.warning(msg %  (list(unknown_keys), self._fontsize_keys))
-            for key in unknown_keys: fontsize.pop(key, None)
+            for unknown_key in unknown_keys: fontsize.pop(unknown_key, None)
 
         defaults = self._get_fontsize_defaults()
         size = None
@@ -787,7 +788,7 @@ class DimensionedPlot(Plot):
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
-                dim_name = el_dim.name
+                dim_name = el_dim.label
                 if dim_name in prev_ranges and not framewise:
                     continue
                 data_range = data_ranges[(el, el_dim)]
@@ -909,11 +910,11 @@ class DimensionedPlot(Plot):
         traversed = obj.traverse(lookup, specs)
         options = {}
         default_opts = defaultdict(lambda: defaultdict(list))
-        for key, opts in traversed:
-            defaults = opts.pop('defaults', {})
+        for key, topts in traversed:
+            defaults = topts.pop('defaults', {})
             if key not in options:
                 options[key] = {}
-            for opt, v in opts.items():
+            for opt, v in topts.items():
                 if opt not in options[key]:
                     options[key][opt] = []
                 options[key][opt].append(v)
@@ -921,11 +922,11 @@ class DimensionedPlot(Plot):
                 default_opts[key][opt].append(v)
 
         # Merge defaults into dictionary if not explicitly specified
-        for key, opts in default_opts.items():
-            for opt, v in opts.items():
+        for key, dopts in default_opts.items():
+            for opt, v in dopts.items():
                 if opt not in options[key]:
                     options[key][opt] = v
-        return options if keyfn else options[None]
+        return options if keyfn else options.get(None, {})
 
     def _get_projection(cls, obj):
         """
@@ -968,6 +969,19 @@ class CallbackPlot:
 
     backend = None
 
+    @staticmethod
+    def _sources_match(src1, src2):
+        return src1 is src2 or (src1._plot_id is not None and src1._plot_id == src2._plot_id)
+
+    def _matching_plot_type(self, element):
+        """
+        Checks if the plot type matches the element type.
+        """
+        return (
+            (not isinstance(element, CompositeOverlay) or isinstance(self, GenericOverlayPlot) or self.batched) and
+            (not isinstance(element, Element) or not isinstance(self, GenericOverlayPlot))
+        )
+
     def _construct_callbacks(self):
         """
         Initializes any callbacks for streams which have defined
@@ -978,10 +992,18 @@ class CallbackPlot:
         registry = list(Stream.registry.items())
         callbacks = Stream._callbacks[self.backend]
         for source in self.link_sources:
-            streams = [
-                s for src, streams in registry for s in streams
-                if src is source or (src._plot_id is not None and
-                                     src._plot_id == source._plot_id)]
+            streams = []
+            for stream_src, src_streams in registry:
+                # Skip if source identities do not match
+                if not self._sources_match(stream_src, source):
+                    continue
+                for stream in src_streams:
+                    # Skip if Stream.source is an overlay but the plot isn't
+                    # or if the source is an element but the plot isn't
+                    src_el = stream.source.last if isinstance(stream.source, HoloMap) else stream.source
+                    if not self._matching_plot_type(src_el):
+                        continue
+                    streams.append(stream)
             cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
                            if type(stream) in callbacks and stream.linked
                            and stream.source is not None}
@@ -1006,7 +1028,13 @@ class CallbackPlot:
             zorders = [self.zorder]
 
         if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = [self.hmap.last]
+            if self.overlaid:
+                sources = [self.hmap.last]
+            else:
+                sources = [
+                    o for i, inputs in self.stream_sources.items()
+                    for o in inputs
+                ]
         elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]
@@ -1118,7 +1146,7 @@ class GenericElementPlot(DimensionedPlot):
        If specified, takes precedence over data and dimension ranges.""")
 
     ylim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       User-specified y-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
     zlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
@@ -1131,15 +1159,13 @@ class GenericElementPlot(DimensionedPlot):
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
 
-    xticks = param.Parameter(default=None, doc="""
+    xticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray), default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations, or bokeh Ticker object. If set to None default
-        bokeh ticking behavior is applied.""")
+        tick locations. If set to None default ticking behavior is applied.""")
 
-    yticks = param.Parameter(default=None, doc="""
+    yticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray), default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations, or bokeh Ticker object. If set to None
-        default bokeh ticking behavior is applied.""")
+        tick locations. If set to None default ticking behavior is applied.""")
 
     # A dictionary mapping of the plot methods used to draw the
     # glyphs corresponding to the ElementPlot, can support two
@@ -1423,7 +1449,7 @@ class GenericElementPlot(DimensionedPlot):
 
         return (x0, y0, x1, y1)
 
-    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, **kwargs):
+    def get_extents(self, element, ranges, range_type='combined', dimension=None, xdim=None, ydim=None, zdim=None, lims_as_soft_ranges=False, **kwargs):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
@@ -1444,6 +1470,12 @@ class GenericElementPlot(DimensionedPlot):
 
         This allows Overlay plots to obtain each range and combine them
         appropriately for all the objects in the overlay.
+
+        If lims_as_soft_ranges is set to True, the xlim and ylim will be treated as
+        soft ranges instead of the default case as hard ranges while computing the extents.
+        This is used e.g. when apply_hard_bounds is True and xlim/ylim is set, in which
+        case we limit the initial viewable range to xlim/ylim, but allow navigation up to
+        the abs max between the data range and xlim/ylim.
         """
         num = 6 if (isinstance(self.projection, str) and self.projection == '3d') else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
@@ -1486,8 +1518,15 @@ class GenericElementPlot(DimensionedPlot):
         else:
             x0, y0, x1, y1 = combined
 
-        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
-        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if lims_as_soft_ranges:
+            # run x|ylim through max_range to ensure datetime-dtype matching with ranges
+            xlim_soft_ranges = util.max_range([self.xlim])
+            ylim_soft_ranges = util.max_range([self.ylim])
+            x0, x1 = util.dimension_range(x0, x1, (None, None), xlim_soft_ranges)
+            y0, y1 = util.dimension_range(y0, y1, (None, None), ylim_soft_ranges)
+        else:
+            x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+            y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
@@ -1758,10 +1797,14 @@ class GenericOverlayPlot(GenericElementPlot):
             collapsed = Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
         return collapsed
 
+    @property
+    def _is_batched(self):
+        return self.batched and type(self.hmap.last) is NdOverlay
+
     def _create_subplots(self, ranges):
         # Check if plot should be batched
         ordering = util.layer_sort(self.hmap)
-        batched = self.batched and type(self.hmap.last) is NdOverlay
+        batched = self._is_batched
         if batched:
             backend = self.renderer.backend
             batchedplot = Store.registry[backend].get(self.hmap.last.type)
@@ -1796,8 +1839,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 self.zoffset += len(subplot.subplots.keys()) - 1
 
         if not subplots:
-            raise SkipRendering("%s backend could not plot any Elements "
-                                "in the Overlay." % self.renderer.backend)
+            raise SkipRendering(f"{self.renderer.backend} backend could not plot any Elements "
+                                "in the Overlay.")
         return subplots
 
     def _create_subplot(self, key, obj, streams, ranges):
@@ -1828,8 +1871,9 @@ class GenericOverlayPlot(GenericElementPlot):
         plottype = registry.get(vtype, None)
         if plottype is None:
             self.param.warning(
-                "No plotting class for {} type and {} backend "
-                "found. ".format(vtype.__name__, self.renderer.backend))
+                f"No plotting class for {vtype.__name__} type "
+                f"and {self.renderer.backend} backend found. "
+            )
             return None
 
         # Get zorder and style counter
@@ -1845,8 +1889,8 @@ class GenericOverlayPlot(GenericElementPlot):
             opts['group_counter'] = self.group_counter
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
-                self.param.warning('%s is empty and will be skipped '
-                                   'during plotting' % obj.last)
+                self.param.warning(f'{obj.last} is empty and will be skipped '
+                                   'during plotting')
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
             param_vals = self.param.values()

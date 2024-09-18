@@ -2,7 +2,6 @@
 Module for accessor objects for viewable HoloViews objects.
 """
 import copy
-import sys
 from functools import wraps
 from types import FunctionType
 
@@ -133,6 +132,8 @@ class Apply(metaclass=AccessorPipelineMeta):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        from panel.widgets.base import Widget
+
         from ..util import Dynamic
         from .data import Dataset
         from .dimension import ViewableElement
@@ -162,17 +163,16 @@ class Apply(metaclass=AccessorPipelineMeta):
             def apply_function(object, **kwargs):
                 method = getattr(object, method_name, None)
                 if method is None:
-                    raise AttributeError('Applied method %s does not exist.'
+                    raise AttributeError(f'Applied method {method_name} does not exist.'
                                          'When declaring a method to apply '
                                          'as a string ensure a corresponding '
-                                         'method exists on the object.' %
-                                         method_name)
+                                         'method exists on the object.')
                 return method(*args, **kwargs)
 
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-            kwargs = {k: v.param.value if isinstance(v, Widget) else v
-                      for k, v in kwargs.items()}
+        kwargs = {
+            k: v.param.value if isinstance(v, Widget) else v
+            for k, v in kwargs.items()
+        }
 
         spec = Element if per_element else ViewableElement
         applies = isinstance(self._obj, spec)
@@ -469,7 +469,7 @@ class Redim(metaclass=AccessorPipelineMeta):
     def label(self, specs=None, **values):
         for k, v in values.items():
             dim = self._obj.get_dimension(k)
-            if dim and dim.name != dim.label and dim.label != v:
+            if dim and dim.label not in (dim.name, v):
                 raise ValueError('Cannot override an existing Dimension label')
         return self._redim('label', specs, **values)
 
@@ -518,7 +518,7 @@ class Opts(metaclass=AccessorPipelineMeta):
         keywords = {}
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
-        for group in groups:
+        for group in groups:  # noqa: PLR1704
             optsobj = Store.lookup_options(backend, self._obj, group,
                                            defaults=defaults)
             keywords = dict(keywords, **optsobj.kwargs)
