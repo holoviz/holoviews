@@ -795,22 +795,18 @@ class MultiAxisTapCallback(TapCallback):
         extra_x = list(self.plot.handles.get('extra_x_ranges', {}).values())
         y_range = self.plot.handles.get('y_range')
         extra_y = list(self.plot.handles.get('extra_y_ranges', {}).values())
-        xaxis = self.plot.handles.get('xaxis')
-        yaxis = self.plot.handles.get('yaxis')
 
         sx, sy = msg['sx'], msg['sy']
         w, h = fig.outer_width, fig.outer_height
         xfactor, yfactor = sx/w, sy/h
         xs, ys = {}, {}
-        for values, factor, ranges, ax, axis in (
-                (xs, xfactor, [x_range]+extra_x, 0, xaxis),
-                (ys, yfactor, [y_range]+extra_y, 1, yaxis)
+        for values, factor, ranges, ax in (
+                (xs, xfactor, [x_range]+extra_x, 0),
+                (ys, yfactor, [y_range]+extra_y, 1)
         ):
             for rng in ranges:
                 span = (rng.end-rng.start) * factor
                 value = rng.end - span if ax else rng.start + span
-                if isinstance(axis, DatetimeAxis):
-                    value = convert_timestamp(value)
                 values[rng.name] = value
 
         return {'xs': xs, 'ys': ys}
