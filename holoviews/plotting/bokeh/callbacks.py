@@ -50,6 +50,7 @@ from ...streams import (
     Lasso,
     MouseEnter,
     MouseLeave,
+    MultiAxisTap,
     PanEnd,
     PlotReset,
     PlotSize,
@@ -780,6 +781,54 @@ class TapCallback(PopupMixin, PointerXYCallback):
             value = None
         return value
 
+
+class MultiAxisTapCallback(TapCallback):
+    """
+    Returns the mouse x/y-positions on tap event.
+    """
+
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
+
+    def _process_msg(self, msg):
+        x_range = self.plot.handles.get('x_range')
+        y_range = self.plot.handles.get('y_range')
+        extra_x = list(self.plot.handles.get('extra_x_ranges', {}).values())
+        extra_y = list(self.plot.handles.get('extra_y_ranges', {}).values())
+        xaxis = self.plot.handles.get('xaxis')
+        yaxis = self.plot.handles.get('yaxis')
+
+        # Compute x/y position relative to first axis
+        x, y = msg['x'], msg['y']
+        x0, x1 = x_range.start, x_range.end
+        y0, y1 = y_range.start, y_range.end
+        if isinstance(xaxis, DatetimeAxis):
+            x = convert_timestamp(x)
+            if isinstance(x0, (float, int)):
+                x0 = convert_timestamp(x0)
+            if isinstance(x1, (float, int)):
+                x1 = convert_timestamp(x1)
+        if isinstance(yaxis, DatetimeAxis):
+            y = convert_timestamp(y)
+            if isinstance(y0, (float, int)):
+                y0 = convert_timestamp(y0)
+            if isinstance(y1, (float, int)):
+                y1 = convert_timestamp(y1)
+        xs, ys = {x_range.name: x}, {y_range.name: y}
+        xspan, yspan = x1 - x0, y1 - y0
+        xfactor, yfactor = (x-x0) / xspan, (y-y0) / yspan
+
+        # Use computed factors to compute x/y position on other axes
+        for values, factor, ranges, axis in (
+            (xs, xfactor, extra_x, xaxis),
+            (ys, yfactor, extra_y, yaxis)
+        ):
+            for rng in ranges:
+                value = rng.start + (rng.end-rng.start) * factor
+                if isinstance(axis, DatetimeAxis) and isinstance(value, (float, int)):
+                    value = convert_timestamp(value)
+                values[rng.name] = value
+
+        return {'xs': xs, 'ys': ys}
 
 
 class SingleTapCallback(TapCallback):
@@ -1585,5 +1634,6 @@ Stream._callbacks['bokeh'].update({
     FreehandDraw: FreehandDrawCallback,
     PolyDraw    : PolyDrawCallback,
     PolyEdit    : PolyEditCallback,
-    SelectMode  : SelectModeCallback
+    SelectMode  : SelectModeCallback,
+    MultiAxisTap: MultiAxisTapCallback
 })
