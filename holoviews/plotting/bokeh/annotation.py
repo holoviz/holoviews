@@ -45,6 +45,11 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
             raise ImportError(msg)
         super().__init__(element, **kwargs)
 
+    def _get_axis_dims(self, element):
+        if isinstance(element, (HLines, HSpans)):
+            return None, element.kdims[0], None
+        return element.kdims[0], None, None
+
     def _init_glyph(self, plot, mapping, properties):
         self._plot_methods = {"single": self._methods[self.invert_axes]}
         return super()._init_glyph(plot, mapping, properties)
