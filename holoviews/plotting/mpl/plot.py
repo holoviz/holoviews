@@ -120,6 +120,9 @@ class MPLPlot(DimensionedPlot):
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
 
+    sublabel_offset = param.Number(default=0, bounds=(0, None), doc="""
+        Allows offsetting the sublabel index.""")
+
     sublabel_position = param.NumericTuple(default=(-0.35, 0.85), doc="""
          Position relative to the plot for placing the optional subfigure label.""")
 
@@ -217,6 +220,7 @@ class MPLPlot(DimensionedPlot):
             sublabel_num = len(set(range(layout_num)) - set(self.sublabel_skip))
         else:
             sublabel_num = layout_num
+        sublabel_num += self.sublabel_offset
         if self.sublabel_format and not self.adjoined and sublabel_num > 0:
             from matplotlib.offsetbox import AnchoredText
             labels = {}
