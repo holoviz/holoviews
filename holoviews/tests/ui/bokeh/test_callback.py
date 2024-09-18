@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import panel as pn
 import pytest
 
@@ -182,7 +183,30 @@ def test_multi_axis_tap(serve_hv):
     hv_plot.click()
 
     wait_until(lambda: (
-        s.xs == {'x': 9.5} and s.ys == {'y1': 22.5, 'y2': 95.0}
+        s.xs == {'x': 11.560240963855422} and s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
+    ), page)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_multi_axis_tap_datetime(serve_hv):
+    c1 = Curve((pd.date_range('2024-01-01', '2024-01-10'), np.arange(10).cumsum()), vdims='y1')
+    c2 = Curve((pd.date_range('2024-01-01', '2024-01-20'), np.arange(20).cumsum()), vdims='y2')
+
+    overlay = (c1 * c2).opts(multi_y=True)
+
+    s = MultiAxisTap(source=overlay)
+
+    page = serve_hv(overlay)
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    hv_plot.click()
+
+    wait_until(lambda: (
+        s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')} and
+        s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
     ), page)
 
 
