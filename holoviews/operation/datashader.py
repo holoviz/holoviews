@@ -1294,7 +1294,7 @@ class shade(LinkableOperation):
         if isinstance(element, ImageStack):
             vdim = element.vdims
             array = element.data
-            # If data is a Dataset it has to be converted to a
+            # If data is a xarray Dataset it has to be converted to a
             # DataArray, either by selecting the singular value
             # dimension or by adding a z-dimension
             kdims = [kdim.name for kdim in kdims]
@@ -1306,7 +1306,7 @@ class shade(LinkableOperation):
                     # If data is 3D then we have one extra constant dimension
                     if array.ndim > 3:
                         drop = [d for d in array.dims if d not in kdims+["z"]]
-                        array = array.squeeze(drop)
+                        array = array.squeeze(dim=drop)
             array = array.transpose(*kdims, ...)
         else:
             vdim = element.vdims[0].name
