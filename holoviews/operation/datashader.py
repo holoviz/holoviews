@@ -1348,7 +1348,7 @@ class shade(LinkableOperation):
         if self.p.clims:
             shade_opts['span'] = self.p.clims
         elif ds_version > Version('0.5.0') and self.p.cnorm != 'eq_hist':
-            shade_opts['span'] = (array.min(), array.max())
+            shade_opts['span'] = (array.min().item(), array.max().item())
 
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:],
