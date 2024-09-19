@@ -1286,11 +1286,13 @@ class shade(LinkableOperation):
             ydensity = element.ydensity
             bounds = element.bounds
 
+        # Convert to xarray if not already
+        if element.interface.datatype != 'xarray':
+            element = element.clone(datatype=['xarray'])
+
         kdims = element.kdims
         if isinstance(element, ImageStack):
             vdim = element.vdims
-            if element.interface.datatype != 'xarray':
-                element = element.clone(datatype=['xarray'])
             array = element.data
             # If data is a Dataset it has to be converted to a
             # DataArray, either by selecting the singular value
@@ -1309,6 +1311,9 @@ class shade(LinkableOperation):
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
+
+        # Dask is not supported by shade so materialize it
+        array = array.compute()
 
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
