@@ -1286,16 +1286,34 @@ class shade(LinkableOperation):
             ydensity = element.ydensity
             bounds = element.bounds
 
+        # Convert to xarray if not already
+        if element.interface.datatype != 'xarray':
+            element = element.clone(datatype=['xarray'])
+
         kdims = element.kdims
         if isinstance(element, ImageStack):
             vdim = element.vdims
             array = element.data
-            if hasattr(array, "to_array"):
-                array = array.to_array("z")
-            array = array.transpose(*[kdim.name for kdim in kdims], ...)
+            # If data is a xarray Dataset it has to be converted to a
+            # DataArray, either by selecting the singular value
+            # dimension or by adding a z-dimension
+            kdims = [kdim.name for kdim in kdims]
+            if not element.interface.packed(element):
+                if len(vdim) == 1:
+                    array = array[vdim[0].name]
+                else:
+                    array = array.to_array("z")
+                    # If data is 3D then we have one extra constant dimension
+                    if array.ndim > 3:
+                        drop = [d for d in array.dims if d not in kdims+["z"]]
+                        array = array.squeeze(dim=drop)
+            array = array.transpose(*kdims, ...)
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
+
+        # Dask is not supported by shade so materialize it
+        array = array.compute()
 
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
@@ -1335,7 +1353,7 @@ class shade(LinkableOperation):
         if self.p.clims:
             shade_opts['span'] = self.p.clims
         elif ds_version > Version('0.5.0') and self.p.cnorm != 'eq_hist':
-            shade_opts['span'] = element.range(vdim)
+            shade_opts['span'] = (array.min().item(), array.max().item())
 
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:],

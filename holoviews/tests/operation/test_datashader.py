@@ -827,6 +827,22 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
         actual = img.data
         assert (expected.data.to_array("z").values == actual.T.values).all()
 
+    def test_aggregate_points_categorical_one_category(self):
+        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'A'), (0, 0.99, 'A')], vdims='z')
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.by('z', ds.count()))
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[1, 2], [0, 0]])
+        xrds = xr.DataArray(
+            a,
+            dims=('x', 'y'),
+            coords={"x": x, "y": y}
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a"])
+        actual = img.data
+        assert (expected.data.to_array("z").values == actual.T.values).all()
+
     def test_aggregate_points_categorical_mean(self):
         points = Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
