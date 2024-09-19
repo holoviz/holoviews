@@ -129,8 +129,8 @@ class MPLPlot(DimensionedPlot):
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
 
-    sublabel_skip = param.List(default=None, doc="""
-        List of elements to skip when labeling subplots.""")
+    sublabel_skip = param.List(default=None, item_type=int, doc="""
+        List of elements to skip when labeling subplots. Numbering starts at 1.""")
 
     projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
@@ -217,6 +217,8 @@ class MPLPlot(DimensionedPlot):
             return
         layout_num = self.layout_num if self.subplot else 1
         if self.sublabel_skip:
+            if any(n < 1 for n in self.sublabel_skip):
+                raise ValueError('sublabel_skip values must be greater than 0')
             sublabel_num = len(set(range(layout_num)) - set(self.sublabel_skip))
         else:
             sublabel_num = layout_num
