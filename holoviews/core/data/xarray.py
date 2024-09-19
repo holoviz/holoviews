@@ -446,7 +446,11 @@ class XArrayInterface(GridInterface):
         Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if not cls.packed(dataset) and len(data.data_vars) == 1:
+        if cls.packed(dataset):
+            array = data.squeeze()
+            if len(array.shape) == 0:
+                return array.item()
+        elif len(data.data_vars) == 1:
             array = data[dataset.vdims[0].name].squeeze()
             if len(array.shape) == 0:
                 return array.item()
