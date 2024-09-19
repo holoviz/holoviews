@@ -1289,10 +1289,23 @@ class shade(LinkableOperation):
         kdims = element.kdims
         if isinstance(element, ImageStack):
             vdim = element.vdims
+            if element.interface.datatype != 'xarray':
+                element = element.clone(datatype=['xarray'])
             array = element.data
-            if hasattr(array, "to_array"):
-                array = array.to_array("z").isel(z=0)
-            array = array.transpose(*[kdim.name for kdim in kdims], ...)
+            # If data is a Dataset it has to be converted to a
+            # DataArray, either by selecting the singular value
+            # dimension or by adding a z-dimension
+            kdims = [kdim.name for kdim in kdims]
+            if not element.interface.packed(element):
+                if len(vdim) == 1:
+                    array = array[vdim[0].name]
+                else:
+                    array = array.to_array("z")
+                    # If data is 3D then we have one extra constant dimension
+                    if array.ndim > 3:
+                        drop = [d for d in array.dims if d not in kdims+["z"]]
+                        array = array.squeeze(drop)
+            array = array.transpose(*kdims, ...)
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
@@ -1335,7 +1348,7 @@ class shade(LinkableOperation):
         if self.p.clims:
             shade_opts['span'] = self.p.clims
         elif ds_version > Version('0.5.0') and self.p.cnorm != 'eq_hist':
-            shade_opts['span'] = element.range(vdim)
+            shade_opts['span'] = (array.min(), array.max())
 
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:],
