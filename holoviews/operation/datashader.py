@@ -1784,9 +1784,10 @@ class inspect_mask(Operation):
     operation.
     """
 
-    pixels = param.Integer(default=3, doc="""
+    pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
        Size of the mask that should match the pixels parameter used in
-       the associated inspection operation.""")
+       the associated inspection operation. Pixels can be provided as
+       integer or x/y-tuple to perform asymmetric masking.""")
 
     streams = param.ClassSelector(default=[PointerXY], class_=(dict, list))
     x = param.Number(default=0)
@@ -1795,9 +1796,13 @@ class inspect_mask(Operation):
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
         ycount, xcount =  element.interface.shape(element, gridded=True)
+        if isinstance(pixels, tuple):
+            xpixels, ypixels = pixels
+        else:
+            xpixels = ypixels = pixels
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
+        return (x_delta*xpixels, y_delta*ypixels)
 
     def _process(self, raster, key=None):
         if isinstance(raster, RGB):
@@ -1820,10 +1825,11 @@ class inspect(Operation):
     type.
     """
 
-    pixels = param.Integer(default=3, doc="""
+    pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
        Number of pixels in data space around the cursor point to search
        for hits in. The hit within this box mask that is closest to the
-       cursor's position is displayed.""")
+       cursor's position is displayed. Pixels can be provided as
+       integer or x/y-tuple to perform asymmetric masking.""")
 
     null_value = param.Number(default=0, doc="""
        Value of raster which indicates no hits. For instance zero for
@@ -1936,9 +1942,13 @@ class inspect_base(inspect):
     @classmethod
     def _distance_args(cls, element, x_range, y_range, pixels):
         ycount, xcount = element.interface.shape(element, gridded=True)
+        if isinstance(pixels, tuple):
+            xpixels, ypixels = pixels
+        else:
+            xpixels = ypixels = pixels
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
+        return (x_delta*xpixels, y_delta*ypixels)
 
     @classmethod
     def _empty_df(cls, dataset):
@@ -1993,15 +2003,17 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        if dx.dtype.kind in 'Mm':
-            if dx.dtype != dy.dtype and len(dx):
-                dx = dx.astype('int64')
-                dx = (dx - dx.min()) / (dx.max() - dx.min())
-                dy = (dy - dy.min()) / (dy.max() - dy.min())
-            else:
-                dx = dx.astype('int64')
-        if dy.dtype.kind in 'Mm':
+        xtype, ytype = dx.dtype.kind, dy.dtype.kind
+        if xtype.kind in 'Mm':
+            dx = dx.astype('int64')
+        if ytype.kind in 'Mm':
             dy = dx.astype('int64')
+        # If coordinate types don't match normalize
+        # coordinate space to ensure that distance
+        # in both direction is handled the same.
+        if xtype != ytype and len(dx) and len(dy):
+            dx = (dx - dx.min()) / (dx.max() - dx.min())
+            dy = (dy - dy.min()) / (dy.max() - dy.min())
         distances = pd.Series(dx**2 + dy**2)
         return df.iloc[distances.argsort().values]
 
