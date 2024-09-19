@@ -1291,7 +1291,7 @@ class shade(LinkableOperation):
             vdim = element.vdims
             array = element.data
             if hasattr(array, "to_array"):
-                array = array.to_array("z")
+                array = array.to_array("z").isel(z=0)
             array = array.transpose(*[kdim.name for kdim in kdims], ...)
         else:
             vdim = element.vdims[0].name
