@@ -120,7 +120,7 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@dev_drive
         if: needs.setup.outputs.code_change == 'true'
         with:
           environments: ${{ matrix.environment }}
