@@ -27,6 +27,10 @@ def ibis4():
 def ibis5():
     return ibis_version() >= Version("5.0")
 
+@lru_cache
+def ibis9_5():
+    return ibis_version() >= Version("9.5")
+
 
 class IbisInterface(Interface):
 
@@ -457,7 +461,8 @@ class IbisInterface(Interface):
         data = dataset.data
         if all(util.isscalar(s) or len(s) == 1 for s in samples):
             items = [s[0] if isinstance(s, tuple) else s for s in samples]
-            return data[data[dims[0].name].isin(items)]
+            subset = data[dims[0].name].isin(items)
+            return data.filter(subset) if ibis9_5() else data[subset]
 
         predicates = None
         for sample in samples:

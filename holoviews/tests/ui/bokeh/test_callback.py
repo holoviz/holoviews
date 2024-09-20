@@ -1,11 +1,12 @@
 import numpy as np
+import pandas as pd
 import panel as pn
 import pytest
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
 from holoviews.plotting.bokeh.util import bokeh34
-from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, RangeXY
+from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, MultiAxisTap, RangeXY
 
 from .. import expect, wait_until
 
@@ -162,6 +163,54 @@ def test_multi_axis_rangexy(serve_hv):
         np.testing.assert_almost_equal(s1.y_range, expected_yrange1) and
         np.testing.assert_almost_equal(s2.y_range, expected_yrange2)
     ), page)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_multi_axis_tap(serve_hv):
+    c1 = Curve(np.arange(10).cumsum(), vdims='y1')
+    c2 = Curve(np.arange(20).cumsum(), vdims='y2')
+
+    overlay = (c1 * c2).opts(multi_y=True)
+
+    s = MultiAxisTap(source=overlay)
+
+    page = serve_hv(overlay)
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    hv_plot.click()
+
+    def test():
+        assert s.xs == {'x': 11.560240963855422}
+        assert s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
+
+    wait_until(test, page)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_multi_axis_tap_datetime(serve_hv):
+    c1 = Curve((pd.date_range('2024-01-01', '2024-01-10'), np.arange(10).cumsum()), vdims='y1')
+    c2 = Curve((pd.date_range('2024-01-01', '2024-01-20'), np.arange(20).cumsum()), vdims='y2')
+
+    overlay = (c1 * c2).opts(multi_y=True)
+
+    s = MultiAxisTap(source=overlay)
+
+    page = serve_hv(overlay)
+
+    hv_plot = page.locator('.bk-events')
+
+    expect(hv_plot).to_have_count(1)
+
+    hv_plot.click()
+
+    def test():
+        assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
+        assert s.ys == {'y1': 18.13070539419087, 'y2': 76.551867219917}
+
+    wait_until(test, page)
 
 
 @pytest.mark.usefixtures("bokeh_backend")

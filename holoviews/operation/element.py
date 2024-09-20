@@ -830,7 +830,7 @@ class histogram(Operation):
 
         # Mask data
         if is_ibis_expr(data):
-            from ..core.data.ibis import ibis5
+            from ..core.data.ibis import ibis5, ibis9_5
 
             mask = data.notnull()
             if self.p.nonzero:
@@ -840,7 +840,7 @@ class histogram(Operation):
             else:
                 # to_projection removed in ibis 5.0.0
                 data = data.to_projection()
-            data = data[mask]
+            data = data.filter(mask) if ibis9_5() else data[mask]
             no_data = not len(data.head(1).execute())
             data = data[dim.name]
         else:

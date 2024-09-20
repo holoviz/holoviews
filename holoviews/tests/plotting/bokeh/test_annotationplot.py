@@ -267,6 +267,21 @@ class TestHVLinesPlot(TestBokehPlot):
         assert list(source.data) == ["y"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
 
+    def test_hlines_plot_multi_y(self):
+        hlines = (
+            HLines({"y1": [1, 2, 3]}, 'y1') * HLines({'y2': [3, 4, 5]}, 'y2')
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(hlines)
+        sp1, sp2 = plot.subplots.values()
+        y1_range = sp1.handles['y_range']
+        assert y1_range.name == 'y1'
+        assert y1_range.start == 1
+        assert y1_range.end == 3
+        y2_range = sp2.handles['y_range']
+        assert y2_range.name == 'y2'
+        assert y2_range.start == 3
+        assert y2_range.end == 5
+
     def test_hlines_xlabel_ylabel(self):
         hlines = HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
