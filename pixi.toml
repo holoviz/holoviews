@@ -18,7 +18,7 @@ test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core", "test-unit-task"]
+test-core = ["py313", "test-core", "test-unit-task"]
 test-gpu = ["py311", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -53,12 +53,12 @@ bokeh_sampledata = "*"
 python = "3.12.*"
 bokeh_sampledata = "*"
 
-# [feature.py313]
-# channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
-#
-# [feature.py313.dependencies]
-# python = "3.13.*"
-# bokeh_sampledata = "*"
+[feature.py313]
+channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
+
+[feature.py313.dependencies]
+python = "3.13.*"
+bokeh_sampledata = "*"
 
 [feature.example.dependencies]
 cftime = "*"
