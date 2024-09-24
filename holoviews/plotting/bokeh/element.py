@@ -21,6 +21,7 @@ from bokeh.models import (
     GlyphRenderer,
     Legend,
     Renderer,
+    Span,
     Title,
     tools,
 )
@@ -575,10 +576,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             tool_list.append(tool)
 
         copied_tools = []
+        skip_models = (Span,)
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
                 properties = {
-                    p: v.clone() if isinstance(v, Model) else v
+                    p: v.clone() if isinstance(v, Model) and not isinstance(v, skip_models) else v
                     for p, v in tool.properties_with_values(include_defaults=False).items()
                 }
                 tool = type(tool)(**properties)
