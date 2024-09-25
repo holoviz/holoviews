@@ -12,7 +12,7 @@ on:
 
 defaults:
   run:
-    shell: bash -el {0}
+    shell: bash -l {0}
 
 env:
   PYTHON_VERSION: "3.11"
@@ -33,14 +33,14 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
 
   conda_build:
     name: Build Conda
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: "build"
           download-data: false
@@ -88,7 +88,7 @@ jobs:
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: "build"
           download-data: false
