@@ -120,11 +120,17 @@ class MPLPlot(DimensionedPlot):
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
 
+    sublabel_offset = param.Number(default=0, bounds=(0, None), doc="""
+        Allows offsetting the sublabel index.""")
+
     sublabel_position = param.NumericTuple(default=(-0.35, 0.85), doc="""
          Position relative to the plot for placing the optional subfigure label.""")
 
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
+
+    sublabel_skip = param.List(default=None, item_type=int, doc="""
+        List of elements to skip when labeling subplots. Numbering starts at 1.""")
 
     projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
@@ -207,20 +213,29 @@ class MPLPlot(DimensionedPlot):
 
 
     def _subplot_label(self, axis):
+        if self.sublabel_skip and self.layout_num in self.sublabel_skip:
+            return
         layout_num = self.layout_num if self.subplot else 1
-        if self.sublabel_format and not self.adjoined and layout_num > 0:
+        if self.sublabel_skip:
+            if any(n < 1 for n in self.sublabel_skip):
+                raise ValueError('sublabel_skip values must be greater than 0')
+            sublabel_num = len(set(range(layout_num)) - set(self.sublabel_skip))
+        else:
+            sublabel_num = layout_num
+        sublabel_num += self.sublabel_offset
+        if self.sublabel_format and not self.adjoined and sublabel_num > 0:
             from matplotlib.offsetbox import AnchoredText
             labels = {}
             if '{Alpha}' in self.sublabel_format:
-                labels['Alpha'] = int_to_alpha(layout_num-1)
+                labels['Alpha'] = int_to_alpha(sublabel_num-1)
             elif '{alpha}' in self.sublabel_format:
-                labels['alpha'] = int_to_alpha(layout_num-1, upper=False)
+                labels['alpha'] = int_to_alpha(sublabel_num-1, upper=False)
             elif '{numeric}' in self.sublabel_format:
-                labels['numeric'] = self.layout_num
+                labels['numeric'] = sublabel_num
             elif '{Roman}' in self.sublabel_format:
-                labels['Roman'] = int_to_roman(layout_num)
+                labels['Roman'] = int_to_roman(sublabel_num)
             elif '{roman}' in self.sublabel_format:
-                labels['roman'] = int_to_roman(layout_num).lower()
+                labels['roman'] = int_to_roman(sublabel_num).lower()
             at = AnchoredText(self.sublabel_format.format(**labels), loc=3,
                               bbox_to_anchor=self.sublabel_position, frameon=False,
                               prop=dict(size=self.sublabel_size, weight='bold'),
