@@ -2004,17 +2004,20 @@ class inspect_points(inspect_base):
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
         xtype, ytype = dx.dtype.kind, dy.dtype.kind
-        if xtype.kind in 'Mm':
+        if xtype in 'Mm':
             dx = dx.astype('int64')
-        if ytype.kind in 'Mm':
+        if ytype in 'Mm':
             dy = dx.astype('int64')
         # If coordinate types don't match normalize
         # coordinate space to ensure that distance
         # in both direction is handled the same.
         if xtype != ytype and len(dx) and len(dy):
-            dx = (dx - dx.min()) / (dx.max() - dx.min())
-            dy = (dy - dy.min()) / (dy.max() - dy.min())
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', r'invalid value encountered in (divide)')
+                dx = (dx - dx.min()) / (dx.max() - dx.min())
+                dy = (dy - dy.min()) / (dy.max() - dy.min())
         distances = pd.Series(dx**2 + dy**2)
+        distances[distances.isna()] = 0
         return df.iloc[distances.argsort().values]
 
 
