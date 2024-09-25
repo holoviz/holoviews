@@ -1,6 +1,11 @@
 import numpy as np
 import pandas as pd
-from bokeh.models import CategoricalColorMapper, LinearAxis, LinearColorMapper
+from bokeh.models import (
+    CategoricalColorMapper,
+    DatetimeAxis,
+    LinearAxis,
+    LinearColorMapper,
+)
 
 from holoviews.core.overlay import NdOverlay, Overlay
 from holoviews.element import Bars
@@ -313,6 +318,29 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
 
+    def test_bars_continuous_datetime_timezone_in_overlay(self):
+        # See: https://github.com/holoviz/holoviews/issues/6364
+        bars = Bars((pd.date_range("1/1/2000", periods=10, tz="UTC"), np.random.rand(10)))
+        overlay = Overlay([bars])
+        plot = bokeh_renderer.get_plot(overlay)
+        assert isinstance(plot.handles["xaxis"], DatetimeAxis)
+
+    def test_bars_continuous_datetime_stacked(self):
+        # See: https://github.com/holoviz/holoviews/issues/6288
+        data = pd.DataFrame({
+            "x": pd.to_datetime([
+                    "2017-01-01T00:00:00",
+                    "2017-01-01T00:00:00",
+                    "2017-01-01T01:00:00",
+                    "2017-01-01T01:00:00",
+                ]),
+            "cat": ["A", "B", "A", "B"],
+            "y": [1, 2, 3, 4],
+        })
+        bars = Bars(data, ["x", "cat"], ["y"]).opts(stacked=True)
+        plot = bokeh_renderer.get_plot(bars)
+        assert isinstance(plot.handles["xaxis"], DatetimeAxis)
+
     def test_bars_not_continuous_data_list(self):
         bars = Bars([("A", 1), ("B", 2), ("C", 3)])
         plot = bokeh_renderer.get_plot(bars)
@@ -354,5 +382,12 @@ class TestBarPlot(TestBokehPlot):
             .aggregate(function=np.sum)
             .opts(stacked=True)
         )
+        plot = bokeh_renderer.get_plot(bars)
+        assert plot.handles["glyph"].width == 0.8
+
+    def test_bar_stacked_stack_variable_sorted(self):
+        # Check that if the stack dim is ordered
+        df = pd.DataFrame({"a": [*range(50), *range(50)], "b": sorted("ab" * 50), "c": range(100)})
+        bars = Bars(df, kdims=["a", "b"], vdims=["c"]).opts(stacked=True)
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 0.8

@@ -93,7 +93,7 @@ class XArrayInterface(GridInterface):
         if isinstance(data, xr.DataArray):
             kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
             vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
-            if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
+            if kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
                 packed = True
             elif vdims:
                 vdim = vdims[0]
@@ -446,7 +446,11 @@ class XArrayInterface(GridInterface):
         Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if not cls.packed(dataset) and len(data.data_vars) == 1:
+        if cls.packed(dataset):
+            array = data.squeeze()
+            if len(array.shape) == 0:
+                return array.item()
+        elif len(data.data_vars) == 1:
             array = data[dataset.vdims[0].name].squeeze()
             if len(array.shape) == 0:
                 return array.item()

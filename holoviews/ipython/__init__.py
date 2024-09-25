@@ -2,6 +2,7 @@ import os
 from unittest import SkipTest
 
 import param
+from bokeh.settings import settings as bk_settings
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
@@ -164,6 +165,7 @@ class notebook_extension(extension):
             Store.set_display_hook('html+js', LabelledData, pprint_display)
             Store.set_display_hook('png', LabelledData, png_display)
             Store.set_display_hook('svg', LabelledData, svg_display)
+            bk_settings.simple_ids.set_value(False)
             notebook_extension._loaded = True
 
         css = ''

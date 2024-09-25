@@ -936,9 +936,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         cats = None
         style_dim = None
+        xslice = slice(None)
         if sdim:
             cats = values['stack']
             style_dim = sdim
+            stack_data = element.dimension_values(sdim)
+            xslice = stack_data == stack_data[0]
         elif cdim:
             cats = values['category']
             style_dim = cdim
@@ -954,14 +957,15 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         is_dt = isdatetime(xvals)
         continuous = True
         if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
-            xdiff_vals = date2num(xvals) if is_dt else xvals
-            xdiff = np.abs(np.diff(xdiff_vals))
-            if len(np.unique(xdiff)) == 1:
-                # if all are same
+            xvals = xvals[xslice]
+            xdiff = np.abs(np.diff(xvals))
+            diff_size = len(np.unique(xdiff))
+            if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
                 xdiff = 1
             else:
                 xdiff = np.min(xdiff)
-            width = (1 - self.bar_padding) * xdiff
+            width = (1 - self.bar_padding) * (date2num(xdiff) / 1000 if is_dt else xdiff)
+            data_width = (1 - self.bar_padding) * xdiff
         else:
             xdiff = len(values.get('category', [None]))
             width = (1 - self.bar_padding) / xdiff
@@ -1050,16 +1054,23 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             axis.legend(title=title, **legend_opts)
 
         x_range = ranges[gdim.label]["data"]
-        if continuous and not is_dt:
-            if style.get('align', 'center') == 'center':
-                left_multiplier = 0.5
-                right_multiplier = 0.5
-            else:
-                left_multiplier = 0
-                right_multiplier = 1
+        if style.get('align', 'center') == 'center':
+            left_multiplier = 0.5
+            right_multiplier = 0.5
+        else:
+            left_multiplier = 0
+            right_multiplier = 1
+        if continuous:
             ranges[gdim.label]["data"] = (
-                x_range[0] - width * left_multiplier,
-                x_range[1] + width * right_multiplier
+                x_range[0] - data_width * left_multiplier,
+                x_range[1] + data_width * right_multiplier,
+            )
+        else:
+            locs = [item[0] for item in xticks]
+            xmin, xmax = min(locs), max(locs)
+            ranges[gdim.label]["data"] = (
+                - width * left_multiplier + xmin,
+                width * right_multiplier + xmax
             )
         return bars, xticks if not continuous else None, ax_dims
 

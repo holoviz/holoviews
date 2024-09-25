@@ -1358,6 +1358,18 @@ class Tap(PointerXY):
            Pointer position along the y-axis in data coordinates""")
 
 
+class MultiAxisTap(LinkedStream):
+    """
+    The x/y-positions of a tap or click in data coordinates.
+    """
+
+    xs = param.Dict(default=None, constant=True, doc="""
+           Pointer positions along the x-axes in data coordinates""")
+
+    ys = param.Dict(default=None, constant=True, doc="""
+           Pointer positions along the y-axes in data coordinates""")
+
+
 class DoubleTap(PointerXY):
     """
     The x/y-position of a double-tap or -click in data coordinates.

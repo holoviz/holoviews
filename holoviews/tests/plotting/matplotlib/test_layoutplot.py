@@ -58,3 +58,25 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
         self.assertTrue(cp1.handles['axis'].get_ylim(), (1, 3))
         self.assertTrue(cp2.handles['axis'].get_ylim(), (10, 30))
+
+    def test_layout_sublabel_offset(self):
+        from holoviews.plotting.mpl import CurvePlot
+        layout = Curve([]) + Curve([]) + Curve([]) + Curve([])
+        layout.opts(sublabel_offset=1)
+        plot = mpl_renderer.get_plot(layout)
+        cps = plot.traverse(lambda x: x, [CurvePlot])
+        assert cps[0].handles["sublabel"].get_text() == "B"
+        assert cps[1].handles["sublabel"].get_text() == "C"
+        assert cps[2].handles["sublabel"].get_text() == "D"
+        assert cps[3].handles["sublabel"].get_text() == "E"
+
+    def test_layout_sublabel_skip(self):
+        from holoviews.plotting.mpl import CurvePlot
+        layout = Curve([]) + Curve([]) + Curve([]) + Curve([])
+        layout.opts(sublabel_skip=[1, 3])
+        plot = mpl_renderer.get_plot(layout)
+        cps = plot.traverse(lambda x: x, [CurvePlot])
+        assert "sublabel" not in cps[0].handles
+        assert cps[1].handles["sublabel"].get_text() == "A"
+        assert "sublabel" not in cps[2].handles
+        assert cps[3].handles["sublabel"].get_text() == "B"
