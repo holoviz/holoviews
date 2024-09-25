@@ -2012,13 +2012,11 @@ class inspect_points(inspect_base):
         # coordinate space to ensure that distance
         # in both direction is handled the same.
         if xtype != ytype and len(dx) and len(dy):
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', r'invalid value encountered in (divide)')
+            with np.errstate(divide='ignore'):
                 dx = (dx - dx.min()) / (dx.max() - dx.min())
                 dy = (dy - dy.min()) / (dy.max() - dy.min())
         distances = pd.Series(dx**2 + dy**2)
-        distances[distances.isna()] = 0
-        return df.iloc[distances.argsort().values]
+        return df.iloc[distances.fillna(0).argsort().values]
 
 
 class inspect_polygons(inspect_base):
