@@ -1488,13 +1488,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.subcoordinate_y and yupdate and not subcoord:
             updated = set()
             for sp in (self.subplots or {}).values():
-                sp_range = sp.handles['y_range']
-                if sp_range.name in updated:
-                    continue
-                updated.add(sp_range.name)
+                if isinstance(sp, GenericOverlayPlot):
+                    subcoord = False
+                    el_ranges = ranges
+                else:
+                    sp_range = sp.handles.get('y_range')
+                    if not sp_range or sp_range.name in updated:
+                        continue
+                    el_ranges = util.match_spec(sp.current_frame, ranges)
+                    updated.add(sp_range.name)
+                    subcoord = True
                 sp._update_main_ranges(
                     sp.current_frame, sp.handles['x_range'], sp.handles['y_range'],
-                    ranges, subcoord=True
+                    el_ranges, subcoord=subcoord
                 )
         elif (not self.drawn or yupdate) and (not self.subcoordinate_y or subcoord):
             self._update_range(
