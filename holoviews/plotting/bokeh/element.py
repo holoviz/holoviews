@@ -1483,6 +1483,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
 
+        # If subcoordinate_y is enabled we iterate over each of the
+        # subcoordinate ranges and let the subplot handle the update
         if self.subcoordinate_y and yupdate and not subcoord:
             updated = set()
             for sp in (self.subplots or {}).values():
@@ -1494,7 +1496,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     sp.current_frame, sp.handles['x_range'], sp.handles['y_range'],
                     ranges, subcoord=True
                 )
-        elif (not (self.drawn or self.subcoordinate_y) or subcoord) and yupdate:
+        elif (not self.drawn or yupdate) and (not self.subcoordinate_y or subcoord):
             self._update_range(
                 y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
                 self._shared['y-main-range'], self.logy, streaming
