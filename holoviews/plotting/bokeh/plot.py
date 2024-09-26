@@ -48,7 +48,7 @@ from ..plot import (
     GenericLayoutPlot,
     GenericOverlayPlot,
 )
-from ..util import attach_streams, collate, displayable
+from ..util import attach_streams, collate, displayable, get_nested_streams
 from .links import LinkCallback
 from .util import (
     cds_column_replace,
@@ -249,12 +249,14 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             if plot.subplots:
                 plot.subplots.clear()
 
-            if isinstance(plot, GenericElementPlot):
-                for callback in plot.callbacks:
-                    streams += callback.streams
-                    callback.cleanup()
+            if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
+                continue
 
-            for stream in set(streams):
+            for callback in plot.callbacks:
+                streams += callback.streams
+                callback.cleanup()
+
+            for stream in get_nested_streams(plot.hmap):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if not is_param_method(subscriber) or

@@ -109,8 +109,8 @@ def test_layout_plot_stream_cleanup():
 
     plot = bokeh_renderer.get_plot(dmap1 + dmap2)
 
-    assert len(stream1._subscribers) == 1
-    assert len(stream2._subscribers) == 1
+    assert len(stream1._subscribers) == 2
+    assert len(stream2._subscribers) == 2
 
     plot.cleanup()
 
