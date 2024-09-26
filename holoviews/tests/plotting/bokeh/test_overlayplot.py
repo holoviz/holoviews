@@ -15,7 +15,7 @@ from holoviews.element import (
     VLine,
 )
 from holoviews.plotting.bokeh.util import property_to_dict
-from holoviews.streams import Stream, Tap
+from holoviews.streams import Pipe, Stream, Tap
 from holoviews.util import Dynamic
 
 from ...utils import LoggingComparisonTestCase
@@ -307,6 +307,43 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
             assert sp.handles['y_range'].start == 0
             assert sp.handles['y_range'].end == 27
 
+    def test_ndoverlay_subcoordinate_y_ranges_update(self):
+        def lines(data):
+            return NdOverlay({
+                'A': Curve(data, 'x', ('A', 'y1')).opts(subcoordinate_y=True, framewise=True),
+                'B': Curve(data, 'x', ('B', 'y2')).opts(subcoordinate_y=True, framewise=True),
+                'C': Curve(data, 'x', ('C', 'y3')).opts(subcoordinate_y=True, framewise=True),
+            })
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        stream = Pipe(data=data)
+        dmap = DynamicMap(lines, streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            assert y_range.start == 0
+            assert y_range.end == data[y_range.name].max()
+
+        new_data = {
+            'x': np.arange(10),
+            'A': data['A'] + 1,
+            'B': data['B'] + 2,
+            'C': data['C'] + 3
+        }
+        stream.event(data=new_data)
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            ydata = new_data[y_range.name]
+            assert y_range.start == ydata.min()
+            assert y_range.end == ydata.max()
+
     def test_overlay_subcoordinate_y_ranges(self):
         data = {
             'x': np.arange(10),
@@ -326,6 +363,43 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         for sp in plot.subplots.values():
             assert sp.handles['y_range'].start == 0
             assert sp.handles['y_range'].end == 27
+
+    def test_overlay_subcoordinate_y_ranges_update(self):
+        def lines(data):
+            return Overlay([
+                Curve(data, 'x', ('A', 'y1'), label='A').opts(subcoordinate_y=True, framewise=True),
+                Curve(data, 'x', ('B', 'y2'), label='B').opts(subcoordinate_y=True, framewise=True),
+                Curve(data, 'x', ('C', 'y3'), label='C').opts(subcoordinate_y=True, framewise=True),
+            ])
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        stream = Pipe(data=data)
+        dmap = DynamicMap(lines, streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            assert y_range.start == 0
+            assert y_range.end == data[y_range.name].max()
+
+        new_data = {
+            'x': np.arange(10),
+            'A': data['A'] + 1,
+            'B': data['B'] + 2,
+            'C': data['C'] + 3
+        }
+        stream.event(data=new_data)
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            ydata = new_data[y_range.name]
+            assert y_range.start == ydata.min()
+            assert y_range.end == ydata.max()
 
 
 class TestLegends(TestBokehPlot):

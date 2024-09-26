@@ -368,6 +368,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Flag to check whether plot has been updated
         self._updated = False
+        # Counter to keep track of last stream update
+        self._stream_count = None
 
     def _hover_opts(self, element):
         if self.batched:
@@ -989,6 +991,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         fig.xaxis[0].update(**axis_props['x'])
         fig.yaxis[0].update(**axis_props['y'])
 
+        # Set up handlers to configure following behavior on streaming plots
+        if self.streaming:
+            fig.on_event('rangesupdate', self._disable_follow)
+            fig.on_event('reset', self._reset_follow)
+            code = "export default (_, cb_obj) => { cb_obj.origin.hold_render = false }"
+            fig.js_on_event('reset', CustomJS(code=code))
+
         # Do not add the extra axes to the layout if subcoordinates are used
         if self._subcoord_overlaid:
             return fig
@@ -1007,6 +1016,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ax = ax_cls(**ax_kwargs)
             fig.add_layout(ax, axis_position)
         return fig
+
+    def _disable_follow(self, event):
+        hold = self.state.hold_render
+        for stream in self.streaming:
+            stream.following = False
+        if not hold:
+            stream.trigger(self.streaming)
+            self.state.hold_render = True
+
+    def _reset_follow(self, event):
+        self.state.hold_render = False
+        for stream in self.streaming:
+            stream.following = True
+        stream.trigger(self.streaming)
 
     def _plot_properties(self, key, element):
         """
@@ -1319,7 +1342,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self._shared.get(extra_y_range.name, False), log, streaming
             )
 
-    def _update_main_ranges(self, element, x_range, y_range, ranges):
+    def _update_main_ranges(self, element, x_range, y_range, ranges, subcoord=False):
         plot = self.handles['plot']
 
         l, b, r, t = None, None, None, None
@@ -1343,11 +1366,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         framewise = self.framewise
         streaming = (self.streaming and any(stream._triggering and stream.following
                                             for stream in self.streaming))
-        xupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
+        xupdate = not subcoord and ((not (self.model_changed(x_range) or self.model_changed(plot))
                     and (framewise or streaming))
                    or xfactors is not None)
-        yupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
-                    and (framewise or streaming) or yfactors is not None) and not self.subcoordinate_y)
+        yupdate = (not (self.model_changed(x_range) or self.model_changed(plot))
+                    and (framewise or streaming) or yfactors is not None)
 
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options.get('width'))
@@ -1459,7 +1482,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x-main-range'], self.logx, streaming)
-        if not (self.drawn or self.subcoordinate_y) or yupdate:
+
+        # If subcoordinate_y is enabled we iterate over each of the
+        # subcoordinate ranges and let the subplot handle the update
+        if self.subcoordinate_y and yupdate and not subcoord:
+            updated = set()
+            for sp in (self.subplots or {}).values():
+                if isinstance(sp, GenericOverlayPlot):
+                    subcoord = False
+                    el_ranges = ranges
+                else:
+                    sp_range = sp.handles.get('y_range')
+                    if not sp_range or sp_range.name in updated:
+                        continue
+                    el_ranges = util.match_spec(sp.current_frame, ranges)
+                    updated.add(sp_range.name)
+                    subcoord = True
+                sp._update_main_ranges(
+                    sp.current_frame, sp.handles['x_range'], sp.handles['y_range'],
+                    el_ranges, subcoord=subcoord
+                )
+        elif (not self.drawn or yupdate) and (not self.subcoordinate_y or subcoord):
             self._update_range(
                 y_range, b, t, yfactors, self._get_tag(y_range, 'invert_yaxis'),
                 self._shared['y-main-range'], self.logy, streaming
