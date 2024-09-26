@@ -2012,7 +2012,8 @@ class inspect_points(inspect_base):
         # coordinate space to ensure that distance
         # in both direction is handled the same.
         if xtype != ytype and len(dx) and len(dy):
-            with np.errstate(divide='ignore'):
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', r'invalid value encountered in (divide)')
                 dx = (dx - dx.min()) / (dx.max() - dx.min())
                 dy = (dy - dy.min()) / (dy.max() - dy.min())
         distances = pd.Series(dx**2 + dy**2)
