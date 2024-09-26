@@ -666,7 +666,6 @@ class PopupMixin:
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
             async_execute(self._process_selection_event)
-            self._skipped_partial_event = False
 
     def on_msg(self, msg):
         super().on_msg(msg)
@@ -751,6 +750,7 @@ class PopupMixin:
         if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
+        self._skipped_partial_event = False
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
