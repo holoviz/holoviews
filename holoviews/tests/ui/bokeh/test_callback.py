@@ -261,6 +261,24 @@ def test_stream_popup_callbacks(serve_hv):
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_async_callbacks(serve_hv):
+    async def popup_form(x, y):
+        return pn.widgets.Button(name=f"{x},{y}")
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(2)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_visible(serve_hv, points):
     def popup_form(x, y):
         def hide(_):
