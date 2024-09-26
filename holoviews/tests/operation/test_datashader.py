@@ -1458,14 +1458,25 @@ class GraphBundlingTests(ComparisonTestCase):
         direct = directly_connect_edges(self.graph)._split_edgepaths
         self.assertEqual(direct, self.graph.edgepaths)
 
+
 class InspectorTests(ComparisonTestCase):
     """
     Tests for inspector operations
     """
     def setUp(self):
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
-        self.pntsimg = rasterize(points, dynamic=False,
-                             x_range=(0, 1), y_range=(0, 1), width=4, height=4)
+        self.pntsimg = rasterize(
+            points, dynamic=False, height=4, width=4,
+            x_range=(0, 1), y_range=(0, 1)
+        )
+        date_pts = Points([
+            (np.datetime64('2024-09-25 11:00'), 0.3),
+            (np.datetime64('2024-09-25 11:01'), 0.7),
+            (np.datetime64('2024-09-25 11:04'), 0.99)])
+        self.datesimg = rasterize(
+            date_pts, dynamic=False, height=4, width=4,
+            x_range=(np.datetime64('2024-09-25 11:00'), np.datetime64('2024-09-25 11:04')), y_range=(0, 1)
+        )
         if spatialpandas is None:
             return
 
@@ -1479,7 +1490,6 @@ class InspectorTests(ComparisonTestCase):
 
     def tearDown(self):
         Tap.x, Tap.y = None, None
-
 
     def test_inspect_points_or_polygons(self):
         if spatialpandas is None:
@@ -1537,6 +1547,18 @@ class InspectorTests(ComparisonTestCase):
         self.assertEqual(points.streams[0].x, 0.2)
         self.assertEqual(points.streams[0].y, 0.3)
 
+    def test_points_with_dates_inspection_1px_mask(self):
+        points = inspect_points(self.datesimg, max_indicators=3, dynamic=False, pixels=1,
+                                x=np.datetime64('2024-09-25 11:01'), y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([]))
+        self.assertEqual(points.dimension_values('y'), np.array([]))
+
+    def test_points_with_dates_inspection_2px_mask(self):
+        points = inspect_points(self.datesimg, max_indicators=3, dynamic=False, pixels=2,
+                                x=np.datetime64('2024-09-25 11:01'), y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([np.datetime64('2024-09-25 11:00')]))
+        self.assertEqual(points.dimension_values('y'), np.array([0.3]))
+
     def test_polys_inspection_1px_mask_hit(self):
         if spatialpandas is None:
             raise SkipTest('Polygon inspect tests require spatialpandas')
@@ -1555,7 +1577,6 @@ class InspectorTests(ComparisonTestCase):
         data = [[6.0, 7.0, 3.0, 2.0, 7.0, 5.0, 6.0, 7.0]]
         self.assertEqual(inspector.hits.iloc[0].geometry,
                          spatialpandas.geometry.polygon.Polygon(data))
-
 
     def test_polys_inspection_1px_mask_miss(self):
         if spatialpandas is None:
