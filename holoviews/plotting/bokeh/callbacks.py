@@ -723,6 +723,7 @@ class PopupMixin:
             self._panel.stylesheets = []
 
         self._panel.visible = True
+        self._skipped_partial_event = False
         # for existing popup, important to check if they're visible
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
@@ -750,7 +751,6 @@ class PopupMixin:
         if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
-        self._skipped_partial_event = False
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
