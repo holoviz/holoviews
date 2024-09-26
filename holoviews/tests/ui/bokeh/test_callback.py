@@ -425,9 +425,9 @@ def test_stream_popup_selection1d_lasso_select(serve_hv, points):
     expect(hv_plot).to_have_count(1)
 
     box = hv_plot.bounding_box()
-    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
-    mid_x, mid_y = box['x'] + 10, box['y'] + 10
-    end_x, end_y = box['x'] + box['width'] - 10, box['y'] + 10
+    start_x, start_y = box['x'] + 1, box['y'] + box['height'] - 1
+    mid_x, mid_y = box['x'] + 1, box['y'] + 1
+    end_x, end_y = box['x'] + box['width'] - 1, box['y'] + 1
 
     page.mouse.move(start_x, start_y)
     hv_plot.click()
