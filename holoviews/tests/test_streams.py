@@ -952,7 +952,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         buff = Buffer(data)
         buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
         dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])}, index=[0, 0])
-        self.assertEqual(buff.data, dframe)
+        pd.testing.assert_frame_equal(buff.data, dframe)
 
     def test_buffer_dframe_larger_than_length(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
@@ -980,7 +980,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         data = pd.DataFrame({'a': [1, 2, 3]})
         buff = Buffer(data)
         buff.clear()
-        self.assertEqual(buff.data, data.iloc[:0, :])
+        pd.testing.assert_frame_equal(buff.data, data.iloc[:0, :])
 
 
 class Sum(Derived):
