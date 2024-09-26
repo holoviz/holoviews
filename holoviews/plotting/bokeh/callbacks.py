@@ -723,7 +723,9 @@ class PopupMixin:
             self._panel.stylesheets = []
 
         self._panel.visible = True
-        self._skipped_partial_event = False
+
+        if self._skipped_partial_event:
+            self._skipped_partial_event = False
         # for existing popup, important to check if they're visible
         # otherwise, UnknownReferenceError: can't resolve reference 'p...'
         # meaning the popup has already been removed; we need to regenerate
