@@ -256,7 +256,7 @@ Enhancements:
 - Drop requirements for `OrderedDict` ([#5867](https://github.com/holoviz/holoviews/pull/5867), [#5890](https://github.com/holoviz/holoviews/pull/5890), [#5925](https://github.com/holoviz/holoviews/pull/5925))
 - Allow to link to an `Overlay` ([#5881](https://github.com/holoviz/holoviews/pull/5881))
 - Use contourpy for contour calculations ([#5910](https://github.com/holoviz/holoviews/pull/5910))
-- Use browser information to set `pixel_density` in `ResampleOperation2D` ([#5947](https://github.com/holoviz/holoviews/pull/5947))
+- Use browser information to set `pixel_ratio` in `ResampleOperation2D` ([#5947](https://github.com/holoviz/holoviews/pull/5947))
 - Avoid bounce back of events for `Range{X,Y,XY}` streams ([#5946](https://github.com/holoviz/holoviews/pull/5946))
 
 Bug fixes:
