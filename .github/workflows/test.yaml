@@ -194,6 +194,7 @@ jobs:
           pixi run -e ${{ matrix.environment }} test-unit
 
   result_test_suite:
+    name: result:test
     needs: [unit_test_suite, ui_test_suite, core_test_suite]
     if: always()
     runs-on: ubuntu-latest
