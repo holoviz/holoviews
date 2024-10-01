@@ -218,6 +218,8 @@ class DaskInterface(PandasInterface):
         for coord in indices:
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
                 continue
+            if len(coord) == 1 and not util.PANDAS_GE_220:
+                coord = coord[0]
             group = group_type(groupby.get_group(coord), **group_kwargs)
             data.append((coord, group))
         if issubclass(container_type, NdMapping):
