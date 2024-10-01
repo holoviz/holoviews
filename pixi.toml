@@ -13,7 +13,6 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 PYTHONIOENCODING = "utf-8"
 
 [environments]
-test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
@@ -37,21 +36,14 @@ panel = ">=1.0"
 param = ">=2.0,<3.0"
 pyviz_comms = ">=2.1"
 
-[feature.py39.dependencies]
-python = "3.9.*"
-panel = "1.4.*"
-
 [feature.py310.dependencies]
 python = "3.10.*"
-bokeh_sampledata = "*"
 
 [feature.py311.dependencies]
 python = "3.11.*"
-bokeh_sampledata = "*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
-bokeh_sampledata = "*"
 
 [feature.py313]
 channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
@@ -61,6 +53,7 @@ python = "3.13.*"
 bokeh_sampledata = "*"
 
 [feature.example.dependencies]
+bokeh_sampledata = "*"
 cftime = "*"
 dask-core = "*"
 datashader = ">=0.11.1"
@@ -95,6 +88,7 @@ pytest-xdist = "*"
 test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
 [feature.test.dependencies]
+bokeh_sampledata = "*"
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
@@ -107,7 +101,7 @@ matplotlib-base = ">=3"
 networkx = "*"
 plotly = ">=4.0"
 pillow = "*"
-scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
+scipy = ">=1.10"
 selenium = "*"
 shapely = "*"
 spatialpandas = "*"
