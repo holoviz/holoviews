@@ -21,7 +21,7 @@ from holoviews import opts
 from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
-from holoviews.plotting.bokeh.util import bokeh34
+from holoviews.plotting.bokeh.util import bokeh34, bokeh36
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import PointDraw, Stream
 from holoviews.util import render
@@ -884,6 +884,31 @@ class TestScalebarPlot:
         toolbar = plot.handles['plot'].toolbar
         scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
         assert len(scalebar_icon) == 1
+
+    @pytest.mark.skipif(not bokeh36, reason="requires Bokeh >= 3.6")
+    @pytest.mark.parametrize("enabled1", [True, False])
+    @pytest.mark.parametrize("enabled2", [True, False])
+    @pytest.mark.parametrize("enabled3", [True, False])
+    def test_scalebar_with_subcoordinate_y(self, enabled1, enabled2, enabled3):
+        from bokeh.models import ScaleBar
+
+        enabled = [enabled1, enabled2, enabled3]
+        curve1 = Curve([1, 2, 3], label='c1').opts(scalebar=enabled1, subcoordinate_y=True)
+        curve2 = Curve([1, 2, 3], label='c2').opts(scalebar=enabled2, subcoordinate_y=True)
+        curve3 = Curve([1, 2, 3], label='c3').opts(scalebar=enabled3, subcoordinate_y=True)
+        curves = curve1 * curve2 * curve3
+
+        plot = bokeh_renderer.get_plot(curves).handles["plot"]
+        coordinates = [r.coordinates for r in plot.renderers][::-1]
+        sb = (c for c in plot.center if isinstance(c, ScaleBar))
+        scalebars = [next(sb) if e else None for e in enabled]
+        assert sum(map(bool, scalebars)) == sum(enabled)
+
+        for coordinate, scalebar, idx in zip(coordinates, scalebars, "123"):
+            assert coordinate.y_source.name == f"c{idx}"
+            if scalebar is None:
+                continue
+            assert coordinate.y_source is scalebar.range
 
 
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
