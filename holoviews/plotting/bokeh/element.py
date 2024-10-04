@@ -72,6 +72,7 @@ from .util import (
     bokeh32,
     bokeh34,
     bokeh35,
+    bokeh36,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,
@@ -208,7 +209,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         The scalebar_unit is only used if scalebar is True.""")
 
     scalebar_location = param.Selector(
-        default="bottom_right",
+        default=None,
         objects=[
             "top_left", "top_center", "top_right",
             "center_left", "center_center", "center_right",
@@ -217,6 +218,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         ],
         doc="""
             Location anchor for positioning scale bar.
+
+            Default to 'bottom_right', except if subcoordinate_y is True then it will default to 'left'.
 
             The scalebar_location is only used if scalebar is True.""")
 
@@ -2407,10 +2410,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         `scalebar_opts`, and `scalebar_unit` for more information.
 
         Requires Bokeh 3.4
+
+        For scalebar on a subcoordinate_y plot Bokeh 3.6 is needed.
         """
 
         if not bokeh34:
             raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
+        elif not bokeh36 and self.subcoordinate_y:
+            raise RuntimeError("Scalebar with subcoordinate_y requires Bokeh >= 3.6.0")
 
         from bokeh.models import Metric, ScaleBar
 
@@ -2421,17 +2428,36 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             base_unit = unit
 
-        _default_scalebar_opts = {"background_fill_alpha": 0.8}
-        opts = dict(_default_scalebar_opts, **self.scalebar_opts)
+        if self.subcoordinate_y:
+            srange = plot.renderers[-1].coordinates.y_source
+            orientation = "vertical"
+            # Integer is used for the location as `major_label_overrides` overrides the
+            # label with {0: labelA, 1: labelB}
+            location = (self.scalebar_location or "left", len(plot.renderers) - 1)
+            _default_scalebar_opts = {
+                "label_location": "right",
+                "background_fill_color": None,
+                "border_line_color": None,
+                "bar_length": 0.8,
+                "bar_length_units": "data",
+                "margin": 10,
+                "padding": 0,
+                "length_sizing": "exact",
+            }
+        else:
+            srange = plot.x_range if self.scalebar_range == "x" else plot.y_range
+            orientation = "horizontal" if self.scalebar_range == "x" else "vertical"
+            location = self.scalebar_location or "bottom_right"
+            _default_scalebar_opts = {"background_fill_alpha": 0.8}
 
         scale_bar = ScaleBar(
-            range=plot.x_range if self.scalebar_range == "x" else plot.y_range,
-            orientation="horizontal" if self.scalebar_range == "x" else "vertical",
+            range=srange,
+            orientation=orientation,
             unit=unit,
             dimensional=Metric(base_unit=base_unit),
-            location=self.scalebar_location,
+            location=location,
             label=self.scalebar_label,
-            **opts,
+            **dict(_default_scalebar_opts, **self.scalebar_opts),
         )
         self.handles['scalebar'] = scale_bar
         plot.add_layout(scale_bar)

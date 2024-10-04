@@ -67,6 +67,7 @@ bokeh32 = bokeh_version >= Version("3.2")
 bokeh33 = bokeh_version >= Version("3.3")
 bokeh34 = bokeh_version >= Version("3.4")
 bokeh35 = bokeh_version >= Version("3.5")
+bokeh36 = bokeh_version >= Version("3.6")
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
