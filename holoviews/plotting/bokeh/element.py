@@ -2416,7 +2416,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if not bokeh34:
             raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
-        elif not bokeh36 and self.subcoordinate_y:
+        elif not bokeh36 and self._subcoord_overlaid:
             raise RuntimeError("Scalebar with subcoordinate_y requires Bokeh >= 3.6.0")
 
         from bokeh.models import Metric, ScaleBar
@@ -2428,7 +2428,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             base_unit = unit
 
-        if self.subcoordinate_y:
+        if self._subcoord_overlaid:
             srange = plot.renderers[-1].coordinates.y_source
             orientation = "vertical"
             # Integer is used for the location as `major_label_overrides` overrides the
