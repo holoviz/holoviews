@@ -1802,9 +1802,10 @@ class inspect_mask(Operation):
     operation.
     """
 
-    pixels = param.Integer(default=3, doc="""
+    pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
        Size of the mask that should match the pixels parameter used in
-       the associated inspection operation.""")
+       the associated inspection operation. Pixels can be provided as
+       integer or x/y-tuple to perform asymmetric masking.""")
 
     streams = param.ClassSelector(default=[PointerXY], class_=(dict, list))
     x = param.Number(default=0)
@@ -1813,9 +1814,13 @@ class inspect_mask(Operation):
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
         ycount, xcount =  element.interface.shape(element, gridded=True)
+        if isinstance(pixels, tuple):
+            xpixels, ypixels = pixels
+        else:
+            xpixels = ypixels = pixels
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
+        return (x_delta*xpixels, y_delta*ypixels)
 
     def _process(self, raster, key=None):
         if isinstance(raster, RGB):
@@ -1838,10 +1843,11 @@ class inspect(Operation):
     type.
     """
 
-    pixels = param.Integer(default=3, doc="""
+    pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
        Number of pixels in data space around the cursor point to search
        for hits in. The hit within this box mask that is closest to the
-       cursor's position is displayed.""")
+       cursor's position is displayed. Pixels can be provided as
+       integer or x/y-tuple to perform asymmetric masking.""")
 
     null_value = param.Number(default=0, doc="""
        Value of raster which indicates no hits. For instance zero for
@@ -1874,9 +1880,9 @@ class inspect(Operation):
                                                y=PointerXY.param.y),
                                   class_=(dict, list))
 
-    x = param.Number(default=0, doc="x-position to inspect.")
+    x = param.Number(default=None, doc="x-position to inspect.")
 
-    y = param.Number(default=0, doc="y-position to inspect.")
+    y = param.Number(default=None, doc="y-position to inspect.")
 
     _dispatch = {}
 
@@ -1927,33 +1933,40 @@ class inspect_base(inspect):
 
     def _process(self, raster, key=None):
         self._validate(raster)
-        if isinstance(raster, RGB):
-            raster = raster[..., raster.vdims[-1]]
-        x_range, y_range = raster.range(0), raster.range(1)
-        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
         x, y = self.p.x, self.p.y
-        val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
-        if np.isnan(val):
-            val = self.p.null_value
+        if x is not None and y is not None:
+            if isinstance(raster, RGB):
+                raster = raster[..., raster.vdims[-1]]
+            x_range, y_range = raster.range(0), raster.range(1)
+            xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
+            val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
+            if np.isnan(val):
+                val = self.p.null_value
 
-        if ((self.p.value_bounds and
-             not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
-             or val == self.p.null_value):
-            result = self._empty_df(raster.dataset)
+            if ((self.p.value_bounds and
+                 not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
+                or val == self.p.null_value):
+                result = self._empty_df(raster.dataset)
+            else:
+                masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
+                result = self._sort_by_distance(raster, masked, x, y)
+
+            self.hits = result
         else:
-            masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
-            result = self._sort_by_distance(raster, masked, x, y)
-
-        self.hits = result
+            self.hits = result = self._empty_df(raster.dataset)
         df = self.p.transform(result)
         return self._element(raster, df.iloc[:self.p.max_indicators])
 
     @classmethod
-    def _distance_args(cls, element, x_range, y_range,  pixels):
-        ycount, xcount =  element.interface.shape(element, gridded=True)
+    def _distance_args(cls, element, x_range, y_range, pixels):
+        ycount, xcount = element.interface.shape(element, gridded=True)
+        if isinstance(pixels, tuple):
+            xpixels, ypixels = pixels
+        else:
+            xpixels = ypixels = pixels
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
+        return (x_delta*xpixels, y_delta*ypixels)
 
     @classmethod
     def _empty_df(cls, dataset):
@@ -2008,9 +2021,21 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        distances = pd.Series(dx*dx + dy*dy)
-        return df.iloc[distances.argsort().values]
-
+        xtype, ytype = dx.dtype.kind, dy.dtype.kind
+        if xtype in 'Mm':
+            dx = dx.astype('int64')
+        if ytype in 'Mm':
+            dy = dx.astype('int64')
+        # If coordinate types don't match normalize
+        # coordinate space to ensure that distance
+        # in both direction is handled the same.
+        if xtype != ytype and len(dx) and len(dy):
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', r'invalid value encountered in (divide)')
+                dx = (dx - dx.min()) / (dx.max() - dx.min())
+                dy = (dy - dy.min()) / (dy.max() - dy.min())
+        distances = pd.Series(dx**2 + dy**2)
+        return df.iloc[distances.fillna(0).argsort().values]
 
 
 class inspect_polygons(inspect_base):
@@ -2044,7 +2069,7 @@ class inspect_polygons(inspect_base):
                 xs.append((np.min(gxs)+np.max(gxs))/2)
                 ys.append((np.min(gys)+np.max(gys))/2)
         dx, dy = np.array(xs) - x, np.array(ys) - y
-        distances = pd.Series(dx*dx + dy*dy)
+        distances = pd.Series(dx**2 + dy**2)
         return df.iloc[distances.argsort().values]
 
 
