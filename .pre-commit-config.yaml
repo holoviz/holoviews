@@ -1,11 +1,8 @@
-# This is the configuration for pre-commit, a local framework for managing pre-commit hooks
-#   Check out the docs at: https://pre-commit.com/
-
 exclude: (\.min\.js$|\.svg$|\.html$)
-default_stages: [commit]
+default_stages: [pre-commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -20,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.7
+    rev: v0.6.9
     hooks:
       - id: ruff
         files: holoviews/|scripts/
