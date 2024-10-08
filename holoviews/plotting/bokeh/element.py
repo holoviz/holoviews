@@ -2440,19 +2440,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 'background_fill_color': 'white',
                 'background_fill_alpha': 0.6,
                 'length_sizing': 'adaptive',
+                # Adding location so people can overwrite the default
+                'location': location,
             }
         else:
             srange = plot.x_range if self.scalebar_range == "x" else plot.y_range
             orientation = "horizontal" if self.scalebar_range == "x" else "vertical"
             location = self.scalebar_location or "bottom_right"
-            default_scalebar_opts = {"background_fill_alpha": 0.8}
+            default_scalebar_opts = {"background_fill_alpha": 0.8, "location": location}
 
         scale_bar = ScaleBar(
             range=srange,
             orientation=orientation,
             unit=unit,
             dimensional=Metric(base_unit=base_unit),
-            location=location,
             label=self.scalebar_label,
             **dict(default_scalebar_opts, **self.scalebar_opts),
         )
