@@ -219,7 +219,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         doc="""
             Location anchor for positioning scale bar.
 
-            Default to 'bottom_right', except if subcoordinate_y is True then it will default to 'left'.
+            Default to 'bottom_right', except if subcoordinate_y is True then it will default to 'right'.
 
             The scalebar_location is only used if scalebar is True.""")
 
@@ -2433,22 +2433,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             orientation = "vertical"
             # Integer is used for the location as `major_label_overrides` overrides the
             # label with {0: labelA, 1: labelB}
-            location = (self.scalebar_location or "left", len(plot.renderers) - 1)
-            _default_scalebar_opts = {
-                "label_location": "right",
-                "background_fill_color": None,
-                "border_line_color": None,
-                "bar_length": 0.8,
-                "bar_length_units": "data",
-                "margin": 10,
-                "padding": 0,
-                "length_sizing": "exact",
+            location = (self.scalebar_location or "right", len(plot.renderers) - 1)
+            default_scalebar_opts = {
+                'bar_line_width': 3,
+                'label_location': 'left',
+                'background_fill_color': 'white',
+                'background_fill_alpha': 0.6,
+                'length_sizing': 'adaptive',
             }
         else:
             srange = plot.x_range if self.scalebar_range == "x" else plot.y_range
             orientation = "horizontal" if self.scalebar_range == "x" else "vertical"
             location = self.scalebar_location or "bottom_right"
-            _default_scalebar_opts = {"background_fill_alpha": 0.8}
+            default_scalebar_opts = {"background_fill_alpha": 0.8}
 
         scale_bar = ScaleBar(
             range=srange,
@@ -2457,7 +2454,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dimensional=Metric(base_unit=base_unit),
             location=location,
             label=self.scalebar_label,
-            **dict(_default_scalebar_opts, **self.scalebar_opts),
+            **dict(default_scalebar_opts, **self.scalebar_opts),
         )
         self.handles['scalebar'] = scale_bar
         plot.add_layout(scale_bar)
