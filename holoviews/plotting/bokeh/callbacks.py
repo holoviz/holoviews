@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import inspect
 import time
 from collections import defaultdict
 from functools import partial
@@ -19,6 +20,7 @@ from bokeh.models import (
     Range1d,
 )
 from panel.io.notebook import push_on_root
+from panel.io.server import async_execute
 from panel.io.state import set_curdoc, state
 from panel.pane import panel
 
@@ -664,15 +666,14 @@ class PopupMixin:
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            self._process_selection_event()
-            self._skipped_partial_event = False
+            async_execute(self._process_selection_partial_event)
 
     def on_msg(self, msg):
         super().on_msg(msg)
         if hasattr(self, '_panel'):
-            self._process_selection_event()
+            async_execute(self._process_selection_event)
 
-    def _process_selection_event(self):
+    async def _process_selection_event(self):
         event = self._selection_event
         if event is not None:
             if self.geom_type not in (event.geometry["type"], "any"):
@@ -691,7 +692,10 @@ class PopupMixin:
         popup_is_callable = callable(popup)
         if popup_is_callable:
             with set_curdoc(self.plot.document):
-                popup = popup(**stream.contents)
+                if inspect.iscoroutinefunction(popup):
+                    popup = await popup(**stream.contents)
+                else:
+                    popup = await asyncio.to_thread(popup, **stream.contents)
 
         # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
@@ -747,6 +751,10 @@ class PopupMixin:
         if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
+
+    async def _process_selection_partial_event(self):
+        await self._process_selection_event()
+        self._skipped_partial_event = False
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
