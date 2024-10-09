@@ -53,9 +53,6 @@ bokeh_sampledata = "*"
 python = "3.12.*"
 bokeh_sampledata = "*"
 
-[feature.py313]
-channels = ["conda-forge/label/python_rc"]
-
 [feature.py313.dependencies]
 python = "3.13.*"
 bokeh_sampledata = "*"
