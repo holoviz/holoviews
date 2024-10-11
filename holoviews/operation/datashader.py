@@ -388,9 +388,9 @@ class aggregate(LineAggregationOperation):
         if sel_fn:
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]
-            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "index": ds.where(sel_fn)})
+            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
-            _ignore = [*params["vdims"], "index"]
+            _ignore = [*params["vdims"], "__index__"]
             sel_vdims = [s for s in agg if s not in _ignore]
             params["vdims"] = [*params["vdims"], *sel_vdims]
         else:
@@ -422,13 +422,13 @@ class aggregate(LineAggregationOperation):
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
 
         is_where_index = ds15 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
-        is_summary_index = isinstance(agg_fn, ds.summary) and "index" in agg
+        is_summary_index = isinstance(agg_fn, ds.summary) and "__index__" in agg
         if is_where_index or is_summary_index:
             if is_where_index:
                 data = agg.data
-                agg = agg.to_dataset(name="index")
+                agg = agg.to_dataset(name="__index__")
             else:  # summary index
-                data = agg.index.data
+                data = agg["__index__"].data
             neg1 = data == -1
             for col in dfdata.columns:
                 if col in agg.coords:
