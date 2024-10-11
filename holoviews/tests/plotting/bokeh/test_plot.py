@@ -2,10 +2,12 @@ import numpy as np
 import pyviz_comms as comms
 from bokeh.models import (
     ColumnDataSource,
+    CrosshairTool,
     CustomJS,
     HoverTool,
     LinearColorMapper,
     LogColorMapper,
+    Span,
 )
 from param import concrete_descendents
 
@@ -124,3 +126,17 @@ def test_sync_three_plots():
                 assert v[0].code == "dst.muted = src.muted"
                 assert isinstance(v[1], CustomJS)
                 assert v[1].code == "dst.muted = src.muted"
+
+
+def test_span_not_cloned_crosshair():
+    # See https://github.com/holoviz/holoviews/issues/6386
+    height = Span(dimension="height")
+    cht = CrosshairTool(overlay=height)
+
+    layout = Curve([]).opts(tools=[cht]) + Curve([]).opts(tools=[cht])
+
+    (fig1, *_), (fig2, *_) = bokeh_renderer.get_plot(layout).handles["plot"].children
+    tool1 = next(t for t in fig1.tools if isinstance(t, CrosshairTool))
+    tool2 = next(t for t in fig2.tools if isinstance(t, CrosshairTool))
+
+    assert tool1.overlay is tool2.overlay
