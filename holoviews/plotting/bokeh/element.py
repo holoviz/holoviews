@@ -2112,7 +2112,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._postprocess_hover(renderer, source)
 
         if self.scalebar:
-            self._draw_scalebar(plot)
+            self._draw_scalebar(plot=plot, renderer=renderer)
 
         zooms_subcoordy = self.handles.get('zooms_subcoordy')
         if zooms_subcoordy is not None:
@@ -2402,7 +2402,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return any(self.lookup_options(frame, 'norm').options.get('framewise')
                    for frame in current_frames)
 
-    def _draw_scalebar(self, plot):
+    def _draw_scalebar(self, *, plot, renderer):
         """Draw scalebar on the plot
 
         This will draw a scalebar on the plot. See the documentation for
@@ -2429,7 +2429,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             base_unit = unit
 
         if self._subcoord_overlaid:
-            srange = plot.renderers[-1].coordinates.y_source
+            srange = renderer.coordinates.y_source
             orientation = "vertical"
             # Integer is used for the location as `major_label_overrides` overrides the
             # label with {0: labelA, 1: labelB}
