@@ -249,10 +249,12 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             if plot.subplots:
                 plot.subplots.clear()
 
-            if isinstance(plot, GenericElementPlot):
-                for callback in plot.callbacks:
-                    streams += callback.streams
-                    callback.cleanup()
+            if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
+                continue
+
+            for callback in plot.callbacks:
+                streams += callback.streams
+                callback.cleanup()
 
             for stream in set(streams):
                 stream._subscribers = [
@@ -260,7 +262,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                     if not is_param_method(subscriber) or
                     get_method_owner(subscriber) not in plots
                 ]
-
 
     def _fontsize(self, key, label='fontsize', common=True):
         """

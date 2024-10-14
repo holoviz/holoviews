@@ -14,9 +14,11 @@ from param import concrete_descendents
 from holoviews import Curve
 from holoviews.core.element import Element
 from holoviews.core.options import Store
+from holoviews.core.spaces import DynamicMap
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
+from holoviews.streams import Pipe
 
 bokeh_renderer = Store.renderers['bokeh']
 
@@ -82,9 +84,58 @@ class TestBokehPlot(ComparisonTestCase):
                     self.assertIn(lookup[2:-1], cds.data)
 
         # Ensure all the glyph renderers have a hover tool
-        print(renderers, hover)
         for renderer in renderers:
             self.assertTrue(any(renderer in h.renderers for h in hover))
+
+
+def test_element_plot_stream_cleanup():
+    stream = Pipe()
+
+    dmap = DynamicMap(Curve, streams=[stream])
+
+    plot = bokeh_renderer.get_plot(dmap)
+
+    assert len(stream._subscribers) == 1
+
+    plot.cleanup()
+
+    assert not stream._subscribers
+
+
+def test_overlay_plot_stream_cleanup():
+    stream1 = Pipe()
+    stream2 = Pipe()
+
+    dmap1 = DynamicMap(Curve, streams=[stream1])
+    dmap2 = DynamicMap(Curve, streams=[stream2])
+
+    plot = bokeh_renderer.get_plot(dmap1 * dmap2)
+
+    assert len(stream1._subscribers) == 4
+    assert len(stream2._subscribers) == 4
+
+    plot.cleanup()
+
+    assert not stream1._subscribers
+    assert not stream2._subscribers
+
+
+def test_layout_plot_stream_cleanup():
+    stream1 = Pipe()
+    stream2 = Pipe()
+
+    dmap1 = DynamicMap(Curve, streams=[stream1])
+    dmap2 = DynamicMap(Curve, streams=[stream2])
+
+    plot = bokeh_renderer.get_plot(dmap1 + dmap2)
+
+    assert len(stream1._subscribers) == 2
+    assert len(stream2._subscribers) == 2
+
+    plot.cleanup()
+
+    assert not stream1._subscribers
+    assert not stream2._subscribers
 
 
 def test_sync_two_plots():

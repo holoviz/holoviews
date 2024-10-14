@@ -195,7 +195,7 @@ class Plot(param.Parameterized):
         """
         plots = self.traverse(lambda x: x, [Plot])
         for plot in plots:
-            if not isinstance(plot, (GenericCompositePlot, GenericElementPlot, GenericOverlayPlot)):
+            if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
                 continue
             for stream in set(plot.streams):
                 stream._subscribers = [
