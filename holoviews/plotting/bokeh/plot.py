@@ -48,7 +48,7 @@ from ..plot import (
     GenericLayoutPlot,
     GenericOverlayPlot,
 )
-from ..util import attach_streams, collate, displayable, get_nested_streams
+from ..util import attach_streams, collate, displayable
 from .links import LinkCallback
 from .util import (
     cds_column_replace,
@@ -256,13 +256,12 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                 streams += callback.streams
                 callback.cleanup()
 
-            for stream in get_nested_streams(plot.hmap):
+            for stream in set(streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if not is_param_method(subscriber) or
                     get_method_owner(subscriber) not in plots
                 ]
-
 
     def _fontsize(self, key, label='fontsize', common=True):
         """

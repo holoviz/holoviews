@@ -100,6 +100,24 @@ def test_element_plot_stream_cleanup():
     assert not stream._subscribers
 
 
+def test_overlay_plot_stream_cleanup():
+    stream1 = Pipe()
+    stream2 = Pipe()
+
+    dmap1 = DynamicMap(Curve, streams=[stream1])
+    dmap2 = DynamicMap(Curve, streams=[stream2])
+
+    plot = bokeh_renderer.get_plot(dmap1 * dmap2)
+
+    assert len(stream1._subscribers) == 4
+    assert len(stream2._subscribers) == 4
+
+    plot.cleanup()
+
+    assert not stream1._subscribers
+    assert not stream2._subscribers
+
+
 def test_layout_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()

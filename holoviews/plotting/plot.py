@@ -197,7 +197,7 @@ class Plot(param.Parameterized):
         for plot in plots:
             if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
                 continue
-            for stream in get_nested_streams(plot.hmap):
+            for stream in set(plot.streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if not util.is_param_method(subscriber) or
