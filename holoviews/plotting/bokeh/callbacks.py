@@ -1191,13 +1191,24 @@ class Selection1DCallback(PopupMixin, Callback):
               }
               if (!xs || !ys) { return }
               for (const i of indices) {
-                const tx = xs[i]
-                if (!x || (tx > x)) {
-                  x = xs[i]
+                let ix = xs[i]
+                let iy = ys[i]
+                if (typeof ix === 'number') {
+                  ix = [ix]
+                  iy = [iy]
+                } else {
+                  while (ix.length && (typeof ix[0] !== 'number')) {
+                    ix = ix[0]
+                    iy = iy[0]
+                  }
                 }
-                const ty = ys[i]
+                const tx = Math.max(...ix)
+                if (!x || (tx > x)) {
+                  x = tx
+                }
+                const ty = Math.max(...iy)
                 if (!y || (ty > y)) {
-                  y = ys[i]
+                  y = ty
                 }
               }
               if (x && y) {
