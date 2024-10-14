@@ -268,6 +268,24 @@ def test_stream_popup(serve_hv):
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_polygons(serve_hv):
+    def popup_form(name):
+        return f"# {name}"
+
+    points = hv.Polygons([np.random.randn(10, 2)]).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form("Tap"))
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator("#tap")
+    expect(locator).to_have_count(1)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_none(serve_hv, points):
     def popup_form(name):
         return
