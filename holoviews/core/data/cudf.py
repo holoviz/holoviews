@@ -233,7 +233,6 @@ class cuDFInterface(PandasInterface):
                 mask &= new_mask
         return mask
 
-
     @classmethod
     def _select_mask_neighbor(cls, dataset, selection):
         """Runs select mask and expand the True values to include its neighbors
