@@ -262,7 +262,7 @@ def test_stream_popup(serve_hv):
     hv_plot.click()
     expect(hv_plot).to_have_count(1)
 
-    locator = page.locator("#tap")
+    locator = page.locator(".markdown")
     expect(locator).to_have_count(1)
 
 
@@ -272,7 +272,7 @@ def test_stream_popup_polygons(serve_hv):
     def popup_form(name):
         return f"# {name}"
 
-    points = hv.Polygons([np.random.randn(10, 2)]).opts(tools=["tap"])
+    points = hv.Polygons([(0, 0), (0, 1), (1, 1), (1, 0)]).opts(tools=["tap"])
     hv.streams.Tap(source=points, popup=popup_form("Tap"))
 
     page = serve_hv(points)
@@ -280,7 +280,7 @@ def test_stream_popup_polygons(serve_hv):
     hv_plot.click()
     expect(hv_plot).to_have_count(1)
 
-    locator = page.locator("#tap")
+    locator = page.locator(".markdown")
     expect(locator).to_have_count(1)
 
 
