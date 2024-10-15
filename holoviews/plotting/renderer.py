@@ -40,7 +40,7 @@ from ..streams import Stream
 from . import Plot
 from .util import collate, displayable, initialize_dynamic
 
-panel_version = Version(pn.__version__)
+PANEL_VERSION = Version(pn.__version__).release
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -649,9 +649,9 @@ class Renderer(Exporter):
         Loads any resources required for display of plots
         in the Jupyter notebook
         """
-        if panel_version >= Version('1.0.2'):
+        if PANEL_VERSION >= (1, 0, 2):
             load_notebook(inline, reloading=reloading, enable_mathjax=enable_mathjax)
-        elif panel_version >= Version('1.0.0'):
+        elif PANEL_VERSION >= (1, 0, 0):
             load_notebook(inline, reloading=reloading)
         elif reloading:
             return

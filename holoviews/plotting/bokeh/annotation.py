@@ -23,7 +23,7 @@ from .styles import (
     line_properties,
     text_properties,
 )
-from .util import bokeh32, date_to_integer
+from .util import BOKEH_GE_3_2_0, date_to_integer
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
 arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
@@ -39,7 +39,7 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
     _allow_implicit_categories = False
 
     def __init__(self, element, **kwargs):
-        if not bokeh32:
+        if not BOKEH_GE_3_2_0:
             name = type(getattr(element, "last", element)).__name__
             msg = f'{name} element requires Bokeh >=3.2'
             raise ImportError(msg)

@@ -13,7 +13,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import bokeh34, bokeh35
+from .util import BOKEH_GE_3_4_0, BOKEH_GE_3_5_0
 
 
 class LinkCallback:
@@ -163,7 +163,7 @@ class RangeToolLinkCallback(LinkCallback):
                 target_range_name = range_name
             axes[range_name] = ax = target_plot.handles[target_range_name]
             interval = getattr(link, f'intervals{axis}', None)
-            if interval is not None and bokeh34:
+            if interval is not None and BOKEH_GE_3_4_0:
                 min, max = interval
                 if min is not None:
                     ax.min_interval = min
@@ -183,7 +183,7 @@ class RangeToolLinkCallback(LinkCallback):
 
         tool = RangeTool(**axes)
 
-        if bokeh35:
+        if BOKEH_GE_3_5_0:
             use_handles = getattr(link, 'use_handles', True)
             start_gesture = getattr(link, 'start_gesture', 'tap')
             inverted = getattr(link, 'inverted', True)

@@ -3,7 +3,6 @@ import os
 from colorcet import kbc, register_cmap
 from matplotlib import rc_params_from_file
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
-from packaging.version import Version
 from param import concrete_descendents
 
 from ...core import Collator, GridMatrix, Layout, config
@@ -27,8 +26,7 @@ from .renderer import MPLRenderer
 from .sankey import *
 from .stats import *
 from .tabular import *
-
-mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
+from .util import MPL_GE_1_5_0
 
 try:
     from pandas.plotting import register_matplotlib_converters
@@ -62,7 +60,7 @@ def set_style(key):
 
 # Define matplotlib based style cycles and Palettes
 def get_color_cycle():
-    if mpl_ge_150:
+    if MPL_GE_1_5_0:
         cyl = mpl.rcParams['axes.prop_cycle']
         # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
         # but no guarantee that there's a `color` key.

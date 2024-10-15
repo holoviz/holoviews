@@ -158,7 +158,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         raise SkipTest("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
-        int_dtype = "int64" if ibis_version() >= Version("9.0") else "int32"
+        int_dtype = "int64" if ibis_version() >= (9, 0, 0) else "int32"
         ds = self.table
         self.assertEqual(ds.interface.dtype(ds, "Gender"), np.dtype("object"))
         self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype(int_dtype))
@@ -166,7 +166,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.assertEqual(ds.interface.dtype(ds, "Height"), np.dtype("float64"))
 
     def test_dataset_dtypes(self):
-        int_dtype = "int64" if ibis_version() >= Version("9.0") else "int32"
+        int_dtype = "int64" if ibis_version() >= (9, 0, 0) else "int32"
         self.assertEqual(
             self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype(int_dtype)
         )

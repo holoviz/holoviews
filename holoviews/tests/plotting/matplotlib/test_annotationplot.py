@@ -2,7 +2,7 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.element import HLines, HSpans, VLines, VSpans
-from holoviews.plotting.mpl.util import MPL_GE_3_9
+from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -157,7 +157,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
     def _hspans_check(self, source, v0, v1):
         # Matplotlib 3.9+ uses a rectangle instead of polygon
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             rect = [source.get_x(), source.get_y(), source.get_width(), source.get_height()]
             assert np.allclose(rect, [0, v0, 1, v1 - v0])
         else:
@@ -166,7 +166,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
     def _vspans_check(self, source, v0, v1):
         # Matplotlib 3.9+ uses a rectangle instead of polygon
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             rect = [source.get_x(), source.get_y(), source.get_width(), source.get_height()]
             assert np.allclose(rect, [v0, 0, v1 - v0, 1])
         else:

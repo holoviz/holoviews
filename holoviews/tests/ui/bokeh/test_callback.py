@@ -5,14 +5,14 @@ import pytest
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
-from holoviews.plotting.bokeh.util import bokeh34
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, MultiAxisTap, RangeXY
 
 from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
-skip_popup = pytest.mark.skipif(not bokeh34, reason="Pop ups needs Bokeh 3.4")
+skip_popup = pytest.mark.skipif(not BOKEH_GE_3_4_0, reason="Pop ups needs Bokeh 3.4")
 
 @pytest.fixture
 def points():
@@ -74,7 +74,7 @@ def test_lasso_select(serve_hv):
     page.mouse.move(bbox['x']+50, bbox['y']+150, steps=5)
     page.mouse.up()
 
-    if bokeh34:
+    if BOKEH_GE_3_4_0:
         expected_array = np.array([
             [3.28440367e-01, 2.31836735e00],
             [4.38532110e-01, 2.22040816e00],

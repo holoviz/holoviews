@@ -9,7 +9,7 @@ from packaging.version import Version
 
 system = platform.system()
 py_version = sys.version_info[:2]
-PD2 = Version(pd.__version__) >= Version("2.0")
+PANDAS_GE_2_0_0 = Version(pd.__version__).release >= (2, 0, 0)
 
 # Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
 # to avoid crashing when running tests with pytest-xdist on Windows.
@@ -30,7 +30,7 @@ collect_ignore_glob = [
 
 # 2023-07-14 with following error:
 # ValueError: Buffer dtype mismatch, expected 'const int64_t' but got 'int'
-if PD2 and system == "Windows":
+if PANDAS_GE_2_0_0 and system == "Windows":
     collect_ignore_glob += [
         "gallery/demos/bokeh/point_draw_triangulate.ipynb",
         "reference/elements/*/TriMesh.ipynb",
@@ -45,7 +45,7 @@ if system == "Windows":
     ]
 
 # First available in Bokeh 3.2.0
-if Version(bokeh.__version__) < Version("3.2.0"):
+if Version(bokeh.__version__).release < (3, 2, 0):
     collect_ignore_glob += [
         "reference/elements/bokeh/HLines.ipynb",
         "reference/elements/bokeh/HSpans.ipynb",

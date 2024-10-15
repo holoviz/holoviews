@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import Dataset, Image, QuadMesh
 
-from .test_plot import TestMPLPlot, mpl38, mpl_renderer
+from .test_plot import TestMPLPlot, MPL_GE_3_8_0, mpl_renderer
 
 
 class TestQuadMeshPlot(TestMPLPlot):
@@ -12,7 +12,7 @@ class TestQuadMeshPlot(TestMPLPlot):
         qmesh = QuadMesh(Image(arr)).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(qmesh)
         artist = plot.handles['artist']
-        if mpl38:
+        if MPL_GE_3_8_0:
             np.testing.assert_equal(artist.get_array().data, arr[::-1].T)
         else:
             np.testing.assert_equal(artist.get_array().data, arr.T[::-1].flatten())
@@ -22,7 +22,7 @@ class TestQuadMeshPlot(TestMPLPlot):
         qmesh = QuadMesh(Image(arr)).opts(nodata=0)
         plot = mpl_renderer.get_plot(qmesh)
         artist = plot.handles['artist']
-        if mpl38:
+        if MPL_GE_3_8_0:
             expected = np.array([[3, 4, 5], [np.nan, 1, 2]])
         else:
             expected = np.array([3, 4, 5, np.nan, 1, 2])
@@ -34,7 +34,7 @@ class TestQuadMeshPlot(TestMPLPlot):
         qmesh = QuadMesh(Image(arr)).opts(nodata=0)
         plot = mpl_renderer.get_plot(qmesh)
         artist = plot.handles['artist']
-        if mpl38:
+        if MPL_GE_3_8_0:
             expected = np.array([[3, 4, 5], [np.nan, 1, 2]])
         else:
             expected = np.array([3, 4, 5, np.nan, 1, 2])

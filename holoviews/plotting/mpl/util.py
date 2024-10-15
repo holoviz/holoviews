@@ -36,9 +36,10 @@ from ...core.util import arraylike_types, cftime_types, is_number
 from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
-mpl_version = Version(mpl.__version__)
-MPL_GE_3_7 = mpl_version >= Version('3.7')
-MPL_GE_3_9 = mpl_version >= Version('3.9')
+MPL_VERSION = Version(mpl.__version__).release
+MPL_GE_1_5_0 = MPL_VERSION >= (1, 5, 0)
+MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)
+MPL_GE_3_9_0 = MPL_VERSION >= (3, 9, 0)
 
 
 def is_color(color):
@@ -88,7 +89,7 @@ def get_old_rcparams():
     ]
     old_rcparams = {
         k: v for k, v in mpl.rcParams.items()
-        if mpl_version < Version('3.0') or k not in deprecated_rcparams
+        if MPL_VERSION < (3, 0, 0) or k not in deprecated_rcparams
     }
     return old_rcparams
 

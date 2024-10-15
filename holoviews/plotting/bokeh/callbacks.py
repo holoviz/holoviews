@@ -72,7 +72,7 @@ from ...streams import (
     Tap,
 )
 from ...util.warnings import warn
-from .util import bokeh33, convert_timestamp
+from .util import BOKEH_GE_3_3_0, convert_timestamp
 
 
 class Callback:
@@ -1557,7 +1557,7 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             # First version with Quad support
             box_tool = BoxEditTool(renderers=[renderer], **kwargs)
             self.plot.state.tools.append(box_tool)

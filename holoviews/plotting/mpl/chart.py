@@ -26,7 +26,7 @@ from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
-from .util import MPL_GE_3_7, MPL_GE_3_9, mpl_version
+from .util import MPL_GE_3_7_0, MPL_GE_3_9_0, MPL_VERSION
 
 
 class ChartPlot(ElementPlot):
@@ -94,7 +94,7 @@ class CurvePlot(ChartPlot):
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
         if isdatetime(xs):
-            if MPL_GE_3_9:
+            if MPL_GE_3_9_0:
                 artist = ax.plot(xs, ys, '-', **plot_kwargs)[0]
             else:
                 artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
@@ -130,7 +130,7 @@ class ErrorPlot(ColorbarPlot):
     def init_artists(self, ax, plot_data, plot_kwargs):
         handles = ax.errorbar(*plot_data, **plot_kwargs)
         bottoms, tops = None, None
-        if mpl_version >= Version('2.0'):
+        if MPL_VERSION >= (2, 0, 0):
             _, caps, verts = handles
             if caps:
                 bottoms, tops = caps
@@ -503,7 +503,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         # Get colormapping options
         if isinstance(range_item, (HeatMap, Raster)) or (cdim and cdim in element):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
-            if MPL_GE_3_7:
+            if MPL_GE_3_7_0:
                 # https://github.com/matplotlib/matplotlib/pull/28355
                 cmap = mpl.colormaps.get_cmap(style.get('cmap'))
             else:

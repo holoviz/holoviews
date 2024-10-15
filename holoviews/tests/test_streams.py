@@ -11,7 +11,7 @@ from panel.widgets import IntSlider
 
 import holoviews as hv
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import NUMPY_GE_200, Version
+from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
 from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import *  # noqa (Test all available streams)
@@ -20,6 +20,7 @@ from holoviews.util.transform import dim
 
 from .utils import LoggingComparisonTestCase
 
+PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
 def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
@@ -73,7 +74,7 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(xy.y, 2)
 
     def test_XY_set_invalid_class_x(self):
-        if Version(param.__version__) > Version('2.0.0a2'):
+        if PARAM_GE_2_0_0:
             regexp = "Number parameter 'XY.x' only takes numeric values"
         else:
             regexp = "Parameter 'x' only takes numeric values"
@@ -81,7 +82,7 @@ class TestStreamsDefine(ComparisonTestCase):
             self.XY.x = 'string'
 
     def test_XY_set_invalid_class_y(self):
-        if Version(param.__version__) > Version('2.0.0a2'):
+        if PARAM_GE_2_0_0:
             regexp = "Number parameter 'XY.y' only takes numeric values"
         else:
             regexp = "Parameter 'y' only takes numeric values"
@@ -90,7 +91,7 @@ class TestStreamsDefine(ComparisonTestCase):
 
     def test_XY_set_invalid_instance_x(self):
         xy = self.XY(x=1,y=2)
-        if Version(param.__version__) > Version('2.0.0a2'):
+        if PARAM_GE_2_0_0:
             regexp = "Number parameter 'XY.x' only takes numeric values"
         else:
             regexp = "Parameter 'x' only takes numeric values"
@@ -99,7 +100,7 @@ class TestStreamsDefine(ComparisonTestCase):
 
     def test_XY_set_invalid_instance_y(self):
         xy = self.XY(x=1,y=2)
-        if Version(param.__version__) > Version('2.0.0a2'):
+        if PARAM_GE_2_0_0:
             regexp = "Number parameter 'XY.y' only takes numeric values"
         else:
             regexp = "Parameter 'y' only takes numeric values"
@@ -343,7 +344,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if Version(param.__version__) < Version('1.8.0'):
+        if PARAM_VERSION < (1, 8, 0):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):
@@ -1445,7 +1446,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
 
-        fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_200 else x
+        fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_2_0_0 else x
 
         expr_stream.input_streams[2].event(index=[0, 1])
         self.assertEqual(
