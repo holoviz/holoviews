@@ -204,20 +204,10 @@ class cuDFInterface(PandasInterface):
             if isinstance(sel, slice):
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'invalid value encountered')
-                    start, end = sel.start, sel.stop
-                    if (
-                        isinstance(start, util.datetime_types) or
-                        isinstance(end, util.datetime_types)
-                    ):
-                        arr = arr.astype(int)
-                    if start is not None:
-                        if isinstance(start, util.datetime_types):
-                            start = np.array([start]).astype(int)[0]
-                        new_masks.append(start <= arr)
-                    if end is not None:
-                        if isinstance(end, util.datetime_types):
-                            end = np.array([end]).astype(int)[0]
-                        new_masks.append(arr < end)
+                    if sel.start is not None:
+                        new_masks.append(arr >= self.start)
+                    if sel.stop is not None:
+                        new_masks.append(arr < sel.stop)
                 if not new_masks:
                     continue
                 new_mask = new_masks[0]
