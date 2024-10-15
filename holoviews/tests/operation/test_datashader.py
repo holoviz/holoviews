@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import nan
-from packaging.version import Version
 
 from holoviews import (
     RGB,
@@ -38,28 +37,29 @@ from holoviews.streams import Tap
 from holoviews.util import render
 
 try:
-    import dask.dataframe as dd
     import datashader as ds
-    import xarray as xr
-
-    from holoviews.operation.datashader import (
-        AggregationOperation,
-        aggregate,
-        datashade,
-        directly_connect_edges,
-        ds_version,
-        dynspread,
-        inspect,
-        inspect_points,
-        inspect_polygons,
-        rasterize,
-        regrid,
-        shade,
-        spread,
-        stack,
-    )
 except ImportError:
     raise SkipTest('Datashader not available')
+
+import dask.dataframe as dd
+import xarray as xr
+
+from holoviews.operation.datashader import (
+    DATASHADER_VERSION,
+    AggregationOperation,
+    aggregate,
+    datashade,
+    directly_connect_edges,
+    dynspread,
+    inspect,
+    inspect_points,
+    inspect_polygons,
+    rasterize,
+    regrid,
+    shade,
+    spread,
+    stack,
+)
 
 try:
     import spatialpandas
@@ -807,7 +807,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
 class DatashaderCatAggregateTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version < Version('0.11.0'):
+        if DATASHADER_VERSION < (0, 11, 0):
             raise SkipTest('Regridding operations require datashader>=0.11.0')
 
     def test_aggregate_points_categorical(self):
@@ -918,10 +918,6 @@ class DatashaderRegridTests(ComparisonTestCase):
     Tests for datashader aggregation
     """
 
-    def setUp(self):
-        if ds_version <= Version('0.5.0'):
-            raise SkipTest('Regridding operations require datashader>=0.6.0')
-
     def test_regrid_mean(self):
         img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, width=2, height=2, dynamic=False)
@@ -997,7 +993,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
     """
 
     def setUp(self):
-        if ds_version <= Version('0.6.4'):
+        if DATASHADER_VERSION <= (0, 6, 4):
             raise SkipTest('Regridding operations require datashader>=0.7.0')
 
         self.simplexes = [(0, 1, 2), (3, 2, 1)]
@@ -1401,7 +1397,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
         self.assertEqual(spreaded, RGB(arr))
 
     def test_spread_img_1px(self):
-        if ds_version < Version('0.12.0'):
+        if DATASHADER_VERSION < (0, 12, 0):
             raise SkipTest('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
@@ -1448,7 +1444,7 @@ class DatashaderStackTests(ComparisonTestCase):
 class GraphBundlingTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version <= Version('0.7.0'):
+        if DATASHADER_VERSION <= (0, 7, 0):
             raise SkipTest('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)
