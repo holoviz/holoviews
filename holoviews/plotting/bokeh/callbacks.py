@@ -1193,20 +1193,21 @@ class Selection1DCallback(PopupMixin, Callback):
               for (const i of indices) {
                 let ix = xs[i]
                 let iy = ys[i]
+                let tx, ty
                 if (typeof ix === 'number') {
-                  ix = [ix]
-                  iy = [iy]
+                  tx = ix
+                  ty = iy
                 } else {
                   while (ix.length && (typeof ix[0] !== 'number')) {
                     ix = ix[0]
                     iy = iy[0]
                   }
+                  tx = Math.max(...ix)
+                  ty = Math.max(...iy)
                 }
-                const tx = Math.max(...ix)
                 if (!x || (tx > x)) {
                   x = tx
                 }
-                const ty = Math.max(...iy)
                 if (!y || (ty > y)) {
                   y = ty
                 }
