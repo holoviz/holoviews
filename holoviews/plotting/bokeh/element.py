@@ -54,6 +54,7 @@ from ...core.overlay import CompositeOverlay, NdOverlay
 from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
 from ...streams import Buffer, PlotSize, RangeXY
 from ...util.transform import dim
+from ...util.warnings import warn
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import color_intervals, dim_axis_label, dim_range_key, process_cmap
 from .plot import BokehPlot
@@ -2419,7 +2420,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not bokeh34:
             raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
         elif not bokeh36 and self._subcoord_overlaid:
-            raise RuntimeError("Scalebar with subcoordinate_y requires Bokeh >= 3.6.0")
+            warn("Scalebar with subcoordinate_y requires Bokeh >= 3.6.0", RuntimeWarning)
 
         from bokeh.models import Metric, ScaleBar
 
