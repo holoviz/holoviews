@@ -2,7 +2,6 @@ import numpy as np
 import param
 from matplotlib import cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
-from packaging.version import Version
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception

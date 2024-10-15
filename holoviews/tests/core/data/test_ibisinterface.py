@@ -10,7 +10,6 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.ibis import IbisInterface, ibis_version

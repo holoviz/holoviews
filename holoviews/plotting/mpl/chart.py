@@ -3,7 +3,6 @@ import numpy as np
 import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
-from packaging.version import Version
 
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception

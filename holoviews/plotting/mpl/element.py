@@ -9,7 +9,6 @@ import param
 from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
-from packaging.version import Version
 
 from ...core import (
     CompositeOverlay,
@@ -27,7 +26,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import MPLPlot, mpl_rc_context
-from .util import EqHistNormalize, MPL_VERSION, validate, wrap_formatter
+from .util import MPL_VERSION, EqHistNormalize, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):

@@ -70,11 +70,11 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
-    TOOL_TYPES,
     BOKEH_GE_3_2_0,
     BOKEH_GE_3_4_0,
     BOKEH_GE_3_5_0,
     BOKEH_GE_3_6_0,
+    TOOL_TYPES,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,

@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
 
 from .. import util

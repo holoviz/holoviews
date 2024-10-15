@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from matplotlib.collections import LineCollection, PolyCollection
-from packaging.version import Version
 
 from holoviews.core.data import Dataset
 from holoviews.core.options import AbbreviatedException, Cycle
@@ -9,7 +8,7 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element import Chord, Graph, Nodes, TriMesh, circular_layout
 from holoviews.util.transform import dim
 
-from .test_plot import TestMPLPlot, mpl_renderer, MPL_GE_3_4_0
+from .test_plot import MPL_GE_3_4_0, TestMPLPlot, mpl_renderer
 
 
 class TestMplGraphPlot(TestMPLPlot):

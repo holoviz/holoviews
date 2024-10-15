@@ -2,7 +2,6 @@ import sys
 
 import numpy as np
 import param
-from packaging.version import Version
 
 from ...core import CompositeOverlay, Element, traversal
 from ...core.util import isfinite, match_spec, max_range, unique_iterator
@@ -11,7 +10,7 @@ from ..util import categorical_legend
 from .chart import PointPlot
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .plot import GridPlot, MPLPlot, mpl_rc_context
-from .util import get_raster_array, MPL_VERSION
+from .util import MPL_VERSION, get_raster_array
 
 
 class RasterBasePlot(ElementPlot):

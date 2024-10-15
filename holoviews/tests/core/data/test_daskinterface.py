@@ -3,7 +3,6 @@ from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 
 try:
     import dask.dataframe as dd
