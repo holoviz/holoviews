@@ -1212,61 +1212,61 @@ class Selection1DCallback(PopupMixin, Callback):
             args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected, popup_position=self._popup_position),
             code="""
             export default ({panel, renderer, source, selected, popup_position}, cb_obj, _) => {
-            const el = panel.elements[1];
-            if ((el && !el.visible) || !cb_obj.final) {
-                return;
-            }
-            let x, y, xs, ys;
-            let indices = selected.indices;
-            if (cb_obj.geometry.type == 'point') {
-                indices = indices.slice(-1);
-            }
-            if (renderer.glyph.x && renderer.glyph.y) {
-                xs = source.get_column(renderer.glyph.x.field);
-                ys = source.get_column(renderer.glyph.y.field);
-            } else if (renderer.glyph.right && renderer.glyph.top) {
-                xs = source.get_column(renderer.glyph.right.field);
-                ys = source.get_column(renderer.glyph.top.field);
-            } else if (renderer.glyph.x1 && renderer.glyph.y1) {
-                xs = source.get_column(renderer.glyph.x1.field);
-                ys = source.get_column(renderer.glyph.y1.field);
-            } else if (renderer.glyph.xs && renderer.glyph.ys) {
-                xs = source.get_column(renderer.glyph.xs.field);
-                ys = source.get_column(renderer.glyph.ys.field);
-            }
-            if (!xs || !ys) { return; }
+                const el = panel.elements[1];
+                if ((el && !el.visible) || !cb_obj.final) {
+                    return;
+                }
+                let x, y, xs, ys;
+                let indices = selected.indices;
+                if (cb_obj.geometry.type == 'point') {
+                    indices = indices.slice(-1);
+                }
+                if (renderer.glyph.x && renderer.glyph.y) {
+                    xs = source.get_column(renderer.glyph.x.field);
+                    ys = source.get_column(renderer.glyph.y.field);
+                } else if (renderer.glyph.right && renderer.glyph.top) {
+                    xs = source.get_column(renderer.glyph.right.field);
+                    ys = source.get_column(renderer.glyph.top.field);
+                } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                    xs = source.get_column(renderer.glyph.x1.field);
+                    ys = source.get_column(renderer.glyph.y1.field);
+                } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                    xs = source.get_column(renderer.glyph.xs.field);
+                    ys = source.get_column(renderer.glyph.ys.field);
+                }
+                if (!xs || !ys) { return; }
 
-            let minX = null, maxX = null, minY = null, maxY = null;
+                let minX = null, maxX = null, minY = null, maxY = null;
 
-            for (const i of indices) {
-                const tx = xs[i];
-                const ty = ys[i];
+                for (const i of indices) {
+                    const tx = xs[i];
+                    const ty = ys[i];
 
-                if (minX === null || tx < minX) { minX = tx; }
-                if (maxX === null || tx > maxX) { maxX = tx; }
-                if (minY === null || ty < minY) { minY = ty; }
-                if (maxY === null || ty > maxY) { maxY = ty; }
-            }
-
-            if (minX !== null && maxX !== null && minY !== null && maxY !== null) {
-                if (popup_position.includes('left')) {
-                    x = minX;
-                } else if (popup_position.includes('right')) {
-                    x = maxX;
-                } else {
-                    x = (minX + maxX) / 2;
+                    if (minX === null || tx < minX) { minX = tx; }
+                    if (maxX === null || tx > maxX) { maxX = tx; }
+                    if (minY === null || ty < minY) { minY = ty; }
+                    if (maxY === null || ty > maxY) { maxY = ty; }
                 }
 
-                if (popup_position.includes('top')) {
-                    y = maxY;
-                } else if (popup_position.includes('bottom')) {
-                    y = minY;
-                } else {
-                    y = (minY + maxY) / 2;
-                }
+                if (minX !== null && maxX !== null && minY !== null && maxY !== null) {
+                    if (popup_position.includes('left')) {
+                        x = minX;
+                    } else if (popup_position.includes('right')) {
+                        x = maxX;
+                    } else {
+                        x = (minX + maxX) / 2;
+                    }
 
-                panel.position.setv({x, y});
-            }
+                    if (popup_position.includes('top')) {
+                        y = maxY;
+                    } else if (popup_position.includes('bottom')) {
+                        y = minY;
+                    } else {
+                        y = (minY + maxY) / 2;
+                    }
+
+                    panel.position.setv({x, y});
+                }
             }
             """,
         ))
