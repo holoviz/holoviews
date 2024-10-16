@@ -543,7 +543,8 @@ def test_stream_popup_selection1d_box_select_right(serve_hv, points):
     expect(locator).not_to_have_text("lasso\n0")
 
     popup = locator.bounding_box()
-    assert popup['x'] + popup["width"] > mid_x  # Should be towards the right
+    assert popup['x'] > mid_x  # Should be towards the right
+    assert popup['y'] > mid_y  # Should be towards the top
 
 
 @skip_popup
@@ -581,6 +582,7 @@ def test_stream_popup_selection1d_box_select_left(serve_hv, points):
 
     popup = locator.bounding_box()
     assert popup['x'] < mid_x  # Should be towards the left
+    assert popup['y'] > mid_y  # Should be towards the top
 
 
 @pytest.mark.usefixtures("bokeh_backend")
