@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from holoviews.core.data import Dataset
-from holoviews.core.data.ibis import IbisInterface, ibis_version
+from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.spaces import HoloMap
 
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
@@ -157,7 +157,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         raise SkipTest("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
-        int_dtype = "int64" if ibis_version() >= (9, 0, 0) else "int32"
+        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
         ds = self.table
         self.assertEqual(ds.interface.dtype(ds, "Gender"), np.dtype("object"))
         self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype(int_dtype))
@@ -165,7 +165,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.assertEqual(ds.interface.dtype(ds, "Height"), np.dtype("float64"))
 
     def test_dataset_dtypes(self):
-        int_dtype = "int64" if ibis_version() >= (9, 0, 0) else "int32"
+        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
         self.assertEqual(
             self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype(int_dtype)
         )

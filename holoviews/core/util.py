@@ -18,6 +18,7 @@ import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
+from importlib.metadata import PackageNotFoundError, version
 from threading import Event, Thread
 from types import FunctionType
 
@@ -113,6 +114,14 @@ class VersionError(Exception):
         self.version = version
         self.min_version = min_version
         super().__init__(msg, **kwargs)
+
+
+def _no_import_version(name) -> tuple[int, int, int]:
+    """ Get version number without importing the library """
+    try:
+        return Version(version(name)).release
+    except PackageNotFoundError:
+        return (0, 0, 0)
 
 
 class Config(param.ParameterizedFunction):
