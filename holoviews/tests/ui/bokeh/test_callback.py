@@ -509,6 +509,80 @@ def test_stream_popup_selection1d_lasso_select(serve_hv, points):
     expect(locator).not_to_have_text("lasso\n0")
 
 
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_box_select_right(serve_hv, points):
+    def popup_form(index):
+        if index:
+            return f"# lasso\n{len(index)}"
+
+    hv.streams.Selection1D(source=points, popup=popup_form, popup_position="right", popup_anchor="left")
+    points.opts(tools=["box_select"], active_tools=["box_select"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    box = hv_plot.bounding_box()
+    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
+    mid_x, mid_y = box['x'], box['y']
+    end_x, end_y = box['x'], box['y']
+
+    # Perform lasso selection
+    page.mouse.move(start_x, start_y)
+    hv_plot.click()
+    page.mouse.down()
+    page.mouse.move(mid_x, mid_y)
+    page.mouse.move(end_x, end_y)
+    page.mouse.up()
+
+    # Wait for popup to show
+    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
+    locator = page.locator("#lasso")
+    expect(locator).to_have_count(1)
+    expect(locator).not_to_have_text("lasso\n0")
+
+    popup = locator.bounding_box()
+    assert popup['x'] + popup["width"] > mid_x  # Should be towards the right
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_selection1d_box_select_left(serve_hv, points):
+    def popup_form(index):
+        if index:
+            return f"# lasso\n{len(index)}"
+
+    hv.streams.Selection1D(source=points, popup=popup_form, popup_position="left", popup_anchor="right")
+    points.opts(tools=["box_select"], active_tools=["box_select"])
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
+
+    box = hv_plot.bounding_box()
+    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
+    mid_x, mid_y = box['x'], box['y']
+    end_x, end_y = box['x'], box['y']
+
+    # Perform lasso selection
+    page.mouse.move(start_x, start_y)
+    hv_plot.click()
+    page.mouse.down()
+    page.mouse.move(mid_x, mid_y)
+    page.mouse.move(end_x, end_y)
+    page.mouse.up()
+
+    # Wait for popup to show
+    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
+    locator = page.locator("#lasso")
+    expect(locator).to_have_count(1)
+    expect(locator).not_to_have_text("lasso\n0")
+
+    popup = locator.bounding_box()
+    assert popup['x'] < mid_x  # Should be towards the left
+
+
 @pytest.mark.usefixtures("bokeh_backend")
 def test_stream_subcoordinate_y_range(serve_hv, points):
     def cb(x_range, y_range):

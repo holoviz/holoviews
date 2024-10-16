@@ -74,6 +74,17 @@ from ...streams import (
 from ...util.warnings import warn
 from .util import BOKEH_GE_3_3_0, convert_timestamp
 
+POPUP_POSITION_ANCHOR = {
+    "top_right": "top_left",
+    "top_left": "top_right",
+    "bottom_left": "bottom_right",
+    "bottom_right": "bottom_left",
+    "right": "top_left",
+    "left": "top_right",
+    "top": "bottom",
+    "bottom": "top",
+}
+
 
 class Callback:
     """
@@ -610,9 +621,10 @@ class PopupMixin:
         }
         """],
         css_classes=["popup-close-btn"])
+        self._popup_position = stream.popup_position
         self._panel = Panel(
             position=XY(x=np.nan, y=np.nan),
-            anchor="top_left",
+            anchor=stream.popup_anchor or POPUP_POSITION_ANCHOR.get(self._popup_position, 'top_left'),
             elements=[close_button],
             visible=False,
             styles={"zIndex": "1000"},
@@ -626,24 +638,56 @@ class PopupMixin:
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel),
+            args=dict(panel=self._panel, popup_position=self.popup_position),
             code=f"""
-            export default ({{panel}}, cb_obj, _) => {{
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
-                 return
-              }}
-              let pos;
-              if (cb_obj.geometry.type === 'point') {{
-                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
-              }} else if (cb_obj.geometry.type === 'rect') {{
-                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
-              }} else if (cb_obj.geometry.type === 'poly') {{
-                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
-              }}
-              if (pos) {{
-                panel.position.setv(pos)
-              }}
+            export default ({{panel, popup_position}}, cb_obj, _) => {{
+            const el = panel.elements[1];
+            if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                return;
+            }}
+
+            let pos;
+            if (cb_obj.geometry.type === 'point') {{
+                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}};
+            }} else if (cb_obj.geometry.type === 'rect') {{
+                let x, y;
+                if (popup_position.includes('left')) {{
+                    x = cb_obj.geometry.x0;
+                }} else if (popup_position.includes('right')) {{
+                    x = cb_obj.geometry.x1;
+                }} else {{
+                    x = (cb_obj.geometry.x0 + cb_obj.geometry.x1) / 2;
+                }}
+                if (popup_position.includes('top')) {{
+                    y = cb_obj.geometry.y1;
+                }} else if (popup_position.includes('bottom')) {{
+                    y = cb_obj.geometry.y0;
+                }} else {{
+                    y = (cb_obj.geometry.y0 + cb_obj.geometry.y1) / 2;
+                }}
+                pos = {{x: x, y: y}};
+            }} else if (cb_obj.geometry.type === 'poly') {{
+                let x, y;
+                if (popup_position.includes('left')) {{
+                    x = Math.min(...cb_obj.geometry.x);
+                }} else if (popup_position.includes('right')) {{
+                    x = Math.max(...cb_obj.geometry.x);
+                }} else {{
+                    x = (Math.min(...cb_obj.geometry.x) + Math.max(...cb_obj.geometry.x)) / 2;
+                }}
+                if (popup_position.includes('top')) {{
+                    y = Math.max(...cb_obj.geometry.y);
+                }} else if (popup_position.includes('bottom')) {{
+                    y = Math.min(...cb_obj.geometry.y);
+                }} else {{
+                    y = (Math.min(...cb_obj.geometry.y) + Math.max(...cb_obj.geometry.y)) / 2;
+                }}
+                pos = {{x: x, y: y}};
+            }}
+
+            if (pos) {{
+                panel.position.setv(pos);
+            }}
             }}""",
         ))
 
@@ -1163,60 +1207,70 @@ class Selection1DCallback(PopupMixin, Callback):
         source = self.plot.handles['source']
         renderer = self.plot.handles['glyph_renderer']
         selected = self.plot.handles['selected']
+
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected, popup_position=self._popup_position),
             code="""
-            export default ({panel, renderer, source, selected}, cb_obj, _) => {
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final) {
-                 return
-              }
-              let x, y, xs, ys;
-              let indices = selected.indices;
-              if (cb_obj.geometry.type == 'point') {
-                indices = indices.slice(-1)
-              }
-              if (renderer.glyph.x && renderer.glyph.y) {
-                xs = source.get_column(renderer.glyph.x.field)
-                ys = source.get_column(renderer.glyph.y.field)
-              } else if (renderer.glyph.right && renderer.glyph.top) {
-                xs = source.get_column(renderer.glyph.right.field)
-                ys = source.get_column(renderer.glyph.top.field)
-              } else if (renderer.glyph.x1 && renderer.glyph.y1) {
-                xs = source.get_column(renderer.glyph.x1.field)
-                ys = source.get_column(renderer.glyph.y1.field)
-              } else if (renderer.glyph.xs && renderer.glyph.ys) {
-                xs = source.get_column(renderer.glyph.xs.field)
-                ys = source.get_column(renderer.glyph.ys.field)
-              }
-              if (!xs || !ys) { return }
-              for (const i of indices) {
-                let ix = xs[i]
-                let iy = ys[i]
-                let tx, ty
-                if (typeof ix === 'number') {
-                  tx = ix
-                  ty = iy
+            export default ({panel, renderer, source, selected, popup_position}, cb_obj, _) => {
+            const el = panel.elements[1];
+            if ((el && !el.visible) || !cb_obj.final) {
+                return;
+            }
+            let x, y, xs, ys;
+            let indices = selected.indices;
+            if (cb_obj.geometry.type == 'point') {
+                indices = indices.slice(-1);
+            }
+            if (renderer.glyph.x && renderer.glyph.y) {
+                xs = source.get_column(renderer.glyph.x.field);
+                ys = source.get_column(renderer.glyph.y.field);
+            } else if (renderer.glyph.right && renderer.glyph.top) {
+                xs = source.get_column(renderer.glyph.right.field);
+                ys = source.get_column(renderer.glyph.top.field);
+            } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                xs = source.get_column(renderer.glyph.x1.field);
+                ys = source.get_column(renderer.glyph.y1.field);
+            } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                xs = source.get_column(renderer.glyph.xs.field);
+                ys = source.get_column(renderer.glyph.ys.field);
+            }
+            if (!xs || !ys) { return; }
+
+            let minX = null, maxX = null, minY = null, maxY = null;
+
+            for (const i of indices) {
+                const tx = xs[i];
+                const ty = ys[i];
+
+                if (minX === null || tx < minX) { minX = tx; }
+                if (maxX === null || tx > maxX) { maxX = tx; }
+                if (minY === null || ty < minY) { minY = ty; }
+                if (maxY === null || ty > maxY) { maxY = ty; }
+            }
+
+            if (minX !== null && maxX !== null && minY !== null && maxY !== null) {
+                if (popup_position.includes('left')) {
+                    x = minX;
+                } else if (popup_position.includes('right')) {
+                    x = maxX;
                 } else {
-                  while (ix.length && (typeof ix[0] !== 'number')) {
-                    ix = ix[0]
-                    iy = iy[0]
-                  }
-                  tx = Math.max(...ix)
-                  ty = Math.max(...iy)
+                    x = (minX + maxX) / 2;
                 }
-                if (!x || (tx > x)) {
-                  x = tx
+
+                if (popup_position.includes('top')) {
+                    y = maxY;
+                } else if (popup_position.includes('bottom')) {
+                    y = minY;
+                } else {
+                    y = (minY + maxY) / 2;
                 }
-                if (!y || (ty > y)) {
-                  y = ty
-                }
-              }
-              if (x && y) {
-                panel.position.setv({x, y})
-              }
-            }""",
+
+                panel.position.setv({x, y});
+            }
+            }
+            """,
         ))
+
 
     def _get_position(self, event):
         el = self.plot.current_frame
