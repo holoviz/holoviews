@@ -20,7 +20,6 @@ from bokeh.models import (
     Range1d,
 )
 from panel.io.notebook import push_on_root
-from panel.io.server import async_execute
 from panel.io.state import set_curdoc, state
 from panel.pane import panel
 
@@ -212,7 +211,7 @@ class Callback:
                 filtered_msg[k] = v
         return filtered_msg
 
-    def on_msg(self, msg):
+    async def on_msg(self, msg):
         streams = []
         for stream in self.streams:
             handle_ids = self.handle_ids[stream]
@@ -362,7 +361,7 @@ class Callback:
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
-            self.on_msg(msg)
+            await self.on_msg(msg)
         await self.process_on_event()
 
     async def process_on_change(self):
@@ -397,7 +396,7 @@ class Callback:
             equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
-            self.on_msg(msg)
+            await self.on_msg(msg)
             self._prev_msg = msg
         await self.process_on_change()
 
@@ -665,12 +664,12 @@ class PopupMixin:
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            async_execute(self._process_selection_partial_event)
+            state.execute(self._process_selection_partial_event)
 
-    def on_msg(self, msg):
-        super().on_msg(msg)
+    async def on_msg(self, msg):
+        await super().on_msg(msg)
         if hasattr(self, '_panel'):
-            async_execute(self._process_selection_event)
+            await self._process_selection_event()
 
     async def _process_selection_event(self):
         event = self._selection_event
@@ -694,7 +693,7 @@ class PopupMixin:
                 if inspect.iscoroutinefunction(popup):
                     popup = await popup(**stream.contents)
                 else:
-                    popup = await asyncio.to_thread(popup, **stream.contents)
+                    popup = popup(**stream.contents)
 
         # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
