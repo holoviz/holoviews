@@ -30,6 +30,7 @@ from holoviews.element import (
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.selection import spatial_select_columnar
+from holoviews.util.transform import dim
 
 from ..utils import dask_switcher
 
@@ -59,6 +60,29 @@ shapelib_available = skipIf(shapely is None and spd is None,
 shapely_available = skipIf(shapely is None, 'shapely is not available')
 ds_available = skipIf(ds is None, 'datashader not available')
 dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
+
+
+class TestIndexExpr(ComparisonTestCase):
+
+    def setUp(self):
+        import holoviews.plotting.bokeh # noqa
+        super().setUp()
+        self._backend = Store.current_backend
+        Store.set_current_backend('bokeh')
+
+    def tearDown(self):
+        Store.current_backend = self._backend
+
+    def test_index_selection_on_id_column(self):
+        # tests issue in https://github.com/holoviz/holoviews/pull/6336
+        x, y = np.random.randn(2, 100)
+        idx = np.arange(100)
+
+        points = Points(
+            {'x': x, 'y': y, 'id': idx}, kdims=['x', 'y'], vdims=['id'], datatype=['dataframe']
+        )
+        sel, _, _ = points._get_index_selection([3, 7], ['id'])
+        assert sel == dim('id').isin([3, 7])
 
 
 class TestSelection1DExpr(ComparisonTestCase):
