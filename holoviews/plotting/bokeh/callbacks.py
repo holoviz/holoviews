@@ -641,53 +641,53 @@ class PopupMixin:
             args=dict(panel=self._panel, popup_position=self.popup_position),
             code=f"""
             export default ({{panel, popup_position}}, cb_obj, _) => {{
-            const el = panel.elements[1];
-            if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
-                return;
-            }}
+                const el = panel.elements[1];
+                if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                    return;
+                }}
 
-            let pos;
-            if (cb_obj.geometry.type === 'point') {{
-                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}};
-            }} else if (cb_obj.geometry.type === 'rect') {{
-                let x, y;
-                if (popup_position.includes('left')) {{
-                    x = cb_obj.geometry.x0;
-                }} else if (popup_position.includes('right')) {{
-                    x = cb_obj.geometry.x1;
-                }} else {{
-                    x = (cb_obj.geometry.x0 + cb_obj.geometry.x1) / 2;
+                let pos;
+                if (cb_obj.geometry.type === 'point') {{
+                    pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}};
+                }} else if (cb_obj.geometry.type === 'rect') {{
+                    let x, y;
+                    if (popup_position.includes('left')) {{
+                        x = cb_obj.geometry.x0;
+                    }} else if (popup_position.includes('right')) {{
+                        x = cb_obj.geometry.x1;
+                    }} else {{
+                        x = (cb_obj.geometry.x0 + cb_obj.geometry.x1) / 2;
+                    }}
+                    if (popup_position.includes('top')) {{
+                        y = cb_obj.geometry.y1;
+                    }} else if (popup_position.includes('bottom')) {{
+                        y = cb_obj.geometry.y0;
+                    }} else {{
+                        y = (cb_obj.geometry.y0 + cb_obj.geometry.y1) / 2;
+                    }}
+                    pos = {{x: x, y: y}};
+                }} else if (cb_obj.geometry.type === 'poly') {{
+                    let x, y;
+                    if (popup_position.includes('left')) {{
+                        x = Math.min(...cb_obj.geometry.x);
+                    }} else if (popup_position.includes('right')) {{
+                        x = Math.max(...cb_obj.geometry.x);
+                    }} else {{
+                        x = (Math.min(...cb_obj.geometry.x) + Math.max(...cb_obj.geometry.x)) / 2;
+                    }}
+                    if (popup_position.includes('top')) {{
+                        y = Math.max(...cb_obj.geometry.y);
+                    }} else if (popup_position.includes('bottom')) {{
+                        y = Math.min(...cb_obj.geometry.y);
+                    }} else {{
+                        y = (Math.min(...cb_obj.geometry.y) + Math.max(...cb_obj.geometry.y)) / 2;
+                    }}
+                    pos = {{x: x, y: y}};
                 }}
-                if (popup_position.includes('top')) {{
-                    y = cb_obj.geometry.y1;
-                }} else if (popup_position.includes('bottom')) {{
-                    y = cb_obj.geometry.y0;
-                }} else {{
-                    y = (cb_obj.geometry.y0 + cb_obj.geometry.y1) / 2;
-                }}
-                pos = {{x: x, y: y}};
-            }} else if (cb_obj.geometry.type === 'poly') {{
-                let x, y;
-                if (popup_position.includes('left')) {{
-                    x = Math.min(...cb_obj.geometry.x);
-                }} else if (popup_position.includes('right')) {{
-                    x = Math.max(...cb_obj.geometry.x);
-                }} else {{
-                    x = (Math.min(...cb_obj.geometry.x) + Math.max(...cb_obj.geometry.x)) / 2;
-                }}
-                if (popup_position.includes('top')) {{
-                    y = Math.max(...cb_obj.geometry.y);
-                }} else if (popup_position.includes('bottom')) {{
-                    y = Math.min(...cb_obj.geometry.y);
-                }} else {{
-                    y = (Math.min(...cb_obj.geometry.y) + Math.max(...cb_obj.geometry.y)) / 2;
-                }}
-                pos = {{x: x, y: y}};
-            }}
 
-            if (pos) {{
-                panel.position.setv(pos);
-            }}
+                if (pos) {{
+                    panel.position.setv(pos);
+                }}
             }}""",
         ))
 
