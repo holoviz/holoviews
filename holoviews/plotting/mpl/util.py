@@ -37,7 +37,6 @@ from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 MPL_VERSION = Version(mpl.__version__).release
-MPL_GE_1_5_0 = MPL_VERSION >= (1, 5, 0)
 MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)
 MPL_GE_3_9_0 = MPL_VERSION >= (3, 9, 0)
 
