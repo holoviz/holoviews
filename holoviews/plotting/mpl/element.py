@@ -9,7 +9,6 @@ import param
 from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
-from packaging.version import Version
 
 from ...core import (
     CompositeOverlay,
@@ -27,7 +26,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import MPLPlot, mpl_rc_context
-from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
+from .util import MPL_VERSION, EqHistNormalize, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -136,7 +135,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                if mpl_version <= Version('1.5.9'):
+                if MPL_VERSION <= (1, 5, 9):
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)

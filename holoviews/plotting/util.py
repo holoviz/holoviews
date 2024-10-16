@@ -570,7 +570,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if cmap.startswith('Category'):
             cmap = cmap.replace('Category', 'tab')
 
-        if Version(mpl.__version__) < Version("3.5"):
+        if Version(mpl.__version__).release < (3, 5, 0):
             from matplotlib import cm
             try:
                 cmap = cm.get_cmap(cmap)

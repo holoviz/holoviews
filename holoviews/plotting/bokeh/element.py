@@ -70,11 +70,11 @@ from .styles import (
 )
 from .tabular import TablePlot
 from .util import (
+    BOKEH_GE_3_2_0,
+    BOKEH_GE_3_4_0,
+    BOKEH_GE_3_5_0,
+    BOKEH_GE_3_6_0,
     TOOL_TYPES,
-    bokeh32,
-    bokeh34,
-    bokeh35,
-    bokeh36,
     cds_column_replace,
     compute_layout_properties,
     date_to_integer,
@@ -553,7 +553,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 tool = tools.HoverTool(
                     tooltips=tooltips, tags=['hv_created'], **tool_opts
                 )
-            elif bokeh32 and isinstance(tool, str) and tool.endswith(
+            elif BOKEH_GE_3_2_0 and isinstance(tool, str) and tool.endswith(
                 ('wheel_zoom', 'zoom_in', 'zoom_out')
             ):
                 zoom_kwargs = {}
@@ -919,7 +919,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         axis_specs = {'x': {}, 'y': {}}
         axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + (self.xaxis, {})
         if self.multi_y:
-            if not bokeh32:
+            if not BOKEH_GE_3_2_0:
                 self.param.warning('Independent axis zooming for multi_y=True only supported for Bokeh >=3.2')
             yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
             axis_specs['y'].update(extra_axis_specs)
@@ -2417,9 +2417,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         For scalebar on a subcoordinate_y plot Bokeh 3.6 is needed.
         """
 
-        if not bokeh34:
+        if not BOKEH_GE_3_4_0:
             raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
-        elif not bokeh36 and self._subcoord_overlaid:
+        elif not BOKEH_GE_3_6_0 and self._subcoord_overlaid:
             warn("Scalebar with subcoordinate_y requires Bokeh >= 3.6.0", RuntimeWarning)
 
         from bokeh.models import Metric, ScaleBar
@@ -3329,7 +3329,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if zoom_tool.renderers:
                 raise RuntimeError(f'Found unexpected zoom renderers {zoom_tool.renderers}')
 
-            if zoom_tool_name == 'wheel_zoom' and bokeh35:
+            if zoom_tool_name == 'wheel_zoom' and BOKEH_GE_3_5_0:
                 zoom_tool.update(
                     hit_test=True,
                     hit_test_mode='hline',

@@ -1,13 +1,12 @@
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import PANDAS_GE_210
+from ..util import PANDAS_GE_2_1_0
 from .interface import DataError, Interface
 from .util import finite_range
 
@@ -251,14 +250,14 @@ class PandasInterface(Interface, PandasAPI):
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
-        if len(group_by) == 1 and util.pandas_version >= Version("1.5.0"):
+        if len(group_by) == 1 and util.PANDAS_VERSION >= (1, 5, 0):
             # Because of this deprecation warning from pandas 1.5.0:
             # In a future version of pandas, a length 1 tuple will be returned
             # when iterating over a groupby with a grouper equal to a list of length 1.
             # Don't supply a list with a single grouper to avoid this warning.
             group_by = group_by[0]
         groupby_kwargs = {"sort": False}
-        if PANDAS_GE_210:
+        if PANDAS_GE_2_1_0:
             groupby_kwargs["observed"] = False
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, **groupby_kwargs)]
@@ -296,7 +295,7 @@ class PandasInterface(Interface, PandasAPI):
                     if is_numeric_dtype(d) and c not in cols
                 ]
             groupby_kwargs = {"sort": False}
-            if PANDAS_GE_210:
+            if PANDAS_GE_2_1_0:
                 groupby_kwargs["observed"] = False
             grouped = reindexed.groupby(cols, **groupby_kwargs)
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()

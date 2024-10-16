@@ -630,7 +630,7 @@ class contours(Operation):
         if self.p.filled:
             vdims = [vdims[0].clone(range=crange)]
 
-        if Version(contourpy_version) >= Version('1.2'):
+        if Version(contourpy_version).release >= (1, 2, 0):
             line_type = LineType.ChunkCombinedNan
         else:
             line_type = LineType.ChunkCombinedOffset
@@ -821,7 +821,7 @@ class histogram(Operation):
         is_cupy = is_cupy_array(data)
         if is_cupy:
             import cupy
-            full_cupy_support = Version(cupy.__version__) > Version('8.0')
+            full_cupy_support = Version(cupy.__version__).release > (8, 0, 0)
             if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False
@@ -830,17 +830,17 @@ class histogram(Operation):
 
         # Mask data
         if is_ibis_expr(data):
-            from ..core.data.ibis import ibis5, ibis9_5
+            from ..core.data.ibis import IBIS_GE_5_0_0, IBIS_GE_9_5_0
 
             mask = data.notnull()
             if self.p.nonzero:
                 mask = mask & (data != 0)
-            if ibis5():
+            if IBIS_GE_5_0_0:
                 data = data.as_table()
             else:
                 # to_projection removed in ibis 5.0.0
                 data = data.to_projection()
-            data = data.filter(mask) if ibis9_5() else data[mask]
+            data = data.filter(mask) if IBIS_GE_9_5_0 else data[mask]
             no_data = not len(data.head(1).execute())
             data = data[dim.name]
         else:

@@ -1,7 +1,7 @@
 import numpy as np
 
 from holoviews.element import Violin
-from holoviews.plotting.mpl.util import MPL_GE_3_9
+from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -15,7 +15,7 @@ class TestMPLViolinPlot(TestMPLPlot):
         data, style, axis_opts = plot.get_data(violin, {}, {})
         self.assertEqual(data[0][0], values)
         self.assertEqual(style['positions'], [0])
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             self.assertEqual(style['tick_labels'], [''])
         else:
             self.assertEqual(style['labels'], [''])
@@ -38,7 +38,7 @@ class TestMPLViolinPlot(TestMPLPlot):
         self.assertEqual(data[0][0], violin.select(A=0).dimension_values(1))
         self.assertEqual(data[0][1], violin.select(A=1).dimension_values(1))
         self.assertEqual(style['positions'], [0, 1])
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             self.assertEqual(style['tick_labels'], ['0', '1'])
         else:
             self.assertEqual(style['labels'], ['0', '1'])

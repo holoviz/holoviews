@@ -6,7 +6,7 @@ from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
-from .util import MPL_GE_3_9
+from .util import MPL_GE_3_9_0
 
 
 class DistributionPlot(AreaPlot):
@@ -78,7 +78,7 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
             d = group[group.vdims[0]]
             data.append(d[np.isfinite(d)])
             labels.append(label)
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             style['tick_labels'] = labels
         else:
             style['labels'] = labels
@@ -161,7 +161,7 @@ class ViolinPlot(BoxPlot):
         stats_color = plot_kwargs.pop('stats_color', 'black')
         facecolors = plot_kwargs.pop('facecolors', [])
         edgecolors = plot_kwargs.pop('edgecolors', 'black')
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             labels = {'tick_labels': plot_kwargs.pop('tick_labels')}
         else:
             labels = {'labels': plot_kwargs.pop('labels')}
@@ -206,7 +206,7 @@ class ViolinPlot(BoxPlot):
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = list(range(len(data)))
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             style['tick_labels'] = labels
         else:
             style['labels'] = labels

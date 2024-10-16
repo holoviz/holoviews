@@ -3,7 +3,7 @@ from contextlib import suppress
 import bokeh
 from packaging.version import Version
 
-if Version(Version(bokeh.__version__).base_version) < Version("3.5"):
+if Version(bokeh.__version__).release < (3, 5, 0):
     import bokeh.sampledata
 
     bokeh.sampledata.download()
