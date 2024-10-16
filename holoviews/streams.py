@@ -1345,13 +1345,21 @@ class Tap(PointerXY):
     The x/y-position of a tap or click in data coordinates.
     """
     x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
+    @classmethod
+    def from_param(cls, x=None, y=None):
+        tap = cls(x=x, y=y)
+        tap.param.watch(tap._event, ["x", "y"])
+        return tap
+
+    def _event(self, *events):
+        self.trigger([self])
 
 class MultiAxisTap(LinkedStream):
     """
