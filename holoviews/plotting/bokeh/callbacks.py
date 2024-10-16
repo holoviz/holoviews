@@ -664,7 +664,10 @@ class PopupMixin:
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            state.execute(self._process_selection_partial_event)
+            if self.plot.document.session_context:
+                self.plot.document.add_next_tick_callback(self._process_selection_partial_event)
+            else:
+                state.execute(self._process_selection_partial_event)
 
     async def on_msg(self, msg):
         await super().on_msg(msg)
