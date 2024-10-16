@@ -638,7 +638,7 @@ class PopupMixin:
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel, popup_position=self.popup_position),
+            args=dict(panel=self._panel, popup_position=self._popup_position),
             code=f"""
             export default ({{panel, popup_position}}, cb_obj, _) => {{
                 const el = panel.elements[1];
