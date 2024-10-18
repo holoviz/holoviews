@@ -1830,7 +1830,8 @@ class GenericOverlayPlot(GenericElementPlot):
 
         subplots = {}
         for (key, vmap, streams) in zip(keys, vmaps, dmap_streams):
-            streams = list(unique_iterator(streams))
+            if streams:
+                streams = list(unique_iterator(streams))
             subplot = self._create_subplot(key, vmap, streams, ranges)
             if subplot is None:
                 continue
