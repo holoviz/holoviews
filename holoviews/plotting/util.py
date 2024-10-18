@@ -114,7 +114,7 @@ def isoverlay_fn(obj):
     """
     Determines whether object is a DynamicMap returning (Nd)Overlay types.
     """
-    return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
+    return isinstance(obj, CompositeOverlay) or (isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay)))
 
 
 def overlay_depth(obj):
