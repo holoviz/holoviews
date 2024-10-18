@@ -233,28 +233,35 @@ def split_dmap_overlay(obj, depth=0):
     to determine if a stream update should redraw a particular
     subplot.
     """
-    layers = []
+    layers, streams = [], []
     if isinstance(obj, DynamicMap):
         initialize_dynamic(obj)
         if issubclass(obj.type, NdOverlay) and not depth:
             for _ in obj.last.values():
                 layers.append(obj)
+                streams.append(obj.streams)
         elif issubclass(obj.type, Overlay):
-            if obj.callback.inputs and is_dynamic_overlay(obj) and not depth:
+            if obj.callback.inputs and is_dynamic_overlay(obj):
                 for inp in obj.callback.inputs:
-                    layers += split_dmap_overlay(inp, depth+1)
+                    split, sub_streams = split_dmap_overlay(inp, depth+1)
+                    layers += split
+                    streams += [s+obj.streams for s in sub_streams]
             else:
                 for _ in obj.last.values():
                     layers.append(obj)
+                    streams.append(obj.streams)
         else:
             layers.append(obj)
-        return layers
+            streams.append(obj.streams)
+        return layers, streams
     if isinstance(obj, Overlay):
         for _k, v in obj.items():
             layers.append(v)
+            streams.append([])
     else:
         layers.append(obj)
-    return layers
+        streams.append([])
+    return layers, streams
 
 
 def initialize_dynamic(obj):
