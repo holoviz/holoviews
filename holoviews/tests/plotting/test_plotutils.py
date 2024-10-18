@@ -202,6 +202,13 @@ class TestOverlayableZorders(ComparisonTestCase):
         self.assertIn(curve, sources[2])
         self.assertNotIn(ndoverlay, sources[2])
 
+    def test_dynamic_compute_overlayable_zorders_ndoverlays_as_input(self):
+        ndoverlay1 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        ndoverlay2 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        combined = ndoverlay1*ndoverlay2
+        combined[()]
+        sources = compute_overlayable_zorders(combined)
+        assert len(sources) == 2
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(self):
         ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
