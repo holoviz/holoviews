@@ -384,6 +384,24 @@ def test_stream_popup_box_select_right(serve_hv, points):
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_async_callbacks(serve_hv):
+    async def popup_form(x, y):
+        return pn.widgets.Button(name=f"{x},{y}")
+
+    points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+    hv.streams.Tap(source=points, popup=popup_form)
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    hv_plot.click()
+    expect(hv_plot).to_have_count(1)
+
+    locator = page.locator(".bk-btn")
+    expect(locator).to_have_count(2)
+
+
+@skip_popup
+@pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_visible(serve_hv, points):
     def popup_form(x, y):
         def hide(_):
@@ -414,7 +432,6 @@ def test_stream_popup_visible(serve_hv, points):
     locator.click()
     locator = page.locator(".bk-btn")
     expect(locator.first).not_to_be_visible()
-
 
 
 @skip_popup
@@ -530,9 +547,9 @@ def test_stream_popup_selection1d_lasso_select(serve_hv, points):
     expect(hv_plot).to_have_count(1)
 
     box = hv_plot.bounding_box()
-    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
-    mid_x, mid_y = box['x'] + 10, box['y'] + 10
-    end_x, end_y = box['x'] + box['width'] - 10, box['y'] + 10
+    start_x, start_y = box['x'] + 1, box['y'] + box['height'] - 1
+    mid_x, mid_y = box['x'] + 1, box['y'] + 1
+    end_x, end_y = box['x'] + box['width'] - 1, box['y'] + 1
 
     page.mouse.move(start_x, start_y)
     hv_plot.click()

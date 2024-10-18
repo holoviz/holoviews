@@ -83,6 +83,7 @@ xarray = ">=0.10.4"
 [feature.test-core.dependencies]
 psutil = "*"
 pytest = "*"
+pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"

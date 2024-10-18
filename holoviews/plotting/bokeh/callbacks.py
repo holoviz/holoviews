@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import inspect
 import time
 from collections import defaultdict
 from functools import partial
@@ -222,7 +223,7 @@ class Callback:
                 filtered_msg[k] = v
         return filtered_msg
 
-    def on_msg(self, msg):
+    async def on_msg(self, msg):
         streams = []
         for stream in self.streams:
             handle_ids = self.handle_ids[stream]
@@ -372,7 +373,7 @@ class Callback:
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
-            self.on_msg(msg)
+            await self.on_msg(msg)
         await self.process_on_event()
 
     async def process_on_change(self):
@@ -407,7 +408,7 @@ class Callback:
             equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
-            self.on_msg(msg)
+            await self.on_msg(msg)
             self._prev_msg = msg
         await self.process_on_change()
 
@@ -708,15 +709,17 @@ class PopupMixin:
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            self._process_selection_event()
-            self._skipped_partial_event = False
+            if self.plot.document.session_context and self.plot.document.session_context.server_context:
+                self.plot.document.add_next_tick_callback(self._process_selection_partial_event)
+            else:
+                state.execute(self._process_selection_partial_event)
 
-    def on_msg(self, msg):
-        super().on_msg(msg)
+    async def on_msg(self, msg):
+        await super().on_msg(msg)
         if hasattr(self, '_panel'):
-            self._process_selection_event()
+            await self._process_selection_event()
 
-    def _process_selection_event(self):
+    async def _process_selection_event(self):
         event = self._selection_event
         if event is not None:
             if self.geom_type not in (event.geometry["type"], "any"):
@@ -735,7 +738,10 @@ class PopupMixin:
         popup_is_callable = callable(popup)
         if popup_is_callable:
             with set_curdoc(self.plot.document):
-                popup = popup(**stream.contents)
+                if inspect.iscoroutinefunction(popup):
+                    popup = await popup(**stream.contents)
+                else:
+                    popup = popup(**stream.contents)
 
         # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
@@ -791,6 +797,10 @@ class PopupMixin:
         if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
+
+    async def _process_selection_partial_event(self):
+        await self._process_selection_event()
+        self._skipped_partial_event = False
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
