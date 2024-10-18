@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -111,7 +112,6 @@ filterwarnings = [
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
     "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
     # 2024-01: Pandas 2.2
-    "ignore:When grouping with a length-1 list::dask.dataframe.groupby", # https://github.com/dask/dask/issues/10572
     "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning", # Will go away by itself in Pandas 3.0
     "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning", # https://github.com/holoviz/spatialpandas/issues/137
     # 2024-04
@@ -125,7 +125,7 @@ filterwarnings = [
     "ignore:The (non_)?interactive_bk attribute was deprecated in Matplotlib 3.9", # OK - Only happening in debug mode
     "ignore: Jitify is performing a one-time only warm::cupy", # OK,
     # 2024-10
-    "ignore:unclosed <socket.socket fd=.+?, family=.+?, type=.+?, proto=.+?>",
+    "ignore::ResourceWarning",
 ]
 
 [tool.coverage]
