@@ -204,7 +204,7 @@ class TestOverlayableZorders(ComparisonTestCase):
 
     def test_dynamic_compute_overlayable_zorders_ndoverlays_as_input(self):
         ndoverlay1 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
-        ndoverlay2 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        ndoverlay2 = NdOverlay({i: Area((range(15, 25+i), range(10+i))) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
         combined = ndoverlay1*ndoverlay2
         combined[()]
         sources = compute_overlayable_zorders(combined)
