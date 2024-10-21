@@ -1266,7 +1266,7 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, popup=None, popup_position=POPUP_POSITIONS[0], popup_anchor=None, **params):
+    def __init__(self, linked=True, popup=None, popup_position="top_right", popup_anchor=None, **params):
         if popup_position not in POPUP_POSITIONS:
             raise ValueError(
                 f"Invalid popup_position: {popup_position!r}; "

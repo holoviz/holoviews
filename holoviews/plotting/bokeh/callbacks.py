@@ -625,7 +625,7 @@ class PopupMixin:
         self._popup_position = stream.popup_position
         self._panel = Panel(
             position=XY(x=np.nan, y=np.nan),
-            anchor=stream.popup_anchor or POPUP_POSITION_ANCHOR.get(self._popup_position, 'top_left'),
+            anchor=stream.popup_anchor or POPUP_POSITION_ANCHOR[self._popup_position],
             elements=[close_button],
             visible=False,
             styles={"zIndex": "1000"},
@@ -1246,7 +1246,7 @@ class Selection1DCallback(PopupMixin, Callback):
                 }
                 if (!xs || !ys) { return; }
 
-                let minX = null, maxX = null, minY = null, maxY = null;
+                let minX, maxX, minY, maxY;
 
                 for (const i of indices) {
                     const tx = xs[i];
