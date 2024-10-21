@@ -192,7 +192,7 @@ def test_multi_axis_tap(serve_hv):
 
     def test():
         assert s.xs == {'x': 11.560240963855422}
-        assert s.ys == {'y1': 18, 'y2': 78.71428571428572}
+        assert s.ys == {'y1': 18.642857142857146, 'y2': np.float64(78.71428571428572)}
 
     wait_until(test, page)
 
