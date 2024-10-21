@@ -1244,7 +1244,11 @@ class Selection1DCallback(PopupMixin, Callback):
                     xs = source.get_column(renderer.glyph.xs.field);
                     ys = source.get_column(renderer.glyph.ys.field);
                 }
-                if (!xs || !ys) { return; }
+
+                if (!xs || !ys || indices.length == 0) {
+                    panel.visible = false;
+                    return;
+                }
 
                 let minX, maxX, minY, maxY;
 
@@ -1252,31 +1256,29 @@ class Selection1DCallback(PopupMixin, Callback):
                     const tx = xs[i];
                     const ty = ys[i];
 
-                    if (minX === null || tx < minX) { minX = tx; }
-                    if (maxX === null || tx > maxX) { maxX = tx; }
-                    if (minY === null || ty < minY) { minY = ty; }
-                    if (maxY === null || ty > maxY) { maxY = ty; }
+                    if (minX === undefined || tx < minX) { minX = tx; }
+                    if (maxX === undefined || tx > maxX) { maxX = tx; }
+                    if (minY === undefined || ty < minY) { minY = ty; }
+                    if (maxY === undefined || ty > maxY) { maxY = ty; }
                 }
 
-                if (minX !== null && maxX !== null && minY !== null && maxY !== null) {
-                    if (popup_position.includes('left')) {
-                        x = minX;
-                    } else if (popup_position.includes('right')) {
-                        x = maxX;
-                    } else {
-                        x = (minX + maxX) / 2;
-                    }
-
-                    if (popup_position.includes('top')) {
-                        y = maxY;
-                    } else if (popup_position.includes('bottom')) {
-                        y = minY;
-                    } else {
-                        y = (minY + maxY) / 2;
-                    }
-
-                    panel.position.setv({x, y});
+                if (popup_position.includes('left')) {
+                    x = minX;
+                } else if (popup_position.includes('right')) {
+                    x = maxX;
+                } else {
+                    x = (minX + maxX) / 2;
                 }
+
+                if (popup_position.includes('top')) {
+                    y = maxY;
+                } else if (popup_position.includes('bottom')) {
+                    y = minY;
+                } else {
+                    y = (minY + maxY) / 2;
+                }
+
+                panel.position.setv({x, y});
             }
             """,
         ))
