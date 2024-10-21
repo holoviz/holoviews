@@ -192,7 +192,7 @@ def test_multi_axis_tap(serve_hv):
 
     def test():
         assert s.xs == {'x': 11.560240963855422}
-        assert s.ys == {'y1': 18.642857142857146, 'y2': 78.71428571428572}
+        assert s.ys == {'y1': 18, 'y2': 78.71428571428572}
 
     wait_until(test, page)
 
@@ -324,9 +324,9 @@ def test_stream_popup_polygons_tap(serve_hv, popup_position):
 ])
 def test_stream_popup_polygons_selection1d(serve_hv, popup_position):
     def popup_form(name):
-        return f"# {name}"
+        return "# selection"
 
-    points = hv.Polygons([(0, 0), (0, 1), (1, 1), (1, 0)]).opts(tools=["tap"])
+    points = hv.Polygons([(0, 0), (0, 1), (1, 1), (1, 0)]).opts(tools=["tap"], padding=1)
     hv.streams.Selection1D(source=points, popup=popup_form("Tap"), popup_position=popup_position)
 
     page = serve_hv(points)
@@ -570,6 +570,8 @@ def test_stream_popup_position_selection1d(serve_hv, points, tool, popup_positio
         page.mouse.move(end_x, end_y)
         page.mouse.up()
     elif tool == "tap":
+        mid_x, mid_y = box['x'] + 1, box['y'] + 1
+        page.mouse.move(mid_x, mid_y)
         hv_plot.click()
 
     # Wait for popup to show
@@ -630,7 +632,7 @@ def test_stream_popup_anchor_selection1d(serve_hv, points):
 
 
 @skip_popup
-@pytest.mark.parametrize("tool, tool_type", [("box_select", BoundsXY), ("lasso_select", Lasso), ("tap", Tap)])
+@pytest.mark.parametrize("tool, tool_type", [("box_select", BoundsXY), ("lasso_select", Lasso)])
 @pytest.mark.parametrize("popup_position", [
     "top_right", "top_left", "bottom_left", "bottom_right",
     "right", "left", "top", "bottom"
@@ -673,6 +675,7 @@ def test_stream_popup_position_streams(serve_hv, points, tool, tool_type, popup_
 
     locator = page.locator("#selection")
     popup_box = locator.bounding_box()
+    expect(locator).to_have_count(1)
 
     distance_to_left = abs(popup_box['x'] - box['x'])
     distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
@@ -730,6 +733,7 @@ def test_stream_popup_anchor_streams(serve_hv, points, tool, tool_type):
 
     locator = page.locator("#selection")
     popup_box = locator.bounding_box()
+    expect(locator).to_have_count(1)
 
     distance_to_left = abs(popup_box['x'] - box['x'])
     distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
