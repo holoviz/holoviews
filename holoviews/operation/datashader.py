@@ -69,7 +69,8 @@ from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
-DATASHADER_VERSION = Version(ds.__version__).release
+ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
+DATASHADER_VERSION = ds_version.release
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
 DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
 DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
