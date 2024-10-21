@@ -674,8 +674,8 @@ def test_stream_popup_position_streams(serve_hv, points, tool, tool_type, popup_
         hv_plot.click()
 
     locator = page.locator("#selection")
-    popup_box = locator.bounding_box()
     expect(locator).to_have_count(1)
+    popup_box = locator.bounding_box()
 
     distance_to_left = abs(popup_box['x'] - box['x'])
     distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
@@ -732,8 +732,8 @@ def test_stream_popup_anchor_streams(serve_hv, points, tool, tool_type):
         hv_plot.click()
 
     locator = page.locator("#selection")
-    popup_box = locator.bounding_box()
     expect(locator).to_have_count(1)
+    popup_box = locator.bounding_box()
 
     distance_to_left = abs(popup_box['x'] - box['x'])
     distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
