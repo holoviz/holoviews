@@ -6,7 +6,15 @@ import pytest
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
-from holoviews.streams import BoundsX, BoundsXY, BoundsY, Lasso, MultiAxisTap, RangeXY
+from holoviews.streams import (
+    BoundsX,
+    BoundsXY,
+    BoundsY,
+    Lasso,
+    MultiAxisTap,
+    RangeXY,
+    Tap,
+)
 
 from .. import expect, wait_until
 
@@ -268,39 +276,86 @@ def test_stream_popup(serve_hv):
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_polygons_tap(serve_hv):
+@pytest.mark.parametrize("popup_position", [
+    "top_right", "top_left", "bottom_left", "bottom_right",
+    "right", "left", "top", "bottom"
+])
+def test_stream_popup_polygons_tap(serve_hv, popup_position):
     def popup_form(name):
-        return f"# {name}"
+        return "# selection"
 
     points = hv.Polygons([(0, 0), (0, 1), (1, 1), (1, 0)]).opts(tools=["tap"])
-    hv.streams.Tap(source=points, popup=popup_form("Tap"))
+    hv.streams.Tap(source=points, popup=popup_form("Tap"), popup_position=popup_position)
 
     page = serve_hv(points)
     hv_plot = page.locator('.bk-events')
     hv_plot.click()
     expect(hv_plot).to_have_count(1)
 
-    locator = page.locator(".markdown")
+    # Wait for popup to show
+    wait_until(lambda: expect(page.locator("#selection")).to_have_count(1), page)
+    locator = page.locator("#selection")
     expect(locator).to_have_count(1)
+
+    box = hv_plot.bounding_box()
+    popup_box = locator.bounding_box()
+
+    distance_to_left = abs(popup_box['x'] - box['x'])
+    distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
+    distance_to_top = abs(popup_box['y'] - box['y'])
+    distance_to_bottom = abs((popup_box['y'] + popup_box['height']) - (box['y'] + box['height']))
+
+    if "right" in popup_position:
+        assert distance_to_right <= distance_to_left
+    elif "left" in popup_position:
+        assert distance_to_left <= distance_to_right
+
+    if "top" in popup_position:
+        assert distance_to_top <= distance_to_bottom
+    elif "bottom" in popup_position:
+        assert distance_to_bottom <= distance_to_top
 
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_polygons_selection1d(serve_hv):
+@pytest.mark.parametrize("popup_position", [
+    "top_right", "top_left", "bottom_left", "bottom_right",
+    "right", "left", "top", "bottom"
+])
+def test_stream_popup_polygons_selection1d(serve_hv, popup_position):
     def popup_form(name):
         return f"# {name}"
 
     points = hv.Polygons([(0, 0), (0, 1), (1, 1), (1, 0)]).opts(tools=["tap"])
-    hv.streams.Selection1D(source=points, popup=popup_form("Tap"))
+    hv.streams.Selection1D(source=points, popup=popup_form("Tap"), popup_position=popup_position)
 
     page = serve_hv(points)
     hv_plot = page.locator('.bk-events')
     hv_plot.click()
     expect(hv_plot).to_have_count(1)
 
-    locator = page.locator(".markdown")
+    # Wait for popup to show
+    wait_until(lambda: expect(page.locator("#selection")).to_have_count(1), page)
+    locator = page.locator("#selection")
     expect(locator).to_have_count(1)
 
+    box = hv_plot.bounding_box()
+    popup_box = locator.bounding_box()
+
+    distance_to_left = abs(popup_box['x'] - box['x'])
+    distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
+    distance_to_top = abs(popup_box['y'] - box['y'])
+    distance_to_bottom = abs((popup_box['y'] + popup_box['height']) - (box['y'] + box['height']))
+
+    if "right" in popup_position:
+        assert distance_to_right <= distance_to_left
+    elif "left" in popup_position:
+        assert distance_to_left <= distance_to_right
+
+    if "top" in popup_position:
+        assert distance_to_top <= distance_to_bottom
+    elif "bottom" in popup_position:
+        assert distance_to_bottom <= distance_to_top
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
@@ -342,44 +397,6 @@ def test_stream_popup_callbacks(serve_hv):
 
     locator = page.locator(".bk-btn")
     expect(locator).to_have_count(2)
-
-
-@skip_popup
-@pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_box_select_right(serve_hv, points):
-    def popup_form(bounds):
-        if bounds:
-            return f"# box\n{len(bounds)}"
-
-    hv.streams.BoundsXY(source=points, popup=popup_form, popup_position="right", popup_anchor="left")
-    points.opts(tools=["box_select"], active_tools=["box_select"])
-
-    page = serve_hv(points)
-    hv_plot = page.locator('.bk-events')
-    expect(hv_plot).to_have_count(1)
-
-    box = hv_plot.bounding_box()
-    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
-    mid_x, mid_y = box['x'], box['y']
-    end_x, end_y = box['x'], box['y']
-
-    # Perform lasso selection
-    page.mouse.move(start_x, start_y)
-    hv_plot.click()
-    page.mouse.down()
-    page.mouse.move(mid_x, mid_y)
-    page.mouse.move(end_x, end_y)
-    page.mouse.up()
-
-    # Wait for popup to show
-    wait_until(lambda: expect(page.locator("#box")).to_have_count(1), page)
-    locator = page.locator("#box")
-    expect(locator).to_have_count(1)
-    expect(locator).not_to_have_text("box\n0")
-
-    popup = locator.bounding_box()
-    assert popup['x'] > mid_x  # Should be towards the right
-    assert popup['y'] > mid_y  # Should be towards the top
 
 
 @skip_popup
@@ -474,25 +491,6 @@ def test_stream_popup_selection1d_undefined(serve_hv, points):
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d_tap(serve_hv, points):
-    def popup_form(index):
-        return "# Tap"
-
-    points = points.opts(hit_dilation=5)
-    hv.streams.Selection1D(source=points, popup=popup_form)
-    points.opts(tools=["tap"], active_tools=["tap"])
-
-    page = serve_hv(points)
-    hv_plot = page.locator('.bk-events')
-    expect(hv_plot).to_have_count(1)
-    hv_plot.click()
-
-    locator = page.locator("#tap")
-    expect(locator).to_have_count(1)
-
-
-@skip_popup
-@pytest.mark.usefixtures("bokeh_backend")
 def test_stream_popup_noncallable_reappear(serve_hv, points):
     def popup_form(name):
         text_input = pn.widgets.TextInput(name='Description')
@@ -533,111 +531,213 @@ def test_stream_popup_noncallable_reappear(serve_hv, points):
 
 
 @skip_popup
+@pytest.mark.parametrize("tool", ["box_select", "lasso_select", "tap"])
+@pytest.mark.parametrize("popup_position", [
+    "top_right", "top_left", "bottom_left", "bottom_right",
+    "right", "left", "top", "bottom"
+])
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d_lasso_select(serve_hv, points):
+def test_stream_popup_position_selection1d(serve_hv, points, tool, popup_position):
     def popup_form(index):
         if index:
-            return f"# lasso\n{len(index)}"
+            return f"# selection\n{len(index)} {popup_position}"
 
-    hv.streams.Selection1D(source=points, popup=popup_form)
-    points.opts(tools=["tap", "lasso_select"], active_tools=["lasso_select"])
+    hv.streams.Selection1D(source=points, popup=popup_form, popup_position=popup_position)
+    points.opts(tools=[tool], active_tools=[tool])
 
     page = serve_hv(points)
     hv_plot = page.locator('.bk-events')
     expect(hv_plot).to_have_count(1)
 
     box = hv_plot.bounding_box()
-    start_x, start_y = box['x'] + 1, box['y'] + box['height'] - 1
-    mid_x, mid_y = box['x'] + 1, box['y'] + 1
-    end_x, end_y = box['x'] + box['width'] - 1, box['y'] + 1
+    if tool == "box_select":
+        # try to get it centered as possible
+        start_x, start_y = box['x'] + 90, box['y'] + 90
+        end_x, end_y = box['x'] + 170, box['y'] + 125
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(end_x, end_y)
+        page.mouse.up()
+    elif tool == "lasso_select":
+        start_x, start_y = box['x'] + 1, box['y'] + box['height'] - 1
+        mid_x, mid_y = box['x'] + 1, box['y'] + 1
+        end_x, end_y = box['x'] + box['width'] - 1, box['y'] + 1
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(mid_x, mid_y)
+        page.mouse.move(end_x, end_y)
+        page.mouse.up()
+    elif tool == "tap":
+        hv_plot.click()
 
-    page.mouse.move(start_x, start_y)
-    hv_plot.click()
-    page.mouse.down()
-    page.mouse.move(mid_x, mid_y)
-    page.mouse.move(end_x, end_y)
-    page.mouse.up()
-
-    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
-    locator = page.locator("#lasso")
+    # Wait for popup to show
+    wait_until(lambda: expect(page.locator("#selection")).to_have_count(1), page)
+    locator = page.locator("#selection")
     expect(locator).to_have_count(1)
-    expect(locator).not_to_have_text("lasso\n0")
+    expect(locator).not_to_have_text("selection\n0")
+
+    popup_box = locator.bounding_box()
+
+    distance_to_left = abs(popup_box['x'] - box['x'])
+    distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
+    distance_to_top = abs(popup_box['y'] - box['y'])
+    distance_to_bottom = abs((popup_box['y'] + popup_box['height']) - (box['y'] + box['height']))
+
+    if "right" in popup_position:
+        assert distance_to_right <= distance_to_left
+    elif "left" in popup_position:
+        assert distance_to_left <= distance_to_right
+
+    if "top" in popup_position:
+        assert distance_to_top <= distance_to_bottom
+    elif "bottom" in popup_position:
+        assert distance_to_bottom <= distance_to_top
 
 
 @skip_popup
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d_box_select_right(serve_hv, points):
+def test_stream_popup_anchor_selection1d(serve_hv, points):
     def popup_form(index):
         if index:
-            return f"# lasso\n{len(index)}"
+            return f"# selection\n{len(index)}"
 
-    hv.streams.Selection1D(source=points, popup=popup_form, popup_position="right", popup_anchor="left")
-    points.opts(tools=["box_select"], active_tools=["box_select"])
+    hv.streams.Selection1D(source=points, popup=popup_form, popup_position="top", popup_anchor="top_right")
+    points.opts(tools=["tap"], active_tools=["tap"])
 
     page = serve_hv(points)
     hv_plot = page.locator('.bk-events')
     expect(hv_plot).to_have_count(1)
-
-    box = hv_plot.bounding_box()
-    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
-    mid_x, mid_y = box['x'], box['y']
-    end_x, end_y = box['x'], box['y']
-
-    # Perform lasso selection
-    page.mouse.move(start_x, start_y)
     hv_plot.click()
-    page.mouse.down()
-    page.mouse.move(mid_x, mid_y)
-    page.mouse.move(end_x, end_y)
-    page.mouse.up()
 
     # Wait for popup to show
-    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
-    locator = page.locator("#lasso")
+    wait_until(lambda: expect(page.locator("#selection")).to_have_count(1), page)
+    locator = page.locator("#selection")
     expect(locator).to_have_count(1)
-    expect(locator).not_to_have_text("lasso\n0")
+    expect(locator).not_to_have_text("selection\n0")
 
-    popup = locator.bounding_box()
-    assert popup['x'] > mid_x  # Should be towards the right
-    assert popup['y'] > mid_y  # Should be towards the top
+    box = hv_plot.bounding_box()
+    popup_box = locator.bounding_box()
+
+    distance_to_left = abs(popup_box['x'] - box['x'])
+    distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
+    distance_to_top = abs(popup_box['y'] - box['y'])
+    distance_to_bottom = abs((popup_box['y'] + popup_box['height']) - (box['y'] + box['height']))
+
+    assert distance_to_left <= distance_to_right
+    assert distance_to_bottom <= distance_to_top
 
 
 @skip_popup
+@pytest.mark.parametrize("tool, tool_type", [("box_select", BoundsXY), ("lasso_select", Lasso), ("tap", Tap)])
+@pytest.mark.parametrize("popup_position", [
+    "top_right", "top_left", "bottom_left", "bottom_right",
+    "right", "left", "top", "bottom"
+])
 @pytest.mark.usefixtures("bokeh_backend")
-def test_stream_popup_selection1d_box_select_left(serve_hv, points):
-    def popup_form(index):
-        if index:
-            return f"# lasso\n{len(index)}"
+def test_stream_popup_position_streams(serve_hv, points, tool, tool_type, popup_position):
+    def popup_form(*args, **kwargs):
+        return "# selection"
 
-    hv.streams.Selection1D(source=points, popup=popup_form, popup_position="left", popup_anchor="right")
-    points.opts(tools=["box_select"], active_tools=["box_select"])
+    points = points.opts(tools=[tool], active_tools=[tool])
+    tool_type(source=points, popup=popup_form, popup_position=popup_position)
 
     page = serve_hv(points)
     hv_plot = page.locator('.bk-events')
     expect(hv_plot).to_have_count(1)
+    hv_plot.click()
 
     box = hv_plot.bounding_box()
-    start_x, start_y = box['x'] + 10, box['y'] + box['height'] - 10
-    mid_x, mid_y = box['x'], box['y']
-    end_x, end_y = box['x'], box['y']
+    if tool == "box_select":
+        # try to get it centered as possible
+        start_x, start_y = box['x'] + 90, box['y'] + 90
+        end_x, end_y = box['x'] + 170, box['y'] + 125
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(end_x, end_y)
+        page.mouse.up()
+    elif tool == "lasso_select":
+        start_x, start_y = box['x'] + 1, box['y'] + box['height'] - 1
+        mid_x, mid_y = box['x'] + 1, box['y'] + 1
+        end_x, end_y = box['x'] + box['width'] - 1, box['y'] + 1
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(mid_x, mid_y)
+        page.mouse.move(end_x, end_y)
+        page.mouse.up()
+    elif tool == "tap":
+        hv_plot.click()
 
-    # Perform lasso selection
-    page.mouse.move(start_x, start_y)
+    locator = page.locator("#selection")
+    popup_box = locator.bounding_box()
+
+    distance_to_left = abs(popup_box['x'] - box['x'])
+    distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
+    distance_to_top = abs(popup_box['y'] - box['y'])
+    distance_to_bottom = abs((popup_box['y'] + popup_box['height']) - (box['y'] + box['height']))
+
+    if "right" in popup_position:
+        assert distance_to_right <= distance_to_left
+    elif "left" in popup_position:
+        assert distance_to_left <= distance_to_right
+
+    if "top" in popup_position:
+        assert distance_to_top <= distance_to_bottom
+    elif "bottom" in popup_position:
+        assert distance_to_bottom <= distance_to_top
+
+
+@skip_popup
+@pytest.mark.parametrize("tool, tool_type", [("box_select", BoundsXY), ("lasso_select", Lasso), ("tap", Tap)])
+@pytest.mark.usefixtures("bokeh_backend")
+def test_stream_popup_anchor_streams(serve_hv, points, tool, tool_type):
+    def popup_form(*args, **kwargs):
+        return "# selection"
+
+    points = points.opts(tools=[tool], active_tools=[tool])
+    tool_type(source=points, popup=popup_form, popup_position="bottom", popup_anchor="bottom_right")
+
+    page = serve_hv(points)
+    hv_plot = page.locator('.bk-events')
+    expect(hv_plot).to_have_count(1)
     hv_plot.click()
-    page.mouse.down()
-    page.mouse.move(mid_x, mid_y)
-    page.mouse.move(end_x, end_y)
-    page.mouse.up()
 
-    # Wait for popup to show
-    wait_until(lambda: expect(page.locator("#lasso")).to_have_count(1), page)
-    locator = page.locator("#lasso")
-    expect(locator).to_have_count(1)
-    expect(locator).not_to_have_text("lasso\n0")
+    box = hv_plot.bounding_box()
+    if tool == "box_select":
+        # try to get it centered as possible
+        start_x, start_y = box['x'] + 90, box['y'] + 90
+        end_x, end_y = box['x'] + 170, box['y'] + 125
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(end_x, end_y)
+        page.mouse.up()
+    elif tool == "lasso_select":
+        start_x, start_y = box['x'] + 1, box['y'] + box['height'] - 1
+        mid_x, mid_y = box['x'] + 1, box['y'] + 1
+        end_x, end_y = box['x'] + box['width'] - 1, box['y'] + 1
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(mid_x, mid_y)
+        page.mouse.move(end_x, end_y)
+        page.mouse.up()
+    elif tool == "tap":
+        hv_plot.click()
 
-    popup = locator.bounding_box()
-    assert popup['x'] < mid_x  # Should be towards the left
-    assert popup['y'] > mid_y  # Should be towards the top
+    locator = page.locator("#selection")
+    popup_box = locator.bounding_box()
+
+    distance_to_left = abs(popup_box['x'] - box['x'])
+    distance_to_right = abs((popup_box['x'] + popup_box['width']) - (box['x'] + box['width']))
+    distance_to_top = abs(popup_box['y'] - box['y'])
+    distance_to_bottom = abs((popup_box['y'] + popup_box['height']) - (box['y'] + box['height']))
+
+    assert distance_to_left <= distance_to_right
+    assert distance_to_bottom >= distance_to_top
 
 
 @pytest.mark.usefixtures("bokeh_backend")
