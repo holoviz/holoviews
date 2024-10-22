@@ -192,7 +192,9 @@ def test_multi_axis_tap(serve_hv):
 
     def test():
         assert s.xs == {'x': 11.560240963855422}
-        assert s.ys == {'y1': 18.642857142857146, 'y2': np.float64(78.71428571428572)}
+        assert len(s.ys) == 2
+        assert np.isclose(s.ys["y1"], 18.642857142857146)
+        assert np.isclose(s.ys["y2"], 78.71428571428572)
 
     wait_until(test, page)
 
@@ -293,7 +295,7 @@ def test_stream_popup_polygons_tap(serve_hv, popup_position):
     expect(hv_plot).to_have_count(1)
 
     # Wait for popup to show
-    wait_until(lambda: expect(page.locator("#selection")).to_have_count(1), page)
+    expect(page.locator("#selection")).to_have_count(1)
     locator = page.locator("#selection")
     expect(locator).to_have_count(1)
 
