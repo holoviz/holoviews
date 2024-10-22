@@ -1247,7 +1247,7 @@ class Selection1DCallback(PopupMixin, Callback):
                     ys = source.get_column(renderer.glyph.ys.field);
                 }
 
-                if (!xs || !ys) {
+                if (!xs || !ys || !indices.length) {
                     return;
                 }
 
