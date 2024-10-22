@@ -2443,6 +2443,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 'background_fill_color': 'white',
                 'background_fill_alpha': 0.6,
                 'length_sizing': 'adaptive',
+                'bar_length_units': 'data',
+                'bar_length': 0.8,
                 # Adding location so people can overwrite the default
                 'location': location,
             }
