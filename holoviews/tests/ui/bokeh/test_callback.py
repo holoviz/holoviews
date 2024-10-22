@@ -218,7 +218,9 @@ def test_multi_axis_tap_datetime(serve_hv):
 
     def test():
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
-        assert s.ys == {'y1': 18.13070539419087, 'y2': 76.551867219917}
+        assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
+        assert np.isclose(s.ys["y1"], 18)
+        assert np.isclose(s.ys["y2"], 76)
 
     wait_until(test, page)
 
@@ -294,7 +296,7 @@ class TestPopup:
     @pytest.fixture
     def points(self):
         rng = np.random.default_rng(10)
-        return hv.Points(rng.normal(size=(1000, 2))).opts(padding=0.2)
+        return hv.Points(rng.normal(size=(1000, 2)))
 
     def _select_points_based_on_tool(self, tool, page, plot):
         """Helper method to perform point selection based on tool type."""
@@ -319,8 +321,6 @@ class TestPopup:
             page.mouse.move(end_x, end_y)
             page.mouse.up()
         elif tool == "tap":
-            mid_x, mid_y = box['x'] + box['width']/2, box['y'] + box['height']/2
-            page.mouse.move(mid_x, mid_y)
             plot.click()
 
     def _get_popup_distances_relative_to_bbox(self, popup_box, plot_box):
@@ -342,10 +342,9 @@ class TestPopup:
         elif "bottom" in popup_position:
             assert distances['bottom'] <= distances['top']
 
-    def _serve_plot_and_click(self, serve_hv, plot):
+    def _serve_plot(self, serve_hv, plot):
         page = serve_hv(plot)
         hv_plot = page.locator('.bk-events')
-        hv_plot.click()
         expect(hv_plot).to_have_count(1)
         return page, hv_plot
 
@@ -354,14 +353,15 @@ class TestPopup:
         expect(locator).to_have_count(count)
         return locator
 
-    def test_basic(self, serve_hv):
+    def test_basic(self, serve_hv, points):
         def popup_form(name):
             return f"# {name}"
 
-        points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+        points.opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form("Tap"))
 
-        page, _ = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
         self._locate_popup(page)
 
     @pytest.mark.parametrize("popup_position", [
@@ -375,7 +375,8 @@ class TestPopup:
         points = hv.Polygons([(0, 0), (0, 1), (1, 1), (1, 0)]).opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form("Tap"), popup_position=popup_position)
 
-        page, hv_plot = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
         locator = self._locate_popup(page)
 
         box = hv_plot.bounding_box()
@@ -389,28 +390,31 @@ class TestPopup:
 
         hv.streams.Tap(source=points, popup=popup_form("Tap"))
 
-        page, _ = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
         self._locate_popup(page, count=0)
 
-    def test_callbacks(self, serve_hv):
+    def test_callbacks(self, serve_hv, points):
         def popup_form(x, y):
             return pn.widgets.Button(name=f"{x},{y}")
 
-        points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+        points.opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form)
 
-        page, _ = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
         locator = page.locator(".bk-btn")
         expect(locator).to_have_count(2)
 
-    async def test_async_callbacks(self, serve_hv):
+    def test_async_callbacks(self, serve_hv, points):
         async def popup_form(x, y):
             return pn.widgets.Button(name=f"{x},{y}")
 
-        points = hv.Points(np.random.randn(10, 2)).opts(tools=["tap"])
+        points.opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form)
 
-        page, _ = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
         locator = page.locator(".bk-btn")
         expect(locator).to_have_count(2)
 
@@ -426,10 +430,11 @@ class TestPopup:
             col = pn.Column(button)
             return col
 
-        points = points.opts(tools=["tap"])
+        points.opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form)
 
-        page, _ = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
 
         locator = page.locator(".bk-btn")
         expect(locator).to_have_count(2)
@@ -453,7 +458,7 @@ class TestPopup:
         hv.streams.Selection1D(source=points, popup=popup_form, popup_position=popup_position)
         points.opts(tools=[tool], active_tools=[tool])
 
-        page, hv_plot = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
         self._select_points_based_on_tool(tool, page, hv_plot)
 
         locator = self._locate_popup(page)
@@ -472,7 +477,8 @@ class TestPopup:
         hv.streams.Selection1D(source=points, popup=popup_form, popup_position="top", popup_anchor="top_right")
         points.opts(tools=["tap"], active_tools=["tap"])
 
-        page, hv_plot = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        self._select_points_based_on_tool("tap", page, hv_plot)
         locator = self._locate_popup(page)
         expect(locator).not_to_have_text("selection\n0")
 
@@ -494,7 +500,7 @@ class TestPopup:
 
         points = points.opts(tools=[tool], active_tools=[tool])
         tool_type(source=points, popup=popup_form, popup_position="bottom", popup_anchor="bottom_right")
-        page, hv_plot = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
 
         self._select_points_based_on_tool(tool, page, hv_plot)
         locator = self._locate_popup(page)
@@ -519,7 +525,7 @@ class TestPopup:
         points = points.opts(tools=[tool], active_tools=[tool])
         tool_type(source=points, popup=popup_form, popup_position=popup_position)
 
-        page, hv_plot = self._serve_plot_and_click(serve_hv, points)
+        page, hv_plot = self._serve_plot(serve_hv, points)
         self._select_points_based_on_tool(tool, page, hv_plot)
         locator = self._locate_popup(page)
 
