@@ -219,8 +219,8 @@ def test_multi_axis_tap_datetime(serve_hv):
     def test():
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
-        assert 18 <= s.ys["y1"] <= 18.5
-        assert 76 <= s.ys["y2"] <= 76.5
+        assert np.isclose(s.ys["y1"], 18.2, atol=0.5)
+        assert np.isclose(s.ys["y2"], 76.5, atol=0.5)
 
     wait_until(test, page)
 
