@@ -219,8 +219,9 @@ def test_multi_axis_tap_datetime(serve_hv):
     def test():
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
-        assert np.isclose(s.ys["y1"], 18.2, atol=0.5)
-        assert np.isclose(s.ys["y2"], 76.5, atol=0.5)
+        assert len(s.ys) == 2
+        assert np.isclose(s.ys["y1"], 18.130705394191)
+        assert np.isclose(s.ys["y2"], 76.551867219917)
 
     wait_until(test, page)
 
@@ -293,11 +294,6 @@ def test_stream_subcoordinate_y_range(serve_hv, points):
 @pytest.mark.usefixtures("bokeh_backend")
 @skip_popup
 class TestPopup:
-    @pytest.fixture
-    def points(self):
-        rng = np.random.default_rng(10)
-        return hv.Points(rng.normal(size=(1000, 2)))
-
     def _select_points_based_on_tool(self, tool, page, plot):
         """Helper method to perform point selection based on tool type."""
         box = plot.bounding_box()
