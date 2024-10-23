@@ -392,8 +392,12 @@ def deephash(obj):
     Given an object, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.
     """
+    from panel.io.cache import _generate_hash
+
     try:
-        return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
+        hasher = hashlib.new("md5")
+        hasher.update(_generate_hash(obj))
+        return hasher.hexdigest()
     except Exception:
         return None
 
