@@ -6,7 +6,7 @@ from holoviews.core import NdOverlay, Overlay
 from holoviews.element import Curve
 from holoviews.element.annotation import VSpan
 from holoviews.operation.normalization import subcoordinate_group_ranges
-from holoviews.plotting.bokeh.util import bokeh35
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_5_0
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -368,7 +368,7 @@ class TestSubcoordinateY(TestBokehPlot):
             2: 'B / 0', 3: 'B / 1',
         }
 
-    @pytest.mark.skipif(bokeh35, reason="test Bokeh < 3.5")
+    @pytest.mark.skipif(BOKEH_GE_3_5_0, reason="test Bokeh < 3.5")
     def test_multiple_groups_wheel_zoom_configured(self):
         # Same as test_tools_default_wheel_zoom_configured
 
@@ -389,7 +389,7 @@ class TestSubcoordinateY(TestBokehPlot):
             assert zoom_tool.level == 1
             assert zoom_tool.description == f'Wheel Zoom ({group})'
 
-    @pytest.mark.skipif(not bokeh35, reason="requires Bokeh >= 3.5")
+    @pytest.mark.skipif(not BOKEH_GE_3_5_0, reason="requires Bokeh >= 3.5")
     def test_multiple_groups_wheel_zoom_configured_35(self):
         # Same as test_tools_default_wheel_zoom_configured
 

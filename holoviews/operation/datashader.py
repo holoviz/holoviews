@@ -69,9 +69,11 @@ from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
-ds_version = Version(ds.__version__)
-ds15 = ds_version >= Version('0.15.1')
-ds16 = ds_version >= Version('0.16.0')
+ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
+DATASHADER_VERSION = ds_version.release
+DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
+DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
+DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -114,7 +116,7 @@ class AggregationOperation(ResampleOperation2D):
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
-        if ds15:
+        if DATASHADER_GE_0_15_1:
             agg_types = (rd.count, rd.any, rd.where)
         else:
             agg_types = (rd.count, rd.any)
@@ -379,7 +381,7 @@ class aggregate(LineAggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         agg_kwargs = {}
-        if self.p.line_width and glyph == 'line' and ds_version >= Version('0.14.0'):
+        if self.p.line_width and glyph == 'line' and DATASHADER_GE_0_14_0:
             agg_kwargs['line_width'] = self.p.line_width
 
         dfdata = PandasInterface.as_dframe(data)
@@ -388,9 +390,9 @@ class aggregate(LineAggregationOperation):
         if sel_fn:
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]
-            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "index": ds.where(sel_fn)})
+            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
-            _ignore = [*params["vdims"], "index"]
+            _ignore = [*params["vdims"], "__index__"]
             sel_vdims = [s for s in agg if s not in _ignore]
             params["vdims"] = [*params["vdims"], *sel_vdims]
         else:
@@ -405,8 +407,7 @@ class aggregate(LineAggregationOperation):
 
         if isinstance(agg, xr.Dataset) or agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
-            eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
-            return self.p.element_type(eldata, **params)
+            return self.p.element_type(agg, **params)
         else:
             params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
@@ -421,14 +422,14 @@ class aggregate(LineAggregationOperation):
             )
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
 
-        is_where_index = ds15 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
-        is_summary_index = isinstance(agg_fn, ds.summary) and "index" in agg
+        is_where_index = DATASHADER_GE_0_15_1 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
+        is_summary_index = isinstance(agg_fn, ds.summary) and "__index__" in agg
         if is_where_index or is_summary_index:
             if is_where_index:
                 data = agg.data
-                agg = agg.to_dataset(name="index")
+                agg = agg.to_dataset(name="__index__")
             else:  # summary index
-                data = agg.index.data
+                data = agg["__index__"].data
             neg1 = data == -1
             for col in dfdata.columns:
                 if col in agg.coords:
@@ -708,7 +709,7 @@ class spikes_aggregate(LineAggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         agg_kwargs = {}
-        if ds_version >= Version('0.14.0'):
+        if DATASHADER_GE_0_14_0:
             agg_kwargs['line_width'] = self.p.line_width
 
         rename_dict = {k: v for k, v in rename_dict.items() if k != v}
@@ -770,14 +771,12 @@ class geom_aggregate(AggregationOperation):
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
-            eldata = agg if ds_version > Version('0.5.0') else (xs, ys, agg.data)
-            return self.p.element_type(eldata, **params)
+            return self.p.element_type(agg, **params)
         else:
             layers = {}
             for c in agg.coords[agg_fn.column].data:
                 cagg = agg.sel(**{agg_fn.column: c})
-                eldata = cagg if ds_version > Version('0.5.0') else (xs, ys, cagg.data)
-                layers[c] = self.p.element_type(eldata, **params)
+                layers[c] = self.p.element_type(cagg, **params)
             return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
 
 
@@ -788,7 +787,7 @@ class segments_aggregate(geom_aggregate, LineAggregationOperation):
 
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
         agg_kwargs = {}
-        if ds_version >= Version('0.14.0'):
+        if DATASHADER_GE_0_14_0:
             agg_kwargs['line_width'] = self.p.line_width
 
         return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1, **agg_kwargs)
@@ -878,9 +877,6 @@ class regrid(AggregationOperation):
 
 
     def _process(self, element, key=None):
-        if ds_version <= Version('0.5.0'):
-            raise RuntimeError('regrid operation requires datashader>=0.6.0')
-
         # Compute coords, anges and size
         x, y = element.kdims
         coords = tuple(element.dimension_values(d, expanded=False) for d in [x, y])
@@ -1040,7 +1036,7 @@ class trimesh_rasterize(aggregate):
         precompute = self.p.precompute
         if interp == 'linear': interp = 'bilinear'
         wireframe = False
-        if (not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims))) and ds_version <= Version('0.6.9'):
+        if (not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims))) and DATASHADER_VERSION <= (0, 6, 9):
             self.p.aggregator = ds.any() if isinstance(agg, ds.any) or agg == 'any' else ds.count()
             return aggregate._process(self, element, key)
         elif ((not interp and (isinstance(agg, (ds.any, ds.count)) or
@@ -1101,11 +1097,11 @@ class quadmesh_rasterize(trimesh_rasterize):
     """
 
     def _precompute(self, element, agg):
-        if ds_version <= Version('0.7.0'):
+        if DATASHADER_VERSION <= (0, 7, 0):
             return super()._precompute(element.trimesh(), agg)
 
     def _process(self, element, key=None):
-        if ds_version <= Version('0.7.0'):
+        if DATASHADER_VERSION <= (0, 7, 0):
             return super()._process(element, key)
 
         if element.interface.datatype != 'xarray':
@@ -1286,21 +1282,39 @@ class shade(LinkableOperation):
             ydensity = element.ydensity
             bounds = element.bounds
 
+        # Convert to xarray if not already
+        if element.interface.datatype != 'xarray':
+            element = element.clone(datatype=['xarray'])
+
         kdims = element.kdims
         if isinstance(element, ImageStack):
             vdim = element.vdims
             array = element.data
-            if hasattr(array, "to_array"):
-                array = array.to_array("z")
-            array = array.transpose(*[kdim.name for kdim in kdims], ...)
+            # If data is a xarray Dataset it has to be converted to a
+            # DataArray, either by selecting the singular value
+            # dimension or by adding a z-dimension
+            kdims = [kdim.name for kdim in kdims]
+            if not element.interface.packed(element):
+                if len(vdim) == 1:
+                    array = array[vdim[0].name]
+                else:
+                    array = array.to_array("z")
+                    # If data is 3D then we have one extra constant dimension
+                    if array.ndim > 3:
+                        drop = [d for d in array.dims if d not in kdims+["z"]]
+                        array = array.squeeze(dim=drop)
+            array = array.transpose(*kdims, ...)
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
 
+        # Dask is not supported by shade so materialize it
+        array = array.compute()
+
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
         )
-        if ds_version >= Version('0.14.0'):
+        if DATASHADER_GE_0_14_0:
             shade_opts['rescale_discrete_levels'] = self.p.rescale_discrete_levels
 
         # Compute shading options depending on whether
@@ -1334,8 +1348,8 @@ class shade(LinkableOperation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif ds_version > Version('0.5.0') and self.p.cnorm != 'eq_hist':
-            shade_opts['span'] = element.range(vdim)
+        elif self.p.cnorm != 'eq_hist':
+            shade_opts['span'] = (array.min().item(), array.max().item())
 
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:],
@@ -1391,7 +1405,7 @@ class geometry_rasterize(LineAggregationOperation):
             data, col = self._precomputed[element._plot_id]
         else:
             if (('spatialpandas' not in element.interface.datatype) and
-                (not (ds16 and 'geodataframe' in element.interface.datatype))):
+                (not (DATASHADER_GE_0_16_0 and 'geodataframe' in element.interface.datatype))):
                 element = element.clone(datatype=['spatialpandas'])
             data = element.data
             col = element.interface.geo_column(data)
@@ -1406,7 +1420,7 @@ class geometry_rasterize(LineAggregationOperation):
         if isinstance(element, Polygons):
             agg = cvs.polygons(data, **agg_kwargs)
         elif isinstance(element, Path):
-            if self.p.line_width and ds_version >= Version('0.14.0'):
+            if self.p.line_width and DATASHADER_GE_0_14_0:
                 agg_kwargs['line_width'] = self.p.line_width
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
@@ -1609,7 +1623,7 @@ class SpreadingOperation(LinkableOperation):
     to make sparse plots more visible.
     """
 
-    how = param.ObjectSelector(default='source' if ds_version <= Version('0.11.1') else None,
+    how = param.ObjectSelector(default='source' if DATASHADER_VERSION <= (0, 11, 1) else None,
             objects=[None, 'source', 'over', 'saturate', 'add', 'max', 'min'], doc="""
         The name of the compositing operator to use when combining
         pixels. Default of None uses 'over' operator for RGB elements
@@ -1784,9 +1798,10 @@ class inspect_mask(Operation):
     operation.
     """
 
-    pixels = param.Integer(default=3, doc="""
+    pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
        Size of the mask that should match the pixels parameter used in
-       the associated inspection operation.""")
+       the associated inspection operation. Pixels can be provided as
+       integer or x/y-tuple to perform asymmetric masking.""")
 
     streams = param.ClassSelector(default=[PointerXY], class_=(dict, list))
     x = param.Number(default=0)
@@ -1795,9 +1810,13 @@ class inspect_mask(Operation):
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
         ycount, xcount =  element.interface.shape(element, gridded=True)
+        if isinstance(pixels, tuple):
+            xpixels, ypixels = pixels
+        else:
+            xpixels = ypixels = pixels
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
+        return (x_delta*xpixels, y_delta*ypixels)
 
     def _process(self, raster, key=None):
         if isinstance(raster, RGB):
@@ -1820,10 +1839,11 @@ class inspect(Operation):
     type.
     """
 
-    pixels = param.Integer(default=3, doc="""
+    pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
        Number of pixels in data space around the cursor point to search
        for hits in. The hit within this box mask that is closest to the
-       cursor's position is displayed.""")
+       cursor's position is displayed. Pixels can be provided as
+       integer or x/y-tuple to perform asymmetric masking.""")
 
     null_value = param.Number(default=0, doc="""
        Value of raster which indicates no hits. For instance zero for
@@ -1856,9 +1876,9 @@ class inspect(Operation):
                                                y=PointerXY.param.y),
                                   class_=(dict, list))
 
-    x = param.Number(default=0, doc="x-position to inspect.")
+    x = param.Number(default=None, doc="x-position to inspect.")
 
-    y = param.Number(default=0, doc="y-position to inspect.")
+    y = param.Number(default=None, doc="y-position to inspect.")
 
     _dispatch = {}
 
@@ -1909,33 +1929,40 @@ class inspect_base(inspect):
 
     def _process(self, raster, key=None):
         self._validate(raster)
-        if isinstance(raster, RGB):
-            raster = raster[..., raster.vdims[-1]]
-        x_range, y_range = raster.range(0), raster.range(1)
-        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
         x, y = self.p.x, self.p.y
-        val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
-        if np.isnan(val):
-            val = self.p.null_value
+        if x is not None and y is not None:
+            if isinstance(raster, RGB):
+                raster = raster[..., raster.vdims[-1]]
+            x_range, y_range = raster.range(0), raster.range(1)
+            xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
+            val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
+            if np.isnan(val):
+                val = self.p.null_value
 
-        if ((self.p.value_bounds and
-             not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
-             or val == self.p.null_value):
-            result = self._empty_df(raster.dataset)
+            if ((self.p.value_bounds and
+                 not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
+                or val == self.p.null_value):
+                result = self._empty_df(raster.dataset)
+            else:
+                masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
+                result = self._sort_by_distance(raster, masked, x, y)
+
+            self.hits = result
         else:
-            masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
-            result = self._sort_by_distance(raster, masked, x, y)
-
-        self.hits = result
+            self.hits = result = self._empty_df(raster.dataset)
         df = self.p.transform(result)
         return self._element(raster, df.iloc[:self.p.max_indicators])
 
     @classmethod
-    def _distance_args(cls, element, x_range, y_range,  pixels):
-        ycount, xcount =  element.interface.shape(element, gridded=True)
+    def _distance_args(cls, element, x_range, y_range, pixels):
+        ycount, xcount = element.interface.shape(element, gridded=True)
+        if isinstance(pixels, tuple):
+            xpixels, ypixels = pixels
+        else:
+            xpixels = ypixels = pixels
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
+        return (x_delta*xpixels, y_delta*ypixels)
 
     @classmethod
     def _empty_df(cls, dataset):
@@ -1990,9 +2017,21 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        distances = pd.Series(dx*dx + dy*dy)
-        return df.iloc[distances.argsort().values]
-
+        xtype, ytype = dx.dtype.kind, dy.dtype.kind
+        if xtype in 'Mm':
+            dx = dx.astype('int64')
+        if ytype in 'Mm':
+            dy = dx.astype('int64')
+        # If coordinate types don't match normalize
+        # coordinate space to ensure that distance
+        # in both direction is handled the same.
+        if xtype != ytype and len(dx) and len(dy):
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', r'invalid value encountered in (divide)')
+                dx = (dx - dx.min()) / (dx.max() - dx.min())
+                dy = (dy - dy.min()) / (dy.max() - dy.min())
+        distances = pd.Series(dx**2 + dy**2)
+        return df.iloc[distances.fillna(0).argsort().values]
 
 
 class inspect_polygons(inspect_base):
@@ -2026,7 +2065,7 @@ class inspect_polygons(inspect_base):
                 xs.append((np.min(gxs)+np.max(gxs))/2)
                 ys.append((np.min(gys)+np.max(gys))/2)
         dx, dy = np.array(xs) - x, np.array(ys) - y
-        distances = pd.Series(dx*dx + dy*dy)
+        distances = pd.Series(dx**2 + dy**2)
         return df.iloc[distances.argsort().values]
 
 

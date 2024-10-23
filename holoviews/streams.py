@@ -22,6 +22,17 @@ from .core.ndmapping import UniformNdMapping
 # Types supported by Pointer derived streams
 pointer_types = (Number, str, tuple)+util.datetime_types
 
+POPUP_POSITIONS = [
+    "top_right",
+    "top_left",
+    "bottom_left",
+    "bottom_right",
+    "right",
+    "left",
+    "top",
+    "bottom",
+]
+
 class _SkipTrigger: pass
 
 
@@ -565,8 +576,6 @@ class Buffer(Pipe):
             data.stream.sink(self.send)
             self.sdf = data
 
-        if index and isinstance(example, pd.DataFrame):
-            example = example.reset_index()
         params['data'] = example
         super().__init__(**params)
         self.length = length
@@ -656,9 +665,6 @@ class Buffer(Pipe):
         """
         data = kwargs.get('data')
         if data is not None:
-            if (isinstance(data, pd.DataFrame) and
-                list(data.columns) != list(self.data.columns) and self._index):
-                data = data.reset_index()
             self.verify(data)
             kwargs['data'] = self._concat(data)
             self._count += 1
@@ -667,7 +673,7 @@ class Buffer(Pipe):
 
     @property
     def hashkey(self):
-        return {'hash': self._count}
+        return {'hash': (self._count, self._memoize_counter)}
 
 
 
@@ -1260,9 +1266,17 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, popup=None, **params):
+    def __init__(self, linked=True, popup=None, popup_position="top_right", popup_anchor=None, **params):
+        if popup_position not in POPUP_POSITIONS:
+            raise ValueError(
+                f"Invalid popup_position: {popup_position!r}; "
+                f"expect one of {POPUP_POSITIONS}"
+            )
+
         super().__init__(linked=linked, **params)
         self.popup = popup
+        self.popup_position = popup_position
+        self.popup_anchor = popup_anchor
 
 
 class PointerX(LinkedStream):
@@ -1356,6 +1370,18 @@ class Tap(PointerXY):
     y = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the y-axis in data coordinates""")
+
+
+class MultiAxisTap(LinkedStream):
+    """
+    The x/y-positions of a tap or click in data coordinates.
+    """
+
+    xs = param.Dict(default=None, constant=True, doc="""
+           Pointer positions along the x-axes in data coordinates""")
+
+    ys = param.Dict(default=None, constant=True, doc="""
+           Pointer positions along the y-axes in data coordinates""")
 
 
 class DoubleTap(PointerXY):

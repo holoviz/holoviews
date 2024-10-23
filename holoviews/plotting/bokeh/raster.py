@@ -11,7 +11,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import bokeh33, bokeh34, colormesh
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
 
 
 class RasterPlot(ColorbarPlot):
@@ -72,7 +72,7 @@ class RasterPlot(ColorbarPlot):
                 formatter += '{custom}'
             tooltips.append((name, formatter))
 
-        if not bokeh34:  # https://github.com/bokeh/bokeh/issues/13598
+        if not BOKEH_GE_3_4_0:  # https://github.com/bokeh/bokeh/issues/13598
             datetime_code = """
             if (value === -9223372036854776) {
                 return "NaN"
@@ -321,7 +321,7 @@ class ImageStackPlot(RasterPlot):
         # Bokeh 3.3 has simple support for multi hover in a tuple.
         # https://github.com/bokeh/bokeh/pull/13193
         # https://github.com/bokeh/bokeh/pull/13366
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             xdim, ydim = element.kdims
             vdim = ", ".join([d.pprint_label for d in element.vdims])
             return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}

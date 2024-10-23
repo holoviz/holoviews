@@ -177,10 +177,15 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         if (self.streaming and self.streaming[0].data is self.current_frame.data
             and self._stream_data and not empty):
             stream = self.streaming[0]
-            if stream._triggering:
-                data = {k: v[-stream._chunk_length:] for k, v in data.items()}
-                source.stream(data, stream.length)
-            return
+            if stream._count == ((self._stream_count or 0) + 1):
+                if stream._triggering and stream.following:
+                    data = {k: v[-stream._chunk_length:] for k, v in data.items()}
+                    source.stream(data, stream.length)
+                    self._stream_count = stream._count
+                return
+            elif not stream.following:
+                return
+            self._stream_count = stream._count
 
         if cds_column_replace(source, data):
             source.data = data
@@ -244,10 +249,12 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             if plot.subplots:
                 plot.subplots.clear()
 
-            if isinstance(plot, GenericElementPlot):
-                for callback in plot.callbacks:
-                    streams += callback.streams
-                    callback.cleanup()
+            if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
+                continue
+
+            for callback in plot.callbacks:
+                streams += callback.streams
+                callback.cleanup()
 
             for stream in set(streams):
                 stream._subscribers = [
@@ -255,7 +262,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                     if not is_param_method(subscriber) or
                     get_method_owner(subscriber) not in plots
                 ]
-
 
     def _fontsize(self, key, label='fontsize', common=True):
         """

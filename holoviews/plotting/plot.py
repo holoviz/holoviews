@@ -25,7 +25,7 @@ from ..core.layout import Empty, Layout, NdLayout
 from ..core.options import Compositor, SkipRendering, Store, lookup_options
 from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
 from ..core.spaces import DynamicMap, HoloMap
-from ..core.util import isfinite, stream_parameters
+from ..core.util import isfinite, stream_parameters, unique_iterator
 from ..element import Graph, Table
 from ..selection import NoOpSelectionDisplay
 from ..streams import RangeX, RangeXY, RangeY, Stream
@@ -195,7 +195,7 @@ class Plot(param.Parameterized):
         """
         plots = self.traverse(lambda x: x, [Plot])
         for plot in plots:
-            if not isinstance(plot, (GenericCompositePlot, GenericElementPlot, GenericOverlayPlot)):
+            if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
                 continue
             for stream in set(plot.streams):
                 stream._subscribers = [
@@ -1817,8 +1817,8 @@ class GenericOverlayPlot(GenericElementPlot):
             keys, vmaps = self.hmap._split_overlays()
 
         if isinstance(self.hmap, DynamicMap):
-            dmap_streams = [get_nested_streams(layer) for layer in
-                            split_dmap_overlay(self.hmap)]
+            dmap_streams = [streams+get_nested_streams(layer) for layer, streams in
+                            zip(*split_dmap_overlay(self.hmap))]
         else:
             dmap_streams = [None]*len(keys)
 
@@ -1830,6 +1830,8 @@ class GenericOverlayPlot(GenericElementPlot):
 
         subplots = {}
         for (key, vmap, streams) in zip(keys, vmaps, dmap_streams):
+            if streams:
+                streams = list(unique_iterator(streams))
             subplot = self._create_subplot(key, vmap, streams, ranges)
             if subplot is None:
                 continue

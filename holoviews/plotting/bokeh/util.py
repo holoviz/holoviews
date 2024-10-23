@@ -62,11 +62,12 @@ from ...core.util import (
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
-bokeh_version = Version(Version(bokeh.__version__).base_version)
-bokeh32 = bokeh_version >= Version("3.2")
-bokeh33 = bokeh_version >= Version("3.3")
-bokeh34 = bokeh_version >= Version("3.4")
-bokeh35 = bokeh_version >= Version("3.5")
+BOKEH_VERSION = Version(bokeh.__version__).release
+BOKEH_GE_3_2_0 = BOKEH_VERSION >= (3, 2, 0)
+BOKEH_GE_3_3_0 = BOKEH_VERSION >= (3, 3, 0)
+BOKEH_GE_3_4_0 = BOKEH_VERSION >= (3, 4, 0)
+BOKEH_GE_3_5_0 = BOKEH_VERSION >= (3, 5, 0)
+BOKEH_GE_3_6_0 = BOKEH_VERSION >= (3, 6, 0)
 
 TOOL_TYPES = {
     'pan': tools.PanTool,

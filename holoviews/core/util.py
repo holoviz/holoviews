@@ -18,6 +18,7 @@ import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
+from importlib.metadata import PackageNotFoundError, version
 from threading import Event, Thread
 from types import FunctionType
 
@@ -38,12 +39,13 @@ cmp = lambda a, b: (a>b)-(a<b)
 get_keywords = operator.attrgetter('varkw')
 
 # Versions
-numpy_version = Version(Version(np.__version__).base_version)
-param_version = Version(param.__version__)
-pandas_version = Version(pd.__version__)
+NUMPY_VERSION = Version(np.__version__).release
+PARAM_VERSION = Version(param.__version__).release
+PANDAS_VERSION = Version(pd.__version__).release
 
-NUMPY_GE_200 = numpy_version >= Version("2")
-PANDAS_GE_210 = pandas_version >= Version("2.1")
+NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
+PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
+PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
 
 # Types
 generator_types = (zip, range, types.GeneratorType)
@@ -112,6 +114,14 @@ class VersionError(Exception):
         self.version = version
         self.min_version = min_version
         super().__init__(msg, **kwargs)
+
+
+def _no_import_version(name) -> tuple[int, int, int]:
+    """ Get version number without importing the library """
+    try:
+        return Version(version(name)).release
+    except PackageNotFoundError:
+        return (0, 0, 0)
 
 
 class Config(param.ParameterizedFunction):

@@ -10,7 +10,7 @@ from ..core.data import PandasInterface, default_datatype
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (
-    PANDAS_GE_210,
+    PANDAS_GE_2_1_0,
     cartesian_product,
     datetime_types,
     is_cyclic,
@@ -202,7 +202,7 @@ class categorical_aggregate2d(Operation):
     def _aggregate_dataset_pandas(self, obj):
         index_cols = [d.name for d in obj.kdims]
         groupby_kwargs = {"sort": False}
-        if PANDAS_GE_210:
+        if PANDAS_GE_2_1_0:
             groupby_kwargs["observed"] = False
         df = obj.data.set_index(index_cols).groupby(index_cols, **groupby_kwargs).first()
         label = 'unique' if len(df) == len(obj) else 'non-unique'

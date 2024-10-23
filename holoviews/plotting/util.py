@@ -114,7 +114,7 @@ def isoverlay_fn(obj):
     """
     Determines whether object is a DynamicMap returning (Nd)Overlay types.
     """
-    return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
+    return isinstance(obj, CompositeOverlay) or (isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay)))
 
 
 def overlay_depth(obj):
@@ -233,28 +233,35 @@ def split_dmap_overlay(obj, depth=0):
     to determine if a stream update should redraw a particular
     subplot.
     """
-    layers = []
+    layers, streams = [], []
     if isinstance(obj, DynamicMap):
         initialize_dynamic(obj)
         if issubclass(obj.type, NdOverlay) and not depth:
             for _ in obj.last.values():
                 layers.append(obj)
+                streams.append(obj.streams)
         elif issubclass(obj.type, Overlay):
             if obj.callback.inputs and is_dynamic_overlay(obj):
                 for inp in obj.callback.inputs:
-                    layers += split_dmap_overlay(inp, depth+1)
+                    split, sub_streams = split_dmap_overlay(inp, depth+1)
+                    layers += split
+                    streams += [s+obj.streams for s in sub_streams]
             else:
                 for _ in obj.last.values():
                     layers.append(obj)
+                    streams.append(obj.streams)
         else:
             layers.append(obj)
-        return layers
+            streams.append(obj.streams)
+        return layers, streams
     if isinstance(obj, Overlay):
         for _k, v in obj.items():
             layers.append(v)
+            streams.append([])
     else:
         layers.append(obj)
-    return layers
+        streams.append([])
+    return layers, streams
 
 
 def initialize_dynamic(obj):
@@ -570,7 +577,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if cmap.startswith('Category'):
             cmap = cmap.replace('Category', 'tab')
 
-        if Version(mpl.__version__) < Version("3.5"):
+        if Version(mpl.__version__).release < (3, 5, 0):
             from matplotlib import cm
             try:
                 cmap = cm.get_cmap(cmap)

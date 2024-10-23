@@ -1,6 +1,6 @@
 [project]
 name = "holoviews"
-channels = ["pyviz/label/dev", "bokeh", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tasks]
@@ -18,8 +18,8 @@ test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core", "test-unit-task"]
-test-gpu = ["py311", "test-core", "test", "test-gpu"]
+test-core = ["py313", "test-core", "test-unit-task"]
+test-gpu = ["py312", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -53,12 +53,9 @@ bokeh_sampledata = "*"
 python = "3.12.*"
 bokeh_sampledata = "*"
 
-# [feature.py313]
-# channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
-#
-# [feature.py313.dependencies]
-# python = "3.13.*"
-# bokeh_sampledata = "*"
+[feature.py313.dependencies]
+python = "3.13.*"
+bokeh_sampledata = "*"
 
 [feature.example.dependencies]
 cftime = "*"
@@ -86,6 +83,7 @@ xarray = ">=0.10.4"
 [feature.test-core.dependencies]
 psutil = "*"
 pytest = "*"
+pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
@@ -124,11 +122,11 @@ test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui]
-channels = ["pyviz/label/dev", "microsoft", "conda-forge"]
+channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
 playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = "*"
+pytest-playwright = { version = "*", channel = "microsoft" }
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
@@ -138,7 +136,7 @@ cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
 depends_on = ["_install-ui"]
 
 [feature.test-gpu]
-channels = ["pyviz/label/dev", "rapidsai", "conda-forge"]
+channels = ["rapidsai"]
 platforms = ["linux-64"]
 
 [feature.test-gpu.activation.env]
@@ -146,7 +144,7 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "24.08.*"
+cudf = "24.10.*"
 cupy = "*"
 cuspatial = "*"
 librmm = { version = "*", channel = "rapidsai" }

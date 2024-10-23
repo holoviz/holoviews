@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import inspect
 import time
 from collections import defaultdict
 from functools import partial
@@ -50,6 +51,7 @@ from ...streams import (
     Lasso,
     MouseEnter,
     MouseLeave,
+    MultiAxisTap,
     PanEnd,
     PlotReset,
     PlotSize,
@@ -71,7 +73,18 @@ from ...streams import (
     Tap,
 )
 from ...util.warnings import warn
-from .util import bokeh33, convert_timestamp
+from .util import BOKEH_GE_3_3_0, convert_timestamp
+
+POPUP_POSITION_ANCHOR = {
+    "top_right": "bottom_left",
+    "top_left": "bottom_right",
+    "bottom_left": "top_right",
+    "bottom_right": "top_left",
+    "right": "top_left",
+    "left": "top_right",
+    "top": "bottom",
+    "bottom": "top",
+}
 
 
 class Callback:
@@ -210,7 +223,7 @@ class Callback:
                 filtered_msg[k] = v
         return filtered_msg
 
-    def on_msg(self, msg):
+    async def on_msg(self, msg):
         streams = []
         for stream in self.streams:
             handle_ids = self.handle_ids[stream]
@@ -360,7 +373,7 @@ class Callback:
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
-            self.on_msg(msg)
+            await self.on_msg(msg)
         await self.process_on_event()
 
     async def process_on_change(self):
@@ -395,7 +408,7 @@ class Callback:
             equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
-            self.on_msg(msg)
+            await self.on_msg(msg)
             self._prev_msg = msg
         await self.process_on_change()
 
@@ -609,9 +622,10 @@ class PopupMixin:
         }
         """],
         css_classes=["popup-close-btn"])
+        self._popup_position = stream.popup_position
         self._panel = Panel(
             position=XY(x=np.nan, y=np.nan),
-            anchor="top_left",
+            anchor=stream.popup_anchor or POPUP_POSITION_ANCHOR[self._popup_position],
             elements=[close_button],
             visible=False,
             styles={"zIndex": "1000"},
@@ -625,24 +639,56 @@ class PopupMixin:
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel),
+            args=dict(panel=self._panel, popup_position=self._popup_position),
             code=f"""
-            export default ({{panel}}, cb_obj, _) => {{
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
-                 return
-              }}
-              let pos;
-              if (cb_obj.geometry.type === 'point') {{
-                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
-              }} else if (cb_obj.geometry.type === 'rect') {{
-                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
-              }} else if (cb_obj.geometry.type === 'poly') {{
-                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
-              }}
-              if (pos) {{
-                panel.position.setv(pos)
-              }}
+            export default ({{panel, popup_position}}, cb_obj, _) => {{
+                const el = panel.elements[1];
+                if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                    return;
+                }}
+
+                let pos;
+                if (cb_obj.geometry.type === 'point') {{
+                    pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}};
+                }} else if (cb_obj.geometry.type === 'rect') {{
+                    let x, y;
+                    if (popup_position.includes('left')) {{
+                        x = cb_obj.geometry.x0;
+                    }} else if (popup_position.includes('right')) {{
+                        x = cb_obj.geometry.x1;
+                    }} else {{
+                        x = (cb_obj.geometry.x0 + cb_obj.geometry.x1) / 2;
+                    }}
+                    if (popup_position.includes('top')) {{
+                        y = cb_obj.geometry.y1;
+                    }} else if (popup_position.includes('bottom')) {{
+                        y = cb_obj.geometry.y0;
+                    }} else {{
+                        y = (cb_obj.geometry.y0 + cb_obj.geometry.y1) / 2;
+                    }}
+                    pos = {{x: x, y: y}};
+                }} else if (cb_obj.geometry.type === 'poly') {{
+                    let x, y;
+                    if (popup_position.includes('left')) {{
+                        x = Math.min(...cb_obj.geometry.x);
+                    }} else if (popup_position.includes('right')) {{
+                        x = Math.max(...cb_obj.geometry.x);
+                    }} else {{
+                        x = (Math.min(...cb_obj.geometry.x) + Math.max(...cb_obj.geometry.x)) / 2;
+                    }}
+                    if (popup_position.includes('top')) {{
+                        y = Math.max(...cb_obj.geometry.y);
+                    }} else if (popup_position.includes('bottom')) {{
+                        y = Math.min(...cb_obj.geometry.y);
+                    }} else {{
+                        y = (Math.min(...cb_obj.geometry.y) + Math.max(...cb_obj.geometry.y)) / 2;
+                    }}
+                    pos = {{x: x, y: y}};
+                }}
+
+                if (pos) {{
+                    panel.position.setv(pos);
+                }}
             }}""",
         ))
 
@@ -663,15 +709,17 @@ class PopupMixin:
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            self._process_selection_event()
-            self._skipped_partial_event = False
+            if self.plot.document.session_context and self.plot.document.session_context.server_context:
+                self.plot.document.add_next_tick_callback(self._process_selection_partial_event)
+            else:
+                state.execute(self._process_selection_partial_event)
 
-    def on_msg(self, msg):
-        super().on_msg(msg)
+    async def on_msg(self, msg):
+        await super().on_msg(msg)
         if hasattr(self, '_panel'):
-            self._process_selection_event()
+            await self._process_selection_event()
 
-    def _process_selection_event(self):
+    async def _process_selection_event(self):
         event = self._selection_event
         if event is not None:
             if self.geom_type not in (event.geometry["type"], "any"):
@@ -690,7 +738,10 @@ class PopupMixin:
         popup_is_callable = callable(popup)
         if popup_is_callable:
             with set_curdoc(self.plot.document):
-                popup = popup(**stream.contents)
+                if inspect.iscoroutinefunction(popup):
+                    popup = await popup(**stream.contents)
+                else:
+                    popup = popup(**stream.contents)
 
         # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
@@ -727,7 +778,7 @@ class PopupMixin:
             position = self._get_position(event) if event else None
             if position:
                 self._panel.position = XY(**position)
-                if self.plot.comm:  # update Jupyter Notebook
+                if self.plot.comm:  # update Jupyter Notebooks
                     push_on_root(self.plot.root.ref['id'])
             return
 
@@ -746,6 +797,10 @@ class PopupMixin:
         if self.plot.comm:  # update Jupyter Notebook
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
+
+    async def _process_selection_partial_event(self):
+        await self._process_selection_event()
+        self._skipped_partial_event = False
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
@@ -780,6 +835,54 @@ class TapCallback(PopupMixin, PointerXYCallback):
             value = None
         return value
 
+
+class MultiAxisTapCallback(TapCallback):
+    """
+    Returns the mouse x/y-positions on tap event.
+    """
+
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
+
+    def _process_msg(self, msg):
+        x_range = self.plot.handles.get('x_range')
+        y_range = self.plot.handles.get('y_range')
+        extra_x = list(self.plot.handles.get('extra_x_ranges', {}).values())
+        extra_y = list(self.plot.handles.get('extra_y_ranges', {}).values())
+        xaxis = self.plot.handles.get('xaxis')
+        yaxis = self.plot.handles.get('yaxis')
+
+        # Compute x/y position relative to first axis
+        x, y = msg['x'], msg['y']
+        x0, x1 = x_range.start, x_range.end
+        y0, y1 = y_range.start, y_range.end
+        if isinstance(xaxis, DatetimeAxis):
+            x = convert_timestamp(x)
+            if isinstance(x0, (float, int)):
+                x0 = convert_timestamp(x0)
+            if isinstance(x1, (float, int)):
+                x1 = convert_timestamp(x1)
+        if isinstance(yaxis, DatetimeAxis):
+            y = convert_timestamp(y)
+            if isinstance(y0, (float, int)):
+                y0 = convert_timestamp(y0)
+            if isinstance(y1, (float, int)):
+                y1 = convert_timestamp(y1)
+        xs, ys = {x_range.name: x}, {y_range.name: y}
+        xspan, yspan = x1 - x0, y1 - y0
+        xfactor, yfactor = (x-x0) / xspan, (y-y0) / yspan
+
+        # Use computed factors to compute x/y position on other axes
+        for values, factor, ranges, axis in (
+            (xs, xfactor, extra_x, xaxis),
+            (ys, yfactor, extra_y, yaxis)
+        ):
+            for rng in ranges:
+                value = rng.start + (rng.end-rng.start) * factor
+                if isinstance(axis, DatetimeAxis) and isinstance(value, (float, int)):
+                    value = convert_timestamp(value)
+                values[rng.name] = value
+
+        return {'xs': xs, 'ys': ys}
 
 
 class SingleTapCallback(TapCallback):
@@ -1114,47 +1217,106 @@ class Selection1DCallback(PopupMixin, Callback):
         source = self.plot.handles['source']
         renderer = self.plot.handles['glyph_renderer']
         selected = self.plot.handles['selected']
+
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected, popup_position=self._popup_position),
             code="""
-            export default ({panel, renderer, source, selected}, cb_obj, _) => {
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final) {
-                 return
-              }
-              let x, y, xs, ys;
-              let indices = selected.indices;
-              if (cb_obj.geometry.type == 'point') {
-                indices = indices.slice(-1)
-              }
-              if (renderer.glyph.x && renderer.glyph.y) {
-                xs = source.get_column(renderer.glyph.x.field)
-                ys = source.get_column(renderer.glyph.y.field)
-              } else if (renderer.glyph.right && renderer.glyph.top) {
-                xs = source.get_column(renderer.glyph.right.field)
-                ys = source.get_column(renderer.glyph.top.field)
-              } else if (renderer.glyph.x1 && renderer.glyph.y1) {
-                xs = source.get_column(renderer.glyph.x1.field)
-                ys = source.get_column(renderer.glyph.y1.field)
-              } else if (renderer.glyph.xs && renderer.glyph.ys) {
-                xs = source.get_column(renderer.glyph.xs.field)
-                ys = source.get_column(renderer.glyph.ys.field)
-              }
-              if (!xs || !ys) { return }
-              for (const i of indices) {
-                const tx = xs[i]
-                if (!x || (tx > x)) {
-                  x = xs[i]
+            export default ({panel, renderer, source, selected, popup_position}, cb_obj, _) => {
+                panel.visible = false;  // Hide the popup panel so it doesn't show in previous location
+                const el = panel.elements[1];
+                if ((el && !el.visible) || !cb_obj.final) {
+                    return;
                 }
-                const ty = ys[i]
-                if (!y || (ty > y)) {
-                  y = ys[i]
+                let x, y, xs, ys;
+                let indices = selected.indices;
+                if (cb_obj.geometry.type == 'point') {
+                    indices = indices.slice(-1);
                 }
-              }
-              if (x && y) {
-                panel.position.setv({x, y})
-              }
-            }""",
+
+                if (renderer.glyph.x && renderer.glyph.y) {
+                    xs = source.get_column(renderer.glyph.x.field);
+                    ys = source.get_column(renderer.glyph.y.field);
+                } else if (renderer.glyph.right && renderer.glyph.top) {
+                    xs = source.get_column(renderer.glyph.right.field);
+                    ys = source.get_column(renderer.glyph.top.field);
+                } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                    xs = source.get_column(renderer.glyph.x1.field);
+                    ys = source.get_column(renderer.glyph.y1.field);
+                } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                    xs = source.get_column(renderer.glyph.xs.field);
+                    ys = source.get_column(renderer.glyph.ys.field);
+                }
+
+                if (!xs || !ys || !indices.length) {
+                    return;
+                }
+
+                let minX, maxX, minY, maxY;
+
+                // Loop over each index in the selection and find the corresponding polygon coordinates
+                for (const i of indices) {
+                    let ix = xs[i];
+                    let iy = ys[i];
+                    let tx, ty;
+
+                    // Check if the values are numbers or nested arrays
+                    if (typeof ix === 'number') {
+                        tx = ix;
+                        ty = iy;
+                    } else {
+                        // Drill down into nested arrays until we find the number values
+                        while (ix.length && typeof ix[0] !== 'number') {
+                            ix = ix[0];
+                            iy = iy[0];
+                        }
+
+                        // Set tx and ty based on the popup position preferences
+                        if (popup_position.includes('left')) {
+                            tx = Math.min(...ix);
+                        } else if (popup_position.includes('right')) {
+                            tx = Math.max(...ix);
+                        } else {
+                            tx = (Math.min(...ix) + Math.max(...ix)) / 2;
+                        }
+
+                        if (popup_position.includes('top')) {
+                            ty = Math.max(...iy);
+                        } else if (popup_position.includes('bottom')) {
+                            ty = Math.min(...iy);
+                        } else {
+                            ty = (Math.min(...iy) + Math.max(...iy)) / 2;
+                        }
+                    }
+
+                    // Update the min/max values for x and y
+                    if (minX === undefined || tx < minX) { minX = tx; }
+                    if (maxX === undefined || tx > maxX) { maxX = tx; }
+                    if (minY === undefined || ty < minY) { minY = ty; }
+                    if (maxY === undefined || ty > maxY) { maxY = ty; }
+                }
+
+                // Set x and y based on popup_position preference
+                if (popup_position.includes('left')) {
+                    x = minX;
+                } else if (popup_position.includes('right')) {
+                    x = maxX;
+                } else {
+                    x = (minX + maxX) / 2;
+                }
+
+                if (popup_position.includes('top')) {
+                    y = maxY;
+                } else if (popup_position.includes('bottom')) {
+                    y = minY;
+                } else {
+                    y = (minY + maxY) / 2;
+                }
+
+                // Set the popup position and make it visible
+                panel.position.setv({x, y});
+                panel.visible = true;
+            }
+            """,
         ))
 
     def _get_position(self, event):
@@ -1508,7 +1670,7 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             # First version with Quad support
             box_tool = BoxEditTool(renderers=[renderer], **kwargs)
             self.plot.state.tools.append(box_tool)
@@ -1585,5 +1747,6 @@ Stream._callbacks['bokeh'].update({
     FreehandDraw: FreehandDrawCallback,
     PolyDraw    : PolyDrawCallback,
     PolyEdit    : PolyEditCallback,
-    SelectMode  : SelectModeCallback
+    SelectMode  : SelectModeCallback,
+    MultiAxisTap: MultiAxisTapCallback
 })

@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import nan
-from packaging.version import Version
 
 from holoviews import (
     RGB,
@@ -38,28 +37,29 @@ from holoviews.streams import Tap
 from holoviews.util import render
 
 try:
-    import dask.dataframe as dd
     import datashader as ds
-    import xarray as xr
-
-    from holoviews.operation.datashader import (
-        AggregationOperation,
-        aggregate,
-        datashade,
-        directly_connect_edges,
-        ds_version,
-        dynspread,
-        inspect,
-        inspect_points,
-        inspect_polygons,
-        rasterize,
-        regrid,
-        shade,
-        spread,
-        stack,
-    )
 except ImportError:
     raise SkipTest('Datashader not available')
+
+import dask.dataframe as dd
+import xarray as xr
+
+from holoviews.operation.datashader import (
+    DATASHADER_VERSION,
+    AggregationOperation,
+    aggregate,
+    datashade,
+    directly_connect_edges,
+    dynspread,
+    inspect,
+    inspect_points,
+    inspect_polygons,
+    rasterize,
+    regrid,
+    shade,
+    spread,
+    stack,
+)
 
 try:
     import spatialpandas
@@ -119,6 +119,25 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         width=2, height=2)
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
                          vdims=[Dimension('Count', nodata=0)])
+        self.assertEqual(img, expected)
+
+    def test_aggregate_points_empty(self):
+        points = Points([])
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, pixel_ratio=1)
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [0, 0]]),
+                         vdims=[Dimension('Count', nodata=0)])
+        self.assertEqual(img, expected)
+
+    def test_aggregate_points_empty_with_pixel_ratio(self):
+        points = Points([])
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, pixel_ratio=2)
+        expected = Image((
+            [0.125, 0.375, 0.625, 0.875],
+            [0.125, 0.375, 0.625, 0.875],
+            [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+        ), vdims=[Dimension('Count', nodata=0)])
         self.assertEqual(img, expected)
 
     def test_aggregate_points_count_column(self):
@@ -788,7 +807,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
 class DatashaderCatAggregateTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version < Version('0.11.0'):
+        if DATASHADER_VERSION < (0, 11, 0):
             raise SkipTest('Regridding operations require datashader>=0.11.0')
 
     def test_aggregate_points_categorical(self):
@@ -805,6 +824,22 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
             data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
         )
         expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        actual = img.data
+        assert (expected.data.to_array("z").values == actual.T.values).all()
+
+    def test_aggregate_points_categorical_one_category(self):
+        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'A'), (0, 0.99, 'A')], vdims='z')
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.by('z', ds.count()))
+        x = np.array([0.25, 0.75])
+        y = np.array([0.25, 0.75])
+        a = np.array([[1, 2], [0, 0]])
+        xrds = xr.DataArray(
+            a,
+            dims=('x', 'y'),
+            coords={"x": x, "y": y}
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a"])
         actual = img.data
         assert (expected.data.to_array("z").values == actual.T.values).all()
 
@@ -883,10 +918,6 @@ class DatashaderRegridTests(ComparisonTestCase):
     Tests for datashader aggregation
     """
 
-    def setUp(self):
-        if ds_version <= Version('0.5.0'):
-            raise SkipTest('Regridding operations require datashader>=0.6.0')
-
     def test_regrid_mean(self):
         img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, width=2, height=2, dynamic=False)
@@ -962,7 +993,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
     """
 
     def setUp(self):
-        if ds_version <= Version('0.6.4'):
+        if DATASHADER_VERSION <= (0, 6, 4):
             raise SkipTest('Regridding operations require datashader>=0.7.0')
 
         self.simplexes = [(0, 1, 2), (3, 2, 1)]
@@ -1279,12 +1310,12 @@ def test_rasterize_where_agg_no_column(point_plot, agg_input_fn, index_col):
     rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
     img = rasterize(point_plot, aggregator=agg_fn, **rast_input)
 
-    assert list(img.data) == ["index", "s", "val", "cat"]
+    assert list(img.data) == ["__index__", "s", "val", "cat"]
     assert list(img.vdims) == ["val", "s", "cat"]  # val first and no index
 
     # N=100 in point_data is chosen to have a big enough sample size
     # so that the index are not the same for the different agg_input_fn
-    np.testing.assert_array_equal(img.data["index"].data.flatten(), index_col)
+    np.testing.assert_array_equal(img.data["__index__"].data.flatten(), index_col)
 
     img_simple = rasterize(point_plot, aggregator=agg_input_fn("val"), **rast_input)
     np.testing.assert_array_equal(img_simple["val"], img["val"])
@@ -1322,7 +1353,7 @@ def test_rasterize_selector(point_plot, sel_fn):
     img = rasterize(point_plot, selector=sel_fn("val"), **rast_input)
 
     # Count is from the aggregator
-    assert list(img.data) == ["Count", "index", "s", "val", "cat"]
+    assert list(img.data) == ["Count", "__index__", "s", "val", "cat"]
     assert list(img.vdims) == ["Count", "s", "val", "cat"]  # no index
 
     # The output for the selector should be equal to the output for the aggregator using
@@ -1366,7 +1397,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
         self.assertEqual(spreaded, RGB(arr))
 
     def test_spread_img_1px(self):
-        if ds_version < Version('0.12.0'):
+        if DATASHADER_VERSION < (0, 12, 0):
             raise SkipTest('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
@@ -1413,7 +1444,7 @@ class DatashaderStackTests(ComparisonTestCase):
 class GraphBundlingTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version <= Version('0.7.0'):
+        if DATASHADER_VERSION <= (0, 7, 0):
             raise SkipTest('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)
@@ -1423,14 +1454,25 @@ class GraphBundlingTests(ComparisonTestCase):
         direct = directly_connect_edges(self.graph)._split_edgepaths
         self.assertEqual(direct, self.graph.edgepaths)
 
+
 class InspectorTests(ComparisonTestCase):
     """
     Tests for inspector operations
     """
     def setUp(self):
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
-        self.pntsimg = rasterize(points, dynamic=False,
-                             x_range=(0, 1), y_range=(0, 1), width=4, height=4)
+        self.pntsimg = rasterize(
+            points, dynamic=False, height=4, width=4,
+            x_range=(0, 1), y_range=(0, 1)
+        )
+        date_pts = Points([
+            (np.datetime64('2024-09-25 11:00'), 0.3),
+            (np.datetime64('2024-09-25 11:01'), 0.7),
+            (np.datetime64('2024-09-25 11:04'), 0.99)])
+        self.datesimg = rasterize(
+            date_pts, dynamic=False, height=4, width=4,
+            x_range=(np.datetime64('2024-09-25 11:00'), np.datetime64('2024-09-25 11:04')), y_range=(0, 1)
+        )
         if spatialpandas is None:
             return
 
@@ -1444,7 +1486,6 @@ class InspectorTests(ComparisonTestCase):
 
     def tearDown(self):
         Tap.x, Tap.y = None, None
-
 
     def test_inspect_points_or_polygons(self):
         if spatialpandas is None:
@@ -1502,6 +1543,18 @@ class InspectorTests(ComparisonTestCase):
         self.assertEqual(points.streams[0].x, 0.2)
         self.assertEqual(points.streams[0].y, 0.3)
 
+    def test_points_with_dates_inspection_1px_mask(self):
+        points = inspect_points(self.datesimg, max_indicators=3, dynamic=False, pixels=1,
+                                x=np.datetime64('2024-09-25 11:01'), y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([]))
+        self.assertEqual(points.dimension_values('y'), np.array([]))
+
+    def test_points_with_dates_inspection_2px_mask(self):
+        points = inspect_points(self.datesimg, max_indicators=3, dynamic=False, pixels=2,
+                                x=np.datetime64('2024-09-25 11:01'), y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([np.datetime64('2024-09-25 11:00')]))
+        self.assertEqual(points.dimension_values('y'), np.array([0.3]))
+
     def test_polys_inspection_1px_mask_hit(self):
         if spatialpandas is None:
             raise SkipTest('Polygon inspect tests require spatialpandas')
@@ -1520,7 +1573,6 @@ class InspectorTests(ComparisonTestCase):
         data = [[6.0, 7.0, 3.0, 2.0, 7.0, 5.0, 6.0, 7.0]]
         self.assertEqual(inspector.hits.iloc[0].geometry,
                          spatialpandas.geometry.polygon.Polygon(data))
-
 
     def test_polys_inspection_1px_mask_miss(self):
         if spatialpandas is None:

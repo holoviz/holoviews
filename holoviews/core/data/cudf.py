@@ -205,7 +205,8 @@ class cuDFInterface(PandasInterface):
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'invalid value encountered')
                     if sel.start is not None:
-                        new_masks.append(sel.start <= arr)
+                        # Comparison has to be in this order due to issues with datetime comparison (see #6407)
+                        new_masks.append(arr >= sel.start)
                     if sel.stop is not None:
                         new_masks.append(arr < sel.stop)
                 if not new_masks:
