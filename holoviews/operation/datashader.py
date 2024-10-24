@@ -394,7 +394,7 @@ class aggregate(LineAggregationOperation):
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
             _ignore = [*params["vdims"], "__index__"]
             sel_vdims = [s for s in agg if s not in _ignore]
-            params["vdims"] = [*params["vdims"], *sel_vdims]
+            # params["vdims"] = [*params["vdims"], *sel_vdims]
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
 

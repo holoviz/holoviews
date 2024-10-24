@@ -584,7 +584,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         copied_tools = []
         skip_models = (Span,)
         for tool in tool_list:
-            if isinstance(tool, tools.Tool):
+            if False and isinstance(tool, tools.Tool):
                 properties = {
                     p: v.clone() if isinstance(v, Model) and not isinstance(v, skip_models) else v
                     for p, v in tool.properties_with_values(include_defaults=False).items()
@@ -2058,7 +2058,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_datasource(source, data)
 
 
-    def _postprocess_hover(self, renderer, source):
+    def _postprocess_hover(self, renderer, source, element):
         """
         Attaches renderer to hover tool and processes tooltips to
         ensure datetime data is displayed correctly.
@@ -2112,7 +2112,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if isinstance(renderer, Renderer):
             self.handles['glyph_renderer'] = renderer
 
-        self._postprocess_hover(renderer, source)
+        self._postprocess_hover(renderer, source, element)
 
         if self.scalebar:
             self._draw_scalebar(plot=plot, renderer=renderer)
@@ -2361,7 +2361,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_hover(element)
             if 'cds' in self.handles:
                 cds = self.handles['cds']
-                self._postprocess_hover(renderer, cds)
+                self._postprocess_hover(renderer, cds, element)
 
         if self.apply_hard_bounds:
             self._apply_hard_bounds(element, ranges)
@@ -2543,7 +2543,7 @@ class CompositeElementPlot(ElementPlot):
             if isinstance(renderer, Renderer):
                 self.handles[key+'_glyph_renderer'] = renderer
 
-            self._postprocess_hover(renderer, source)
+            self._postprocess_hover(renderer, source, element)
 
             # Update plot, source and glyph
             with abbreviated_exception():

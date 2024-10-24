@@ -1,8 +1,12 @@
 import sys
+import uuid
 
+import bokeh.core.properties as bp
 import numpy as np
 import param
-from bokeh.models import CustomJSHover, DatetimeAxis
+from bokeh.model import DataModel
+from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
+from bokeh.models.dom import Div as DomDiv, Span, Styles, ValueOf
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
@@ -13,6 +17,14 @@ from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
 
+# class HoverPosition(DataModel):
+    # xy = bp.Tuple(bp.Float(), bp.Float(), default=(np.nan, np.nan))
+
+HoverPosition = type(f"HoverPosition{uuid.uuid4().hex}", (DataModel,), {"xy": bp.Tuple(bp.Float(), bp.Float(), default=(np.nan, np.nan))})
+
+dims =['x_y s', 's', 'val', 'cat']
+dims =['s', 'val', 'cat']
+HoverModel = type(f"HoverModel{uuid.uuid4().hex}", (DataModel,), {d: bp.Any() for d in dims})
 
 class RasterPlot(ColorbarPlot):
 
@@ -37,6 +49,7 @@ class RasterPlot(ColorbarPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     def _hover_opts(self, element):
+        return [], {}
         xdim, ydim = element.kdims
         tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]
         vdims = element.vdims
@@ -46,12 +59,86 @@ class RasterPlot(ColorbarPlot):
             tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
         return tooltips, {}
 
-    def _postprocess_hover(self, renderer, source):
+    def _postprocess_hover(self, renderer, source, element):
+        print("post")
+        data = element.data
+        # dims = list(data.data_vars)
+
+        hover_position = HoverPosition()
+        # Create a dynamic custom DataModel with the dims as attributes
+        # hover_model = type(f"HoverModel{uuid.uuid4().hex}", (DataModel,), {d: bp.Any() for d in dims})()
+        hover_model = HoverModel()
+        # print(dir(self.handles.get("plot")))
+        # self.handles.get("plot").add_glyph(hover_model)
+
+        style = Styles(
+            display="grid",
+            grid_template_columns="auto auto",
+            column_gap="10px",
+        )
+        _create_row = lambda attr: (
+            Span(children=[f"{attr}:"], style={"color": "#26aae1"}),
+            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "right"}),
+            # ValueOf(obj=hover_model, attr=attr),
+        )
+        grid = DomDiv(children=[el for dim in dims for el in _create_row(dim)], style=style)
+        # grid = DomDiv(style=style)
+
+        # hover_tool = HoverTool(
+        #     tooltips=grid,
+        #     callback=CustomJS(
+        #         args={"position": hover_position},
+        #         code="export default ({position}, _, {geometry: {x, y}}) => { position.xy = [x, y]}",
+        #     ),
+        # )
+        # self.handles['hover'] = hover_tool
+        hover = self.handles.get('hover')
+        hover.tooltips=grid
+        hover.formatters={}
+        hover.callback=CustomJS(
+            args={"position": hover_position, "hover_model": hover_model},
+            code="""export default ({position}, _, {geometry: {x, y}}) => { position.xy = [x, y] }""",
+        )
+
+        # self.state.elements.append(hover_model)
+        # breakpoint()
+
+        def on_change(attr, old, new):
+            # idx = np.argmin(np.abs(data.indexes["x"] - hover_position.xy[0]))
+            # idy = np.argmin(np.abs(data.indexes["y"] - hover_position.xy[1]))
+            data_vars = data.sel(x=hover_position.xy[0], y=hover_position.xy[1], method="nearest").to_dict()
+            # print(values)
+
+            updates = {dim: data_vars['data_vars'][dim]['data'] for dim in dims}
+            # updates = {dim: i for i, dim in enumerate(dims)}
+            hover = self.handles.get('hover')
+            print(hover.tooltips.children[1].children[0].obj is hover_model)
+            print(updates)
+            hover_model.update(**updates)
+            # print(hover_model["x_y s"])
+
+            # hover_model.x = round(ls[idx], 2)
+            # hover_model.y = round(ls[idy], 2)
+            # hover_model.s = 2
+            # hover_model.color = f"#{hover_model.data}"
+            # hover_model.datetime = str(datetime.today())
+            # TODO:
+            # if self.plot.comm:  # update Jupyter Notebook
+            #     push_on_root(self.plot.root.ref['id'])
+
+
+        hover_position.on_change("xy", on_change)
+
+        # renderer.state.add_tools(hover_tool)
+        # soour.add_tools(hover_tool)
+
+        return
         super()._postprocess_hover(renderer, source)
         hover = self.handles.get('hover')
         if not (hover and isinstance(hover.tooltips, list)):
             return
 
+        return
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
