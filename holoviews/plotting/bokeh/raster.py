@@ -60,6 +60,12 @@ class RasterPlot(ColorbarPlot):
             tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
         return tooltips, {}
 
+    def _update_hover(self, element):
+        tool = self.handles['hover']
+        if isinstance(tool.tooltips, DomDiv):
+            return
+        super()._update_hover(element)
+
     def _init_tools(self, element):
         tools = super()._init_tools(element)
 
@@ -71,7 +77,6 @@ class RasterPlot(ColorbarPlot):
         else:
             return tools
 
-        print("post")
         data = element.data
         dims = tuple(data.data_vars)
 
@@ -110,12 +115,7 @@ class RasterPlot(ColorbarPlot):
             updates = {dim: data_vars['data_vars'][dim]['data'] for dim in dims}
             hover_model.update(**updates)
 
-        on_change(None, None, (0, 0))
-
         hover_model.on_change("xy_position", on_change)
-
-        # renderer.state.add_tools(hover_tool)
-        # soour.add_tools(hover_tool)
 
         return tools
 
@@ -124,8 +124,7 @@ class RasterPlot(ColorbarPlot):
         hover = self.handles.get('hover')
         if not (hover and isinstance(hover.tooltips, list)):
             return
-
-        return
+        print("!!!!!!!")
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
