@@ -4,14 +4,20 @@ to allow multiple Views to be presented side-by-side in a NdLayout. An
 AdjointLayout allows one or two Views to be adjoined to a primary View
 to act as supplementary elements.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 import param
+from panel.pane.holoviews import HoloViews
 
 from . import traversal
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import NdMapping, UniformNdMapping
 
+if TYPE_CHECKING:
+    from panel.io.server import Server
 
 class Layoutable:
     """
@@ -33,6 +39,16 @@ class Layoutable:
 
     def __radd__(self, other):
         return self.__class__.__add__(other, self)
+
+    def show(self, pane_params: dict | None = None, **show_kwargs: dict) -> Server:
+        """
+        Starts a Bokeh server and displays the HoloViews object in a new tab.
+
+        Args:
+            pane_params: Params to pass to `pn.pane.HoloViews`
+            **show_kwargs: Keyword arguments to pass to the `show` method.
+        """
+        return HoloViews(self, **pane_params or {}).show(**show_kwargs)
 
 
 class Composable(Layoutable):
