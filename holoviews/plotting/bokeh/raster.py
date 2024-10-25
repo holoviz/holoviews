@@ -18,9 +18,77 @@ from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh, hold_policy
 
-_model_cache = {}
 
-class RasterPlot(ColorbarPlot):
+class ServerHoverMixin:
+    _model_cache = {}
+
+    def _update_hover(self, element):
+        tool = self.handles['hover']
+        if isinstance(tool.tooltips, Div):
+            self._hover_data = element.data
+            return
+        super()._update_hover(element)
+
+    def _init_tools(self, element, callbacks=None):
+        tools = super()._init_tools(element, callbacks=callbacks)
+
+        hover = None
+        for tool in tools or ():
+            if isinstance(tool, HoverTool):
+                hover = tool
+                break
+
+        data = element.data
+        if hover is None or not (XArrayInterface.applies(data) and "selector_columns" in data.attrs):
+            return tools
+
+        self._hover_data = data
+        coords, vars = tuple(data.coords), tuple(data.data_vars)
+        dims = (*coords, *vars)
+
+        # Create a dynamic custom DataModel with the dims as attributes
+        # __xy__ is the cursor position
+        if dims in self._model_cache:
+            HoverModel = self._model_cache[dims]
+        else:
+            HoverModel = self._model_cache[dims] = type(
+                f"HoverModel_{uuid.uuid4().hex}",
+                (DataModel,),
+                {d: bp.Any() for d in ("__xy__", *dims)},
+            )
+
+        hover_model = HoverModel()
+        _create_row = lambda attr: (
+            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
+            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
+        )
+        style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
+        grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
+        hover.tooltips = grid
+        hover.callback = CustomJS(
+            args={"position": hover_model},
+            code="export default ({position}, _, {geometry: {x, y}}) => {position.__xy__ = [x, y]}",
+        )
+
+        def on_change(attr, old, new):
+            data_sel = self._hover_data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
+            # TODO: When ValueOf support formatter remove the rounding
+            # https://github.com/bokeh/bokeh/issues/14123
+            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
+            if self.comm:  # Jupyter Notebook
+                with hold_policy(self.document, 'combine'):
+                    hover_model.update(**data_coords, **data_vars)
+                    self.push()
+            else:
+                hover_model.update(**data_coords, **data_vars)
+
+        hover_model.on_change("__xy__", on_change)
+
+        return tools
+
+
+class RasterPlot(ServerHoverMixin, ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
@@ -51,73 +119,6 @@ class RasterPlot(ColorbarPlot):
             vname = dimension_sanitizer(vdim.name)
             tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
         return tooltips, {}
-
-    def _update_hover(self, element):
-        tool = self.handles['hover']
-        if isinstance(tool.tooltips, Div):
-            self._hover_data = element.data
-            return
-        super()._update_hover(element)
-
-    def _init_tools(self, element, callbacks=None):
-        tools = super()._init_tools(element, callbacks=callbacks)
-
-        hover = None
-        for tool in tools or ():
-            if isinstance(tool, HoverTool):
-                hover = tool
-                break
-
-        data = element.data
-
-        if hover is None or not (XArrayInterface.applies(data) and "selector_columns" in data.attrs):
-            return tools
-
-        self._hover_data = data
-        coords, vars = tuple(data.coords), tuple(data.data_vars)
-        dims = (*coords, *vars)
-
-        # Create a dynamic custom DataModel with the dims as attributes
-        # __xy__ is the cursor position
-        if dims in _model_cache:
-            HoverModel = _model_cache[dims]
-        else:
-            HoverModel = _model_cache[dims] = type(
-                f"HoverModel_{uuid.uuid4().hex}",
-                (DataModel,),
-                {d: bp.Any() for d in ("__xy__", *dims)},
-            )
-
-        hover_model = HoverModel()
-
-        _create_row = lambda attr: (
-            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
-            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
-        )
-        style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
-        grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
-        hover.tooltips = grid
-        hover.callback = CustomJS(
-            args={"position": hover_model},
-            code="export default ({position}, _, {geometry: {x, y}}) => {position.__xy__ = [x, y]}",
-        )
-
-        def on_change(attr, old, new):
-            data_sel = self._hover_data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
-            # TODO: When ValueOf support formatter remove the rounding
-            # https://github.com/bokeh/bokeh/issues/14123
-            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
-            data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
-            if self.comm:  # Jupyter Notebook
-                with hold_policy(self.document, 'combine'):
-                    hover_model.update(**data_coords, **data_vars)
-                    self.push()
-            else:
-                hover_model.update(**data_coords, **data_vars)
-
-        hover_model.on_change("__xy__", on_change)
-
-        return tools
 
     def _postprocess_hover(self, renderer, source):
         super()._postprocess_hover(renderer, source)
