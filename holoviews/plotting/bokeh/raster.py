@@ -1,8 +1,12 @@
 import sys
+import uuid
 
+import bokeh.core.properties as bp
 import numpy as np
 import param
-from bokeh.models import CustomJSHover, DatetimeAxis
+from bokeh.model import DataModel
+from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
+from bokeh.models.dom import Div, Span, Styles, ValueOf
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
@@ -13,6 +17,7 @@ from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
 
+_model_cache = {}
 
 class RasterPlot(ColorbarPlot):
 
@@ -45,6 +50,64 @@ class RasterPlot(ColorbarPlot):
             vname = dimension_sanitizer(vdim.name)
             tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
         return tooltips, {}
+
+    def _update_hover(self, element):
+        tool = self.handles['hover']
+        if isinstance(tool.tooltips, Div):
+            return
+        super()._update_hover(element)
+
+    def _init_tools(self, element):
+        tools = super()._init_tools(element)
+
+        hover = None
+        for tool in tools:
+            if isinstance(tool, HoverTool):
+                hover = tool
+                break
+        else:
+            return tools
+
+        data = element.data
+        dims = tuple(data.data_vars)  # TODO: add xy
+
+        # Create a dynamic custom DataModel with the dims as attributes
+        # __xy__ is the cursor position
+        if dims in _model_cache:
+            HoverModel = _model_cache[dims]
+        else:
+            HoverModel = _model_cache[dims] = type(
+                f"HoverModel_{uuid.uuid4().hex}",
+                (DataModel,),
+                {d: bp.Any() for d in ("__xy__", *dims)},
+            )
+
+        hover_model = HoverModel()
+
+        _create_row = lambda attr: (
+            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
+            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
+        )
+        style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
+        grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
+        hover.tooltips = grid
+        hover.callback = CustomJS(
+            args={"position": hover_model},
+            code="""export default ({position}, _, {geometry: {x, y}}) => { position.__xy__ = [x, y] }""",
+        )
+
+        def on_change(attr, old, new):
+            data_vars = data.sel(x=new[0], y=new[1], method="nearest").to_dict()
+            updates = {dim: data_vars['data_vars'][dim]['data'] for dim in dims}
+            hover_model.update(**updates)
+            # TODO: Work in notebook
+            # from panel.io.notebook import push_on_root
+            # if self.plot.comm:  # update Jupyter Notebook
+            #     push_on_root(self.plot.root.ref['id'])
+
+        hover_model.on_change("__xy__", on_change)
+
+        return tools
 
     def _postprocess_hover(self, renderer, source):
         super()._postprocess_hover(renderer, source)
