@@ -69,7 +69,8 @@ class RasterPlot(ColorbarPlot):
             return tools
 
         data = element.data
-        dims = tuple(data.data_vars)  # TODO: add xy
+        coords, vars = tuple(data.coords), tuple(data.data_vars)
+        dims = (*coords, *vars)
 
         # Create a dynamic custom DataModel with the dims as attributes
         # __xy__ is the cursor position
@@ -97,9 +98,11 @@ class RasterPlot(ColorbarPlot):
         )
 
         def on_change(attr, old, new):
-            data_vars = data.sel(x=new[0], y=new[1], method="nearest").to_dict()
-            updates = {dim: data_vars['data_vars'][dim]['data'] for dim in dims}
-            hover_model.update(**updates)
+            data_sel = data.sel(**dict(zip(data.coords, new)), method="nearest").to_dict()
+            # TODO: When ValueOf support formatter remove the rounding
+            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
+            hover_model.update(**data_coords, **data_vars)
             # TODO: Work in notebook
             # from panel.io.notebook import push_on_root
             # if self.plot.comm:  # update Jupyter Notebook
