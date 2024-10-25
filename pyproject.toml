@@ -48,7 +48,7 @@ HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
 recommended = ["matplotlib >=3", "plotly >=4.0"]
-tests = ["pytest", "pytest-rerunfailures"]
+tests = ["pytest", "pytest-rerunfailures", "pytest-asyncio"]
 
 [project.scripts]
 holoviews = "holoviews.util.command:main"
