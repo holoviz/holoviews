@@ -61,11 +61,11 @@ class RasterPlot(ColorbarPlot):
         tools = super()._init_tools(element)
 
         hover = None
-        for tool in tools:
+        for tool in tools or ():
             if isinstance(tool, HoverTool):
                 hover = tool
                 break
-        else:
+        if hover is None:
             return tools
 
         data = element.data
@@ -98,7 +98,7 @@ class RasterPlot(ColorbarPlot):
         )
 
         def on_change(attr, old, new):
-            data_sel = data.sel(**dict(zip(data.coords, new)), method="nearest").to_dict()
+            data_sel = data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
