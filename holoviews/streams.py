@@ -22,6 +22,17 @@ from .core.ndmapping import UniformNdMapping
 # Types supported by Pointer derived streams
 pointer_types = (Number, str, tuple)+util.datetime_types
 
+POPUP_POSITIONS = [
+    "top_right",
+    "top_left",
+    "bottom_left",
+    "bottom_right",
+    "right",
+    "left",
+    "top",
+    "bottom",
+]
+
 class _SkipTrigger: pass
 
 
@@ -1255,9 +1266,17 @@ class LinkedStream(Stream):
     supplying stream data.
     """
 
-    def __init__(self, linked=True, popup=None, **params):
+    def __init__(self, linked=True, popup=None, popup_position="top_right", popup_anchor=None, **params):
+        if popup_position not in POPUP_POSITIONS:
+            raise ValueError(
+                f"Invalid popup_position: {popup_position!r}; "
+                f"expect one of {POPUP_POSITIONS}"
+            )
+
         super().__init__(linked=linked, **params)
         self.popup = popup
+        self.popup_position = popup_position
+        self.popup_anchor = popup_anchor
 
 
 class PointerX(LinkedStream):
