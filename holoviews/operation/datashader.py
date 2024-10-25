@@ -392,9 +392,6 @@ class aggregate(LineAggregationOperation):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
-            _ignore = [*params["vdims"], "__index__"]
-            sel_vdims = [s for s in agg if s not in _ignore]
-            params["vdims"] = [*params["vdims"], *sel_vdims]
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
 
@@ -448,6 +445,8 @@ class aggregate(LineAggregationOperation):
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
+
+            agg = agg.drop_vars("__index__")
         return agg
 
 class curve_aggregate(aggregate):
