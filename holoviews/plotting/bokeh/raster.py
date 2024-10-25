@@ -70,7 +70,7 @@ class RasterPlot(ColorbarPlot):
 
         data = element.data
 
-        if hover is None or not (XArrayInterface.applies(data) and "has_selector" in data.attrs):
+        if hover is None or not (XArrayInterface.applies(data) and "selector_columns" in data.attrs):
             return tools
 
         self._hover_data = data

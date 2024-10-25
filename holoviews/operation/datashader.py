@@ -402,8 +402,6 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if sel_fn:
-            agg.attrs["has_selector"] = True
         if isinstance(agg, xr.Dataset) or agg.ndim == 2:
             return self.p.element_type(agg, **params)
         else:
@@ -429,6 +427,7 @@ class aggregate(LineAggregationOperation):
             else:  # summary index
                 data = agg["__index__"].data
             neg1 = data == -1
+            agg.attrs["selector_columns"] = sel_cols = []
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
@@ -446,6 +445,7 @@ class aggregate(LineAggregationOperation):
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
+                sel_cols.append(col)
 
             agg = agg.drop_vars("__index__")
         return agg
