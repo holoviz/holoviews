@@ -57,8 +57,8 @@ class RasterPlot(ColorbarPlot):
             return
         super()._update_hover(element)
 
-    def _init_tools(self, element):
-        tools = super()._init_tools(element)
+    def _init_tools(self, element, callbacks=None):
+        tools = super()._init_tools(element, callbacks=callbacks)
 
         hover = None
         for tool in tools or ():
