@@ -93,7 +93,7 @@ class RasterPlot(ColorbarPlot):
         hover.tooltips = grid
         hover.callback = CustomJS(
             args={"position": hover_model},
-            code="""export default ({position}, _, {geometry: {x, y}}) => { position.__xy__ = [x, y] }""",
+            code="export default ({position}, _, {geometry: {x, y}}) => {position.__xy__ = [x, y]}",
         )
 
         def on_change(attr, old, new):
