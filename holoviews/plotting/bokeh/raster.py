@@ -55,6 +55,7 @@ class RasterPlot(ColorbarPlot):
     def _update_hover(self, element):
         tool = self.handles['hover']
         if isinstance(tool.tooltips, Div):
+            self._hover_data = element.data
             return
         super()._update_hover(element)
 
@@ -72,6 +73,7 @@ class RasterPlot(ColorbarPlot):
         if hover is None or not (XArrayInterface.applies(data) and "has_selector" in data.attrs):
             return tools
 
+        self._hover_data = data
         coords, vars = tuple(data.coords), tuple(data.data_vars)
         dims = (*coords, *vars)
 
@@ -101,7 +103,7 @@ class RasterPlot(ColorbarPlot):
         )
 
         def on_change(attr, old, new):
-            data_sel = data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
+            data_sel = self._hover_data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
             # https://github.com/bokeh/bokeh/issues/14123
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
