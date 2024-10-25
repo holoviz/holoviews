@@ -15,7 +15,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh, hold_policy
 
 _model_cache = {}
 
@@ -102,11 +102,12 @@ class RasterPlot(ColorbarPlot):
             # TODO: When ValueOf support formatter remove the rounding
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
-            hover_model.update(**data_coords, **data_vars)
-            # TODO: Work in notebook
-            # from panel.io.notebook import push_on_root
-            # if self.plot.comm:  # update Jupyter Notebook
-            #     push_on_root(self.plot.root.ref['id'])
+            if self.comm:  # Jupyter Notebook
+                with hold_policy(self.document, 'combine'):
+                    hover_model.update(**data_coords, **data_vars)
+                    self.push()
+            else:
+                hover_model.update(**data_coords, **data_vars)
 
         hover_model.on_change("__xy__", on_change)
 
