@@ -19,6 +19,7 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
+test-minimum = ["min-pins", "test-core", "test-unit-task"]
 test-gpu = ["py312", "test-core", "test", "test-gpu"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -36,6 +37,15 @@ pandas = ">=1.3"
 panel = ">=1.0"
 param = ">=2.0,<3.0"
 pyviz_comms = ">=2.1"
+
+[feature.min-pins.dependencies]
+python = "3.9.*"
+bokeh = "3.1.*"
+numpy = "1.21.*"
+pandas = "1.3.*"
+panel = "1.2.*"
+param = "2.0.*"
+pyviz_comms = "2.1.*"
 
 [feature.py39.dependencies]
 python = "3.9.*"

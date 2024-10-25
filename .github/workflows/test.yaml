@@ -180,13 +180,14 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        environment: ["test-core"]
+        environment: ["test-core", "test-minimum"]
     timeout-minutes: 120
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
+        if: ${{ matrix.environment }} == 'test-core'
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
       - name: Test Unit

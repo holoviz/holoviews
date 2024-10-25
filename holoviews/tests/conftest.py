@@ -5,7 +5,11 @@ from collections.abc import Callable
 import panel as pn
 import pytest
 from panel.tests.conftest import port, server_cleanup  # noqa: F401
-from panel.tests.util import serve_and_wait
+
+try:
+    from panel.tests.util import serve_and_wait
+except ImportError:
+    pass
 
 import holoviews as hv
 
