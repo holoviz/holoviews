@@ -8,6 +8,7 @@ from bokeh.model import DataModel
 from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
 from bokeh.models.dom import Div, Span, Styles, ValueOf
 
+from ...core.data import XArrayInterface
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
 from ..util import categorical_legend
@@ -65,10 +66,12 @@ class RasterPlot(ColorbarPlot):
             if isinstance(tool, HoverTool):
                 hover = tool
                 break
-        if hover is None:
-            return tools
 
         data = element.data
+
+        if hover is None or not (XArrayInterface.applies(data) and "has_selector" in data.attrs):
+            return tools
+
         coords, vars = tuple(data.coords), tuple(data.data_vars)
         dims = (*coords, *vars)
 
@@ -100,6 +103,7 @@ class RasterPlot(ColorbarPlot):
         def on_change(attr, old, new):
             data_sel = data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
+            # https://github.com/bokeh/bokeh/issues/14123
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             if self.comm:  # Jupyter Notebook

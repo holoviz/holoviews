@@ -402,8 +402,9 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
+        if sel_fn:
+            agg.attrs["has_selector"] = True
         if isinstance(agg, xr.Dataset) or agg.ndim == 2:
-            # Replacing x and y coordinates to avoid numerical precision issues
             return self.p.element_type(agg, **params)
         else:
             params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
