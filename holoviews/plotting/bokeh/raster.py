@@ -43,7 +43,13 @@ class ServerHoverMixin:
             return tools
 
         self._hover_data = data
+
+        # Get dimensions
         coords, vars = tuple(data.coords), tuple(data.data_vars)
+        if ht := self.hover_tooltips:
+            ht = [ht] if isinstance(ht, str) else ht
+            coords = [c for c in coords if c in ht]
+            vars = [v for v in vars if v in ht]
         dims = (*coords, *vars)
 
         # Create a dynamic custom DataModel with the dims as attributes
@@ -71,7 +77,7 @@ class ServerHoverMixin:
         )
 
         def on_change(attr, old, new):
-            data_sel = self._hover_data.sel(**dict(zip(coords, new)), method="nearest").to_dict()
+            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
             # https://github.com/bokeh/bokeh/issues/14123
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
