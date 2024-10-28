@@ -206,7 +206,7 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
         return (data, mapping, style)
 
 
-class RGBPlot(LegendPlot):
+class RGBPlot(ServerHoverMixin, LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 

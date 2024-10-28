@@ -1308,6 +1308,11 @@ class shade(LinkableOperation):
             vdim = element.vdims[0].name
             array = element.data[vdim]
 
+        if "selector_columns" in element.data.attrs:
+            sel_data = {k: element.data[k] for k in element.data.attrs["selector_columns"]}
+        else:
+            sel_data = None
+
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
@@ -1366,7 +1371,13 @@ class shade(LinkableOperation):
                 return RGB(img, **params)
             else:
                 img = tf.shade(array, **shade_opts)
-        return RGB(self.uint32_to_uint8_xr(img), **params)
+        img_data = self.uint32_to_uint8_xr(img)
+        if sel_data is not None:
+            img_data.coords["band"] = ["R", "G", "B", "A"]
+            img_data = img_data.to_dataset(dim="band")
+            img_data.update(sel_data)
+            img_data.attrs["selector_columns"] = list(sel_data)
+        return RGB(img_data, **params)
 
 
 
