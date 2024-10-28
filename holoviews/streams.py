@@ -138,6 +138,15 @@ class Stream(param.Parameterized):
         # Dynamic class creation using type
         return type(name, (Stream,), params)
 
+    @classmethod
+    def from_param(cls, **params):
+        stream = cls(**params)
+        param_names = list(set(params) & set(cls.param))
+        stream.param.watch(stream._sync__params, param_names)
+        for pname, ref in stream._param__private.refs.items():
+            for p in param.parameterized.resolve_ref(ref):
+                p.owner.param.watch(lambda e: cls.trigger([stream]), p.name)
+        return stream
 
     @classmethod
     def trigger(cls, streams):
@@ -190,6 +199,14 @@ class Stream(param.Parameterized):
     def _on_trigger(self):
         """Called when a stream has been triggered"""
 
+    def _sync__params(self, *events):
+        updates = {}
+        for e in events:
+            if e.name not in self._param__private.refs:
+                continue
+            ref = self._param__private.refs[e.name]
+            if isinstance(ref, param.Parameter):
+                setattr(ref.owner, ref.name, e.new)
 
     @classmethod
     def _process_streams(cls, streams):
@@ -423,8 +440,9 @@ class Stream(param.Parameterized):
         Sets the stream parameters which are expected to be declared
         constant.
         """
-        with util.disable_constant(self):
-            self.param.update(**kwargs)
+        with param.parameterized._syncing(self, list(kwargs)):
+            with util.disable_constant(self):
+                self.param.update(**kwargs)
 
     def event(self, **kwargs):
         """
@@ -1302,11 +1320,11 @@ class PointerXY(LinkedStream):
     """
 
     x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
 
