@@ -1308,11 +1308,6 @@ class shade(LinkableOperation):
             vdim = element.vdims[0].name
             array = element.data[vdim]
 
-        if "selector_columns" in element.data.attrs:
-            sel_data = {k: element.data[k] for k in element.data.attrs["selector_columns"]}
-        else:
-            sel_data = None
-
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
@@ -1368,17 +1363,21 @@ class shade(LinkableOperation):
                           yd.name: element.data.coords[yd.name],
                           'band': [0, 1, 2, 3]}
                 img = xr.DataArray(arr, coords=coords, dims=(yd.name, xd.name, 'band'))
+                img = self.add_selector_data(img, element)
                 return RGB(img, **params)
             else:
                 img = tf.shade(array, **shade_opts)
         img_data = self.uint32_to_uint8_xr(img)
-        if sel_data is not None:
-            img_data.coords["band"] = ["R", "G", "B", "A"]
-            img_data = img_data.to_dataset(dim="band")
-            img_data.update(sel_data)
-            img_data.attrs["selector_columns"] = list(sel_data)
+        img_data = self.add_selector_data(img_data, element)
         return RGB(img_data, **params)
 
+    def add_selector_data(self, img_data, element):
+        if "selector_columns" in element.data.attrs:
+            img_data.coords["band"] = ["R", "G", "B", "A"]
+            img_data = img_data.to_dataset(dim="band")
+            img_data.update({k: element.data[k] for k in element.data.attrs["selector_columns"]})
+            img_data.attrs["selector_columns"] = element.data.attrs["selector_columns"]
+        return img_data
 
 
 class geometry_rasterize(LineAggregationOperation):
