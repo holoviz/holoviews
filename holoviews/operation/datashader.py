@@ -427,7 +427,7 @@ class aggregate(LineAggregationOperation):
             else:  # summary index
                 data = agg["__index__"].data
             neg1 = data == -1
-            agg.attrs["selector_columns"] = sel_cols = []
+            agg.attrs["selector_columns"] = sel_cols = ["__index__"]
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
@@ -446,8 +446,6 @@ class aggregate(LineAggregationOperation):
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
                 sel_cols.append(col)
-
-            agg = agg.drop_vars("__index__")
         return agg
 
 class curve_aggregate(aggregate):

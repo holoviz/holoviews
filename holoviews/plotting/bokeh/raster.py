@@ -45,7 +45,8 @@ class ServerHoverMixin:
         self._hover_data = data
 
         # Get dimensions
-        coords, vars = tuple(data.coords), tuple(data.data_vars)
+        coords, vars = list(data.coords), list(data.data_vars)
+        vars.remove("__index__")
         if ht := self.hover_tooltips:
             ht = [ht] if isinstance(ht, str) else ht
             coords = [c for c in coords if c in ht]

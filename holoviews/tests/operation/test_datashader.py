@@ -100,7 +100,6 @@ def point_data():
         ]
     }
     df = pd.concat(dists, ignore_index=True)
-    df["_index"] = np.arange(len(df))  # Used to track index
     return df
 
 
@@ -1311,12 +1310,12 @@ def test_rasterize_where_agg_no_column(point_plot, agg_input_fn, index_col):
     rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
     img = rasterize(point_plot, aggregator=agg_fn, **rast_input)
 
-    assert list(img.data) == ["s", "val", "cat", "_index"]
-    assert list(img.vdims) == ["val", "s", "cat", "_index"]  # val first and no __index__
+    assert list(img.data) == ["__index__", "s", "val", "cat"]
+    assert list(img.vdims) == ["val", "s", "cat"]  # val first and no __index__
 
     # N=100 in point_data is chosen to have a big enough sample size
     # so that the index are not the same for the different agg_input_fn
-    np.testing.assert_array_equal(img.data["_index"].data.flatten(), index_col)
+    np.testing.assert_array_equal(img.data["__index__"].data.flatten(), index_col)
 
     img_simple = rasterize(point_plot, aggregator=agg_input_fn("val"), **rast_input)
     np.testing.assert_array_equal(img_simple["val"], img["val"])
@@ -1354,13 +1353,13 @@ def test_rasterize_selector(point_plot, sel_fn):
     img = rasterize(point_plot, selector=sel_fn("val"), **rast_input)
 
     # Count is from the aggregator
-    assert list(img.data) == ["Count", "s", "val", "cat", "_index"]
+    assert list(img.data) == ["Count", "__index__", "s", "val", "cat"]
     assert list(img.vdims) == [Dimension("Count")]  # Only the dimension send to the frontend
 
     # The output for the selector should be equal to the output for the aggregator using
     # ds.where
     img_agg = rasterize(point_plot, aggregator=ds.where(sel_fn("val")), **rast_input)
-    for c in ["s", "val", "cat", "_index"]:
+    for c in ["s", "val", "cat"]:
         np.testing.assert_array_equal(img.data[c], img_agg.data[c], err_msg=c)
 
     # Checking the count is also the same
