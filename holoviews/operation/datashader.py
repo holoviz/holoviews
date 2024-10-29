@@ -1360,21 +1360,22 @@ class shade(LinkableOperation):
                 coords = {xd.name: element.data.coords[xd.name],
                           yd.name: element.data.coords[yd.name],
                           'band': [0, 1, 2, 3]}
-                img = xr.DataArray(arr, coords=coords, dims=(yd.name, xd.name, 'band'))
-                img = self.add_selector_data(img, element)
-                return RGB(img, **params)
+                img_data = xr.DataArray(arr, coords=coords, dims=(yd.name, xd.name, 'band'))
+                img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
+                return RGB(img_data, **params)
             else:
                 img = tf.shade(array, **shade_opts)
         img_data = self.uint32_to_uint8_xr(img)
-        img_data = self.add_selector_data(img_data, element)
+        img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
         return RGB(img_data, **params)
 
-    def add_selector_data(self, img_data, element):
-        if "selector_columns" in element.data.attrs:
+    @classmethod
+    def add_selector_data(cls, *, img_data, sel_data):
+        if "selector_columns" in sel_data.attrs:
             img_data.coords["band"] = ["R", "G", "B", "A"]
             img_data = img_data.to_dataset(dim="band")
-            img_data.update({k: element.data[k] for k in element.data.attrs["selector_columns"]})
-            img_data.attrs["selector_columns"] = element.data.attrs["selector_columns"]
+            img_data.update({k: sel_data[k] for k in sel_data.attrs["selector_columns"]})
+            img_data.attrs["selector_columns"] = sel_data.attrs["selector_columns"]
         return img_data
 
 
