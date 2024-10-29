@@ -931,7 +931,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 if is_dt:
                     width *= xdiff.astype('timedelta64[ms]').astype(np.int64)
                 else:
-                    width /= xdiff
+                    width = width * xdiff if np.min(xdiff) < 1 else width / xdiff
                 width = np.min(width)
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
