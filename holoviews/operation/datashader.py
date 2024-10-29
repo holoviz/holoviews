@@ -1653,7 +1653,7 @@ class SpreadingOperation(LinkableOperation):
         rgb = img.reshape((flat_shape, 4)).view('uint32').reshape(shape[:2])
         return rgb
 
-    def _apply_spreading(self, array):
+    def _apply_spreading(self, array, how=None):
         """Apply the spread function using the indicated parameters."""
         raise NotImplementedError
 
@@ -1676,9 +1676,27 @@ class SpreadingOperation(LinkableOperation):
             raise ValueError('spreading can only be applied to Image or RGB Elements. '
                              f'Received object of type {type(element)!s}')
 
-        kwargs = {}
+        kwargs, sel_data = {}, {}
         array = self._apply_spreading(data)
-        if isinstance(element, RGB):
+        if "selector_columns" in getattr(element.data, "attrs", ()):
+            index = element.data["__index__"].copy()
+            mask = np.arange(index.size).reshape(index.shape)
+            mask[index == -1] = 0
+            index.data = mask
+            spread_index = self._apply_spreading(index, how="source")
+            for n in element.data.attrs["selector_columns"]:
+                # TODO: Check if there is as better way to get spread
+                sel_data[n] = element.data[n].data.ravel()[spread_index].reshape(index.shape)
+
+        if isinstance(element, RGB) and sel_data:
+            element = element.clone()
+            img = datashade.uint32_to_uint8(array.data)[::-1]
+            for k, v in zip("RGBA", np.split(img, 4, axis=2)):  # PYTHON 3.10: strict=True
+                element.data[k].data = v.squeeze()
+            for k, v in sel_data.items():
+                element.data[k].data = v
+            return element
+        elif isinstance(element, RGB):
             img = datashade.uint32_to_uint8(array.data)[::-1]
             new_data = {
                 kd.name: rgb.dimension_values(kd, expanded=False)
@@ -1709,8 +1727,8 @@ class spread(SpreadingOperation):
     px = param.Integer(default=1, doc="""
         Number of pixels to spread on all sides.""")
 
-    def _apply_spreading(self, array):
-        return tf.spread(array, px=self.p.px, how=self.p.how, shape=self.p.shape)
+    def _apply_spreading(self, array, how=None):
+        return tf.spread(array, px=self.p.px, how=how or self.p.how, shape=self.p.shape)
 
 
 class dynspread(SpreadingOperation):
@@ -1736,10 +1754,10 @@ class dynspread(SpreadingOperation):
         Higher values give more spreading, up to the max_px
         allowed.""")
 
-    def _apply_spreading(self, array):
+    def _apply_spreading(self, array, how=None):
         return tf.dynspread(
             array, max_px=self.p.max_px, threshold=self.p.threshold,
-            how=self.p.how, shape=self.p.shape
+            how=how or self.p.how, shape=self.p.shape
         )
 
 
