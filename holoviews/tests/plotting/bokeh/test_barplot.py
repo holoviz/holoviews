@@ -397,4 +397,4 @@ class TestBarPlot(TestBokehPlot):
         dic = {"ratio": [0.82, 1.11, 3, 6], "count": [1, 2, 1, 3]}
         bars = Bars(dic, kdims=["ratio"], vdims=["count"])
         plot = bokeh_renderer.get_plot(bars)
-        assert np.isclose(plot.handles["glyph"].width, 0.23200000000000012)
+        assert np.isclose(plot.handles["glyph"].width, 0.232)
