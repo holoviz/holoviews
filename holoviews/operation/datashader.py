@@ -448,6 +448,12 @@ class aggregate(LineAggregationOperation):
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
+
+        if isinstance(agg_fn, ds.count_cat):
+            col = agg_fn.column
+            if '' in agg.coords[col]:
+                agg = agg.drop_sel(**{col: ''})
+
         return agg
 
 class curve_aggregate(aggregate):
