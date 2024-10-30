@@ -1296,6 +1296,42 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         assert isinstance(overlay, Overlay)
         assert len(overlay) == 2
 
+    def test_rasterize_path_empty_string_as_cat_sep(self):
+        # https://github.com/holoviz/holoviews/issues/6326
+        df = pd.DataFrame({
+            'x': [1, 1, np.nan, 3, 3, np.nan],
+            'y': [0, 1, np.nan, 0, 1, np.nan],
+            # Empty strings on the sep rows.
+            'cat': ['a', 'a', '', 'b', 'b', ''],
+        })
+        path = Path(df, ['x', 'y'])
+        rasterized = rasterize(  # noqa
+            path, aggregator=ds.count_cat('cat'), dynamic=False,
+            width=4, height=4, pixel_ratio=1,
+        )
+        # x = np.array([1.25, 1.75, 2.25, 2.75])
+        # y = np.array([0.125, 0.375, 0.625, 0.875])
+        # array = np.array(
+        #     [[[1, 0],
+        #         [0, 0],
+        #         [0, 0],
+        #         [0, 1]],
+        #     [[1, 0],
+        #         [0, 0],
+        #         [0, 0],
+        #         [0, 1]],
+        #     [[1, 0],
+        #         [0, 0],
+        #         [0, 0],
+        #         [0, 1]],
+        #     [[1, 0],
+        #         [0, 0],
+        #         [0, 0],
+        #         [0, 1]],
+        # ])
+        # expected = ImageStack((x, y, array), vdims=['a', 'b'])
+        # self.assertEqual(rasterized, expected)
+
 
 @pytest.mark.parametrize("agg_input_fn,index_col",
     (
