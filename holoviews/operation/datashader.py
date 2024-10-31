@@ -1708,6 +1708,12 @@ class SpreadingOperation(LinkableOperation):
             vdims = rgb.vdims+[rgb.alpha_dimension] if len(rgb.vdims) == 3 else rgb.vdims
             kwargs['vdims'] = vdims
             new_data[tuple(vd.name for vd in vdims)] = img
+        elif isinstance(element, Image) and sel_data:
+            element = element.clone()
+            element.data[element.vdims[0].name].data = array
+            for k, v in sel_data.items():
+                element.data[k].data = v
+            return element
         else:
             new_data = array
         return element.clone(new_data, xdensity=element.xdensity,
