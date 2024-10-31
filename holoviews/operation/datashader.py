@@ -1372,6 +1372,9 @@ class shade(LinkableOperation):
     @classmethod
     def add_selector_data(cls, *, img_data, sel_data):
         if "selector_columns" in sel_data.attrs:
+            if {"R", "G", "B", "A"} & set(sel_data.attrs["selector_columns"]):
+                msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
+                raise ValueError(msg)
             img_data.coords["band"] = ["R", "G", "B", "A"]
             img_data = img_data.to_dataset(dim="band")
             img_data.update({k: sel_data[k] for k in sel_data.attrs["selector_columns"]})
