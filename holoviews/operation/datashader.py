@@ -1694,8 +1694,8 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB) and sel_data:
             element = element.clone()
             img = datashade.uint32_to_uint8(array.data)[::-1]
-            for k, v in zip("RGBA", np.split(img, 4, axis=2)):  # PYTHON 3.10: strict=True
-                element.data[k].data = v.squeeze()
+            for idx, k, in enumerate("RGBA"):
+                element.data[k].data = img[:, :, idx]
             for k, v in sel_data.items():
                 element.data[k].data = v
             return element
