@@ -1679,7 +1679,6 @@ class SpreadingOperation(LinkableOperation):
             raise ValueError('spreading can only be applied to Image or RGB Elements. '
                              f'Received object of type {type(element)!s}')
 
-        kwargs, sel_data = {}, {}
         array = self._apply_spreading(data)
         if "selector_columns" in getattr(element.data, "attrs", ()):
             index = element.data["__index__"].copy()
@@ -1687,19 +1686,28 @@ class SpreadingOperation(LinkableOperation):
             mask[index == -1] = 0
             index.data = mask
             spread_index = self._apply_spreading(index, how="source")
-            for n in element.data.attrs["selector_columns"]:
-                # TODO: Check if there is as better way to get spread
-                sel_data[n] = element.data[n].data.ravel()[spread_index].reshape(index.shape)
+            sel_data = {
+                sc: element.data[sc].data.ravel()[spread_index].reshape(index.shape)
+                for sc in element.data.attrs["selector_columns"]
+            }
 
-        if isinstance(element, RGB) and sel_data:
             element = element.clone()
-            img = datashade.uint32_to_uint8(array.data)[::-1]
-            for idx, k, in enumerate("RGBA"):
-                element.data[k].data = img[:, :, idx]
+            if isinstance(element, RGB):
+                img = datashade.uint32_to_uint8(array.data)[::-1]
+                for idx, k, in enumerate("RGBA"):
+                    element.data[k].data = img[:, :, idx]
+            elif isinstance(element, Image):
+                element.data[element.vdims[0].name].data = array
+            else:
+                msg = "ImageStack currently does not support spreading with selector_columns"
+                raise NotImplementedError(msg)
+
             for k, v in sel_data.items():
                 element.data[k].data = v
             return element
-        elif isinstance(element, RGB):
+
+        kwargs = {}
+        if isinstance(element, RGB):
             img = datashade.uint32_to_uint8(array.data)[::-1]
             new_data = {
                 kd.name: rgb.dimension_values(kd, expanded=False)
@@ -1708,12 +1716,6 @@ class SpreadingOperation(LinkableOperation):
             vdims = rgb.vdims+[rgb.alpha_dimension] if len(rgb.vdims) == 3 else rgb.vdims
             kwargs['vdims'] = vdims
             new_data[tuple(vd.name for vd in vdims)] = img
-        elif isinstance(element, Image) and sel_data:
-            element = element.clone()
-            element.data[element.vdims[0].name].data = array
-            for k, v in sel_data.items():
-                element.data[k].data = v
-            return element
         else:
             new_data = array
         return element.clone(new_data, xdensity=element.xdensity,
