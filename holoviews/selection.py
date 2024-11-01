@@ -667,7 +667,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
             backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
             selected_colors = [c or backup_clr for c in colors[1:]]
             n = len(ds)
-            clrs = np.array([unselected_color] + list(selected_colors))
+            clrs = np.array([unselected_color, *selected_colors])
 
             color_inds = np.zeros(n, dtype='int8')
 

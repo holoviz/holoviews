@@ -1281,7 +1281,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
     indexes = [(dimensions[i], int(i not in range(ndims)),
                     i if i in range(ndims) else i-ndims)
                 for i in key_index]
-    cached_values = {d.name: [None]+list(d.values) for d in dimensions}
+    cached_values = {d.name: [None, *d.values] for d in dimensions}
 
     if len(set(key_index)) != len(key_index):
         raise ValueError("Cannot sort on duplicated dimensions")

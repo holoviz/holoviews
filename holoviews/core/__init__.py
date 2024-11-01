@@ -41,5 +41,6 @@ def public(obj):
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 _public = list({_k for _k, _v in locals().items() if public(_v)})
-__all__ = _public + ["boundingregion", "dimension", "layer", "layout",
-                     "ndmapping", "operation", "options", "sheetcoords", "tree", "element"]
+__all__ = [
+    *_public, "boundingregion", "dimension", "layer", "layout", "ndmapping", "operation", "options", "sheetcoords", "tree", "element"
+]

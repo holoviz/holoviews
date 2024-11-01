@@ -1882,7 +1882,7 @@ class BoxEdit(CDSStream):
                 xs.append(x0)
                 ys.append(y0)
             vals = [data[vd.name][i] for vd in source.vdims]
-            paths.append((xs, ys)+tuple(vals))
+            paths.append((xs, ys, *vals))
         datatype = source.datatype if source.interface.multi else ['multitabular']
         return source.clone(paths, datatype=datatype, id=None)
 

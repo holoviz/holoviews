@@ -1308,7 +1308,7 @@ class ViewableTree(AttrTree, Dimensioned):
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.param)+['id', 'plot_id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in [*self.param, 'id', 'plot_id'] if p in kwargs}
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)

@@ -692,7 +692,7 @@ class RGB(Image):
         if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
             (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
              and data[-1].shape[-1] == 4 and len(vdims) == 3) or
-            (isinstance(data, dict) and tuple(dimension_name(vd) for vd in vdims)+(alpha.name,) in data)):
+            (isinstance(data, dict) and (*(dimension_name(vd) for vd in vdims), alpha.name) in data)):
             # Handle all forms of packed value dimensions
             vdims.append(alpha)
         super().__init__(data, kdims=kdims, vdims=vdims, **params)

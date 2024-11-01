@@ -182,7 +182,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
         self.assertIsInstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
+        self.assertEqual(x_range.factors, [*map(str, range(10)), 'A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)

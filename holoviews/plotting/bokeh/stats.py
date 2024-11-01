@@ -431,8 +431,8 @@ class ViolinPlot(BoxWhiskerPlot):
 
             if split_dim:
                 if len(_xs):
-                    fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
-                    fill_ys.append([0]+list(_ys)+[0])
+                    fill_xs.append([x_range[0], *_xs, x_range[-1]])
+                    fill_ys.append([0, *_ys, 0])
                 else:
                     fill_xs.append([])
                     fill_ys.append([])

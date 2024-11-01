@@ -58,9 +58,12 @@ class _layout_sankey(Operation):
 
         node_data = []
         for node in graph['nodes']:
-            node_data.append((np.mean([node['x0'], node['x1']]),
-                              np.mean([node['y0'], node['y1']]),
-                              node['index'])+tuple(node['values']))
+            node_data.append((
+                np.mean([node['x0'], node['x1']]),
+                np.mean([node['y0'], node['y1']]),
+                node['index'],
+                *tuple(node['values'])
+            ))
         if element.nodes.ndims == 3:
             kdims = element.nodes.kdims
         elif element.nodes.ndims:

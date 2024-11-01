@@ -50,8 +50,7 @@ class HeatMapPlot(ColorbarPlot):
 
     _plot_methods = dict(single='rect')
 
-    style_opts = (['cmap', 'color', 'dilate'] + base_properties +
-                  line_properties + fill_properties)
+    style_opts = (['cmap', 'color', 'dilate', *base_properties, *line_properties, *fill_properties])
 
     selection_display = BokehOverlaySelectionDisplay()
 

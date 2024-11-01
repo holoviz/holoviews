@@ -227,7 +227,7 @@ class notebook_extension(extension):
         """
         resources = []
         disabled = []
-        for resource in ['holoviews'] + list(Store.renderers.keys()):
+        for resource in ['holoviews', *Store.renderers]:
             if resource in args:
                 resources.append(resource)
 

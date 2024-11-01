@@ -390,7 +390,7 @@ class HistogramPlot(ColorbarPlot):
         elif self.xticks:
             dim = element.get_dimension(0)
             inds = np.linspace(0, len(edges), self.xticks, dtype=int)
-            edges = list(edges) + [edges[-1] + widths[-1]]
+            edges = [*edges, edges[-1] + widths[-1]]
             xvals = [edges[i] for i in inds]
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]

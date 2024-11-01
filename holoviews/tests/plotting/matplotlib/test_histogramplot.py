@@ -113,7 +113,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         artist = plot.handles['artist']
         children = artist.get_children()
         for c, w in zip(children, ['#000000', '#FF0000', '#00FF00']):
-            self.assertEqual(c.get_facecolor(), tuple(c/255. for c in hex2rgb(w))+(1,))
+            self.assertEqual(c.get_facecolor(), (*(c / 255.0 for c in hex2rgb(w)), 1))
 
     def test_histogram_linear_color_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 1), (0, 2, 2)],

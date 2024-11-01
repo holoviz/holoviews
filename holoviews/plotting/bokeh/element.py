@@ -934,9 +934,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     range_tags_extras['y-upperlim'] = upperlim
             else:
                 range_tags_extras['autorange'] = False
-            axis_specs['y']['y'] = self._axis_props(
-                plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras
-            ) + (self.yaxis, {})
+            axis_specs['y']['y'] = (
+                *self._axis_props(plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras), self.yaxis, {}
+            )
 
         if self._subcoord_overlaid:
             _, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
