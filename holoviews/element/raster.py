@@ -333,7 +333,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if yvals.ndim > 1:
             invalid.append(ydim)
         if invalid:
-            dims = '{} and {}'.format(*tuple(invalid)) if len(invalid) > 1 else f'{invalid[0]}'
+            dims = '{} and {}'.format(*invalid) if len(invalid) > 1 else f'{invalid[0]}'
             raise ValueError(f'{clsname} coordinates must be 1D arrays, '
                              f'{dims} dimension(s) were found to have '
                              'multiple dimensions. Either supply 1D '

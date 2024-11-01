@@ -639,12 +639,12 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_pandas_period_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
-        daily = pd.PeriodIndex([*list(daily), pd.NaT])
+        daily = pd.PeriodIndex([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_period_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
-        daily = pd.Series([*list(daily), pd.NaT])
+        daily = pd.Series([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_index(self):
@@ -657,12 +657,12 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_pandas_timestamp_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
-        daily = pd.DatetimeIndex([*list(daily), pd.NaT])
+        daily = pd.DatetimeIndex([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
-        daily = pd.Series([*list(daily), pd.NaT])
+        daily = pd.Series([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_datetime64_array(self):

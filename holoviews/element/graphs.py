@@ -63,7 +63,7 @@ class layout_nodes(Operation):
                 for (s, t), w in zip(edges, element[weight]):
                     graph.edges[s, t][weight] = w
             positions = self.p.layout(graph, **self.p.kwargs)
-            nodes = [(*tuple(pos), idx) for idx, pos in sorted(positions.items())]
+            nodes = [(*pos, idx) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
@@ -455,7 +455,7 @@ argument to specify a selection specification""")
             node_columns[idim.name].append(idx)
         node_cols = sorted([k for k in node_columns if k not in cls.node_type.kdims
                             and len(node_columns[k]) == len(node_columns[xdim.name])])
-        columns = [xdim.name, ydim.name, idim.name, *node_cols, *list(info_cols)]
+        columns = [xdim.name, ydim.name, idim.name, *node_cols, *info_cols]
         node_data = tuple(node_columns[col] for col in columns)
 
         # Construct nodes

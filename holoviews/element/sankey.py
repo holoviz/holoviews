@@ -62,7 +62,7 @@ class _layout_sankey(Operation):
                 np.mean([node['x0'], node['x1']]),
                 np.mean([node['y0'], node['y1']]),
                 node['index'],
-                *tuple(node['values'])
+                *node['values']
             ))
         if element.nodes.ndims == 3:
             kdims = element.nodes.kdims
