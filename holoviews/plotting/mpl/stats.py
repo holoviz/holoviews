@@ -6,7 +6,7 @@ from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
-from .util import MPL_GE_3_9_0
+from .util import MPL_GE_3_9_0, MPL_GE_3_10_0
 
 
 class DistributionPlot(AreaPlot):
@@ -84,7 +84,10 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
             style['labels'] = labels
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
-        style['vert'] = not self.invert_axes
+        if MPL_GE_3_10_0:
+            style["orientation"] = "horizontal" if self.invert_axes else "vertical"
+        else:
+            style["vert"] = not self.invert_axes
         format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]]}
 
@@ -171,11 +174,15 @@ class ViolinPlot(BoxPlot):
         artists = ax.violinplot(*plot_args, bw_method=bw_method,
                                showmedians=showmedians, **plot_kwargs)
         if self.inner == 'box':
+            if MPL_GE_3_10_0:
+                invert_axes = {"orientation": "horizontal" if self.invert_axes else "vertical"}
+            else:
+                invert_axes = {"vert": not self.invert_axes}
             box = ax.boxplot(*plot_args, positions=plot_kwargs['positions'],
                              showfliers=False, showcaps=False, patch_artist=True,
                              boxprops={'facecolor': box_color},
                              medianprops={'color': 'white'}, widths=0.1,
-                             **labels)
+                             **invert_axes, **labels)
             artists.update(box)
         for body, color in zip(artists['bodies'], facecolors):
             body.set_facecolors(color)
@@ -220,7 +227,10 @@ class ViolinPlot(BoxPlot):
         new_style = self._apply_transforms(element, ranges, style)
         style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}
-        style['vert'] = not self.invert_axes
+        if MPL_GE_3_10_0:
+            style["orientation"] = "horizontal" if self.invert_axes else "vertical"
+        else:
+            style["vert"] = not self.invert_axes
         format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         ticks = {'yticks' if self.invert_axes else 'xticks': list(enumerate(labels))}
         return (data,), style, dict(dimensions=[format_kdims, element.vdims[0]], **ticks)
