@@ -120,7 +120,7 @@ def validate(style, value, vectorized=True):
     validator = get_validator(style)
     if validator is None:
         return None
-    if isinstance(value, arraylike_types+(list,)) and vectorized:
+    if isinstance(value, (*arraylike_types, list)) and vectorized:
         return all(validator(v) for v in value)
     try:
         valid = validator(value)
@@ -386,7 +386,7 @@ def polygons_to_path_patches(element):
                 if (interior[0] != interior[-1]).any():
                     interior = np.append(interior, interior[:1], axis=0)
                 interiors.append(interior)
-            vertices = np.concatenate([array]+interiors)
+            vertices = np.concatenate([array, *interiors])
             codes = np.concatenate([ring_coding(array)]+
                                    [ring_coding(h) for h in interiors])
             subpath.append(PathPatch(Path(vertices, codes)))

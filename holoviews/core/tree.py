@@ -160,7 +160,7 @@ class AttrTree:
         else:
             self.data[path] = val
         if self.parent is not None:
-            self.parent._propagate((self.identifier,)+path, val)
+            self.parent._propagate((self.identifier, *path), val)
 
 
     def __setitem__(self, identifier, val):

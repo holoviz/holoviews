@@ -55,7 +55,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         filtered = {k: v for k, v in merged_opts.items() if k in allowed}
         plot_opts = Store.lookup_options('bokeh', element, 'plot').kwargs
-        tools = plot_opts.get('tools', []) + ['box_select']
+        tools = [*plot_opts.get('tools', []), 'box_select']
         return element.opts(backend='bokeh', clone=True, tools=tools,
                             **filtered)
 

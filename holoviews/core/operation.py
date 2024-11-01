@@ -155,9 +155,7 @@ class Operation(param.ParameterizedFunction):
             and isinstance(element, Dataset) and not in_method):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
-                operations=element_pipeline.operations + [
-                    self.instance(**self.p)
-                ],
+                operations=[*element_pipeline.operations, self.instance(**self.p)],
             )
             ret._transforms = element._transforms
         return ret

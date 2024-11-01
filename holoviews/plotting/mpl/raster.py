@@ -178,7 +178,7 @@ class QuadMeshPlot(ColorbarPlot):
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
-        cmesh_data = coords + [data]
+        cmesh_data = [*coords, data]
         if expanded:
             style['locs'] = np.concatenate(coords)
         vdim = element.vdims[0]

@@ -473,7 +473,7 @@ class Renderer(Exporter):
         data to a json file in the supplied json_path (defaults to
         current path).
         """
-        if fmt not in self_or_cls.widgets+['auto', None]:
+        if fmt not in [*self_or_cls.widgets, "auto", None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
         self_or_cls.get_widget(obj, fmt).save(filename)

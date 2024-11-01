@@ -109,7 +109,7 @@ class CompositorMagic(Magics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         lines = ['The %compositor line magic is used to define compositors.']
-        self.compositor.__func__.__doc__ = '\n'.join(lines + [CompositorSpec.__doc__])
+        self.compositor.__func__.__doc__ = '\n'.join([*lines, CompositorSpec.__doc__])
 
 
     @line_magic

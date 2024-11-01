@@ -610,7 +610,7 @@ def to_dash(
             ).to_dict()
             figs[fig_ind] = fig
 
-        return figs + [encode_store_data(store_data)]
+        return [*figs, encode_store_data(store_data)]
 
     # Register key dimension slider callbacks
     # Install callbacks to update kdim labels based on slider values

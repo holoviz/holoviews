@@ -46,7 +46,7 @@ class Composable(Layoutable):
         if isinstance(other, (ViewableElement, NdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
-            return AdjointLayout(other.data.values()+[self])
+            return AdjointLayout([*other.data.values(), self])
         else:
             raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 

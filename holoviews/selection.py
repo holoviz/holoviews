@@ -572,7 +572,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
             cmap_stream = selection_streams.cmap_streams[layer_number]
             layer = obj.apply(
-                self._build_layer_callback, streams=[cmap_stream]+streams,
+                self._build_layer_callback, streams=[cmap_stream, *streams],
                 layer_number=layer_number, cache=cache, per_element=True
             )
             layers.append(layer)

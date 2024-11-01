@@ -225,7 +225,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
         xs = element.dimension_values(0)
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
-        return tuple([xs]+ys), style, {}
+        return tuple([xs, *ys]), style, {}
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         fill_fn = ax.fill_betweenx if self.invert_axes else ax.fill_between
@@ -872,7 +872,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         gvals, cvals = self._get_coords(element, ranges, as_string=False)
         kdims = element.kdims
         if element.ndims == 1:
-            dimensions = kdims + [None, None]
+            dimensions = [*kdims, None, None]
             values = {'group': gvals, 'stack': [None]}
         elif self.stacked:
             stack_dim = kdims[1]
@@ -886,7 +886,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             stack_order = list(stack_order)
             values = {'group': gvals, 'stack': stack_order}
         else:
-            dimensions = kdims + [None]
+            dimensions = [*kdims, None]
             values = {'group': gvals, 'category': cvals}
         return dimensions, values
 
@@ -1093,7 +1093,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
 
-    style_opts = PathPlot.style_opts + ['cmap']
+    style_opts = [*PathPlot.style_opts, 'cmap']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         if 'c' in plot_kwargs:

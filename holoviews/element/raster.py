@@ -123,7 +123,7 @@ class Raster(Element2D):
                 samples = zip(*[c if isinstance(c, list) else [c] for _, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
-            table_data = [c+(self._zdata[self._coord2matrix(c)],)
+            table_data = [(*c, self._zdata[self._coord2matrix(c)])
                           for c in samples]
             params['kdims'] = self.kdims
             return Table(table_data, **params)
@@ -442,7 +442,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             selection = (y, x)
             sliced = False
 
-        datatype = list(util.unique_iterator([self.interface.datatype]+self.datatype))
+        datatype = list(util.unique_iterator([self.interface.datatype, *self.datatype]))
         data = self.interface.ndloc(self, selection)
         if not sliced:
             if np.isscalar(data):
@@ -843,12 +843,12 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
         ts = (t1, t2, t3)
         for vd in self.vdims:
             zs = self.dimension_values(vd)
-            ts = ts + (np.concatenate([zs, zs]),)
+            ts = (*ts, np.concatenate([zs, zs]))
 
         # Construct TriMesh
         params = util.get_param_values(self)
         params['kdims'] = params['kdims'] + TriMesh.node_type.kdims[2:]
-        nodes = TriMesh.node_type(vertices+(np.arange(len(vertices[0])),),
+        nodes = TriMesh.node_type((*vertices, np.arange(len(vertices[0]))),
                                   **{k: v for k, v in params.items()
                                      if k != 'vdims'})
         return TriMesh(((ts,), nodes), **{k: v for k, v in params.items()

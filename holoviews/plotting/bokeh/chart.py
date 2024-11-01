@@ -227,7 +227,7 @@ class VectorFieldPlot(ColorbarPlot):
 
     style_opts = base_properties + line_properties + ['scale', 'cmap']
 
-    _nonvectorized_styles = base_properties + ['scale', 'cmap']
+    _nonvectorized_styles = [*base_properties, "scale", "cmap"]
 
     _plot_methods = dict(single='segment')
 
@@ -425,7 +425,7 @@ class HistogramPlot(ColorbarPlot):
 
     style_opts = base_properties + fill_properties + line_properties + ['cmap']
 
-    _nonvectorized_styles = base_properties + ['line_dash']
+    _nonvectorized_styles = [*base_properties, "line_dash"]
     _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges, style):
@@ -456,7 +456,7 @@ class HistogramPlot(ColorbarPlot):
 
 class SideHistogramPlot(HistogramPlot):
 
-    style_opts = HistogramPlot.style_opts + ['cmap']
+    style_opts = [*HistogramPlot.style_opts, "cmap"]
 
     height = param.Integer(default=125, doc="The height of the plot")
 
@@ -545,7 +545,7 @@ class ErrorPlot(ColorbarPlot):
         ('hover', 'selection', 'nonselection', 'muted')
     ] + ['lower_head', 'upper_head'] + base_properties)
 
-    _nonvectorized_styles = base_properties + ['line_dash']
+    _nonvectorized_styles = [*base_properties, "line_dash"]
     _mapping = dict(base="base", upper="upper", lower="lower")
     _plot_methods = dict(single=Whisker)
 
@@ -701,7 +701,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     style_opts = base_properties + line_properties + ['cmap', 'palette']
 
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, "cmap"]
     _plot_methods = dict(single='segment')
 
     def get_data(self, element, ranges, style):
@@ -789,7 +789,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     style_opts = (base_properties + fill_properties + line_properties +
                   ['bar_width', 'cmap'])
 
-    _nonvectorized_styles = base_properties + ['bar_width', 'cmap']
+    _nonvectorized_styles = [*base_properties, "bar_width", "cmap"]
     _plot_methods = dict(single=('vbar', 'hbar'))
 
     def _axis_properties(self, axis, key, plot, dimension=None,

@@ -58,15 +58,14 @@ class SankeyPlot(GraphPlot):
 
     _draw_order = ['graph', 'quad_1', 'text_1', 'text_2']
 
-    style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
-                                         'label_text_font_size']
+    style_opts = [*GraphPlot.style_opts, 'edge_fill_alpha', 'nodes_line_color', 'label_text_font_size']
 
     filled = True
 
     def _init_glyphs(self, plot, element, ranges, source):
         super()._init_glyphs(plot, element, ranges, source)
         renderer = plot.renderers.pop(plot.renderers.index(self.handles['glyph_renderer']))
-        plot.renderers = [renderer] + plot.renderers
+        plot.renderers = [renderer, *plot.renderers]
         arc_renderer = self.handles['quad_1_glyph_renderer']
         scatter_renderer = self.handles['scatter_1_glyph_renderer']
         arc_renderer.view = scatter_renderer.view

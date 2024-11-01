@@ -815,7 +815,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
         converted['geometry'] = GeoSeries(geom_array)
     else:
         converted['geometry'] = GeoSeries(single_array([]))
-    return GeoDataFrame(converted, columns=['geometry']+columns)
+    return GeoDataFrame(converted, columns=['geometry', *columns])
 
 
 def to_geom_dict(eltype, data, kdims, vdims, interface=None):

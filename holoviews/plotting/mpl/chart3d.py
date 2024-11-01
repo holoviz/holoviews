@@ -223,7 +223,7 @@ class SurfacePlot(Plot3D):
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
-        cmesh_data = coords + [data]
+        cmesh_data = [*coords, data]
 
         if self.plot_type != 'wireframe' and 'cmap' in style:
             self._norm_kwargs(element, ranges, style, element.vdims[0])

@@ -13,7 +13,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     Segments are lines in 2D space where each two key dimensions specify a
     (x, y) node of the line.
     """
-    style_opts = PathPlot.style_opts + ['cmap']
+    style_opts = [*PathPlot.style_opts, 'cmap']
 
     _nonvectorized_styles = ['cmap']
 
