@@ -1623,3 +1623,12 @@ def test_imagestack_dynspread():
     points = Points(df, ['x','y'], ['language'])
     op = dynspread(rasterize(points, aggregator=ds.by('language', ds.count())))
     render(op)  # should not error out
+
+def test_datashade_count_cat_no_change_inplace():
+    # Test for https://github.com/holoviz/holoviews/issues/6324
+    df = pd.DataFrame({"x": range(3), "y": range(3), "c": list(map(str, range(3)))})
+    assert df["c"].dtype == "object"
+    op = datashade(Points(df), aggregator=ds.count_cat("c"))
+    render(op)
+    # Should not convert to category dtype
+    assert df["c"].dtype == "object"
