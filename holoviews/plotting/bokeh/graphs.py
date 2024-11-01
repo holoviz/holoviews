@@ -312,7 +312,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         layout = StaticLayoutProvider(graph_layout=layout)
         self.handles['layout_source'] = layout
 
-        return tuple(*sources, layout), properties
+        return (*sources, layout), properties
 
     def _reorder_renderers(self, plot, renderer, mapping):
         "Reorders renderers based on the defined draw order"
