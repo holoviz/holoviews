@@ -1305,32 +1305,19 @@ class DatashaderRasterizeTests(ComparisonTestCase):
             'cat': ['a', 'a', '', 'b', 'b', ''],
         })
         path = Path(df, ['x', 'y'])
-        rasterized = rasterize(  # noqa
+        rasterized = rasterize(
             path, aggregator=ds.count_cat('cat'), dynamic=False,
             width=4, height=4, pixel_ratio=1,
         )
-        # x = np.array([1.25, 1.75, 2.25, 2.75])
-        # y = np.array([0.125, 0.375, 0.625, 0.875])
-        # array = np.array(
-        #     [[[1, 0],
-        #         [0, 0],
-        #         [0, 0],
-        #         [0, 1]],
-        #     [[1, 0],
-        #         [0, 0],
-        #         [0, 0],
-        #         [0, 1]],
-        #     [[1, 0],
-        #         [0, 0],
-        #         [0, 0],
-        #         [0, 1]],
-        #     [[1, 0],
-        #         [0, 0],
-        #         [0, 0],
-        #         [0, 1]],
-        # ])
-        # expected = ImageStack((x, y, array), vdims=['a', 'b'])
-        # self.assertEqual(rasterized, expected)
+        expected = xr.DataArray(
+            coords={
+                "y": [0.125, 0.375, 0.625, 0.875],
+                "x": [1.25, 1.75, 2.25, 2.75],
+                "cat": ["a", "b"],
+            },
+            data=4 * [[[1, 0], [0, 0], [0, 0], [0, 1]]]
+        )
+        xr.testing.assert_equal(rasterized.data, expected)
 
 
 @pytest.mark.parametrize("agg_input_fn,index_col",

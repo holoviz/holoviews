@@ -449,7 +449,7 @@ class aggregate(LineAggregationOperation):
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
 
-        if isinstance(agg_fn, ds.count_cat):
+        if isinstance(agg_fn, ds.by):
             col = agg_fn.column
             if '' in agg.coords[col]:
                 agg = agg.drop_sel(**{col: ''})
