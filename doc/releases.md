@@ -1,5 +1,52 @@
 # Releases
 
+## Version 1.20
+
+### Version 1.20.0
+
+**November 1, 2024**
+
+This release brings several enhancements and bug fixes.
+Many thanks to the new contributors @grapesmoker, @arafune, and @LecrisUT, as well as the returning contributors @ahuang11, @droumis, @jbednar, @maximlt, @philippjfr, and @hoxbro.
+
+### Enhancements
+
+- De-parameterize the options `Keywords` objects ([#6314](https://github.com/holoviz/holoviews/pull/6314))
+- Freeze models while updating plot(s) ([#6315](https://github.com/holoviz/holoviews/pull/6315))
+- Support hit-tested group-wise wheel zoom renderers for `subcoordinate_y` ([#6277](https://github.com/holoviz/holoviews/pull/6277))
+- Adds Bokeh 3.5 enhancements to RangeToolLink ([#6341](https://github.com/holoviz/holoviews/pull/6341))
+- Add MultiAxisTap stream ([#6374](https://github.com/holoviz/holoviews/pull/6374))
+- Add `sublabel_index` and `sublabel_skip` option for matplotlib backend ([#6375](https://github.com/holoviz/holoviews/pull/6375))
+- Handle datetimes and empty selections better for inspect operations ([#6377](https://github.com/holoviz/holoviews/pull/6377))
+- Improve following behavior when streaming ([#6318](https://github.com/holoviz/holoviews/pull/6318))
+- Enh: Add `Scalebar` support for `subcoordinate_y` plots ([#6403](https://github.com/holoviz/holoviews/pull/6403), [#6420](https://github.com/holoviz/holoviews/pull/6420))
+- Support async callbacks for `popup` ([#6390](https://github.com/holoviz/holoviews/pull/6390))
+- Add `popup` position and anchor ([#6414](https://github.com/holoviz/holoviews/pull/6414))
+
+### Bug fixes
+
+- Wrap `popup` in `set_curdoc` ([#6337](https://github.com/holoviz/holoviews/pull/6337))
+- Fixes `popup` being invisible forever after closing once ([#6347](https://github.com/holoviz/holoviews/pull/6347))
+- Disable simple id in notebook ([#6367](https://github.com/holoviz/holoviews/pull/6367))
+- Ensure `pixel_ratio` is applied when computing resampling coordinates ([#6373](https://github.com/holoviz/holoviews/pull/6373))
+- Add support for rendering `HLine`, `VLine` and `Span` on `multi_y` ([#6376](https://github.com/holoviz/holoviews/pull/6376))
+- Drop the `z` dimension from `ImageStack` `DataArray` before shading ([#6378](https://github.com/holoviz/holoviews/pull/6378))
+- Improve datetime support for continuous `hv.Bars` ([#6365](https://github.com/holoviz/holoviews/pull/6365))
+- Don't clone Span in `HoverTool` ([#6387](https://github.com/holoviz/holoviews/pull/6387))
+- Ensure proper cleanup of stream subscribers ([#6389](https://github.com/holoviz/holoviews/pull/6389))
+- Handle datetime selection in the `cuDF` interface ([#6407](https://github.com/holoviz/holoviews/pull/6407))
+- Fix `popup` positioning on polygons ([#6411](https://github.com/holoviz/holoviews/pull/6411))
+- Fix a problem where linked selections were resulting in repeated columns ([#6336](https://github.com/holoviz/holoviews/pull/6336))
+- Ensure streams are correctly mapped to plots ([#6415](https://github.com/holoviz/holoviews/pull/6415))
+- Fix `Bars` width for small discrete differences on the x-axis ([#6428](https://github.com/holoviz/holoviews/pull/6428))
+- Documentation fixes ([#6392](https://github.com/holoviz/holoviews/pull/6392), [#6421](https://github.com/holoviz/holoviews/pull/6421))
+- Fix rasterizing a `Path` where categorical values include empty strings ([#6429](https://github.com/holoviz/holoviews/pull/6429))
+
+### Compatibility
+
+- Handle `DeprecationWarning` from Pandas ([#6346](https://github.com/holoviz/holoviews/pull/6346), [#6391](https://github.com/holoviz/holoviews/pull/6391))
+- Compatibility with Ibis 9.5 ([#6371](https://github.com/holoviz/holoviews/pull/6371)), Python 3.13 ([#6383](https://github.com/holoviz/holoviews/pull/6383)), cuDF 24.10 ([#6409](https://github.com/holoviz/holoviews/pull/6409)), and Matplotlib 3.10 ([#6431](https://github.com/holoviz/holoviews/pull/6431))
+
 ## Version 1.19
 
 ### Version 1.19.1
