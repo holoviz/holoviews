@@ -318,13 +318,17 @@ class aggregate(LineAggregationOperation):
                 df = pd.concat(paths)
         else:
             df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
-        if category and df[category].dtype.name != 'category':
-            df[category] = df[category].astype('category')
 
         is_custom = lazy_isinstance(df, "dask.dataframe:DataFrame") or cuDFInterface.applies(df)
-        if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-               df[d.name].dtype.kind in ["M", "u"] for d in (x, y)):
+        category_check = category and df[category].dtype.name != 'category'
+        if (
+            category_check or
+            any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
+            df[d.name].dtype.kind in ["M", "u"] for d in (x, y))
+        ):
             df = df.copy()
+        if category_check:
+            df[category] = df[category].astype('category')
 
         for d in (x, y):
             vals = df[d.name]
