@@ -261,8 +261,8 @@ The first positional argument to the Dataset.select method is expected to be a
 holoviews.util.transform.dim expression. Use the selection_specs keyword
 argument to specify a selection specification""")
 
-        selection = {dim: sel for dim, sel in selection.items()
-                     if dim in [*self.dimensions('ranges'), 'selection_mask']}
+        sel_dims = (*self.dimensions('ranges'), 'selection_mask')
+        selection = {dim: sel for dim, sel in selection.items() if dim in sel_dims}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or (not selection and not selection_expr)):
             return self

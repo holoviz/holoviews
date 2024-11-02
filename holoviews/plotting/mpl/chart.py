@@ -225,7 +225,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
         xs = element.dimension_values(0)
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
-        return tuple([xs, *ys]), style, {}
+        return (xs, *ys), style, {}
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         fill_fn = ax.fill_betweenx if self.invert_axes else ax.fill_between

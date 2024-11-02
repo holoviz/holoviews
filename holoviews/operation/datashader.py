@@ -1233,7 +1233,7 @@ class shade(LinkableOperation):
         Cast uint32 xarray DataArray to 4 uint8 channels.
         """
         new_array = img.values.view(dtype=np.uint8).reshape((*img.shape, 4))
-        coords = dict([*img.coords.items(), ('band', [0, 1, 2, 3])])
+        coords = dict(img.coords, band=[0, 1, 2, 3])
         return xr.DataArray(new_array, coords=coords, dims=(*img.dims, 'band'))
 
 
