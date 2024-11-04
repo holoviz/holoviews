@@ -6,7 +6,7 @@
 
 **November 1, 2024**
 
-This release brings several enhancements and bug fixes.
+This release focuses on performance improvement, enhancing streaming support, and refining popup functionality, along with several bug fixes.
 Many thanks to the new contributors @grapesmoker, @arafune, and @LecrisUT, as well as the returning contributors @ahuang11, @droumis, @jbednar, @maximlt, @philippjfr, and @hoxbro.
 
 ### Enhancements
