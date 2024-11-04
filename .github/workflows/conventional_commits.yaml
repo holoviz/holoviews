@@ -30,6 +30,7 @@ jobs:
             feat
             fix
             perf
+            refactor
             test
             type
           scopes: |
