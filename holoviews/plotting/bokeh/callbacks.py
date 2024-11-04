@@ -519,7 +519,10 @@ class PointerXYCallback(Callback):
             msg['y'] = convert_timestamp(msg['y'])
 
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
-            msg['x'] = x_range.factors[int(msg['x'])]
+            try:
+                msg['x'] = x_range.factors[int(msg['x'])]
+            except IndexError:
+                pass
         elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
