@@ -181,6 +181,35 @@ pixi run build-pip
 pixi run build-conda
 ```
 
+## Making a pull requests
+
+Once you have finished your code changes, you are ready to make a pull request.
+A pull request is how code from your local repository becomes available to maintainers to review
+and then merged into the project. To submit a pull request:
+
+1.  Navigate to your repository on GitHub.
+1.  Click on the `Compare & pull request` button.
+1.  You can then look at the commits and file changes to make sure everything looks
+    okay one last time.
+1.  Write a descriptive title that includes prefixes. HoloViews uses a convention for title
+    prefixes. The following prefixes are used:
+
+        * build: Changes that affect the build system
+        * chore: Changes that are not user-facing
+        * ci: Changes to CI configuration files and scripts
+        * compat: Compatibility with upstream packages
+        * docs: Documentation only changes
+        * enh: An enhancement to existing feature
+        * feat: A new feature
+        * fix: A bug fix
+        * perf: A code change that improves performance
+        * refactor: A code change that neither fixes a bug nor adds a feature
+        * test: Adding missing tests or correcting existing tests
+        * type: Type annotations
+
+1.  Write a description of your changes in the.
+1.  Click `Create Pull Request`.
+
 ## Continuous Integration
 
 Every push to the `main` branch or any PR branch on GitHub automatically triggers a test build with [GitHub Actions](https://github.com/features/actions).
