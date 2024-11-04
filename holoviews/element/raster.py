@@ -573,6 +573,17 @@ class ImageStack(Image):
                 vdims = [Dimension(key) for key in data.keys() if key not in _kdims]
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
+    def select(self, selection_specs=None, **selection):
+        select_el = super().select(selection_specs, **selection)
+        data = select_el.data
+        # isinstance(data, xr.DataArray) and len(data.indexes) == 3
+        if len(getattr(data, "indexes", ())) == 3:
+            dim = list(data.indexes)[2]
+            if dim in selection:
+                select_el.data = data.sel(**{dim: selection[dim]})
+                select_el.vdims = list(map(Dimension, selection[dim]))
+        return select_el
+
 
 class RGB(Image):
     """
