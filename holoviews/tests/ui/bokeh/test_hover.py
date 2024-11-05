@@ -1,10 +1,8 @@
-import datashader as ds
 import numpy as np
 import pandas as pd
 import pytest
 
 import holoviews as hv
-from holoviews.operation.datashader import rasterize
 
 from .. import expect, wait_until
 
@@ -230,6 +228,10 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_rasterize_server_hover(serve_hv):
+    import datashader as ds
+
+    from holoviews.operation.datashader import rasterize
+
     df = pd.DataFrame({
         "x": seed.normal(0, 1, 100),
         "y": seed.normal(0, 1, 100),
