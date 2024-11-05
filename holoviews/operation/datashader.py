@@ -1691,29 +1691,34 @@ class SpreadingOperation(LinkableOperation):
 
         array = self._apply_spreading(data)
         if "selector_columns" in getattr(element.data, "attrs", ()):
-            index = element.data["__index__"].copy()
+            new_data = element.data.copy()
+            index = new_data["__index__"].copy()
             mask = np.arange(index.size).reshape(index.shape)
             mask[index == -1] = 0
             index.data = mask
             spread_index = self._apply_spreading(index, how="source")
             sel_data = {
-                sc: element.data[sc].data.ravel()[spread_index].reshape(index.shape)
-                for sc in element.data.attrs["selector_columns"]
+                sc: new_data[sc].data.ravel()[spread_index].reshape(index.shape)
+                for sc in new_data.attrs["selector_columns"]
             }
 
-            element = element.clone()
             if isinstance(element, RGB):
                 img = datashade.uint32_to_uint8(array.data)[::-1]
                 for idx, k, in enumerate("RGBA"):
-                    element.data[k].data = img[:, :, idx]
+                    new_data[k].data = img[:, :, idx]
             elif isinstance(element, Image):
-                element.data[element.vdims[0].name].data = array
+                new_data[element.vdims[0].name].data = array
             else:
                 msg = "ImageStack currently does not support spreading with selector_columns"
                 raise NotImplementedError(msg)
 
             for k, v in sel_data.items():
-                element.data[k].data = v
+                new_data[k].data = v
+
+            # TODO: Investigate why this does not work
+            # element = element.clone(data=new_data, kdims=element.vdims.copy(), vdims=element.vdims.copy())
+            element = element.clone()
+            element.data = new_data
             return element
 
         kwargs = {}
