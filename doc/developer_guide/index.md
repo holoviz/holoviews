@@ -207,7 +207,7 @@ and then merged into the project. To submit a pull request:
         * test: Adding missing tests or correcting existing tests
         * type: Type annotations
 
-1.  Write a description of your changes in the.
+1.  Write a description of your changes in the `Write` tab, and check if everything looks ok in the `Preview` tab.
 1.  Click `Create Pull Request`.
 
 ## Continuous Integration
