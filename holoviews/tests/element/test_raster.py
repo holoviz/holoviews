@@ -51,13 +51,10 @@ class TestRGB(ComparisonTestCase):
         xr = pytest.importorskip('xarray')
         xr_dataset = xr.DataArray(
             data=self.rgb_array,
-            coords={
-                "y": [0, 1, 2],
-                "x": [0, 1, 2],
-                "band": list("RGBA")
-            }
+            coords={"y": [0, 1, 2], "x": [0, 1, 2], "band": list("RGBA")}
         ).to_dataset(dim="band")
         rgb = RGB(xr_dataset)
+        assert str(rgb.alpha_dimension) in xr_dataset.data_vars
         assert len(rgb.vdims) == 4
 
     def test_construct_from_dict_with_alpha(self):
