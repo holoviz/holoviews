@@ -1,4 +1,5 @@
 import datetime as dt
+from contextlib import suppress
 from unittest import SkipTest, skipIf
 
 import colorcet as cc
@@ -1408,6 +1409,26 @@ def test_datashade_selector(point_plot, sel_fn):
     img_count = datashade(point_plot, **inputs)
     for n in "RGBA":
         np.testing.assert_array_equal(img[n], img_count[n], err_msg=n)
+
+
+@pytest.mark.parametrize("op_fn", (rasterize, datashade))
+def test_spread_selector(point_plot, op_fn):
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    img = op_fn(point_plot, selector=ds.first("val"), **inputs)
+    spread_img = spread(img)
+
+    with suppress(AssertionError): # We expect them to be different
+        xr.testing.assert_equal(spread_img.data, img.data)
+        raise ValueError("The spread should not be equal to the original image")
+
+    with suppress(AssertionError): # We expect them to be different
+        np.testing.assert_array_equal(spread_img.data["__index__"], img.data["__index__"])
+        raise ValueError("The spread should not be equal to the original image")
+
+    vdim = spread_img.vdims[-1].name  # Last one as it is alpha for datashade
+    vdim_nan = spread_img.data[vdim] == 0
+    index_nan = spread_img.data["__index__"] == -1
+    np.testing.assert_array_equal(vdim_nan, index_nan)
 
 
 def test_rasterize_with_datetime_column():
