@@ -1389,6 +1389,26 @@ def test_rasterize_selector(point_plot, sel_fn):
     img_count = rasterize(point_plot, **rast_input)
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
+@pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
+def test_datashade_selector(point_plot, sel_fn):
+    datashade_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
+    img = datashade(point_plot, selector=sel_fn("val"), **datashade_input)
+
+    # RGBA is from the aggregator
+    assert list(img.data) == [*"RGBA", "__index__", "s", "val", "cat"]
+    assert list(img.vdims) == [*map(Dimension, "RGBA")]  # Only the RGBA send to the frontend
+
+    # The output for the selector should be equal to the output for the aggregator using
+    # ds.where
+    img_agg = rasterize(point_plot, aggregator=ds.where(sel_fn("val")), **datashade_input)
+    for c in ["s", "val", "cat"]:
+        np.testing.assert_array_equal(img.data[c], img_agg.data[c], err_msg=c)
+
+    # Checking the RGBA is also the same
+    img_count = datashade(point_plot, **datashade_input)
+    for n in "RGBA":
+        np.testing.assert_array_equal(img[n], img_count[n], err_msg=n)
+
 
 def test_rasterize_with_datetime_column():
     n = 4
