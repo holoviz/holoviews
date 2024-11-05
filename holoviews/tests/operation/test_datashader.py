@@ -1372,8 +1372,8 @@ def test_rasterize_summerize(point_plot):
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_rasterize_selector(point_plot, sel_fn):
-    rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
-    img = rasterize(point_plot, selector=sel_fn("val"), **rast_input)
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    img = rasterize(point_plot, selector=sel_fn("val"), **inputs)
 
     # Count is from the aggregator
     assert list(img.data) == ["Count", "__index__", "s", "val", "cat"]
@@ -1381,18 +1381,18 @@ def test_rasterize_selector(point_plot, sel_fn):
 
     # The output for the selector should be equal to the output for the aggregator using
     # ds.where
-    img_agg = rasterize(point_plot, aggregator=ds.where(sel_fn("val")), **rast_input)
+    img_agg = rasterize(point_plot, aggregator=ds.where(sel_fn("val")), **inputs)
     for c in ["s", "val", "cat"]:
         np.testing.assert_array_equal(img.data[c], img_agg.data[c], err_msg=c)
 
     # Checking the count is also the same
-    img_count = rasterize(point_plot, **rast_input)
+    img_count = rasterize(point_plot, **inputs)
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_datashade_selector(point_plot, sel_fn):
-    datashade_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
-    img = datashade(point_plot, selector=sel_fn("val"), **datashade_input)
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    img = datashade(point_plot, selector=sel_fn("val"), **inputs)
 
     # RGBA is from the aggregator
     assert list(img.data) == [*"RGBA", "__index__", "s", "val", "cat"]
@@ -1400,12 +1400,12 @@ def test_datashade_selector(point_plot, sel_fn):
 
     # The output for the selector should be equal to the output for the aggregator using
     # ds.where
-    img_agg = rasterize(point_plot, aggregator=ds.where(sel_fn("val")), **datashade_input)
+    img_agg = rasterize(point_plot, aggregator=ds.where(sel_fn("val")), **inputs)
     for c in ["s", "val", "cat"]:
         np.testing.assert_array_equal(img.data[c], img_agg.data[c], err_msg=c)
 
     # Checking the RGBA is also the same
-    img_count = datashade(point_plot, **datashade_input)
+    img_count = datashade(point_plot, **inputs)
     for n in "RGBA":
         np.testing.assert_array_equal(img[n], img_count[n], err_msg=n)
 
@@ -1430,11 +1430,11 @@ def test_datashade_selector_bad_column_name(point_data):
     assert "R" in point_data.columns
 
     point_plot = Points(point_data)
-    datashade_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
 
     msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
     with pytest.raises(ValueError, match=msg):
-        datashade(point_plot, selector=ds.min("val"), **datashade_input)
+        datashade(point_plot, selector=ds.min("val"), **inputs)
 
 
 class DatashaderSpreadTests(ComparisonTestCase):
