@@ -391,3 +391,10 @@ class TestBarPlot(TestBokehPlot):
         bars = Bars(df, kdims=["a", "b"], vdims=["c"]).opts(stacked=True)
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 0.8
+
+    def test_bar_narrow_non_monotonous_xvals(self):
+        # Tests regression: https://github.com/holoviz/hvplot/issues/1450
+        dic = {"ratio": [0.82, 1.11, 3, 6], "count": [1, 2, 1, 3]}
+        bars = Bars(dic, kdims=["ratio"], vdims=["count"])
+        plot = bokeh_renderer.get_plot(bars)
+        assert np.isclose(plot.handles["glyph"].width, 0.232)

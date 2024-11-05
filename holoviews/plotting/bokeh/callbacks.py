@@ -23,11 +23,6 @@ from panel.io.notebook import push_on_root
 from panel.io.state import set_curdoc, state
 from panel.pane import panel
 
-try:
-    from bokeh.models import XY, Panel
-except Exception:
-    Panel = XY = None
-
 from ...core.data import Dataset
 from ...core.options import CallbackError
 from ...core.util import (
@@ -73,7 +68,10 @@ from ...streams import (
     Tap,
 )
 from ...util.warnings import warn
-from .util import BOKEH_GE_3_3_0, convert_timestamp
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, convert_timestamp
+
+if BOKEH_GE_3_4_0:
+    from bokeh.models import XY, Panel as BokehPanel
 
 POPUP_POSITION_ANCHOR = {
     "top_right": "bottom_left",
@@ -595,7 +593,7 @@ class PopupMixin:
         stream = self.streams[0]
         if not getattr(stream, 'popup', None):
             return
-        elif Panel is None:
+        elif not BOKEH_GE_3_4_0:
             raise VersionError("Popup requires Bokeh >= 3.4")
 
         close_button = Button(label="", stylesheets=[r"""
@@ -623,7 +621,7 @@ class PopupMixin:
         """],
         css_classes=["popup-close-btn"])
         self._popup_position = stream.popup_position
-        self._panel = Panel(
+        self._panel = BokehPanel(
             position=XY(x=np.nan, y=np.nan),
             anchor=stream.popup_anchor or POPUP_POSITION_ANCHOR[self._popup_position],
             elements=[close_button],
