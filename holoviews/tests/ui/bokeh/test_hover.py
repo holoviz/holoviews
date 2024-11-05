@@ -1,11 +1,16 @@
+import datashader as ds
 import numpy as np
+import pandas as pd
 import pytest
 
 import holoviews as hv
+from holoviews.operation.datashader import rasterize
 
 from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
+
+seed = np.random.RandomState(42)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -221,3 +226,35 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     wait_until(lambda: expect(page.locator(".bk-Tooltip")).to_have_count(1), page=page)
 
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_tooltips_rasterize_server_hover(serve_hv):
+    df = pd.DataFrame({
+        "x": seed.normal(0, 1, 100),
+        "y": seed.normal(0, 1, 100),
+        "s": 1,
+        "val": 10,
+        "cat": "cat1",
+    })
+    img = rasterize(hv.Points(df), selector=ds.first("val")).opts(tools=["hover"])
+
+    page = serve_hv(img)
+    hv_plot = page.locator(".bk-events")
+    wait_until(lambda: expect(hv_plot).to_have_count(1), page=page)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over the plot, first time the hovertool only have null
+    # we then timeout and hover again to get hovertool with actual values
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    page.wait_for_timeout(100)
+
+    page.mouse.move(bbox["x"] + bbox["width"] / 4, bbox["y"] + bbox["height"] / 4)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
+    expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
