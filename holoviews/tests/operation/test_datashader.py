@@ -1372,7 +1372,7 @@ def test_rasterize_summerize(point_plot):
 
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
-def test_rasterize_selector(point_plot, sel_fn):
+def test_selector_rasterize(point_plot, sel_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = rasterize(point_plot, selector=sel_fn("val"), **inputs)
 
@@ -1391,7 +1391,7 @@ def test_rasterize_selector(point_plot, sel_fn):
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
-def test_datashade_selector(point_plot, sel_fn):
+def test_selector_datashade(point_plot, sel_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = datashade(point_plot, selector=sel_fn("val"), **inputs)
 
@@ -1412,7 +1412,7 @@ def test_datashade_selector(point_plot, sel_fn):
 
 
 @pytest.mark.parametrize("op_fn", (rasterize, datashade))
-def test_spread_selector(point_plot, op_fn):
+def test_selector_spread(point_plot, op_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = op_fn(point_plot, selector=ds.first("val"), **inputs)
     spread_img = spread(img)
@@ -1431,7 +1431,7 @@ def test_spread_selector(point_plot, op_fn):
     np.testing.assert_array_equal(vdim_nan, index_nan)
 
 
-def test_rasterize_with_datetime_column():
+def test_selector_rasterize_with_datetime_column():
     n = 4
     df = pd.DataFrame({
         "x": np.random.uniform(-180, 180, n),
@@ -1446,7 +1446,7 @@ def test_rasterize_with_datetime_column():
     assert img_agg.data["Timestamp"].dtype == np.dtype("datetime64[ns]")
 
 
-def test_datashade_selector_bad_column_name(point_data):
+def test_selector_datashade_bad_column_name(point_data):
     point_data = point_data.rename({"cat": "R"}, axis=1)
     assert "R" in point_data.columns
 
