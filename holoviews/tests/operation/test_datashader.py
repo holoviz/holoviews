@@ -1425,6 +1425,17 @@ def test_rasterize_with_datetime_column():
     assert img_agg.data["Timestamp"].dtype == np.dtype("datetime64[ns]")
 
 
+def test_datashade_selector_bad_column_name(point_data):
+    point_data = point_data.rename({"cat": "R"}, axis=1)
+    assert "R" in point_data.columns
+
+    point_plot = Points(point_data)
+    datashade_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+
+    msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
+    with pytest.raises(ValueError, match=msg):
+        datashade(point_plot, selector=ds.min("val"), **datashade_input)
+
 
 class DatashaderSpreadTests(ComparisonTestCase):
 
