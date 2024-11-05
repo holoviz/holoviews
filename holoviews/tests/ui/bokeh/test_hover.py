@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import pytest
 
@@ -8,11 +6,6 @@ import holoviews as hv
 from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
-
-
-def delay_rerun(*args):
-    time.sleep(2)
-    return True
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -208,11 +201,7 @@ def test_hover_mode(serve_hv, hover_mode):
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
     "hover_tooltip",
-    [
-        "Amplitude",
-        "@Amplitude",
-        ("Amplitude", "@Amplitude"),
-    ],
+    ["Amplitude", "@Amplitude", ("Amplitude", "@Amplitude")],
 )
 def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     amplitude_dim = hv.Dimension("Amplitude", unit="µV")
