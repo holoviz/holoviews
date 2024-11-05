@@ -1372,7 +1372,7 @@ def test_rasterize_summerize(point_plot):
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_rasterize_selector(point_plot, sel_fn):
-    rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
+    rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = rasterize(point_plot, selector=sel_fn("val"), **rast_input)
 
     # Count is from the aggregator
@@ -1391,7 +1391,7 @@ def test_rasterize_selector(point_plot, sel_fn):
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_datashade_selector(point_plot, sel_fn):
-    datashade_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
+    datashade_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = datashade(point_plot, selector=sel_fn("val"), **datashade_input)
 
     # RGBA is from the aggregator
