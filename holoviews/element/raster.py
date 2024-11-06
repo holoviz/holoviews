@@ -650,7 +650,7 @@ class RGB(Image):
         try:
             from PIL import Image
         except ImportError:
-            raise ImportError("RGB.load_image requires PIL (or Pillow).") from None
+            raise ImportError(f"{cls.__name__}.load_image requires PIL (or Pillow).") from None
 
         with open(filename, 'rb') as f:
             data = np.array(Image.open(f))
