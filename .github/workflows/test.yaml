@@ -66,7 +66,7 @@ jobs:
               - 'pixi.toml'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
-      - name: Set matrix option
+      - name: Set matrix
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
             OPTION=${{ github.event.inputs.target }}
@@ -77,30 +77,7 @@ jobs:
           else
             OPTION="default"
           fi
-          echo "MATRIX_OPTION=$OPTION" >> $GITHUB_ENV
-      - name: Set test matrix with 'default' option
-        if: env.MATRIX_OPTION == 'default'
-        run: |
-          MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-312"]
-          }')
-          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
-      - name: Set test matrix with 'full' option
-        if: env.MATRIX_OPTION == 'full'
-        run: |
-          MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-310", "test-311", "test-312"]
-          }')
-          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
-      - name: Set test matrix with 'downstream' option
-        if: env.MATRIX_OPTION == 'downstream'
-        run: |
-          MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest"],
-              "environment": ["test-311"]
-          }')
+          MATRIX=$(jq -c ".$OPTION" "${GITHUB_WORKSPACE}/.github/test-matrix.json")
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
   pixi_lock:
