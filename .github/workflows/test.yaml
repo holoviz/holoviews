@@ -77,6 +77,7 @@ jobs:
           else
             OPTION="default"
           fi
+          ls -l "${GITHUB_WORKSPACE}/.github/"
           MATRIX=$(jq -c ".$OPTION" "${GITHUB_WORKSPACE}/.github/test-matrix.json")
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
