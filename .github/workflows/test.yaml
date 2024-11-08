@@ -187,7 +187,7 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
-        if: ${{ matrix.environment }} == 'test-core'
+        if: ${{ matrix.environment == 'test-core' }}
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
       - name: Test Unit
