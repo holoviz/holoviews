@@ -7,6 +7,7 @@ import param
 from bokeh.model import DataModel
 from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
 from bokeh.models.dom import Div, Span, Styles, ValueOf
+from panel.io import hold
 
 from ...core.data import XArrayInterface
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
@@ -16,7 +17,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh, hold_policy
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
 
 
 class ServerHoverMixin:
@@ -83,12 +84,10 @@ class ServerHoverMixin:
             # https://github.com/bokeh/bokeh/issues/14123
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
-            if self.comm:  # Jupyter Notebook
-                with hold_policy(self.document, 'combine'):
-                    hover_model.update(**data_coords, **data_vars)
-                    self.push()
-            else:
+            with hold(self.document):
                 hover_model.update(**data_coords, **data_vars)
+                if self.comm:  # Jupyter Notebook
+                    self.push()
 
         hover_model.on_change("__xy__", on_change)
 
