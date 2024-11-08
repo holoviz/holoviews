@@ -112,19 +112,19 @@ class Renderer(Exporter):
     dpi = param.Integer(default=None, doc="""
         The render resolution in dpi (dots per inch)""")
 
-    fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
+    fig = param.Selector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
     fps = param.Number(default=20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['scrubber','widgets', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
-    mode = param.ObjectSelector(default='default',
+    mode = param.Selector(default='default',
                                 objects=['default', 'server'], doc="""
         Whether to render the object in regular or server mode. In server
         mode a bokeh Document will be returned which can be served as a
@@ -133,13 +133,13 @@ class Renderer(Exporter):
     size = param.Integer(default=100, doc="""
         The rendered size as a percentage size""")
 
-    widget_location = param.ObjectSelector(default=None, allow_None=True, objects=[
+    widget_location = param.Selector(default=None, allow_None=True, objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The position of the widgets relative to the plot.""")
 
-    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'], doc="""
+    widget_mode = param.Selector(default='embed', objects=['embed', 'live'], doc="""
         The widget mode determining whether frames are embedded or generated
         'live' when interacting with the widget.""")
 

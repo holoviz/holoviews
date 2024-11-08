@@ -228,7 +228,7 @@ class ImageStackPlot(RasterPlot):
 
     _plot_methods = dict(single='image_stack')
 
-    cnorm = param.ObjectSelector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
+    cnorm = param.Selector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     start_alpha = param.Integer(default=0, bounds=(0, 255))

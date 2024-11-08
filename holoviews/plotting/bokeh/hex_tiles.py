@@ -34,7 +34,7 @@ class hex_binning(Operation):
 
     min_count = param.Number(default=None)
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
+    orientation = param.Selector(default='pointy', objects=['flat', 'pointy'])
 
     def _process(self, element, key=None):
         gridsize, aggregator, orientation = self.p.gridsize, self.p.aggregator, self.p.orientation
@@ -115,7 +115,7 @@ class HexTilesPlot(ColorbarPlot):
       The display threshold before a bin is shown, by default bins with
       a count of less than 1 are hidden.""")
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
+    orientation = param.Selector(default='pointy', objects=['flat', 'pointy'],
                                        doc="""
       The orientation of hexagon bins. By default the pointy side is on top.""")
 

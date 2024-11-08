@@ -35,7 +35,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
-    invert_axes = param.ObjectSelector(default=False, doc="""
+    invert_axes = param.Selector(default=False, doc="""
         Inverts the axes of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
         adjoined plots when appropriate.""")
@@ -71,7 +71,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.Selector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
@@ -82,7 +82,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Ticks along x-axis specified as an integer, explicit list of
         tick locations, list of tuples containing the locations.""")
 
-    yaxis = param.ObjectSelector(default='left',
+    yaxis = param.Selector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing

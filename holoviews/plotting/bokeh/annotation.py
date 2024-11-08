@@ -470,7 +470,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
 
     width = param.Number(default=300)
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
 

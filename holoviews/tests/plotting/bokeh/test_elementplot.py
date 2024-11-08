@@ -1229,7 +1229,7 @@ class TestApplyHardBounds(TestBokehPlot):
 
         ChoiceStream = Stream.define(
             'Choice',
-            choice=param.ObjectSelector(default='set1', objects=['set1', 'set2'])
+            choice=param.Selector(default='set1', objects=['set1', 'set2'])
         )
         choice_stream = ChoiceStream()
         dmap = DynamicMap(curve_data, kdims=[], streams=[choice_stream])

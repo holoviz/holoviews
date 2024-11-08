@@ -326,7 +326,7 @@ class ViolinPlot(BoxWhiskerPlot):
     cut = param.Number(default=5, doc="""
         Draw the estimate to cut * bw from the extreme data points.""")
 
-    inner = param.ObjectSelector(objects=['box', 'quartiles', 'stick', None],
+    inner = param.Selector(objects=['box', 'quartiles', 'stick', None],
                                  default='box', doc="""
         Inner visual indicator for distribution values:
 

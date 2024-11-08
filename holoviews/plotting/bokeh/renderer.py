@@ -29,11 +29,11 @@ class BokehRenderer(Renderer):
     backend = param.String(default='bokeh', doc="The backend name.")
 
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto', 'png'], doc="""
+    fig = param.Selector(default='auto', objects=['html', 'json', 'auto', 'png'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['widgets', 'scrubber',
                                             None, 'gif', 'auto'], doc="""
         Output render multi-frame (typically animated) format. If

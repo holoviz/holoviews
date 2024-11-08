@@ -50,13 +50,13 @@ class MPLRenderer(Renderer):
     dpi=param.Integer(default=72, doc="""
         The render resolution in dpi (dots per inch)""")
 
-    fig = param.ObjectSelector(default='auto',
+    fig = param.Selector(default='auto',
                                objects=['png', 'svg', 'pdf', 'pgf',
                                         'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
@@ -65,7 +65,7 @@ class MPLRenderer(Renderer):
         Whether to enable interactive plotting allowing interactive
         plotting with explicitly calling show.""")
 
-    mode = param.ObjectSelector(default='default', objects=['default'])
+    mode = param.Selector(default='default', objects=['default'])
 
 
     mode_formats = {'fig':     ['png', 'svg', 'pdf', 'pgf', 'html', None, 'auto'],

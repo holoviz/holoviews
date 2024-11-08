@@ -856,7 +856,7 @@ class Compositor(param.Parameterized):
     values names of those matrices match 'R', 'G' and 'B'.
     """
 
-    mode = param.ObjectSelector(default='data',
+    mode = param.Selector(default='data',
                                 objects=['data', 'display'], doc="""
       The mode of the Compositor object which may be either 'data' or
       'display'.""")

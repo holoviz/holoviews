@@ -13,7 +13,7 @@ class SankeyPlot(GraphPlot):
     labels = param.ClassSelector(class_=(str, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
-    label_position = param.ObjectSelector(default='right',
+    label_position = param.Selector(default='right',
                                           objects=['left', 'right', 'outer', 'inner'],
                                           doc="""
         Whether node labels should be placed to the left, right, outer or inner.""")

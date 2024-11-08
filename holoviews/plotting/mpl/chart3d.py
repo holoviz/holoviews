@@ -37,21 +37,21 @@ class Plot3D(ColorbarPlot):
     labelled = param.List(default=['x', 'y', 'z'], doc="""
         Whether to plot the 'x', 'y' and 'z' labels.""")
 
-    projection = param.ObjectSelector(default='3d', objects=['3d'], doc="""
+    projection = param.Selector(default='3d', objects=['3d'], doc="""
         The projection of the matplotlib axis.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Whether to draw a grid in the figure.""")
 
-    xaxis = param.ObjectSelector(default='fixed',
+    xaxis = param.Selector(default='fixed',
                                  objects=['fixed', None], doc="""
         Whether and where to display the xaxis.""")
 
-    yaxis = param.ObjectSelector(default='fixed',
+    yaxis = param.Selector(default='fixed',
                                  objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
-    zaxis = param.ObjectSelector(default='fixed',
+    zaxis = param.Selector(default='fixed',
                                  objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
@@ -195,7 +195,7 @@ class SurfacePlot(Plot3D):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
-    plot_type = param.ObjectSelector(default='surface',
+    plot_type = param.Selector(default='surface',
                                      objects=['surface', 'wireframe',
                                               'contour'], doc="""
         Specifies the type of visualization for the Surface object.

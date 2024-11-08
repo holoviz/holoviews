@@ -1119,14 +1119,14 @@ class GenericElementPlot(DimensionedPlot):
     show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.Selector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None, True, False], doc="""
         Whether and where to display the xaxis.
         The "bare" options allow suppressing all axis labels, including ticks and xlabel.
         Valid options are 'top', 'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='left',
+    yaxis = param.Selector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None, True, False], doc="""
         Whether and where to display the yaxis.

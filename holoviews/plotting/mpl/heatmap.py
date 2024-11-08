@@ -240,7 +240,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
-    projection = param.ObjectSelector(default='polar', objects=['polar'])
+    projection = param.Selector(default='polar', objects=['polar'])
 
     _style_groups = ['annular', 'xmarks', 'ymarks']
 
