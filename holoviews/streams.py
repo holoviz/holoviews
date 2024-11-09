@@ -17,10 +17,14 @@ import pandas as pd
 import param
 
 from .core import util
+from .core.dtypes import datetime_types, gen_types
 from .core.ndmapping import UniformNdMapping
 
-# Types supported by Pointer derived streams
-pointer_types = (Number, str, tuple)+util.datetime_types
+
+@gen_types
+def pointer_types():
+    # Types supported by Pointer derived streams
+    yield from (Number, str, tuple, *datetime_types)
 
 POPUP_POSITIONS = [
     "top_right",

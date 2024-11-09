@@ -26,9 +26,17 @@ import numpy as np
 import pandas as pd
 import param
 from packaging.version import Version
-from pandas.core.arrays.masked import BaseMaskedArray
-from pandas.core.dtypes.dtypes import DatetimeTZDtype
-from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+
+from .dtypes import (
+    arraylike_types,
+    cftime_types,
+    datetime_types,
+    generator_types,  # noqa: F401
+    masked_types,
+    pandas_datetime_types,
+    pandas_timedelta_types,
+    timedelta_types,
+)
 
 # Python 2 builtins
 basestring = str
@@ -47,21 +55,6 @@ NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
 PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
 PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
 
-# Types
-generator_types = (zip, range, types.GeneratorType)
-pandas_datetime_types = (pd.Timestamp, DatetimeTZDtype, pd.Period)
-pandas_timedelta_types = (pd.Timedelta,)
-datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time, *pandas_datetime_types)
-timedelta_types = (np.timedelta64, dt.timedelta, *pandas_timedelta_types)
-arraylike_types = (np.ndarray, ABCSeries, ABCIndex, ABCExtensionArray)
-masked_types = (BaseMaskedArray,)
-
-try:
-    import cftime
-    cftime_types = (cftime.datetime,)
-    datetime_types += cftime_types
-except ImportError:
-    cftime_types = ()
 _STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
 
 anonymous_dimension_label = '_'

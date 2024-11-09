@@ -5,7 +5,17 @@ import param
 
 from ..core import Dimension, Element, Element2D
 from ..core.data import Dataset
-from ..core.util import datetime_types
+from ..core.dtypes import datetime_types, gen_types
+
+
+@gen_types
+def coord_types():
+    yield Number
+    yield from (Number, *datetime_types)
+
+@gen_types
+def label_types():
+    yield from (Number, str, *datetime_types)
 
 
 class VectorizedAnnotation(Dataset, Element2D):
@@ -123,7 +133,7 @@ class VLine(Annotation):
 
     group = param.String(default='VLine', constant=True)
 
-    x = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=coord_types, doc="""
        The x-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['x']
@@ -158,7 +168,7 @@ class HLine(Annotation):
 
     group = param.String(default='HLine', constant=True)
 
-    y = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=coord_types, doc="""
        The y-position of the HLine which make be numeric or a timestamp.""")
 
     __pos_params = ['y']
@@ -229,10 +239,10 @@ class VSpan(Annotation):
 
     group = param.String(default='VSpan', constant=True)
 
-    x1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
+    x1 = param.ClassSelector(default=0, class_=coord_types, allow_None=True, doc="""
        The start x-position of the VSpan which must be numeric or a timestamp.""")
 
-    x2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
+    x2 = param.ClassSelector(default=0, class_=coord_types, allow_None=True, doc="""
        The end x-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['x1', 'x2']
@@ -265,10 +275,10 @@ class HSpan(Annotation):
 
     group = param.String(default='HSpan', constant=True)
 
-    y1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
+    y1 = param.ClassSelector(default=0, class_=coord_types, allow_None=True, doc="""
        The start y-position of the VSpan which must be numeric or a timestamp.""")
 
-    y2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
+    y2 = param.ClassSelector(default=0, class_=coord_types, allow_None=True, doc="""
        The end y-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['y1', 'y2']
@@ -360,10 +370,10 @@ class Arrow(Annotation):
     specified as well as the arrow head style.
     """
 
-    x = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=coord_types, doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=coord_types, doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="Text associated with the arrow.")
@@ -430,10 +440,10 @@ class Text(Annotation):
     Draw a text annotation at the specified position with custom
     fontsize, alignment and rotation.
     """
-    x = param.ClassSelector(default=0, class_=(Number, str) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=label_types, doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, str) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=label_types, doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")
