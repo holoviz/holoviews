@@ -8,9 +8,6 @@ from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
-seed = np.random.RandomState(42)
-
-
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_list(serve_hv):
     hv_image = hv.Image(
@@ -227,14 +224,14 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_rasterize_server_hover(serve_hv):
+def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     import datashader as ds
 
     from holoviews.operation.datashader import rasterize
 
     df = pd.DataFrame({
-        "x": seed.normal(0, 1, 100),
-        "y": seed.normal(0, 1, 100),
+        "x": rng.normal(0, 1, 100),
+        "y": rng.normal(0, 1, 100),
         "s": 1,
         "val": 10,
         "cat": "cat1",
