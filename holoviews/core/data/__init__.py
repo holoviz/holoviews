@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from functools import wraps
 
 import numpy as np
-import pandas as pd  # noqa
 import param
 from param.parameterized import ParameterizedMetaclass
 
