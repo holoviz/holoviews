@@ -1729,9 +1729,9 @@ class SpreadingOperation(LinkableOperation):
             mask = np.arange(index.size).reshape(index.shape)
             mask[index == -1] = 0
             index.data = mask
-            spread_index = self._apply_spreading(index, how="source")
+            index = self._apply_spreading(index, how="source")
             sel_data = {
-                sc: new_data[sc].data.ravel()[spread_index].reshape(index.shape)
+                sc: new_data[sc].data.ravel()[index].reshape(index.shape)
                 for sc in new_data.attrs["selector_columns"]
             }
 
@@ -1742,7 +1742,7 @@ class SpreadingOperation(LinkableOperation):
             elif isinstance(element, Image):
                 new_data[element.vdims[0].name].data = array
             else:
-                msg = "ImageStack currently does not support spreading with selector_columns"
+                msg = f"{type(element).__name__} currently does not support spreading with selector_columns"
                 raise NotImplementedError(msg)
 
             for k, v in sel_data.items():

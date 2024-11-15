@@ -79,6 +79,8 @@ class ServerHoverMixin:
         )
 
         def on_change(attr, old, new):
+            if np.isinf(new).all():
+                return
             # Uses dims as that is what order the data is
             data_sel = self._hover_data.sel(**dict(zip(self._hover_data.dims, new)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
