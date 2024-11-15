@@ -240,10 +240,22 @@ class LineAggregationOperation(AggregationOperation):
 
 
 class AggState(enum.Enum):
-    AGG = 0  # Only aggregator
-    AGG_BY = 1  # Only aggregator, where the aggregator is ds.by
-    SEL = 2  # Selector and aggregator
-    SEL_BY = 3  # Selector and aggregator, where the aggregator is ds.by
+    AGG_ONLY = 0  # Only aggregator
+    AGG_BY = 1  # Aggregator where the aggregator is ds.by
+    AGG_SEL = 2  # Selector and aggregator
+    AGG_SEL_BY = 3  # Selector and aggregator, where the aggregator is ds.by
+
+    def get_state(agg_fn, sel_fn):
+        if isinstance(agg_fn, ds.by):
+            return AggState.AGG_SEL_BY if sel_fn else AggState.AGG_BY
+        else:
+            return AggState.AGG_SEL if sel_fn else AggState.AGG_ONLY
+
+    def has_sel(state):
+        return state in (AggState.AGG_SEL, AggState.AGG_SEL_BY)
+
+    def has_by(state):
+        return state in (AggState.AGG_BY, AggState.AGG_SEL_BY)
 
 
 class aggregate(LineAggregationOperation):
@@ -399,12 +411,8 @@ class aggregate(LineAggregationOperation):
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
 
-        if isinstance(agg_fn, ds.by):
-            expr_state = AggState.SEL_BY if sel_fn else AggState.AGG_BY
-        else:
-            expr_state = AggState.SEL if sel_fn else AggState.AGG
-
-        if expr_state in (AggState.SEL, AggState.SEL_BY):
+        expr_state = AggState.get_state(agg_fn, sel_fn)
+        if AggState.has_sel(expr_state):
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
@@ -419,12 +427,12 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if expr_state in (AggState.AGG, AggState.SEL):
+        if not AggState.has_by(expr_state):
             return self.p.element_type(agg, **params)
         elif expr_state == AggState.AGG_BY:
             params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
-        elif expr_state == AggState.SEL_BY:
+        elif expr_state == AggState.AGG_SEL_BY:
             params['vdims'] = [d for d in agg.data_vars if d not in agg.attrs["selector_columns"]]
             return ImageStack(agg, **params)
 
@@ -439,14 +447,14 @@ class aggregate(LineAggregationOperation):
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
 
         is_where_index = DATASHADER_GE_0_15_1 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
-        is_summary_index = agg_state in (AggState.SEL, AggState.SEL_BY)
+        is_summary_index = AggState.has_sel(agg_state)
         if is_where_index or is_summary_index:
             if is_where_index:
                 index = agg.data
                 agg = agg.to_dataset(name="__index__")
             else:  # summary index
                 index = agg["__index__"].data
-                if agg_state == AggState.SEL_BY:
+                if agg_state == AggState.AGG_SEL_BY:
                     main_dim = next(k for k in agg if k != "__index__")
                     # Taking values from the main dimension expanding it to
                     # a new dataset
