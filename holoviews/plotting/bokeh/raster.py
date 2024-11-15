@@ -81,8 +81,7 @@ class ServerHoverMixin:
         def on_change(attr, old, new):
             if np.isinf(new).all():
                 return
-            # Uses dims as that is what order the data is
-            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.dims, new)), method="nearest").to_dict()
+            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
             # https://github.com/bokeh/bokeh/issues/14123
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
