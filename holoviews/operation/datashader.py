@@ -1333,6 +1333,8 @@ class shade(LinkableOperation):
             # DataArray, either by selecting the singular value
             # dimension or by adding a z-dimension
             kdims = [kdim.name for kdim in kdims]
+            if sel_cols := array.attrs.get("selector_columns"):
+                array = array.drop(sel_cols)
             if not element.interface.packed(element):
                 if len(vdim) == 1:
                     array = array[vdim[0].name]
