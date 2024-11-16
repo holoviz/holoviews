@@ -39,6 +39,7 @@ from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 MPL_VERSION = Version(mpl.__version__).release
 MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)
 MPL_GE_3_9_0 = MPL_VERSION >= (3, 9, 0)
+MPL_GE_3_10_0 = MPL_VERSION >= (3, 10, 0)
 
 
 def is_color(color):

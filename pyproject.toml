@@ -126,6 +126,8 @@ filterwarnings = [
     "ignore: Jitify is performing a one-time only warm::cupy", # OK,
     # 2024-10
     "ignore::ResourceWarning",
+    # 2024-11
+    "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
 ]
 
 [tool.coverage]
