@@ -40,7 +40,7 @@ fill_properties = fill_base_properties + [f'{prefix}_{prop}'
                                           for prop in fill_base_properties
                                           for prefix in property_prefixes]
 
-border_properties = ['border_' + prop for prop in line_base_properties + ['radius']]
+border_properties = ['border_' + prop for prop in [*line_base_properties, 'radius']]
 
 hatch_properties = ['hatch_color', 'hatch_scale', 'hatch_weight',
                     'hatch_extra', 'hatch_pattern', 'hatch_alpha']
@@ -146,7 +146,7 @@ def validate(style, value, scalar=False):
     validator = get_validator(style)
     if validator is None:
         return None
-    if isinstance(value, arraylike_types+(list,)):
+    if isinstance(value, (*arraylike_types, list)):
         if scalar:
             return False
         return all(validator(v) for v in value)

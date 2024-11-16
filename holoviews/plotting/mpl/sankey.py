@@ -44,7 +44,7 @@ class SankeyPlot(GraphPlot):
 
     filled = True
 
-    style_opts = GraphPlot.style_opts + ['label_text_font_size']
+    style_opts = [*GraphPlot.style_opts, 'label_text_font_size']
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         """

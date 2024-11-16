@@ -108,8 +108,8 @@ class RoundTripTests(ComparisonTestCase):
         self.assertIsInstance(poly.data.geometry.dtype, PolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
-        expected = Polygons([{'x': xs+[1], 'y': ys+[2], 'z': 0},
-                             {'x': [3]+xs, 'y': [7]+ys, 'z': 1}],
+        expected = Polygons([{'x': [*xs, 1], 'y': [*ys, 2], 'z': 0},
+                             {'x': [3, *xs], 'y': [7, *ys], 'z': 1}],
                             ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
 

@@ -253,7 +253,7 @@ class ImageInterface(GridInterface):
         if len(samples[0]) == 1:
             select = {dataset.kdims[0].name: [s[0] for s in samples]}
             return tuple(dataset.select(**select).columns().values())
-        return [c+(dataset.data[dataset._coord2matrix(c)],) for c in samples]
+        return [(*c, dataset.data[dataset._coord2matrix(c)]) for c in samples]
 
 
     @classmethod

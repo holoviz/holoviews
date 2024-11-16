@@ -26,7 +26,7 @@ class TestOptsCompleter(IPTestCase):
                 ['styleoptC1', 'styleoptC2'])}
 
         self.compositor_defs = {}
-        self.all_keys = sorted(self.completions.keys()) + ['style(', 'plot[', 'norm{']
+        self.all_keys = [*sorted(self.completions.keys()), "style(", "plot[", "norm{"]
 
         super().setUp()
 

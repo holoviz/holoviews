@@ -39,7 +39,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
     _batched_style_opts = line_properties
 
     def _element_transform(self, transform, element, ranges):
@@ -189,7 +189,7 @@ class ContourPlot(PathPlot):
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     _color_style = 'line_color'
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
 
     def __init__(self, *args, **params):
         super().__init__(*args, **params)

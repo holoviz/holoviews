@@ -145,7 +145,7 @@ def compute_overlayable_zorders(obj, path=None):
     """
     if path is None:
         path = []
-    path = path+[obj]
+    path = [*path, obj]
     zorder_map = defaultdict(list)
 
     # Process non-dynamic layers
@@ -157,7 +157,7 @@ def compute_overlayable_zorders(obj, path=None):
             for el in obj.values():
                 if isinstance(el, CompositeOverlay):
                     for k, v in compute_overlayable_zorders(el, path).items():
-                        zorder_map[k] += v + [obj]
+                        zorder_map[k] += [*v, obj]
                 else:
                     zorder_map[0] += [obj, el]
         elif obj not in zorder_map[0]:

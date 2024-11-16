@@ -23,7 +23,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     style_opts = base_properties + line_properties + ['cmap']
 
     _allow_implicit_categories = False
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
     _plot_methods = dict(single='segment')
 
     def get_data(self, element, ranges, style):
@@ -49,7 +49,7 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
                   ['cmap'])
 
     _allow_implicit_categories = False
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
     _plot_methods = dict(single='quad')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'

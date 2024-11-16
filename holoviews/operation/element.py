@@ -1093,7 +1093,7 @@ class interpolate_curve(Operation):
         xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x, dvals)
         if is_datetime:
             xs = xs.astype(dt_type)
-        return element.clone((xs,)+dvals)
+        return element.clone((xs, *dvals))
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
@@ -1180,7 +1180,7 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, np.str_, np.object_)+datetime_types
+        types = (str, np.str_, np.object_, *datetime_types)
         dims = [d for d in element.dimensions()
                 if _is_number(element.range(d)[0]) and
                 not issubclass(element.get_dimension_type(d), types)]

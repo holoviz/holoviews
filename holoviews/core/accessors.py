@@ -56,9 +56,7 @@ class AccessorPipelineMeta(type):
 
                     if isinstance(result, Dataset):
                         result._pipeline = inst_pipeline.instance(
-                            operations=inst_pipeline.operations + [
-                                init_op, call_op
-                            ],
+                            operations=[*inst_pipeline.operations, init_op, call_op],
                             output_type=type(result),
                         )
                     elif isinstance(result, MultiDimensionalMapping):
@@ -69,9 +67,7 @@ class AccessorPipelineMeta(type):
                                 args=[key],
                             )
                             element._pipeline = inst_pipeline.instance(
-                                operations=inst_pipeline.operations + [
-                                    init_op, call_op, getitem_op
-                                ],
+                                operations=[*inst_pipeline.operations, init_op, call_op, getitem_op],
                                 output_type=type(result),
                             )
             finally:
@@ -431,7 +427,7 @@ class Redim(metaclass=AccessorPipelineMeta):
             if renames:
                 data = obj.interface.redim(obj, renames)
             transform = self._create_expression_transform(kdims, vdims, list(renames.values()))
-            transforms = obj._transforms + [transform]
+            transforms = [*obj._transforms, transform]
             clone = obj.clone(data, kdims=kdims, vdims=vdims, transforms=transforms)
             if self._obj.dimensions(label='name') == clone.dimensions(label='name'):
                 # Ensure that plot_id is inherited as long as dimension

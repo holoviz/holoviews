@@ -767,7 +767,7 @@ class OptionTree(AttrTree):
         # Try to get a cache hit in the backend lookup cache
         backend = backend or Store.current_backend
         cache = Store._lookup_cache.get(backend, {})
-        cache_key = opts_spec+(group, defaults, id(self.root))
+        cache_key = (*opts_spec, group, defaults, id(self.root))
         if cache_key in cache:
             return cache[cache_key]
 
@@ -1344,7 +1344,7 @@ class Store:
             for option in new_options:
                 if option not in cls.registry[backend][component].style_opts:
                     plot_class = cls.registry[backend][component]
-                    plot_class.style_opts = sorted(plot_class.style_opts+[option])
+                    plot_class.style_opts = sorted([*plot_class.style_opts, option])
         cls._options[backend][component.name] = Options(
             'style', merge_keywords=True, allowed_keywords=new_options
         )
@@ -1592,7 +1592,7 @@ class StoreOptions:
                 error_key = (error.invalid_keyword,
                              error.allowed_keywords.target,
                              error.group_name)
-                error_info[error_key+(backend,)] = error.allowed_keywords
+                error_info[(*error_key, backend)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
         for ((keyword, target, group_name), backend_error) in backend_errors.items():

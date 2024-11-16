@@ -153,7 +153,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._subplot_label(axis)
 
             # Apply axis options if axes are enabled
-            if element is not None and not any(not sp._has_axes for sp in [self] + subplots):
+            if element is not None and not any(not sp._has_axes for sp in [self, *subplots]):
                 # Set axis labels
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)

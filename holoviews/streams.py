@@ -20,7 +20,7 @@ from .core import util
 from .core.ndmapping import UniformNdMapping
 
 # Types supported by Pointer derived streams
-pointer_types = (Number, str, tuple)+util.datetime_types
+pointer_types = (Number, str, tuple, *util.datetime_types)
 
 POPUP_POSITIONS = [
     "top_right",
@@ -1882,7 +1882,7 @@ class BoxEdit(CDSStream):
                 xs.append(x0)
                 ys.append(y0)
             vals = [data[vd.name][i] for vd in source.vdims]
-            paths.append((xs, ys)+tuple(vals))
+            paths.append((xs, ys, *vals))
         datatype = source.datatype if source.interface.multi else ['multitabular']
         return source.clone(paths, datatype=datatype, id=None)
 

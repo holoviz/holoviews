@@ -123,7 +123,7 @@ class Raster(Element2D):
                 samples = zip(*[c if isinstance(c, list) else [c] for _, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
-            table_data = [c+(self._zdata[self._coord2matrix(c)],)
+            table_data = [(*c, self._zdata[self._coord2matrix(c)])
                           for c in samples]
             params['kdims'] = self.kdims
             return Table(table_data, **params)
@@ -333,7 +333,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if yvals.ndim > 1:
             invalid.append(ydim)
         if invalid:
-            dims = '{} and {}'.format(*tuple(invalid)) if len(invalid) > 1 else f'{invalid[0]}'
+            dims = '{} and {}'.format(*invalid) if len(invalid) > 1 else f'{invalid[0]}'
             raise ValueError(f'{clsname} coordinates must be 1D arrays, '
                              f'{dims} dimension(s) were found to have '
                              'multiple dimensions. Either supply 1D '
@@ -442,7 +442,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             selection = (y, x)
             sliced = False
 
-        datatype = list(util.unique_iterator([self.interface.datatype]+self.datatype))
+        datatype = list(util.unique_iterator([self.interface.datatype, *self.datatype]))
         data = self.interface.ndloc(self, selection)
         if not sliced:
             if np.isscalar(data):
@@ -692,7 +692,7 @@ class RGB(Image):
         if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
             (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
              and data[-1].shape[-1] == 4 and len(vdims) == 3) or
-            (isinstance(data, dict) and tuple(dimension_name(vd) for vd in vdims)+(alpha.name,) in data)):
+            (isinstance(data, dict) and (*map(dimension_name, vdims), alpha.name) in data)):
             # Handle all forms of packed value dimensions
             vdims.append(alpha)
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
@@ -843,12 +843,12 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
         ts = (t1, t2, t3)
         for vd in self.vdims:
             zs = self.dimension_values(vd)
-            ts = ts + (np.concatenate([zs, zs]),)
+            ts = (*ts, np.concatenate([zs, zs]))
 
         # Construct TriMesh
         params = util.get_param_values(self)
         params['kdims'] = params['kdims'] + TriMesh.node_type.kdims[2:]
-        nodes = TriMesh.node_type(vertices+(np.arange(len(vertices[0])),),
+        nodes = TriMesh.node_type((*vertices, np.arange(len(vertices[0]))),
                                   **{k: v for k, v in params.items()
                                      if k != 'vdims'})
         return TriMesh(((ts,), nodes), **{k: v for k, v in params.items()

@@ -567,8 +567,8 @@ def ensure_ring(geom, values=None):
         values = geom
 
     breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
-    starts = [0] + list(breaks+1)
-    ends = list(breaks-1) + [len(geom)-1]
+    starts = [0, *(breaks + 1)]
+    ends = [*(breaks - 1), len(geom) - 1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts])
     unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
                      if (s!=e).any()]))

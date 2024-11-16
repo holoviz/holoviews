@@ -28,7 +28,7 @@ class RasterPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = base_properties + ['cmap', 'alpha']
+    style_opts = [*base_properties, 'cmap', 'alpha']
 
     _nonvectorized_styles = style_opts
 
@@ -136,7 +136,7 @@ class RGBPlot(LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    style_opts = ['alpha'] + base_properties
+    style_opts = ['alpha', *base_properties]
 
     _nonvectorized_styles = style_opts
 
@@ -352,7 +352,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap'] + base_properties + line_properties + fill_properties
+    style_opts = ['cmap', *base_properties, *line_properties, *fill_properties]
 
     _nonvectorized_styles = style_opts
 

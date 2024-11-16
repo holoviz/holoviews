@@ -823,7 +823,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_type = 'auto'
             dim_range = FactorRange(name=name)
         elif None in [v0, v1] or any(
-            True if isinstance(el, (str, bytes)+util.cftime_types)
+            True if isinstance(el, (str, bytes, *util.cftime_types))
             else not util.isfinite(el) for el in [v0, v1]
         ):
             dim_range = range_type(name=name)
@@ -917,7 +917,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + (self.xaxis, {})
+        axis_specs['x']['x'] = (*self._axis_props(plots, subplots, element, ranges, pos=0), self.xaxis, {})
         if self.multi_y:
             if not BOKEH_GE_3_2_0:
                 self.param.warning('Independent axis zooming for multi_y=True only supported for Bokeh >=3.2')
@@ -934,9 +934,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     range_tags_extras['y-upperlim'] = upperlim
             else:
                 range_tags_extras['autorange'] = False
-            axis_specs['y']['y'] = self._axis_props(
-                plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras
-            ) + (self.yaxis, {})
+            axis_specs['y']['y'] = (
+                *self._axis_props(plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras), self.yaxis, {}
+            )
 
         if self._subcoord_overlaid:
             _, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
@@ -2720,7 +2720,7 @@ class ColorbarPlot(ElementPlot):
 
     _default_nan = '#8b8b8b'
 
-    _nonvectorized_styles = base_properties + ['cmap', 'palette']
+    _nonvectorized_styles = [*base_properties, 'cmap', 'palette']
 
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):

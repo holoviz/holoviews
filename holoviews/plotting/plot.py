@@ -1301,9 +1301,9 @@ class GenericElementPlot(DimensionedPlot):
         """
         dims = element.dimensions()[:2]
         if len(dims) == 1:
-            return dims + [None, None]
+            return [*dims, None, None]
         else:
-            return dims + [None]
+            return [*dims, None]
 
     def _has_axis_dimension(self, element, dimension):
         dims = self._get_axis_dims(element)
@@ -1853,7 +1853,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         opts = {'overlaid': overlay_type}
         if self.hmap.type == Overlay:
-            style_key = (obj.type.__name__,) + key
+            style_key = (obj.type.__name__, *key)
             if self.overlay_dims:
                 opts['overlay_dims'] = self.overlay_dims
         else:

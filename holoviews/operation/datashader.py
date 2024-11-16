@@ -697,14 +697,14 @@ class spikes_aggregate(LineAggregationOperation):
 
         value_cols = [] if agg_fn.column is None else [agg_fn.column]
         if y is None:
-            df = element.dframe([x]+value_cols).copy()
+            df = element.dframe([x, *value_cols]).copy()
             y = Dimension('y')
             df['y0']  = float(self.p.offset)
             df['y1']  = float(self.p.offset + spike_length)
             yagg = ['y0', 'y1']
             if not self.p.expand: height = 1
         else:
-            df = element.dframe([x, y]+value_cols).copy()
+            df = element.dframe([x, y, *value_cols]).copy()
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
@@ -948,7 +948,7 @@ class regrid(AggregationOperation):
             regridded[vd] = rarray
         regridded = xr.Dataset(regridded)
 
-        return element.clone(regridded, datatype=['xarray']+element.datatype, **params)
+        return element.clone(regridded, datatype=['xarray', *element.datatype], **params)
 
 
 
@@ -1234,7 +1234,7 @@ class shade(LinkableOperation):
         """
         Cast uint32 RGB image to 4 uint8 channels.
         """
-        return np.flipud(img.view(dtype=np.uint8).reshape(img.shape + (4,)))
+        return np.flipud(img.view(dtype=np.uint8).reshape((*img.shape, 4)))
 
 
     @classmethod
@@ -1242,9 +1242,9 @@ class shade(LinkableOperation):
         """
         Cast uint32 xarray DataArray to 4 uint8 channels.
         """
-        new_array = img.values.view(dtype=np.uint8).reshape(img.shape + (4,))
-        coords = dict(list(img.coords.items())+[('band', [0, 1, 2, 3])])
-        return xr.DataArray(new_array, coords=coords, dims=img.dims+('band',))
+        new_array = img.values.view(dtype=np.uint8).reshape((*img.shape, 4))
+        coords = dict(img.coords, band=[0, 1, 2, 3])
+        return xr.DataArray(new_array, coords=coords, dims=(*img.dims, 'band'))
 
 
     @classmethod
@@ -1272,7 +1272,7 @@ class shade(LinkableOperation):
         finally:
             element.vdims[:] = vdims
         dtypes = [dt for dt in element.datatype if dt != 'xarray']
-        return element.clone(data, datatype=['xarray']+dtypes,
+        return element.clone(data, datatype=['xarray', *dtypes],
                              bounds=element.bounds,
                              xdensity=element.xdensity,
                              ydensity=element.ydensity)
@@ -1311,7 +1311,7 @@ class shade(LinkableOperation):
                     array = array.to_array("z")
                     # If data is 3D then we have one extra constant dimension
                     if array.ndim > 3:
-                        drop = [d for d in array.dims if d not in kdims+["z"]]
+                        drop = [d for d in array.dims if d not in [*kdims, 'z']]
                         array = array.squeeze(dim=drop)
             array = array.transpose(*kdims, ...)
         else:
@@ -1620,8 +1620,8 @@ class stack(Operation):
         data = (coords[dims[1]], coords[dims[0]], arr[:, :, 0],
                 arr[:, :, 1], arr[:, :, 2])
         if arr.shape[-1] == 4:
-            data = data + (arr[:, :, 3],)
-        return rgb.clone(data, datatype=[rgb.interface.datatype]+rgb.datatype)
+            data = (*data, arr[:, :, 3])
+        return rgb.clone(data, datatype=[rgb.interface.datatype, *rgb.datatype])
 
 
 
@@ -1685,7 +1685,7 @@ class SpreadingOperation(LinkableOperation):
                 kd.name: rgb.dimension_values(kd, expanded=False)
                 for kd in rgb.kdims
             }
-            vdims = rgb.vdims+[rgb.alpha_dimension] if len(rgb.vdims) == 3 else rgb.vdims
+            vdims = [*rgb.vdims, rgb.alpha_dimension] if len(rgb.vdims) == 3 else rgb.vdims
             kwargs['vdims'] = vdims
             new_data[tuple(vd.name for vd in vdims)] = img
         else:
