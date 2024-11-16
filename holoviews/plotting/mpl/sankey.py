@@ -16,7 +16,7 @@ class SankeyPlot(GraphPlot):
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
 
-    label_position = param.ObjectSelector(default='right', objects=['left', 'right'],
+    label_position = param.Selector(default='right', objects=['left', 'right'],
                                           doc="""
         Whether node labels should be placed to the left or right.""")
 

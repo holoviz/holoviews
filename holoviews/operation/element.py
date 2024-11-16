@@ -764,7 +764,7 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=False,
+    normed = param.Selector(default=False,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
       Controls normalization behavior.  If `True` or `'integral'`, then
@@ -1023,7 +1023,7 @@ class interpolate_curve(Operation):
     to represent changes in y-values as steps.
     """
 
-    interpolation = param.ObjectSelector(objects=['steps-pre', 'steps-mid',
+    interpolation = param.Selector(objects=['steps-pre', 'steps-mid',
                                                   'steps-post', 'linear'],
                                          default='steps-mid', doc="""
        Controls the transition point of the step along the x-axis.""")

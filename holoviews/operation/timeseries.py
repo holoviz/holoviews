@@ -35,7 +35,7 @@ class rolling(Operation,RollingBase):
     Applies a function over a rolling window.
     """
 
-    window_type = param.ObjectSelector(default=None, allow_None=True,
+    window_type = param.Selector(default=None, allow_None=True,
         objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
                  'parzen', 'bohman', 'blackmanharris', 'nuttall',
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
@@ -69,13 +69,13 @@ class resample(Operation):
     Resamples a timeseries of dates with a frequency and function.
     """
 
-    closed = param.ObjectSelector(default=None, objects=['left', 'right'],
+    closed = param.Selector(default=None, objects=['left', 'right'],
         doc="Which side of bin interval is closed", allow_None=True)
 
     function = param.Callable(default=np.mean, doc="""
         Function for computing new values out of existing ones.""")
 
-    label = param.ObjectSelector(default='right', doc="""
+    label = param.Selector(default='right', doc="""
         The bin edge to label the bin with.""")
 
     rule = param.String(default='D', doc="""

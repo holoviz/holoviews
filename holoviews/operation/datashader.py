@@ -837,7 +837,7 @@ class regrid(AggregationOperation):
        be faster and use less memory if the resulting aggregate is
        being overlaid on a much larger background.""")
 
-    interpolation = param.ObjectSelector(default='nearest',
+    interpolation = param.Selector(default='nearest',
         objects=['linear', 'nearest', 'bilinear', None, False], doc="""
         Interpolation method""")
 
@@ -981,7 +981,7 @@ class trimesh_rasterize(aggregate):
     aggregator = param.ClassSelector(default=rd.mean(),
                                      class_=(rd.Reduction, rd.summary, str))
 
-    interpolation = param.ObjectSelector(default='bilinear',
+    interpolation = param.Selector(default='bilinear',
                                          objects=['bilinear', 'linear', None, False], doc="""
         The interpolation method to apply during rasterization.""")
 
@@ -1475,7 +1475,7 @@ class rasterize(AggregationOperation):
     aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default='default')
 
-    interpolation = param.ObjectSelector(
+    interpolation = param.Selector(
         default='default', objects=['default', 'linear', 'nearest', 'bilinear', None, False], doc="""
         The interpolation method to apply during rasterization.
         Default depends on element type""")
@@ -1575,7 +1575,7 @@ class stack(Operation):
     the defined compositing operator.
     """
 
-    compositor = param.ObjectSelector(objects=['add', 'over', 'saturate', 'source'],
+    compositor = param.Selector(objects=['add', 'over', 'saturate', 'source'],
                                       default='over', doc="""
         Defines how the compositing operation combines the images""")
 
@@ -1633,13 +1633,13 @@ class SpreadingOperation(LinkableOperation):
     to make sparse plots more visible.
     """
 
-    how = param.ObjectSelector(default='source' if DATASHADER_VERSION <= (0, 11, 1) else None,
+    how = param.Selector(default='source' if DATASHADER_VERSION <= (0, 11, 1) else None,
             objects=[None, 'source', 'over', 'saturate', 'add', 'max', 'min'], doc="""
         The name of the compositing operator to use when combining
         pixels. Default of None uses 'over' operator for RGB elements
         and 'add' operator for aggregate arrays.""")
 
-    shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
+    shape = param.Selector(default='circle', objects=['circle', 'square'],
                                  doc="""
         The shape to spread by. Options are 'circle' [default] or 'square'.""")
 

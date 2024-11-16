@@ -755,7 +755,7 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
-    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+    cnorm = param.Selector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
@@ -779,7 +779,7 @@ class ColorbarPlot(ElementPlot):
     cbar_width = param.Number(default=0.05, doc="""
         Width of the colorbar as a fraction of the main plot""")
 
-    cbar_extend = param.ObjectSelector(
+    cbar_extend = param.Selector(
         objects=['neither', 'both', 'min', 'max'], default=None, doc="""
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
@@ -1069,7 +1069,7 @@ class LegendPlot(ElementPlot):
     legend_labels = param.Dict(default={}, doc="""
         A mapping that allows overriding legend labels.""")
 
-    legend_position = param.ObjectSelector(objects=['inner', 'right',
+    legend_position = param.Selector(objects=['inner', 'right',
                                                     'bottom', 'top',
                                                     'left', 'best',
                                                     'top_right',

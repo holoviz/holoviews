@@ -45,7 +45,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
                                      allow_None=True, doc="""
         Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
-    scaling_method = param.ObjectSelector(default="area",
+    scaling_method = param.Selector(default="area",
                                           objects=["width", "area"],
                                           doc="""
         Deprecated in favor of size style mapping, e.g.
@@ -197,7 +197,7 @@ class VectorFieldPlot(ColorbarPlot):
 
     padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
 
-    pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
+    pivot = param.Selector(default='mid', objects=['mid', 'tip', 'tail'],
                                  doc="""
         The point around which the arrows should pivot valid options
         include 'mid', 'tip' and 'tail'.""")
@@ -346,7 +346,7 @@ class CurvePlot(ElementPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+    interpolation = param.Selector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],
                                          default='linear', doc="""
         Defines how the samples of the Curve are interpolated,
@@ -745,14 +745,14 @@ class SideSpikesPlot(SpikesPlot):
         The current selection as a list of integers corresponding
         to the selected items.""")
 
-    xaxis = param.ObjectSelector(default='top-bare',
+    xaxis = param.Selector(default='top-bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel. Valid options are 'top',
         'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='right-bare',
+    yaxis = param.Selector(default='right-bare',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing

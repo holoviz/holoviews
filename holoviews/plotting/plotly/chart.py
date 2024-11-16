@@ -79,7 +79,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
 
 class CurvePlot(ChartPlot, ColorbarPlot):
 
-    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+    interpolation = param.Selector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],
                                          default='linear', doc="""
         Defines how the samples of the Curve are interpolated,
