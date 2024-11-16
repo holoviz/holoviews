@@ -1067,7 +1067,7 @@ class Dimensioned(LabelledData):
             selection_specs = [selection_specs]
 
         # Apply all indexes applying on this object
-        vdims = self.vdims+['value'] if self.vdims else []
+        vdims = [*self.vdims, 'value'] if self.vdims else []
         kdims = self.kdims
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in kdims+vdims}
@@ -1106,14 +1106,14 @@ class Dimensioned(LabelledData):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
-            dimensions = selection.dimensions() + ['value']
+            dimensions = [*selection.dimensions(), 'value']
             if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs=selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
-                dimensions = v.dimensions() + ['value']
+                dimensions = [*v.dimensions(), 'value']
                 if any(kw in dimensions for kw in kwargs):
                     items.append((k, v.select(selection_specs=selection_specs, **kwargs)))
                 else:
@@ -1308,7 +1308,7 @@ class ViewableTree(AttrTree, Dimensioned):
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.param)+['id', 'plot_id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in [*self.param, 'id', 'plot_id'] if p in kwargs}
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
@@ -1355,7 +1355,7 @@ class ViewableTree(AttrTree, Dimensioned):
         counts = defaultdict(lambda: 0)
         for path, item in items:
             if counter[path] > 1:
-                path = path + (util.int_to_roman(counts[path]+1),)
+                path = (*path, util.int_to_roman(counts[path] + 1))
             else:
                 inc = 1
                 while counts[path]:

@@ -30,7 +30,7 @@ class univariate_kde(Operation):
     using the bw_method but it may be overridden by an explicit value.
     """
 
-    bw_method = param.ObjectSelector(default='scott', objects=['scott', 'silverman'], doc="""
+    bw_method = param.Selector(default='scott', objects=['scott', 'silverman'], doc="""
         Method of automatically determining KDE bandwidth""")
 
     bandwidth = param.Number(default=None, doc="""
@@ -138,7 +138,7 @@ class bivariate_kde(Operation):
         Whether to compute contours from the KDE, determines whether to
         return an Image or Contours/Polygons.""")
 
-    bw_method = param.ObjectSelector(default='scott', objects=['scott', 'silverman'], doc="""
+    bw_method = param.Selector(default='scott', objects=['scott', 'silverman'], doc="""
         Method of automatically determining KDE bandwidth""")
 
     bandwidth = param.Number(default=None, doc="""

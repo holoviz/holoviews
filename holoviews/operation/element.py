@@ -764,7 +764,7 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=False,
+    normed = param.Selector(default=False,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
       Controls normalization behavior.  If `True` or `'integral'`, then
@@ -1023,7 +1023,7 @@ class interpolate_curve(Operation):
     to represent changes in y-values as steps.
     """
 
-    interpolation = param.ObjectSelector(objects=['steps-pre', 'steps-mid',
+    interpolation = param.Selector(objects=['steps-pre', 'steps-mid',
                                                   'steps-post', 'linear'],
                                          default='steps-mid', doc="""
        Controls the transition point of the step along the x-axis.""")
@@ -1093,7 +1093,7 @@ class interpolate_curve(Operation):
         xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x, dvals)
         if is_datetime:
             xs = xs.astype(dt_type)
-        return element.clone((xs,)+dvals)
+        return element.clone((xs, *dvals))
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
@@ -1180,7 +1180,7 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, np.str_, np.object_)+datetime_types
+        types = (str, np.str_, np.object_, *datetime_types)
         dims = [d for d in element.dimensions()
                 if _is_number(element.range(d)[0]) and
                 not issubclass(element.get_dimension_type(d), types)]

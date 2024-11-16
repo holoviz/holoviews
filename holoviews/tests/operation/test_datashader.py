@@ -879,7 +879,7 @@ class DatashaderShadeTests(ComparisonTestCase):
         b = [[28, 95], [129, 95]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
-                       vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
+                       vdims=[*RGB.vdims, Dimension('A', range=(0, 1))])
         self.assertEqual(shaded, expected)
 
     def test_shade_categorical_images_grid(self):
@@ -897,7 +897,7 @@ class DatashaderShadeTests(ComparisonTestCase):
         b = [[28, 95], [129, 95]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
-                       vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
+                       vdims=[*RGB.vdims, Dimension('A', range=(0, 1))])
         self.assertEqual(shaded, expected)
 
     def test_shade_dt_xaxis_constant_yaxis(self):

@@ -92,7 +92,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                   ['outlier_'+p for p in fill_properties+line_properties] +
                   ['box_width', 'cmap', 'box_cmap'])
 
-    _nonvectorized_styles = base_properties + ['box_width', 'whisker_width', 'cmap', 'box_cmap']
+    _nonvectorized_styles = [*base_properties, 'box_width', 'whisker_width', 'cmap', 'box_cmap']
 
     _stream_data = False # Plot does not support streaming data
 
@@ -237,8 +237,8 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 data['x0'].append(label)
                 data['x1'].append(label)
             for data in [w1_data, w2_data]:
-                data['x0'].append(wrap_tuple(label)+(-whisker_width,))
-                data['x1'].append(wrap_tuple(label)+(whisker_width,))
+                data['x0'].append((*wrap_tuple(label), -whisker_width))
+                data['x1'].append((*wrap_tuple(label), whisker_width))
             r1_data['top'].append(q2)
             r2_data['top'].append(q1)
             r1_data['bottom'].append(q3)
@@ -326,7 +326,7 @@ class ViolinPlot(BoxWhiskerPlot):
     cut = param.Number(default=5, doc="""
         Draw the estimate to cut * bw from the extreme data points.""")
 
-    inner = param.ObjectSelector(objects=['box', 'quartiles', 'stick', None],
+    inner = param.Selector(objects=['box', 'quartiles', 'stick', None],
                                  default='box', doc="""
         Inner visual indicator for distribution values:
 
@@ -431,8 +431,8 @@ class ViolinPlot(BoxWhiskerPlot):
 
             if split_dim:
                 if len(_xs):
-                    fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
-                    fill_ys.append([0]+list(_ys)+[0])
+                    fill_xs.append([x_range[0], *_xs, x_range[-1]])
+                    fill_ys.append([0, *_ys, 0])
                 else:
                     fill_xs.append([])
                     fill_ys.append([])
@@ -447,10 +447,10 @@ class ViolinPlot(BoxWhiskerPlot):
         # this scales the width
         if split_dim:
             fill_xs = [np.asarray(x) for x in fill_xs]
-            fill_ys = [[key + (y,) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
+            fill_ys = [[(*key, y) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
                        if len(fy) else [] for fy in fill_ys]
         ys = (ys/np.nanmax(np.abs(ys)))*(self.violin_width/scale) if len(ys) else []
-        ys = [key + (y,) for y in ys]
+        ys = [(*key, y) for y in ys]
 
         line = {'ys': xs, 'xs': ys}
         if split_dim:
@@ -473,7 +473,7 @@ class ViolinPlot(BoxWhiskerPlot):
                     sidx = np.argmin(np.abs(xs-stat))
                     sx, sy = xs[sidx], ys[sidx]
                     segments['x'].append(sx)
-                    segments['y0'].append(key+(-sy[-1],))
+                    segments['y0'].append((*key, -sy[-1]))
                     segments['y1'].append(sy)
         elif self.inner == 'stick':
             if len(xs):
@@ -481,10 +481,10 @@ class ViolinPlot(BoxWhiskerPlot):
                     sidx = np.argmin(np.abs(xs-value))
                     sx, sy = xs[sidx], ys[sidx]
                     segments['x'].append(sx)
-                    segments['y0'].append(key+(-sy[-1],))
+                    segments['y0'].append((*key, -sy[-1]))
                     segments['y1'].append(sy)
         elif self.inner == 'box':
-            xpos = key+(0,)
+            xpos = (*key, 0)
             q1, q2, q3, upper, lower, _ = self._box_stats(values)
             segments['x'].append(xpos)
             segments['y0'].append(lower)

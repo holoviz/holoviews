@@ -122,7 +122,7 @@ class GridInterface(DictInterface):
                 if shape[-1] != len(vdims):
                     raise error('The shape of the value array does not match the number of value dimensions.')
                 shape = shape[:-1]
-            if (not expected and shape == (1,)) or (len(set((shape,)+shapes)) == 1 and len(shape) > 1):
+            if (not expected and shape == (1,)) or (len(shape) > 1 and len({shape, *shapes}) == 1):
                 # If empty or an irregular mesh
                 pass
             elif len(shape) != len(expected):

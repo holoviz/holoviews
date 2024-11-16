@@ -110,14 +110,14 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
     border_size = param.Number(default=0, doc="""
         The size of the border expressed as a fraction of the main plot.""")
 
-    xaxis = param.ObjectSelector(default='bare',
+    xaxis = param.Selector(default='bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel. Valid options are 'top',
         'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='bare',
+    yaxis = param.Selector(default='bare',
                                  objects=['left', 'right', 'bare', 'left-bare',
                                           'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
@@ -141,7 +141,7 @@ class ViolinPlot(BoxPlot):
         Allows supplying explicit bandwidth value rather than relying
         on scott or silverman method.""")
 
-    inner = param.ObjectSelector(objects=['box', 'medians', None],
+    inner = param.Selector(objects=['box', 'medians', None],
                                  default='box', doc="""
         Inner visual indicator for distribution values:
 

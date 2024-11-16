@@ -328,5 +328,7 @@ class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
         return decollate(self)
 
 
-__all__ = list({_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)}) + ['Overlayable']
+__all__ = [
+    *{_k for _k, _v in locals().items() if isinstance(_v, type) and issubclass(_v, Dimensioned)},
+    "Overlayable"
+]

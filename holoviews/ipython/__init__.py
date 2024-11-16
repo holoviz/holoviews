@@ -139,7 +139,7 @@ class notebook_extension(extension):
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
             svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
-            hv.archive.exporters = [svg_exporter] + hv.archive.exporters
+            hv.archive.exporters = [svg_exporter, *hv.archive.exporters]
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         if p.case_sensitive_completion:
@@ -227,7 +227,7 @@ class notebook_extension(extension):
         """
         resources = []
         disabled = []
-        for resource in ['holoviews'] + list(Store.renderers.keys()):
+        for resource in ['holoviews', *Store.renderers]:
             if resource in args:
                 resources.append(resource)
 
@@ -245,7 +245,7 @@ class notebook_extension(extension):
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
-            resources = ['holoviews'] + resources
+            resources = ['holoviews', *resources]
         return resources
 
     @classmethod

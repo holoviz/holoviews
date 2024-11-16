@@ -30,9 +30,9 @@ class RedimGraph(Redim):
         redimmed = super().__call__(specs, **dimensions)
         new_data = (redimmed.data,)
         if self._obj.nodes:
-            new_data = new_data + (self._obj.nodes.redim(specs, **dimensions),)
+            new_data = (*new_data, self._obj.nodes.redim(specs, **dimensions))
         if self._obj._edgepaths:
-            new_data = new_data + (self._obj.edgepaths.redim(specs, **dimensions),)
+            new_data = (*new_data, self._obj.edgepaths.redim(specs, **dimensions))
         return redimmed.clone(new_data)
 
 
@@ -63,7 +63,7 @@ class layout_nodes(Operation):
                 for (s, t), w in zip(edges, element[weight]):
                     graph.edges[s, t][weight] = w
             positions = self.p.layout(graph, **self.p.kwargs)
-            nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
+            nodes = [(*pos, idx) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
@@ -231,12 +231,12 @@ class Graph(Dataset, Element2D):
         if data is None:
             data = (self.data, self.nodes)
             if self._edgepaths is not None:
-                data = data + (self.edgepaths,)
+                data = (*data, self.edgepaths)
             overrides['plot_id'] = self._plot_id
         elif not isinstance(data, tuple):
             data = (data, self.nodes)
             if self._edgepaths:
-                data = data + (self.edgepaths,)
+                data = (*data, self.edgepaths)
         return super().clone(data, shared_data, new_type, link,
                              *args, **overrides)
 
@@ -261,8 +261,8 @@ The first positional argument to the Dataset.select method is expected to be a
 holoviews.util.transform.dim expression. Use the selection_specs keyword
 argument to specify a selection specification""")
 
-        selection = {dim: sel for dim, sel in selection.items()
-                     if dim in self.dimensions('ranges')+['selection_mask']}
+        sel_dims = (*self.dimensions('ranges'), 'selection_mask')
+        selection = {dim: sel for dim, sel in selection.items() if dim in sel_dims}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or (not selection and not selection_expr)):
             return self
@@ -422,7 +422,7 @@ argument to specify a selection specification""")
         edge_cols = sorted([k for k in edges if k not in ('start', 'end')
                             and len(edges[k]) == len(edges['start'])])
         edge_vdims = [str(col) if isinstance(col, int) else col for col in edge_cols]
-        edge_data = tuple(edges[col] for col in ['start', 'end']+edge_cols)
+        edge_data = tuple(edges[col] for col in ['start', 'end', *edge_cols])
 
         # Unpack user node info
         xdim, ydim, idim = cls.node_type.kdims[:3]
@@ -455,7 +455,7 @@ argument to specify a selection specification""")
             node_columns[idim.name].append(idx)
         node_cols = sorted([k for k in node_columns if k not in cls.node_type.kdims
                             and len(node_columns[k]) == len(node_columns[xdim.name])])
-        columns = [xdim.name, ydim.name, idim.name]+node_cols+list(info_cols)
+        columns = [xdim.name, ydim.name, idim.name, *node_cols, *info_cols]
         node_data = tuple(node_columns[col] for col in columns)
 
         # Construct nodes
@@ -522,7 +522,7 @@ class TriMesh(Graph):
             if is_dataframe(nodes):
                 coords = list(nodes.columns)[:2]
                 index = nodes.index.name or 'index'
-                nodes = self.node_type(nodes, coords+[index])
+                nodes = self.node_type(nodes, [*coords, index])
             else:
                 try:
                     points = self.point_type(nodes)
@@ -723,7 +723,7 @@ class layout_chords(Operation):
             values, vdims = (), []
 
         if len(nodes):
-            node_data = (mxs, mys, nodes)+values
+            node_data = (mxs, mys, nodes, *values)
         else:
             node_data = tuple([] for _ in kdims+vdims)
 

@@ -110,7 +110,7 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = base_properties + ['cmap', 'alpha']
+    style_opts = [*base_properties, 'cmap', 'alpha']
 
     _nonvectorized_styles = style_opts
 
@@ -218,7 +218,7 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    style_opts = ['alpha'] + base_properties
+    style_opts = ['alpha', *base_properties]
 
     _nonvectorized_styles = style_opts
 
@@ -310,7 +310,7 @@ class ImageStackPlot(RasterPlot):
 
     _plot_methods = dict(single='image_stack')
 
-    cnorm = param.ObjectSelector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
+    cnorm = param.Selector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     start_alpha = param.Integer(default=0, bounds=(0, 255))
@@ -434,7 +434,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap'] + base_properties + line_properties + fill_properties
+    style_opts = ['cmap', *base_properties, *line_properties, *fill_properties]
 
     _nonvectorized_styles = style_opts
 

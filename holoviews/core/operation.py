@@ -32,7 +32,7 @@ class Operation(param.ParameterizedFunction):
        The group string used to identify the output of the
        Operation. By default this should match the operation name.""")
 
-    dynamic = param.ObjectSelector(default='default',
+    dynamic = param.Selector(default='default',
                                    objects=['default', True, False], doc="""
        Whether the operation should be applied dynamically when a
        specific frame is requested, specified as a Boolean. If set to
@@ -155,9 +155,7 @@ class Operation(param.ParameterizedFunction):
             and isinstance(element, Dataset) and not in_method):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
-                operations=element_pipeline.operations + [
-                    self.instance(**self.p)
-                ],
+                operations=[*element_pipeline.operations, self.instance(**self.p)],
             )
             ret._transforms = element._transforms
         return ret

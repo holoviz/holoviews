@@ -355,12 +355,12 @@ class GridPlot(CompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.Selector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
         Whether and where to display the xaxis, supported options are
         'bottom', 'top' and None.""")
 
-    yaxis = param.ObjectSelector(default='left',
+    yaxis = param.Selector(default='left',
                                  objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis, supported options are
         'left', 'right' and None.""")
@@ -765,7 +765,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
-    absolute_scaling = param.ObjectSelector(default=False, doc="""
+    absolute_scaling = param.Selector(default=False, doc="""
       If aspect_weight is enabled absolute_scaling determines whether
       axes are scaled relative to the widest plot or whether the
       aspect scales the axes in absolute terms.""")

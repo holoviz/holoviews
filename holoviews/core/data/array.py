@@ -247,7 +247,7 @@ class ArrayInterface(Interface):
             idx = dataset.get_dimension_index(d)
             data[:, idx] = arr
         new_cols = [arr for d, arr in new_data.items() if dataset.get_dimension(d) is None]
-        return np.column_stack([data]+new_cols)
+        return np.column_stack([data, *new_cols])
 
 
     @classmethod

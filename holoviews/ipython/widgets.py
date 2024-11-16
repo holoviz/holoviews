@@ -17,7 +17,7 @@ class ProgressBar(ProgressIndicator):
     progress bars has not achieved 100% completion.
     """
 
-    display = param.ObjectSelector(default='stdout',
+    display = param.Selector(default='stdout',
                   objects=['stdout', 'disabled', 'broadcast'], doc="""
         Parameter to control display of the progress bar. By default,
         progress is shown on stdout but this may be disabled e.g. for
