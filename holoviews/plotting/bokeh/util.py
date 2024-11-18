@@ -647,7 +647,7 @@ def hsv_to_rgb(hsv):
     order = np.array([[0,3,1],[2,0,1],[1,0,3],[1,2,0],[3,1,0],[0,1,2]])
     rgb = clist[order[i], np.arange(np.prod(shape))[:,None]]
 
-    return rgb.reshape(shape+(3,))
+    return rgb.reshape((*shape, 3))
 
 
 def pad_width(model, table_padding=0.85, tabs_padding=1.2):
@@ -777,7 +777,7 @@ def cds_column_replace(source, data):
     columns are not the same length as the columns being updated.
     """
     current_length = [len(v) for v in source.data.values()
-                      if isinstance(v, (list,)+arraylike_types)]
+                      if isinstance(v, (list, *arraylike_types))]
     new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
@@ -1063,8 +1063,8 @@ def multi_polygons_data(element):
         for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs)):
             if i != (len(arrays)-1):
                 path = path[:-1]
-            multi_xs.append([path[:, 0]]+hx)
-            multi_ys.append([path[:, 1]]+hy)
+            multi_xs.append([path[:, 0], *hx])
+            multi_ys.append([path[:, 1], *hy])
         xsh.append(multi_xs)
         ysh.append(multi_ys)
     return xsh, ysh

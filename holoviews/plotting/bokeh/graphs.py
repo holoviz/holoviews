@@ -39,11 +39,11 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
       Whether to draw arrows on the graph edges to indicate the
       directionality of each edge.""")
 
-    selection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
+    selection_policy = param.Selector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when selecting connected edges and nodes respectively.""")
 
-    inspection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
+    inspection_policy = param.Selector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when hovering over connected edges and nodes respectively.""")
 
@@ -69,7 +69,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['node_size', 'cmap', 'edge_cmap', 'node_cmap',
                    'node_radius', 'node_marker'])
 
-    _nonvectorized_styles =  base_properties + ['cmap', 'edge_cmap', 'node_cmap']
+    _nonvectorized_styles =  [*base_properties, 'cmap', 'edge_cmap', 'node_cmap']
 
     # Filled is only supported for subclasses
     filled = False
@@ -312,7 +312,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         layout = StaticLayoutProvider(graph_layout=layout)
         self.handles['layout_source'] = layout
 
-        return tuple(sources+[layout]), properties
+        return (*sources, layout), properties
 
     def _reorder_renderers(self, plot, renderer, mapping):
         "Reorders renderers based on the defined draw order"

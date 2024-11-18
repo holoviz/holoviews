@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from functools import wraps
 
 import numpy as np
-import pandas as pd  # noqa
 import param
 from param.parameterized import ParameterizedMetaclass
 
@@ -207,7 +206,7 @@ class PipelineMeta(ParameterizedMetaclass):
                 if not in_method:
                     if isinstance(result, Dataset):
                         result._pipeline = inst_pipeline.instance(
-                            operations=inst_pipeline.operations + [op],
+                            operations=[*inst_pipeline.operations, op],
                             output_type=type(result),
                         )
 
@@ -220,9 +219,7 @@ class PipelineMeta(ParameterizedMetaclass):
                                     args=[key]
                                 )
                                 element._pipeline = inst_pipeline.instance(
-                                    operations=inst_pipeline.operations + [
-                                        op, getitem_op
-                                    ],
+                                    operations=[*inst_pipeline.operations, op, getitem_op],
                                     output_type=type(result),
                                 )
             finally:
@@ -344,7 +341,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             kwargs=dict(kwargs, kdims=self.kdims, vdims=self.vdims),
         )
         self._pipeline = input_pipeline.instance(
-            operations=input_pipeline.operations + [init_op],
+            operations=[*input_pipeline.operations, init_op],
             output_type=type(self),
         )
         self._transforms = input_transforms or []
@@ -607,8 +604,8 @@ argument to specify a selection specification""")
 
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        selection = {dim_name: sel for dim_name, sel in selection.items()
-                     if dim_name in self.dimensions()+['selection_mask']}
+        sel_dims = (*self.dimensions(), 'selection_mask')
+        selection = {dim: sel for dim, sel in selection.items() if dim in sel_dims}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or (not selection and not selection_expr)):
             return self
@@ -812,7 +809,7 @@ argument to specify a selection specification""")
                 reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
-            datatype = list(core_util.unique_iterator(self.datatype+['dataframe', 'dict']))
+            datatype = list(core_util.unique_iterator([*self.datatype, 'dataframe', 'dict']))
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
@@ -1186,7 +1183,7 @@ argument to specify a selection specification""")
             Cloned object
         """
         if 'datatype' not in overrides:
-            datatypes = [self.interface.datatype] + self.datatype
+            datatypes = [self.interface.datatype, *self.datatype]
             overrides['datatype'] = list(core_util.unique_iterator(datatypes))
 
         if data is None:

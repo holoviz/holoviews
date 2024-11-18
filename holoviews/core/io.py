@@ -586,7 +586,7 @@ class FileArchive(Archive):
         The root directory in which the output directory is
         located. May be an absolute or relative path.""")
 
-    archive_format = param.ObjectSelector(default='zip', objects=['zip', 'tar'], doc="""
+    archive_format = param.Selector(default='zip', objects=['zip', 'tar'], doc="""
         The archive format to use if there are multiple files and pack
         is set to True. Supported formats include 'zip' and 'tar'.""")
 

@@ -183,7 +183,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
     style_opts = (base_properties + text_properties
                   + background_properties + border_properties + ['cmap', 'angle'])
 
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
 
     _plot_methods = dict(single='text', batched='text')
     _batched_style_opts = text_properties + background_properties + border_properties
@@ -195,7 +195,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
         dims = element.dimensions()
         coords = (1, 0) if self.invert_axes else (0, 1)
-        xdim, ydim, tdim = (dimension_sanitizer(dims[i].name) for i in coords+(2,))
+        xdim, ydim, tdim = (dimension_sanitizer(dims[i].name) for i in (*coords, 2))
         mapping = dict(x=xdim, y=ydim, text=tdim)
         data = {d: element.dimension_values(d) for d in (xdim, ydim)}
         if self.xoffset is not None:
@@ -223,7 +223,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
 class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = line_properties + ['level', 'visible']
+    style_opts = [*line_properties, 'level', 'visible']
 
     apply_ranges = param.Boolean(default=False, doc="""
         Whether to include the annotation in axis range calculations.""")
@@ -308,7 +308,7 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
 
 class SlopePlot(ElementPlot, AnnotationPlot):
 
-    style_opts = line_properties + ['level']
+    style_opts = [*line_properties, 'level']
 
     _plot_methods = dict(single='Slope')
 
@@ -345,7 +345,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
     Does not support matplotlib Path codes.
     """
 
-    style_opts = line_properties + ['visible']
+    style_opts = [*line_properties, 'visible']
     _plot_methods = dict(single='bezier')
 
     selection_display = None
@@ -470,7 +470,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
 
     width = param.Number(default=300)
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
 

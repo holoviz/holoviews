@@ -49,7 +49,7 @@ class CurvePlot(ChartPlot):
         Whether to let matplotlib automatically compute tick marks
         or to allow the user to control tick marks.""")
 
-    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+    interpolation = param.Selector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],
                                          default='linear', doc="""
         Defines how the samples of the Curve are interpolated,
@@ -225,7 +225,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
         xs = element.dimension_values(0)
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
-        return tuple([xs]+ys), style, {}
+        return (xs, *ys), style, {}
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         fill_fn = ax.fill_betweenx if self.invert_axes else ax.fill_between
@@ -243,14 +243,14 @@ class SideAreaPlot(AdjoinedPlot, AreaPlot):
     border_size = param.Number(default=0, doc="""
         The size of the border expressed as a fraction of the main plot.""")
 
-    xaxis = param.ObjectSelector(default='bare',
+    xaxis = param.Selector(default='bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel. Valid options are 'top',
         'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='bare',
+    yaxis = param.Selector(default='bare',
                                  objects=['left', 'right', 'bare', 'left-bare',
                                           'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
@@ -390,7 +390,7 @@ class HistogramPlot(ColorbarPlot):
         elif self.xticks:
             dim = element.get_dimension(0)
             inds = np.linspace(0, len(edges), self.xticks, dtype=int)
-            edges = list(edges) + [edges[-1] + widths[-1]]
+            edges = [*edges, edges[-1] + widths[-1]]
             xvals = [edges[i] for i in inds]
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
@@ -571,7 +571,7 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
                                      allow_None=True, doc="""
         Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
-    scaling_method = param.ObjectSelector(default="area",
+    scaling_method = param.Selector(default="area",
                                           objects=["width", "area"],
                                           doc="""
         Deprecated in favor of size style mapping, e.g.
@@ -872,7 +872,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         gvals, cvals = self._get_coords(element, ranges, as_string=False)
         kdims = element.kdims
         if element.ndims == 1:
-            dimensions = kdims + [None, None]
+            dimensions = [*kdims, None, None]
             values = {'group': gvals, 'stack': [None]}
         elif self.stacked:
             stack_dim = kdims[1]
@@ -886,7 +886,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             stack_order = list(stack_order)
             values = {'group': gvals, 'stack': stack_order}
         else:
-            dimensions = kdims + [None]
+            dimensions = [*kdims, None]
             values = {'group': gvals, 'category': cvals}
         return dimensions, values
 
@@ -1093,7 +1093,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
 
-    style_opts = PathPlot.style_opts + ['cmap']
+    style_opts = [*PathPlot.style_opts, 'cmap']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         if 'c' in plot_kwargs:
@@ -1196,14 +1196,14 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
     spike_length = param.Number(default=1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
 
-    xaxis = param.ObjectSelector(default='bare',
+    xaxis = param.Selector(default='bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel. Valid options are 'top',
         'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='bare',
+    yaxis = param.Selector(default='bare',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing

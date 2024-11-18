@@ -572,7 +572,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
             cmap_stream = selection_streams.cmap_streams[layer_number]
             layer = obj.apply(
-                self._build_layer_callback, streams=[cmap_stream]+streams,
+                self._build_layer_callback, streams=[cmap_stream, *streams],
                 layer_number=layer_number, cache=cache, per_element=True
             )
             layers.append(layer)
@@ -667,7 +667,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
             backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
             selected_colors = [c or backup_clr for c in colors[1:]]
             n = len(ds)
-            clrs = np.array([unselected_color] + list(selected_colors))
+            clrs = np.array([unselected_color, *selected_colors])
 
             color_inds = np.zeros(n, dtype='int8')
 

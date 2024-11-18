@@ -1157,6 +1157,12 @@ class TestOverlayPlot(TestBokehPlot):
         assert low > 0
         assert high < 1
 
+    def test_propagate_tools(self):
+        scatter = lambda: Scatter([]).opts(default_tools=[])
+        overlay = scatter() * scatter()
+        plot = bokeh_renderer.get_plot(overlay)
+        assert plot.default_tools == []
+
 class TestApplyHardBounds(TestBokehPlot):
     def test_apply_hard_bounds(self):
         """Test `apply_hard_bounds` with a single element."""
@@ -1229,7 +1235,7 @@ class TestApplyHardBounds(TestBokehPlot):
 
         ChoiceStream = Stream.define(
             'Choice',
-            choice=param.ObjectSelector(default='set1', objects=['set1', 'set2'])
+            choice=param.Selector(default='set1', objects=['set1', 'set2'])
         )
         choice_stream = ChoiceStream()
         dmap = DynamicMap(curve_data, kdims=[], streams=[choice_stream])

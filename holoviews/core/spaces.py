@@ -297,7 +297,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if isinstance(other, (ViewableElement, UniformNdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
-            return AdjointLayout(other.data+[self])
+            return AdjointLayout([*other.data, self])
         else:
             raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 
@@ -1048,7 +1048,7 @@ class DynamicMap(HoloMap):
                 overrides['plot_id'] = self._plot_id
         clone = super(UniformNdMapping, self).clone(
             callback, shared_data, new_type, link,
-            *(data,) + args, **overrides)
+            *(data, *args), **overrides)
 
         # Ensure the clone references this object to ensure
         # stream sources are inherited
@@ -1747,7 +1747,7 @@ class GridSpace(Layoutable, UniformNdMapping):
         if isinstance(other, (ViewableElement, UniformNdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
-            return AdjointLayout(other.data+[self])
+            return AdjointLayout([*other.data, self])
         else:
             raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
 

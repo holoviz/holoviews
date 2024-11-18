@@ -297,7 +297,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x': np.array([-0.1, 1.4, 1.4, -0.1]),
                                 'y': np.array([-0.1, 0, 2.2, 2.2])})
         self.assertEqual(expr.apply(points), np.array([False, True, False, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.1, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
 
     @shapelib_available
     def test_points_selection_geom_inverted(self):
@@ -307,7 +307,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'y': np.array([-0.1, 1.4, 1.4, -0.1]),
                                 'x': np.array([-0.1, 0, 2.2, 2.2])})
         self.assertEqual(expr.apply(points), np.array([False, False, True, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.1, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
 
     def test_points_selection_categorical(self):
         points = Points((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
@@ -397,7 +397,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [np.nan, np.nan, np.nan],
             [np.nan, np.nan, np.nan]
         ]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     @ds_available
     def test_img_selection_geom_inverted(self):
@@ -412,7 +412,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [ False,  False, False],
             [False, False, False]
         ]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     def test_rgb_selection_numeric(self):
         img = RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3)))
@@ -519,7 +519,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, True, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     @shapely_available
     def test_rect_geom_selection_inverted(self):
@@ -531,7 +531,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     def test_segments_selection_numeric(self):
         segs = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
@@ -565,7 +565,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, True, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     @shapely_available
     def test_segs_geom_selection_inverted(self):
@@ -577,7 +577,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
 
 class TestSelectionPolyExpr(ComparisonTestCase):
@@ -625,7 +625,7 @@ class TestSelectionPolyExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x': np.array([0.2, 0.5, 0.75, 0.1]),
                                 'y': np.array([-0.15, 0, 0.6, 0.45])})
         self.assertEqual(expr.apply(poly, expanded=False), np.array([False, True, True]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
 
     @shapely_available
     def test_poly_geom_selection_inverted(self):
@@ -639,7 +639,7 @@ class TestSelectionPolyExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'y': np.array([0.2, 0.5, 0.75, 0.1]),
                                 'x': np.array([-0.15, 0, 0.6, 0.6])})
         self.assertEqual(expr.apply(poly, expanded=False), np.array([False, False, True]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
 
 
 class TestSpatialSelectColumnar:

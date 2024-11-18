@@ -42,7 +42,7 @@ class LinkCallback:
         references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
-        for sh in self.source_handles+[self.source_model]:
+        for sh in [*self.source_handles, self.source_model]:
             key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
@@ -52,7 +52,7 @@ class LinkCallback:
             references[p] = value
 
         if target_plot is not None:
-            for sh in self.target_handles+[self.target_model]:
+            for sh in [*self.target_handles, self.target_model]:
                 key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
