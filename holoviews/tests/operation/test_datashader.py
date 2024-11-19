@@ -1419,7 +1419,7 @@ def test_selector_datashade(point_plot, sel_fn):
         lambda *args, **kwargs: dynspread(rasterize(*args, **kwargs)),
         lambda *args, **kwargs: dynspread(datashade(*args, **kwargs)),
     ),
-    ids=["rasterize", "datashade", "rasterize+datashade", "dynspread+datashade"],
+    ids=["rasterize", "datashade", "rasterize+dynspread", "datashader+dynspread"],
 )
 def test_selector_spread(point_plot, op_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)

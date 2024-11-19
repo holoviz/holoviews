@@ -1306,6 +1306,33 @@ class shade(LinkableOperation):
                              xdensity=element.xdensity,
                              ydensity=element.ydensity)
 
+    @classmethod
+    def _extract_data(self, element):
+        vdims = element.vdims
+        vdim = vdims[0].name if len(vdims) == 1 else None
+        if isinstance(element, ImageStack):
+            array = element.data
+            main_dims = element.data.sizes
+            # Dropping data related to selector columns
+            if sel_cols := array.attrs.get("selector_columns"):
+                array = array.drop_vars(sel_cols)
+            # If data is a xarray Dataset it has to be converted to a
+            # DataArray, either by selecting the singular value
+            # dimension or by adding a z-dimension
+            if not element.interface.packed(element):
+                if vdim:
+                    array = array[vdim]
+                else:
+                    array = array.to_array("z")
+                    # If data is 3D then we have one extra constant dimension
+                    if array.ndim > 3:
+                        drop = set(array.dims) - {*main_dims, 'z'}
+                        array = array.squeeze(dim=drop)
+            array = array.transpose(*main_dims, ...)
+        else:
+            array = element.data[vdim]
+
+        return array
 
     def _process(self, element, key=None):
         element = element.map(self.to_xarray, Image)
@@ -1326,28 +1353,7 @@ class shade(LinkableOperation):
             element = element.clone(datatype=['xarray'])
 
         kdims = element.kdims
-        if isinstance(element, ImageStack):
-            vdim = element.vdims
-            array = element.data
-            # If data is a xarray Dataset it has to be converted to a
-            # DataArray, either by selecting the singular value
-            # dimension or by adding a z-dimension
-            kdims = [kdim.name for kdim in kdims]
-            if sel_cols := array.attrs.get("selector_columns"):
-                array = array.drop_vars(sel_cols)
-            if not element.interface.packed(element):
-                if len(vdim) == 1:
-                    array = array[vdim[0].name]
-                else:
-                    array = array.to_array("z")
-                    # If data is 3D then we have one extra constant dimension
-                    if array.ndim > 3:
-                        drop = set(array.dims) - {*kdims, 'z'}
-                        array = array.squeeze(dim=drop)
-            array = array.transpose(*element.data.sizes, ...)
-        else:
-            vdim = element.vdims[0].name
-            array = element.data[vdim]
+        array = self._extract_data(element)
 
         # Dask is not supported by shade so materialize it
         array = array.compute()
@@ -1715,7 +1721,7 @@ class SpreadingOperation(LinkableOperation):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
         elif isinstance(element, ImageStack):
-            data = element.data
+            data = shade._extract_data(element)
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
@@ -1739,6 +1745,9 @@ class SpreadingOperation(LinkableOperation):
                 img = datashade.uint32_to_uint8(array.data)[::-1]
                 for idx, k, in enumerate("RGBA"):
                     new_data[k].data = img[:, :, idx]
+            elif isinstance(element, ImageStack):
+                for k in array["z"].data:
+                    new_data[k].data = array.sel(z=k)
             elif isinstance(element, Image):
                 new_data[element.vdims[0].name].data = array
             else:
