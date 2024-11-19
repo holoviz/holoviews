@@ -1411,19 +1411,13 @@ def test_selector_datashade(point_plot, sel_fn):
         np.testing.assert_array_equal(img[n], img_count[n], err_msg=n)
 
 
+@pytest.mark.parametrize("op_fn", (rasterize, datashade))
 @pytest.mark.parametrize(
-    "op_fn",
-    (
-        rasterize,
-        datashade,
-        lambda *args, **kwargs: dynspread(rasterize(*args, **kwargs)),
-        lambda *args, **kwargs: dynspread(datashade(*args, **kwargs)),
-    ),
-    ids=["rasterize", "datashade", "rasterize+dynspread", "datashader+dynspread"],
+    "agg_fn", (ds.count(), ds.by("cat")), ids=["count", "by"]
 )
-def test_selector_spread(point_plot, op_fn):
+def test_selector_spread(point_plot, op_fn, agg_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
-    img = op_fn(point_plot, selector=ds.first("val"), **inputs)
+    img = op_fn(point_plot, aggregator=agg_fn, selector=ds.first("val"), **inputs)
     spread_img = spread(img)
 
     with suppress(AssertionError): # We expect them to be different
@@ -1434,10 +1428,14 @@ def test_selector_spread(point_plot, op_fn):
         np.testing.assert_array_equal(spread_img.data["__index__"], img.data["__index__"])
         raise ValueError("The spread should not be equal to the original image")
 
-    vdim = spread_img.vdims[-1].name  # Last one as it is alpha for datashade
-    vdim_nan = spread_img.data[vdim] == 0
+    if isinstance(agg_fn, ds.count):
+        data = spread_img.vdims[-1].name  # FIXME: Last one as it is alpha for datashade, shouldn't matter
+        data_nan = spread_img.data[data] == 0
+    else:
+        data_nan = ~np.any([spread_img.data[v.name] != 0 for v in spread_img.vdims], axis=0)
+
     index_nan = spread_img.data["__index__"] == -1
-    np.testing.assert_array_equal(vdim_nan, index_nan)
+    np.testing.assert_array_equal(data_nan, index_nan)
 
 
 def test_selector_rasterize_with_datetime_column():

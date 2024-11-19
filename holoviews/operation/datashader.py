@@ -1746,7 +1746,7 @@ class SpreadingOperation(LinkableOperation):
                 for idx, k, in enumerate("RGBA"):
                     new_data[k].data = img[:, :, idx]
             elif isinstance(element, ImageStack):
-                for k in array["z"].data:
+                for k in map(str, element.vdims):
                     new_data[k].data = array.sel(z=k)
             elif isinstance(element, Image):
                 new_data[element.vdims[0].name].data = array
