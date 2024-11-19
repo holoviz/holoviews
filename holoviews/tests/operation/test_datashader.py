@@ -1411,7 +1411,16 @@ def test_selector_datashade(point_plot, sel_fn):
         np.testing.assert_array_equal(img[n], img_count[n], err_msg=n)
 
 
-@pytest.mark.parametrize("op_fn", (rasterize, datashade))
+@pytest.mark.parametrize(
+    "op_fn",
+    (
+        rasterize,
+        datashade,
+        lambda *args, **kwargs: dynspread(rasterize(*args, **kwargs)),
+        lambda *args, **kwargs: dynspread(datashade(*args, **kwargs)),
+    ),
+    ids=["rasterize", "datashade", "rasterize+datashade", "dynspread+datashade"],
+)
 def test_selector_spread(point_plot, op_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = op_fn(point_plot, selector=ds.first("val"), **inputs)
