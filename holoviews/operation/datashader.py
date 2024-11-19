@@ -458,7 +458,7 @@ class aggregate(LineAggregationOperation):
                     main_dim = next(k for k in agg if k != "__index__")
                     # Taking values from the main dimension expanding it to
                     # a new dataset
-                    agg = agg[main_dim].to_dataset(dim=list(agg.dims)[2])
+                    agg = agg[main_dim].to_dataset(dim=list(agg.sizes)[2])
                     agg["__index__"] = ((y.name, x.name), index)
 
             neg1 = index == -1
@@ -1342,7 +1342,7 @@ class shade(LinkableOperation):
                     array = array.to_array("z")
                     # If data is 3D then we have one extra constant dimension
                     if array.ndim > 3:
-                        drop = [d for d in array.dims if d not in [*kdims, 'z']]
+                        drop = set(array.dims) - {*kdims, 'z'}
                         array = array.squeeze(dim=drop)
             array = array.transpose(*element.data.sizes, ...)
         else:
