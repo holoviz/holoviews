@@ -1344,7 +1344,7 @@ class shade(LinkableOperation):
                     if array.ndim > 3:
                         drop = [d for d in array.dims if d not in [*kdims, 'z']]
                         array = array.squeeze(dim=drop)
-            array = array.transpose(*kdims, ...)
+            array = array.transpose(*element.data.sizes, ...)
         else:
             vdim = element.vdims[0].name
             array = element.data[vdim]
