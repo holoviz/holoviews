@@ -1720,10 +1720,10 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
-        elif isinstance(element, ImageStack):
-            data = shade._extract_data(element)
         elif isinstance(element, Image):
-            data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
+            if element.interface.datatype != 'xarray':
+                element = element.clone(datatype=['xarray'])
+            data = shade._extract_data(element)
         else:
             raise ValueError('spreading can only be applied to Image or RGB Elements. '
                              f'Received object of type {type(element)!s}')
