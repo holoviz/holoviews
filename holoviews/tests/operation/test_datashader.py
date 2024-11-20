@@ -874,9 +874,9 @@ class DatashaderShadeTests(ComparisonTestCase):
                                      datatype=['xarray'], vdims=Dimension('z Count', nodata=0))},
                          kdims=['z'])
         shaded = shade(data, rescale_discrete_levels=False)
-        r = [[228, 120], [66, 120]]
-        g = [[26, 109], [150, 109]]
-        b = [[28, 95], [129, 95]]
+        r = [[228, 0], [66, 0]]
+        g = [[26, 0], [150, 0]]
+        b = [[28, 0], [129, 0]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
                        vdims=[*RGB.vdims, Dimension('A', range=(0, 1))])
@@ -892,9 +892,9 @@ class DatashaderShadeTests(ComparisonTestCase):
                                      datatype=['grid'], vdims=Dimension('z Count', nodata=0))},
                          kdims=['z'])
         shaded = shade(data, rescale_discrete_levels=False)
-        r = [[228, 120], [66, 120]]
-        g = [[26, 109], [150, 109]]
-        b = [[28, 95], [129, 95]]
+        r = [[228, 0], [66, 0]]
+        g = [[26, 0], [150, 0]]
+        b = [[28, 0], [129, 0]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
                        vdims=[*RGB.vdims, Dimension('A', range=(0, 1))])
