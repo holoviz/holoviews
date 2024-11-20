@@ -1263,7 +1263,9 @@ class shade(LinkableOperation):
         """
         Cast uint32 RGB image to 4 uint8 channels.
         """
-        return np.flipud(img.view(dtype=np.uint8).reshape((*img.shape, 4)))
+        new_array = np.flipud(img.view(dtype=np.uint8).reshape((*img.shape, 4)))
+        new_array[new_array[:,:,3] == 0] = 0  # Set alpha 0 to 0 for all dimension
+        return new_array
 
 
     @classmethod
@@ -1272,6 +1274,7 @@ class shade(LinkableOperation):
         Cast uint32 xarray DataArray to 4 uint8 channels.
         """
         new_array = img.values.view(dtype=np.uint8).reshape((*img.shape, 4))
+        new_array[new_array[:,:,3] == 0] = 0
         coords = dict(img.coords, band=[0, 1, 2, 3])
         return xr.DataArray(new_array, coords=coords, dims=(*img.dims, 'band'))
 

@@ -1428,13 +1428,9 @@ def test_selector_spread(point_plot, op_fn, agg_fn):
         np.testing.assert_array_equal(spread_img.data["__index__"], img.data["__index__"])
         raise ValueError("The spread should not be equal to the original image")
 
-    if isinstance(agg_fn, ds.count):
-        data = spread_img.vdims[-1].name  # FIXME: Last one as it is alpha for datashade, shouldn't matter
-        data_nan = spread_img.data[data] == 0
-    else:
-        data_nan = ~np.any([spread_img.data[v.name] != 0 for v in spread_img.vdims], axis=0)
-
+    data_nan = np.all([spread_img.data[v.name] == 0 for v in spread_img.vdims], axis=0)
     index_nan = spread_img.data["__index__"] == -1
+    assert index_nan.sum() == 36  # Hard-coded
     np.testing.assert_array_equal(data_nan, index_nan)
 
 
