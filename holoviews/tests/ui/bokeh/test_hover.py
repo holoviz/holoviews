@@ -230,8 +230,8 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     from holoviews.operation.datashader import rasterize
 
     df = pd.DataFrame({
-        "x": rng.normal(0, 1, 100),
-        "y": rng.normal(0, 1, 100),
+        "x": rng.normal(45, 1, 100),
+        "y": rng.normal(85, 1, 100),
         "s": 1,
         "val": 10,
         "cat": "cat1",
@@ -255,5 +255,7 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    expect(page.locator(".bk-Tooltip")).to_contain_text('x:4')
+    expect(page.locator(".bk-Tooltip")).to_contain_text('y:8')
     expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
     expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
