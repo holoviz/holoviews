@@ -34,6 +34,7 @@ jobs:
             test
             type
           scopes: |
+            dev
             data
             plotting
             bokeh
