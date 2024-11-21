@@ -411,14 +411,14 @@ class aggregate(LineAggregationOperation):
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
 
-        expr_state = AggState.get_state(agg_fn, sel_fn)
-        if AggState.has_sel(expr_state):
+        agg_state = AggState.get_state(agg_fn, sel_fn)
+        if AggState.has_sel(agg_state):
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
-            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, expr_state)
+            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, agg_state)
         else:
-            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, expr_state)
+            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
@@ -427,12 +427,12 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if not AggState.has_by(expr_state):
+        if not AggState.has_by(agg_state):
             return self.p.element_type(agg, **params)
-        elif expr_state == AggState.AGG_BY:
+        elif agg_state == AggState.AGG_BY:
             params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
-        elif expr_state == AggState.AGG_SEL_BY:
+        elif agg_state == AggState.AGG_SEL_BY:
             params['vdims'] = [d for d in agg.data_vars if d not in agg.attrs["selector_columns"]]
             return ImageStack(agg, **params)
 
