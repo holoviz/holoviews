@@ -25,7 +25,7 @@ class ServerHoverMixin:
 
     def _update_hover(self, element):
         tool = self.handles['hover']
-        if isinstance(tool.tooltips, Div):
+        if 'hv_created' in tool.tags and isinstance(tool.tooltips, Div):
             self._hover_data = element.data
             return
         super()._update_hover(element)
@@ -40,7 +40,11 @@ class ServerHoverMixin:
                 break
 
         data = element.data
-        if hover is None or not (XArrayInterface.applies(data) and "selector_columns" in data.attrs):
+        if (
+            hover is None
+            or "hv_created" not in tool.tags
+            or not (XArrayInterface.applies(data) and "selector_columns" in data.attrs)
+        ):
             return tools
 
         self._hover_data = data
