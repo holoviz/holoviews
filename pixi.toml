@@ -23,7 +23,7 @@ test-gpu = ["py312", "test-core", "optional", "test-gpu"]
 docs = ["py311", "optional", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
-dev = ["py312", "optional", "test-core", "test-example", "test-unit-task", "test-ui", "lint"]
+dev = ["py312", "optional", "test-core", "test-example", "test-unit-task", "test-ui", "lint", "dev"]
 
 [dependencies]
 nomkl = "*"
@@ -87,6 +87,12 @@ xyzservices = "*"
 
 [feature.optional.target.unix.dependencies]
 tsdownsample = "*" # currently not available on Windows
+
+[feature.dev.dependencies]
+jupyterlab = "*"
+
+[feature.dev.tasks]
+lab = 'jupyter lab'
 
 # =============================================
 # =================== TESTS ===================
