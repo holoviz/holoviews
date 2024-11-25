@@ -96,13 +96,45 @@ pixi run install
 :::{admonition} Note
 :class: info
 
-Currently, this needs to be run for each environment. So, if you want to install in the `test-ui` environment, you can add `--environment` / `-e` to the command:
+Currently, this needs to be run for each environment. So, if you want to install in the `dev` environment, you can add `--environment` / `-e` to the command:
 
 ```bash
-pixi run -e test-ui install
+pixi run -e dev install
 ```
 
 :::
+
+## Developer Environment
+
+The `dev` environment is meant to provide all the tools needed to develop HoloViews.
+
+This environment can be created by running `pixi run -e dev install`, which will set up the environment and make an editable install of HoloViews.
+
+You can activate this environment in your terminal by running `pixi shell -e dev`.
+
+### VS Code
+
+This environment can also be selected in your IDE. In VS Code, this can be done by running the command `Python: Select Interpreter` and choosing `{'dev': Pixi}`.
+
+<p style="text-align: center">
+  <img
+    src="https://github.com/user-attachments/assets/6a8f7f60-870d-4497-8e23-52b336cf7682"
+    alt="001"
+    style="width: 45%; display: inline-block"
+  />
+  <img
+    src="https://github.com/user-attachments/assets/edcf1291-7615-428e-b8e5-d3b54f9d7f51"
+    alt="002"
+    style="width: 45%; display: inline-block"
+  />
+</p>
+To confirm you are using this dev environment, check the bottom right corner:
+
+![003](https://github.com/user-attachments/assets/0ee7b97a-3551-4bde-84ff-6a4028a723cd)
+
+### Jupyter Lab
+
+You can launch Jupyter lab from this environment with `pixi run lab`.
 
 ## Linting
 
