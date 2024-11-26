@@ -124,7 +124,7 @@ This environment can also be selected in your IDE. In VS Code, this can be done 
     style="width: 45%; display: inline-block"
   />
   <img
-    src="https://github.com/user-attachments/assets/edcf1291-7615-428e-b8e5-d3b54f9d7f51"
+    src="https://github.com/user-attachments/assets/55d48f26-7dca-4397-b216-6a5cae0632a3"
     alt="002"
     style="width: 45%; display: inline-block"
   />
@@ -132,7 +132,7 @@ This environment can also be selected in your IDE. In VS Code, this can be done 
 
 To confirm you are using this dev environment, check the bottom right corner:
 
-![003](https://github.com/user-attachments/assets/0ee7b97a-3551-4bde-84ff-6a4028a723cd)
+![003](https://github.com/user-attachments/assets/66b405e2-e6d0-4678-bd18-96b2a9e573ef)
 
 ### Jupyter Lab
 
