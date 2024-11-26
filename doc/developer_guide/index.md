@@ -137,6 +137,7 @@ To confirm you are using this dev environment, check the bottom right corner:
 ### Jupyter Lab
 
 You can launch Jupyter lab with the `default` environment with `pixi run lab`.
+This can be advantageous when you need to edit the documentation or debug an example notebook.
 
 ## Linting
 
@@ -151,6 +152,18 @@ Linting can also be set up to run automatically with each commit; this is the re
 ```bash
 pixi run lint-install
 ```
+
+:::{admonition} Note
+:class: info
+
+Alternatively, if you have `pre-commit` installed elsewhere you can run
+
+```bash
+pre-commit install  # To install
+pre-commit run --all-files  # To run on all files
+```
+
+:::
 
 ## Testing
 
