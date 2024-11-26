@@ -13,19 +13,59 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 PYTHONIOENCODING = "utf-8"
 
 [environments]
-dev = ["py312", "optional", "test-core", "test-example", "test-unit-task", "test-ui", "lint", "dev"]
-test-39 = ["py39", "optional", "test-core", "test-example", "test-unit-task"]
-test-310 = ["py310", "optional", "test-core", "test-example", "test-unit-task"]
-test-311 = ["py311", "optional", "test-core", "test-example", "test-unit-task"]
-test-312 = ["py312", "optional", "test-core", "test-example", "test-unit-task"]
-test-ui = ["py312", "optional", "test-core", "test-ui"]
-test-core = ["py313", "test-core", "test-unit-task"]
-test-gpu = ["py312", "test-core", "optional", "test-gpu"]
-docs = ["py311", "optional", "doc"]
-build = ["py311", "build"]
-lint = ["py311", "lint"]
+default = [
+    "required",
+    "py312",
+    "optional",
+    "test-core",
+    "test-example",
+    "test-unit-task",
+    "test-ui",
+    "lint",
+    "dev",
+]
 
-[dependencies]
+[environments.test-39]
+features = ["required", "py39", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-310]
+features = ["required", "py310", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-311]
+features = ["required", "py311", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-312]
+features = ["required", "py312", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-ui]
+features = ["required", "py312", "optional", "test-core", "test-ui"]
+no-default-feature = true
+
+[environments.test-core]
+features = ["required", "py313", "test-core", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-gpu]
+features = ["required", "py312", "test-core", "optional", "test-gpu"]
+no-default-feature = true
+
+[environments.docs]
+features = ["required", "py311", "optional", "doc"]
+no-default-feature = true
+
+[environments.build]
+features = ["required", "py311", "build"]
+no-default-feature = true
+
+[environments.lint]
+features = ["lint"]
+no-default-feature = true
+
+[feature.required.dependencies]
 nomkl = "*"
 pip = "*"
 # Required
@@ -188,6 +228,7 @@ build-pip = 'python -m build .'
 # =================== LINT ====================
 # =============================================
 [feature.lint.dependencies]
+python = "3.12" # To not download bokeh-sampledata
 pre-commit = "*"
 
 [feature.lint.tasks]
