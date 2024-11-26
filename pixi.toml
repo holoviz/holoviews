@@ -13,6 +13,7 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 PYTHONIOENCODING = "utf-8"
 
 [environments]
+dev = ["py312", "optional", "test-core", "test-example", "test-unit-task", "test-ui", "lint", "dev"]
 test-39 = ["py39", "optional", "test-core", "test-example", "test-unit-task"]
 test-310 = ["py310", "optional", "test-core", "test-example", "test-unit-task"]
 test-311 = ["py311", "optional", "test-core", "test-example", "test-unit-task"]
@@ -23,7 +24,6 @@ test-gpu = ["py312", "test-core", "optional", "test-gpu"]
 docs = ["py311", "optional", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
-dev = ["py312", "optional", "test-core", "test-example", "test-unit-task", "test-ui", "lint", "dev"]
 
 [dependencies]
 nomkl = "*"
