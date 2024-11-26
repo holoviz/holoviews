@@ -228,7 +228,6 @@ build-pip = 'python -m build .'
 # =================== LINT ====================
 # =============================================
 [feature.lint.dependencies]
-python = "3.12" # To not download bokeh-sampledata
 pre-commit = "*"
 
 [feature.lint.tasks]
