@@ -119,12 +119,12 @@ This environment can also be selected in your IDE. In VS Code, this can be done 
 
 <p style="text-align: center">
   <img
-    src="https://github.com/user-attachments/assets/6a8f7f60-870d-4497-8e23-52b336cf7682"
+    src="https://assets.holoviews.org/static/dev_guide/001.png"
     alt="001"
     style="width: 45%; display: inline-block"
   />
   <img
-    src="https://github.com/user-attachments/assets/55d48f26-7dca-4397-b216-6a5cae0632a3"
+    src="https://assets.holoviews.org/static/dev_guide/002.png"
     alt="002"
     style="width: 45%; display: inline-block"
   />
@@ -132,7 +132,7 @@ This environment can also be selected in your IDE. In VS Code, this can be done 
 
 To confirm you are using this dev environment, check the bottom right corner:
 
-![003](https://github.com/user-attachments/assets/66b405e2-e6d0-4678-bd18-96b2a9e573ef)
+![003](https://assets.holoviews.org/static/dev_guide/003.png)
 
 ### Jupyter Lab
 
