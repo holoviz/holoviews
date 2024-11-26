@@ -63,7 +63,7 @@ This `holoviews` directory is the _source checkout_ for the remainder of this do
 
 ## Start developing
 
-To start developing, run the following command, this will create an environment and install HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+To start developing, run the following command, this will create an environment called `default` and install HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
@@ -111,7 +111,7 @@ The `default` environment is meant to provide all the tools needed to develop Ho
 
 This environment can be created by running `pixi run install`, which will set up the environment and make an editable install of HoloViews.
 
-You can activate this environment in your terminal by running `pixi shell`.
+If you need to run a command directly instead of via `pixi`, you can activate the developer environment by running `pixi shell`, and run your command (e.g. `pytest holoviews/tests/<somefile.py>`).
 
 ### VS Code
 
