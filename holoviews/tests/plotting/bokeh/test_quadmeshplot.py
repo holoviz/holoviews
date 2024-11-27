@@ -83,7 +83,7 @@ class TestQuadMeshPlot(TestBokehPlot):
                 'x': [0.5, 0.5, 0.5, 1.5, 1.5, 1.5],
                 'y': [0.5, 1.5, 2.5, 0.5, 1.5, 2.5]}
         self.assertEqual(source.data.keys(), expected.keys())
-        for key in expected:
+        for key in expected:  # noqa: PLC0206
             self.assertEqual(list(source.data[key]), expected[key])
 
     def test_quadmesh_irregular_centers(self):
@@ -103,7 +103,7 @@ class TestQuadMeshPlot(TestBokehPlot):
                     'x': [0.5, 0.5, 0.5, 1.5, 1.5],
                     'y': [0.5, 1.5, 2.5, 0.5, 1.5]}
         self.assertEqual(source.data.keys(), expected.keys())
-        for key in expected:
+        for key in expected:  # noqa: PLC0206
             self.assertEqual(list(source.data[key]), expected[key])
 
     def test_quadmesh_irregular_edges(self):
@@ -123,5 +123,5 @@ class TestQuadMeshPlot(TestBokehPlot):
                     'x': [0.5, 0.5, 0.5, 1.5, 1.5],
                     'y': [0.5, 1.5, 2.5, 0.5, 1.5]}
         self.assertEqual(source.data.keys(), expected.keys())
-        for key in expected:
+        for key in expected:  # noqa: PLC0206
             self.assertEqual(list(source.data[key]), expected[key])

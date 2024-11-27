@@ -1721,11 +1721,11 @@ class StoreOptions:
                     additions.update({k:kws})
             if spec_key not in options:
                 options[spec_key] = {}
-            for key in additions:
+            for key, value in additions.items():
                 if key in options[spec_key]:
-                    options[spec_key][key].update(additions[key])
+                    options[spec_key][key].update(value)
                 else:
-                    options[spec_key][key] = additions[key]
+                    options[spec_key][key] = value
         return options
 
 

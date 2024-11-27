@@ -57,7 +57,7 @@ class Raster(Element2D):
         if not isinstance(slices, tuple):
             slices = (slices, slice(None))
         elif len(slices) > (2 + self.depth):
-            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
+            raise KeyError(f"Can only slice {2 + self.depth} dimensions")
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
             raise KeyError(f"{self.vdims[0].name!r} is the only selectable value dimension")
 

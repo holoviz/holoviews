@@ -122,9 +122,8 @@ class PandasInterface(Interface, PandasAPI):
                 if any(d.ndim > 1 for d in data):
                     raise ValueError('PandasInterface cannot interpret multi-dimensional arrays.')
                 elif len(data) < min_dims:
-                    raise DataError('Data contains fewer columns than the %s element expects. Expected '
-                                    'at least %d columns but found only %s columns.' %
-                                    (eltype.__name__, min_dims, len(data)))
+                    raise DataError(f'Data contains fewer columns than the {eltype.__name__} element expects. Expected '
+                                    f'at least {min_dims} columns but found only {len(data)} columns.')
                 elif not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame(dict(zip(columns, data)), columns=columns)

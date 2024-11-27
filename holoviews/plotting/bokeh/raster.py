@@ -81,8 +81,7 @@ class RasterPlot(ColorbarPlot):
                 return date.toISOString().slice(0, 19).replace('T', ' ')
             }
             """
-            for key in formatters:
-                formatter = formatters[key]
+            for key, formatter in formatters.values():
                 if isinstance(formatter, str) and formatter.lower() == "datetime":
                     formatters[key] = CustomJSHover(code=datetime_code)
 
