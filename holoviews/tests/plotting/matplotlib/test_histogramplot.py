@@ -81,7 +81,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
-        histogram = Histogram([(np.datetime64('2016-04-0{}'.format(i), 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(histogram)
@@ -92,7 +92,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_histogram_padding_datetime_nonsquare(self):
-        histogram = Histogram([(np.datetime64('2016-04-0{}'.format(i), 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(histogram)
