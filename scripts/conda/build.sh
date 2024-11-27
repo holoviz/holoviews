@@ -4,7 +4,7 @@ set -euxo pipefail
 
 PACKAGE="holoviews"
 
-python -m build . # Can add -w when this is solved: https://github.com/pypa/hatch/issues/1305
+python -m build --sdist .
 
 VERSION=$(python -c "import $PACKAGE; print($PACKAGE._version.__version__)")
 export VERSION
