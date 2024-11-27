@@ -118,11 +118,10 @@ class SpatialPandasInterface(MultiInterface):
         dim_types = 'key' if vdims else 'all'
         geom_dims = cls.geom_dims(dataset)
         if len(geom_dims) != 2:
-            raise DataError('Expected %s instance to declare two key '
+            raise DataError('Expected {} instance to declare two key '
                             'dimensions corresponding to the geometry '
-                            'coordinates but %s dimensions were found '
-                            'which did not refer to any columns.'
-                            % (type(dataset).__name__, len(geom_dims)), cls)
+                            'coordinates but {} dimensions were found '
+                            'which did not refer to any columns.'.format(type(dataset).__name__, len(geom_dims)), cls)
         not_found = [d.name for d in dataset.dimensions(dim_types)
                      if d not in geom_dims and d.name not in dataset.data]
         if not_found:

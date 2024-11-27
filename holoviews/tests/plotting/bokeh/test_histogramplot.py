@@ -135,7 +135,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
-        histogram = Histogram([(np.datetime64('2016-04-0%s' % i, 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64('2016-04-0{}'.format(i), 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(histogram)
@@ -146,7 +146,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_histogram_padding_datetime_nonsquare(self):
-        histogram = Histogram([(np.datetime64('2016-04-0%s' % i, 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64('2016-04-0{}'.format(i), 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(histogram)

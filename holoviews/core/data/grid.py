@@ -126,10 +126,10 @@ class GridInterface(DictInterface):
                 # If empty or an irregular mesh
                 pass
             elif len(shape) != len(expected):
-                raise error('The shape of the %s value array does not '
+                raise error('The shape of the {} value array does not '
                             'match the expected dimensionality indicated '
-                            'by the key dimensions. Expected %s-D array, '
-                            'found %s-D array.' % (vdim, len(expected), len(shape)))
+                            'by the key dimensions. Expected {}-D array, '
+                            'found {}-D array.'.format(vdim, len(expected), len(shape)))
             elif any((e not in (s, s + 1)) for s, e in zip(shape, valid_shape)):
                 raise error(f'Key dimension values and value array {vdim} '
                             f'shapes do not match. Expected shape {valid_shape}, '

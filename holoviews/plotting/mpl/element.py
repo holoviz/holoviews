@@ -997,8 +997,7 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(cmap, list) and len(cmap) != ncolors:
                     raise ValueError('The number of colors in the colormap '
                                      'must match the intervals defined in the '
-                                     'color_levels, expected %s colors found %s.'
-                                     % (ncolors, len(cmap)))
+                                     'color_levels, expected {} colors found {}.'.format(ncolors, len(cmap)))
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
             except ValueError:

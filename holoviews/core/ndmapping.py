@@ -147,10 +147,9 @@ class MultiDimensionalMapping(Dimensioned):
             raise TypeError(f'{slf} does not accept {data} type, data elements have '
                             f'to be a {data_type}.')
         elif not len(dim_vals) == self.ndims:
-            raise KeyError('The data contains keys of length %s, but the kdims '
-                           'only declare %s dimensions. Ensure that the number '
-                           'of kdims match the length of the keys in your data.'
-                           % (len(dim_vals), self.ndims))
+            raise KeyError('The data contains keys of length {}, but the kdims '
+                           'only declare {} dimensions. Ensure that the number '
+                           'of kdims match the length of the keys in your data.'.format(len(dim_vals), self.ndims))
 
 
     def _add_item(self, dim_vals, data, sort=True, update=True):
@@ -475,7 +474,7 @@ class MultiDimensionalMapping(Dimensioned):
         """
         if (len(self.values()) > 0):
             info_str = self.__class__.__name__ +\
-                       " containing %s items of type %s\n" % (len(self.keys()),
+                       " containing {} items of type {}\n".format(len(self.keys()),
                                                               type(self.values()[0]).__name__)
         else:
             info_str = self.__class__.__name__ + " containing no items\n"
@@ -920,7 +919,7 @@ class UniformNdMapping(NdMapping):
                 for dim, val in key_dims:
                     dimn = 1
                     while dim in df:
-                        dim = dim+'_%s' % dimn
+                        dim = dim+'_{}'.format(dimn)
                         if dim in df:
                             dimn += 1
                     df.insert(0, dim, val)

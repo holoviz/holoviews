@@ -109,7 +109,7 @@ class ProgressBar(ProgressIndicator):
                                             min_port=min_port,
                                             max_port=max_port,
                                             max_tries=max_tries)
-            self.param.message("Progress broadcast bound to port %s" % port)
+            self.param.message("Progress broadcast bound to port {}".format(port))
             return sock
         except Exception:
             self.param.message("No suitable port found for progress broadcast.")
