@@ -123,7 +123,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.3483695221017129)
 
     def test_curve_padding_datetime_square(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        curve = Curve([(np.datetime64('2016-04-0%s' % i), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(curve)
@@ -134,7 +134,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_curve_padding_datetime_nonsquare(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        curve = Curve([(np.datetime64('2016-04-0%s' % i), i) for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(curve)

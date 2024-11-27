@@ -2848,7 +2848,7 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(cmap, list) and len(cmap) != ncolors:
                     raise ValueError('The number of colors in the colormap '
                                      'must match the intervals defined in the '
-                                     'color_levels, expected %d colors found %d.'
+                                     'color_levels, expected %s colors found %s.'
                                      % (ncolors, len(cmap)))
             palette = process_cmap(cmap, ncolors, categorical=categorical)
             if isinstance(self.color_levels, list):

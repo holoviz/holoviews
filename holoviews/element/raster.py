@@ -268,7 +268,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
         elif isinstance(data, np.ndarray) and data.ndim < self._ndim:
-            raise ValueError('%s type expects %d-D array received %d-D '
+            raise ValueError('%s type expects %s-D array received %s-D '
                              'array.' % (type(self).__name__, self._ndim, data.ndim))
 
         if rtol is not None:
@@ -319,7 +319,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
             if self.shape[2] != len(self.vdims):
-                raise ValueError("Input array has shape %r but %d value dimensions defined"
+                raise ValueError("Input array has shape %r but %s value dimensions defined"
                                  % (self.shape, len(self.vdims)))
 
         # Ensure coordinates are regularly sampled

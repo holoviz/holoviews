@@ -88,7 +88,7 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(x_range.end, 3.3483695221017129)
 
     def test_spikes_padding_datetime_square(self):
-        spikes = Spikes([np.datetime64('2016-04-0%d' % i) for i in range(1, 4)]).opts(
+        spikes = Spikes([np.datetime64('2016-04-0%s' % i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(spikes)
@@ -97,7 +97,7 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(x_range.end, np.datetime64('2016-04-03T04:48:00.000000000'))
 
     def test_spikes_padding_datetime_square_heights(self):
-        spikes = Spikes([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)], vdims=['Height']).opts(
+        spikes = Spikes([(np.datetime64('2016-04-0%s' % i), i) for i in range(1, 4)], vdims=['Height']).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(spikes)
@@ -108,7 +108,7 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_spikes_padding_datetime_nonsquare(self):
-        spikes = Spikes([np.datetime64('2016-04-0%d' % i) for i in range(1, 4)]).opts(
+        spikes = Spikes([np.datetime64('2016-04-0%s' % i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(spikes)

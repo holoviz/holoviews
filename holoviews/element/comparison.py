@@ -532,7 +532,7 @@ class Comparison(ComparisonInterface):
                             el2.dimension_values(d, flat=tabular))
                             for d in el1.vdims]
         if el1.shape[0] != el2.shape[0]:
-            raise AssertionError("%s not of matching length, %d vs. %d."
+            raise AssertionError("%s not of matching length, %s vs. %s."
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             with contextlib.suppress(Exception):

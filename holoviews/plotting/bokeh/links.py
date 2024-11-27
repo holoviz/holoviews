@@ -235,8 +235,8 @@ class DataLinkCallback(LinkCallback):
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
             raise ValueError('DataLink source data length must match target '
-                            'data length, found source length of %d and '
-                            'target length of %d.' % (src_len[0], tgt_len[0]))
+                            'data length, found source length of %s and '
+                            'target length of %s.' % (src_len[0], tgt_len[0]))
 
         # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():

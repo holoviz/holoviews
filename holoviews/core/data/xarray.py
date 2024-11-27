@@ -180,7 +180,7 @@ class XArrayInterface(GridInterface):
             data = {d: np.asarray(values) if d in kdims else values
                     for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
-            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+            dims = tuple('dim_%s' % i for i in range(max(coord_dims)))[::-1]
             coords = {}
             for kd in kdims:
                 coord_vals = data[kd.name]

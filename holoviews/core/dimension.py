@@ -700,7 +700,7 @@ class LabelledData(param.Parameterized):
         obj_dict = self.__dict__.copy()
         try:
             if Store.save_option_state and (obj_dict.get('_id', None) is not None):
-                custom_key = '_custom_option_%d' % obj_dict['_id']
+                custom_key = '_custom_option_%s' % obj_dict['_id']
                 if custom_key not in obj_dict:
                     obj_dict[custom_key] = {backend:s[obj_dict['_id']]
                                             for backend,s in Store._custom_options.items()
