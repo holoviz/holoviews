@@ -88,7 +88,7 @@ class ItemTable(Element):
         if col > 2:
             raise Exception("Only two columns available in a ItemTable.")
         elif row >= self.rows:
-            raise Exception("Maximum row index is %s" % self.rows-1)
+            raise Exception(f"Maximum row index is {self.rows-1}")
         elif col == 0:
             return self.dimensions('value')[row].pprint_label
         else:

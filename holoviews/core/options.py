@@ -1522,9 +1522,8 @@ class StoreOptions:
 
         # Clean up the custom tree if it was not applied
         if new_id not in Store.custom_options(backend=backend):
-            raise AssertionError("New option id %d does not match any "
-                                 "option trees in Store.custom_options."
-                                 % new_id)
+            raise AssertionError(f"New option id {new_id} does not match any "
+                                 "option trees in Store.custom_options.")
         return applied
 
     @classmethod

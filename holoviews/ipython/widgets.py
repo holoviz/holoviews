@@ -64,9 +64,7 @@ class ProgressBar(ProgressIndicator):
                 elapsed = time.time() -  self.start_time
                 if clear_output:
                     clear_output()
-                self.out = '\r' + ('100%% %s %02d:%02d:%02d'
-                                   % (self.label.lower(), elapsed//3600,
-                                      elapsed//60, elapsed%60))
+                self.out = f'\r100% {self.label.lower()} {elapsed//3600:02d}:{elapsed//60:02d}:{elapsed%60:02d}'
                 output = ''.join([pg.out for pg in self.current_progress])
                 sys.stdout.write(output)
             else:

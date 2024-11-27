@@ -277,9 +277,9 @@ class Tabular(Element):
         """
         ndims = self.ndims
         if col >= self.cols:
-            raise Exception("Maximum column index is %s" % self.cols-1)
+            raise Exception("Maximum column index is {}".format(self.cols-1))
         elif row >= self.rows:
-            raise Exception("Maximum row index is %s" % self.rows-1)
+            raise Exception("Maximum row index is {}".format(self.cols-1))
         elif row == 0:
             if col >= ndims:
                 if self.vdims:
