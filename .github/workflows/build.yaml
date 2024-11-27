@@ -74,6 +74,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
+          channels: "conda-forge"
       - name: conda setup
         run: |
           conda install -y anaconda-client
