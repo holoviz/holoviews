@@ -111,7 +111,9 @@ The `default` environment is meant to provide all the tools needed to develop Ho
 
 This environment can be created by running `pixi run install`, which will set up the environment and make an editable install of HoloViews.
 
-If you need to run a command directly instead of via `pixi`, you can activate the developer environment by running `pixi shell`, and run your command (e.g. `pytest holoviews/tests/<somefile.py>`).
+To activate this environment you can run `pixi shell`, this is equivalent to `source venv/bin/activate` in a virtual environment or `conda activate` in a conda environment.
+
+If you need to run a command directly instead of via `pixi`, you activate the environment and run your command (e.g. `pytest holoviews/tests/<somefile.py>`).
 
 ### VS Code
 
