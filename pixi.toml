@@ -131,6 +131,7 @@ tsdownsample = "*" # currently not available on Windows
 [feature.dev.dependencies]
 jupyterlab = "*"
 jupyterlab-myst = "*"
+setuptools_scm = "*"
 
 [feature.dev.tasks]
 lab = 'jupyter lab'
