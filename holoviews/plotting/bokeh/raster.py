@@ -363,7 +363,7 @@ class QuadMeshPlot(ColorbarPlot):
 
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(z, element, ranges, style)
-        cmapper = {'field': z.name, 'transform': cmapper}
+        cmapper = {'field': dimension_sanitizer(z.name), 'transform': cmapper}
 
         irregular = (element.interface.irregular(element, x) or
                      element.interface.irregular(element, y))
