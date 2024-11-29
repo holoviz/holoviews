@@ -405,11 +405,10 @@ class QuadMeshPlot(ColorbarPlot):
                     mask.append(False)
             mask = np.array(mask)
 
-            data = {'xs': XS, 'ys': YS, z.name: zvals[mask]}
+            data = {'xs': XS, 'ys': YS, dimension_sanitizer(z.name): zvals[mask]}
             if 'hover' in self.handles:
                 if not self.static_source:
-                    hover_data = self._collect_hover_data(
-                            element, mask, irregular=True)
+                    hover_data = self._collect_hover_data(element, mask, irregular=True)
                 hover_data[x] = np.array(xc)
                 hover_data[y] = np.array(yc)
         else:
