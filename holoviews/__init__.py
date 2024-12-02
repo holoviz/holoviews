@@ -76,6 +76,7 @@ To report issues go to https://github.com/holoviz/holoviews.
 import builtins
 import os
 import sys
+from typing import TYPE_CHECKING
 
 import param
 
@@ -131,6 +132,11 @@ if '_pyodide' in sys.modules:
     else:
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
+
+
+if TYPE_CHECKING:
+    # Adding this here to have better docstring in LSP
+    from .util import extension
 
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
