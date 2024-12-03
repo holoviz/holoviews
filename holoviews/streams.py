@@ -143,7 +143,7 @@ class Stream(param.Parameterized):
         stream = cls(**params)
         param_names = list(set(params) & set(cls.param))
         stream.param.watch(stream._sync__params, param_names)
-        for pname, ref in stream._param__private.refs.items():
+        for _, ref in stream._param__private.refs.items():
             for p in param.parameterized.resolve_ref(ref):
                 p.owner.param.watch(lambda e: cls.trigger([stream]), p.name)
         return stream
@@ -200,7 +200,6 @@ class Stream(param.Parameterized):
         """Called when a stream has been triggered"""
 
     def _sync__params(self, *events):
-        updates = {}
         for e in events:
             if e.name not in self._param__private.refs:
                 continue
@@ -1370,12 +1369,6 @@ class Tap(PointerXY):
                             constant=True, allow_refs=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
-    @classmethod
-    def from_param(cls, x=None, y=None):
-        tap = cls(x=x, y=y)
-        tap.param.watch(tap._event, ["x", "y"])
-        return tap
-
     def _event(self, *events):
         self.trigger([self])
 
@@ -1384,10 +1377,10 @@ class MultiAxisTap(LinkedStream):
     The x/y-positions of a tap or click in data coordinates.
     """
 
-    xs = param.Dict(default=None, constant=True, doc="""
+    xs = param.Dict(default=None, constant=True, allow_refs=True, doc="""
            Pointer positions along the x-axes in data coordinates""")
 
-    ys = param.Dict(default=None, constant=True, doc="""
+    ys = param.Dict(default=None, constant=True, allow_refs=True, doc="""
            Pointer positions along the y-axes in data coordinates""")
 
 
@@ -1396,11 +1389,11 @@ class DoubleTap(PointerXY):
     The x/y-position of a double-tap or -click in data coordinates.
     """
     x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
 class PressUp(PointerXY):
@@ -1408,22 +1401,22 @@ class PressUp(PointerXY):
     The x/y position of a mouse pressup event in data coordinates.
     """
     x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
 class PanEnd(PointerXY):
     """The x/y position of a the end of a pan event in data coordinates.
     """
     x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
+                            constant=True, allow_refs=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
 class MouseEnter(PointerXY):
@@ -1486,10 +1479,10 @@ class RangeXY(LinkedStream):
     Axis ranges along x- and y-axis in data coordinates.
     """
 
-    x_range = param.Tuple(default=None, length=2, constant=True, doc="""
+    x_range = param.Tuple(default=None, length=2, constant=True, allow_refs=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
-    y_range = param.Tuple(default=None, length=2, constant=True, doc="""
+    y_range = param.Tuple(default=None, length=2, constant=True, allow_refs=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
 
 
@@ -1498,7 +1491,7 @@ class RangeX(LinkedStream):
     Axis range along x-axis in data coordinates.
     """
 
-    x_range = param.Tuple(default=None, length=2, constant=True, doc="""
+    x_range = param.Tuple(default=None, length=2, constant=True, allow_refs=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
     def _set_stream_parameters(self, **kwargs):
@@ -1511,7 +1504,7 @@ class RangeY(LinkedStream):
     Axis range along y-axis in data coordinates.
     """
 
-    y_range = param.Tuple(default=None, length=2, constant=True, doc="""
+    y_range = param.Tuple(default=None, length=2, constant=True, allow_refs=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
 
     def _set_stream_parameters(self, **kwargs):
@@ -1526,7 +1519,7 @@ class BoundsXY(LinkedStream):
     """
 
     bounds = param.Tuple(default=None, constant=True, length=4,
-                         allow_None=True, doc="""
+                         allow_None=True, allow_refs=True, doc="""
         Bounds defined as (left, bottom, right, top) tuple.""")
 
 
@@ -1548,7 +1541,7 @@ class SelectionXY(BoundsXY):
     """
 
     bounds = param.Tuple(default=None, constant=True, length=4,
-                         allow_None=True, doc="""
+                         allow_None=True, allow_refs=True, doc="""
         Bounds defined as (left, bottom, right, top) tuple.""")
 
     x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
@@ -1569,7 +1562,7 @@ class BoundsX(LinkedStream):
     """
 
     boundsx = param.Tuple(default=None, constant=True, length=2,
-                          allow_None=True, doc="""
+                          allow_None=True, allow_refs=True, doc="""
         Bounds defined as (left, right) tuple.""")
 
 
@@ -1580,7 +1573,7 @@ class BoundsY(LinkedStream):
     """
 
     boundsy = param.Tuple(default=None, constant=True, length=2,
-                          allow_None=True, doc="""
+                          allow_None=True, allow_refs=True, doc="""
         Bounds defined as (bottom, top) tuple.""")
 
 
@@ -1589,7 +1582,7 @@ class Selection1D(LinkedStream):
     A stream representing a 1D selection of objects by their index.
     """
 
-    index = param.List(default=[], allow_None=True, constant=True, doc="""
+    index = param.List(default=[], allow_None=True, constant=True, allow_refs=True, doc="""
         Indices into a 1D datastructure.""")
 
 
