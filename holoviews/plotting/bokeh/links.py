@@ -162,6 +162,14 @@ class RangeToolLinkCallback(LinkCallback):
             else:
                 target_range_name = range_name
             axes[range_name] = ax = target_plot.handles[target_range_name]
+            if ax is source_plot.handles.get(target_range_name):
+                # Cloning the axis as it does not make sense to have a link
+                # for the same axis
+                new_ax = ax.clone()
+                source_plot.handles[target_range_name] = new_ax
+                setattr(source_plot.handles["plot"], range_name, new_ax)
+                # So it is not re-linked by pn.pane.HoloViews(..., linked_axes=True)
+                new_ax.tags = []
             interval = getattr(link, f'intervals{axis}', None)
             if interval is not None and BOKEH_GE_3_4_0:
                 min, max = interval
