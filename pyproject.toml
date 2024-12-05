@@ -128,8 +128,6 @@ filterwarnings = [
     "ignore::ResourceWarning",
     # 2024-11
     "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
-    # 2024-12
-    "ignore:sys.monitoring isn't available:coverage.exceptions.CoverageWarning", # OK
 ]
 
 [tool.coverage]

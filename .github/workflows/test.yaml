@@ -36,7 +36,6 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./holoviews --cov-report=xml"
-  COVERAGE_CORE: sysmon
 
 jobs:
   pre_commit:
