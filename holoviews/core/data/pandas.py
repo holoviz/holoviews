@@ -354,8 +354,6 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def sorted_index(cls, df):
-        if hasattr(df.index, 'is_lexsorted'):
-            return df.index.is_lexsorted()
         return df.index.is_monotonic_increasing
 
     @classmethod
