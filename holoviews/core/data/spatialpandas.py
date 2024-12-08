@@ -616,6 +616,8 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     Returns:
         An array containing the values along a dimension
     """
+    if not len(data):
+        return np.array([])
     column = data[dimension.name]
     if keep_index:
         return column
@@ -639,8 +641,6 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
         if expanded and not is_points and not i == (len(data[geom_col])-1):
             arrays.append(np.array([np.nan]))
 
-    if not len(data):
-        return np.array([])
     if expanded:
         return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
     elif (all_scalar and arrays):
