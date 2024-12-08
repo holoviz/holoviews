@@ -621,17 +621,19 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     column = data[dimension.name]
     if keep_index:
         return column
-    all_scalar = True
+    is_scalars = [isscalar(value) for value in column]
+    all_scalar = all(is_scalars)
+    if all_scalar and not expanded:
+        return column.unique()
     arrays, scalars = [], []
     for i, geom in enumerate(data[geom_col]):
         val = column.iloc[i]
-        scalar = isscalar(val)
+        scalar = is_scalars[i]
         if scalar:
             val = np.array([val])
         if not scalar and len(unique_array(val)) == 1:
             val = val[:1]
             scalar = True
-        all_scalar &= scalar
         scalars.append(scalar)
         if not expanded or not scalar:
             arrays.append(val)
