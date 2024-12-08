@@ -616,31 +616,35 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     Returns:
         An array containing the values along a dimension
     """
+    if not len(data):
+        return np.array([])
     column = data[dimension.name]
     if keep_index:
         return column
-    all_scalar = True
+    is_scalars = [isscalar(value) for value in column]
+    all_scalar = all(is_scalars)
+    if all_scalar and not expanded:
+        scal_unique = column.unique()
+        # .unique() on categorical dtype doesn't return a np array
+        return scal_unique if isinstance(scal_unique, np.ndarray) else scal_unique.to_numpy()
     arrays, scalars = [], []
     for i, geom in enumerate(data[geom_col]):
-        length = 1 if is_points else geom_length(geom)
         val = column.iloc[i]
-        scalar = isscalar(val)
+        scalar = is_scalars[i]
         if scalar:
             val = np.array([val])
         if not scalar and len(unique_array(val)) == 1:
             val = val[:1]
             scalar = True
-        all_scalar &= scalar
         scalars.append(scalar)
         if not expanded or not scalar:
             arrays.append(val)
         elif scalar:
+            length = 1 if is_points else geom_length(geom)
             arrays.append(np.full(length, val))
         if expanded and not is_points and not i == (len(data[geom_col])-1):
             arrays.append(np.array([np.nan]))
 
-    if not len(data):
-        return np.array([])
     if expanded:
         return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
     elif (all_scalar and arrays):
