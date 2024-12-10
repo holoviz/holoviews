@@ -47,6 +47,10 @@ def norm(values, min=None, max=None):
     """
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
+    if min==max:
+        if max==0:
+            return 0*values
+        return values/max
     return (values - min) / (max-min)
 
 
