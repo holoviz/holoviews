@@ -81,8 +81,7 @@ class RasterPlot(ColorbarPlot):
                 return date.toISOString().slice(0, 19).replace('T', ' ')
             }
             """
-            for key in formatters:
-                formatter = formatters[key]
+            for key, formatter in formatters.values():
                 if isinstance(formatter, str) and formatter.lower() == "datetime":
                     formatters[key] = CustomJSHover(code=datetime_code)
 
@@ -363,7 +362,7 @@ class QuadMeshPlot(ColorbarPlot):
 
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(z, element, ranges, style)
-        cmapper = {'field': z.name, 'transform': cmapper}
+        cmapper = {'field': dimension_sanitizer(z.name), 'transform': cmapper}
 
         irregular = (element.interface.irregular(element, x) or
                      element.interface.irregular(element, y))
@@ -405,11 +404,10 @@ class QuadMeshPlot(ColorbarPlot):
                     mask.append(False)
             mask = np.array(mask)
 
-            data = {'xs': XS, 'ys': YS, z.name: zvals[mask]}
+            data = {'xs': XS, 'ys': YS, dimension_sanitizer(z.name): zvals[mask]}
             if 'hover' in self.handles:
                 if not self.static_source:
-                    hover_data = self._collect_hover_data(
-                            element, mask, irregular=True)
+                    hover_data = self._collect_hover_data(element, mask, irregular=True)
                 hover_data[x] = np.array(xc)
                 hover_data[y] = np.array(yc)
         else:

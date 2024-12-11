@@ -817,8 +817,7 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
         if isinstance(cmap, list) and len(cmap) != ncolors:
             raise ValueError('The number of colors in the colormap '
                              'must match the intervals defined in the '
-                             'color_levels, expected %d colors found %d.'
-                             % (ncolors, len(cmap)))
+                             f'color_levels, expected {ncolors} colors found {len(cmap)}.')
     try:
         palette = process_cmap(cmap, ncolors)
     except Exception as e:

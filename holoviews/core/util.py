@@ -1976,8 +1976,7 @@ def cross_index(values, index):
     lengths = [len(v) for v in values]
     length = np.prod(lengths)
     if index >= length:
-        raise IndexError('Index %d out of bounds for cross-product of size %d'
-                         % (index, length))
+        raise IndexError(f'Index {index} out of bounds for cross-product of size {lengths}')
     indexes = []
     for i in range(1, len(values))[::-1]:
         p = np.prod(lengths[-i:])

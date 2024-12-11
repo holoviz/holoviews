@@ -57,7 +57,7 @@ class Raster(Element2D):
         if not isinstance(slices, tuple):
             slices = (slices, slice(None))
         elif len(slices) > (2 + self.depth):
-            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
+            raise KeyError(f"Can only slice {2 + self.depth} dimensions")
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
             raise KeyError(f"{self.vdims[0].name!r} is the only selectable value dimension")
 
@@ -268,8 +268,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
         elif isinstance(data, np.ndarray) and data.ndim < self._ndim:
-            raise ValueError('%s type expects %d-D array received %d-D '
-                             'array.' % (type(self).__name__, self._ndim, data.ndim))
+            raise ValueError(f'{type(self).__name__} type expects {self._ndim}-D array received {data.ndim}-D '
+                             'array.')
 
         if rtol is not None:
             params['rtol'] = rtol
@@ -319,8 +319,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
             if self.shape[2] != len(self.vdims):
-                raise ValueError("Input array has shape %r but %d value dimensions defined"
-                                 % (self.shape, len(self.vdims)))
+                raise ValueError(f"Input array has shape {self.shape!r} but {len(self.vdims)} value dimensions defined")
 
         # Ensure coordinates are regularly sampled
         clsname = type(self).__name__
