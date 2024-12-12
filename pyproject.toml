@@ -128,7 +128,6 @@ filterwarnings = [
     "ignore::ResourceWarning",
     # 2024-11
     "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
-    "ignore:The cuda.cuda(rt)? module is deprecated:DeprecationWarning", # https://github.com/rapidsai/rmm/issues/1730
 ]
 
 [tool.coverage]
