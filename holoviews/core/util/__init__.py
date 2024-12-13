@@ -265,7 +265,7 @@ def deprecated_opts_signature(args, kwargs):
     Returns whether opts.apply_groups should be used (as a bool) and the
     corresponding options.
     """
-    from .options import Options
+    from ..options import Options
     groups = set(Options._option_groups)
     opts = {kw for kw in kwargs if kw != 'clone'}
     apply_groups = False
@@ -1675,7 +1675,7 @@ def stream_name_mapping(stream, exclude_params=None, reverse=False):
     """
     if exclude_params is None:
         exclude_params = ['name']
-    from ..streams import Params
+    from ...streams import Params
     if isinstance(stream, Params):
         mapping = {}
         for p in stream.parameters:
@@ -1721,7 +1721,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
     """
     if exclude is None:
         exclude = ['name', '_memoize_key']
-    from ..streams import Params
+    from ...streams import Params
     param_groups = {}
     for s in streams:
         if not s.contents and isinstance(s.hashkey, dict):
