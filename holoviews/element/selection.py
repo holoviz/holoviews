@@ -7,7 +7,6 @@ import sys
 from importlib.util import find_spec
 
 import numpy as np
-import pandas as pd
 
 from ..core import Dataset, NdOverlay, util
 from ..streams import Lasso, Selection1D, SelectionXY
@@ -115,6 +114,7 @@ def _cuspatial_new(xvals, yvals, geometry):
 
 
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
+    import pandas as pd
     if 'cudf' in sys.modules:
         import cudf
         import cupy as cp

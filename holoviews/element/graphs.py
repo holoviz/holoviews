@@ -2,7 +2,6 @@ from collections import defaultdict
 from types import FunctionType
 
 import numpy as np
-import pandas as pd
 import param
 
 from ..core import Dataset, Dimension, Element2D
@@ -69,6 +68,7 @@ class layout_nodes(Operation):
             target = element.dimension_values(1, expanded=False)
             nodes = np.unique(np.concatenate([source, target]))
             if self.p.layout:
+                import pandas as pd
                 df = pd.DataFrame({'index': nodes})
                 nodes = self.p.layout(df, element.dframe(), **self.p.kwargs)
                 nodes = nodes[['x', 'y', 'index']]
@@ -165,6 +165,8 @@ class Graph(Dataset, Element2D):
         return RedimGraph(self, mode='dataset')
 
     def _add_node_info(self, node_info):
+        import pandas as pd
+
         nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
         if isinstance(node_info, self.node_type):
             nodes = nodes.redim(**dict(zip(nodes.dimensions('key', label=True),
