@@ -854,7 +854,7 @@ def isnat(val):
         return np.isnat(val)
     elif val is pd.NaT:
         return True
-    elif isinstance(val, pandas_datetime_types+pandas_timedelta_types):
+    elif isinstance(val, (pandas_datetime_types, pandas_timedelta_types)):
         return pd.isna(val)
     else:
         return False
@@ -888,7 +888,7 @@ def isfinite(val):
         finite = np.isfinite(val)
         finite &= ~pd.isna(val)
         return finite
-    elif isinstance(val, datetime_types+timedelta_types):
+    elif isinstance(val, (datetime_types, timedelta_types)):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
