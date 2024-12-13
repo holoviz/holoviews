@@ -18,17 +18,14 @@ import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
-from importlib.metadata import PackageNotFoundError, version
 from threading import Event, Thread
 from types import FunctionType
 
 import numpy as np
 import pandas as pd
 import param
-from packaging.version import Version
-from pandas.core.arrays.masked import BaseMaskedArray
-from pandas.core.dtypes.dtypes import DatetimeTZDtype
-from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+
+from . import versions  # noqa: F401
 
 # Python 2 builtins
 basestring = str
@@ -38,41 +35,16 @@ cmp = lambda a, b: (a>b)-(a<b)
 
 get_keywords = operator.attrgetter('varkw')
 
-# Versions
-NUMPY_VERSION = Version(np.__version__).release
-PARAM_VERSION = Version(param.__version__).release
-PANDAS_VERSION = Version(pd.__version__).release
-
-NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
-PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
-PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
-
-# Types
-generator_types = (zip, range, types.GeneratorType)
-pandas_datetime_types = (pd.Timestamp, DatetimeTZDtype, pd.Period)
-pandas_timedelta_types = (pd.Timedelta,)
-datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time, *pandas_datetime_types)
-timedelta_types = (np.timedelta64, dt.timedelta, *pandas_timedelta_types)
-arraylike_types = (np.ndarray, ABCSeries, ABCIndex, ABCExtensionArray)
-masked_types = (BaseMaskedArray,)
-
-try:
-    import cftime
-    cftime_types = (cftime.datetime,)
-    datetime_types += cftime_types
-except ImportError:
-    cftime_types = ()
-_STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
-
 anonymous_dimension_label = '_'
 
 # Argspec was removed in Python 3.11
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
-_NP_SIZE_LARGE = 1_000_000
-_NP_SAMPLE_SIZE = 1_000_000
-_PANDAS_ROWS_LARGE = 1_000_000
-_PANDAS_SAMPLE_SIZE = 1_000_000
+_STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
+_ARRAY_SIZE_LARGE = 1_000_000
+_ARRAY_SAMPLE_SIZE = 1_000_000
+_DATAFRAME_ROWS_LARGE = 1_000_000
+_DATAFRAME_SAMPLE_SIZE = 1_000_000
 
 # To avoid pandas warning about using DataFrameGroupBy.function
 # introduced in Pandas 2.1.
@@ -106,23 +78,6 @@ _PANDAS_FUNC_LOOKUP = {
     np.cumsum: "cumsum",
     np.nancumsum: "cumsum",
 }
-
-
-class VersionError(Exception):
-    "Raised when there is a library version mismatch."
-    def __init__(self, msg, version=None, min_version=None, **kwargs):
-        self.version = version
-        self.min_version = min_version
-        super().__init__(msg, **kwargs)
-
-
-def _no_import_version(name) -> tuple[int, int, int]:
-    """ Get version number without importing the library """
-    try:
-        return Version(version(name)).release
-    except PackageNotFoundError:
-        return (0, 0, 0)
-
 
 class Config(param.ParameterizedFunction):
     """
@@ -207,14 +162,14 @@ class HashableJSON(json.JSONEncoder):
             h = hashlib.new("md5")
             for s in obj.shape:
                 h.update(_int_to_bytes(s))
-            if obj.size >= _NP_SIZE_LARGE:
+            if obj.size >= _ARRAY_SIZE_LARGE:
                 state = np.random.RandomState(0)
-                obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
+                obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
         if isinstance(obj, (pd.Series, pd.DataFrame)):
-            if len(obj) > _PANDAS_ROWS_LARGE:
-                obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
+            if len(obj) > _DATAFRAME_ROWS_LARGE:
+                obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
             try:
                 pd_values = list(pd.util.hash_pandas_object(obj, index=True).values)
             except TypeError:
