@@ -1,7 +1,6 @@
 import itertools
 
 import numpy as np
-import pandas as pd
 import param
 
 from ..core import Dataset
@@ -95,6 +94,7 @@ def reduce_fn(x):
     """
     Aggregation function to get the first non-zero value.
     """
+    import pandas as pd
     values = x.values if isinstance(x, pd.Series) else x
     for v in values:
         if not is_nan(v):
@@ -200,6 +200,7 @@ class categorical_aggregate2d(Operation):
                          datatype=self.p.datatype)
 
     def _aggregate_dataset_pandas(self, obj):
+        import pandas as pd
         index_cols = [d.name for d in obj.kdims]
         groupby_kwargs = {"sort": False}
         if PANDAS_GE_2_1_0:
@@ -270,6 +271,7 @@ def connect_edges_pd(graph):
     operation depends on pandas and is a lot faster than the pure
     NumPy equivalent.
     """
+    import pandas as pd
     edges = graph.dframe()
     edges.index.name = 'graph_edge_index'
     edges = edges.reset_index()
@@ -296,6 +298,7 @@ def connect_tri_edges_pd(trimesh):
     operation depends on pandas and is a lot faster than the pure
     NumPy equivalent.
     """
+    import pandas as pd
     edges = trimesh.dframe().copy()
     edges.index.name = 'trimesh_edge_index'
     edges = edges.drop("color", errors="ignore", axis=1).reset_index()

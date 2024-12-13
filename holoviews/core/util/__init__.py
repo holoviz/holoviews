@@ -22,7 +22,6 @@ from threading import Event, Thread
 from types import FunctionType
 
 import numpy as np
-import pandas as pd
 import param
 
 from .types import (
@@ -185,6 +184,7 @@ class HashableJSON(json.JSONEncoder):
                 obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
+        import pandas as pd
         if isinstance(obj, (pd.Series, pd.DataFrame)):
             if len(obj) > _DATAFRAME_ROWS_LARGE:
                 obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
@@ -849,6 +849,7 @@ def isnat(val):
     """
     Checks if the value is a NaT. Should only be called on datetimelike objects.
     """
+    import pandas as pd
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
         return np.isnat(val)
@@ -865,6 +866,7 @@ def isfinite(val):
     Helper function to determine if scalar or array value is finite extending
     np.isfinite with support for None, string, datetime types.
     """
+    import pandas as pd
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
         if isinstance(val, np.ma.core.MaskedArray):
@@ -963,6 +965,7 @@ def max_range(ranges, combined=True):
     Returns:
        The maximum range as a single tuple
     """
+    import pandas as pd
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1166,6 +1169,7 @@ def unique_array(arr):
     if not len(arr):
         return np.asarray(arr)
 
+    import pandas as pd
     if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
         return pd.unique(arr)
@@ -1486,6 +1490,7 @@ def is_dataframe(data):
     """
     Checks whether the supplied data is of DataFrame type.
     """
+    import pandas as pd
     dd = None
     if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
         import dask.dataframe as dd
@@ -1497,6 +1502,7 @@ def is_series(data):
     """
     Checks whether the supplied data is of Series type.
     """
+    import pandas as pd
     dd = None
     if 'dask.dataframe' in sys.modules:
         import dask.dataframe as dd
@@ -1884,6 +1890,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
     @param.parameterized.bothmethod
     def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
                        group_type, sort=False, **kwargs):
+        import pandas as pd
         if 'kdims' in kwargs:
             idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
         else:
@@ -2018,6 +2025,7 @@ def is_nan(x):
     try:
         # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
         # Call bool() to raise an error if x is pd.NA, an array, etc.
+        import pandas as pd
         return bool(pd.isna(x))
     except Exception:
         return False
@@ -2084,6 +2092,7 @@ def date_range(start, end, length, time_unit='us'):
     Computes a date range given a start date, end date and the number
     of samples.
     """
+    import pandas as pd
     step = (1./compute_density(start, end, length, time_unit))
     if isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
@@ -2095,6 +2104,7 @@ def parse_datetime(date):
     """
     Parses dates specified as string or integer or pandas Timestamp
     """
+    import pandas as pd
     return pd.to_datetime(date).to_datetime64()
 
 
@@ -2118,6 +2128,7 @@ def dt_to_int(value, time_unit='us'):
     """
     Converts a datetime type to an integer with the supplied time unit.
     """
+    import pandas as pd
     if isinstance(value, pd.Period):
         value = value.to_timestamp()
     if isinstance(value, pd.Timestamp):

@@ -1,6 +1,6 @@
+import sys
+
 import numpy as np
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -23,12 +23,25 @@ class PandasAPI:
             ...
     """
 
+pd = None  # Set when PandasInterface.applies is successful
 
 class PandasInterface(Interface, PandasAPI):
 
-    types = (pd.DataFrame,)
+    types = ()
 
     datatype = 'dataframe'
+
+    @classmethod
+    def loaded(cls):
+        return 'pandas' in sys.modules
+
+    @classmethod
+    def applies(cls, obj):
+        if not cls.loaded():
+            return False
+        global pd  # noqa: PLW0603
+        import pandas as pd
+        return isinstance(obj, (pd.DataFrame, pd.Series))
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -289,6 +302,7 @@ class PandasInterface(Interface, PandasAPI):
                     c for c in reindexed.columns if c not in cols
                 ]
             else:
+                from pandas.api.types import is_numeric_dtype
                 numeric_cols = [
                     c for c, d in zip(reindexed.columns, reindexed.dtypes)
                     if is_numeric_dtype(d) and c not in cols
