@@ -659,6 +659,20 @@ class extension(_pyviz_extension):
     Helper utility used to load holoviews extensions. These can be
     plotting extensions, element extensions or anything else that can be
     registered to work with HoloViews.
+
+    The plotting extension is the most commonly used and is
+    used to select the plotting backend. The plotting extension can be
+    loaded using the backend name, e.g. 'bokeh', 'matplotlib' or 'plotly'.
+
+    Examples
+    --------
+    Activate the bokeh plotting extension:
+
+    ```python
+    import holoviews as hv
+    hv.extension("bokeh")
+    ```
+
     """
 
     # Mapping between backend name and module name

@@ -412,4 +412,4 @@ class PrettyPrinter(param.Parameterized):
         return level, lines
 
 
-__all__ = ['PrettyPrinter', 'InfoPrinter']
+__all__ = ['InfoPrinter', 'PrettyPrinter']

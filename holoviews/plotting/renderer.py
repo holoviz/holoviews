@@ -352,7 +352,7 @@ class Renderer(Exporter):
             figdata = figdata.encode("utf-8")
         elif fmt == 'pdf' and 'height' not in css:
             _, h = self.get_size(plot)
-            css['height'] = '%dpx' % (h*self.dpi*1.15)
+            css['height'] = f"{int(h*self.dpi*1.15)}px"
 
         if isinstance(css, dict):
             css = '; '.join(f"{k}: {v}" for k, v in css.items())
