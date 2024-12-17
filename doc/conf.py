@@ -81,6 +81,11 @@ nbsite_gallery_conf = {
 if os.environ.get('HV_DOC_GALLERY') not in ('False', 'false', '0'):
     nbsite_gallery_conf['galleries']['gallery'] = {
         'title': 'Gallery',
+        'intro': (
+            'Also visit the `Examples HoloViz Gallery <https://examples.holoviz.org>`_ to '
+            'discover a curated collection of domain-specific narrative examples using '
+            'HoloViews and various HoloViz projects.'
+        ),
         'sections': [
             {'path': 'apps', 'title': 'Applications', 'skip': True},
             'demos'

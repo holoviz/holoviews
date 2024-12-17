@@ -1522,9 +1522,8 @@ class StoreOptions:
 
         # Clean up the custom tree if it was not applied
         if new_id not in Store.custom_options(backend=backend):
-            raise AssertionError("New option id %d does not match any "
-                                 "option trees in Store.custom_options."
-                                 % new_id)
+            raise AssertionError(f"New option id {new_id} does not match any "
+                                 "option trees in Store.custom_options.")
         return applied
 
     @classmethod
@@ -1722,11 +1721,11 @@ class StoreOptions:
                     additions.update({k:kws})
             if spec_key not in options:
                 options[spec_key] = {}
-            for key in additions:
+            for key, value in additions.items():
                 if key in options[spec_key]:
-                    options[spec_key][key].update(additions[key])
+                    options[spec_key][key].update(value)
                 else:
-                    options[spec_key][key] = additions[key]
+                    options[spec_key][key] = value
         return options
 
 

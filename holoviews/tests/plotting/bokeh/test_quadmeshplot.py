@@ -55,6 +55,33 @@ class TestQuadMeshPlot(TestBokehPlot):
         source = plot.handles['source']
         self.assertEqual(source.data['z'], flattened)
 
+    def test_quadmesh_non_sanitized_name(self):
+        # https://github.com/holoviz/holoviews/issues/6460
+        xs = [0, 1, 2]
+        ys = [2, 1, 0]
+        data = np.array([[0,1,2], [3,4,5], [6,7,8]])
+        qmesh = QuadMesh((xs, ys, data), vdims="z (x,y)")
+        plot = bokeh_renderer.get_plot(qmesh)
+        source = plot.handles['source']
+
+        flattened = np.array([6, 3, 0, 7, 4, 1, 8, 5, 2])
+        sanitized_name = 'z_left_parenthesis_x_comma_y_right_parenthesis'
+        np.testing.assert_equal(source.data[sanitized_name], flattened)
+
+    def test_quadmesh_non_sanitized_name_grid(self):
+        # https://github.com/holoviz/holoviews/issues/6460
+        xs = [0, 1, 2]
+        ys = [2, 1, 0]
+        data = np.array([[0,1,2], [3,4,5], [6,7,8]])
+        XX, YY = np.meshgrid(xs, ys)
+        qmesh = QuadMesh((XX, YY, data), vdims="z (x,y)")
+        plot = bokeh_renderer.get_plot(qmesh)
+        source = plot.handles['source']
+
+        flattened = data.flatten()
+        sanitized_name = 'z_left_parenthesis_x_comma_y_right_parenthesis'
+        np.testing.assert_equal(source.data[sanitized_name], flattened)
+
     def test_quadmesh_nodata_uint(self):
         xs = [0, 1, 2]
         ys = [2, 1, 0]
@@ -83,7 +110,7 @@ class TestQuadMeshPlot(TestBokehPlot):
                 'x': [0.5, 0.5, 0.5, 1.5, 1.5, 1.5],
                 'y': [0.5, 1.5, 2.5, 0.5, 1.5, 2.5]}
         self.assertEqual(source.data.keys(), expected.keys())
-        for key in expected:
+        for key in expected:  # noqa: PLC0206
             self.assertEqual(list(source.data[key]), expected[key])
 
     def test_quadmesh_irregular_centers(self):
@@ -103,7 +130,7 @@ class TestQuadMeshPlot(TestBokehPlot):
                     'x': [0.5, 0.5, 0.5, 1.5, 1.5],
                     'y': [0.5, 1.5, 2.5, 0.5, 1.5]}
         self.assertEqual(source.data.keys(), expected.keys())
-        for key in expected:
+        for key in expected:  # noqa: PLC0206
             self.assertEqual(list(source.data[key]), expected[key])
 
     def test_quadmesh_irregular_edges(self):
@@ -123,5 +150,5 @@ class TestQuadMeshPlot(TestBokehPlot):
                     'x': [0.5, 0.5, 0.5, 1.5, 1.5],
                     'y': [0.5, 1.5, 2.5, 0.5, 1.5]}
         self.assertEqual(source.data.keys(), expected.keys())
-        for key in expected:
+        for key in expected:  # noqa: PLC0206
             self.assertEqual(list(source.data[key]), expected[key])

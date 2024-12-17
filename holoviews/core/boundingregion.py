@@ -253,7 +253,7 @@ class AARectangle:
 
     Usage:  aar = AARectangle( (x1,y1),(x2,y2), ... , (xN,yN) )
     """
-    __slots__ = ['_left', '_bottom', '_right', '_top']
+    __slots__ = ['_bottom', '_left', '_right', '_top']
 
 
     def __init__(self, *points):

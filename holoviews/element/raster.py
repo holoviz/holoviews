@@ -57,7 +57,7 @@ class Raster(Element2D):
         if not isinstance(slices, tuple):
             slices = (slices, slice(None))
         elif len(slices) > (2 + self.depth):
-            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
+            raise KeyError(f"Can only slice {2 + self.depth} dimensions")
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
             raise KeyError(f"{self.vdims[0].name!r} is the only selectable value dimension")
 
@@ -268,8 +268,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
         elif isinstance(data, np.ndarray) and data.ndim < self._ndim:
-            raise ValueError('%s type expects %d-D array received %d-D '
-                             'array.' % (type(self).__name__, self._ndim, data.ndim))
+            raise ValueError(f'{type(self).__name__} type expects {self._ndim}-D array received {data.ndim}-D '
+                             'array.')
 
         if rtol is not None:
             params['rtol'] = rtol
@@ -319,8 +319,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
             if self.shape[2] != len(self.vdims):
-                raise ValueError("Input array has shape %r but %d value dimensions defined"
-                                 % (self.shape, len(self.vdims)))
+                raise ValueError(f"Input array has shape {self.shape!r} but {len(self.vdims)} value dimensions defined")
 
         # Ensure coordinates are regularly sampled
         clsname = type(self).__name__
@@ -688,16 +687,32 @@ class RGB(Image):
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
-        alpha = self.alpha_dimension
-        if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
-            (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
-             and data[-1].shape[-1] == 4 and len(vdims) == 3) or
-            (isinstance(data, dict) and (*map(dimension_name, vdims), alpha.name) in data) or
-            str(alpha) in getattr(data, "data_vars", [])
-        ):
-            # Handle all forms of packed value dimensions
-            vdims.append(alpha)
+        if self._has_alpha_dimension(data, vdims):
+            vdims.append(self.alpha_dimension)
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
+    def _has_alpha_dimension(self, data, vdims) -> bool:
+        # Handle all forms of packed value dimensions
+        if len(vdims) != 3:
+            return False
+
+        alpha = self.alpha_dimension
+
+        if hasattr(data, "shape") and data.shape[-1] == 4:
+            return True
+
+        if isinstance(data, tuple):
+            last = data[-1]
+            if isinstance(last, np.ndarray) and last.ndim == 3 and last.shape[-1] == 4:
+                return True
+
+        if isinstance(data, dict) and (*map(dimension_name, vdims), alpha.name) in data:
+            return True
+
+        if str(alpha) in getattr(data, "data_vars", []):
+            return True
+
+        return False
 
 
 class HSV(RGB):

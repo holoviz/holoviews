@@ -161,7 +161,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                 mapping = {'xs': 'xs', 'ys': 'ys'}
             else:
                 raise ValueError("Edge paths do not match the number of supplied edges."
-                                 "Expected %d, found %d paths." % (len(element), len(edges)))
+                                 f"Expected {len(element)}, found {len(edges)} paths.")
         elif self.directed:
             xdim, ydim = element.nodes.kdims[:2]
             x_range = ranges[xdim.label]['combined']

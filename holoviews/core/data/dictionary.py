@@ -128,7 +128,7 @@ class DictInterface(Interface):
         lengths = [(dim, 1 if isscalar(dataset.data[dim]) else len(dataset.data[dim]))
                    for dim in dimensions]
         if len({l for d, l in lengths if l > 1}) > 1:
-            lengths = ', '.join(['%s: %d' % l for l in sorted(lengths)])
+            lengths = ', '.join(['{}: {}'.format(*l) for l in sorted(lengths)])
             raise DataError('Length of columns must be equal or scalar, '
                             f'columns have lengths: {lengths}', cls)
 
