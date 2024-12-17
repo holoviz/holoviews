@@ -56,6 +56,12 @@ class ServerHoverMixin:
             ht = [ht] if isinstance(ht, str) else ht
             coords = [c for c in coords if c in ht]
             vars = [v for v in vars if v in ht]
+        elif isinstance(self, RGBPlot):
+            # Remove vdims (RGBA) as they are not very useful
+            for vdim in map(str, element.vdims):
+                if vdim in vars:
+                    vars.remove(vdim)
+
         dims = (*coords, *vars)
 
         # Create a dynamic custom DataModel with the dims as attributes
