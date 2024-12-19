@@ -18,12 +18,12 @@ thus would not supply any information regarding *why* two elements are
 considered different.
 """
 import contextlib
+import sys
 from functools import partial
 from unittest import TestCase
 from unittest.util import safe_repr
 
 import numpy as np
-import pandas as pd
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from ..core import (
@@ -131,7 +131,8 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
 
         # Pandas dataframe comparison
-        cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
+        if pd := sys.modules.get("pandas"):
+            cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions

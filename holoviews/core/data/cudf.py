@@ -3,8 +3,6 @@ import warnings
 from itertools import product
 
 import numpy as np
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import dimension_name
@@ -49,6 +47,7 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import cudf
+        import pandas as pd
 
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
@@ -276,6 +275,9 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
+        import pandas as pd
+        from pandas.api.types import is_numeric_dtype
+
         data = dataset.data
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions('value', label='name')

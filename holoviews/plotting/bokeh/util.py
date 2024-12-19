@@ -8,7 +8,6 @@ from itertools import permutations
 
 import bokeh
 import numpy as np
-import pandas as pd
 from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
@@ -980,6 +979,7 @@ def date_to_integer(date):
     Returns:
         Milliseconds since 1970-01-01 00:00:00
     """
+    import pandas as pd
     if isinstance(date, pd.Timestamp):
         try:
             date = date.to_datetime64()

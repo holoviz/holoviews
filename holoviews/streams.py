@@ -13,7 +13,6 @@ from numbers import Number
 from types import FunctionType
 
 import numpy as np
-import pandas as pd
 import param
 
 from .core import util
@@ -542,6 +541,7 @@ class Buffer(Pipe):
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
+        import pandas as pd
         if isinstance(data, pd.DataFrame):
             example = data
         elif isinstance(data, np.ndarray):
@@ -587,6 +587,7 @@ class Buffer(Pipe):
 
     def verify(self, x):
         """ Verify consistency of dataframes that pass through this stream """
+        import pandas as pd
         if type(x) != type(self.data):  # noqa: E721
             raise TypeError(f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}.")
         elif isinstance(x, np.ndarray):
@@ -606,6 +607,7 @@ class Buffer(Pipe):
 
 
     def clear(self):
+        import pandas as pd
         "Clears the data in the stream"
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
@@ -623,6 +625,7 @@ class Buffer(Pipe):
         Concatenate and slice the accepted data types to the defined
         length.
         """
+        import pandas as pd
         if isinstance(data, np.ndarray):
             data_length = len(data)
             if not self.length:
