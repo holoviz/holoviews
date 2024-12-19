@@ -1374,6 +1374,9 @@ class shade(LinkableOperation):
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
+        if array.shape[-1] == 1:
+            array = array.squeeze()
+
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
         )
