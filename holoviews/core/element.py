@@ -408,14 +408,12 @@ class Collator(NdMapping):
                 raise ValueError("Collator values must be Dimensioned objects "
                                  "before collation.")
 
-            dim_keys = zip(self.kdims, key)
-            varying_keys = [(d, k) for d, k in dim_keys if not self.drop_constant or
+            varying_keys = [(d, k) for d, k in zip(self.kdims, key) if not self.drop_constant or
                             (d not in constant_dims and d not in self.drop)]
-            constant_keys = [(d, k) for d, k in dim_keys if d in constant_dims
-                             and d not in self.drop and self.drop_constant]
+            constant_keys = {d: k for d, k in zip(self.kdims, key) if d in constant_dims
+                             and d not in self.drop and self.drop_constant}
             if varying_keys or constant_keys:
-                data = self._add_dimensions(data, varying_keys,
-                                            dict(constant_keys))
+                data = self._add_dimensions(data, varying_keys, constant_keys)
             ndmapping[key] = data
             if self.progress_bar is not None:
                 self.progress_bar(float(idx+1)/num_elements*100)
