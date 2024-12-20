@@ -64,7 +64,7 @@ class TestSpikesPlot(TestMPLPlot):
         self.assertEqual(x_range[1], 3.3483695221017129)
 
     def test_spikes_padding_datetime_square(self):
-        spikes = Spikes([np.datetime64('2016-04-0%d' % i) for i in range(1, 4)]).opts(
+        spikes = Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(spikes)
@@ -73,7 +73,7 @@ class TestSpikesPlot(TestMPLPlot):
         self.assertEqual(x_range[1], 16894.2)
 
     def test_spikes_padding_datetime_square_heights(self):
-        spikes = Spikes([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)], vdims=['Height']).opts(
+        spikes = Spikes([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)], vdims=['Height']).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(spikes)
@@ -84,7 +84,7 @@ class TestSpikesPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_spikes_padding_datetime_nonsquare(self):
-        spikes = Spikes([np.datetime64('2016-04-0%d' % i) for i in range(1, 4)]).opts(
+        spikes = Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(spikes)

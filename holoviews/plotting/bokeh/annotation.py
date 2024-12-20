@@ -138,7 +138,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
         if 'text_baseline' not in style:
             style['text_baseline'] = baseline
         if 'text_font_size' not in style:
-            style['text_font_size'] = '%dPt' % element.fontsize
+            style['text_font_size'] = f"{int(element.fontsize)}Pt"
         if 'color' in style:
             style['text_color'] = style.pop('color')
         style['angle'] = np.deg2rad(style.get('angle', element.rotation))

@@ -53,9 +53,15 @@ bokeh_sampledata = "*"
 python = "3.12.*"
 bokeh_sampledata = "*"
 
+[feature.py312.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.py313.dependencies]
 python = "3.13.*"
 bokeh_sampledata = "*"
+
+[feature.py313.activation.env]
+COVERAGE_CORE = "sysmon"
 
 [feature.example.dependencies]
 cftime = "*"
@@ -144,7 +150,7 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "24.10.*"
+cudf = "24.12.*"
 cupy = "*"
 cuspatial = "*"
 librmm = { version = "*", channel = "rapidsai" }
