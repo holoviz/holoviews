@@ -3,6 +3,7 @@ import base64
 import inspect
 import time
 from collections import defaultdict
+from contextlib import suppress
 from functools import partial
 
 import numpy as np
@@ -518,10 +519,8 @@ class PointerXYCallback(Callback):
             msg['y'] = convert_timestamp(msg['y'])
 
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
-            try:
+            with suppress(IndexError): # See: https://github.com/holoviz/holoviews/pull/6438
                 msg['x'] = x_range.factors[int(msg['x'])]
-            except IndexError:
-                pass
         elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
@@ -533,7 +532,8 @@ class PointerXYCallback(Callback):
                 msg['x'] = x
 
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
-            msg['y'] = y_range.factors[int(msg['y'])]
+            with suppress(IndexError):
+                msg['y'] = y_range.factors[int(msg['y'])]
         elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:
