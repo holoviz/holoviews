@@ -25,7 +25,7 @@ from ..core.util import (
 if TYPE_CHECKING:
     from typing import TypeVar
 
-    Array = TypeVar('Array', np.ndarray, pd.api.extensions.ExtensionArray)
+    Array = TypeVar("Array", np.ndarray, pd.api.extensions.ExtensionArray)
 
 
 def split_path(path):

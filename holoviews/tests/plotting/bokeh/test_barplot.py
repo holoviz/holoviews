@@ -352,7 +352,10 @@ class TestBarPlot(TestBokehPlot):
         assert plot.handles["glyph"].width == 1
 
     def test_bars_categorical_order(self):
-        cells_dtype = pd.CategoricalDtype(pd.array(["~1M", "~10M", "~100M"], dtype="string"), ordered=True)
+        cells_dtype = pd.CategoricalDtype(
+            pd.array(["~1M", "~10M", "~100M"], dtype="string"),
+            ordered=True,
+        )
         df = pd.DataFrame(dict(
             cells=cells_dtype.categories.astype(cells_dtype),
             time=pd.array([2.99, 18.5, 835.2]),
@@ -361,12 +364,12 @@ class TestBarPlot(TestBokehPlot):
 
         bars = Bars(df, ["function", "cells"], ["time"])
         plot = bokeh_renderer.get_plot(bars)
-        x_factors = plot.handles['x_range'].factors
+        x_factors = plot.handles["x_range"].factors
 
         np.testing.assert_equal(x_factors, [
-            ('read', np.str_('~1M')),
-            ('read', np.str_('~10M')),
-            ('read', np.str_('~100M')),
+            ("read", "~1M"),
+            ("read", "~10M"),
+            ("read", "~100M"),
         ])
 
     def test_bars_group(self):
