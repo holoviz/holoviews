@@ -153,7 +153,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._subplot_label(axis)
 
             # Apply axis options if axes are enabled
-            if element is not None and not any(not sp._has_axes for sp in [self] + subplots):
+            if element is not None and not any(not sp._has_axes for sp in [self, *subplots]):
                 # Set axis labels
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
@@ -755,7 +755,7 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
-    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+    cnorm = param.Selector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
@@ -779,7 +779,7 @@ class ColorbarPlot(ElementPlot):
     cbar_width = param.Number(default=0.05, doc="""
         Width of the colorbar as a fraction of the main plot""")
 
-    cbar_extend = param.ObjectSelector(
+    cbar_extend = param.Selector(
         objects=['neither', 'both', 'min', 'max'], default=None, doc="""
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
@@ -997,8 +997,7 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(cmap, list) and len(cmap) != ncolors:
                     raise ValueError('The number of colors in the colormap '
                                      'must match the intervals defined in the '
-                                     'color_levels, expected %d colors found %d.'
-                                     % (ncolors, len(cmap)))
+                                     f'color_levels, expected {ncolors} colors found {len(cmap)}.')
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
             except ValueError:
@@ -1069,7 +1068,7 @@ class LegendPlot(ElementPlot):
     legend_labels = param.Dict(default={}, doc="""
         A mapping that allows overriding legend labels.""")
 
-    legend_position = param.ObjectSelector(objects=['inner', 'right',
+    legend_position = param.Selector(objects=['inner', 'right',
                                                     'bottom', 'top',
                                                     'left', 'best',
                                                     'top_right',

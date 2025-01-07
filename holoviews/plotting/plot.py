@@ -1119,14 +1119,14 @@ class GenericElementPlot(DimensionedPlot):
     show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.Selector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None, True, False], doc="""
         Whether and where to display the xaxis.
         The "bare" options allow suppressing all axis labels, including ticks and xlabel.
         Valid options are 'top', 'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='left',
+    yaxis = param.Selector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None, True, False], doc="""
         Whether and where to display the yaxis.
@@ -1301,9 +1301,9 @@ class GenericElementPlot(DimensionedPlot):
         """
         dims = element.dimensions()[:2]
         if len(dims) == 1:
-            return dims + [None, None]
+            return [*dims, None, None]
         else:
-            return dims + [None]
+            return [*dims, None]
 
     def _has_axis_dimension(self, element, dimension):
         dims = self._get_axis_dims(element)
@@ -1853,7 +1853,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         opts = {'overlaid': overlay_type}
         if self.hmap.type == Overlay:
-            style_key = (obj.type.__name__,) + key
+            style_key = (obj.type.__name__, *key)
             if self.overlay_dims:
                 opts['overlay_dims'] = self.overlay_dims
         else:

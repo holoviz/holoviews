@@ -207,7 +207,7 @@ class LabelsPlot(ColorbarPlot):
         if 'size' in style: style['fontsize'] = style.pop('size')
         if 'horizontalalignment' not in style: style['horizontalalignment'] = 'center'
         if 'verticalalignment' not in style: style['verticalalignment'] = 'center'
-        return positions + (text, cs), style, {}
+        return (*positions, text, cs), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         if plot_args[-1] is not None:
@@ -245,7 +245,7 @@ class ArrowPlot(AnnotationPlot):
     "Draw an arrow using the information supplied to the Arrow annotation"
 
     _arrow_style_opts = ['alpha', 'color', 'lw', 'linewidth', 'visible']
-    _text_style_opts = TextPlot.style_opts + ['textsize', 'fontsize']
+    _text_style_opts = [*TextPlot.style_opts, 'textsize', 'fontsize']
 
     style_opts = sorted(set(_arrow_style_opts + _text_style_opts))
 

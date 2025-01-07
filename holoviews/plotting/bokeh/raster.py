@@ -28,7 +28,7 @@ class RasterPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = base_properties + ['cmap', 'alpha']
+    style_opts = [*base_properties, 'cmap', 'alpha']
 
     _nonvectorized_styles = style_opts
 
@@ -81,8 +81,7 @@ class RasterPlot(ColorbarPlot):
                 return date.toISOString().slice(0, 19).replace('T', ' ')
             }
             """
-            for key in formatters:
-                formatter = formatters[key]
+            for key, formatter in formatters.values():
                 if isinstance(formatter, str) and formatter.lower() == "datetime":
                     formatters[key] = CustomJSHover(code=datetime_code)
 
@@ -136,7 +135,7 @@ class RGBPlot(LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    style_opts = ['alpha'] + base_properties
+    style_opts = ['alpha', *base_properties]
 
     _nonvectorized_styles = style_opts
 
@@ -228,7 +227,7 @@ class ImageStackPlot(RasterPlot):
 
     _plot_methods = dict(single='image_stack')
 
-    cnorm = param.ObjectSelector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
+    cnorm = param.Selector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     start_alpha = param.Integer(default=0, bounds=(0, 255))
@@ -352,7 +351,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap'] + base_properties + line_properties + fill_properties
+    style_opts = ['cmap', *base_properties, *line_properties, *fill_properties]
 
     _nonvectorized_styles = style_opts
 
@@ -363,7 +362,7 @@ class QuadMeshPlot(ColorbarPlot):
 
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(z, element, ranges, style)
-        cmapper = {'field': z.name, 'transform': cmapper}
+        cmapper = {'field': dimension_sanitizer(z.name), 'transform': cmapper}
 
         irregular = (element.interface.irregular(element, x) or
                      element.interface.irregular(element, y))
@@ -405,11 +404,10 @@ class QuadMeshPlot(ColorbarPlot):
                     mask.append(False)
             mask = np.array(mask)
 
-            data = {'xs': XS, 'ys': YS, z.name: zvals[mask]}
+            data = {'xs': XS, 'ys': YS, dimension_sanitizer(z.name): zvals[mask]}
             if 'hover' in self.handles:
                 if not self.static_source:
-                    hover_data = self._collect_hover_data(
-                            element, mask, irregular=True)
+                    hover_data = self._collect_hover_data(element, mask, irregular=True)
                 hover_data[x] = np.array(xc)
                 hover_data[y] = np.array(yc)
         else:

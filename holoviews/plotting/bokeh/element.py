@@ -113,7 +113,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         listed only the last one will be active. As a default 'pan'
         and 'wheel_zoom' will be used if the tools are enabled.""")
 
-    align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
+    align = param.Selector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
     apply_hard_bounds = param.Boolean(default=False, doc="""
@@ -121,7 +121,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         on the more extreme of extents between the data or xlim/ylim ranges.
         If dim ranges are set, the hard bounds will be set to the dim ranges.""")
 
-    autorange = param.ObjectSelector(default=None, objects=['x', 'y', None], doc="""
+    autorange = param.Selector(default=None, objects=['x', 'y', None], doc="""
         Whether to auto-range along either the x- or y-axis, i.e.
         when panning or zooming along the orthogonal axis it will
         ensure all the data along the selected axis remains visible.""")
@@ -258,7 +258,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     subcoordinate_scale = param.Number(default=1, bounds=(0, None), inclusive_bounds=(False, True), doc="""
        Scale factor for subcoordinate ranges to control the level of overlap.""")
 
-    responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
+    responsive = param.Selector(default=False, objects=[False, True, 'width', 'height'])
 
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
@@ -310,7 +310,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     hover_formatters = param.Dict(doc="""
         A dict of formatting options for the hover tooltip.""")
 
-    hover_mode = param.ObjectSelector(default='mouse', objects=['mouse', 'vline', 'hline'], doc="""
+    hover_mode = param.Selector(default='mouse', objects=['mouse', 'vline', 'hline'], doc="""
         The hover mode determines how the hover tool is activated.""")
 
     xticks = param.ClassSelector(class_=(int, list, tuple, np.ndarray, Ticker), default=None, doc="""
@@ -323,7 +323,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tick locations, or bokeh Ticker object. If set to None default
         bokeh ticking behavior is applied.""")
 
-    toolbar = param.ObjectSelector(default='right',
+    toolbar = param.Selector(default='right',
                                    objects=["above", "below",
                                             "left", "right", "disable", None],
                                    doc="""
@@ -823,7 +823,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_type = 'auto'
             dim_range = FactorRange(name=name)
         elif None in [v0, v1] or any(
-            True if isinstance(el, (str, bytes)+util.cftime_types)
+            True if isinstance(el, (str, bytes, *util.cftime_types))
             else not util.isfinite(el) for el in [v0, v1]
         ):
             dim_range = range_type(name=name)
@@ -917,7 +917,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_specs = {'x': {}, 'y': {}}
-        axis_specs['x']['x'] = self._axis_props(plots, subplots, element, ranges, pos=0) + (self.xaxis, {})
+        axis_specs['x']['x'] = (*self._axis_props(plots, subplots, element, ranges, pos=0), self.xaxis, {})
         if self.multi_y:
             if not BOKEH_GE_3_2_0:
                 self.param.warning('Independent axis zooming for multi_y=True only supported for Bokeh >=3.2')
@@ -934,9 +934,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     range_tags_extras['y-upperlim'] = upperlim
             else:
                 range_tags_extras['autorange'] = False
-            axis_specs['y']['y'] = self._axis_props(
-                plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras
-            ) + (self.yaxis, {})
+            axis_specs['y']['y'] = (
+                *self._axis_props(plots, subplots, element, ranges, pos=1, range_tags_extras=range_tags_extras), self.yaxis, {}
+            )
 
         if self._subcoord_overlaid:
             _, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
@@ -2670,13 +2670,13 @@ class ColorbarPlot(ElementPlot):
         numerical percentile value.""")
 
 
-    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+    cnorm = param.Selector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
-    colorbar_position = param.ObjectSelector(objects=list(colorbar_specs),
+    colorbar_position = param.Selector(objects=list(colorbar_specs),
                                              default="right", doc="""
         Allows selecting between a number of predefined colorbar position
         options. The predefined options may be customized in the
@@ -2720,7 +2720,7 @@ class ColorbarPlot(ElementPlot):
 
     _default_nan = '#8b8b8b'
 
-    _nonvectorized_styles = base_properties + ['cmap', 'palette']
+    _nonvectorized_styles = [*base_properties, 'cmap', 'palette']
 
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
@@ -2848,8 +2848,7 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(cmap, list) and len(cmap) != ncolors:
                     raise ValueError('The number of colors in the colormap '
                                      'must match the intervals defined in the '
-                                     'color_levels, expected %d colors found %d.'
-                                     % (ncolors, len(cmap)))
+                                     f'color_levels, expected {ncolors} colors found {len(cmap)}.')
             palette = process_cmap(cmap, ncolors, categorical=categorical)
             if isinstance(self.color_levels, list):
                 palette, (low, high) = color_intervals(palette, self.color_levels, clip=(low, high))
@@ -2985,7 +2984,7 @@ class LegendPlot(ElementPlot):
         If legend is placed outside the axis, this determines the
         (width, height) offset in pixels from the original position.""")
 
-    legend_position = param.ObjectSelector(objects=["top_right",
+    legend_position = param.Selector(objects=["top_right",
                                                     "top_left",
                                                     "bottom_left",
                                                     "bottom_right",
@@ -3068,7 +3067,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale', 'autorange']
+                          'subcoordinate_scale', 'autorange', 'default_tools']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)

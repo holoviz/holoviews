@@ -17,7 +17,7 @@ class ProgressBar(ProgressIndicator):
     progress bars has not achieved 100% completion.
     """
 
-    display = param.ObjectSelector(default='stdout',
+    display = param.Selector(default='stdout',
                   objects=['stdout', 'disabled', 'broadcast'], doc="""
         Parameter to control display of the progress bar. By default,
         progress is shown on stdout but this may be disabled e.g. for
@@ -64,9 +64,7 @@ class ProgressBar(ProgressIndicator):
                 elapsed = time.time() -  self.start_time
                 if clear_output:
                     clear_output()
-                self.out = '\r' + ('100%% %s %02d:%02d:%02d'
-                                   % (self.label.lower(), elapsed//3600,
-                                      elapsed//60, elapsed%60))
+                self.out = f'\r100% {self.label.lower()} {elapsed//3600:02d}:{elapsed//60:02d}:{elapsed%60:02d}'
                 output = ''.join([pg.out for pg in self.current_progress])
                 sys.stdout.write(output)
             else:
@@ -109,7 +107,7 @@ class ProgressBar(ProgressIndicator):
                                             min_port=min_port,
                                             max_port=max_port,
                                             max_tries=max_tries)
-            self.param.message("Progress broadcast bound to port %d" % port)
+            self.param.message(f"Progress broadcast bound to port {port}")
             return sock
         except Exception:
             self.param.message("No suitable port found for progress broadcast.")

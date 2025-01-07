@@ -118,11 +118,10 @@ class SpatialPandasInterface(MultiInterface):
         dim_types = 'key' if vdims else 'all'
         geom_dims = cls.geom_dims(dataset)
         if len(geom_dims) != 2:
-            raise DataError('Expected %s instance to declare two key '
+            raise DataError(f'Expected {type(dataset).__name__} instance to declare two key '
                             'dimensions corresponding to the geometry '
-                            'coordinates but %d dimensions were found '
-                            'which did not refer to any columns.'
-                            % (type(dataset).__name__, len(geom_dims)), cls)
+                            f'coordinates but {len(geom_dims)} dimensions were found '
+                            'which did not refer to any columns.', cls)
         not_found = [d.name for d in dataset.dimensions(dim_types)
                      if d not in geom_dims and d.name not in dataset.data]
         if not_found:
@@ -617,31 +616,35 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     Returns:
         An array containing the values along a dimension
     """
+    if not len(data):
+        return np.array([])
     column = data[dimension.name]
     if keep_index:
         return column
-    all_scalar = True
+    is_scalars = [isscalar(value) for value in column]
+    all_scalar = all(is_scalars)
+    if all_scalar and not expanded:
+        scal_unique = column.unique()
+        # .unique() on categorical dtype doesn't return a np array
+        return scal_unique if isinstance(scal_unique, np.ndarray) else scal_unique.to_numpy()
     arrays, scalars = [], []
     for i, geom in enumerate(data[geom_col]):
-        length = 1 if is_points else geom_length(geom)
         val = column.iloc[i]
-        scalar = isscalar(val)
+        scalar = is_scalars[i]
         if scalar:
             val = np.array([val])
         if not scalar and len(unique_array(val)) == 1:
             val = val[:1]
             scalar = True
-        all_scalar &= scalar
         scalars.append(scalar)
         if not expanded or not scalar:
             arrays.append(val)
         elif scalar:
+            length = 1 if is_points else geom_length(geom)
             arrays.append(np.full(length, val))
         if expanded and not is_points and not i == (len(data[geom_col])-1):
             arrays.append(np.array([np.nan]))
 
-    if not len(data):
-        return np.array([])
     if expanded:
         return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
     elif (all_scalar and arrays):
@@ -815,7 +818,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
         converted['geometry'] = GeoSeries(geom_array)
     else:
         converted['geometry'] = GeoSeries(single_array([]))
-    return GeoDataFrame(converted, columns=['geometry']+columns)
+    return GeoDataFrame(converted, columns=['geometry', *columns])
 
 
 def to_geom_dict(eltype, data, kdims, vdims, interface=None):

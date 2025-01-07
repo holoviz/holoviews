@@ -56,7 +56,7 @@ class KeywordSettings:
                         raise ValueError(f"Value {value!r} for key {keyword!r} not one of {allowed}")
                 elif isinstance(allowed, tuple):
                     if not (allowed[0] <= value <= allowed[1]):
-                        info = (keyword,value)+allowed
+                        info = (keyword, value, *allowed)
                         raise ValueError("Value {!r} for key {!r} not between {} and {}".format(*info))
                 options[keyword] = value
         return cls._validate(options, items, warnfn)
@@ -230,7 +230,7 @@ class OutputSettings(KeywordSettings):
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         if signature:
             doc_signature = '\noutput({})\n'.format(', '.join(f'{kw}=None' for kw in keywords))
-            return '\n'.join([doc_signature] + intro + descriptions)
+            return '\n'.join([doc_signature, *intro, *descriptions])
         else:
             return '\n'.join(intro + descriptions)
 

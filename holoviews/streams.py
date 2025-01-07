@@ -20,7 +20,7 @@ from .core import util
 from .core.ndmapping import UniformNdMapping
 
 # Types supported by Pointer derived streams
-pointer_types = (Number, str, tuple)+util.datetime_types
+pointer_types = (Number, str, tuple, *util.datetime_types)
 
 POPUP_POSITIONS = [
     "top_right",
@@ -593,8 +593,8 @@ class Buffer(Pipe):
             if x.ndim != 2:
                 raise ValueError('Streamed array data must be two-dimensional')
             elif x.shape[1] != self.data.shape[1]:
-                raise ValueError("Streamed array data expected to have %d columns, "
-                                 "got %d." % (self.data.shape[1], x.shape[1]))
+                raise ValueError(f"Streamed array data expected to have {self.data.shape[1]} columns, "
+                                 f"got {x.shape[1]}.")
         elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
             raise IndexError(f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}")
         elif isinstance(x, dict):
@@ -1466,7 +1466,7 @@ class PlotSize(LinkedStream):
 
 class SelectMode(LinkedStream):
 
-    mode = param.ObjectSelector(default="replace", constant=True, objects=[
+    mode = param.Selector(default="replace", constant=True, objects=[
         "replace", "append", "intersect", "subtract"], doc="""
         Defines what should happen when a new selection is made. The
         default is to replace the existing selection. Other options
@@ -1882,7 +1882,7 @@ class BoxEdit(CDSStream):
                 xs.append(x0)
                 ys.append(y0)
             vals = [data[vd.name][i] for vd in source.vdims]
-            paths.append((xs, ys)+tuple(vals))
+            paths.append((xs, ys, *vals))
         datatype = source.datatype if source.interface.multi else ['multitabular']
         return source.clone(paths, datatype=datatype, id=None)
 

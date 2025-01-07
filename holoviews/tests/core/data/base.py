@@ -855,7 +855,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         expected = Dataset({'Gender':self.gender, 'Age':self.age,
                               'Weight':self.weight, 'Height':self.height,
                               'combined': self.age*self.weight},
-                             kdims=self.kdims, vdims=self.vdims+['combined'])
+                             kdims=self.kdims, vdims=[*self.vdims, 'combined'])
         self.assertEqual(transformed, expected)
 
     def test_select_with_neighbor(self):

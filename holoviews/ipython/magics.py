@@ -109,7 +109,7 @@ class CompositorMagic(Magics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         lines = ['The %compositor line magic is used to define compositors.']
-        self.compositor.__func__.__doc__ = '\n'.join(lines + [CompositorSpec.__doc__])
+        self.compositor.__func__.__doc__ = '\n'.join([*lines, CompositorSpec.__doc__])
 
 
     @line_magic
@@ -368,7 +368,7 @@ class TimerMagic(Magics):
         seconds = time.time() -  TimerMagic.start_time
         minutes = seconds // 60
         hours = minutes // 60
-        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes % 60, seconds % 60)
+        return f"Timer elapsed: {hours:02d}:{minutes % 60:02d}:{seconds % 60:02d}"
 
     @classmethod
     def option_completer(cls, k,v):

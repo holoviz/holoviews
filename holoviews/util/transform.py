@@ -259,12 +259,11 @@ class dim:
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types+(str,)) or
+            if not (isinstance(fn, (*function_types, str)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  f'found {type(fn)} type')
-            self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
-                          'reverse': kwargs.pop('reverse', False)}]
+            self.ops = [*self.ops, {'args': args[1:], 'fn': fn, 'kwargs': kwargs, 'reverse': kwargs.pop('reverse', False)}]
 
     def __getstate__(self):
         return self.__dict__

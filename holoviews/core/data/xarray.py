@@ -180,7 +180,7 @@ class XArrayInterface(GridInterface):
             data = {d: np.asarray(values) if d in kdims else values
                     for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
-            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+            dims = tuple(f'dim_{i}' for i in range(max(coord_dims)))[::-1]
             coords = {}
             for kd in kdims:
                 coord_vals = data[kd.name]
@@ -267,7 +267,7 @@ class XArrayInterface(GridInterface):
             nonmatching = [f'{kd}: {dims}' for kd, dims in irregular[1:]
                            if set(dims) != set(irregular[0][1])]
             if nonmatching:
-                nonmatching = ['{}: {}'.format(*irregular[0])] + nonmatching
+                nonmatching = ['{}: {}'.format(*irregular[0]), *nonmatching]
                 raise DataError("The dimensions of coordinate arrays "
                                 "on irregular data must match. The "
                                 "following kdims were found to have "

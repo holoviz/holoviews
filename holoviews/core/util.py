@@ -994,7 +994,7 @@ def max_range(ranges, combined=True):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.nan if v is None else v for v in r) for r in ranges]
-            if any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
+            if any(isinstance(v, datetime_types) and not isinstance(v, (*cftime_types, dt.time))
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
@@ -1281,7 +1281,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
     indexes = [(dimensions[i], int(i not in range(ndims)),
                     i if i in range(ndims) else i-ndims)
                 for i in key_index]
-    cached_values = {d.name: [None]+list(d.values) for d in dimensions}
+    cached_values = {d.name: [None, *d.values] for d in dimensions}
 
     if len(set(key_index)) != len(key_index):
         raise ValueError("Cannot sort on duplicated dimensions")
@@ -1434,8 +1434,8 @@ def get_overlay_spec(o, k, v):
     Gets the type.group.label + key spec from an Element in an Overlay.
     """
     k = wrap_tuple(k)
-    return ((type(v).__name__, v.group, v.label) + k if len(o.kdims) else
-            (type(v).__name__,) + k)
+    return ((type(v).__name__, v.group, v.label, *k) if len(o.kdims) else
+            (type(v).__name__, *k))
 
 
 def layer_sort(hmap):
@@ -1887,9 +1887,9 @@ def make_path_unique(path, counts, new):
             path = path[:-1]
         else:
             added = True
-        path = path + (int_to_roman(count),)
+        path = (*path, int_to_roman(count))
     if len(path) == 1:
-        path = path + (int_to_roman(counts.get(path, 1)),)
+        path = (*path, int_to_roman(counts.get(path, 1)))
     if path not in counts:
         counts[path] = 1
     return path
@@ -1976,8 +1976,7 @@ def cross_index(values, index):
     lengths = [len(v) for v in values]
     length = np.prod(lengths)
     if index >= length:
-        raise IndexError('Index %d out of bounds for cross-product of size %d'
-                         % (index, length))
+        raise IndexError(f'Index {index} out of bounds for cross-product of size {lengths}')
     indexes = []
     for i in range(1, len(values))[::-1]:
         p = np.prod(lengths[-i:])

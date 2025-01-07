@@ -767,7 +767,7 @@ class OptionTree(AttrTree):
         # Try to get a cache hit in the backend lookup cache
         backend = backend or Store.current_backend
         cache = Store._lookup_cache.get(backend, {})
-        cache_key = opts_spec+(group, defaults, id(self.root))
+        cache_key = (*opts_spec, group, defaults, id(self.root))
         if cache_key in cache:
             return cache[cache_key]
 
@@ -856,7 +856,7 @@ class Compositor(param.Parameterized):
     values names of those matrices match 'R', 'G' and 'B'.
     """
 
-    mode = param.ObjectSelector(default='data',
+    mode = param.Selector(default='data',
                                 objects=['data', 'display'], doc="""
       The mode of the Compositor object which may be either 'data' or
       'display'.""")
@@ -1344,7 +1344,7 @@ class Store:
             for option in new_options:
                 if option not in cls.registry[backend][component].style_opts:
                     plot_class = cls.registry[backend][component]
-                    plot_class.style_opts = sorted(plot_class.style_opts+[option])
+                    plot_class.style_opts = sorted([*plot_class.style_opts, option])
         cls._options[backend][component.name] = Options(
             'style', merge_keywords=True, allowed_keywords=new_options
         )
@@ -1522,9 +1522,8 @@ class StoreOptions:
 
         # Clean up the custom tree if it was not applied
         if new_id not in Store.custom_options(backend=backend):
-            raise AssertionError("New option id %d does not match any "
-                                 "option trees in Store.custom_options."
-                                 % new_id)
+            raise AssertionError(f"New option id {new_id} does not match any "
+                                 "option trees in Store.custom_options.")
         return applied
 
     @classmethod
@@ -1592,7 +1591,7 @@ class StoreOptions:
                 error_key = (error.invalid_keyword,
                              error.allowed_keywords.target,
                              error.group_name)
-                error_info[error_key+(backend,)] = error.allowed_keywords
+                error_info[(*error_key, backend)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
         for ((keyword, target, group_name), backend_error) in backend_errors.items():
@@ -1722,11 +1721,11 @@ class StoreOptions:
                     additions.update({k:kws})
             if spec_key not in options:
                 options[spec_key] = {}
-            for key in additions:
+            for key, value in additions.items():
                 if key in options[spec_key]:
-                    options[spec_key][key].update(additions[key])
+                    options[spec_key][key].update(value)
                 else:
-                    options[spec_key][key] = additions[key]
+                    options[spec_key][key] = value
         return options
 
 

@@ -169,8 +169,8 @@ ignore = [
     "PLR091", # Too many arguments/branches/statements
     "PLR2004", # Magic value used in comparison
     "PLW2901", # `for` loop variable is overwritten
-    "RUF005", # Consider {expr} instead of concatenation
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
+    "RUF021", # parenthesize-chained-operators
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports

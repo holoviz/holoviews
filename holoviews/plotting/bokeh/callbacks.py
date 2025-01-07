@@ -3,6 +3,7 @@ import base64
 import inspect
 import time
 from collections import defaultdict
+from contextlib import suppress
 from functools import partial
 
 import numpy as np
@@ -459,8 +460,7 @@ class Callback:
 
         # Hash the plot handle with Callback type allowing multiple
         # callbacks on one handle to be merged
-        hash_ids = [id(h) for h in hash_handles]
-        cb_hash = tuple(hash_ids)+(id(type(self)),)
+        cb_hash = (*map(id, hash_handles), id(type(self)))
         if cb_hash in self._callbacks:
             # Merge callbacks if another callback has already been attached
             cb = self._callbacks[cb_hash]
@@ -519,7 +519,8 @@ class PointerXYCallback(Callback):
             msg['y'] = convert_timestamp(msg['y'])
 
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
-            msg['x'] = x_range.factors[int(msg['x'])]
+            with suppress(IndexError): # See: https://github.com/holoviz/holoviews/pull/6438
+                msg['x'] = x_range.factors[int(msg['x'])]
         elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
@@ -531,7 +532,8 @@ class PointerXYCallback(Callback):
                 msg['x'] = x
 
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
-            msg['y'] = y_range.factors[int(msg['y'])]
+            with suppress(IndexError):
+                msg['y'] = y_range.factors[int(msg['y'])]
         elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:

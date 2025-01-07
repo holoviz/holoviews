@@ -39,7 +39,7 @@ class Accessor:
                     args=[index],
                 )
                 res._pipeline = self.dataset.pipeline.instance(
-                    operations=self.dataset.pipeline.operations + [getitem_op],
+                    operations=[*self.dataset.pipeline.operations, getitem_op],
                     output_type=type(self.dataset)
                 )
         finally:
@@ -91,7 +91,7 @@ class iloc(Accessor):
             kdims = [d for d in dims if d in kdims]
             vdims = [d for d in dims if d in vdims]
 
-        datatypes = util.unique_iterator([dataset.interface.datatype]+dataset.datatype)
+        datatypes = util.unique_iterator([dataset.interface.datatype, *dataset.datatype])
         datatype = [dt for dt in datatypes if dt in Interface.interfaces and
                     not Interface.interfaces[dt].gridded]
         if not datatype: datatype = ['dataframe', 'dictionary']
@@ -118,7 +118,7 @@ class ndloc(Accessor):
         params = {}
         if hasattr(ds, 'bounds'):
             params['bounds'] = None
-        return dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
+        return dataset.clone(selected, datatype=[ds.interface.datatype, *ds.datatype], **params)
 
 
 class Interface(param.Parameterized):

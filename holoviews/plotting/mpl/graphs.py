@@ -231,7 +231,7 @@ class TriMeshPlot(GraphPlot):
     filled = param.Boolean(default=False, doc="""
         Whether the triangles should be drawn as filled.""")
 
-    style_opts = GraphPlot.style_opts + ['edge_facecolors']
+    style_opts = [*GraphPlot.style_opts, 'edge_facecolors']
 
     def get_data(self, element, ranges, style):
         edge_color = style.get('edge_color')
@@ -259,7 +259,7 @@ class ChordPlot(ChordMixin, GraphPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the node labels will be drawn""")
 
-    style_opts = GraphPlot.style_opts + ['text_font_size', 'label_offset']
+    style_opts = [*GraphPlot.style_opts, 'text_font_size', 'label_offset']
 
     _style_groups = ['edge', 'node', 'arc']
 

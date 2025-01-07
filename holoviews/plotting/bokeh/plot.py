@@ -82,7 +82,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
     title_format = param.String(default=None, doc="Alias for title.")
 
-    toolbar = param.ObjectSelector(default='above',
+    toolbar = param.Selector(default='above',
                                    objects=["above", "below",
                                             "left", "right", None],
                                    doc="""
@@ -367,7 +367,7 @@ class CompositePlot(BokehPlot):
     to such a plot.
     """
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
 
@@ -472,12 +472,12 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Adds a legend based on the entries of the middle-right plot""")
 
-    xaxis = param.ObjectSelector(default=True,
+    xaxis = param.Selector(default=True,
                                  objects=['bottom', 'top', None, True, False], doc="""
         Whether and where to display the xaxis, supported options are
         'bottom', 'top' and None.""")
 
-    yaxis = param.ObjectSelector(default=True,
+    yaxis = param.Selector(default=True,
                                  objects=['left', 'right', None, True, False], doc="""
         Whether and where to display the yaxis, supported options are
         'left', 'right' and None.""")
@@ -721,7 +721,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         Whether to show the legend for a particular subplot by index. If True all legends
         will be shown. If False no legends will be shown.""")
 
-    legend_position = param.ObjectSelector(objects=["top_right",
+    legend_position = param.Selector(objects=["top_right",
                                                     "top_left",
                                                     "bottom_left",
                                                     "bottom_right",

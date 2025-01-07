@@ -46,11 +46,11 @@ class PlotlyRenderer(Renderer):
 
     backend = param.String(default='plotly', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
+    fig = param.Selector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['scrubber','widgets', 'gif',
                                             None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If

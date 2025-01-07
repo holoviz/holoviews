@@ -145,7 +145,7 @@ def compute_overlayable_zorders(obj, path=None):
     """
     if path is None:
         path = []
-    path = path+[obj]
+    path = [*path, obj]
     zorder_map = defaultdict(list)
 
     # Process non-dynamic layers
@@ -157,7 +157,7 @@ def compute_overlayable_zorders(obj, path=None):
             for el in obj.values():
                 if isinstance(el, CompositeOverlay):
                     for k, v in compute_overlayable_zorders(el, path).items():
-                        zorder_map[k] += v + [obj]
+                        zorder_map[k] += [*v, obj]
                 else:
                     zorder_map[0] += [obj, el]
         elif obj not in zorder_map[0]:
@@ -985,8 +985,7 @@ def color_intervals(colors, levels, clip=None, N=255):
     if len(colors) != len(levels)-1:
         raise ValueError('The number of colors in the colormap '
                          'must match the intervals defined in the '
-                         'color_levels, expected %d colors found %d.'
-                         % (N, len(colors)))
+                         f'color_levels, expected {N} colors found {len(colors)}.')
     intervals = np.diff(levels)
     cmin, cmax = min(levels), max(levels)
     interval = cmax-cmin

@@ -42,7 +42,7 @@ class LinkCallback:
         references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
-        for sh in self.source_handles+[self.source_model]:
+        for sh in [*self.source_handles, self.source_model]:
             key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
@@ -52,7 +52,7 @@ class LinkCallback:
             references[p] = value
 
         if target_plot is not None:
-            for sh in self.target_handles+[self.target_model]:
+            for sh in [*self.target_handles, self.target_model]:
                 key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
@@ -162,6 +162,14 @@ class RangeToolLinkCallback(LinkCallback):
             else:
                 target_range_name = range_name
             axes[range_name] = ax = target_plot.handles[target_range_name]
+            if ax is source_plot.handles.get(target_range_name):
+                # Cloning the axis as it does not make sense to have a link
+                # for the same axis
+                new_ax = ax.clone()
+                source_plot.handles[target_range_name] = new_ax
+                setattr(source_plot.handles["plot"], range_name, new_ax)
+                # So it is not re-linked by pn.pane.HoloViews(..., linked_axes=True)
+                new_ax.tags = []
             interval = getattr(link, f'intervals{axis}', None)
             if interval is not None and BOKEH_GE_3_4_0:
                 min, max = interval
@@ -235,8 +243,8 @@ class DataLinkCallback(LinkCallback):
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
             raise ValueError('DataLink source data length must match target '
-                            'data length, found source length of %d and '
-                            'target length of %d.' % (src_len[0], tgt_len[0]))
+                            f'data length, found source length of {src_len[0]} and '
+                            f'target length of {tgt_len[0]}.')
 
         # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
