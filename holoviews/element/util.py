@@ -158,7 +158,7 @@ class categorical_aggregate2d(Operation):
             if len(vals) == 1:
                 orderings[vals[0]] = [vals[0]]
             else:
-                for p1, p2 in itertools.pairwise(vals):
+                for p1, p2 in zip(vals[:-1], vals[1:]):
                     orderings[p1] = [p2]
             if sort:
                 if vals.dtype.kind in ('i', 'f'):
