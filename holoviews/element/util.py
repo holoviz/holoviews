@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import itertools
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -18,6 +21,11 @@ from ..core.util import (
     one_to_one,
     sort_topologically,
 )
+
+if TYPE_CHECKING:
+    from typing import TypeVar
+
+    Array = TypeVar('Array', np.ndarray, pd.api.extensions.ExtensionArray)
 
 
 def split_path(path):
@@ -126,7 +134,7 @@ class categorical_aggregate2d(Operation):
         The grid interface types to use when constructing the gridded Dataset.""")
 
     @classmethod
-    def _get_coords(cls, obj):
+    def _get_coords(cls, obj: Dataset):
         """
         Get the coordinates of the 2D aggregate, maintaining the correct
         sorting order.
@@ -134,10 +142,11 @@ class categorical_aggregate2d(Operation):
         xdim, ydim = obj.dimensions(label=True)[:2]
         xcoords = obj.dimension_values(xdim, False)
         ycoords = obj.dimension_values(ydim, False)
+
         if xcoords.dtype.kind not in 'SUO':
-            xcoords = np.sort(xcoords)
+            xcoords = sort_arr(xcoords)
         if ycoords.dtype.kind not in 'SUO':
-            return xcoords, np.sort(ycoords)
+            return xcoords, sort_arr(ycoords)
 
         # Determine global orderings of y-values using topological sort
         grouped = obj.groupby(xdim, container_type=dict,
@@ -149,19 +158,18 @@ class categorical_aggregate2d(Operation):
             if len(vals) == 1:
                 orderings[vals[0]] = [vals[0]]
             else:
-                for i in range(len(vals)-1):
-                    p1, p2 = vals[i:i+2]
+                for p1, p2 in itertools.pairwise(vals):
                     orderings[p1] = [p2]
             if sort:
                 if vals.dtype.kind in ('i', 'f'):
                     sort = (np.diff(vals)>=0).all()
                 else:
-                    sort = np.array_equal(np.sort(vals), vals)
+                    sort = np.array_equal(sort_arr(vals), vals)
         if sort or one_to_one(orderings, ycoords):
-            ycoords = np.sort(ycoords)
+            ycoords = sort_arr(ycoords)
         elif not is_cyclic(orderings):
             coords = list(itertools.chain(*sort_topologically(orderings)))
-            ycoords = coords if len(coords) == len(ycoords) else np.sort(ycoords)
+            ycoords = coords if len(coords) == len(ycoords) else sort_arr(ycoords)
         return np.asarray(xcoords), np.asarray(ycoords)
 
     def _aggregate_dataset(self, obj):
@@ -332,3 +340,9 @@ def connect_edges(graph):
         end = end_ds.array(end_ds.kdims[:2])
         paths.append(np.array([start[0], end[0]]))
     return paths
+
+
+def sort_arr(arr: Array) -> Array:
+    if isinstance(arr, pd.api.extensions.ExtensionArray):
+        return arr[arr.argsort()]
+    return np.sort(arr)

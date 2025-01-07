@@ -3,6 +3,8 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 import re
@@ -922,7 +924,7 @@ class Dimensioned(LabelledData):
                 if label else dim for dim in dims]
 
 
-    def get_dimension(self, dimension, default=None, strict=False):
+    def get_dimension(self, dimension, default=None, strict=False) -> Dimension | None:
         """Get a Dimension object by name or index.
 
         Args:

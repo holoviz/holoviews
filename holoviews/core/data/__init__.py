@@ -266,6 +266,8 @@ class Dataset(Element, metaclass=PipelineMeta):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
+    interface: Interface
+
     def __new__(cls, data=None, kdims=None, vdims=None, **kwargs):
         """
         Allows casting a DynamicMap to an Element class like hv.Curve, by applying the
