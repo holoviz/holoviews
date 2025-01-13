@@ -139,7 +139,7 @@ _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
-depends_on = ["_install-ui"]
+depends-on = ["_install-ui"]
 
 [feature.test-gpu]
 channels = ["rapidsai"]
@@ -183,7 +183,7 @@ _docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
 
 [feature.doc.tasks.docs-build]
-depends_on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
+depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
 
 # =============================================
 # ================== BUILD ====================
