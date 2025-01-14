@@ -256,11 +256,9 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         loc = element.data
         if isinstance(element, VLine):
-            dim = 'x'
+            dim = 'y' if self.invert_axes else 'x'
         elif isinstance(element, HLine):
-            dim = 'y'
-        if self.invert_axes:
-            dim = 'x' if dim == 'y' else 'x'
+            dim = 'x' if self.invert_axes else 'y'
         ranges[dim]['soft'] = loc, loc
         return super().get_extents(element, ranges, range_type)
 
