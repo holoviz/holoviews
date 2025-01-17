@@ -57,7 +57,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         for el in element.split():
             new_el = transform.apply(el, ranges=ranges, flat=True)
             if len(new_el) == 1:
-                kdim_length = max([len(el[kdim]) for kdim in el.kdims])
+                kdim_length = len(el[el.kdims[0]])
                 transformed.append(np.tile(new_el, kdim_length - 1))
             else:
                 transformed.append(new_el)
