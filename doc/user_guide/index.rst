@@ -66,6 +66,9 @@ concepts in HoloViews:
 `Working with large data <Large_Data.html>`_
  Leverage Datashader to interactively explore millions or billions of datapoints.
 
+`Working with Streaming Data <Streaming_Data.html>`_
+ Demonstrates how to leverage HoloViews to work with streaming datasets.
+
 `Creating interactive dashboards <Dashboards.html>`_
  Use external widget libraries to build custom, interactive dashboards.
 
