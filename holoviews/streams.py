@@ -18,6 +18,7 @@ import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
+from .util.warnings import deprecated
 
 # Types supported by Pointer derived streams
 pointer_types = (Number, str, tuple, *util.datetime_types)
@@ -524,10 +525,6 @@ class Buffer(Pipe):
     by the specified ``length``. The accumulated data is then made
     available via the ``data`` parameter.
 
-    A Buffer may also be instantiated with a streamz.StreamingDataFrame
-    or a streamz.StreamingSeries, it will automatically subscribe to
-    events emitted by a streamz object.
-
     When streaming a DataFrame will reset the DataFrame index by
     default making it available to HoloViews elements as dimensions,
     this may be disabled by setting index=False.
@@ -567,6 +564,10 @@ class Buffer(Pipe):
                     loaded = True
                 except ImportError:
                     loaded = False
+            if loaded:
+                # NOTE: there could still be some code in these classes which handles
+                # the streaming interface.
+                deprecated("1.22.0", "Buffer's streamz interface")
             if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
                 raise ValueError("Buffer must be initialized with pandas DataFrame, "
                                  "streamz.StreamingDataFrame or streamz.StreamingSeries.")
