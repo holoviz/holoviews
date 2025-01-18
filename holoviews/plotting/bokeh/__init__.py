@@ -261,11 +261,10 @@ options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle(), line_color='black',
                            cmap=dflt_cmap)
-options.Rectangles = Options('style', cmap=dflt_cmap)
-options.Segments = Options('style', cmap=dflt_cmap)
 
 # Geometries
-options.Rectangles = Options('style', line_color='black')
+options.Rectangles = Options('style', color=Cycle(), cmap=dflt_cmap, line_color='black')
+options.Segments = Options('style', color='black', cmap=dflt_cmap)
 
 # Rasters
 options.Image = Options('style', cmap=config.default_gridded_cmap)
