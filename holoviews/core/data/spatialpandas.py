@@ -632,7 +632,10 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
         val = column.iloc[i]
         scalar = is_scalars[i]
         if scalar:
-            val = np.array([val])
+            if pd.isna(val):
+                val = np.array([np.nan])
+            else:
+                val = np.array([val])
         if not scalar and len(unique_array(val)) == 1:
             val = val[:1]
             scalar = True
