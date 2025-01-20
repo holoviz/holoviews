@@ -52,8 +52,17 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 else:
                     new_data.append(d)
             return np.array(new_data)
-        return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
-                               for el in element.split()])
+
+        transformed = []
+        for el in element.split():
+            new_el = transform.apply(el, ranges=ranges, flat=True)
+            if len(new_el) == 1:
+                kdim_length = len(el[el.kdims[0]])
+                transformed.append(np.tile(new_el, kdim_length - 1))
+            else:
+                transformed.append(new_el)
+
+        return np.concatenate(transformed)
 
     def _hover_opts(self, element):
         cdim = element.get_dimension(self.color_index)
