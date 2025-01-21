@@ -206,7 +206,6 @@ python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.activation.env]
-DASK_DATAFRAME__QUERY_PLANNING = "False"
 MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"
