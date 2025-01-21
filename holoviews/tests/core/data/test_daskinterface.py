@@ -13,13 +13,10 @@ from holoviews.core.data import Dataset
 from holoviews.core.util import PANDAS_VERSION
 from holoviews.util.transform import dim
 
-from ...utils import dask_switcher
+from ...utils import DASK_VERSION, dask_setup, dask_switcher
 from .test_pandasinterface import BasePandasInterfaceTests
 
-try:
-    import dask_expr
-except ImportError:
-    dask_expr = None
+classic, expr = dask_setup()
 
 
 class _DaskDatasetTest(BasePandasInterfaceTests):
@@ -136,9 +133,11 @@ class _DaskDatasetTest(BasePandasInterfaceTests):
 
 class DaskClassicDatasetTest(_DaskDatasetTest):
 
-    data_type = dd.core.DataFrame
+    # No longer supported from Dask 2025.1
 
-    __test__ = True
+    data_type = getattr(dd.core, "DataFrame", None)
+
+    __test__ = classic
 
     @dask_switcher(query=False)
     def setUp(self):
@@ -147,11 +146,17 @@ class DaskClassicDatasetTest(_DaskDatasetTest):
 
 class DaskExprDatasetTest(_DaskDatasetTest):
 
-    __test__ = bool(dask_expr)
+    __test__ = expr
 
     @property
     def data_type(self):
-        return dask_expr.DataFrame
+        # Only available from 2025.1 and forward
+        if DASK_VERSION >= (2025, 1, 0):
+            return dd.DataFrame
+        else:
+            import dask_expr
+
+            return dask_expr.DataFrame
 
     @dask_switcher(query=True)
     def setUp(self):

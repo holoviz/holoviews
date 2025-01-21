@@ -158,7 +158,7 @@ pytest-xdist = "*"
 test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
 [feature.test-example.tasks]
-test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', env = { DASK_DATAFRAME__QUERY_PLANNING = "False" } }
+test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -206,7 +206,6 @@ python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.activation.env]
-DASK_DATAFRAME__QUERY_PLANNING = "False"
 MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"
