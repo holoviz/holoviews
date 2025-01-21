@@ -159,7 +159,6 @@ test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
 [feature.test-example.tasks]
 test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
-# test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', env = { DASK_DATAFRAME__QUERY_PLANNING = "False" } }
 
 [feature.test-example.dependencies]
 nbval = "*"
