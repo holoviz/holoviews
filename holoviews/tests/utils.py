@@ -8,8 +8,8 @@ from importlib.util import find_spec
 
 import param
 import pytest
-from packaging.version import Version
 
+from holoviews.core.util import _no_import_version
 from holoviews.element.comparison import ComparisonTestCase
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
@@ -120,21 +120,21 @@ class LoggingComparisonTestCase(ComparisonTestCase):
 
 
 DASK_UNAVAILABLE = find_spec("dask") is None
+DASK_VERSION = _no_import_version("dask")
 
 
 @lru_cache
-def _dask_setup():
+def dask_setup():
     """
     Set-up both dask dataframes, using lru_cahce to only do it once
 
     """
-    import dask
     from datashader.data_libraries.dask import bypixel, dask_pipeline
 
     classic, expr = False, False
 
     # Removed in Dask 2025.1, and will raise AttributeError
-    if Version(dask.__version__).release < (2025, 1, 0):
+    if DASK_VERSION < (2025, 1, 0):
         import dask.dataframe as dd
 
         bypixel.pipeline.register(dd.core.DataFrame)(dask_pipeline)
@@ -164,7 +164,7 @@ def dask_switcher(*, query=False, extras=None):
     if DASK_UNAVAILABLE:
         pytest.skip("dask is not available")
 
-    classic, expr = _dask_setup()
+    classic, expr = dask_setup()
 
     if not query and not classic:
         pytest.skip("Classic DataFrame no longer supported by dask")
