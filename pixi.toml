@@ -204,7 +204,6 @@ nbsite = ">=0.8.4,<0.9.0"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
-dask-core = "<2025.1" # Spatialpandas does not support the new dask-expr DataFrame
 
 [feature.doc.activation.env]
 DASK_DATAFRAME__QUERY_PLANNING = "False"
