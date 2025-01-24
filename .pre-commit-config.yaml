@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: v0.9.3
     hooks:
       - id: ruff
         files: holoviews/|scripts/
@@ -27,7 +27,7 @@ repos:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.0
     hooks:
       - id: codespell
         additional_dependencies:
