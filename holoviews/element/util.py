@@ -213,7 +213,7 @@ class categorical_aggregate2d(Operation):
         if PANDAS_GE_2_1_0:
             groupby_kwargs["observed"] = False
         df = obj.data
-        if not all(c in obj.data.index.names for c in index_cols):
+        if not all(c in df.index.names for c in index_cols):
             df = df.set_index(index_cols)
         df = df.groupby(index_cols, **groupby_kwargs).first()
         label = 'unique' if len(df) == len(obj) else 'non-unique'
