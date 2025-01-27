@@ -1,12 +1,8 @@
-from __future__ import absolute_import
 
 import panel as pn
-
 from bokeh.client import pull_session
 from bokeh.embed import server_session
-
-from flask import Flask, render_template
-from flask import send_from_directory
+from flask import Flask, render_template, send_from_directory
 
 app = Flask(__name__)
 

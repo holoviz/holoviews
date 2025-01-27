@@ -1,6 +1,7 @@
-import psutil
-import panel as pn
 import pandas as pd
+import panel as pn
+import psutil
+
 import holoviews as hv
 from holoviews import dim, opts
 

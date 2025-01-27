@@ -9,6 +9,7 @@ The app can be served using:
 """
 
 import numpy as np
+
 import holoviews as hv
 from holoviews.streams import Selection1D
 

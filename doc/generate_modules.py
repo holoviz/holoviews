@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 sphinx-autopackage-script
 This script parses a directory tree looking for python modules and packages and
@@ -31,9 +30,8 @@ It also creates a modules index (named modules.<suffix>).
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import optparse
-
+import os
 
 # automodule options
 OPTIONS = ['members',

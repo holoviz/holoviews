@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 An example of a simple player widget animating an Image demonstrating
 how to connect a simple HoloViews plot with custom widgets and
@@ -10,11 +9,11 @@ The app can be served using:
 
 """
 import numpy as np
-import holoviews as hv
-
 from bokeh.io import curdoc
 from bokeh.layouts import layout
-from bokeh.models import Slider, Button
+from bokeh.models import Button, Slider
+
+import holoviews as hv
 
 renderer = hv.renderer('bokeh')
 
