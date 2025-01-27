@@ -55,4 +55,4 @@ callback = pn.io.PeriodicCallback(callback=cb, period=500)
 callback.start()
 
 # Show plot inside notebook
-plot
+plot  # noqa: B018

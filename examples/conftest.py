@@ -92,7 +92,7 @@ def pytest_runtest_makereport(item, call):
             "Kernel didn't respond in 60 seconds",
         ]
         for msg in msgs:
-            if call.excinfo.type == RuntimeError and call.excinfo.value.args[0] in msg:
+            if call.excinfo.type is RuntimeError and call.excinfo.value.args[0] in msg:
                 tr.outcome = "skipped"
                 tr.wasxfail = f"reason: {msg}"
 
