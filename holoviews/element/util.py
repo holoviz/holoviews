@@ -216,7 +216,6 @@ class categorical_aggregate2d(Operation):
         if not all(c in obj.data.index.names for c in index_cols):
             df = df.set_index(index_cols)
         df = df.groupby(index_cols, **groupby_kwargs).first()
-        # df = obj.data.set_index(index_cols).groupby(index_cols, **groupby_kwargs).first()
         label = 'unique' if len(df) == len(obj) else 'non-unique'
         levels = self._get_coords(obj)
         index = pd.MultiIndex.from_product(levels, names=df.index.names)
