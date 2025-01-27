@@ -18,9 +18,10 @@ import holoviews as hv
 renderer = hv.renderer('bokeh')
 
 # Declare the HoloViews object
+seed = np.random.default_rng()
 start = 0
 end = 10
-hmap = hv.HoloMap({i: hv.Image(np.random.rand(10,10)) for i in range(start, end+1)})
+hmap = hv.HoloMap({i: hv.Image(seed.random(size=(10,10))) for i in range(start, end+1)})
 
 # Convert the HoloViews object into a plot
 plot = renderer.get_plot(hmap)
