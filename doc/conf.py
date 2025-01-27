@@ -13,6 +13,9 @@ authors = 'HoloViz developers'
 copyright = '2005 ' + authors
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
+# Setting this to not error out if no install is done
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import holoviews
 version = release = base_version(holoviews.__version__)
 
