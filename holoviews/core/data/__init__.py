@@ -1269,3 +1269,7 @@ argument to specify a selection specification""")
             dataset.ndloc[[1, 2, 3], [0, 2, 3]]
         """
         return ndloc(self)
+
+    def __dask_tokenize__(self):
+        from dask.base import normalize_token
+        return normalize_token(type(self)), self.data

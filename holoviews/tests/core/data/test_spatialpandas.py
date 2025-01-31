@@ -260,7 +260,7 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     __test__ = True
 
-    @dask_switcher(query=False, extras=["spatialpandas.dask"])
+    @dask_switcher(query=True, extras=["spatialpandas.dask"])
     def setUp(self):
         if spatialpandas is None:
             raise SkipTest('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
