@@ -82,9 +82,6 @@ PYTHONIOENCODING = "utf-8"
 python = "3.9.*"
 panel = "1.4.*"
 
-[feature.py39.activation.env]
-DASK_DATAFRAME__QUERY_PLANNING = "False"
-
 [feature.py310.dependencies]
 python = "3.10.*"
 bokeh_sampledata = "*"
