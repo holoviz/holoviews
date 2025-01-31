@@ -683,7 +683,7 @@ class TestSpatialSelectColumnar:
 
 
     @pytest.fixture(scope="function")
-    def dask_df(self, pandas_df, request):
+    def dask_df(self, pandas_df):
         return dd.from_pandas(pandas_df, npartitions=2)
 
     @pytest.fixture(scope="function")
