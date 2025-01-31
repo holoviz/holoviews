@@ -249,7 +249,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         self.assertIsInstance(path.data.geometry.dtype, MultiPolygonDtype)
 
 
-class DaskSpatialPandasTest(GeomTests, RoundTripTests):
+class DaskSpatialPandasBaseTest(GeomTests, RoundTripTests):
     """
     Test of the DaskSpatialPandasInterface.
     """
@@ -258,9 +258,8 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     interface = DaskSpatialPandasInterface
 
-    __test__ = True
+    __test__ = False
 
-    @dask_switcher(query=True, extras=["spatialpandas.dask"])
     def setUp(self):
         if spatialpandas is None:
             raise SkipTest('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
@@ -303,3 +302,26 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     def test_sort_by_value(self):
         raise SkipTest("Not supported")
+
+
+class DaskSpatialPandasClassicTest(DaskSpatialPandasBaseTest):
+    """
+    Test of the Classic DaskSpatialPandasInterface, no longer exits since dask 2025.1
+    """
+
+    __test__ = True
+
+    @dask_switcher(query=False, extras=["spatialpandas.dask"])
+    def setUp(self):
+        super().setUp()
+
+class DaskSpatialPandasExprTest(DaskSpatialPandasBaseTest):
+    """
+    Test of the Classic DaskSpatialPandasInterface, no longer exits since dask 2025.1
+    """
+
+    __test__ = True
+
+    @dask_switcher(query=True, extras=["spatialpandas.dask"])
+    def setUp(self):
+        super().setUp()
