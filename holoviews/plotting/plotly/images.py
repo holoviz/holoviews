@@ -5,6 +5,7 @@ from ...core.util import VersionError
 from ...element import Tiles
 from .element import ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
+from .util import PLOTLY_SCATTERMAP
 
 
 class RGBPlot(ElementPlot):
@@ -21,7 +22,7 @@ class RGBPlot(ElementPlot):
         if is_geo:
             layer = dict(datum, **options)
             dummy_trace = {
-                'type': 'scattermapbox',
+                'type': PLOTLY_SCATTERMAP,
                 'lat': [None],
                 'lon': [None],
                 'mode': 'markers',

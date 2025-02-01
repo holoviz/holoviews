@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element.tiles import _ATTRIBUTIONS
 from holoviews.plotting.plotly import ElementPlot
-from holoviews.plotting.plotly.util import STYLE_ALIASES
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP, STYLE_ALIASES
 
 
 class TilePlot(ElementPlot):
@@ -12,11 +12,11 @@ class TilePlot(ElementPlot):
 
     @classmethod
     def trace_kwargs(cls, **kwargs):
-        return {'type': 'scattermapbox'}
+        return {'type': PLOTLY_SCATTERMAP}
 
     def get_data(self, element, ranges, style, **kwargs):
         return [{
-            "type": "scattermapbox", "lat": [], "lon": [], "subplot": "mapbox",
+            "type": PLOTLY_SCATTERMAP, "lat": [], "lon": [], "subplot": PLOTLY_MAP,
             "showlegend": False,
         }]
 
@@ -65,7 +65,7 @@ class TilePlot(ElementPlot):
         return extents
 
     def init_graph(self, datum, options, index=0, **kwargs):
-        return {'traces': [datum], "mapbox": options}
+        return {'traces': [datum], PLOTLY_MAP: options}
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
         """

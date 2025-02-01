@@ -11,6 +11,8 @@ from ..util import color_intervals, process_cmap
 
 PLOTLY_VERSION = Version(__version__).release
 PLOTLY_GE_6_0_0 = PLOTLY_VERSION >= (6, 0, 0)
+PLOTLY_SCATTERMAP = "scattermap" if PLOTLY_GE_6_0_0 else "scattermapbox"
+PLOTLY_MAP = "map" if PLOTLY_GE_6_0_0 else "mapbox"
 
 # Constants
 # ---------
@@ -28,7 +30,7 @@ _domain_trace_types = {'parcoords', 'pie', 'table', 'sankey', 'parcats'}
 # Each of these subplot types has a `domain` property with `x`/`y` properties.
 # Note that this set does not contain `xaxis`/`yaxis` because these behave a
 # little differently.
-_subplot_types = {'scene', 'geo', 'polar', 'ternary', 'mapbox'}
+_subplot_types = {'scene', 'geo', 'polar', 'ternary', PLOTLY_MAP}
 
 # For most subplot types, a trace is associated with a particular subplot
 # using a trace property with a name that matches the subplot type. For
@@ -39,7 +41,7 @@ _subplot_types = {'scene', 'geo', 'polar', 'ternary', 'mapbox'}
 # the trace property is just named `subplot`.  For example setting
 # the `scatterpolar.subplot` property to `polar3` associates the scatterpolar
 # trace with the third polar subplot in the figure
-_subplot_prop_named_subplot = {'polar', 'ternary', 'mapbox'}
+_subplot_prop_named_subplot = {'polar', 'ternary', PLOTLY_MAP}
 
 # Mapping from trace type to subplot type(s).
 _trace_to_subplot = {
@@ -82,7 +84,7 @@ _trace_to_subplot = {
     'scatterternary': ['ternary'],
 
     # mapbox
-    'scattermapbox': ['mapbox']
+    PLOTLY_SCATTERMAP: [PLOTLY_MAP],
 }
 
 # trace types that support legends
@@ -102,7 +104,7 @@ legend_trace_types = {
     'scattergl',
     'splom',
     'pointcloud',
-    'scattermapbox',
+    PLOTLY_SCATTERMAP,
     'scattercarpet',
     'contourcarpet',
     'ohlc',
