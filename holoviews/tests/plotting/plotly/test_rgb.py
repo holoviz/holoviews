@@ -3,6 +3,7 @@ import PIL.Image
 import plotly.graph_objs as go
 
 from holoviews.element import RGB, Tiles
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
@@ -276,13 +277,13 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
         # Check dummy trace
-        self.assertEqual(fig_dict["data"][1]["type"], "scattermapbox")
+        self.assertEqual(fig_dict["data"][1]["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(fig_dict["data"][1]["lon"], [None])
         self.assertEqual(fig_dict["data"][1]["lat"], [None])
         self.assertEqual(fig_dict["data"][1]["showlegend"], False)
 
         # Check mapbox subplot
-        subplot = fig_dict["layout"]["mapbox"]
+        subplot = fig_dict["layout"][PLOTLY_MAP]
         self.assertEqual(subplot["style"], "white-bg")
         self.assertEqual(
             subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}

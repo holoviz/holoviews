@@ -3,6 +3,7 @@ import pytest
 
 from holoviews.element import RGB, Bounds, Points, Tiles
 from holoviews.element.tiles import _ATTRIBUTIONS, StamenTerrain
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
@@ -35,13 +36,13 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check dummy trace
         self.assertEqual(len(fig_dict["data"]), 1)
         dummy_trace = fig_dict["data"][0]
-        self.assertEqual(dummy_trace["type"], "scattermapbox")
+        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [])
         self.assertEqual(dummy_trace["lat"], [])
         self.assertEqual(dummy_trace["showlegend"], False)
 
         # Check mapbox subplot
-        subplot = fig_dict["layout"]["mapbox"]
+        subplot = fig_dict["layout"][PLOTLY_MAP]
         self.assertEqual(subplot["style"], "white-bg")
         self.assertEqual(
             subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
@@ -53,7 +54,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         # Check no layers are introduced when an empty tile server string is
         # passed
-        layers = fig_dict["layout"]["mapbox"].get("layers", [])
+        layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
         self.assertEqual(len(layers), 0)
 
     def test_styled_mapbox_tiles(self):
@@ -64,7 +65,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
         # Check mapbox subplot
-        subplot = fig_dict["layout"]["mapbox"]
+        subplot = fig_dict["layout"][PLOTLY_MAP]
         self.assertEqual(subplot["style"], "dark")
         self.assertEqual(subplot["accesstoken"], "token-str")
         self.assertEqual(
@@ -81,20 +82,20 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check dummy trace
         self.assertEqual(len(fig_dict["data"]), 1)
         dummy_trace = fig_dict["data"][0]
-        self.assertEqual(dummy_trace["type"], "scattermapbox")
+        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [])
         self.assertEqual(dummy_trace["lat"], [])
         self.assertEqual(dummy_trace["showlegend"], False)
 
         # Check mapbox subplot
-        subplot = fig_dict["layout"]["mapbox"]
+        subplot = fig_dict["layout"][PLOTLY_MAP]
         self.assertEqual(subplot["style"], "white-bg")
         self.assertEqual(
             subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
         )
 
         # Check for raster layer
-        layers = fig_dict["layout"]["mapbox"].get("layers", [])
+        layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
         self.assertEqual(len(layers), 1)
         layer = layers[0]
         self.assertEqual(layer["source"][0].lower(), tiles.data.lower())
@@ -114,7 +115,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
         # Check mapbox subplot
-        layers = fig_dict["layout"]["mapbox"].get("layers", [])
+        layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
         self.assertEqual(len(layers), 1)
         layer = layers[0]
         self.assertEqual(layer["source"][0].lower(), osm.build_url(scale_factor="@2x"))
@@ -155,7 +156,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         # Check number of traces and layers
         traces = fig_dict["data"]
-        subplot = fig_dict["layout"]["mapbox"]
+        subplot = fig_dict["layout"][PLOTLY_MAP]
         layers = subplot["layers"]
 
         self.assertEqual(len(traces), 5)
@@ -163,7 +164,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         # Check vector layer
         dummy_trace = traces[0]
-        self.assertEqual(dummy_trace["type"], "scattermapbox")
+        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [])
         self.assertEqual(dummy_trace["lat"], [])
         self.assertFalse(dummy_trace["showlegend"])
@@ -177,7 +178,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check raster layer
         dummy_trace = traces[1]
         raster_layer = layers[0]
-        self.assertEqual(dummy_trace["type"], "scattermapbox")
+        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [])
         self.assertEqual(dummy_trace["lat"], [])
         self.assertFalse(dummy_trace["showlegend"])
@@ -191,7 +192,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check RGB layer
         dummy_trace = traces[2]
         rgb_layer = layers[1]
-        self.assertEqual(dummy_trace["type"], "scattermapbox")
+        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [None])
         self.assertEqual(dummy_trace["lat"], [None])
         self.assertFalse(dummy_trace["showlegend"])
@@ -210,7 +211,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         # Check Points layer
         points_trace = traces[3]
-        self.assertEqual(points_trace["type"], "scattermapbox")
+        self.assertEqual(points_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(points_trace["lon"], np.array([0, self.lon_range[1]]))
         self.assertEqual(points_trace["lat"], np.array([0, self.lat_range[1]]))
         self.assertEqual(points_trace["mode"], "markers")
@@ -218,7 +219,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         # Check Bounds layer
         bounds_trace = traces[4]
-        self.assertEqual(bounds_trace["type"], "scattermapbox")
+        self.assertEqual(bounds_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(bounds_trace["lon"], np.array([
             self.lon_range[0], self.lon_range[0], 0, 0, self.lon_range[0]
         ]))
