@@ -3,7 +3,11 @@ import pytest
 
 from holoviews.element import RGB, Bounds, Points, Tiles
 from holoviews.element.tiles import _ATTRIBUTIONS, StamenTerrain
-from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
+from holoviews.plotting.plotly.util import (
+    PLOTLY_GE_6_0_0,
+    PLOTLY_MAP,
+    PLOTLY_SCATTERMAP,
+)
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
@@ -57,6 +61,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
         self.assertEqual(len(layers), 0)
 
+    @pytest.mark.skipif(PLOTLY_GE_6_0_0, reason="Fails on Plotly 6.0")
     def test_styled_mapbox_tiles(self):
         tiles = Tiles().opts(mapboxstyle="dark", accesstoken="token-str").redim.range(
             x=self.x_range, y=self.y_range

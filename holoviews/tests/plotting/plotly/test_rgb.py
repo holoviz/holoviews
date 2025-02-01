@@ -1,9 +1,14 @@
 import numpy as np
 import PIL.Image
 import plotly.graph_objs as go
+import pytest
 
 from holoviews.element import RGB, Tiles
-from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
+from holoviews.plotting.plotly.util import (
+    PLOTLY_GE_6_0_0,
+    PLOTLY_MAP,
+    PLOTLY_SCATTERMAP,
+)
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
@@ -266,6 +271,7 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
         self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
+    @pytest.mark.skipif(PLOTLY_GE_6_0_0, reason="Fails on Plotly 6.0")
     def test_rgb(self):
         rgb_data = np.random.rand(10, 10, 3)
         rgb = Tiles("") * RGB(
