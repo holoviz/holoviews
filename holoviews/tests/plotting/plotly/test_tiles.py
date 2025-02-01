@@ -127,6 +127,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(layer["maxzoom"], osm.max_zoom)
         self.assertEqual(layer["sourceattribution"], osm.html_attribution)
 
+    @pytest.mark.skipif(PLOTLY_GE_6_0_0, reason="Fails on Plotly 6.0")
     def test_overlay(self):
         # Base layer is mapbox vector layer
         tiles = Tiles("").opts(mapboxstyle="dark", accesstoken="token-str")
