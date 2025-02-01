@@ -151,7 +151,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         )
 
         # Render to plotly figure dictionary
-        fig_dict = plotly_renderer.get_plot_state(overlay)
+        fig_dict = plotly_renderer.get_plot_state(overlay, numpy_convert=True)
 
         # Check number of traces and layers
         traces = fig_dict["data"]
