@@ -6,7 +6,7 @@ from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP, STYLE_
 
 
 class TilePlot(ElementPlot):
-    style_opts = ['min_zoom', 'max_zoom', "alpha", "accesstoken", "mapboxstyle"]
+    style_opts = ['min_zoom', 'max_zoom', "alpha", "accesstoken", "mapboxstyle", "mapstyle"]
 
     _supports_geo = True
 
@@ -23,7 +23,7 @@ class TilePlot(ElementPlot):
     def graph_options(self, element, ranges, style, **kwargs):
         style = dict(style)
         opts = dict(
-            style=style.pop("mapboxstyle", "white-bg"),
+            style=style.pop("mapboxstyle", style.pop("mapstyle", "white-bg")),
             accesstoken=style.pop("accesstoken", None),
         )
         # Extract URL and lower case wildcard characters for mapbox
