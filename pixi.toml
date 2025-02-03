@@ -141,6 +141,7 @@ setuptools_scm = "*"
 
 [feature.dev.tasks]
 lab = 'jupyter lab'
+setup-dev = { depends-on = ["install", "download-data", "lint-install"] }
 
 # =============================================
 # =================== TESTS ===================
