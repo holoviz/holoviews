@@ -8,10 +8,19 @@ from holoviews.plotting.plotly.util import (
     PLOTLY_SCATTERMAP,
     STYLE_ALIASES,
 )
+from holoviews.util.warnings import warn
 
 
 class TilePlot(ElementPlot):
-    style_opts = ['min_zoom', 'max_zoom', "alpha", "accesstoken", "mapboxstyle", "mapstyle"]
+    style_opts = [
+        "min_zoom",
+        "max_zoom",
+        "alpha",
+        "mapstyle",
+        # Only needed for Plotly <6
+        "accesstoken",
+        "mapboxstyle",
+    ]
 
     _supports_geo = True
 
@@ -26,10 +35,13 @@ class TilePlot(ElementPlot):
         }]
 
     def graph_options(self, element, ranges, style, **kwargs):
-        if PLOTLY_GE_6_0_0 and "mapboxstyle" in style:
-            raise ValueError("'mapboxstyle' no longer supported with Plotly 6.0 use 'mapstyle'")
-
         style = dict(style)
+        if PLOTLY_GE_6_0_0 and (mapboxstyle := style.pop("mapboxstyle", None)):
+            warn("'mapboxstyle' no longer supported with Plotly 6.0 use 'mapstyle' instead", category=UserWarning)
+            style["mapstyle"] = mapboxstyle
+        if PLOTLY_GE_6_0_0 and style.pop("accesstoken", None):
+            warn("'accesstoken' no longer needed with Plotly 6.0", category=UserWarning)
+
         opts = dict(
             style=style.pop("mapstyle", "white-bg"),
             accesstoken=style.pop("accesstoken", None),
