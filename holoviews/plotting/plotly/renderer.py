@@ -9,7 +9,11 @@ from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .callbacks import callbacks
-from .util import clean_internal_figure_properties
+from .util import (
+    PLOTLY_GE_6_0_0,
+    _convert_numpy_in_fig_dict,
+    clean_internal_figure_properties,
+)
 
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
@@ -67,7 +71,7 @@ class PlotlyRenderer(Renderer):
     _render_with_panel = True
 
     @bothmethod
-    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
+    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, numpy_convert=False, **kwargs):
         """
         Given a HoloViews Viewable return a corresponding figure dictionary.
         Allows cleaning the dictionary of any internal properties that were added
@@ -85,6 +89,10 @@ class PlotlyRenderer(Renderer):
 
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
+
+        if numpy_convert and PLOTLY_GE_6_0_0:
+            return _convert_numpy_in_fig_dict(fig_dict)
+
         return fig_dict
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
