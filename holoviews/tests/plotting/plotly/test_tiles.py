@@ -61,18 +61,17 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
         self.assertEqual(len(layers), 0)
 
-    @pytest.mark.skipif(PLOTLY_GE_6_0_0, reason="Fails on Plotly 6.0")
     def test_styled_mapbox_tiles(self):
-        tiles = Tiles().opts(mapboxstyle="dark", accesstoken="token-str").redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
+        tiles = Tiles().opts(**opts).redim.range(x=self.x_range, y=self.y_range)
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
         self.assertEqual(subplot["style"], "dark")
-        self.assertEqual(subplot["accesstoken"], "token-str")
+        if not PLOTLY_GE_6_0_0:
+            self.assertEqual(subplot["accesstoken"], "token-str")
         self.assertEqual(
             subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
         )
@@ -127,10 +126,10 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(layer["maxzoom"], osm.max_zoom)
         self.assertEqual(layer["sourceattribution"], osm.html_attribution)
 
-    @pytest.mark.skipif(PLOTLY_GE_6_0_0, reason="Fails on Plotly 6.0")
     def test_overlay(self):
         # Base layer is mapbox vector layer
-        tiles = Tiles("").opts(mapboxstyle="dark", accesstoken="token-str")
+        opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
+        tiles = Tiles("").opts(**opts)
 
         # Raster tile layer
         stamen_raster = StamenTerrain().opts(alpha=0.7)
@@ -176,7 +175,8 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertFalse(dummy_trace["showlegend"])
 
         self.assertEqual(subplot["style"], "dark")
-        self.assertEqual(subplot["accesstoken"], "token-str")
+        if not PLOTLY_GE_6_0_0:
+            self.assertEqual(subplot["accesstoken"], "token-str")
         self.assertEqual(
             subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
         )

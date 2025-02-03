@@ -1,11 +1,9 @@
 import numpy as np
 import PIL.Image
 import plotly.graph_objs as go
-import pytest
 
 from holoviews.element import RGB, Tiles
 from holoviews.plotting.plotly.util import (
-    PLOTLY_GE_6_0_0,
     PLOTLY_MAP,
     PLOTLY_SCATTERMAP,
 )
@@ -271,7 +269,6 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
         self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
-    @pytest.mark.skipif(PLOTLY_GE_6_0_0, reason="Fails on Plotly 6.0")
     def test_rgb(self):
         rgb_data = np.random.rand(10, 10, 3)
         rgb = Tiles("") * RGB(
@@ -296,7 +293,7 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         )
 
         # Check rgb layer
-        layers = fig_dict["layout"]["mapbox"]["layers"]
+        layers = fig_dict["layout"][PLOTLY_MAP]["layers"]
         self.assertEqual(len(layers), 1)
         rgb_layer = layers[0]
         self.assertEqual(rgb_layer["below"], "traces")

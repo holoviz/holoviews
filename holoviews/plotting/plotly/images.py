@@ -5,7 +5,7 @@ from ...core.util import VersionError
 from ...element import Tiles
 from .element import ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
-from .util import PLOTLY_SCATTERMAP
+from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 
 class RGBPlot(ElementPlot):
@@ -28,8 +28,7 @@ class RGBPlot(ElementPlot):
                 'mode': 'markers',
                 'showlegend': False
             }
-            return dict(mapbox=dict(layers=[layer]),
-                        traces=[dummy_trace])
+            return {PLOTLY_MAP: dict(layers=[layer]), 'traces': [dummy_trace]}
         else:
             image = dict(datum, **options)
             # Create a dummy invisible scatter trace for this image.
