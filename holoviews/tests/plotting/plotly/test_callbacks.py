@@ -14,6 +14,7 @@ from holoviews.plotting.plotly.callbacks import (
     RangeYCallback,
     Selection1DCallback,
 )
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 from holoviews.streams import (
     BoundsX,
     BoundsXY,
@@ -95,9 +96,9 @@ class TestCallbacks(TestCase):
 
         self.mapbox_fig_dict = go.Figure({
             'data': [
-                {'type': 'scattermapbox', 'uid': 'first', 'subplot': 'mapbox'},
-                {'type': 'scattermapbox', 'uid': 'second', 'subplot': 'mapbox2'},
-                {'type': 'scattermapbox', 'uid': 'third', 'subplot': 'mapbox3'}
+                {'type': PLOTLY_SCATTERMAP, 'uid': 'first', 'subplot': PLOTLY_MAP},
+                {'type': PLOTLY_SCATTERMAP, 'uid': 'second', 'subplot': PLOTLY_MAP + '2'},
+                {'type': PLOTLY_SCATTERMAP, 'uid': 'third', 'subplot': PLOTLY_MAP + '3'}
             ],
             'layout': {
                 'title': {'text': 'Figure Title'},
@@ -211,8 +212,8 @@ class TestCallbacks(TestCase):
 
     def testMapboxRangeXYCallbackEventData(self):
         relayout_data = {
-            'mapbox._derived': {"coordinates": self.mapbox_coords1},
-            'mapbox3._derived': {"coordinates": self.mapbox_coords2}
+            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
+            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
         }
 
         event_data = RangeXYCallback.get_event_data_from_property_update(
@@ -226,8 +227,8 @@ class TestCallbacks(TestCase):
 
     def testMapboxRangeXCallbackEventData(self):
         relayout_data = {
-            'mapbox._derived': {"coordinates": self.mapbox_coords1},
-            'mapbox3._derived': {"coordinates": self.mapbox_coords2}
+            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
+            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
         }
 
         event_data = RangeXCallback.get_event_data_from_property_update(
@@ -241,8 +242,8 @@ class TestCallbacks(TestCase):
 
     def testMapboxRangeYCallbackEventData(self):
         relayout_data = {
-            'mapbox._derived': {"coordinates": self.mapbox_coords1},
-            'mapbox3._derived': {"coordinates": self.mapbox_coords2}
+            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
+            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
         }
 
         event_data = RangeYCallback.get_event_data_from_property_update(
@@ -387,7 +388,7 @@ class TestCallbacks(TestCase):
         })
 
     def testMapboxBoundsXYCallbackEventData(self):
-        selected_data = {"range": {'mapbox2': [
+        selected_data = {"range": {f'{PLOTLY_MAP}2': [
             [self.lon_range1[0], self.lat_range1[0]],
             [self.lon_range1[1], self.lat_range1[1]]
         ]}}
@@ -406,7 +407,7 @@ class TestCallbacks(TestCase):
         })
 
     def testMapboxBoundsXCallbackEventData(self):
-        selected_data = {"range": {'mapbox': [
+        selected_data = {"range": {f'{PLOTLY_MAP}': [
             [self.lon_range1[0], self.lat_range1[0]],
             [self.lon_range1[1], self.lat_range1[1]]
         ]}}
@@ -424,7 +425,7 @@ class TestCallbacks(TestCase):
         })
 
     def testMapboxBoundsYCallbackEventData(self):
-        selected_data = {"range": {'mapbox3': [
+        selected_data = {"range": {f'{PLOTLY_MAP}3': [
             [self.lon_range1[0], self.lat_range1[0]],
             [self.lon_range1[1], self.lat_range1[1]]
         ]}}

@@ -83,7 +83,7 @@ class TestPlotlyPlot(ComparisonTestCase):
             plot.padding = padding
 
     def _get_plot_state(self, element):
-        fig_dict = plotly_renderer.get_plot_state(element)
+        fig_dict = plotly_renderer.get_plot_state(element, numpy_convert=True)
         return fig_dict
 
     def assert_property_values(self, obj, props):
