@@ -118,7 +118,7 @@ netcdf4 = "*"
 networkx = "*"
 notebook = "*"
 pillow = "*"
-plotly = ">=4.0,<6" # TODO: Remove upperpin
+plotly = ">=4.0"
 pooch = "*"
 pyarrow = "*"
 scikit-image = "*"
