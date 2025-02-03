@@ -1270,6 +1270,5 @@ argument to specify a selection specification""")
         """
         return ndloc(self)
 
-    def __dask_tokenize__(self):
-        from dask.base import normalize_token
-        return normalize_token(type(self)), self.data
+    # This is to work with spatialpandas-dask with dask 2025.1
+    __dask_tokenize__ = __getstate__
