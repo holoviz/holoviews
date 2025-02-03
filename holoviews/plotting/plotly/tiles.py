@@ -2,7 +2,12 @@ import numpy as np
 
 from holoviews.element.tiles import _ATTRIBUTIONS
 from holoviews.plotting.plotly import ElementPlot
-from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP, STYLE_ALIASES
+from holoviews.plotting.plotly.util import (
+    PLOTLY_GE_6_0_0,
+    PLOTLY_MAP,
+    PLOTLY_SCATTERMAP,
+    STYLE_ALIASES,
+)
 
 
 class TilePlot(ElementPlot):
@@ -21,9 +26,12 @@ class TilePlot(ElementPlot):
         }]
 
     def graph_options(self, element, ranges, style, **kwargs):
+        if PLOTLY_GE_6_0_0 and "mapboxstyle" in style:
+            raise ValueError("'mapboxstyle' no longer supported with Plotly 6.0 use 'mapstyle'")
+
         style = dict(style)
         opts = dict(
-            style=style.pop("mapboxstyle", style.pop("mapstyle", "white-bg")),
+            style=style.pop("mapstyle", "white-bg"),
             accesstoken=style.pop("accesstoken", None),
         )
         # Extract URL and lower case wildcard characters for mapbox
