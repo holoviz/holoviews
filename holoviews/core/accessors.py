@@ -246,7 +246,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def reduce(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a reduce function to all ViewableElement objects.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
         if dimensions is None:
@@ -348,7 +350,7 @@ class Redim(metaclass=AccessorPipelineMeta):
             elif isinstance(override, Dimension):
                 replaced.append(override)
             elif isinstance(override, dict):
-                replaced.append(d.clone(override.get('name', None),
+                replaced.append(d.clone(override.get('name',None),
                                         **{k:v for k,v in override.items() if k != 'name'}))
             else:
                 raise ValueError('Dimension can only be overridden '
@@ -565,20 +567,20 @@ class Opts(metaclass=AccessorPipelineMeta):
 
         Parameters
         ----------
-            *args
-                Sets of options to apply to object.
-                Supports a number of formats including lists of Options
-                objects, a type[.group][.label] followed by a set of
-                keyword options to apply and a dictionary indexed by
-                type[.group][.label] specs.
-            backend : optional
-                Backend to apply options to
-                Defaults to current selected backend
-            clone : bool, optional
-                Whether to clone object
-                Options can be applied in place with clone=False
-            **kwargs : Keywords of options
-                Set of options to apply to the object
+        *args
+            Sets of options to apply to object.
+            Supports a number of formats including lists of Options
+            objects, a type[.group][.label] followed by a set of
+            keyword options to apply and a dictionary indexed by
+            type[.group][.label] specs.
+        backend : optional
+            Backend to apply options to
+            Defaults to current selected backend
+        clone : bool, optional
+            Whether to clone object
+            Options can be applied in place with clone=False
+        **kwargs : Keywords of options
+            Set of options to apply to the object
 
         Notes
         -----
@@ -587,8 +589,9 @@ class Opts(metaclass=AccessorPipelineMeta):
         utility. This usage will be deprecated and for more
         information see the apply_options_type docstring.
 
-        Returns:
-            Returns the object or a clone with the options applied
+        Returns
+        -------
+        Returns the object or a clone with the options applied
         """
         if not(args) and not(kwargs):
             return self._obj
@@ -601,7 +604,7 @@ class Opts(metaclass=AccessorPipelineMeta):
                        "instead or use hv.opts.apply_groups for backward compatibility.")
                 raise ValueError(msg)
 
-        return self._dispatch_opts(*args, **kwargs)
+        return self._dispatch_opts( *args, **kwargs)
 
     def _dispatch_opts(self, *args, **kwargs):
         if self._mode is None:
@@ -616,12 +619,12 @@ class Opts(metaclass=AccessorPipelineMeta):
 
         Parameters
         ----------
-            clone : bool
-                Whether to return a cleared clone or clear inplace
+        clone : bool
+            Whether to return a cleared clone or clear inplace
 
         Returns
         -------
-            The object cleared of any options applied to it
+        The object cleared of any options applied to it
         """
         return self._obj.opts(clone=clone)
 
@@ -639,7 +642,7 @@ class Opts(metaclass=AccessorPipelineMeta):
     def _holomap_opts(self, *args, clone=None, **kwargs):
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
         data = dict([(k, v.opts(*args, **kwargs))
-                     for k, v in self._obj.data.items()])
+                             for k, v in self._obj.data.items()])
 
         # By default do not clone in .opts method
         if (apply_groups if clone is None else clone):
@@ -665,7 +668,7 @@ class Opts(metaclass=AccessorPipelineMeta):
                 self._obj.callback = dmap.callback
             dmap = self._obj
             dmap.data = dict([(k, v.opts(*args, **kwargs))
-                              for k, v in self._obj.data.items()])
+                                     for k, v in self._obj.data.items()])
         return dmap
 
 

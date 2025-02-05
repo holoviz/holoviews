@@ -25,32 +25,34 @@ KDimIndex = namedtuple("KDim", ["index"])
 def to_expr_extract_streams(
         hvobj, kdims, streams, original_streams, stream_mapping, container_key=None
 ):
-    """
-    Build a HoloViewsExpr expression tree from a potentially nested dynamic
+    """Build a HoloViewsExpr expression tree from a potentially nested dynamic
     HoloViews object, extracting the streams and replacing them with StreamIndex
     objects.
 
     This function is recursive an assumes that initialize_dynamic has already
     been called on the input object.
 
-    Args:
-        hvobj: Element or DynamicMap or Layout
-            Potentially dynamic HoloViews object to represent as a HoloviewsExpr
-        kdims: list of Dimensions
-            List that DynamicMap key-dimension objects should be added to
-        streams: list of Stream
-            List that cloned extracted streams should be added to
-        original_streams: list of Stream
-            List that original extracted streams should be added to
-        stream_mapping: dict
-            dict to be populated with mappings from container keys to extracted Stream
-            objects, as described by the Callable parameter of the same name.
-        container_key: int or tuple
-            key into parent container that is associated to hvobj, or None if hvobj is
-            not in a container
-    Returns:
-        HoloviewsExpr expression representing hvobj if hvobj is dynamic. Otherwise,
-        return hvobj itself
+	Parameters
+	----------
+    hvobj : Element or DynamicMap or Layout
+        Potentially dynamic HoloViews object to represent as a HoloviewsExpr
+    kdims : list of Dimensions
+        List that DynamicMap key-dimension objects should be added to
+    streams : list of Stream
+        List that cloned extracted streams should be added to
+    original_streams : list of Stream
+        List that original extracted streams should be added to
+    stream_mapping : dict
+        dict to be populated with mappings from container keys to extracted Stream
+        objects, as described by the Callable parameter of the same name.
+    container_key : int or tuple
+        key into parent container that is associated to hvobj, or None if hvobj is
+        not in a container
+
+	Returns
+	-------
+    HoloviewsExpr expression representing hvobj if hvobj is dynamic. Otherwise,
+    return hvobj itself
     """
     if isinstance(hvobj, DynamicMap):
         args = []
@@ -222,16 +224,17 @@ def expr_to_fn_of_stream_contents(expr, nkdims):
 
 
 def decollate(hvobj):
-    """
-    Decollate transforms a potentially nested dynamic HoloViews object into single
+    """Decollate transforms a potentially nested dynamic HoloViews object into single
     DynamicMap that returns a non-dynamic HoloViews object. All nested streams in the
     input object are copied and attached to the resulting DynamicMap.
 
-    Args:
-        hvobj: Holoviews object
+	Parameters
+	----------
+    hvobj : Holoviews object
 
-    Returns:
-        DynamicMap
+	Returns
+	-------
+    DynamicMap
     """
     kdims = []
     original_streams = []

@@ -109,7 +109,9 @@ _PANDAS_FUNC_LOOKUP = {
 
 
 class VersionError(Exception):
-    "Raised when there is a library version mismatch."
+    """Raised when there is a library version mismatch.
+
+    """
     def __init__(self, msg, version=None, min_version=None, **kwargs):
         self.version = version
         self.min_version = min_version
@@ -117,7 +119,9 @@ class VersionError(Exception):
 
 
 def _no_import_version(name) -> tuple[int, int, int]:
-    """ Get version number without importing the library """
+    """Get version number without importing the library
+
+    """
     try:
         return Version(version(name)).release
     except PackageNotFoundError:
@@ -125,10 +129,10 @@ def _no_import_version(name) -> tuple[int, int, int]:
 
 
 class Config(param.ParameterizedFunction):
-    """
-    Set of boolean configuration values to change HoloViews' global
+    """Set of boolean configuration values to change HoloViews' global
     behavior. Typically used to control warnings relating to
     deprecations or set global parameter such as style 'themes'.
+
     """
 
     future_deprecations = param.Boolean(default=False, doc="""
@@ -176,8 +180,7 @@ def _int_to_bytes(i):
 
 
 class HashableJSON(json.JSONEncoder):
-    """
-    Extends JSONEncoder to generate a hashable string for as many types
+    """Extends JSONEncoder to generate a hashable string for as many types
     of object as possible including nested objects and objects that are
     not normally hashable. The purpose of this class is to generate
     unique strings that once hashed are suitable for use in memoization
@@ -196,6 +199,7 @@ class HashableJSON(json.JSONEncoder):
 
     One limitation of this approach is that dictionaries with composite
     keys (e.g. tuples) are not supported due to the JSON spec.
+
     """
     string_hashable = (dt.datetime,)
     repr_hashable = ()
@@ -245,8 +249,7 @@ class HashableJSON(json.JSONEncoder):
 
 
 def merge_option_dicts(old_opts, new_opts):
-    """
-    Update the old_opts option dictionary with the options defined in
+    """Update the old_opts option dictionary with the options defined in
     new_opts. Instead of a shallow update as would be performed by calling
     old_opts.update(new_opts), this updates the dictionaries of all option
     types separately.
@@ -257,6 +260,7 @@ def merge_option_dicts(old_opts, new_opts):
         new_opts = {'a': {'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
     this returns a dictionary
         {'a': {'x': 'old', 'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
+
     """
     merged = dict(old_opts)
 
@@ -270,9 +274,9 @@ def merge_option_dicts(old_opts, new_opts):
 
 
 def merge_options_to_dict(options):
-    """
-    Given a collection of Option objects or partial option dictionaries,
+    """Given a collection of Option objects or partial option dictionaries,
     merge everything to a single dictionary.
+
     """
     merged_options = {}
     for obj in options:
@@ -286,11 +290,11 @@ def merge_options_to_dict(options):
 
 
 def deprecated_opts_signature(args, kwargs):
-    """
-    Utility to help with the deprecation of the old .opts method signature
+    """Utility to help with the deprecation of the old .opts method signature
 
     Returns whether opts.apply_groups should be used (as a bool) and the
     corresponding options.
+
     """
     from .options import Options
     groups = set(Options._option_groups)
@@ -319,10 +323,10 @@ def deprecated_opts_signature(args, kwargs):
 
 
 class periodic(Thread):
-    """
-    Run a callback count times with a given period without blocking.
+    """Run a callback count times with a given period without blocking.
 
     If count is None, will run till timeout (which may be forever if None).
+
     """
 
     def __init__(self, period, count, callback, timeout=None, block=False):
@@ -388,9 +392,9 @@ class periodic(Thread):
 
 
 def deephash(obj):
-    """
-    Given an object, return a hash using HashableJSON. This hash is not
+    """Given an object, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.
+
     """
     try:
         return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
@@ -399,12 +403,12 @@ def deephash(obj):
 
 
 def tree_attribute(identifier):
-    """
-    Predicate that returns True for custom attributes added to AttrTrees
+    """Predicate that returns True for custom attributes added to AttrTrees
     that are not methods, properties or internal attributes.
 
     These custom attributes start with a capitalized character when
     applicable (not applicable to underscore or certain unicode characters)
+
     """
     if identifier == '':
         return True
@@ -414,13 +418,13 @@ def tree_attribute(identifier):
         return identifier[0].isupper()
 
 def argspec(callable_obj):
-    """
-    Returns an ArgSpec object for functions, staticmethods, instance
+    """Returns an ArgSpec object for functions, staticmethods, instance
     methods, classmethods and partials.
 
     Note that the args list for instance and class methods are those as
     seen by the user. In other words, the first argument which is
     conventionally called 'self' or 'cls' is omitted in these cases.
+
     """
     if (isinstance(callable_obj, type)
         and issubclass(callable_obj, param.ParameterizedFunction)):
@@ -451,8 +455,7 @@ def argspec(callable_obj):
 
 
 def validate_dynamic_argspec(callback, kdims, streams):
-    """
-    Utility used by DynamicMap to ensure the supplied callback has an
+    """Utility used by DynamicMap to ensure the supplied callback has an
     appropriate signature.
 
     If validation succeeds, returns a list of strings to be zipped with
@@ -467,6 +470,7 @@ def validate_dynamic_argspec(callback, kdims, streams):
 
     If the callback doesn't use **kwargs, the accepted keywords are
     validated against the stream parameter names.
+
     """
     argspec = callback.argspec
     name = callback.name
@@ -517,8 +521,8 @@ def validate_dynamic_argspec(callback, kdims, streams):
 
 
 def callable_name(callable_obj):
-    """
-    Attempt to return a meaningful name identifying a callable or generator
+    """Attempt to return a meaningful name identifying a callable or generator
+
     """
     try:
         if (isinstance(callable_obj, type)
@@ -542,8 +546,7 @@ def callable_name(callable_obj):
 
 
 def process_ellipses(obj, key, vdim_selection=False):
-    """
-    Helper function to pad a __getitem__ key with the right number of
+    """Helper function to pad a __getitem__ key with the right number of
     empty slices (i.e. :) when the key contains an Ellipsis (...).
 
     If the vdim_selection flag is true, check if the end of the key
@@ -551,6 +554,7 @@ def process_ellipses(obj, key, vdim_selection=False):
     will not be applied for the value dimensions (i.e. the resulting key
     will be exactly one longer than the number of kdims). Note: this
     flag should not be used for composite types.
+
     """
     if getattr(getattr(key, 'dtype', None), 'kind', None) == 'b':
         return key
@@ -574,8 +578,8 @@ def process_ellipses(obj, key, vdim_selection=False):
 
 
 def bytes_to_unicode(value):
-    """
-    Safely casts bytestring to unicode
+    """Safely casts bytestring to unicode
+
     """
     if isinstance(value, bytes):
         return value.decode('utf-8')
@@ -583,8 +587,8 @@ def bytes_to_unicode(value):
 
 
 def get_method_owner(method):
-    """
-    Gets the instance that owns the supplied method
+    """Gets the instance that owns the supplied method
+
     """
     if isinstance(method, partial):
         method = method.func
@@ -592,10 +596,10 @@ def get_method_owner(method):
 
 
 def capitalize_unicode_name(s):
-    """
-    Turns a string such as 'capital delta' into the shortened,
+    """Turns a string such as 'capital delta' into the shortened,
     capitalized version, in this case simply 'Delta'. Used as a
     transform in sanitize_identifier.
+
     """
     index = s.find('capital')
     if index == -1: return s
@@ -605,8 +609,7 @@ def capitalize_unicode_name(s):
 
 
 class sanitize_identifier_fn(param.ParameterizedFunction):
-    """
-    Sanitizes group/label values for use in AttrTree attribute
+    """Sanitizes group/label values for use in AttrTree attribute
     access.
 
     Special characters are sanitized using their (lowercase) unicode
@@ -618,6 +621,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     As these names are often very long, this parameterized function
     allows filtered, substitutions and transforms to help shorten these
     names appropriately.
+
     """
 
     capitalize = param.Boolean(default=True, doc="""
@@ -673,16 +677,16 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     @param.parameterized.bothmethod
     def add_aliases(self_or_cls, **kwargs):
-        """
-        Conveniently add new aliases as keyword arguments. For instance
+        """Conveniently add new aliases as keyword arguments. For instance
         you can add a new alias with add_aliases(short='Longer string')
+
         """
         self_or_cls.aliases.update({v:k for k,v in kwargs.items()})
 
     @param.parameterized.bothmethod
     def remove_aliases(self_or_cls, aliases):
-        """
-        Remove a list of aliases.
+        """Remove a list of aliases.
+
         """
         for k,v in self_or_cls.aliases.items():
             if v in aliases:
@@ -702,9 +706,9 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     @param.parameterized.bothmethod
     def prefixed(self, identifier):
-        """
-        Whether or not the identifier will be prefixed.
+        """Whether or not the identifier will be prefixed.
         Strings that require the prefix are generally not recommended.
+
         """
         invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
         if identifier.startswith('_'):  return True
@@ -712,9 +716,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     @param.parameterized.bothmethod
     def remove_diacritics(self_or_cls, identifier):
+        """Remove diacritics and accents from the input leaving other
+        unicode characters alone.
+
         """
-        Remove diacritics and accents from the input leaving other
-        unicode characters alone."""
         chars = ''
         for c in identifier:
             replacement = unicodedata.normalize('NFKD', c).encode('ASCII', 'ignore')
@@ -726,10 +731,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     @param.parameterized.bothmethod
     def shortened_character_name(self_or_cls, c, eliminations=None, substitutions=None, transforms=None):
-        """
-        Given a unicode character c, return the shortened unicode name
+        """Given a unicode character c, return the shortened unicode name
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
+
         """
         if transforms is None:
             transforms = []
@@ -771,7 +776,9 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
 
     def _process_underscores(self, tokens):
-        "Strip underscores to make sure the number is correct after join"
+        """Strip underscores to make sure the number is correct after join
+
+        """
         groups = [[str(''.join(el))] if b else list(el)
                   for (b,el) in itertools.groupby(tokens, lambda k: k=='_')]
         flattened = [el for group in groups for el in group]
@@ -793,7 +800,9 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
             return name
 
     def sanitize(self, name, valid_fn):
-        "Accumulate blocks of hex and separate blocks by underscores"
+        """Accumulate blocks of hex and separate blocks by underscores
+
+        """
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
             raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
@@ -822,8 +831,8 @@ label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def isscalar(val):
-    """
-    Value is scalar or None
+    """Value is scalar or None
+
     """
     return val is None or np.isscalar(val) or isinstance(val, datetime_types)
 
@@ -842,6 +851,7 @@ def isequal(value1, value2):
     """Compare two values, returning a boolean.
 
     Will apply the comparison to all elements of an array/dataframe.
+
     """
     try:
         check = (value1 is value2) or (value1 == value2)
@@ -853,9 +863,9 @@ def isequal(value1, value2):
 
 
 def asarray(arraylike, strict=True):
-    """
-    Converts arraylike objects to NumPy ndarray types. Errors if
+    """Converts arraylike objects to NumPy ndarray types. Errors if
     object is not arraylike and strict option is enabled.
+
     """
     if isinstance(arraylike, np.ndarray):
         return arraylike
@@ -873,8 +883,8 @@ def asarray(arraylike, strict=True):
 nat_as_integer = np.datetime64('NAT').view('i8')
 
 def isnat(val):
-    """
-    Checks if the value is a NaT. Should only be called on datetimelike objects.
+    """Checks if the value is a NaT. Should only be called on datetimelike objects.
+
     """
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
@@ -888,9 +898,9 @@ def isnat(val):
 
 
 def isfinite(val):
-    """
-    Helper function to determine if scalar or array value is finite extending
+    """Helper function to determine if scalar or array value is finite extending
     np.isfinite with support for None, string, datetime types.
+
     """
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
@@ -926,8 +936,8 @@ def isfinite(val):
 
 
 def isdatetime(value):
-    """
-    Whether the array or scalar is recognized datetime type.
+    """Whether the array or scalar is recognized datetime type.
+
     """
     if isinstance(value, np.ndarray):
         return (value.dtype.kind == "M" or
@@ -938,10 +948,10 @@ def isdatetime(value):
 
 
 def find_minmax(lims, olims):
-    """
-    Takes (a1, a2) and (b1, b2) as input and returns
+    """Takes (a1, a2) and (b1, b2) as input and returns
     (np.nanmin(a1, b1), np.nanmax(a2, b2)). Used to calculate
     min and max values of a number of items.
+
     """
     try:
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
@@ -952,10 +962,10 @@ def find_minmax(lims, olims):
 
 
 def find_range(values, soft_range=None):
-    """
-    Safely finds either the numerical min and max of
+    """Safely finds either the numerical min and max of
     a set of values, falling back to the first and
     the last value in the sorted list of values.
+
     """
     if soft_range is None:
         soft_range = []
@@ -978,17 +988,20 @@ def find_range(values, soft_range=None):
 
 
 def max_range(ranges, combined=True):
-    """
-    Computes the maximal lower and upper bounds from a list bounds.
+    """Computes the maximal lower and upper bounds from a list bounds.
 
-    Args:
-       ranges (list of tuples): A list of range tuples
-       combined (boolean, optional): Whether to combine bounds
-          Whether range should be computed on lower and upper bound
-          independently or both at once
+    Parameters
+    ----------
+    ranges : list of tuples
+        A list of range tuples
+    combined : boolean, optional
+        Whether to combine bounds
+        Whether range should be computed on lower and upper bound
+        independently or both at once
 
-    Returns:
-       The maximum range as a single tuple
+	Returns
+	-------
+    The maximum range as a single tuple
     """
     try:
         with warnings.catch_warnings():
@@ -1029,8 +1042,8 @@ def max_range(ranges, combined=True):
 
 
 def range_pad(lower, upper, padding=None, log=False):
-    """
-    Pads the range by a fraction of the interval
+    """Pads the range by a fraction of the interval
+
     """
     if padding is not None and not isinstance(padding, tuple):
         padding = (padding, padding)
@@ -1059,9 +1072,9 @@ def range_pad(lower, upper, padding=None, log=False):
 
 
 def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=False):
-    """
-    Computes the range along a dimension by combining the data range
+    """Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
+
     """
     plower, pupper = range_pad(lower, upper, padding, log)
     if isfinite(soft_range[0]) and soft_range[0] <= lower:
@@ -1079,11 +1092,11 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
 
 
 def max_extents(extents, zrange=False):
-    """
-    Computes the maximal extent in 2D and 3D space from
+    """Computes the maximal extent in 2D and 3D space from
     list of 4-tuples or 6-tuples. If zrange is enabled
     all extents are converted to 6-tuples to compute
     x-, y- and z-limits.
+
     """
     if zrange:
         num = 6
@@ -1119,7 +1132,9 @@ def max_extents(extents, zrange=False):
 
 
 def int_to_alpha(n, upper=True):
-    "Generates alphanumeric labels of form A-Z, AA-ZZ etc."
+    """Generates alphanumeric labels of form A-Z, AA-ZZ etc.
+
+    """
     casenum = 65 if upper else 97
     label = ''
     count= 0
@@ -1155,9 +1170,9 @@ def int_to_roman(input):
 
 
 def unique_iterator(seq):
-    """
-    Returns an iterator containing all non-duplicate elements
+    """Returns an iterator containing all non-duplicate elements
     in the input sequence.
+
     """
     seen = set()
     for item in seq:
@@ -1167,28 +1182,30 @@ def unique_iterator(seq):
 
 
 def lzip(*args):
-    """
-    zip function that returns a list.
+    """zip function that returns a list.
+
     """
     return list(zip(*args))
 
 
 def unique_zip(*args):
-    """
-    Returns a unique list of zipped values.
+    """Returns a unique list of zipped values.
+
     """
     return list(unique_iterator(zip(*args)))
 
 
 def unique_array(arr):
-    """
-    Returns an array of unique values in the input order.
+    """Returns an array of unique values in the input order.
 
-    Args:
-       arr (np.ndarray or list): The array to compute unique values on
+	Parameters
+	----------
+    arr : np.ndarray or list
+        The array to compute unique values on
 
-    Returns:
-       A new array of unique values
+	Returns
+	-------
+    A new array of unique values
     """
     if not len(arr):
         return np.asarray(arr)
@@ -1209,10 +1226,10 @@ def unique_array(arr):
 
 
 def match_spec(element, specification):
-    """
-    Matches the group.label specification of the supplied
+    """Matches the group.label specification of the supplied
     element against the supplied specification dictionary
     returning the value of the best match.
+
     """
     match_tuple = ()
     match = specification.get((), {})
@@ -1245,8 +1262,7 @@ def python2sort(x,key=None):
 
 
 def merge_dimensions(dimensions_list):
-    """
-    Merges lists of fully or partially overlapping dimensions by
+    """Merges lists of fully or partially overlapping dimensions by
     merging their values.
 
     >>> from holoviews import Dimension
@@ -1257,6 +1273,7 @@ def merge_dimensions(dimensions_list):
     [Dimension('A'), Dimension('B')]
     >>> dimensions[0].values
     [1, 2, 3, 4]
+
     """
     dvalues = defaultdict(list)
     dimensions = []
@@ -1271,9 +1288,9 @@ def merge_dimensions(dimensions_list):
 
 
 def dimension_sort(odict, kdims, vdims, key_index):
-    """
-    Sorts data by key using usual Python tuple sorting semantics
+    """Sorts data by key using usual Python tuple sorting semantics
     or sorts in categorical order for any categorical Dimensions.
+
     """
     sortkws = {}
     ndims = len(kdims)
@@ -1306,22 +1323,25 @@ def is_number(obj):
 
 
 def is_float(obj):
-    """
-    Checks if the argument is a floating-point scalar.
+    """Checks if the argument is a floating-point scalar.
+
     """
     return isinstance(obj, (float, np.floating))
 
 
 def is_int(obj, int_like=False):
-    """
-    Checks for int types including the native Python type and NumPy-like objects
+    """Checks for int types including the native Python type and NumPy-like objects
 
-    Args:
-        obj: Object to check for integer type
-        int_like (boolean): Check for float types with integer value
+	Parameters
+	----------
+    obj
+        Object to check for integer type
+    int_like : boolean
+        Check for float types with integer value
 
-    Returns:
-        Boolean indicating whether the supplied value is of integer type.
+	Returns
+	-------
+    Boolean indicating whether the supplied value is of integer type.
     """
     real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype', None), 'kind', 'o') in 'ui'
     if real_int or (int_like and hasattr(obj, 'is_integer') and obj.is_integer()):
@@ -1330,9 +1350,9 @@ def is_int(obj, int_like=False):
 
 
 class ProgressIndicator(param.Parameterized):
-    """
-    Baseclass for any ProgressIndicator that indicates progress
+    """Baseclass for any ProgressIndicator that indicates progress
     as a completion percentage.
+
     """
 
     percent_range = param.NumericTuple(default=(0.0, 100.0), doc="""
@@ -1349,18 +1369,18 @@ class ProgressIndicator(param.Parameterized):
 
 
 def sort_topologically(graph):
-    """
-    Stackless topological sorting.
+    """Stackless topological sorting.
 
     graph = {
-        3: [1],
-        5: [3],
-        4: [2],
-        6: [4],
+        3 : [1],
+        5 : [3],
+        4 : [2],
+        6 : [4],
     }
 
     sort_topologically(graph)
     [[1, 2], [3, 4], [5, 6]]
+
     """
     levels_by_name = {}
     names_by_level = defaultdict(list)
@@ -1402,9 +1422,9 @@ def sort_topologically(graph):
 
 
 def is_cyclic(graph):
-    """
-    Return True if the directed graph g has a cycle. The directed graph
+    """Return True if the directed graph g has a cycle. The directed graph
     should be represented as a dictionary mapping of edges for each node.
+
     """
     path = set()
 
@@ -1420,18 +1440,18 @@ def is_cyclic(graph):
 
 
 def one_to_one(graph, nodes):
-    """
-    Return True if graph contains only one to one mappings. The
+    """Return True if graph contains only one to one mappings. The
     directed graph should be represented as a dictionary mapping of
     edges for each node. Nodes should be passed a simple list.
+
     """
     edges = itertools.chain.from_iterable(graph.values())
     return len(graph) == len(nodes) and len(set(edges)) == len(nodes)
 
 
 def get_overlay_spec(o, k, v):
-    """
-    Gets the type.group.label + key spec from an Element in an Overlay.
+    """Gets the type.group.label + key spec from an Element in an Overlay.
+
     """
     k = wrap_tuple(k)
     return ((type(v).__name__, v.group, v.label, *k) if len(o.kdims) else
@@ -1439,9 +1459,9 @@ def get_overlay_spec(o, k, v):
 
 
 def layer_sort(hmap):
-   """
-   Find a global ordering for layers in a HoloMap of CompositeOverlay
+   """Find a global ordering for layers in a HoloMap of CompositeOverlay
    types.
+
    """
    orderings = {}
    for o in hmap:
@@ -1454,10 +1474,10 @@ def layer_sort(hmap):
 
 
 def layer_groups(ordering, length=2):
-   """
-   Splits a global ordering of Layers into groups based on a slice of
+   """Splits a global ordering of Layers into groups based on a slice of
    the spec.  The grouping behavior can be modified by changing the
    length of spec the entries are grouped by.
+
    """
    group_orderings = defaultdict(list)
    for el in ordering:
@@ -1466,9 +1486,9 @@ def layer_groups(ordering, length=2):
 
 
 def group_select(selects, length=None, depth=None):
-    """
-    Given a list of key tuples to select, groups them into sensible
+    """Given a list of key tuples to select, groups them into sensible
     chunks to avoid duplicating indexing operations.
+
     """
     if length is None and depth is None:
         length = depth = len(selects[0])
@@ -1484,9 +1504,9 @@ def group_select(selects, length=None, depth=None):
 
 
 def iterative_select(obj, dimensions, selects, depth=None):
-    """
-    Takes the output of group_select selecting subgroups iteratively,
+    """Takes the output of group_select selecting subgroups iteratively,
     avoiding duplicating select operations.
+
     """
     ndims = len(dimensions)
     depth = depth if depth is not None else ndims
@@ -1502,16 +1522,16 @@ def iterative_select(obj, dimensions, selects, depth=None):
 
 
 def get_spec(obj):
-   """
-   Gets the spec from any labeled data object.
+   """Gets the spec from any labeled data object.
+
    """
    return (obj.__class__.__name__,
            obj.group, obj.label)
 
 
 def is_dataframe(data):
-    """
-    Checks whether the supplied data is of DataFrame type.
+    """Checks whether the supplied data is of DataFrame type.
+
     """
     dd = None
     if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
@@ -1521,8 +1541,8 @@ def is_dataframe(data):
 
 
 def is_series(data):
-    """
-    Checks whether the supplied data is of Series type.
+    """Checks whether the supplied data is of Series type.
+
     """
     dd = None
     if 'dask.dataframe' in sys.modules:
@@ -1564,16 +1584,20 @@ def get_param_values(data):
 def is_param_method(obj, has_deps=False):
     """Whether the object is a method on a parameterized object.
 
-    Args:
-       obj: Object to check
-       has_deps (boolean, optional): Check for dependencies
-          Whether to also check whether the method has been annotated
-          with param.depends
+	Parameters
+	----------
+    obj
+        Object to check
+    has_deps : boolean, optional
+        Check for dependencies
+        Whether to also check whether the method has been annotated
+        with param.depends
 
-    Returns:
-       A boolean value indicating whether the object is a method
-       on a Parameterized object and if enabled whether it has any
-       dependencies
+	Returns
+	-------
+    A boolean value indicating whether the object is a method
+    on a Parameterized object and if enabled whether it has any
+    dependencies
     """
     parameterized = (inspect.ismethod(obj) and
                      isinstance(get_method_owner(obj), param.Parameterized))
@@ -1589,12 +1613,15 @@ def resolve_dependent_value(value):
     parameterized functions with dependencies on the supplied value,
     including such parameters embedded in a list, tuple, dictionary, or slice.
 
-    Args:
-       value: A value which will be resolved
+	Parameters
+	----------
+    value
+        A value which will be resolved
 
-    Returns:
-       A new value where any parameter dependencies have been
-       resolved.
+	Returns
+	-------
+    A new value where any parameter dependencies have been
+    resolved.
     """
     from panel.widgets import RangeSlider
 
@@ -1638,21 +1665,24 @@ def resolve_dependent_kwargs(kwargs):
     parameterized functions with dependencies in the supplied
     dictionary.
 
-    Args:
-       kwargs (dict): A dictionary of keyword arguments
+	Parameters
+	----------
+    kwargs : dict
+        A dictionary of keyword arguments
 
-    Returns:
-       A new dictionary where any parameter dependencies have been
-       resolved.
+	Returns
+	-------
+    A new dictionary where any parameter dependencies have been
+    resolved.
     """
     return {k: resolve_dependent_value(v) for k, v in kwargs.items()}
 
 
 @contextmanager
 def disable_constant(parameterized):
-    """
-    Temporarily set parameters on Parameterized object to
+    """Temporarily set parameters on Parameterized object to
     constant=False.
+
     """
     params = parameterized.param.objects('existing').values()
     constants = [p.constant for p in params]
@@ -1666,9 +1696,9 @@ def disable_constant(parameterized):
 
 
 def get_ndmapping_label(ndmapping, attr):
-    """
-    Function to get the first non-auxiliary object
+    """Function to get the first non-auxiliary object
     label attribute from an NdMapping.
+
     """
     label = None
     els = iter(ndmapping.data.values())
@@ -1687,18 +1717,20 @@ def get_ndmapping_label(ndmapping, attr):
 
 
 def wrap_tuple(unwrapped):
-    """ Wraps any non-tuple types in a tuple """
+    """Wraps any non-tuple types in a tuple
+
+    """
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
 def stream_name_mapping(stream, exclude_params=None, reverse=False):
-    """
-    Return a complete dictionary mapping between stream parameter names
+    """Return a complete dictionary mapping between stream parameter names
     to their applicable renames, excluding parameters listed in
     exclude_params.
 
     If reverse is True, the mapping is from the renamed strings to the
     original stream parameter names.
+
     """
     if exclude_params is None:
         exclude_params = ['name']
@@ -1719,13 +1751,13 @@ def stream_name_mapping(stream, exclude_params=None, reverse=False):
         return mapping
 
 def rename_stream_kwargs(stream, kwargs, reverse=False):
-    """
-    Given a stream and a kwargs dictionary of parameter values, map to
+    """Given a stream and a kwargs dictionary of parameter values, map to
     the corresponding dictionary where the keys are substituted with the
     appropriately renamed string.
 
     If reverse, the output will be a dictionary using the original
     parameter names given a dictionary using the renamed equivalents.
+
     """
     mapped_kwargs = {}
     mapping = stream_name_mapping(stream, reverse=reverse)
@@ -1739,12 +1771,12 @@ def rename_stream_kwargs(stream, kwargs, reverse=False):
 
 
 def stream_parameters(streams, no_duplicates=True, exclude=None):
-    """
-    Given a list of streams, return a flat list of parameter name,
+    """Given a list of streams, return a flat list of parameter name,
     excluding those listed in the exclude list.
 
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
+
     """
     if exclude is None:
         exclude = ['name', '_memoize_key']
@@ -1780,26 +1812,26 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
 
 
 def dimensionless_contents(streams, kdims, no_duplicates=True):
-    """
-    Return a list of stream parameters that have not been associated
+    """Return a list of stream parameters that have not been associated
     with any of the key dimensions.
+
     """
     names = stream_parameters(streams, no_duplicates)
     return [name for name in names if name not in kdims]
 
 
 def unbound_dimensions(streams, kdims, no_duplicates=True):
-    """
-    Return a list of dimensions that have not been associated with
+    """Return a list of dimensions that have not been associated with
     any streams.
+
     """
     params = stream_parameters(streams, no_duplicates)
     return [d for d in kdims if d not in params]
 
 
 def wrap_tuple_streams(unwrapped, kdims, streams):
-    """
-    Fills in tuple keys with dimensioned stream values as appropriate.
+    """Fills in tuple keys with dimensioned stream values as appropriate.
+
     """
     param_groups = [(s.contents.keys(), s) for s in streams]
     pairs = [(name,s)  for (group, s) in param_groups for name in group]
@@ -1815,8 +1847,8 @@ def wrap_tuple_streams(unwrapped, kdims, streams):
 
 
 def drop_streams(streams, kdims, keys):
-    """
-    Drop any dimensioned streams from the keys and kdims.
+    """Drop any dimensioned streams from the keys and kdims.
+
     """
     stream_params = stream_parameters(streams)
     inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
@@ -1844,8 +1876,8 @@ def unpack_group(group, getter):
 
 
 def capitalize(string):
-    """
-    Capitalizes the first letter of a string.
+    """Capitalizes the first letter of a string.
+
     """
     if string:
         return string[0].upper() + string[1:]
@@ -1854,10 +1886,10 @@ def capitalize(string):
 
 
 def get_path(item):
-    """
-    Gets a path from an Labelled object or from a tuple of an existing
+    """Gets a path from an Labelled object or from a tuple of an existing
     path and a labelled object. The path strings are sanitized and
     capitalized.
+
     """
     sanitizers = [group_sanitizer, label_sanitizer]
     if isinstance(item, tuple):
@@ -1875,9 +1907,9 @@ def get_path(item):
 
 
 def make_path_unique(path, counts, new):
-    """
-    Given a path, a list of existing paths and counts for each of the
+    """Given a path, a list of existing paths and counts for each of the
     existing paths.
+
     """
     added = False
     while any(path == c[:i] for c in counts for i in range(1, len(c)+1)):
@@ -1896,9 +1928,9 @@ def make_path_unique(path, counts, new):
 
 
 class ndmapping_groupby(param.ParameterizedFunction):
-    """
-    Apply a groupby operation to an NdMapping, using pandas to improve
+    """Apply a groupby operation to an NdMapping, using pandas to improve
     performance (if available).
+
     """
 
     sort = param.Boolean(default=False, doc='Whether to apply a sorted groupby')
@@ -1954,11 +1986,11 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
 
 def cartesian_product(arrays, flat=True, copy=False):
-    """
-    Efficient cartesian product of a list of 1D arrays returning the
+    """Efficient cartesian product of a list of 1D arrays returning the
     expanded array views for each dimensions. By default arrays are
     flattened, which may be controlled with the flat flag. The array
     views can be turned into regular arrays with the copy flag.
+
     """
     arrays = np.broadcast_arrays(*np.ix_(*arrays))
     if flat:
@@ -1967,11 +1999,11 @@ def cartesian_product(arrays, flat=True, copy=False):
 
 
 def cross_index(values, index):
-    """
-    Allows efficiently indexing into a cartesian product without
+    """Allows efficiently indexing into a cartesian product without
     expanding it. The values should be defined as a list of iterables
     making up the cartesian product and a linear index, returning
     the cross product of the values at the supplied index.
+
     """
     lengths = [len(v) for v in values]
     length = np.prod(lengths)
@@ -1987,9 +2019,9 @@ def cross_index(values, index):
 
 
 def arglexsort(arrays):
-    """
-    Returns the indices of the lexicographical sorting
+    """Returns the indices of the lexicographical sorting
     order of the supplied arrays.
+
     """
     dtypes = ','.join(array.dtype.str for array in arrays)
     recarray = np.empty(len(arrays[0]), dtype=dtypes)
@@ -1999,9 +2031,9 @@ def arglexsort(arrays):
 
 
 def dimensioned_streams(dmap):
-    """
-    Given a DynamicMap return all streams that have any dimensioned
+    """Given a DynamicMap return all streams that have any dimensioned
     parameters, i.e. parameters also listed in the key dimensions.
+
     """
     dimensioned = []
     for stream in dmap.streams:
@@ -2012,10 +2044,10 @@ def dimensioned_streams(dmap):
 
 
 def expand_grid_coords(dataset, dim):
-    """
-    Expand the coordinates along a dimension of the gridded
+    """Expand the coordinates along a dimension of the gridded
     dataset into an ND-array matching the dimensionality of
     the dataset.
+
     """
     irregular = [d.name for d in dataset.kdims
                  if d is not dim and dataset.interface.irregular(dataset, d)]
@@ -2031,16 +2063,16 @@ def expand_grid_coords(dataset, dim):
 
 
 def dt64_to_dt(dt64):
-    """
-    Safely converts NumPy datetime64 to a datetime object.
+    """Safely converts NumPy datetime64 to a datetime object.
+
     """
     ts = (dt64 - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's')
     return dt.datetime(1970,1,1,0,0,0) + dt.timedelta(seconds=ts)
 
 
 def is_nan(x):
-    """
-    Checks whether value is NaN on arbitrary types
+    """Checks whether value is NaN on arbitrary types
+
     """
     try:
         # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
@@ -2051,10 +2083,10 @@ def is_nan(x):
 
 
 def bound_range(vals, density, time_unit='us'):
-    """
-    Computes a bounding range and density from a number of samples
+    """Computes a bounding range and density from a number of samples
     assumed to be evenly spaced. Density is rounded to machine precision
     using significant digits reported by sys.float_info.dig.
+
     """
     if not len(vals):
         return(np.nan, np.nan, density, False)
@@ -2079,20 +2111,20 @@ def bound_range(vals, density, time_unit='us'):
 
 
 def validate_regular_sampling(values, rtol=10e-6):
-    """
-    Validates regular sampling of a 1D array ensuring that the difference
+    """Validates regular sampling of a 1D array ensuring that the difference
     in sampling steps is at most rtol times the smallest sampling step.
     Returns a boolean indicating whether the sampling is regular.
+
     """
     diffs = np.diff(values)
     return (len(diffs) < 1) or abs(diffs.min()-diffs.max()) < abs(diffs.min()*rtol)
 
 
 def compute_density(start, end, length, time_unit='us'):
-    """
-    Computes a grid density given the edges and number of samples.
+    """Computes a grid density given the edges and number of samples.
     Handles datetime grids correctly by computing timedeltas and
     computing a density for the given time_unit.
+
     """
     if isinstance(start, int): start = float(start)
     if isinstance(end, int): end = float(end)
@@ -2107,9 +2139,9 @@ def compute_density(start, end, length, time_unit='us'):
 
 
 def date_range(start, end, length, time_unit='us'):
-    """
-    Computes a date range given a start date, end date and the number
+    """Computes a date range given a start date, end date and the number
     of samples.
+
     """
     step = (1./compute_density(start, end, length, time_unit))
     if isinstance(start, pd.Timestamp):
@@ -2119,15 +2151,15 @@ def date_range(start, end, length, time_unit='us'):
 
 
 def parse_datetime(date):
-    """
-    Parses dates specified as string or integer or pandas Timestamp
+    """Parses dates specified as string or integer or pandas Timestamp
+
     """
     return pd.to_datetime(date).to_datetime64()
 
 
 def parse_datetime_selection(sel):
-    """
-    Parses string selection specs as datetimes.
+    """Parses string selection specs as datetimes.
+
     """
     if isinstance(sel, str) or isdatetime(sel):
         sel = parse_datetime(sel)
@@ -2142,8 +2174,8 @@ def parse_datetime_selection(sel):
 
 
 def dt_to_int(value, time_unit='us'):
-    """
-    Converts a datetime type to an integer with the supplied time unit.
+    """Converts a datetime type to an integer with the supplied time unit.
+
     """
     if isinstance(value, pd.Period):
         value = value.to_timestamp()
@@ -2190,11 +2222,13 @@ def cftime_to_timestamp(date, time_unit='us'):
     calendar. In order to handle these dates correctly a custom bokeh
     model with support for other calendars would have to be defined.
 
-    Args:
-        date: cftime datetime object (or array)
+	Parameters
+	----------
+    date : cftime datetime object (or array)
 
-    Returns:
-        time_unit since 1970-01-01 00:00:00
+	Returns
+	-------
+    time_unit since 1970-01-01 00:00:00
     """
     import cftime
     if time_unit == 'us':
@@ -2206,9 +2240,9 @@ def cftime_to_timestamp(date, time_unit='us'):
                            calendar='standard')*tscale
 
 def search_indices(values, source):
-    """
-    Given a set of values returns the indices of each of those values
+    """Given a set of values returns the indices of each of those values
     in the source array.
+
     """
     try:
         orig_indices = source.argsort()
@@ -2223,10 +2257,10 @@ def search_indices(values, source):
 
 
 def compute_edges(edges):
-    """
-    Computes edges as midpoints of the bin centers.  The first and
+    """Computes edges as midpoints of the bin centers.  The first and
     last boundaries are equidistant from the first and last midpoints
     respectively.
+
     """
     edges = np.asarray(edges)
     if edges.dtype.kind == 'i':
@@ -2237,8 +2271,8 @@ def compute_edges(edges):
 
 
 def mimebundle_to_html(bundle):
-    """
-    Converts a MIME bundle into HTML.
+    """Converts a MIME bundle into HTML.
+
     """
     if isinstance(bundle, tuple):
         data, metadata = bundle
@@ -2252,8 +2286,8 @@ def mimebundle_to_html(bundle):
 
 
 def numpy_scalar_to_python(scalar):
-    """
-    Converts a NumPy scalar to a regular python type.
+    """Converts a NumPy scalar to a regular python type.
+
     """
     scalar_type = type(scalar)
     if issubclass(scalar_type, np.float64):
@@ -2264,9 +2298,9 @@ def numpy_scalar_to_python(scalar):
 
 
 def closest_match(match, specs, depth=0):
-    """
-    Recursively iterates over type, group, label and overlay key,
+    """Recursively iterates over type, group, label and overlay key,
     finding the closest matching spec.
+
     """
     if len(match) == 0:
         return None
@@ -2299,13 +2333,12 @@ def closest_match(match, specs, depth=0):
 
 
 def cast_array_to_int64(array):
-    """
-    Convert a numpy array  to `int64`. Suppress the following warning
+    """Convert a numpy array  to `int64`. Suppress the following warning
     emitted by Numpy, which as of 12/2021 has been extensively discussed
     (https://github.com/pandas-dev/pandas/issues/22384)
     and whose fate (possible revert) has not yet been settled:
 
-        FutureWarning: casting datetime64[ns] values to int64 with .astype(...)
+        FutureWarning : casting datetime64[ns] values to int64 with .astype(...)
         is deprecated and will raise in a future version. Use .view(...) instead.
 
     """
@@ -2319,8 +2352,7 @@ def cast_array_to_int64(array):
 
 
 def flatten(line):
-    """
-    Flatten an arbitrarily nested sequence.
+    """Flatten an arbitrarily nested sequence.
 
     Inspired by: pd.core.common.flatten
 
@@ -2346,17 +2378,18 @@ def flatten(line):
 
 
 def lazy_isinstance(obj, class_or_tuple):
-    """ Lazy isinstance check
+    """Lazy isinstance check
 
     Will only import the module of the object if the module of the
     obj matches the first value of an item in class_or_tuple.
 
     lazy_isinstance(obj, 'dask.dataframe:DataFrame')
 
-    Will:
+    Will :
         1) check if the first module is dask
         2) If it dask, import dask.dataframe
         3) Do an isinstance check for dask.dataframe.DataFrame
+
     """
     if isinstance(class_or_tuple, str):
         class_or_tuple = (class_or_tuple,)
