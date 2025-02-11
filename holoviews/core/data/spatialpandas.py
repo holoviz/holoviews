@@ -199,8 +199,8 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
-        """
-        Tests if dimension is scalar in each subpath.
+        """Tests if dimension is scalar in each subpath.
+
         """
         dim = dataset.get_dimension(dim)
         if (dim in cls.geom_dims(dataset)):
@@ -457,12 +457,16 @@ class SpatialPandasInterface(MultiInterface):
 def get_geom_type(gdf, col):
     """Return the HoloViews geometry type string for the geometry column.
 
-    Args:
-        gdf: The GeoDataFrame to get the geometry from
-        col: The geometry column
+    Parameters
+    ----------
+    gdf
+        The GeoDataFrame to get the geometry from
+    col
+        The geometry column
 
-    Returns:
-        A string representing the type of geometry
+    Returns
+    -------
+    A string representing the type of geometry
     """
     from spatialpandas.geometry import (
         LineDtype,
@@ -488,13 +492,17 @@ def get_geom_type(gdf, col):
 def geom_to_array(geom, index=None, multi=False, geom_type=None):
     """Converts spatialpandas geometry to an array.
 
-    Args:
-        geom: spatialpandas geometry
-        index: The column index to return
-        multi: Whether to concatenate multiple arrays or not
+	Parameters
+	----------
+    geom : spatialpandas geometry
+    index
+        The column index to return
+    multi
+        Whether to concatenate multiple arrays or not
 
-    Returns:
-        Array or list of arrays.
+	Returns
+	-------
+    Array or list of arrays.
     """
     from spatialpandas.geometry import (
         Line,
@@ -542,12 +550,15 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
 def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
     """Converts spatialpandas extension arrays to a flattened array.
 
-    Args:
-        geom: spatialpandas geometry
-        index: The column index to return
+	Parameters
+	----------
+    geom : spatialpandas geometry
+    index
+        The column index to return
 
-    Returns:
-        Flattened array
+	Returns
+	-------
+    Flattened array
     """
     from spatialpandas.geometry import MultiPointArray, PointArray
     if isinstance(geom_array, PointArray):
@@ -604,17 +615,25 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
                     is_points, geom_length=geom_length):
     """Returns an array of values from a GeoDataFrame.
 
-    Args:
-        data: GeoDataFrame
-        dimension: The dimension to get the values from
-        expanded: Whether to expand the value array
-        keep_index: Whether to return a Series
-        geom_col: The column in the data that contains the geometries
-        is_points: Whether the geometries are points
-        geom_length: The function used to compute the length of each geometry
+	Parameters
+	----------
+    data : GeoDataFrame
+    dimension
+        The dimension to get the values from
+    expanded
+        Whether to expand the value array
+    keep_index
+        Whether to return a Series
+    geom_col
+        The column in the data that contains the geometries
+    is_points
+        Whether the geometries are points
+    geom_length
+        The function used to compute the length of each geometry
 
-    Returns:
-        An array containing the values along a dimension
+	Returns
+	-------
+    An array containing the values along a dimension
     """
     if not len(data):
         return np.array([])
@@ -658,11 +677,13 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
 def geom_to_holes(geom):
     """Extracts holes from spatialpandas Polygon geometries.
 
-    Args:
-        geom: spatialpandas geometry
+	Parameters
+	----------
+    geom : spatialpandas geometry
 
-    Returns:
-        List of arrays representing holes
+	Returns
+	-------
+    List of arrays representing holes
     """
     from spatialpandas.geometry import MultiPolygon, Polygon
     if isinstance(geom, Polygon):
@@ -693,15 +714,20 @@ def geom_to_holes(geom):
 def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
     """Converts list of dictionary format geometries to spatialpandas line geometries.
 
-    Args:
-        data: List of dictionaries representing individual geometries
-        xdim: Name of x-coordinates column
-        ydim: Name of y-coordinates column
-        columns: List of columns to add
-        geom: The type of geometry
+	Parameters
+	----------
+    data : List of dictionaries representing individual geometries
+    xdim
+        Name of x-coordinates column
+    ydim
+        Name of y-coordinates column
+    columns : List of columns to add
+    geom
+        The type of geometry
 
-    Returns:
-        A spatialpandas.GeoDataFrame version of the data
+	Returns
+	-------
+    A spatialpandas.GeoDataFrame version of the data
     """
     from spatialpandas import GeoDataFrame, GeoSeries
     from spatialpandas.geometry import (
@@ -824,14 +850,20 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
 def to_geom_dict(eltype, data, kdims, vdims, interface=None):
     """Converts data from any list format to a dictionary based format.
 
-    Args:
-        eltype: Element type to convert
-        data: The original data
-        kdims: The declared key dimensions
-        vdims: The declared value dimensions
+	Parameters
+	----------
+    eltype
+        Element type to convert
+    data
+        The original data
+    kdims
+        The declared key dimensions
+    vdims
+        The declared value dimensions
 
-    Returns:
-        A list of dictionaries containing geometry coordinates and values.
+	Returns
+	-------
+    A list of dictionaries containing geometry coordinates and values.
     """
     from . import Dataset
 
@@ -856,14 +888,20 @@ def to_geom_dict(eltype, data, kdims, vdims, interface=None):
 def from_multi(eltype, data, kdims, vdims):
     """Converts list formats into spatialpandas.GeoDataFrame.
 
-    Args:
-        eltype: Element type to convert
-        data: The original data
-        kdims: The declared key dimensions
-        vdims: The declared value dimensions
+	Parameters
+	----------
+    eltype
+        Element type to convert
+    data
+        The original data
+    kdims
+        The declared key dimensions
+    vdims
+        The declared value dimensions
 
-    Returns:
-        A GeoDataFrame containing in the list based format.
+	Returns
+	-------
+    A GeoDataFrame containing in the list based format.
     """
     from spatialpandas import GeoDataFrame
 
@@ -895,12 +933,15 @@ def from_multi(eltype, data, kdims, vdims):
 def from_shapely(data):
     """Converts shapely based data formats to spatialpandas.GeoDataFrame.
 
-    Args:
-        data: A list of shapely objects or dictionaries containing
-              shapely objects
+	Parameters
+	----------
+    data
+        A list of shapely objects or dictionaries containing
+        shapely objects
 
-    Returns:
-        A GeoDataFrame containing the shapely geometry data.
+	Returns
+	-------
+    A GeoDataFrame containing the shapely geometry data.
     """
 
     from shapely.geometry.base import BaseGeometry
@@ -932,6 +973,7 @@ def _asarray(v):
 
     Reason why it is not located in holoviews.core.util is that there is a already a
     function called `asarray`.
+
     """
     try:
         return np.asarray(v)
