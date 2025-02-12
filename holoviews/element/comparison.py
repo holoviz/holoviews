@@ -1,5 +1,4 @@
-"""
-Helper classes for comparing the equality of two HoloViews objects.
+"""Helper classes for comparing the equality of two HoloViews objects.
 
 These classes are designed to integrate with unittest.TestCase (see
 the tests directory) while making equality testing easily accessible
@@ -16,6 +15,7 @@ Note that this functionality could not be provided using comparison
 methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
+
 """
 import contextlib
 from functools import partial
@@ -47,8 +47,7 @@ from . import *  # noqa (All Elements need to support comparison)
 
 
 class ComparisonInterface:
-    """
-    This class is designed to allow equality testing to work
+    """This class is designed to allow equality testing to work
     seamlessly with unittest.TestCase as a mix-in by implementing a
     compatible interface (namely the assertEqual method).
 
@@ -56,6 +55,7 @@ class ComparisonInterface:
     method of the same name when used as a mix-in with TestCase. The
     contents of the equality_type_funcs dictionary is suitable for use
     with TestCase.addTypeEqualityFunc.
+
     """
 
     equality_type_funcs = {}
@@ -63,8 +63,8 @@ class ComparisonInterface:
 
     @classmethod
     def simple_equality(cls, first, second, msg=None):
-        """
-        Classmethod equivalent to unittest.TestCase method (longMessage = False.)
+        """Classmethod equivalent to unittest.TestCase method (longMessage = False.)
+
         """
         check = first==second
         if not isinstance(check, bool) and hasattr(check, "all"):
@@ -76,8 +76,8 @@ class ComparisonInterface:
 
     @classmethod
     def assertEqual(cls, first, second, msg=None):
-        """
-        Classmethod equivalent to unittest.TestCase method
+        """Classmethod equivalent to unittest.TestCase method
+
         """
         asserter = None
         if type(first) is type(second) or (is_float(first) and is_float(second)):
@@ -97,8 +97,7 @@ class ComparisonInterface:
 
 
 class Comparison(ComparisonInterface):
-    """
-    Class used for comparing two HoloViews objects, including complex
+    """Class used for comparing two HoloViews objects, including complex
     composite objects. Comparisons are available as classmethods, the
     most general being the assertEqual method that is intended to work
     with any input.
@@ -106,6 +105,7 @@ class Comparison(ComparisonInterface):
     For instance, to test if two Image objects are equal you can use:
 
     Comparison.assertEqual(matrix1, matrix2)
+
     """
 
     # someone might prefer to use a different function, e.g. assert_all_close
@@ -767,8 +767,8 @@ class Comparison(ComparisonInterface):
 
 
 class ComparisonTestCase(Comparison, TestCase):
-    """
-    Class to integrate the Comparison class with unittest.TestCase.
+    """Class to integrate the Comparison class with unittest.TestCase.
+
     """
 
     def __init__(self, *args, **kwargs):

@@ -9,11 +9,11 @@ from .selection import Selection1DExpr, Selection2DExpr
 
 
 class StatisticsElement(Dataset, Element2D):
-    """
-    StatisticsElement provides a baseclass for Element types that
+    """StatisticsElement provides a baseclass for Element types that
     compute statistics based on the input data, usually a density.
     The value dimension of such elements are therefore usually virtual
     and not computed until the element is plotted.
+
     """
 
     __abstract = True
@@ -38,8 +38,8 @@ class StatisticsElement(Dataset, Element2D):
 
     @property
     def dataset(self):
-        """
-        The Dataset that this object was created from
+        """The Dataset that this object was created from
+
         """
         from . import Dataset
         if self._dataset is None:
@@ -54,15 +54,20 @@ class StatisticsElement(Dataset, Element2D):
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
-        Args:
-            dimension: The dimension to compute the range on.
-            data_range (bool): Compute range from data values
-            dimension_range (bool): Include Dimension ranges
-                Whether to include Dimension range and soft_range
-                in range calculation
+        Parameters
+        ----------
+        dimension
+            The dimension to compute the range on.
+        data_range : bool
+            Compute range from data values
+        dimension_range : bool
+            Include Dimension ranges
+            Whether to include Dimension range and soft_range
+            in range calculation
 
-        Returns:
-            Tuple containing the lower and upper bound
+        Returns
+        -------
+        Tuple containing the lower and upper bound
         """
         iskdim = self.get_dimension(dim) not in self.vdims
         return super().range(dim, iskdim, dimension_range)
@@ -70,18 +75,23 @@ class StatisticsElement(Dataset, Element2D):
     def dimension_values(self, dim, expanded=True, flat=True):
         """Return the values along the requested dimension.
 
-        Args:
-            dimension: The dimension to return values for
-            expanded (bool, optional): Whether to expand values
-                Whether to return the expanded values, behavior depends
-                on the type of data:
-                  * Columnar: If false returns unique values
-                  * Geometry: If false returns scalar values per geometry
-                  * Gridded: If false returns 1D coordinates
-            flat (bool, optional): Whether to flatten array
+        Parameters
+        ----------
+        dimension
+            The dimension to return values for
+        expanded : bool, optional
+            Whether to expand values
+            Whether to return the expanded values, behavior depends
+            on the type of data:
+                * Columnar: If false returns unique values
+                * Geometry: If false returns scalar values per geometry
+                * Gridded: If false returns 1D coordinates
+        flat : bool, optional
+            Whether to flatten array
 
-        Returns:
-            NumPy array of values along the requested dimension
+        Returns
+        -------
+        NumPy array of values along the requested dimension
         """
         dim = self.get_dimension(dim, strict=True)
         if dim in self.vdims:
@@ -94,11 +104,14 @@ class StatisticsElement(Dataset, Element2D):
         Type is determined by Dimension.type attribute or common
         type of the dimension values, otherwise None.
 
-        Args:
-            dimension: Dimension to look up by name or by index
+        Parameters
+        ----------
+        dimension
+            Dimension to look up by name or by index
 
-        Returns:
-            Declared type of values along the dimension
+        Returns
+        -------
+        Declared type of values along the dimension
         """
         dim = self.get_dimension(dim)
         if dim is None:
@@ -115,12 +128,16 @@ class StatisticsElement(Dataset, Element2D):
         Returns a pandas dataframe of columns along each dimension,
         either completely flat or indexed by key dimensions.
 
-        Args:
-            dimensions: Dimensions to return as columns
-            multi_index: Convert key dimensions to (multi-)index
+        Parameters
+        ----------
+        dimensions
+            Dimensions to return as columns
+        multi_index
+            Convert key dimensions to (multi-)index
 
-        Returns:
-            DataFrame of columns corresponding to each dimension
+        Returns
+        -------
+        DataFrame of columns corresponding to each dimension
         """
         if dimensions:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
@@ -139,11 +156,14 @@ class StatisticsElement(Dataset, Element2D):
         Returns a dictionary of column arrays along each dimension
         of the element.
 
-        Args:
-            dimensions: Dimensions to return as columns
+        Parameters
+        ----------
+        dimensions
+            Dimensions to return as columns
 
-        Returns:
-            Dictionary of arrays for each dimension
+        Returns
+        -------
+        Dictionary of arrays for each dimension
         """
         if dimensions is None:
             dimensions = self.kdims
@@ -158,10 +178,10 @@ class StatisticsElement(Dataset, Element2D):
 
 
 class Bivariate(Selection2DExpr, StatisticsElement):
-    """
-    Bivariate elements are containers for two dimensional data, which
+    """Bivariate elements are containers for two dimensional data, which
     is to be visualized as a kernel density estimate. The data should
     be supplied in a tabular format of x- and y-columns.
+
     """
 
     group = param.String(default="Bivariate", constant=True)
@@ -173,11 +193,11 @@ class Bivariate(Selection2DExpr, StatisticsElement):
 
 
 class Distribution(Selection1DExpr, StatisticsElement):
-    """
-    Distribution elements provides a representation for a
+    """Distribution elements provides a representation for a
     one-dimensional distribution which can be visualized as a kernel
     density estimate. The data should be supplied in a tabular format
     and will use the first column.
+
     """
 
     group = param.String(default='Distribution', constant=True)
@@ -188,11 +208,11 @@ class Distribution(Selection1DExpr, StatisticsElement):
 
 
 class BoxWhisker(Selection1DExpr, Dataset, Element2D):
-    """
-    BoxWhisker represent data as a distributions highlighting the
+    """BoxWhisker represent data as a distributions highlighting the
     median, mean and various percentiles. It may have a single value
     dimension and any number of key dimensions declaring the grouping
     of each violin.
+
     """
 
     group = param.String(default='BoxWhisker', constant=True)
@@ -205,23 +225,23 @@ class BoxWhisker(Selection1DExpr, Dataset, Element2D):
 
 
 class Violin(BoxWhisker):
-    """
-    Violin elements represent data as 1D distributions visualized
+    """Violin elements represent data as 1D distributions visualized
     as a kernel-density estimate. It may have a single value dimension
     and any number of key dimensions declaring the grouping of each
     violin.
+
     """
 
     group = param.String(default='Violin', constant=True)
 
 
 class HexTiles(Selection2DExpr, Dataset, Element2D):
-    """
-    HexTiles is a statistical element with a visual representation
+    """HexTiles is a statistical element with a visual representation
     that renders a density map of the data values as a hexagonal grid.
 
     Before display the data is aggregated either by counting the values
     in each hexagonal bin or by computing aggregates.
+
     """
 
     group = param.String(default='HexTiles', constant=True)

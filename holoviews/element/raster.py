@@ -19,8 +19,7 @@ from .util import categorical_aggregate2d, compute_slice_bounds
 
 
 class Raster(Element2D):
-    """
-    Raster is a basic 2D element type for presenting either numpy or
+    """Raster is a basic 2D element type for presenting either numpy or
     dask arrays as two dimensional raster images.
 
     Arrays with a shape of (N,M) are valid inputs for Raster whereas
@@ -30,6 +29,7 @@ class Raster(Element2D):
     Raster does not support slicing like the Image or RGB subclasses
     and the extents are in matrix coordinates if not explicitly
     specified.
+
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -84,8 +84,8 @@ class Raster(Element2D):
         return super().range(dim, data_range, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
-        """
-        The set of samples available along a particular dimension.
+        """The set of samples available along a particular dimension.
+
         """
         dim_idx = self.get_dimension_index(dim)
         if not expanded and dim_idx == 0:
@@ -102,13 +102,13 @@ class Raster(Element2D):
             return super().dimension_values(dim)
 
     def sample(self, samples=None, bounds=None, **sample_values):
-        """
-        Sample the Raster along one or both of its dimensions,
+        """Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a ItemTable, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
+
         """
         if samples is None:
             samples = []
@@ -155,11 +155,11 @@ class Raster(Element2D):
 
 
     def reduce(self, dimensions=None, function=None, **reduce_map):
-        """
-        Reduces the Raster using functions provided via the
+        """Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
+
         """
         function, dims = self._reduce_map(dimensions, function, reduce_map)
         if len(dims) == self.ndims:
@@ -200,8 +200,7 @@ class Raster(Element2D):
 
 
 class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
-    """
-    Image represents a regularly sampled 2D grid of an underlying
+    """Image represents a regularly sampled 2D grid of an underlying
     continuous space of intensity values, which will be colormapped on
     plotting. The grid of intensity values may be specified as a NxM
     sized array of values along with a bounds, but it may also be
@@ -225,6 +224,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     Note that the interpretation of the orientation of the array
     changes depending on whether bounds or explicit coordinates are
     used.
+
     """
 
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
@@ -386,13 +386,13 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
+        """Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
 
         If shared_data is set to True and no data explicitly supplied,
         the clone will share data with the original. May also supply
         a new_type, which will inherit all shared parameters.
+
         """
         if data is None and (new_type is None or issubclass(new_type, Image)):
             sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity,
@@ -406,14 +406,14 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg
 
     def select(self, selection_specs=None, **selection):
-        """
-        Allows selecting data by the slices, sets and scalar values
+        """Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
         keywords mapping between the selected dimension and
         value. Additionally selection_specs (taking the form of a list
         of type.group.label strings, types or functions) may be
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
+
         """
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
@@ -456,11 +456,11 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
 
     def closest(self, coords=None, **kwargs):
-        """
-        Given a single coordinate or multiple coordinates as
+        """Given a single coordinate or multiple coordinates as
         a tuple or list of tuples or keyword arguments matching
         the dimension closest will find the closest actual x/y
         coordinates.
+
         """
         if coords is None:
             coords = []
@@ -508,8 +508,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
 
 class ImageStack(Image):
-    """
-    ImageStack expands the capabilities of Image to by supporting
+    """ImageStack expands the capabilities of Image to by supporting
     multiple layers of images.
 
     As there is many ways to represent multiple layers of images,
@@ -529,6 +528,7 @@ class ImageStack(Image):
 
     If no vdims are supplied, and the naming can be inferred like with a dictionary
     the levels will be named level_0, level_1, etc.
+
     """
 
     vdims = param.List(doc="""
@@ -574,8 +574,7 @@ class ImageStack(Image):
 
 
 class RGB(Image):
-    """
-    RGB represents a regularly spaced 2D grid of an underlying
+    """RGB represents a regularly spaced 2D grid of an underlying
     continuous space of RGB(A) (red, green, blue and alpha) color
     space values. The definition of the grid closely matches the
     semantics of an Image and in the simplest case the grid may be
@@ -599,6 +598,7 @@ class RGB(Image):
 
     Note that the interpretation of the orientation changes depending
     on whether bounds or explicit coordinates are used.
+
     """
 
     group = param.String(default='RGB', constant=True)
@@ -621,12 +621,12 @@ class RGB(Image):
 
     @property
     def rgb(self):
-        """
-        Returns the corresponding RGB element.
+        """Returns the corresponding RGB element.
 
         Other than the updating parameter definitions, this is the
         only change needed to implemented an arbitrary colorspace as a
         subclass of RGB.
+
         """
         return self
 
@@ -634,17 +634,25 @@ class RGB(Image):
     def load_image(cls, filename, height=1, array=False, bounds=None, bare=False, **kwargs):
         """Load an image from a file and return an RGB element or array
 
-        Args:
-            filename: Filename of the image to be loaded
-            height: Determines the bounds of the image where the width
-                    is scaled relative to the aspect ratio of the image.
-            array: Whether to return an array (rather than RGB default)
-            bounds: Bounds for the returned RGB (overrides height)
-            bare: Whether to hide the axes
-            kwargs: Additional kwargs to the RGB constructor
+        Parameters
+        ----------
+        filename
+            Filename of the image to be loaded
+        height
+            Determines the bounds of the image where the width
+            is scaled relative to the aspect ratio of the image.
+        array
+            Whether to return an array (rather than RGB default)
+        bounds
+            Bounds for the returned RGB (overrides height)
+        bare
+            Whether to hide the axes
+        kwargs
+            Additional kwargs to the RGB constructor
 
-        Returns:
-            RGB element or array
+        Returns
+        -------
+        RGB element or array
         """
         try:
             from PIL import Image
@@ -698,8 +706,7 @@ class RGB(Image):
 
 
 class HSV(RGB):
-    """
-    HSV represents a regularly spaced 2D grid of an underlying
+    """HSV represents a regularly spaced 2D grid of an underlying
     continuous space of HSV (hue, saturation and value) color space
     values. The definition of the grid closely matches the semantics
     of an Image or RGB element and in the simplest case the grid may
@@ -723,6 +730,7 @@ class HSV(RGB):
 
     Note that the interpretation of the orientation changes depending
     on whether bounds or explicit coordinates are used.
+
     """
 
     group = param.String(default='HSV', constant=True)
@@ -745,8 +753,8 @@ class HSV(RGB):
 
     @property
     def rgb(self):
-        """
-        Conversion from HSV to RGB.
+        """Conversion from HSV to RGB.
+
         """
         coords = tuple(self.dimension_values(d, expanded=False)
                        for d in self.kdims)
@@ -765,8 +773,7 @@ class HSV(RGB):
 
 
 class QuadMesh(Selection2DExpr, Dataset, Element2D):
-    """
-    A QuadMesh represents 2D rectangular grid expressed as x- and
+    """A QuadMesh represents 2D rectangular grid expressed as x- and
     y-coordinates defined as 1D or 2D arrays. Unlike the Image type
     a QuadMesh may be regularly or irregularly spaced and contain
     either bin edges or bin centers. If bin edges are supplied the
@@ -785,6 +792,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
     The grid orientation follows the standard matrix convention: An
     array Z with shape (nrows, ncolumns) is plotted with the column
     number as X and the row number as Y.
+
     """
 
     group = param.String(default="QuadMesh", constant=True)
@@ -809,8 +817,8 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
             )
 
     def trimesh(self):
-        """
-        Converts a QuadMesh into a TriMesh.
+        """Converts a QuadMesh into a TriMesh.
+
         """
         # Generate vertices
         xs = self.interface.coords(self, 0, edges=True)
@@ -856,8 +864,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
 
 
 class HeatMap(Selection2DExpr, Dataset, Element2D):
-    """
-    HeatMap represents a 2D grid of categorical coordinates which can
+    """HeatMap represents a 2D grid of categorical coordinates which can
     be computed from a sparse tabular representation. A HeatMap does
     not automatically aggregate the supplied values, so if the data
     contains multiple entries for the same coordinate on the 2D grid
@@ -872,6 +879,7 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
     However any tabular and gridded format, including pandas
     DataFrames, dictionaries of columns, xarray DataArrays and more
     are supported if the library is importable.
+
     """
 
     group = param.String(default='HeatMap', constant=True)
@@ -893,23 +901,28 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
 
     @property
     def _unique(self):
-        """
-        Reports if the Dataset is unique.
+        """Reports if the Dataset is unique.
+
         """
         return self.gridded.label != 'non-unique'
 
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
-        Args:
-            dimension: The dimension to compute the range on.
-            data_range (bool): Compute range from data values
-            dimension_range (bool): Include Dimension ranges
-                Whether to include Dimension range and soft_range
-                in range calculation
+        Parameters
+        ----------
+        dimension
+            The dimension to compute the range on.
+        data_range : bool
+            Compute range from data values
+        dimension_range : bool
+            Include Dimension ranges
+            Whether to include Dimension range and soft_range
+            in range calculation
 
-        Returns:
-            Tuple containing the lower and upper bound
+        Returns
+        -------
+        Tuple containing the lower and upper bound
         """
         dim = self.get_dimension(dim)
         if dim in self.kdims:
