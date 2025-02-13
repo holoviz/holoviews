@@ -7,14 +7,12 @@ import bokeh
 import pandas as pd
 from packaging.version import Version
 
+# Setting this to not error out if no install is done.
+os.environ["PYTHONPATH"] = os.path.dirname(os.path.dirname(__file__))
+
 system = platform.system()
 py_version = sys.version_info[:2]
 PANDAS_GE_2_0_0 = Version(pd.__version__).release >= (2, 0, 0)
-
-# Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
-# to avoid crashing when running tests with pytest-xdist on Windows.
-# This is set in the .github/workflows/test.yaml file.
-# https://github.com/holoviz/holoviews/pull/5720
 
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
