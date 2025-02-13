@@ -7,8 +7,7 @@ from ..core.util import dimension_sanitizer
 
 
 class Link(param.Parameterized):
-    """
-    A Link defines some connection between a source and target object
+    """A Link defines some connection between a source and target object
     in their visualization. It is quite similar to a Stream as it
     allows defining callbacks in response to some change or event on
     the source object, however, unlike a Stream, it does not transfer
@@ -21,6 +20,7 @@ class Link(param.Parameterized):
     A Link must define a source object which is what triggers events,
     but must not define a target. It is also possible to define bi-
     directional links between the source and target object.
+
     """
 
     # Mapping from a source id to a Link instance
@@ -47,9 +47,9 @@ class Link(param.Parameterized):
 
     @classmethod
     def register_callback(cls, backend, callback):
-        """
-        Register a LinkCallback providing the implementation for
+        """Register a LinkCallback providing the implementation for
         the Link for a particular backend.
+
         """
         cls._callbacks[backend][cls] = callback
 
@@ -62,8 +62,8 @@ class Link(param.Parameterized):
         return self._target() if self._target else None
 
     def link(self):
-        """
-        Registers the Link
+        """Registers the Link
+
         """
         if self.source in self.registry:
             links = self.registry[self.source]
@@ -80,8 +80,8 @@ class Link(param.Parameterized):
             self.registry[self.source] = [self]
 
     def unlink(self):
-        """
-        Unregisters the Link
+        """Unregisters the Link
+
         """
         links = self.registry.get(self.source)
         if self in links:
@@ -89,15 +89,15 @@ class Link(param.Parameterized):
 
 
 class RangeToolLink(Link):
-    """
-    The RangeToolLink sets up a link between a RangeTool on the source
+    """The RangeToolLink sets up a link between a RangeTool on the source
     plot and the axes on the target plot. It is useful for exploring
     a subset of a larger dataset in more detail. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
 
     Example of how to use RangeToolLink can be found here:
-    https://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
+    https ://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
+
     """
 
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
@@ -128,27 +128,27 @@ class RangeToolLink(Link):
     _requires_target = True
 
 class DataLink(Link):
-    """
-    DataLink defines a link in the data between two objects allowing
+    """DataLink defines a link in the data between two objects allowing
     them to be selected together. In order for a DataLink to be
     established the source and target data must be of the same length.
+
     """
 
     _requires_target = True
 
 
 class SelectionLink(Link):
-    """
-    Links the selection between two glyph renderers.
+    """Links the selection between two glyph renderers.
+
     """
 
     _requires_target = True
 
 
 class VertexTableLink(Link):
-    """
-    Defines a Link between a Path type and a Table that will
+    """Defines a Link between a Path type and a Table that will
     display the vertices of selected path.
+
     """
 
     vertex_columns = param.List(default=[])
@@ -163,8 +163,8 @@ class VertexTableLink(Link):
 
 
 class RectanglesTableLink(Link):
-    """
-    Links a Rectangles element to a Table.
+    """Links a Rectangles element to a Table.
+
     """
 
     _requires_target = True
