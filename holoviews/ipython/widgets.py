@@ -9,12 +9,12 @@ from ..core.util import ProgressIndicator
 
 
 class ProgressBar(ProgressIndicator):
-    """
-    A simple text progress bar suitable for both the IPython notebook
+    """A simple text progress bar suitable for both the IPython notebook
     and the IPython interactive prompt.
 
     ProgressBars are automatically nested if a previous instantiated
     progress bars has not achieved 100% completion.
+
     """
 
     display = param.Selector(default='stdout',
@@ -52,7 +52,9 @@ class ProgressBar(ProgressIndicator):
         super().__init__(**params)
 
     def __call__(self, percentage):
-        " Update the progress bar within the specified percent_range"
+        """Update the progress bar within the specified percent_range
+
+        """
 
         if self.start_time is None: self.start_time = time.time()
         span = (self.percent_range[1]-self.percent_range[0])
@@ -115,9 +117,9 @@ class ProgressBar(ProgressIndicator):
 
 
 class RemoteProgress(ProgressBar):
-    """
-    Connect to a progress bar in a separate process with output_mode
+    """Connect to a progress bar in a separate process with output_mode
     set to 'broadcast' in order to display the results (to stdout).
+
     """
 
     hostname=param.String(default='localhost', doc="""
@@ -152,8 +154,7 @@ class RemoteProgress(ProgressBar):
 
 
 class RunProgress(ProgressBar):
-    """
-    RunProgress breaks up the execution of a slow running command so
+    """RunProgress breaks up the execution of a slow running command so
     that the level of completion can be displayed during execution.
 
     This class is designed to run commands that take a single numeric
@@ -165,6 +166,7 @@ class RunProgress(ProgressBar):
     For instance, this is suitable for simulations where the numeric
     argument is the simulated time - typically, advancing 10 simulated
     seconds takes about twice as long as advancing by 5 seconds.
+
     """
 
     interval = param.Number(default=100, doc="""
@@ -180,9 +182,9 @@ class RunProgress(ProgressBar):
         super().__init__(**params)
 
     def __call__(self, value):
-        """
-        Execute the run_hook to a total of value, breaking up progress
+        """Execute the run_hook to a total of value, breaking up progress
         updates by the value specified by interval.
+
         """
         completed = 0
         while (value - completed) >= self.interval:
@@ -196,12 +198,12 @@ class RunProgress(ProgressBar):
 
 
 def progress(iterator, enum=False, length=None):
-    """
-    A helper utility to display a progress bar when iterating over a
+    """A helper utility to display a progress bar when iterating over a
     collection of a fixed length or a generator (with a declared
     length).
 
     If enum=True, then equivalent to enumerate with a progress bar.
+
     """
     progress = ProgressBar()
     length = len(iterator) if length is None else length
