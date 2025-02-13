@@ -59,10 +59,25 @@ class Chart(Dataset, Element2D):
 
 class Scatter(Selection1DExpr, Chart):
     """
-    Scatter is a Chart element representing a set of points in a 1D
-    coordinate system where the key dimension maps to the points
-    location along the x-axis while the first value dimension
-    represents the location of the point along the y-axis.
+    The `Scatter` element visualizes as markers placed in a space of one
+    independent variable, traditionally denoted as `x`, against a dependent
+    variable, traditionally denoted as `y`.
+
+    Scatter elements most naturally overlay with other elements that express
+    dependent relationships between the x and y axes in two-dimensional space,
+    such as Chart types like `Curve`.
+    
+    Reference: `Bokeh <http://holoviews.org/reference/elements/bokeh/Scatter.html>`_, `Matplotlib <http://holoviews.org/reference/elements/matplotlib/Scatter.html>`_, `Plotly <http://holoviews.org/reference/elements/plotly/Scatter.html>`_
+
+    Example:
+
+    >>> scatter = hv.Scatter(data, kdims="x", vdims="y")
+    >>> scatter.opts(color='black', marker='s', size=10, tools=["hover"])
+    >>> scatter
+
+    For full documentation and the available style and plot options, use
+
+    >>> hv.help(scatter)
     """
 
     group = param.String(default='Scatter', constant=True)
