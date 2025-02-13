@@ -32,6 +32,10 @@ no-default-feature = true
 features = ["required", "py312", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
 
+[environments.test-313]
+features = ["required", "py313", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
 [environments.test-ui]
 features = ["required", "py312", "optional", "test-core", "test-ui"]
 no-default-feature = true
@@ -141,6 +145,7 @@ setuptools_scm = "*"
 
 [feature.dev.tasks]
 lab = 'jupyter lab'
+setup-dev = { depends-on = ["install", "download-data", "lint-install"] }
 
 # =============================================
 # =================== TESTS ===================

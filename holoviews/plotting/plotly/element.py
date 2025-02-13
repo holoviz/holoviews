@@ -14,6 +14,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key
 from .plot import PlotlyPlot
 from .util import (
+    PLOTLY_MAP,
     STYLE_ALIASES,
     get_colorscale,
     legend_trace_types,
@@ -208,8 +209,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 components[k].extend(datum_components.get(k, []))
 
             # Handle mapbox
-            if "mapbox" in datum_components:
-                components["mapbox"] = datum_components["mapbox"]
+            if PLOTLY_MAP in datum_components:
+                components[PLOTLY_MAP] = datum_components[PLOTLY_MAP]
 
         self.handles['components'] = components
 
@@ -219,8 +220,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             layout.setdefault(k, [])
             layout[k].extend(components.get(k, []))
 
-        if "mapbox" in components:
-            merge_layout(layout.setdefault("mapbox", {}), components["mapbox"])
+        if PLOTLY_MAP in components:
+            merge_layout(layout.setdefault(PLOTLY_MAP, {}), components[PLOTLY_MAP])
 
         self.handles['layout'] = layout
 
@@ -534,7 +535,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     max_y_zoom = (np.log2(max_delta / y_delta) -
                                 np.log2(mapbox_tile_size / viewport_height))
                 mapbox["zoom"] = min(max_x_zoom, max_y_zoom)
-            layout["mapbox"] = mapbox
+            layout[PLOTLY_MAP] = mapbox
 
         if isinstance(self.projection, str) and self.projection == '3d':
             scene = dict(xaxis=xaxis, yaxis=yaxis)

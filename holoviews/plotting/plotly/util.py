@@ -1,11 +1,18 @@
+import base64
 import copy
 import re
 
 import numpy as np
-from plotly import colors
+from packaging.version import Version
+from plotly import __version__, colors
 
 from ...core.util import isfinite, max_range
 from ..util import color_intervals, process_cmap
+
+PLOTLY_VERSION = Version(__version__).release
+PLOTLY_GE_6_0_0 = PLOTLY_VERSION >= (6, 0, 0)
+PLOTLY_SCATTERMAP = "scattermap" if PLOTLY_GE_6_0_0 else "scattermapbox"
+PLOTLY_MAP = "map" if PLOTLY_GE_6_0_0 else "mapbox"
 
 # Constants
 # ---------
@@ -23,7 +30,7 @@ _domain_trace_types = {'parcoords', 'pie', 'table', 'sankey', 'parcats'}
 # Each of these subplot types has a `domain` property with `x`/`y` properties.
 # Note that this set does not contain `xaxis`/`yaxis` because these behave a
 # little differently.
-_subplot_types = {'scene', 'geo', 'polar', 'ternary', 'mapbox'}
+_subplot_types = {'scene', 'geo', 'polar', 'ternary', PLOTLY_MAP}
 
 # For most subplot types, a trace is associated with a particular subplot
 # using a trace property with a name that matches the subplot type. For
@@ -34,7 +41,7 @@ _subplot_types = {'scene', 'geo', 'polar', 'ternary', 'mapbox'}
 # the trace property is just named `subplot`.  For example setting
 # the `scatterpolar.subplot` property to `polar3` associates the scatterpolar
 # trace with the third polar subplot in the figure
-_subplot_prop_named_subplot = {'polar', 'ternary', 'mapbox'}
+_subplot_prop_named_subplot = {'polar', 'ternary', PLOTLY_MAP}
 
 # Mapping from trace type to subplot type(s).
 _trace_to_subplot = {
@@ -77,7 +84,7 @@ _trace_to_subplot = {
     'scatterternary': ['ternary'],
 
     # mapbox
-    'scattermapbox': ['mapbox']
+    PLOTLY_SCATTERMAP: [PLOTLY_MAP],
 }
 
 # trace types that support legends
@@ -97,7 +104,7 @@ legend_trace_types = {
     'scattergl',
     'splom',
     'pointcloud',
-    'scattermapbox',
+    PLOTLY_SCATTERMAP,
     'scattercarpet',
     'contourcarpet',
     'ohlc',
@@ -911,3 +918,17 @@ def clean_internal_figure_properties(fig):
         elif isinstance(val, (list, tuple)) and val and isinstance(val[0], dict):
             for el in val:
                 clean_internal_figure_properties(el)
+
+
+def _convert_numpy_in_fig_dict(fig_dict):
+    if isinstance(fig_dict, dict):
+        if fig_dict.keys() == {"dtype", "bdata"}:
+            return np.frombuffer(base64.b64decode(fig_dict["bdata"]), dtype=fig_dict["dtype"])
+        elif fig_dict.keys() == {"dtype", "bdata", "shape"}:
+            shape = list(map(int, fig_dict["shape"].split(",")))
+            return np.frombuffer(base64.b64decode(fig_dict["bdata"]), dtype=fig_dict["dtype"]).reshape(shape)
+        return {key: _convert_numpy_in_fig_dict(value) for key, value in fig_dict.items()}
+    elif isinstance(fig_dict, list):
+        return [_convert_numpy_in_fig_dict(item) for item in fig_dict]
+    else:
+        return fig_dict

@@ -6,6 +6,7 @@ from bokeh.document import Document
 from pyviz_comms import Comm
 
 import holoviews as hv
+from holoviews.plotting.plotly.util import _convert_numpy_in_fig_dict
 from holoviews.streams import (
     BoundsXY,
     RangeXY,
@@ -44,7 +45,7 @@ class TestDynamicMap(TestPlotlyPlot):
         _, plotly_pane = next(iter(dmap_pane._plots.values()))
 
         # Check initial data
-        data = plotly_pane.object['data']
+        data = _convert_numpy_in_fig_dict(plotly_pane.object['data'])
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]['type'], 'scatter')
         np.testing.assert_equal(data[0]['y'], ys)
@@ -57,7 +58,7 @@ class TestDynamicMap(TestPlotlyPlot):
         scale_stream.event(scale=2.0)
 
         # Check that figure object was updated
-        data = plotly_pane.object['data']
+        data = _convert_numpy_in_fig_dict(plotly_pane.object['data'])
         np.testing.assert_equal(data[0]['y'], ys * 2.0)
 
         # Check that object callback was triggered

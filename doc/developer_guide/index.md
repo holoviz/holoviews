@@ -95,6 +95,14 @@ pixi run download-data
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
+For setting up a complete development you can run:
+
+```bash
+pixi run setup-dev
+```
+
+This will run the `install` and `download-data` tasks, among other tasks deemed necessary for a development environment.
+
 ### Syncing Git tags with upstream repository
 
 If you are working from a forked repository of HoloViews, you will need to sync the tags with the upstream repo.

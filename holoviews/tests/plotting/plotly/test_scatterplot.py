@@ -1,6 +1,7 @@
 import numpy as np
 
 from holoviews.element import Scatter, Tiles
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 from .test_plot import TestPlotlyPlot
 
@@ -82,12 +83,12 @@ class TestMapboxScatterPlot(TestPlotlyPlot):
 
         scatter = Tiles('') * Scatter((xs, ys)).redim.range(x=x_range, y=y_range)
         state = self._get_plot_state(scatter)
-        self.assertEqual(state['data'][1]['type'], 'scattermapbox')
+        self.assertEqual(state['data'][1]['type'], PLOTLY_SCATTERMAP)
         self.assertEqual(state['data'][1]['lon'], lons)
         self.assertEqual(state['data'][1]['lat'], lats)
         self.assertEqual(state['data'][1]['mode'], 'markers')
         self.assertEqual(
-            state['layout']['mapbox']['center'], {'lat': lat_center, 'lon': lon_center}
+            state['layout'][PLOTLY_MAP]['center'], {'lat': lat_center, 'lon': lon_center}
         )
 
         # There xaxis and yaxis should not be in the layout
