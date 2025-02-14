@@ -2,6 +2,7 @@ import contextlib
 import sys
 from collections.abc import Callable
 
+import numpy as np
 import panel as pn
 import pytest
 from panel.tests.conftest import port, server_cleanup  # noqa: F401
@@ -136,3 +137,8 @@ def reset_store():
     hv.Store._weakrefs = {}
     hv.Store.renderers = renderers
     hv.Store.set_current_backend(current_backend)
+
+
+@pytest.fixture
+def rng():
+    return np.random.default_rng(1)
