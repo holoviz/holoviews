@@ -1269,3 +1269,6 @@ argument to specify a selection specification""")
             dataset.ndloc[[1, 2, 3], [0, 2, 3]]
         """
         return ndloc(self)
+
+    # This is to work with spatialpandas-dask with dask 2025.1
+    __dask_tokenize__ = __getstate__
