@@ -430,14 +430,14 @@ class QuadMeshPlot(ColorbarPlot):
         return data, mapping, style
 
     def _collect_hover_data(self, element, mask=(), irregular=False):
-        """
-        Returns a dict mapping hover dimension names to flattened arrays.
+        """Returns a dict mapping hover dimension names to flattened arrays.
 
         Note that `Quad` glyphs are used when given 1-D coords but `Patches` are
         used for "irregular" 2-D coords, and Bokeh inserts data into these glyphs
         in the opposite order such that the relationship b/w the `invert_axes`
         parameter and the need to transpose the arrays before flattening is
         reversed.
+
         """
         transpose = self.invert_axes if irregular else not self.invert_axes
 
@@ -451,8 +451,8 @@ class QuadMeshPlot(ColorbarPlot):
         return hover_data
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         properties = mpl_to_bokeh(properties)
         properties = dict(properties, **mapping)
