@@ -124,8 +124,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return {}
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """
-        Initializes a new plot object with the last available frame.
+        """Initializes a new plot object with the last available frame.
+
         """
         # Get element key and ranges for frame
         fig = self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
@@ -273,16 +273,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return opts
 
     def init_graph(self, datum, options, index=0, **kwargs):
-        """
-        Initialize the plotly components that will represent the element
+        """Initialize the plotly components that will represent the element
 
         Parameters
         ----------
-        datum: dict
+        datum : dict
             An element of the data list returned by the get_data method
-        options: dict
+        options : dict
             Graph options that were returned by the graph_options method
-        index: int
+        index : int
             Index of datum in the original list returned by the get_data method
 
         Returns
@@ -316,8 +315,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
     def get_aspect(self, xspan, yspan):
-        """
-        Computes the aspect ratio of the plot
+        """Computes the aspect ratio of the plot
+
         """
         return self.width/self.height
 
@@ -328,6 +327,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Should return a list of dimensions or list of lists of
         dimensions, which will be formatted to label the axis
         and to link axes.
+
         """
         dims = element.dimensions()[:3]
         pad = [None]*max(3-len(dims), 0)
@@ -382,8 +382,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return new_style
 
     def _format_title(self, key, separator=' '):
-      """
-      Formats the title of the plot.
+      """Formats the title of the plot.
+
       """
       title = super()._format_title(key, separator)
 
@@ -575,9 +575,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             axis.update(axis_props)
 
     def update_frame(self, key, ranges=None, element=None, is_geo=False):
-        """
-        Updates an existing plot with data corresponding
+        """Updates an existing plot with data corresponding
         to the key.
+
         """
         self.generate_plot(key, ranges, element, is_geo=is_geo)
 
@@ -687,8 +687,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """
-        Initializes a new plot object with the last available frame.
+        """Initializes a new plot object with the last available frame.
+
         """
         # Get element key and ranges for frame
         return self.generate_plot(next(iter(self.hmap.data.keys())), ranges, is_geo=is_geo)
