@@ -37,6 +37,13 @@ class Points(Selection2DExpr, Geometry):
     _auto_indexable_1d = True
 
 
+class Dendrogram(Selection2DExpr, Geometry):
+
+    group = param.String(default='Dendrogram', constant=True)
+
+    # _auto_indexable_1d = True
+
+
 class VectorField(Selection2DExpr, Geometry):
     """
     A VectorField represents a set of vectors in 2D space with an

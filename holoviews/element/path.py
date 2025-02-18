@@ -176,6 +176,132 @@ class Path(SelectionPolyExpr, Geometry):
         return self.interface.split(self, start, end, datatype, **kwargs)
 
 
+class Dendrogram(SelectionPolyExpr, Geometry):
+
+    group = param.String(default="Dendrogram", constant=True)
+
+    datatype = param.List(default=[
+        'multitabular', 'spatialpandas', 'dask_spatialpandas']
+    )
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        if isinstance(data, tuple) and len(data) == 2:
+            # Add support for (x, ys) where ys defines multiple paths
+            x, y = map(np.asarray, data)
+            if y.ndim > 1:
+                if len(x) != y.shape[0]:
+                    raise ValueError("Path x and y values must be the same length.")
+                data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
+        elif isinstance(data, list) and all(isinstance(dendro, Dendrogram) for dendro in data):
+            # Allow unpacking of a list of Path elements
+            kdims = kdims or self.kdims
+            dendros = []
+            for dendro in data:
+                if dendro.kdims != kdims:
+                    redim = {okd.name: nkd for okd, nkd in zip(dendro.kdims, kdims)}
+                    dendro = dendro.redim(**redim)
+                if dendro.interface.multi and isinstance(dendro.data, list):
+                    dendros += dendro.data
+                else:
+                    dendros.append(dendro.data)
+            data = dendros
+
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
+    def __getitem__(self, key):
+        if isinstance(key, np.ndarray):
+            return self.select(selection_mask=np.squeeze(key))
+        if key in self.dimensions(): return self.dimension_values(key)
+        if not isinstance(key, tuple) or len(key) == 1:
+            key = (key, slice(None))
+        elif len(key) == 0: return self.clone()
+        if not all(isinstance(k, slice) for k in key):
+            raise KeyError(f"{self.__class__.__name__} only support slice indexing")
+        xkey, ykey = key
+        xstart, xstop = xkey.start, xkey.stop
+        ystart, ystop = ykey.start, ykey.stop
+        return self.clone(extents=(xstart, ystart, xstop, ystop))
+
+    def select(self, selection_expr=None, selection_specs=None, **selection):
+        """Applies selection by dimension name
+
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
+
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
+
+        * predicate expression: A holoviews.dim expression, e.g.:
+
+            from holoviews import dim
+            ds.select(selection_expr=dim('x') % 2 == 0)
+
+        Args:
+            selection_expr: holoviews.dim predicate expression
+                specifying selection.
+            selection_specs: List of specs to match on
+                A list of types, functions, or type[.group][.label]
+                strings specifying which objects to apply the
+                selection on.
+            **selection: Dictionary declaring selections by dimension
+                Selections can be scalar values, tuple ranges, lists
+                of discrete values and boolean arrays
+
+        Returns:
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
+        """
+        xdim, ydim = self.kdims[:2]
+        x_range = selection.pop(xdim.name, None)
+        y_range = selection.pop(ydim.name, None)
+        sel = super().select(selection_expr, selection_specs,
+                             **selection)
+        if x_range is None and y_range is None:
+            return sel
+        x_range = x_range if isinstance(x_range, slice) else slice(None)
+        y_range = y_range if isinstance(y_range, slice) else slice(None)
+        return sel[x_range, y_range]
+
+    def split(self, start=None, end=None, datatype=None, **kwargs):
+        """
+        The split method allows splitting a Path type into a list of
+        subpaths of the same type. A start and/or end may be supplied
+        to select a subset of paths.
+        """
+        if not self.interface.multi:
+            if not len(self):
+                return []
+            elif datatype == 'array':
+                obj = self.array(**kwargs)
+            elif datatype == 'dataframe':
+                obj = self.dframe(**kwargs)
+            elif datatype in ('columns', 'dictionary'):
+                obj = self.columns(**kwargs)
+            elif datatype is None:
+                obj = self.clone([self.data])
+            else:
+                raise ValueError(f"{datatype} datatype not support")
+            return [obj]
+        return self.interface.split(self, start, end, datatype, **kwargs)
+
+
+
 class Contours(Path):
     """
     The Contours element is a subtype of a Path which is characterized
