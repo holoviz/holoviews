@@ -14,9 +14,9 @@ from .util import MPL_VERSION
 
 
 class Plot3D(ColorbarPlot):
-    """
-    Plot3D provides a common baseclass for mplot3d based
+    """Plot3D provides a common baseclass for mplot3d based
     plots.
+
     """
 
     azimuth = param.Integer(default=-60, bounds=(-180, 180), doc="""
@@ -56,9 +56,9 @@ class Plot3D(ColorbarPlot):
         Whether and where to display the yaxis.""")
 
     def _finalize_axis(self, key, **kwargs):
-        """
-        Extends the ElementPlot _finalize_axis method to set appropriate
+        """Extends the ElementPlot _finalize_axis method to set appropriate
         labels, and axes options for 3D Plots.
+
         """
         axis = self.handles['axis']
         self.handles['fig'].set_frameon(False)
@@ -115,10 +115,10 @@ class Plot3D(ColorbarPlot):
 
 
 class Scatter3DPlot(Plot3D, PointPlot):
-    """
-    Subclass of PointPlot allowing plotting of Points
+    """Subclass of PointPlot allowing plotting of Points
     on a 3D axis, also allows mapping color and size
     onto a particular Dimension of the data.
+
     """
 
     color_index = param.ClassSelector(default=None, class_=(str, int),
@@ -153,8 +153,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
 
 class Path3DPlot(Plot3D, PathPlot):
-    """
-    Allows plotting paths on a 3D axis.
+    """Allows plotting paths on a 3D axis.
+
     """
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
@@ -185,11 +185,11 @@ class Path3DPlot(Plot3D, PathPlot):
 
 
 class SurfacePlot(Plot3D):
-    """
-    Plots surfaces wireframes and contours in 3D space.
+    """Plots surfaces wireframes and contours in 3D space.
     Provides options to switch the display type via the
     plot_type parameter has support for a number of
     styling options including strides and colors.
+
     """
 
     colorbar = param.Boolean(default=False, doc="""
@@ -232,9 +232,9 @@ class SurfacePlot(Plot3D):
 
 
 class TriSurfacePlot(Plot3D):
-    """
-    Plots a trisurface given a TriSurface element, containing
+    """Plots a trisurface given a TriSurface element, containing
     X, Y and Z coordinates.
+
     """
 
     colorbar = param.Boolean(default=False, doc="""

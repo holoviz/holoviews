@@ -14,9 +14,9 @@ from .plot import mpl_rc_context
 
 class ABLine2D(Line2D):
 
-    """
-    Draw a line based on its slope and y-intercept. Additional arguments are
+    """Draw a line based on its slope and y-intercept. Additional arguments are
     passed to the <matplotlib.lines.Line2D> constructor.
+
     """
 
     def __init__(self, slope, intercept, *args, **kwargs):
@@ -37,7 +37,9 @@ class ABLine2D(Line2D):
         self.axes.callbacks.connect('ylim_changed', self._update_lim)
 
     def _update_lim(self, event):
-        """ called whenever axis x/y limits change """
+        """called whenever axis x/y limits change
+
+        """
         x = np.array(self.axes.get_xbound())
         y = (self._slope * x) + self._intercept
         self.set_data(x, y)
@@ -45,8 +47,8 @@ class ABLine2D(Line2D):
 
 
 class AnnotationPlot(ElementPlot):
-    """
-    AnnotationPlot handles the display of all annotation elements.
+    """AnnotationPlot handles the display of all annotation elements.
+
     """
 
     show_legend = param.Boolean(default=False, doc="""
@@ -80,7 +82,9 @@ class AnnotationPlot(ElementPlot):
 
 
 class VLinePlot(AnnotationPlot):
-    "Draw a vertical line on the axis"
+    """Draw a vertical line on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
@@ -92,7 +96,9 @@ class VLinePlot(AnnotationPlot):
 
 
 class HLinePlot(AnnotationPlot):
-    "Draw a horizontal line on the axis"
+    """Draw a horizontal line on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
@@ -105,7 +111,9 @@ class HLinePlot(AnnotationPlot):
 
 
 class VSpanPlot(AnnotationPlot):
-    "Draw a vertical span on the axis"
+    """Draw a vertical span on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
                   'linewidth', 'linestyle', 'visible']
@@ -119,13 +127,17 @@ class VSpanPlot(AnnotationPlot):
 
 
 class HSpanPlot(AnnotationPlot):
-    "Draw a horizontal span on the axis"
+    """Draw a horizontal span on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
                   'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, positions, opts):
-        "Draw a horizontal span on the axis"
+        """Draw a horizontal span on the axis
+
+        """
         if self.invert_axes:
             return [axis.axvspan(*positions, **opts)]
         else:
@@ -137,7 +149,9 @@ class SlopePlot(AnnotationPlot):
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, position, opts):
-        "Draw a horizontal line on the axis"
+        """Draw a horizontal line on the axis
+
+        """
         gradient, intercept = position
         if self.invert_axes:
             if gradient == 0:
@@ -149,7 +163,9 @@ class SlopePlot(AnnotationPlot):
 
 
 class TextPlot(AnnotationPlot):
-    "Draw the Text annotation object"
+    """Draw the Text annotation object
+
+    """
 
     style_opts = ['alpha', 'color', 'family', 'weight', 'visible']
 
@@ -242,7 +258,9 @@ class LabelsPlot(ColorbarPlot):
 
 
 class ArrowPlot(AnnotationPlot):
-    "Draw an arrow using the information supplied to the Arrow annotation"
+    """Draw an arrow using the information supplied to the Arrow annotation
+
+    """
 
     _arrow_style_opts = ['alpha', 'color', 'lw', 'linewidth', 'visible']
     _text_style_opts = [*TextPlot.style_opts, 'textsize', 'fontsize']
@@ -272,7 +290,9 @@ class ArrowPlot(AnnotationPlot):
 
 
 class SplinePlot(AnnotationPlot):
-    "Draw the supplied Spline annotation (see Spline docstring)"
+    """Draw the supplied Spline annotation (see Spline docstring)
+
+    """
 
     style_opts = ['alpha', 'edgecolor', 'linewidth', 'linestyle', 'visible']
 
