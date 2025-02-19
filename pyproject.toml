@@ -136,6 +136,7 @@ exclude_also = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "if ._pyodide
 
 [tool.ruff]
 fix = true
+exclude = ["holoviews/tests/"]
 
 [tool.ruff.lint]
 select = [
