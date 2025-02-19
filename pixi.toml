@@ -209,7 +209,7 @@ nbsite = ">=0.8.4,<0.9.0"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
-sphinx = "<8.2" # Currently not building
+sphinx = "<8.2" # Currently not building, https://github.com/holoviz/holoviews/pull/6514
 
 [feature.doc.activation.env]
 MOZ_HEADLESS = "1"
