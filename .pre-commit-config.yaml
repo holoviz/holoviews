@@ -20,7 +20,7 @@ repos:
     rev: v0.9.3
     hooks:
       - id: ruff
-        files: holoviews/|scripts/
+        exclude: \.ipynb$
   - repo: https://github.com/hoxbro/clean_notebook
     rev: v0.1.15
     hooks:

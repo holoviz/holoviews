@@ -2,11 +2,11 @@
 An example demonstrating how to put together a cross-selector app based
 on the Auto MPG dataset.
 """
-import holoviews as hv
 import panel as pn
 import panel.widgets as pnw
-
 from bokeh.sampledata.autompg import autompg
+
+import holoviews as hv
 
 df = autompg.copy()
 
@@ -32,8 +32,8 @@ quantileable = [x for x in continuous if len(df[x].unique()) > 20]
 
 x = pnw.Select(name='X-Axis', value='mpg', options=quantileable)
 y = pnw.Select(name='Y-Axis', value='hp', options=quantileable)
-size = pnw.Select(name='Size', value='None', options=['None'] + quantileable)
-color = pnw.Select(name='Color', value='None', options=['None'] + quantileable)
+size = pnw.Select(name='Size', value='None', options=['None', *quantileable])
+color = pnw.Select(name='Color', value='None', options=['None', *quantileable])
 
 @pn.depends(x.param.value, y.param.value, color.param.value, size.param.value)
 def create_figure(x, y, color, size):
@@ -42,7 +42,7 @@ def create_figure(x, y, color, size):
         opts['color'] = color
     if size != 'None':
         opts['size'] = hv.dim(size).norm()*20
-    return hv.Points(df, [x, y], label="%s vs %s" % (x.title(), y.title())).opts(**opts)
+    return hv.Points(df, [x, y], label=f"{x.title()} vs {y.title()}").opts(**opts)
 
 widgets = pn.WidgetBox(x, y, color, size, width=200)
 

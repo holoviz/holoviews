@@ -9,13 +9,15 @@ The app can be served using:
 """
 
 import numpy as np
+
 import holoviews as hv
 from holoviews.streams import Selection1D
 
 renderer = hv.renderer('bokeh')
 hv.opts("Points [tools=['box_select']]")
 
-data = np.random.multivariate_normal((0, 0), [[1, 0.1], [0.1, 1]], (1000,))
+seed = np.random.default_rng()
+data = seed.multivariate_normal((0, 0), [[1, 0.1], [0.1, 1]], (1000,))
 points = hv.Points(data)
 sel = Selection1D(source=points)
 mean_sel = hv.DynamicMap(lambda index: hv.HLine(points.iloc[index]['y'].mean()
