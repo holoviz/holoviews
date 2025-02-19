@@ -133,7 +133,7 @@ spatialpandas = "*"
 streamz = ">=0.5.0"
 xarray = ">=0.10.4"
 xyzservices = "*"
-libsqlite = "!=3.49.*" # 2025-02; Breaks ibis test (remove dependency after problem is solved)
+libsqlite = "!=3.49.*" # 2025-02; Breaks ibis tests, https://github.com/ibis-project/ibis/issues/10865 (remove dependency after problem is solved)
 
 [feature.optional.target.unix.dependencies]
 tsdownsample = "*" # currently not available on Windows
