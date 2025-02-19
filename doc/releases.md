@@ -2,6 +2,63 @@
 
 ## Version 1.20
 
+### Version 1.20.1
+
+**February 19, 2025**
+
+This micro release includes a number of bug fixes, enhancements, and compatibility updates.
+Many thanks to the new contributors @spacetimeengineer, @flying-sheep, and @Azaya89, as well as the returning contributors @stanwest, @ahuang11, @maximlt, and @hoxbro
+
+### Enhancements
+
+- Change `param.ObjectSelector` to `param.Selector` ([#6444](https://github.com/holoviz/holoviews/pull/6444))
+- Faster spatialpandas unique scalar values ([#6470](https://github.com/holoviz/holoviews/pull/6470))
+
+### Bug fixes
+
+- `IndexError` associated with `HeatMap` ([#6438](https://github.com/holoviz/holoviews/pull/6438))
+- Propagate default_tools ([#6451](https://github.com/holoviz/holoviews/pull/6451))
+- Heatmap with non-sanitized name ([#6462](https://github.com/holoviz/holoviews/pull/6462))
+- Don't have linked axis between source and target for RangeToolLink ([#6466](https://github.com/holoviz/holoviews/pull/6466))
+- Empty `constant_keys` ([#6477](https://github.com/holoviz/holoviews/pull/6477))
+- Support pandas ExtensionArray ordering ([#6481](https://github.com/holoviz/holoviews/pull/6481))
+- Heatmap aggregation when kdims are in a Pandas multi-index ([#6499](https://github.com/holoviz/holoviews/pull/6499))
+- Support the case of multiple line segments each with one vdim ([#6492](https://github.com/holoviz/holoviews/pull/6492))
+
+### Refactor:
+
+- Remove unused pandas import ([#6439](https://github.com/holoviz/holoviews/pull/6439))
+- Enable RUF005 ([#6434](https://github.com/holoviz/holoviews/pull/6434))
+
+### Compatibility
+
+- Dask query-planning API support ([#6446](https://github.com/holoviz/holoviews/pull/6446), [#6494](https://github.com/holoviz/holoviews/pull/6494), [#6503](https://github.com/holoviz/holoviews/pull/6503), [#6495](https://github.com/holoviz/holoviews/pull/6495))
+- Scipy 1.15 ([#6480](https://github.com/holoviz/holoviews/pull/6480))
+- cuDF 24.12 ([#6475](https://github.com/holoviz/holoviews/pull/6475))
+- Pixi 0.40 ([#6488](https://github.com/holoviz/holoviews/pull/6488))
+- Plotly 6.0 ([#6504](https://github.com/holoviz/holoviews/pull/6504))
+- Ruff 0.8 ([#6459](https://github.com/holoviz/holoviews/pull/6459))
+
+### Documentation
+
+- Fix wrong variable name ([#6442](https://github.com/holoviz/holoviews/pull/6442))
+- Correct doc of "allow_jedi_completion" ([#6485](https://github.com/holoviz/holoviews/pull/6485))
+- Improve LSP information for `extension` ([#6461](https://github.com/holoviz/holoviews/pull/6461))
+- Add gallery intro with link to examples.holoviz.org ([#6472](https://github.com/holoviz/holoviews/pull/6472))
+
+### Build
+
+- Small updates to build infrastructure ([#6458](https://github.com/holoviz/holoviews/pull/6458))
+- Switch PyPI package to trusted build ([#6447](https://github.com/holoviz/holoviews/pull/6447))
+
+### CI
+
+- Enable conventional commits ([#6397](https://github.com/holoviz/holoviews/pull/6397), [#6457](https://github.com/holoviz/holoviews/pull/6457))
+- Add `COVERAGE_CORE=sysmon` for tests ([#6465](https://github.com/holoviz/holoviews/pull/6465))
+- Add test-313 environment ([#6508](https://github.com/holoviz/holoviews/pull/6508))
+- Exclude forks from nightly-lock workflow ([#6507](https://github.com/holoviz/holoviews/pull/6507))
+- Use ruff on all python files ([#6498](https://github.com/holoviz/holoviews/pull/6498))
+
 ### Version 1.20.0
 
 **November 4, 2024**
