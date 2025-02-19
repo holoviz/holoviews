@@ -634,7 +634,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
 
 def hsv_to_rgb(hsv):
     """Vectorized HSV to RGB conversion, adapted from:
-    http ://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
+    https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
 
     """
     h, s, v = (hsv[..., i] for i in range(3))
