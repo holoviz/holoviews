@@ -140,6 +140,7 @@ fix = true
 [tool.ruff.lint]
 select = [
     "B",
+    "D",
     "E",
     "F",
     "FLY",
@@ -171,6 +172,12 @@ ignore = [
     "PLW2901", # `for` loop variable is overwritten
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
     "RUF021", # parenthesize-chained-operators
+    "D1", # Undocumented code
+    "D200", # Unnecessary-multiline-docstring
+    "D205", # Missing-blank-line-after-summary
+    "D400", # Missing-trailing-period
+    "D401", # Non-imperative-mood
+    "D404", # Docstring-starts-with-this
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports
@@ -190,6 +197,9 @@ extend-unsafe-fixes = [
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc"
