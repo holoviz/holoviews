@@ -11,7 +11,6 @@ Many thanks to the new contributors @spacetimeengineer, @flying-sheep, and @Azay
 
 Enhancements:
 
-- Change `param.ObjectSelector` to `param.Selector` ([#6444](https://github.com/holoviz/holoviews/pull/6444))
 - Faster spatialpandas unique scalar values ([#6470](https://github.com/holoviz/holoviews/pull/6470))
 
 Bug fixes:
@@ -25,17 +24,17 @@ Bug fixes:
 - Heatmap aggregation when kdims are in a Pandas multi-index ([#6499](https://github.com/holoviz/holoviews/pull/6499))
 - Support the case of multiple line segments each with one vdim ([#6492](https://github.com/holoviz/holoviews/pull/6492))
 
-Refactor::
+Refactor:
 
 - Remove unused pandas import ([#6439](https://github.com/holoviz/holoviews/pull/6439))
 - Enable RUF005 ([#6434](https://github.com/holoviz/holoviews/pull/6434))
 
 Compatibility:
 
+- Change `param.ObjectSelector` to recommended `param.Selector` ([#6444](https://github.com/holoviz/holoviews/pull/6444))
 - Dask query-planning API support ([#6446](https://github.com/holoviz/holoviews/pull/6446), [#6494](https://github.com/holoviz/holoviews/pull/6494), [#6503](https://github.com/holoviz/holoviews/pull/6503), [#6495](https://github.com/holoviz/holoviews/pull/6495))
 - Scipy 1.15 ([#6480](https://github.com/holoviz/holoviews/pull/6480))
 - cuDF 24.12 ([#6475](https://github.com/holoviz/holoviews/pull/6475))
-- Pixi 0.40 ([#6488](https://github.com/holoviz/holoviews/pull/6488))
 - Plotly 6.0 ([#6504](https://github.com/holoviz/holoviews/pull/6504))
 - Ruff 0.8 ([#6459](https://github.com/holoviz/holoviews/pull/6459))
 
