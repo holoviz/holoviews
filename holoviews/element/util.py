@@ -212,7 +212,10 @@ class categorical_aggregate2d(Operation):
         groupby_kwargs = {"sort": False}
         if PANDAS_GE_2_1_0:
             groupby_kwargs["observed"] = False
-        df = obj.data.set_index(index_cols).groupby(index_cols, **groupby_kwargs).first()
+        df = obj.data
+        if not all(c in df.index.names for c in index_cols):
+            df = df.set_index(index_cols)
+        df = df.groupby(index_cols, **groupby_kwargs).first()
         label = 'unique' if len(df) == len(obj) else 'non-unique'
         levels = self._get_coords(obj)
         index = pd.MultiIndex.from_product(levels, names=df.index.names)
