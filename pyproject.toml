@@ -136,7 +136,6 @@ exclude_also = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "if ._pyodide
 
 [tool.ruff]
 fix = true
-exclude = ["holoviews/tests/"]
 
 [tool.ruff.lint]
 select = [
@@ -193,6 +192,7 @@ extend-unsafe-fixes = [
     "RUF003", # Ambiguous unicode character
     "NPY002", # Replace legacy `np.random.rand` call with Generator
     "B904", # Within an `except` clause, raise exceptions with from err or None
+    "D", # pydocstyle
 ]
 
 [tool.ruff.lint.isort]
