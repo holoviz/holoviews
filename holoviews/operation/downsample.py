@@ -56,6 +56,7 @@ def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
         All x values in the bucket
     y_bucket : np.ndarray
         All y values in the bucket
+
     Returns
     -------
     int
@@ -121,8 +122,8 @@ def _lttb(x, y, n_out, **kwargs):
     n_out : int
         The number of output points.
 
-	Returns
-	-------
+    Returns
+    -------
     np.array: The indexes of the selected datapoints.
     """
     try:
@@ -159,8 +160,8 @@ def _lttb(x, y, n_out, **kwargs):
 def _nth_point(x, y, n_out, **kwargs):
     """Downsampling by selecting every n-th datapoint
 
-	Parameters
-	----------
+    Parameters
+    ----------
     x : np.ndarray
         The x-values of the data.
     y : np.ndarray
@@ -168,8 +169,8 @@ def _nth_point(x, y, n_out, **kwargs):
     n_out : int
         The number of output points.
 
-	Returns
-	-------
+    Returns
+    -------
     slice : The slice of selected datapoints.
     """
     n_samples = len(x)

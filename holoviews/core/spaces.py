@@ -691,13 +691,13 @@ def get_nested_dmaps(dmap):
 def get_nested_streams(dmap):
     """Recurses supplied DynamicMap to find all streams
 
-	Parameters
-	----------
+    Parameters
+    ----------
     dmap
         DynamicMap to recurse to look for streams
 
-	Returns
-	-------
+    Returns
+    -------
     List of streams that were found
     """
     return list({s for dmap in get_nested_dmaps(dmap) for s in dmap.streams})
@@ -727,6 +727,7 @@ class periodic:
     stopped.
 
     """
+
     _periodic_util = util.periodic
 
     def __init__(self, dmap):
@@ -754,7 +755,6 @@ class periodic:
         block
             Whether the periodic callbacks should be blocking
         """
-
         if self.instance is not None and not self.instance.completed:
             raise RuntimeError('Periodic process already running. '
                                'Wait until it completes or call '
@@ -1853,7 +1853,9 @@ class GridSpace(Layoutable, UniformNdMapping):
 
 
     def __lshift__(self, other):
-        "Adjoins another object to the GridSpace"
+        """Adjoins another object to the GridSpace
+
+        """
         if isinstance(other, (ViewableElement, UniformNdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
@@ -1994,7 +1996,6 @@ class GridMatrix(GridSpace):
     Element against each other.
 
     """
-
 
     def _item_check(self, dim_vals, data):
         if not traversal.uniform(NdMapping([(0, self), (1, data)])):

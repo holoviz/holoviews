@@ -22,6 +22,7 @@ class Overlayable:
     mul operation for overlaying multiple elements.
 
     """
+
     def __mul__(self, other):
         """Overlay object with other object.
 

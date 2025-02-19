@@ -231,7 +231,6 @@ def _normalize_subplot_ids(fig):
     fig : dict
         A plotly figure dict
     """
-
     layout = fig.setdefault('layout', {})
     for trace in fig.get('data', None):
         trace_type = trace.get('type', 'scatter')
@@ -562,7 +561,6 @@ def merge_figure(fig, subfig):
     subfig : dict
         The plotly figure dict that will be copied and then merged into `fig`
     """
-
     # traces
     data = fig.setdefault('data', [])
     data.extend(copy.deepcopy(subfig.get('data', [])))
@@ -810,8 +808,8 @@ def figure_grid(figures_grid,
 def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
     """Converts a cmap spec to a plotly colorscale
 
-	Parameters
-	----------
+    Parameters
+    ----------
     cmap : A recognized colormap by name or list of colors
     levels : A list or integer declaring the color-levels
     cmin
@@ -819,8 +817,8 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
     cmax
         The upper bound of the color range
 
-	Returns
-	-------
+    Returns
+    -------
     A valid plotly colorscale
     """
     ncolors = levels if isinstance(levels, int) else None
@@ -872,7 +870,6 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
         should be matched together.  If the property is missing or None, axes will not
         be matched
     """
-
     # Build mapping from matching properties to (axis, ref) tuples
     axis_map = {}
 

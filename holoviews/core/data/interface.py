@@ -108,6 +108,7 @@ class ndloc(Accessor):
     information see the ``Dataset.ndloc`` property docstring.
 
     """
+
     @classmethod
     def _perform_getitem(cls, dataset, indices):
         ds = dataset

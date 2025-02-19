@@ -15,6 +15,7 @@ class _Edge_integer:
     tick locations as integer multiples of a step.
 
     """
+
     def __init__(self, step, offset):
         """
         Parameters
@@ -85,7 +86,6 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
         If either input is inf or NaN, or if both inputs are 0 or very
         close to zero, it returns -*expander*, *expander*.
     """
-
     if (not np.isfinite(vmin)) or (not np.isfinite(vmax)):
         return -expander, expander
 

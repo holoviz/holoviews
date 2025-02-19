@@ -59,16 +59,22 @@ class IPTestCase(ComparisonTestCase):
 
 
     def cell(self, line):
-        "Run an IPython cell"
+        """Run an IPython cell
+
+        """
         self.ip.run_cell(line, silent=True)
 
     def cell_magic(self, *args, **kwargs):
-        "Run an IPython cell magic"
+        """Run an IPython cell magic
+
+        """
         self.ip.run_cell_magic(*args, **kwargs)
 
 
     def line_magic(self, *args, **kwargs):
-        "Run an IPython line magic"
+        """Run an IPython line magic
+
+        """
         self.ip.run_line_magic(*args, **kwargs)
 
 

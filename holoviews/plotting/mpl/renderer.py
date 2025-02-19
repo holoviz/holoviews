@@ -43,6 +43,7 @@ class MPLRenderer(Renderer):
     types of plotting class implemented with matplotlib.
 
     """
+
     drawn = {}
 
     backend = param.String('matplotlib', doc="The backend name.")

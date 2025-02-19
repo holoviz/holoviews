@@ -538,7 +538,6 @@ def simple_name_generator(obj):
     a container whose element(s) share the same group and label.
 
     """
-
     if isinstance(obj, LabelledData):
         labels = obj.traverse(lambda x:
                               (x.group + ('-'  +x.label if x.label else '')))

@@ -8,6 +8,7 @@ class KeywordSettings:
     keyword options.
 
     """
+
     # Dictionary from keywords to allowed bounds/values
     allowed = {}
     defaults = dict([])  # Default keyword values.
@@ -251,7 +252,6 @@ class OutputSettings(KeywordSettings):
         """Validation of edge cases and incompatible options
 
         """
-
         if 'html' in Store.display_formats:
             pass
         elif 'fig' in items and items['fig'] not in Store.display_formats:

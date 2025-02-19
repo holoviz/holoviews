@@ -318,8 +318,8 @@ def get_nested_plot_frame(obj, key_map, cached=False):
     Replaces any HoloMap or DynamicMap in the nested data structure,
     with the item corresponding to the supplied key.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     obj
         Nested Dimensioned object
     key_map
@@ -327,8 +327,8 @@ def get_nested_plot_frame(obj, key_map, cached=False):
     cached
         Whether to allow looking up key in cache
 
-	Returns
-	-------
+    Returns
+    -------
     Nested datastructure where maps are replaced with single frames
     """
     clone = obj.map(lambda x: x)
@@ -1141,9 +1141,10 @@ def dim_range_key(eldim):
 
 
 def hex2rgb(hex):
-  ''' "#FFFFFF" -> [255,255,255]
+  """Convert hex code to RGB integers
+  "#FFFFFF" -> [255,255,255]
 
-  '''
+  """
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
@@ -1158,7 +1159,9 @@ class apply_nodata(Operation):
         that it is transparent (by default) when plotted.""")
 
     def _replace_value(self, data):
-        "Replace `nodata` value in data with NaN, if specified in opts"
+        """Replace `nodata` value in data with NaN, if specified in opts
+
+        """
         data = data.astype('float64')
         mask = data!=self.p.nodata
         if hasattr(data, 'where'):

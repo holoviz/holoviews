@@ -15,6 +15,7 @@ class AttrTree:
     1
 
     """
+
     _disabled_prefixes = [] # Underscore attributes that should be
     _sanitizer = util.sanitize_identifier
 

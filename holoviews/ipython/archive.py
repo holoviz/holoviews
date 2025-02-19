@@ -25,6 +25,7 @@ class NotebookArchive(FileArchive):
     the archive upon export.
 
     """
+
     exporters = param.List(default=[Pickler])
 
     skip_notebook_export = param.Boolean(default=False, doc="""

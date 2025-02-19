@@ -26,7 +26,6 @@ def find_stack_level():
     Inspired by: pandas.util._exceptions.find_stack_level
 
     """
-
     import holoviews as hv
 
     pkg_dir = os.path.dirname(hv.__file__)

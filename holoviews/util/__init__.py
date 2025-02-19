@@ -179,7 +179,6 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         """Group options by backend and filter out output group appropriately
 
         """
-
         if options is None:
             return [(backend or Store.current_backend, options)]
         dfltdict = defaultdict(dict)
@@ -853,7 +852,7 @@ def render(obj, backend=None, **kwargs):
     layout.
 
     Parameters
-    ---------
+    ----------
     obj : HoloViews object
         The HoloViews object to render
     backend : string

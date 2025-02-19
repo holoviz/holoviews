@@ -149,11 +149,14 @@ class OptsCompleter:
     """Implements the TAB-completion for the %%opts magic.
 
     """
+
     _completions = {} # Contains valid plot and style keywords per Element
 
     @classmethod
     def setup_completer(cls):
-        "Get the dictionary of valid completions"
+        """Get the dictionary of valid completions
+
+        """
         try:
             for element in Store.options().keys():
                 options = Store.options()['.'.join(element)]
@@ -242,6 +245,7 @@ class OptsMagic(Magics):
     Consult %%opts? for more information.
 
     """
+
     error_message = None # If not None, the error message that will be displayed
     opts_spec = None       # Next id to propagate, binding displayed object together.
     strict = False

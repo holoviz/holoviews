@@ -492,16 +492,16 @@ def get_geom_type(gdf, col):
 def geom_to_array(geom, index=None, multi=False, geom_type=None):
     """Converts spatialpandas geometry to an array.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     geom : spatialpandas geometry
     index
         The column index to return
     multi
         Whether to concatenate multiple arrays or not
 
-	Returns
-	-------
+    Returns
+    -------
     Array or list of arrays.
     """
     from spatialpandas.geometry import (
@@ -550,14 +550,14 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
 def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
     """Converts spatialpandas extension arrays to a flattened array.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     geom : spatialpandas geometry
     index
         The column index to return
 
-	Returns
-	-------
+    Returns
+    -------
     Flattened array
     """
     from spatialpandas.geometry import MultiPointArray, PointArray
@@ -615,8 +615,8 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
                     is_points, geom_length=geom_length):
     """Returns an array of values from a GeoDataFrame.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     data : GeoDataFrame
     dimension
         The dimension to get the values from
@@ -631,8 +631,8 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     geom_length
         The function used to compute the length of each geometry
 
-	Returns
-	-------
+    Returns
+    -------
     An array containing the values along a dimension
     """
     if not len(data):
@@ -677,12 +677,12 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
 def geom_to_holes(geom):
     """Extracts holes from spatialpandas Polygon geometries.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     geom : spatialpandas geometry
 
-	Returns
-	-------
+    Returns
+    -------
     List of arrays representing holes
     """
     from spatialpandas.geometry import MultiPolygon, Polygon
@@ -714,8 +714,8 @@ def geom_to_holes(geom):
 def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
     """Converts list of dictionary format geometries to spatialpandas line geometries.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     data : List of dictionaries representing individual geometries
     xdim
         Name of x-coordinates column
@@ -725,8 +725,8 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
     geom
         The type of geometry
 
-	Returns
-	-------
+    Returns
+    -------
     A spatialpandas.GeoDataFrame version of the data
     """
     from spatialpandas import GeoDataFrame, GeoSeries
@@ -850,8 +850,8 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
 def to_geom_dict(eltype, data, kdims, vdims, interface=None):
     """Converts data from any list format to a dictionary based format.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     eltype
         Element type to convert
     data
@@ -861,8 +861,8 @@ def to_geom_dict(eltype, data, kdims, vdims, interface=None):
     vdims
         The declared value dimensions
 
-	Returns
-	-------
+    Returns
+    -------
     A list of dictionaries containing geometry coordinates and values.
     """
     from . import Dataset
@@ -888,8 +888,8 @@ def to_geom_dict(eltype, data, kdims, vdims, interface=None):
 def from_multi(eltype, data, kdims, vdims):
     """Converts list formats into spatialpandas.GeoDataFrame.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     eltype
         Element type to convert
     data
@@ -899,8 +899,8 @@ def from_multi(eltype, data, kdims, vdims):
     vdims
         The declared value dimensions
 
-	Returns
-	-------
+    Returns
+    -------
     A GeoDataFrame containing in the list based format.
     """
     from spatialpandas import GeoDataFrame
@@ -933,17 +933,16 @@ def from_multi(eltype, data, kdims, vdims):
 def from_shapely(data):
     """Converts shapely based data formats to spatialpandas.GeoDataFrame.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     data
         A list of shapely objects or dictionaries containing
         shapely objects
 
-	Returns
-	-------
+    Returns
+    -------
     A GeoDataFrame containing the shapely geometry data.
     """
-
     from shapely.geometry.base import BaseGeometry
     from spatialpandas import GeoDataFrame, GeoSeries
 

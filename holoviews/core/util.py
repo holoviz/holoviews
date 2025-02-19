@@ -112,6 +112,7 @@ class VersionError(Exception):
     """Raised when there is a library version mismatch.
 
     """
+
     def __init__(self, msg, version=None, min_version=None, **kwargs):
         self.version = version
         self.min_version = min_version
@@ -201,6 +202,7 @@ class HashableJSON(json.JSONEncoder):
     keys (e.g. tuples) are not supported due to the JSON spec.
 
     """
+
     string_hashable = (dt.datetime,)
     repr_hashable = ()
 
@@ -999,8 +1001,8 @@ def max_range(ranges, combined=True):
         Whether range should be computed on lower and upper bound
         independently or both at once
 
-	Returns
-	-------
+    Returns
+    -------
     The maximum range as a single tuple
     """
     try:
@@ -1182,7 +1184,7 @@ def unique_iterator(seq):
 
 
 def lzip(*args):
-    """zip function that returns a list.
+    """Zip function that returns a list.
 
     """
     return list(zip(*args))
@@ -1198,13 +1200,13 @@ def unique_zip(*args):
 def unique_array(arr):
     """Returns an array of unique values in the input order.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     arr : np.ndarray or list
         The array to compute unique values on
 
-	Returns
-	-------
+    Returns
+    -------
     A new array of unique values
     """
     if not len(arr):
@@ -1332,15 +1334,15 @@ def is_float(obj):
 def is_int(obj, int_like=False):
     """Checks for int types including the native Python type and NumPy-like objects
 
-	Parameters
-	----------
+    Parameters
+    ----------
     obj
         Object to check for integer type
     int_like : boolean
         Check for float types with integer value
 
-	Returns
-	-------
+    Returns
+    -------
     Boolean indicating whether the supplied value is of integer type.
     """
     real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype', None), 'kind', 'o') in 'ui'
@@ -1584,8 +1586,8 @@ def get_param_values(data):
 def is_param_method(obj, has_deps=False):
     """Whether the object is a method on a parameterized object.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     obj
         Object to check
     has_deps : boolean, optional
@@ -1593,8 +1595,8 @@ def is_param_method(obj, has_deps=False):
         Whether to also check whether the method has been annotated
         with param.depends
 
-	Returns
-	-------
+    Returns
+    -------
     A boolean value indicating whether the object is a method
     on a Parameterized object and if enabled whether it has any
     dependencies
@@ -1613,13 +1615,13 @@ def resolve_dependent_value(value):
     parameterized functions with dependencies on the supplied value,
     including such parameters embedded in a list, tuple, dictionary, or slice.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     value
         A value which will be resolved
 
-	Returns
-	-------
+    Returns
+    -------
     A new value where any parameter dependencies have been
     resolved.
     """
@@ -1665,13 +1667,13 @@ def resolve_dependent_kwargs(kwargs):
     parameterized functions with dependencies in the supplied
     dictionary.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     kwargs : dict
         A dictionary of keyword arguments
 
-	Returns
-	-------
+    Returns
+    -------
     A new dictionary where any parameter dependencies have been
     resolved.
     """
@@ -2222,12 +2224,12 @@ def cftime_to_timestamp(date, time_unit='us'):
     calendar. In order to handle these dates correctly a custom bokeh
     model with support for other calendars would have to be defined.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     date : cftime datetime object (or array)
 
-	Returns
-	-------
+    Returns
+    -------
     time_unit since 1970-01-01 00:00:00
     """
     import cftime
@@ -2369,7 +2371,6 @@ def flatten(line):
     -------
     flattened : generator
     """
-
     for element in line:
         if any(isinstance(element, tp) for tp in (list, tuple, dict)):
             yield from flatten(element)

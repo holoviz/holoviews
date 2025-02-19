@@ -406,6 +406,7 @@ class threshold(Operation):
     that level map to the specified low value.
 
     """
+
     output_type = Image
 
     level = param.Number(default=0.5, doc="""

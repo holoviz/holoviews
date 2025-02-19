@@ -18,6 +18,7 @@ class Layoutable:
     add operation for creating a layout from the operands.
 
     """
+
     def __add__(x, y):
         """Compose objects into a Layout"""
         if any(isinstance(arg, int) for arg in (x, y)):

@@ -214,8 +214,8 @@ def compute_layout_properties(
     """Utility to compute the aspect, plot width/height and sizing_mode
     behavior.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     width : int
         Plot width
     height : int
@@ -239,8 +239,8 @@ def compute_layout_properties(
     logger : param.Parameters
         Parameters object to issue warnings on
 
-	Returns
-	-------
+    Returns
+    -------
     Returns two dictionaries one for the aspect and sizing modes,
     and another for the plot dimensions.
     """
@@ -986,12 +986,12 @@ def date_to_integer(date):
     If datetime is a cftime with a non-standard calendar the
     caveats described in hv.core.util.cftime_to_timestamp apply.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     date : Date- or datetime-like object
 
-	Returns
-	-------
+    Returns
+    -------
     Milliseconds since 1970-01-01 00:00:00
     """
     if isinstance(date, pd.Timestamp):
@@ -1183,7 +1183,6 @@ def property_to_dict(x):
     """Convert Bokeh's property Field and Value to a dictionary
 
     """
-
     try:
         from bokeh.core.property.vectorization import Field, Unspecified, Value
 

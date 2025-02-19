@@ -85,6 +85,7 @@ class Segments(SelectionGeomExpr, Geometry):
     """Segments represent a collection of lines in 2D space.
 
     """
+
     group = param.String(default='Segments', constant=True)
 
     kdims = param.List(default=[Dimension('x0'), Dimension('y0'),

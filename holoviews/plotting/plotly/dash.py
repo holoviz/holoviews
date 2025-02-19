@@ -75,15 +75,15 @@ def plot_to_figure(
 ):
     """Convert a HoloViews plotly plot to a plotly.py Figure.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     plot : A HoloViews plotly plot object
     reset_nclicks : int
         Number of times a reset button associated with the plot has been
         clicked
 
-	Returns
-	-------
+    Returns
+    -------
     A plotly.py Figure
     """
     fig_dict = plot.state
@@ -128,12 +128,12 @@ def to_function_spec(hvobj):
     This borrows the low-level holoviews decollate logic, but instead of returning
     DynamicMap with cloned streams, returns a HoloViewsFunctionSpec.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     hvobj : A potentially dynamic Holoviews object
 
-	Returns
-	-------
+    Returns
+    -------
     HoloViewsFunctionSpec
     """
     kdims_list = []
@@ -171,15 +171,15 @@ def populate_store_with_stream_contents(
 ):
     """Add contents of streams to the store dictionary
 
-	Parameters
-	----------
+    Parameters
+    ----------
     store_data
         The store dictionary
     streams
         List of streams whose contents should be added to the store
 
-	Returns
-	-------
+    Returns
+    -------
     None
     """
     for stream in streams:
@@ -194,13 +194,13 @@ def populate_store_with_stream_contents(
 def build_derived_callback(derived_stream):
     """Build StreamCallback for Derived stream
 
-	Parameters
-	----------
+    Parameters
+    ----------
     derived_stream
         A Derived stream
 
-	Returns
-	-------
+    Returns
+    -------
     StreamCallback
     """
     input_ids = [id(stream) for stream in derived_stream.input_streams]
@@ -218,13 +218,13 @@ def build_derived_callback(derived_stream):
 def build_history_callback(history_stream):
     """Build StreamCallback for History stream
 
-	Parameters
-	----------
+    Parameters
+    ----------
     history_stream
         A History stream
 
-	Returns
-	-------
+    Returns
+    -------
     StreamCallback
     """
     history_id = id(history_stream)
@@ -248,8 +248,8 @@ def populate_stream_callback_graph(stream_callbacks, streams):
 
     Input streams to any History or Derived streams are processed recursively
 
-	Parameters
-	----------
+    Parameters
+    ----------
     stream_callbacks
         dict from id(stream) to StreamCallbacks that should
         be populated.
@@ -259,8 +259,8 @@ def populate_stream_callback_graph(stream_callbacks, streams):
     streams
         List of streams to build StreamCallbacks from
 
-	Returns
-	-------
+    Returns
+    -------
     None
     """
     for stream in streams:
@@ -283,12 +283,12 @@ def encode_store_data(store_data):
     string. If HoloViews supports JSON serialization in the future, this method could
     be updated to use this approach instead
 
-	Parameters
-	----------
+    Parameters
+    ----------
     store_data : dict potentially containing HoloViews objects
 
-	Returns
-	-------
+    Returns
+    -------
     dict that can be JSON serialized
     """
     return {"pickled": base64.b64encode(pickle.dumps(store_data)).decode("utf-8")}
@@ -297,12 +297,12 @@ def encode_store_data(store_data):
 def decode_store_data(store_data):
     """Decode a dict that was encoded by the encode_store_data function.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     store_data : dict that was encoded by encode_store_data
 
-	Returns
-	-------
+    Returns
+    -------
     decoded dict
     """
     return pickle.loads(base64.b64decode(store_data["pickled"]))
@@ -314,8 +314,8 @@ def to_dash(
 ):
     """Build Dash components and callbacks from a collection of HoloViews objects
 
-	Parameters
-	----------
+    Parameters
+    ----------
     app : dash.Dash application instance
     hvobjs
         List of HoloViews objects to build Dash components from
@@ -340,8 +340,8 @@ def to_dash(
         in the HoloViews objects. If False, allow Dash to perform its own
         auto-range calculations.
 
-	Returns
-	-------
+    Returns
+    -------
     DashComponents named tuple with properties:
         - graphs: List of graph components (with type matching the input
             graph_class argument) with order corresponding to the order
@@ -670,8 +670,8 @@ def to_dash(
 def update_stream_values_for_type(store_data, stream_event_data, uid_to_streams_for_type):
     """Update the store with values of streams for a single type
 
-	Parameters
-	----------
+    Parameters
+    ----------
     store_data
         Current store dictionary
     stream_event_data
@@ -681,8 +681,8 @@ def update_stream_values_for_type(store_data, stream_event_data, uid_to_streams_
         Mapping from trace UIDs to HoloViews streams of
         a particular type
 
-	Returns
-	-------
+    Returns
+    -------
     any_change
         Whether any stream value has been updated
     """

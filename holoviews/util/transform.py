@@ -37,16 +37,16 @@ def norm(values, min=None, max=None):
 
         (values - min) / (max - min)
 
-	Parameters
-	----------
+    Parameters
+    ----------
     values : Array of values to be normalized
     min : float, optional
         Lower bound of normalization range
     max : float, optional
         Upper bound of normalization range
 
-	Returns
-	-------
+    Returns
+    -------
     Array of normalized values
     """
     min = np.min(values) if min is None else min
@@ -58,16 +58,16 @@ def lognorm(values, min=None, max=None):
     """Unity-based normalization on log scale.
        Apply the same transformation as matplotlib.colors.LogNorm
 
-	Parameters
-	----------
+    Parameters
+    ----------
     values : Array of values to be normalized
     min : float, optional
         Lower bound of normalization range
     max : float, optional
         Upper bound of normalization range
 
-	Returns
-	-------
+    Returns
+    -------
     Array of normalized values
     """
     min = np.log(np.min(values)) if min is None else np.log(min)
@@ -124,15 +124,15 @@ def bin(values, bins, labels=None):
     with bin center values but an explicit list of bin labels may be
     defined.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     values : Array of values to be binned
     bins : List or array containing the bin boundaries
     labels : List of labels to assign to each bin
         If the bins are length N the labels should be length N-1
 
-	Returns
-	-------
+    Returns
+    -------
     Array of binned values
     """
     bins = np.asarray(bins)
@@ -155,14 +155,14 @@ def categorize(values, categories, default=None):
     Replaces discrete values in input array with a fixed set of
     categories defined either as a list or dictionary.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     values : Array of values to be categorized
     categories : List or dict of categories to map inputs to
     default : Default value to assign if value not in categories
 
-	Returns
-	-------
+    Returns
+    -------
     Array of categorized values
     """
     uniq_cats = list(unique_iterator(values))
@@ -972,13 +972,13 @@ def lon_lat_to_easting_northing(longitude, latitude):
     or Numpy arrays, and will be returned in the same form.  Lists
     or tuples will be converted to Numpy arrays.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     longitude
     latitude
 
-	Returns
-	-------
+    Returns
+    -------
     (easting, northing)
 
     Examples
@@ -1016,13 +1016,13 @@ def easting_northing_to_lon_lat(easting, northing):
     easting and northing values are assumed to be in Web Mercator
     (aka Pseudo-Mercator or EPSG:3857) coordinates.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     easting
     northing
 
-	Returns
-	-------
+    Returns
+    -------
     (longitude, latitude)
     """
     if isinstance(easting, (list, tuple)):

@@ -466,6 +466,7 @@ class curve_aggregate(aggregate):
     with the appearance of non-aggregated curves.
 
     """
+
     aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default=rd.count(self_intersect=False), doc="""
         Datashader reduction function used for aggregating the data.

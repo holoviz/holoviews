@@ -218,7 +218,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """        Applies selectiong on all the subpaths.
+        """Applies selectiong on all the subpaths.
 
         """
         from ...element import Polygons
@@ -556,15 +556,15 @@ def ensure_ring(geom, values=None):
     length) then the insertion will occur on the values instead,
     ensuring that they will match the ring geometry.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
         geom
             2-D array of geometry coordinates
         values
             Optional array of values
 
-        Returns
-        -------
+    Returns
+    -------
     Array where values have been inserted and ring closing indexes
 
     """

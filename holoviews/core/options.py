@@ -113,6 +113,7 @@ class SkipRendering(Exception):
     DynamicMaps with exhausted element generators.
 
     """
+
     def __init__(self, message="", warn=True):
         self.warn = warn
         super().__init__(message)
@@ -187,6 +188,7 @@ class AbbreviatedException(Exception):
     user which may not be valid.
 
     """
+
     def __init__(self, etype, value, traceback):
         self.etype = etype
         self.value = value
@@ -213,6 +215,7 @@ class abbreviated_exception:
     incorrect style options.
 
     """
+
     def __enter__(self):
         return self
 
@@ -514,7 +517,9 @@ class Options:
         return self.__class__(**dict(self.kwargs, **inherited_style))
 
     def keys(self):
-        "The keyword names across the supplied options."
+        """The keyword names across the supplied options.
+
+        """
         return sorted(list(self.kwargs.keys()))
 
     def max_cycles(self, num):

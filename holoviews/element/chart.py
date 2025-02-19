@@ -204,7 +204,9 @@ class Histogram(Selection1DExpr, Chart):
 
     @property
     def edges(self):
-        "Property to access the Histogram edges provided for backward compatibility"
+        """Property to access the Histogram edges provided for backward compatibility
+
+        """
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 

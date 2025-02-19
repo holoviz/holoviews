@@ -23,7 +23,6 @@ def _PlotlyHoloviewsPane(fig_dict, **kwargs):
     """Custom Plotly pane constructor for use by the HoloViews Pane.
 
     """
-
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
 

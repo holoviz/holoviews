@@ -32,8 +32,8 @@ def to_expr_extract_streams(
     This function is recursive an assumes that initialize_dynamic has already
     been called on the input object.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     hvobj : Element or DynamicMap or Layout
         Potentially dynamic HoloViews object to represent as a HoloviewsExpr
     kdims : list of Dimensions
@@ -49,8 +49,8 @@ def to_expr_extract_streams(
         key into parent container that is associated to hvobj, or None if hvobj is
         not in a container
 
-	Returns
-	-------
+    Returns
+    -------
     HoloviewsExpr expression representing hvobj if hvobj is dynamic. Otherwise,
     return hvobj itself
     """
@@ -228,12 +228,12 @@ def decollate(hvobj):
     DynamicMap that returns a non-dynamic HoloViews object. All nested streams in the
     input object are copied and attached to the resulting DynamicMap.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     hvobj : Holoviews object
 
-	Returns
-	-------
+    Returns
+    -------
     DynamicMap
     """
     kdims = []

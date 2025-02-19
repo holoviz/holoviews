@@ -808,10 +808,6 @@ class PopupMixin:
 class TapCallback(PopupMixin, PointerXYCallback):
     """Returns the mouse x/y-position on tap event.
 
-    Note
-    ----
-    As of bokeh 0.12.5, there is no way to distinguish the
-    individual tap events within a doubletap event.
     """
 
     geom_type = 'point'
@@ -819,7 +815,9 @@ class TapCallback(PopupMixin, PointerXYCallback):
     on_events = ['tap', 'doubletap']
 
     def _process_out_of_bounds(self, value, start, end):
-        "Sets out of bounds values to None"
+        """Sets out of bounds values to None
+
+        """
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -1065,6 +1063,7 @@ class BoundsCallback(PopupMixin, Callback):
     """Returns the bounds of a box_select tool.
 
     """
+
     attributes = {'x0': 'cb_obj.geometry.x0',
                   'x1': 'cb_obj.geometry.x1',
                   'y0': 'cb_obj.geometry.y0',

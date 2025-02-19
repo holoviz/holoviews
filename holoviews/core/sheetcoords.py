@@ -120,6 +120,7 @@ class SheetCoordinateSystem:
     coordinates.
 
     """
+
     def __get_xdensity(self):
         return self.__xdensity
     def __get_ydensity(self):

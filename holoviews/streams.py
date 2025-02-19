@@ -270,7 +270,6 @@ class Stream(param.Parameterized):
         plot, to disable this set linked=False
 
         """
-
         # Source is stored as a weakref to allow it to be garbage collected
         if subscribers is None:
             subscribers = []
@@ -868,6 +867,7 @@ class Derived(Stream):
     If exclusive=True, then all streams except the most recently updated are cleared.
 
     """
+
     def __init__(self, input_streams, exclusive=False, **params):
         super().__init__(**params)
         self.input_streams = []
@@ -964,6 +964,7 @@ class History(Stream):
     """A Stream that maintains a history of the values of a single input stream
 
     """
+
     values = param.List(constant=True, doc="""
         List containing the historical values of the input stream""")
 
@@ -1321,7 +1322,6 @@ class PointerY(LinkedStream):
 
     """
 
-
     y = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the y-axis in data coordinates""")
@@ -1351,6 +1351,7 @@ class Draw(PointerXY):
     current stroke count
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1380,6 +1381,7 @@ class Tap(PointerXY):
     """The x/y-position of a tap or click in data coordinates.
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1405,6 +1407,7 @@ class DoubleTap(PointerXY):
     """The x/y-position of a double-tap or -click in data coordinates.
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1417,6 +1420,7 @@ class PressUp(PointerXY):
     """The x/y position of a mouse pressup event in data coordinates.
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1429,6 +1433,7 @@ class PanEnd(PointerXY):
     """The x/y position of a the end of a pan event in data coordinates.
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1442,6 +1447,7 @@ class MouseEnter(PointerXY):
     in data coordinates.
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1456,6 +1462,7 @@ class MouseLeave(PointerXY):
     in data coordinates.
 
     """
+
     x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
@@ -1598,7 +1605,7 @@ class BoundsY(LinkedStream):
 class Selection1D(LinkedStream):
     """A stream representing a 1D selection of objects by their index.
 
-   """
+    """
 
     index = param.List(default=[], allow_None=True, constant=True, doc="""
         Indices into a 1D datastructure.""")

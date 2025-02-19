@@ -170,6 +170,7 @@ class Substitute(Preprocessor):
     Where the annotation may be None (i.e. no annotation).
 
     """
+
     annotation = '<center><b>%s</b></center>'
 
     def __init__(self, version, substitutions, **kw):

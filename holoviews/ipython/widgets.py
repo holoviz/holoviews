@@ -55,7 +55,6 @@ class ProgressBar(ProgressIndicator):
         """Update the progress bar within the specified percent_range
 
         """
-
         if self.start_time is None: self.start_time = time.time()
         span = (self.percent_range[1]-self.percent_range[0])
         percentage = self.percent_range[0] + ((percentage/100.0) * span)

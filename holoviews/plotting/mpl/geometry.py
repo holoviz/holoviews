@@ -13,6 +13,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     (x, y) node of the line.
 
     """
+
     style_opts = [*PathPlot.style_opts, 'cmap']
 
     _nonvectorized_styles = ['cmap']

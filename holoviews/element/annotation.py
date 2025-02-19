@@ -477,6 +477,7 @@ class Text(Annotation):
     fontsize, alignment and rotation.
 
     """
+
     x = param.ClassSelector(default=0, class_=(Number, str, *datetime_types), doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 

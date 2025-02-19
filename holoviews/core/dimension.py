@@ -53,12 +53,12 @@ def param_aliases(d):
 def asdim(dimension):
     """Convert the input to a Dimension.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     dimension : tuple, dict or string type to convert to Dimension
 
-	Returns
-	-------
+    Returns
+    -------
     A Dimension object constructed from the dimension spec. No
     copy is performed if the input is already a Dimension.
     """
@@ -68,12 +68,12 @@ def asdim(dimension):
 def dimension_name(dimension):
     """Return the Dimension.name for a dimension-like object.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     dimension : Dimension or dimension string, tuple or dict
 
-	Returns
-	-------
+    Returns
+    -------
     The name of the Dimension or what would be the name if the
     input as converted to a Dimension.
     """
@@ -96,15 +96,15 @@ def dimension_name(dimension):
 def process_dimensions(kdims, vdims):
     """Converts kdims and vdims to Dimension objects.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     kdims : List or single key dimension(s) specified as strings,
         tuples dicts or Dimension objects.
     vdims : List or single value dimension(s) specified as strings,
         tuples dicts or Dimension objects.
 
-	Returns
-	-------
+    Returns
+    -------
     Dictionary containing kdims and vdims converted to Dimension
     objects
         {'kdims': [Dimension('x')], 'vdims': [Dimension('y')]
@@ -356,8 +356,9 @@ class Dimension(param.Parameterized):
             self.label = self.name
 
     def __eq__(self, other):
-        "Implements equals operator including sanitized comparison."
+        """Implements equals operator including sanitized comparison.
 
+        """
         if isinstance(other, Dimension):
             return self.label == other.label
 
@@ -365,11 +366,15 @@ class Dimension(param.Parameterized):
         return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
 
     def __ne__(self, other):
-        "Implements not equal operator including sanitized comparison."
+        """Implements not equal operator including sanitized comparison.
+
+        """
         return not self.__eq__(other)
 
     def __lt__(self, other):
-        "Dimensions are sorted alphanumerically by name"
+        """Dimensions are sorted alphanumerically by name
+
+        """
         return self.name < other.name if isinstance(other, Dimension) else self.name < other
 
     def __str__(self):
@@ -380,7 +385,9 @@ class Dimension(param.Parameterized):
 
     @property
     def pprint_label(self):
-        "The pretty-printed label string for the Dimension"
+        """The pretty-printed label string for the Dimension
+
+        """
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
@@ -740,7 +747,9 @@ class LabelledData(param.Parameterized):
 
 
     def __getstate__(self):
-        "Ensures pickles save options applied to this objects."
+        """Ensures pickles save options applied to this objects.
+
+        """
         obj_dict = self.__dict__.copy()
         try:
             if Store.save_option_state and (obj_dict.get('_id', None) is not None):
@@ -757,7 +766,9 @@ class LabelledData(param.Parameterized):
 
 
     def __setstate__(self, d):
-        "Restores options applied to this object."
+        """Restores options applied to this object.
+
+        """
         d = param_aliases(d)
 
         load_options = Store.load_counter_offset is not None
@@ -915,7 +926,9 @@ class Dimensioned(LabelledData):
 
     @property
     def ddims(self):
-        "The list of deep dimensions"
+        """The list of deep dimensions
+
+        """
         if self._deep_indexable and self:
             return self.values()[0].dimensions()
         else:
@@ -1394,7 +1407,9 @@ class ViewableTree(AttrTree, Dimensioned):
 
     @classmethod
     def _process_items(cls, vals):
-        "Processes list of items assigning unique paths to each."
+        """Processes list of items assigning unique paths to each.
+
+        """
         from .layout import AdjointLayout
 
         if type(vals) is cls:
@@ -1424,7 +1439,9 @@ class ViewableTree(AttrTree, Dimensioned):
 
     @classmethod
     def _deduplicate_items(cls, items):
-        "Deduplicates assigned paths by incrementing numbering"
+        """Deduplicates assigned paths by incrementing numbering
+
+        """
         counter = Counter([path[:i] for path, _ in items for i in range(1, len(path)+1)])
         if sum(counter.values()) == len(counter):
             return items
@@ -1464,7 +1481,9 @@ class ViewableTree(AttrTree, Dimensioned):
 
     @property
     def uniform(self):
-        "Whether items in tree have uniform dimensions"
+        """Whether items in tree have uniform dimensions
+
+        """
         from .traversal import uniform
         return uniform(self)
 

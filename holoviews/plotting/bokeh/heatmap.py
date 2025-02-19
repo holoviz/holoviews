@@ -248,7 +248,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         for radius or angle dimension.
 
         """
-
         if kind == "radius":
             start = self.max_radius * self.radius_inner
             end = self.max_radius
@@ -270,7 +269,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """Extract first and second value from tuples of mapped bins.
 
         """
-
         array = np.array([mapper.get(x) for x in values])
         return array[:, 0], array[:, 1]
 
@@ -278,7 +276,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """Limit hover tool to annular wedges only.
 
         """
-
         if isinstance(renderer.glyph, AnnularWedge):
             super()._postprocess_hover(renderer, source)
 
@@ -304,7 +301,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         missing radial axes in bokeh.
 
         """
-
         return {}
 
     def get_default_mapping(self, z, cmapper):
@@ -312,7 +308,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         mappings.
 
         """
-
         map_annular = dict(x=self.max_radius, y=self.max_radius,
                            inner_radius="inner_radius",
                            outer_radius="outer_radius",

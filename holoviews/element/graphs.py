@@ -360,7 +360,6 @@ class Graph(Dataset, Element2D):
         if no explicit node information was supplied.
 
         """
-
         if self._nodes is None:
             from ..operation.element import chain
             self._nodes = layout_nodes(self, only_nodes=True)

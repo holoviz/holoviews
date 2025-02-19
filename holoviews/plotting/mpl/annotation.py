@@ -13,7 +13,6 @@ from .plot import mpl_rc_context
 
 
 class ABLine2D(Line2D):
-
     """Draw a line based on its slope and y-intercept. Additional arguments are
     passed to the <matplotlib.lines.Line2D> constructor.
 
@@ -37,7 +36,7 @@ class ABLine2D(Line2D):
         self.axes.callbacks.connect('ylim_changed', self._update_lim)
 
     def _update_lim(self, event):
-        """called whenever axis x/y limits change
+        """Called whenever axis x/y limits change
 
         """
         x = np.array(self.axes.get_xbound())
@@ -103,7 +102,9 @@ class HLinePlot(AnnotationPlot):
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, position, opts):
-        "Draw a horizontal line on the axis"
+        """Draw a horizontal line on the axis
+
+        """
         if self.invert_axes:
             return [axis.axvline(position, **opts)]
         else:
@@ -119,7 +120,9 @@ class VSpanPlot(AnnotationPlot):
                   'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, positions, opts):
-        "Draw a vertical span on the axis"
+        """Draw a vertical span on the axis
+
+        """
         if self.invert_axes:
             return [axis.axhspan(*positions, **opts)]
         else:

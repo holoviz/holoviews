@@ -53,15 +53,15 @@ def concat(datasets, datatype=None):
     for each dimension being concatenated along and then
     hierarchically concatenates along each dimension.
 
-	Parameters
-	----------
+    Parameters
+    ----------
     datasets
         NdMapping of Datasets to concatenate
     datatype
         Datatype to cast data to before concatenation
 
-	Returns
-	-------
+    Returns
+    -------
     Concatenated dataset
     """
     return Interface.concatenate(datasets, datatype)

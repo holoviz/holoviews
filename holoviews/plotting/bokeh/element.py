@@ -2423,7 +2423,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         For scalebar on a subcoordinate_y plot Bokeh 3.6 is needed.
 
         """
-
         if not BOKEH_GE_3_4_0:
             raise RuntimeError("Scalebar requires Bokeh >= 3.4.0")
         elif not BOKEH_GE_3_6_0 and self._subcoord_overlaid:

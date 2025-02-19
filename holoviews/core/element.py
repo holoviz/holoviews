@@ -93,11 +93,15 @@ class Element(ViewableElement, Composable, Overlayable):
         return True
 
     def __contains__(self, dimension):
-        "Whether element contains the Dimension"
+        """Whether element contains the Dimension
+
+        """
         return dimension in self.dimensions()
 
     def __iter__(self):
-        "Disable iterator interface."
+        """Disable iterator interface.
+
+        """
         raise NotImplementedError('Iteration on Elements is not supported.')
 
     def closest(self, coords, **kwargs):
@@ -288,12 +292,16 @@ class Tabular(Element):
 
     @property
     def rows(self):
-        "Number of rows in table (including header)"
+        """Number of rows in table (including header)
+
+        """
         return len(self) + 1
 
     @property
     def cols(self):
-        "Number of columns in table"
+        """Number of columns in table
+
+        """
         return len(self.dimensions())
 
 

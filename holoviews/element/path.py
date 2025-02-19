@@ -408,6 +408,7 @@ class Ellipse(BaseShape):
     implemented as an annotation that uses a dedicated ellipse artist.
 
     """
+
     x = param.Number(default=0, doc="The x-position of the ellipse center.")
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")

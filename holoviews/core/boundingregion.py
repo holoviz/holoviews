@@ -81,6 +81,7 @@ class BoundingBox(BoundingRegion):
     an axis-aligned rectangle (or simply a radius for a square).
 
     """
+
     __slots__ = []
 
 
@@ -207,7 +208,7 @@ class BoundingBox(BoundingRegion):
 
 
     def lbrt(self):
-        """return left,bottom,right,top values for the BoundingBox.
+        """Return left,bottom,right,top values for the BoundingBox.
 
         """
         return self._aarect.lbrt()
@@ -226,6 +227,7 @@ class BoundingEllipse(BoundingBox):
     inscribed within the rectangle.
 
     """
+
     __slots__ = []
 
 
@@ -256,6 +258,7 @@ class AARectangle:
     >>> aar = AARectangle( (x1,y1),(x2,y2), ... , (xN,yN) )
 
     """
+
     __slots__ = ['_bottom', '_left', '_right', '_top']
 
 

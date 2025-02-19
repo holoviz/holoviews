@@ -1972,7 +1972,6 @@ class GenericOverlayPlot(GenericElementPlot):
         it was initially assigned.
 
         """
-
         # See if the precise spec has already been assigned a cyclic
         # index otherwise generate a new one
         if spec in self.cyclic_index_lookup:
