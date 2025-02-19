@@ -1080,8 +1080,6 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
-        from . import DendrogramPlot
-
         if plots is None:
             plots = []
         if plots is None: plots = []
@@ -1096,17 +1094,6 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
             else:
                 passed_plots = plots + adjoined_plots
                 adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
-
-            if pos == "right":
-                bk_main, bk_right = adjoined_plots[0], adjoined_plots[-1]
-                bk_right.width = 80 if bk_right.width == subplot.width else subplot.width
-                if isinstance(subplot, DendrogramPlot):
-                    bk_right.y_range, bk_right.y_scale = bk_main.y_range, bk_main.y_scale
-            elif pos == "top":
-                bk_main, bk_top = adjoined_plots[0], adjoined_plots[-1]
-                bk_top.height = 80 if bk_top.height == subplot.height else subplot.height
-                if isinstance(subplot, DendrogramPlot):
-                    bk_top.x_range, bk_top.x_scale = bk_main.x_range, bk_main.x_scale
 
         self.drawn = True
         return adjoined_plots or [None]

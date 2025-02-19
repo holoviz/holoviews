@@ -217,6 +217,20 @@ class DendrogramPlot(LegendPlot, ColorbarPlot):
             dims = list(self.overlay_dims.keys())+self.hmap.last.vdims
         return dims, {}
 
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        if self.adjoined:
+            pos = ["main", "right", "top"][len(plots)]
+            main = self.adjoined[0]
+            if pos == "right":
+                if self.width == self.param.width.default:
+                    plot.width = 80
+                plot.y_range, plot.y_scale = main.y_range, main.y_scale
+            elif pos == "top":
+                if self.height == self.param.height.default:
+                    plot.height = 80
+                plot.x_range, plot.x_scale = main.x_range, main.x_scale
+        return plot
 
     def _get_hover_data(self, data, element):
         """
