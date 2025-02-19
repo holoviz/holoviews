@@ -1704,7 +1704,7 @@ class spread(SpreadingOperation):
 
     See the datashader documentation for more detail:
 
-    http ://datashader.org/api.html#datashader.transfer_functions.spread
+    https://datashader.org/api.html#datashader.transfer_functions.spread
 
     """
 
@@ -1724,7 +1724,7 @@ class dynspread(SpreadingOperation):
 
     See the datashader documentation for more detail:
 
-    http ://datashader.org/api.html#datashader.transfer_functions.dynspread
+    https://datashader.org/api.html#datashader.transfer_functions.dynspread
 
     """
 
