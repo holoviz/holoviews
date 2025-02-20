@@ -649,7 +649,7 @@ class RGB(Image):
         try:
             from PIL import Image
         except ImportError:
-            raise ImportError("RGB.load_image requires PIL (or Pillow).") from None
+            raise ImportError(f"{cls.__name__}.load_image requires PIL (or Pillow).") from None
 
         with open(filename, 'rb') as f:
             data = np.array(Image.open(f))
@@ -687,14 +687,32 @@ class RGB(Image):
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
-        alpha = self.alpha_dimension
-        if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
-            (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
-             and data[-1].shape[-1] == 4 and len(vdims) == 3) or
-            (isinstance(data, dict) and (*map(dimension_name, vdims), alpha.name) in data)):
-            # Handle all forms of packed value dimensions
-            vdims.append(alpha)
+        if self._has_alpha_dimension(data, vdims):
+            vdims.append(self.alpha_dimension)
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
+    def _has_alpha_dimension(self, data, vdims) -> bool:
+        # Handle all forms of packed value dimensions
+        if len(vdims) != 3:
+            return False
+
+        alpha = self.alpha_dimension
+
+        if hasattr(data, "shape") and data.shape[-1] == 4:
+            return True
+
+        if isinstance(data, tuple):
+            last = data[-1]
+            if isinstance(last, np.ndarray) and last.ndim == 3 and last.shape[-1] == 4:
+                return True
+
+        if isinstance(data, dict) and (*map(dimension_name, vdims), alpha.name) in data:
+            return True
+
+        if str(alpha) in getattr(data, "data_vars", []):
+            return True
+
+        return False
 
 
 class HSV(RGB):
