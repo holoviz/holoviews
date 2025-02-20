@@ -10,8 +10,8 @@ from .util import MPL_GE_3_9_0, MPL_GE_3_10_0
 
 
 class DistributionPlot(AreaPlot):
-    """
-    DistributionPlot visualizes a distribution of values as a KDE.
+    """DistributionPlot visualizes a distribution of values as a KDE.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -25,11 +25,11 @@ class DistributionPlot(AreaPlot):
 
 
 class BivariatePlot(PolygonPlot):
-    """
-    Bivariate plot visualizes two-dimensional kernel density
+    """Bivariate plot visualizes two-dimensional kernel density
     estimates. Additionally, by enabling the joint option, the
     marginals distributions can be plotted alongside each axis (does
     not animate or compose).
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -46,10 +46,10 @@ class BivariatePlot(PolygonPlot):
 
 
 class BoxPlot(MultiDistributionMixin, ChartPlot):
-    """
-    BoxPlot plots the ErrorBar Element type and supporting
+    """BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     style_opts = ['notch', 'sym', 'whis', 'bootstrap',
@@ -131,10 +131,10 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
 
 
 class ViolinPlot(BoxPlot):
-    """
-    BoxPlot plots the ErrorBar Element type and supporting
+    """BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     bandwidth = param.Number(default=None, doc="""

@@ -21,17 +21,17 @@ from .magics import load_magics
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
 def show_traceback():
-    """
-    Display the full traceback after an abbreviated traceback has occurred.
+    """Display the full traceback after an abbreviated traceback has occurred.
+
     """
     from .display_hooks import FULL_TRACEBACK
     print(FULL_TRACEBACK)
 
 
 class IPTestCase(ComparisonTestCase):
-    """
-    This class extends ComparisonTestCase to handle IPython specific
+    """This class extends ComparisonTestCase to handle IPython specific
     objects and support the execution of cells and magic.
+
     """
 
     def setUp(self):
@@ -59,23 +59,29 @@ class IPTestCase(ComparisonTestCase):
 
 
     def cell(self, line):
-        "Run an IPython cell"
+        """Run an IPython cell
+
+        """
         self.ip.run_cell(line, silent=True)
 
     def cell_magic(self, *args, **kwargs):
-        "Run an IPython cell magic"
+        """Run an IPython cell magic
+
+        """
         self.ip.run_cell_magic(*args, **kwargs)
 
 
     def line_magic(self, *args, **kwargs):
-        "Run an IPython line magic"
+        """Run an IPython line magic
+
+        """
         self.ip.run_line_magic(*args, **kwargs)
 
 
 class notebook_extension(extension):
-    """
-    Notebook specific extension to hv.extension that offers options for
+    """Notebook specific extension to hv.extension that offers options for
     controlling the notebook environment.
+
     """
 
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
@@ -204,7 +210,9 @@ class notebook_extension(extension):
 
     @classmethod
     def completions_sorting_key(cls, word):
-        "Fixed version of IPyton.completer.completions_sorting_key"
+        """Fixed version of IPyton.completer.completions_sorting_key
+
+        """
         prio1, prio2 = 0, 0
         if word.startswith('__'):  prio1 = 2
         elif word.startswith('_'): prio1 = 1
@@ -219,9 +227,9 @@ class notebook_extension(extension):
 
 
     def _get_resources(self, args, params):
-        """
-        Finds the list of resources from the keyword parameters and pops
+        """Finds the list of resources from the keyword parameters and pops
         them out of the params dictionary.
+
         """
         resources = []
         disabled = []
@@ -248,8 +256,8 @@ class notebook_extension(extension):
 
     @classmethod
     def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
-        """
-        Allow to display Holoviews' logo and the plotting extensions' logo.
+        """Allow to display Holoviews' logo and the plotting extensions' logo.
+
         """
         import jinja2
 

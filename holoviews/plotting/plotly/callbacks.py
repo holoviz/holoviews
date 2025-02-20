@@ -16,11 +16,11 @@ from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP, _trace_to_subplot
 
 
 class PlotlyCallbackMetaClass(type):
-    """
-    Metaclass for PlotlyCallback classes.
+    """Metaclass for PlotlyCallback classes.
 
     We want each callback class to keep track of all of the instances of the class.
     Using a meta class here lets us keep the logic for instance tracking in one place.
+
     """
 
     def __init__(cls, name, bases, attrs):

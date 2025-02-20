@@ -29,15 +29,17 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     @property
     def state(self):
-        """
-        The plotting state that gets updated via the update method and
+        """The plotting state that gets updated via the update method and
         used by the renderer to generate output.
+
         """
         return self.handles['fig']
 
 
     def _trigger_refresh(self, key):
-        "Triggers update to a plot on a refresh event"
+        """Triggers update to a plot on a refresh event
+
+        """
         if self.top_level:
             self.update(key)
         else:
@@ -133,12 +135,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, num=0):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
@@ -254,12 +256,12 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
 
@@ -279,9 +281,9 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
 
 
 class GridPlot(PlotlyPlot, GenericCompositePlot):
-    """
-    Plot a group of elements in a grid layout based on a GridSpace element
+    """Plot a group of elements in a grid layout based on a GridSpace element
     object.
+
     """
 
     hspacing = param.Number(default=15, bounds=(0, None))

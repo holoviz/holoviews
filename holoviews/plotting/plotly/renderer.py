@@ -20,10 +20,9 @@ with param.logging_level('CRITICAL'):
 
 
 def _PlotlyHoloviewsPane(fig_dict, **kwargs):
-    """
-    Custom Plotly pane constructor for use by the HoloViews Pane.
-    """
+    """Custom Plotly pane constructor for use by the HoloViews Pane.
 
+    """
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
 
@@ -72,9 +71,9 @@ class PlotlyRenderer(Renderer):
 
     @bothmethod
     def get_plot_state(self_or_cls, obj, doc=None, renderer=None, numpy_convert=False, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding figure dictionary.
+        """Given a HoloViews Viewable return a corresponding figure dictionary.
         Allows cleaning the dictionary of any internal properties that were added
+
         """
         fig_dict = super().get_plot_state(obj, renderer, **kwargs)
         config = fig_dict.get('config', {})
@@ -159,8 +158,8 @@ class PlotlyRenderer(Renderer):
 
     @classmethod
     def load_nb(cls, inline=True):
-        """
-        Loads the plotly notebook resources.
+        """Loads the plotly notebook resources.
+
         """
         import panel.models.plotly # noqa
         cls._loaded = True

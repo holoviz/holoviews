@@ -85,7 +85,6 @@ def format_inheritance_diagram(module, package=None):
 
 def create_module_file(package, module, opts):
     """Build the text of the file and write the file."""
-
     text = format_heading(1, f'{module} Module')
     text += format_inheritance_diagram(package, module)
     text += format_heading(2, f':mod:`{module}` Module')

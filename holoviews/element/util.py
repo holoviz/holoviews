@@ -29,9 +29,9 @@ if TYPE_CHECKING:
 
 
 def split_path(path):
-    """
-    Split a Path type containing a single NaN separated path into
+    """Split a Path type containing a single NaN separated path into
     multiple subpaths.
+
     """
     path = path.split(0, 1)[0]
     values = path.dimension_values(0)
@@ -48,10 +48,10 @@ def split_path(path):
 
 
 def compute_slice_bounds(slices, scs, shape):
-    """
-    Given a 2D selection consisting of slices/coordinates, a
+    """Given a 2D selection consisting of slices/coordinates, a
     SheetCoordinateSystem and the shape of the array returns a new
     BoundingBox representing the sliced region.
+
     """
     xidx, yidx = slices
     ys, xs = shape
@@ -100,8 +100,8 @@ def compute_slice_bounds(slices, scs, shape):
 
 
 def reduce_fn(x):
-    """
-    Aggregation function to get the first non-zero value.
+    """Aggregation function to get the first non-zero value.
+
     """
     values = x.values if isinstance(x, pd.Series) else x
     for v in values:
@@ -111,8 +111,7 @@ def reduce_fn(x):
 
 
 class categorical_aggregate2d(Operation):
-    """
-    Generates a gridded Dataset of 2D aggregate arrays indexed by the
+    """Generates a gridded Dataset of 2D aggregate arrays indexed by the
     first two dimensions of the passed Element, turning all remaining
     dimensions into value dimensions. The key dimensions of the
     gridded array are treated as categorical indices. Useful for data
@@ -128,6 +127,7 @@ class categorical_aggregate2d(Operation):
     Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
              'Population': [[ 282.2 , np.nan], [np.nan,   58.89]]},
             kdims=['Country', 'Year'], vdims=['Population'])
+
     """
 
     datatype = param.List(default=['xarray', 'grid'], doc="""
@@ -135,9 +135,9 @@ class categorical_aggregate2d(Operation):
 
     @classmethod
     def _get_coords(cls, obj: Dataset):
-        """
-        Get the coordinates of the 2D aggregate, maintaining the correct
+        """Get the coordinates of the 2D aggregate, maintaining the correct
         sorting order.
+
         """
         xdim, ydim = obj.dimensions(label=True)[:2]
         xcoords = obj.dimension_values(xdim, False)
@@ -173,9 +173,9 @@ class categorical_aggregate2d(Operation):
         return np.asarray(xcoords), np.asarray(ycoords)
 
     def _aggregate_dataset(self, obj):
-        """
-        Generates a gridded Dataset from a column-based dataset and
+        """Generates a gridded Dataset from a column-based dataset and
         lists of xcoords and ycoords
+
         """
         xcoords, ycoords = self._get_coords(obj)
         dim_labels = obj.dimensions(label=True)
@@ -227,10 +227,10 @@ class categorical_aggregate2d(Operation):
         return obj.clone(data, datatype=self.p.datatype, label=label)
 
     def _process(self, obj, key=None):
-        """
-        Generates a categorical 2D aggregate by inserting NaNs at all
+        """Generates a categorical 2D aggregate by inserting NaNs at all
         cross-product locations that do not already have a value assigned.
         Returns a 2D gridded Dataset object.
+
         """
         if isinstance(obj, Dataset) and obj.interface.gridded:
             return obj
@@ -245,8 +245,8 @@ class categorical_aggregate2d(Operation):
 
 
 def circular_layout(nodes):
-    """
-    Lay out nodes on a circle and add node index.
+    """Lay out nodes on a circle and add node index.
+
     """
     N = len(nodes)
     if not N:
@@ -258,9 +258,9 @@ def circular_layout(nodes):
 
 
 def quadratic_bezier(start, end, c0=(0, 0), c1=(0, 0), steps=50):
-    """
-    Compute quadratic bezier spline given start and end coordinate and
+    """Compute quadratic bezier spline given start and end coordinate and
     two control points.
+
     """
     steps = np.linspace(0, 1, steps)
     sx, sy = start
@@ -275,11 +275,11 @@ def quadratic_bezier(start, end, c0=(0, 0), c1=(0, 0), steps=50):
 
 
 def connect_edges_pd(graph):
-    """
-    Given a Graph element containing abstract edges compute edge
+    """Given a Graph element containing abstract edges compute edge
     segments directly connecting the source and target nodes. This
     operation depends on pandas and is a lot faster than the pure
     NumPy equivalent.
+
     """
     edges = graph.dframe()
     edges.index.name = 'graph_edge_index'
@@ -301,11 +301,11 @@ def connect_edges_pd(graph):
 
 
 def connect_tri_edges_pd(trimesh):
-    """
-    Given a TriMesh element containing abstract edges compute edge
+    """Given a TriMesh element containing abstract edges compute edge
     segments directly connecting the source and target nodes. This
     operation depends on pandas and is a lot faster than the pure
     NumPy equivalent.
+
     """
     edges = trimesh.dframe().copy()
     edges.index.name = 'trimesh_edge_index'
@@ -327,11 +327,11 @@ def connect_tri_edges_pd(trimesh):
 
 
 def connect_edges(graph):
-    """
-    Given a Graph element containing abstract edges compute edge
+    """Given a Graph element containing abstract edges compute edge
     segments directly connecting the source and target nodes.  This
     operation just uses internal HoloViews operations and will be a
     lot slower than the pandas equivalent.
+
     """
     paths = []
     for start, end in graph.array(graph.kdims):

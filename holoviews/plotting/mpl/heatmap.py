@@ -252,6 +252,7 @@ class RadialHeatMapPlot(ColorbarPlot):
     def _map_order_to_ticks(start, end, order, reverse=False):
         """Map elements from given `order` array to bins ranging from `start`
         to `end`.
+
         """
         size = len(order)
         bounds = np.linspace(start, end, size + 1)

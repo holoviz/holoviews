@@ -76,8 +76,8 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
 
     def _get_hover_data(self, data, element):
-        """
-        Initializes hover data based on Element dimension values.
+        """Initializes hover data based on Element dimension values.
+
         """
         if 'hover' not in self.handles or self.static_source:
             return
@@ -212,9 +212,9 @@ class ContourPlot(PathPlot):
         return dims, {}
 
     def _get_hover_data(self, data, element):
-        """
-        Initializes hover data based on Element dimension values.
+        """Initializes hover data based on Element dimension values.
         If empty initializes with no data.
+
         """
         if 'hover' not in self.handles or self.static_source:
             return
@@ -290,8 +290,8 @@ class ContourPlot(PathPlot):
         return data, mapping, style
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         plot_method = properties.pop('plot_method', None)
         properties = mpl_to_bokeh(properties)

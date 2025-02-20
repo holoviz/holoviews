@@ -129,20 +129,21 @@ _subplot_re = re.compile(r'\D*(\d+)')
 
 
 def _get_subplot_number(subplot_val):
-    """
-    Extract the subplot number from a subplot value string.
+    """Extract the subplot number from a subplot value string.
 
     'x3' -> 3
     'polar2' -> 2
     'scene' -> 1
     'y' -> 1
 
-    Note: the absence of a subplot number (e.g. 'y') is treated by plotly as
+    Note
+    ----
+    The absence of a subplot number (e.g. 'y') is treated by plotly as
     a subplot number of 1
 
     Parameters
     ----------
-    subplot_val: str
+    subplot_val : str
         Subplot string value (e.g. 'scene4')
 
     Returns
@@ -158,8 +159,7 @@ def _get_subplot_number(subplot_val):
 
 
 def _get_subplot_val_prefix(subplot_type):
-    """
-    Get the subplot value prefix for a subplot type. For most subplot types
+    """Get the subplot value prefix for a subplot type. For most subplot types
     this is equal to the subplot type string itself. For example, a
     `scatter3d.scene` value of `scene2` is used to associate the scatter3d
     trace with the `layout.scene2` subplot.
@@ -170,7 +170,7 @@ def _get_subplot_val_prefix(subplot_type):
 
     Parameters
     ----------
-    subplot_type: str
+    subplot_type : str
         Subplot string value (e.g. 'scene4')
 
     Returns
@@ -187,8 +187,7 @@ def _get_subplot_val_prefix(subplot_type):
 
 
 def _get_subplot_prop_name(subplot_type):
-    """
-    Get the name of the trace property used to associate a trace with a
+    """Get the name of the trace property used to associate a trace with a
     particular subplot type.  For most subplot types this is equal to the
     subplot type string. For example, the `scatter3d.scene` property is used
     to associate a `scatter3d` trace with a particular `scene` subplot.
@@ -200,7 +199,7 @@ def _get_subplot_prop_name(subplot_type):
 
     Parameters
     ----------
-    subplot_type: str
+    subplot_type : str
         Subplot string value (e.g. 'scene4')
 
     Returns
@@ -215,8 +214,7 @@ def _get_subplot_prop_name(subplot_type):
 
 
 def _normalize_subplot_ids(fig):
-    """
-    Make sure a layout subplot property is initialized for every subplot that
+    """Make sure a layout subplot property is initialized for every subplot that
     is referenced by a trace in the figure.
 
     For example, if a figure contains a `scatterpolar` trace with the `subplot`
@@ -224,14 +222,15 @@ def _normalize_subplot_ids(fig):
     has a `polar3` property, and will initialize it to an empty dict if it
     does not
 
-    Note: This function mutates the input figure dict
+    Note
+    ----
+    This function mutates the input figure dict
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         A plotly figure dict
     """
-
     layout = fig.setdefault('layout', {})
     for trace in fig.get('data', None):
         trace_type = trace.get('type', 'scatter')
@@ -255,13 +254,12 @@ def _normalize_subplot_ids(fig):
 
 
 def _get_max_subplot_ids(fig):
-    """
-    Given an input figure, return a dict containing the max subplot number
+    """Given an input figure, return a dict containing the max subplot number
     for each subplot type in the figure
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         A plotly figure dict
 
     Returns
@@ -309,20 +307,21 @@ def _get_max_subplot_ids(fig):
 
 
 def _offset_subplot_ids(fig, offsets):
-    """
-    Apply offsets to the subplot id numbers in a figure.
+    """Apply offsets to the subplot id numbers in a figure.
 
-    Note: This function mutates the input figure dict
+    Notes
+    -----
+    1. This function mutates the input figure dict
 
-    Note: This function assumes that the normalize_subplot_ids function has
+    2. This function assumes that the normalize_subplot_ids function has
     already been run on the figure, so that all layout subplot properties in
     use are explicitly present in the figure's layout.
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         A plotly figure dict
-    offsets: dict
+    offsets : dict
         A dict from subplot types to the offset to be applied for each subplot
         type.  This dict matches the form of the dict returned by
         get_max_subplot_ids
@@ -423,34 +422,35 @@ def _offset_subplot_ids(fig, offsets):
 
 
 def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
-    """
-    Scale a figure and translate it to sub-region of the original
+    """Scale a figure and translate it to sub-region of the original
     figure canvas.
 
-    Note: If the input figure has a title, this title is converted into an
+    Notes
+    -----
+    1. If the input figure has a title, this title is converted into an
     annotation and scaled along with the rest of the figure.
 
-    Note: This function mutates the input fig dict
+    2. This function mutates the input fig dict
 
-    Note: This function assumes that the normalize_subplot_ids function has
+    3. This function assumes that the normalize_subplot_ids function has
     already been run on the figure, so that all layout subplot properties in
     use are explicitly present in the figure's layout.
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         A plotly figure dict
-    scale_x: float
+    scale_x : float
         Factor by which to scale the figure in the x-direction. This will
         typically be a value < 1.  E.g. a value of 0.5 will cause the
         resulting figure to be half as wide as the original.
-    scale_y: float
+    scale_y : float
         Factor by which to scale the figure in the y-direction. This will
         typically be a value < 1
-    translate_x: float
+    translate_x : float
         Factor by which to translate the scaled figure in the x-direction in
         normalized coordinates.
-    translate_y: float
+    translate_y : float
         Factor by which to translate the scaled figure in the x-direction in
         normalized coordinates.
     """
@@ -547,20 +547,20 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
 
 
 def merge_figure(fig, subfig):
-    """
-    Merge a sub-figure into a parent figure
+    """Merge a sub-figure into a parent figure
 
-    Note: This function mutates the input fig dict, but it does not mutate
+    Note
+    ----
+    This function mutates the input fig dict, but it does not mutate
     the subfig dict
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         The plotly figure dict into which the sub figure will be merged
-    subfig: dict
+    subfig : dict
         The plotly figure dict that will be copied and then merged into `fig`
     """
-
     # traces
     data = fig.setdefault('data', [])
     data.extend(copy.deepcopy(subfig.get('data', [])))
@@ -571,17 +571,18 @@ def merge_figure(fig, subfig):
 
 
 def merge_layout(obj, subobj):
-    """
-    Merge layout objects recursively
+    """Merge layout objects recursively
 
-    Note: This function mutates the input obj dict, but it does not mutate
+    Note
+    ----
+    This function mutates the input obj dict, but it does not mutate
     the subobj dict
 
     Parameters
     ----------
-    obj: dict
+    obj : dict
         dict into which the sub-figure dict will be merged
-    subobj: dict
+    subobj : dict
         dict that sill be copied and merged into `obj`
     """
     for prop, val in subobj.items():
@@ -605,16 +606,15 @@ def merge_layout(obj, subobj):
 
 
 def _compute_subplot_domains(widths, spacing):
-    """
-    Compute normalized domain tuples for a list of widths and a subplot
+    """Compute normalized domain tuples for a list of widths and a subplot
     spacing value
 
     Parameters
     ----------
-    widths: list of float
+    widths : list of float
         List of the desired widths of each subplot. The length of this list
         is also the specification of the number of desired subplots
-    spacing: float
+    spacing : float
         Spacing between subplots in normalized coordinates
 
     Returns
@@ -647,30 +647,29 @@ def figure_grid(figures_grid,
                 width=None,
                 height=None
                 ):
-    """
-    Construct a figure from a 2D grid of sub-figures
+    """Construct a figure from a 2D grid of sub-figures
 
     Parameters
     ----------
-    figures_grid: list of list of (dict or None)
+    figures_grid : list of list of (dict or None)
         2D list of plotly figure dicts that will be combined in a grid to
         produce the resulting figure.  None values maybe used to leave empty
         grid cells
-    row_spacing: float (default 50)
+    row_spacing : float (default 50)
         Vertical spacing between rows in the grid in pixels
-    column_spacing: float (default 50)
+    column_spacing : float (default 50)
         Horizontal spacing between columns in the grid in pixels
         coordinates
-    share_xaxis: bool (default False)
+    share_xaxis : bool (default False)
         Share x-axis between sub-figures in the same column. Also link all x-axes in the
         figure. This will only work if each sub-figure has a single x-axis
-    share_yaxis: bool (default False)
+    share_yaxis : bool (default False)
         Share y-axis between sub-figures in the same row. Also link all y-axes in the
         figure. This will only work if each subfigure has a single y-axis
-    width: int (default None)
+    width : int (default None)
         Final figure width. If not specified, width is the sum of the max width of
         the figures in each column
-    height: int (default None)
+    height : int (default None)
         Final figure width. If not specified, height is the sum of the max height of
         the figures in each row
 
@@ -809,14 +808,18 @@ def figure_grid(figures_grid,
 def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
     """Converts a cmap spec to a plotly colorscale
 
-    Args:
-        cmap: A recognized colormap by name or list of colors
-        levels: A list or integer declaring the color-levels
-        cmin: The lower bound of the color range
-        cmax: The upper bound of the color range
+    Parameters
+    ----------
+    cmap : A recognized colormap by name or list of colors
+    levels : A list or integer declaring the color-levels
+    cmin
+        The lower bound of the color range
+    cmax
+        The upper bound of the color range
 
-    Returns:
-        A valid plotly colorscale
+    Returns
+    -------
+    A valid plotly colorscale
     """
     ncolors = levels if isinstance(levels, int) else None
     if isinstance(levels, list):
@@ -852,21 +855,21 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
 
 
 def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
-    """
-    Configure matching axes for a figure
+    """Configure matching axes for a figure
 
-    Note: This function mutates the input figure
+    Note
+    ----
+    This function mutates the input figure
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         The figure dictionary to process.
-    matching_prop: str
+    matching_prop : str
         The name of the axis property that should be used to determine that two axes
         should be matched together.  If the property is missing or None, axes will not
         be matched
     """
-
     # Build mapping from matching properties to (axis, ref) tuples
     axis_map = {}
 
@@ -897,15 +900,16 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
 
 
 def clean_internal_figure_properties(fig):
-    """
-    Remove all HoloViews internal properties (those with leading underscores) from the
+    """Remove all HoloViews internal properties (those with leading underscores) from the
     input figure.
 
-    Note: This function mutates the input figure
+    Note
+    ----
+    This function mutates the input figure
 
     Parameters
     ----------
-    fig: dict
+    fig : dict
         The figure dictionary to process.
     """
     fig_props = list(fig)
