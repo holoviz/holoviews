@@ -509,8 +509,8 @@ class SideHistogramPlot(HistogramPlot):
 
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         ret = super()._init_glyph(plot, mapping, properties)
         if "field" not in mapping.get("fill_color", {}):
@@ -576,8 +576,8 @@ class ErrorPlot(ColorbarPlot):
 
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         properties = {k: v for k, v in properties.items() if 'legend' not in k}
         for prop in ['color', 'alpha']:
@@ -612,9 +612,9 @@ class SpreadPlot(ElementPlot):
     _stream_data = False # Plot does not support streaming data
 
     def _split_area(self, xs, lower, upper):
-        """
-        Splits area plots at nans and returns x- and y-coordinates for
+        """Splits area plots at nans and returns x- and y-coordinates for
         each area separated by nans.
+
         """
         xnan = np.array([np.datetime64('nat') if xs.dtype.kind == 'M' else np.nan])
         ynan = np.array([np.datetime64('nat') if lower.dtype.kind == 'M' else np.nan])
@@ -737,8 +737,8 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
 
 class SideSpikesPlot(SpikesPlot):
-    """
-    SpikesPlot with useful defaults for plotting adjoined rug plot.
+    """SpikesPlot with useful defaults for plotting adjoined rug plot.
+
     """
 
     selected = param.List(default=None, doc="""
@@ -768,10 +768,10 @@ class SideSpikesPlot(SpikesPlot):
 
 
 class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
-    """
-    BarPlot allows generating single- or multi-category
+    """BarPlot allows generating single- or multi-category
     bar Charts, by selecting which key dimensions are
     mapped onto separate groups, categories and stacks.
+
     """
 
     multi_level = param.Boolean(default=True, doc="""
@@ -828,10 +828,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         return ([], xvals) if self.invert_axes else (xvals, [])
 
     def get_stack(self, xvals, yvals, baselines, sign='positive'):
-        """
-        Iterates over a x- and y-values in a stack layer
+        """Iterates over a x- and y-values in a stack layer
         and appropriately offsets the layer on top of the
         previous layer.
+
         """
         bottoms, tops = [], []
         for x, y in zip(xvals, yvals):

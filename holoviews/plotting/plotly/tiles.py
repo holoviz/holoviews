@@ -88,7 +88,7 @@ class TilePlot(ElementPlot):
         return {'traces': [datum], PLOTLY_MAP: options}
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
-        """
-        Override to force is_geo to True
+        """Override to force is_geo to True
+
         """
         return super().generate_plot(key, ranges, element, is_geo=True)

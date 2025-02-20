@@ -25,8 +25,8 @@ class TabularSelectionDisplay(SelectionDisplay):
 
 
 class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
-    """
-    Overlay selection display subclass for use with bokeh backend
+    """Overlay selection display subclass for use with bokeh backend
+
     """
 
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):

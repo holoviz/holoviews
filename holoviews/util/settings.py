@@ -4,10 +4,11 @@ from ..core import Store
 
 
 class KeywordSettings:
-    """
-    Base class for options settings used to specified collections of
+    """Base class for options settings used to specified collections of
     keyword options.
+
     """
+
     # Dictionary from keywords to allowed bounds/values
     allowed = {}
     defaults = dict([])  # Default keyword values.
@@ -22,14 +23,16 @@ class KeywordSettings:
 
     @classmethod
     def update_options(cls, options, items):
-        """
-        Allows updating options depending on class attributes
+        """Allows updating options depending on class attributes
         and unvalidated options.
+
         """
 
     @classmethod
     def get_options(cls, items, options, warnfn):
-        "Given a keyword specification, validate and compute options"
+        """Given a keyword specification, validate and compute options
+
+        """
         options = cls.update_options(options, items)
         for keyword in cls.defaults:
             if keyword in items:
@@ -63,14 +66,16 @@ class KeywordSettings:
 
     @classmethod
     def _validate(cls, options, items, warnfn):
-        "Allows subclasses to check options are valid."
+        """Allows subclasses to check options are valid.
+
+        """
         raise NotImplementedError("KeywordSettings is an abstract base class.")
 
 
     @classmethod
     def extract_keywords(cls, line, items):
-        """
-        Given the keyword string, parse a dictionary of options.
+        """Given the keyword string, parse a dictionary of options.
+
         """
         unprocessed = list(reversed(line.split('=')))
         while unprocessed:
@@ -112,9 +117,9 @@ def list_backends():
 
 
 def list_formats(format_type, backend=None):
-    """
-    Returns list of supported formats for a particular
+    """Returns list of supported formats for a particular
     backend.
+
     """
     if backend is None:
         backend = Store.current_backend
@@ -131,8 +136,8 @@ def list_formats(format_type, backend=None):
 
 
 class OutputSettings(KeywordSettings):
-    """
-    Class for controlling display and output settings.
+    """Class for controlling display and output settings.
+
     """
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
@@ -244,8 +249,9 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def _validate(cls, options, items, warnfn):
-        "Validation of edge cases and incompatible options"
+        """Validation of edge cases and incompatible options
 
+        """
         if 'html' in Store.display_formats:
             pass
         elif 'fig' in items and items['fig'] not in Store.display_formats:
@@ -337,9 +343,9 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def update_options(cls, options, items):
-        """
-        Switch default options and backend if new backend is supplied in
+        """Switch default options and backend if new backend is supplied in
         items.
+
         """
         # Get new backend
         backend_spec = items.get('backend', Store.current_backend)
@@ -408,8 +414,8 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def _set_render_options(cls, options, backend=None):
-        """
-        Set options on current Renderer.
+        """Set options on current Renderer.
+
         """
         if backend:
             backend = backend.split(':')[0]

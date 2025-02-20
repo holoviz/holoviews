@@ -1,3 +1,4 @@
+import enum
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
@@ -77,9 +78,9 @@ DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
 
 
 class AggregationOperation(ResampleOperation2D):
-    """
-    AggregationOperation extends the ResampleOperation2D defining an
+    """AggregationOperation extends the ResampleOperation2D defining an
     aggregator parameter used to define a datashader Reduction.
+
     """
 
     aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
@@ -238,9 +239,27 @@ class LineAggregationOperation(AggregationOperation):
 
 
 
+class AggState(enum.Enum):
+    AGG_ONLY = 0  # Only aggregator
+    AGG_BY = 1  # Aggregator where the aggregator is ds.by
+    AGG_SEL = 2  # Selector and aggregator
+    AGG_SEL_BY = 3  # Selector and aggregator, where the aggregator is ds.by
+
+    def get_state(agg_fn, sel_fn):
+        if isinstance(agg_fn, ds.by):
+            return AggState.AGG_SEL_BY if sel_fn else AggState.AGG_BY
+        else:
+            return AggState.AGG_SEL if sel_fn else AggState.AGG_ONLY
+
+    def has_sel(state):
+        return state in (AggState.AGG_SEL, AggState.AGG_SEL_BY)
+
+    def has_by(state):
+        return state in (AggState.AGG_BY, AggState.AGG_SEL_BY)
+
+
 class aggregate(LineAggregationOperation):
-    """
-    aggregate implements 2D binning for any valid HoloViews Element
+    """aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
     Element or overlay of Elements into an Image or an overlay of
     Images by rasterizing it. This allows quickly aggregating large
@@ -261,13 +280,14 @@ class aggregate(LineAggregationOperation):
     is used dynamically, which means that the height and width
     will automatically be set to match the inner dimensions of
     the linked plot.
+
     """
 
     @classmethod
     def get_agg_data(cls, obj, category=None):
-        """
-        Reduces any Overlay or NdOverlay of Elements into a single
+        """Reduces any Overlay or NdOverlay of Elements into a single
         xarray Dataset that can be aggregated.
+
         """
         paths = []
         if isinstance(obj, Graph):
@@ -391,16 +411,14 @@ class aggregate(LineAggregationOperation):
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
 
-        if sel_fn:
+        agg_state = AggState.get_state(agg_fn, sel_fn)
+        if AggState.has_sel(agg_state):
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
-            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y)
-            _ignore = [*params["vdims"], "__index__"]
-            sel_vdims = [s for s in agg if s not in _ignore]
-            params["vdims"] = [*params["vdims"], *sel_vdims]
+            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, agg_state)
         else:
-            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y)
+            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
@@ -409,14 +427,16 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if isinstance(agg, xr.Dataset) or agg.ndim == 2:
-            # Replacing x and y coordinates to avoid numerical precision issues
+        if not AggState.has_by(agg_state):
             return self.p.element_type(agg, **params)
-        else:
+        elif agg_state == AggState.AGG_BY:
             params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
             return ImageStack(agg, **params)
+        elif agg_state == AggState.AGG_SEL_BY:
+            params['vdims'] = [d for d in agg.data_vars if d not in agg.attrs["selector_columns"]]
+            return ImageStack(agg, **params)
 
-    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y):
+    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state: AggState):
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
         with warnings.catch_warnings():
@@ -427,18 +447,26 @@ class aggregate(LineAggregationOperation):
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
 
         is_where_index = DATASHADER_GE_0_15_1 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
-        is_summary_index = isinstance(agg_fn, ds.summary) and "__index__" in agg
+        is_summary_index = AggState.has_sel(agg_state)
         if is_where_index or is_summary_index:
             if is_where_index:
-                data = agg.data
+                index = agg.data
                 agg = agg.to_dataset(name="__index__")
             else:  # summary index
-                data = agg["__index__"].data
-            neg1 = data == -1
+                index = agg["__index__"].data
+                if agg_state == AggState.AGG_SEL_BY:
+                    main_dim = next(k for k in agg if k != "__index__")
+                    # Taking values from the main dimension expanding it to
+                    # a new dataset
+                    agg = agg[main_dim].to_dataset(dim=list(agg.sizes)[2])
+                    agg["__index__"] = ((y.name, x.name), index)
+
+            neg1 = index == -1
+            agg.attrs["selector_columns"] = sel_cols = ["__index__"]
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
-                val = dfdata[col].values[data]
+                val = dfdata[col].values[index]
                 if val.dtype.kind == 'f':
                     val[neg1] = np.nan
                 elif isinstance(val.dtype, pd.CategoricalDtype):
@@ -452,8 +480,9 @@ class aggregate(LineAggregationOperation):
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
                 agg[col] = ((y.name, x.name), val)
+                sel_cols.append(col)
 
-        if isinstance(agg_fn, ds.by):
+        if agg_state == AggState.AGG_BY:
             col = agg_fn.column
             if '' in agg.coords[col]:
                 agg = agg.drop_sel(**{col: ''})
@@ -461,11 +490,12 @@ class aggregate(LineAggregationOperation):
         return agg
 
 class curve_aggregate(aggregate):
-    """
-    Optimized aggregation for Curve objects by setting the default
+    """Optimized aggregation for Curve objects by setting the default
     of the aggregator to self_intersect=False to be more consistent
     with the appearance of non-aggregated curves.
+
     """
+
     aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
                                      default=rd.count(self_intersect=False), doc="""
         Datashader reduction function used for aggregating the data.
@@ -474,14 +504,14 @@ class curve_aggregate(aggregate):
         will be used. May also be defined as a string.""")
 
 class overlay_aggregate(aggregate):
-    """
-    Optimized aggregation for NdOverlay objects by aggregating each
+    """Optimized aggregation for NdOverlay objects by aggregating each
     Element in an NdOverlay individually avoiding having to concatenate
     items in the NdOverlay. Works by summing sum and count aggregates and
     applying appropriate masking for NaN values. Mean aggregation
     is also supported by dividing sum and count aggregates. count_cat
     aggregates are grouped by the categorical dimension and a separate
     aggregate for each category is generated.
+
     """
 
     @classmethod
@@ -589,10 +619,10 @@ class overlay_aggregate(aggregate):
 
 
 class area_aggregate(AggregationOperation):
-    """
-    Aggregates Area elements by filling the area between zero and
+    """Aggregates Area elements by filling the area between zero and
     the y-values if only one value dimension is defined and the area
     between the curves if two are provided.
+
     """
 
     def _process(self, element, key=None):
@@ -634,9 +664,9 @@ class area_aggregate(AggregationOperation):
 
 
 class spread_aggregate(area_aggregate):
-    """
-    Aggregates Spread elements by filling the area between the lower
+    """Aggregates Spread elements by filling the area between the lower
     and upper error band.
+
     """
 
     def _process(self, element, key=None):
@@ -655,10 +685,10 @@ class spread_aggregate(area_aggregate):
 
 
 class spikes_aggregate(LineAggregationOperation):
-    """
-    Aggregates Spikes elements by drawing individual line segments
+    """Aggregates Spikes elements by drawing individual line segments
     over the entire y_range if no value dimension is defined and
     between zero and the y-value if one is defined.
+
     """
 
     spike_length = param.Number(default=None, allow_None=True, doc="""
@@ -732,8 +762,8 @@ class spikes_aggregate(LineAggregationOperation):
 
 
 class geom_aggregate(AggregationOperation):
-    """
-    Baseclass for aggregation of Geom elements.
+    """Baseclass for aggregation of Geom elements.
+
     """
 
     __abstract = True
@@ -791,8 +821,8 @@ class geom_aggregate(AggregationOperation):
 
 
 class segments_aggregate(geom_aggregate, LineAggregationOperation):
-    """
-    Aggregates Segments elements.
+    """Aggregates Segments elements.
+
     """
 
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
@@ -804,8 +834,8 @@ class segments_aggregate(geom_aggregate, LineAggregationOperation):
 
 
 class rectangle_aggregate(geom_aggregate):
-    """
-    Aggregates Rectangle elements.
+    """Aggregates Rectangle elements.
+
     """
 
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
@@ -814,14 +844,14 @@ class rectangle_aggregate(geom_aggregate):
 
 
 class regrid(AggregationOperation):
-    """
-    regrid allows resampling a HoloViews Image type using specified
+    """regrid allows resampling a HoloViews Image type using specified
     up- and downsampling functions defined using the aggregator and
     interpolation parameters respectively. By default upsampling is
     disabled to avoid unnecessarily upscaling an image that has to be
     sent to the browser. Also disables expanding the image beyond its
     original bounds avoiding unnecessarily padding the output array
     with NaN values.
+
     """
 
     aggregator = param.ClassSelector(default=rd.mean(),
@@ -953,10 +983,10 @@ class regrid(AggregationOperation):
 
 
 class contours_rasterize(aggregate):
-    """
-    Rasterizes the Contours element by weighting the aggregation by
+    """Rasterizes the Contours element by weighting the aggregation by
     the iso-contour levels if a value dimension is defined, otherwise
     default to any aggregator.
+
     """
 
     aggregator = param.ClassSelector(default=rd.mean(),
@@ -971,11 +1001,11 @@ class contours_rasterize(aggregate):
 
 
 class trimesh_rasterize(aggregate):
-    """
-    Rasterize the TriMesh element using the supplied aggregator. If
+    """Rasterize the TriMesh element using the supplied aggregator. If
     the TriMesh nodes or edges define a value dimension, will plot
     filled and shaded polygons; otherwise returns a wiremesh of the
     data.
+
     """
 
     aggregator = param.ClassSelector(default=rd.mean(),
@@ -1100,10 +1130,10 @@ class trimesh_rasterize(aggregate):
 
 
 class quadmesh_rasterize(trimesh_rasterize):
-    """
-    Rasterize the QuadMesh element using the supplied aggregator.
+    """Rasterize the QuadMesh element using the supplied aggregator.
     Simply converts to a TriMesh and lets trimesh_rasterize
     handle the actual rasterization.
+
     """
 
     def _precompute(self, element, agg):
@@ -1153,8 +1183,7 @@ class quadmesh_rasterize(trimesh_rasterize):
 
 
 class shade(LinkableOperation):
-    """
-    shade applies a normalization function followed by colormapping to
+    """shade applies a normalization function followed by colormapping to
     an Image or NdOverlay of Images, returning an RGB Element.
     The data must be in the form of a 2D or 3D DataArray, but NdOverlays
     of 2D Images will be automatically converted to a 3D array.
@@ -1163,6 +1192,7 @@ class shade(LinkableOperation):
     array representing categorical aggregates will be supplied a color
     key for each category. The colormap (cmap) for the 2D case may be
     supplied as an Iterable or a Callable.
+
     """
 
     alpha = param.Integer(default=255, bounds=(0, 255), doc="""
@@ -1215,9 +1245,9 @@ class shade(LinkableOperation):
 
     @classmethod
     def concatenate(cls, overlay):
-        """
-        Concatenates an NdOverlay of Image types into a single 3D
+        """Concatenates an NdOverlay of Image types into a single 3D
         xarray Dataset.
+
         """
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
@@ -1231,26 +1261,29 @@ class shade(LinkableOperation):
 
     @classmethod
     def uint32_to_uint8(cls, img):
+        """Cast uint32 RGB image to 4 uint8 channels.
+
         """
-        Cast uint32 RGB image to 4 uint8 channels.
-        """
-        return np.flipud(img.view(dtype=np.uint8).reshape((*img.shape, 4)))
+        new_array = np.flipud(img.view(dtype=np.uint8).reshape((*img.shape, 4)))
+        new_array[new_array[:,:,3] == 0] = 0  # Set alpha 0 to 0 for all dimension
+        return new_array
 
 
     @classmethod
     def uint32_to_uint8_xr(cls, img):
-        """
-        Cast uint32 xarray DataArray to 4 uint8 channels.
+        """Cast uint32 xarray DataArray to 4 uint8 channels.
+
         """
         new_array = img.values.view(dtype=np.uint8).reshape((*img.shape, 4))
+        new_array[new_array[:,:,3] == 0] = 0
         coords = dict(img.coords, band=[0, 1, 2, 3])
         return xr.DataArray(new_array, coords=coords, dims=(*img.dims, 'band'))
 
 
     @classmethod
     def rgb2hex(cls, rgb):
-        """
-        Convert RGB(A) tuple to hex.
+        """Convert RGB(A) tuple to hex.
+
         """
         if len(rgb) > 3:
             rgb = rgb[:-1]
@@ -1277,6 +1310,33 @@ class shade(LinkableOperation):
                              xdensity=element.xdensity,
                              ydensity=element.ydensity)
 
+    @classmethod
+    def _extract_data(self, element):
+        vdims = element.vdims
+        vdim = vdims[0].name if len(vdims) == 1 else None
+        if isinstance(element, ImageStack):
+            array = element.data
+            main_dims = element.data.sizes
+            # Dropping data related to selector columns
+            if sel_cols := array.attrs.get("selector_columns"):
+                array = array.drop_vars(sel_cols)
+            # If data is a xarray Dataset it has to be converted to a
+            # DataArray, either by selecting the singular value
+            # dimension or by adding a z-dimension
+            if not element.interface.packed(element):
+                if vdim:
+                    array = array[vdim]
+                else:
+                    array = array.to_array("z")
+                    # If data is 3D then we have one extra constant dimension
+                    if array.ndim > 3:
+                        drop = set(array.dims) - {*main_dims, 'z'}
+                        array = array.squeeze(dim=drop)
+            array = array.transpose(*main_dims, ...)
+        else:
+            array = element.data[vdim]
+
+        return array
 
     def _process(self, element, key=None):
         element = element.map(self.to_xarray, Image)
@@ -1297,26 +1357,7 @@ class shade(LinkableOperation):
             element = element.clone(datatype=['xarray'])
 
         kdims = element.kdims
-        if isinstance(element, ImageStack):
-            vdim = element.vdims
-            array = element.data
-            # If data is a xarray Dataset it has to be converted to a
-            # DataArray, either by selecting the singular value
-            # dimension or by adding a z-dimension
-            kdims = [kdim.name for kdim in kdims]
-            if not element.interface.packed(element):
-                if len(vdim) == 1:
-                    array = array[vdim[0].name]
-                else:
-                    array = array.to_array("z")
-                    # If data is 3D then we have one extra constant dimension
-                    if array.ndim > 3:
-                        drop = [d for d in array.dims if d not in [*kdims, 'z']]
-                        array = array.squeeze(dim=drop)
-            array = array.transpose(*kdims, ...)
-        else:
-            vdim = element.vdims[0].name
-            array = element.data[vdim]
+        array = self._extract_data(element)
 
         # Dask is not supported by shade so materialize it
         array = array.compute()
@@ -1372,17 +1413,31 @@ class shade(LinkableOperation):
                 coords = {xd.name: element.data.coords[xd.name],
                           yd.name: element.data.coords[yd.name],
                           'band': [0, 1, 2, 3]}
-                img = xr.DataArray(arr, coords=coords, dims=(yd.name, xd.name, 'band'))
-                return RGB(img, **params)
+                img_data = xr.DataArray(arr, coords=coords, dims=(yd.name, xd.name, 'band'))
+                img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
+                return RGB(img_data, **params)
             else:
                 img = tf.shade(array, **shade_opts)
-        return RGB(self.uint32_to_uint8_xr(img), **params)
+        img_data = self.uint32_to_uint8_xr(img)
+        img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
+        return RGB(img_data, **params)
 
+    @classmethod
+    def add_selector_data(cls, *, img_data, sel_data):
+        if "selector_columns" in sel_data.attrs:
+            if {"R", "G", "B", "A"} & set(sel_data.attrs["selector_columns"]):
+                msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
+                raise ValueError(msg)
+            img_data.coords["band"] = ["R", "G", "B", "A"]
+            img_data = img_data.to_dataset(dim="band")
+            img_data.update({k: sel_data[k] for k in sel_data.attrs["selector_columns"]})
+            img_data.attrs["selector_columns"] = sel_data.attrs["selector_columns"]
+        return img_data
 
 
 class geometry_rasterize(LineAggregationOperation):
-    """
-    Rasterizes geometries by converting them to spatialpandas.
+    """Rasterizes geometries by converting them to spatialpandas.
+
     """
 
     aggregator = param.ClassSelector(default=rd.mean(),
@@ -1450,8 +1505,7 @@ class geometry_rasterize(LineAggregationOperation):
 
 
 class rasterize(AggregationOperation):
-    """
-    Rasterize is a high-level operation that will rasterize any
+    """Rasterize is a high-level operation that will rasterize any
     Element or combination of Elements, aggregating them with the supplied
     aggregator and interpolation method.
 
@@ -1470,6 +1524,7 @@ class rasterize(AggregationOperation):
     operation is used dynamically, which means that the width, height,
     x_range and y_range will automatically be set to match the inner
     dimensions of the linked plot and the ranges of the axes.
+
     """
 
     aggregator = param.ClassSelector(class_=(rd.Reduction, rd.summary, str),
@@ -1554,12 +1609,12 @@ class rasterize(AggregationOperation):
 
 
 class datashade(rasterize, shade):
-    """
-    Applies the aggregate and shade operations, aggregating all
+    """Applies the aggregate and shade operations, aggregating all
     elements in the supplied object and then applying normalization
     and colormapping the aggregated data returning RGB elements.
 
     See aggregate and shade operations for more details.
+
     """
 
     def _process(self, element, key=None):
@@ -1570,9 +1625,9 @@ class datashade(rasterize, shade):
 
 
 class stack(Operation):
-    """
-    The stack operation allows compositing multiple RGB Elements using
+    """The stack operation allows compositing multiple RGB Elements using
     the defined compositing operator.
+
     """
 
     compositor = param.Selector(objects=['add', 'over', 'saturate', 'source'],
@@ -1626,11 +1681,11 @@ class stack(Operation):
 
 
 class SpreadingOperation(LinkableOperation):
-    """
-    Spreading expands each pixel in an Image based Element a certain
+    """Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging
     pixels using a specified compositing operator. This can be useful
     to make sparse plots more visible.
+
     """
 
     how = param.Selector(default='source' if DATASHADER_VERSION <= (0, 11, 1) else None,
@@ -1654,7 +1709,7 @@ class SpreadingOperation(LinkableOperation):
         rgb = img.reshape((flat_shape, 4)).view('uint32').reshape(shape[:2])
         return rgb
 
-    def _apply_spreading(self, array):
+    def _apply_spreading(self, array, how=None):
         """Apply the spread function using the indicated parameters."""
         raise NotImplementedError
 
@@ -1669,16 +1724,50 @@ class SpreadingOperation(LinkableOperation):
         if isinstance(element, RGB):
             rgb = element.rgb
             data = self._preprocess_rgb(rgb)
-        elif isinstance(element, ImageStack):
-            data = element.data
         elif isinstance(element, Image):
-            data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
+            if element.interface.datatype != 'xarray':
+                element = element.clone(datatype=['xarray'])
+            data = shade._extract_data(element)
         else:
             raise ValueError('spreading can only be applied to Image or RGB Elements. '
                              f'Received object of type {type(element)!s}')
 
-        kwargs = {}
         array = self._apply_spreading(data)
+        if "selector_columns" in getattr(element.data, "attrs", ()):
+            new_data = element.data.copy()
+            index = new_data["__index__"].copy()
+            mask = np.arange(index.size).reshape(index.shape)
+            mask[index == -1] = 0
+            index.data = mask
+            index = self._apply_spreading(index, how="source")
+            sel_data = {
+                sc: new_data[sc].data.ravel()[index].reshape(index.shape)
+                for sc in new_data.attrs["selector_columns"]
+            }
+
+            if isinstance(element, RGB):
+                img = datashade.uint32_to_uint8(array.data)[::-1]
+                for idx, k, in enumerate("RGBA"):
+                    new_data[k].data = img[:, :, idx]
+            elif isinstance(element, ImageStack):
+                for k in map(str, element.vdims):
+                    new_data[k].data = array.sel(z=k)
+            elif isinstance(element, Image):
+                new_data[element.vdims[0].name].data = array
+            else:
+                msg = f"{type(element).__name__} currently does not support spreading with selector_columns"
+                raise NotImplementedError(msg)
+
+            for k, v in sel_data.items():
+                new_data[k].data = v
+
+            # TODO: Investigate why this does not work
+            # element = element.clone(data=new_data, kdims=element.vdims.copy(), vdims=element.vdims.copy())
+            element = element.clone()
+            element.data = new_data
+            return element
+
+        kwargs = {}
         if isinstance(element, RGB):
             img = datashade.uint32_to_uint8(array.data)[::-1]
             new_data = {
@@ -1696,27 +1785,26 @@ class SpreadingOperation(LinkableOperation):
 
 
 class spread(SpreadingOperation):
-    """
-    Spreading expands each pixel in an Image based Element a certain
+    """Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging
     pixels using a specified compositing operator. This can be useful
     to make sparse plots more visible.
 
     See the datashader documentation for more detail:
 
-    http://datashader.org/api.html#datashader.transfer_functions.spread
+    https://datashader.org/api.html#datashader.transfer_functions.spread
+
     """
 
     px = param.Integer(default=1, doc="""
         Number of pixels to spread on all sides.""")
 
-    def _apply_spreading(self, array):
-        return tf.spread(array, px=self.p.px, how=self.p.how, shape=self.p.shape)
+    def _apply_spreading(self, array, how=None):
+        return tf.spread(array, px=self.p.px, how=how or self.p.how, shape=self.p.shape)
 
 
 class dynspread(SpreadingOperation):
-    """
-    Spreading expands each pixel in an Image based Element a certain
+    """Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging
     pixels using a specified compositing operator. This can be useful
     to make sparse plots more visible. Dynamic spreading determines
@@ -1724,7 +1812,8 @@ class dynspread(SpreadingOperation):
 
     See the datashader documentation for more detail:
 
-    http://datashader.org/api.html#datashader.transfer_functions.dynspread
+    https://datashader.org/api.html#datashader.transfer_functions.dynspread
+
     """
 
     max_px = param.Integer(default=3, doc="""
@@ -1737,17 +1826,17 @@ class dynspread(SpreadingOperation):
         Higher values give more spreading, up to the max_px
         allowed.""")
 
-    def _apply_spreading(self, array):
+    def _apply_spreading(self, array, how=None):
         return tf.dynspread(
             array, max_px=self.p.max_px, threshold=self.p.threshold,
-            how=self.p.how, shape=self.p.shape
+            how=how or self.p.how, shape=self.p.shape
         )
 
 
 def split_dataframe(path_df):
-    """
-    Splits a dataframe of paths separated by NaNs into individual
+    """Splits a dataframe of paths separated by NaNs into individual
     dataframes.
+
     """
     splits = np.where(path_df.iloc[:, 0].isnull())[0]+1
     return [df for df in np.split(path_df, splits) if len(df) > 1]
@@ -1776,11 +1865,11 @@ class _connect_edges(Operation):
 
 
 class bundle_graph(_connect_edges, hammer_bundle):
-    """
-    Iteratively group edges and return as paths suitable for datashading.
+    """Iteratively group edges and return as paths suitable for datashading.
 
     Breaks each edge into a path with multiple line segments, and
     iteratively curves this path to bundle edges into groups.
+
     """
 
     def _bundle(self, position_df, edges_df):
@@ -1789,8 +1878,8 @@ class bundle_graph(_connect_edges, hammer_bundle):
 
 
 class directly_connect_edges(_connect_edges, connect_edges):
-    """
-    Given a Graph object will directly connect all nodes.
+    """Given a Graph object will directly connect all nodes.
+
     """
 
     def _bundle(self, position_df, edges_df):
@@ -1801,11 +1890,11 @@ def identity(x): return x
 
 
 class inspect_mask(Operation):
-    """
-    Operation used to display the inspection mask, for use with other
+    """Operation used to display the inspection mask, for use with other
     inspection operations. Can be used directly but is more commonly
     constructed using the mask property of the corresponding inspector
     operation.
+
     """
 
     pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
@@ -1844,9 +1933,9 @@ class inspect_mask(Operation):
 
 
 class inspect(Operation):
-    """
-    Generalized inspect operation that detects the appropriate indicator
+    """Generalized inspect operation that detects the appropriate indicator
     type.
+
     """
 
     pixels = param.ClassSelector(default=3, class_=(int, tuple), doc="""
@@ -1932,9 +2021,9 @@ class inspect(Operation):
 
 
 class inspect_base(inspect):
-    """
-    Given datashaded aggregate (Image) output, return a set of
+    """Given datashaded aggregate (Image) output, return a set of
     (hoverable) points sampled from those near the cursor.
+
     """
 
     def _process(self, raster, key=None):
@@ -1984,9 +2073,9 @@ class inspect_base(inspect):
 
     @classmethod
     def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
-        """
-        Mask the dataframe around the specified x and y position with
+        """Mask the dataframe around the specified x and y position with
         the given x and y deltas
+
         """
         ds = raster.dataset
         x0, x1, y0, y1 = x-xdelta, x+xdelta, y-ydelta, y+ydelta
@@ -2020,9 +2109,9 @@ class inspect_points(inspect_base):
 
     @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
-        """
-        Returns a dataframe of hits within a given mask around a given
+        """Returns a dataframe of hits within a given mask around a given
         spatial location, sorted by distance from that location.
+
         """
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
@@ -2061,9 +2150,9 @@ class inspect_polygons(inspect_base):
 
     @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
-        """
-        Returns a dataframe of hits within a given mask around a given
+        """Returns a dataframe of hits within a given mask around a given
         spatial location, sorted by distance from that location.
+
         """
         xs, ys = [], []
         for geom in df.geometry.array:

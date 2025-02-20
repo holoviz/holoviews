@@ -206,11 +206,11 @@ class QuadMeshPlot(ColorbarPlot):
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
-    """
-    RasterGridPlot evenly spaces out plots of individual projections on
+    """RasterGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single
     axis to generate all the individual plots it is much faster than the
     equivalent using subplots.
+
     """
 
     padding = param.Number(default=0.1, doc="""

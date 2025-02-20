@@ -33,8 +33,8 @@ Store.output_settings = OutputSettings
 
 
 def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
-    """
-    Copies the notebooks to the supplied path.
+    """Copies the notebooks to the supplied path.
+
     """
     filepath = os.path.abspath(os.path.dirname(root))
     example_dir = os.path.join(filepath, './examples')
@@ -54,9 +54,9 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
 
 
 class OptsMeta(param.parameterized.ParameterizedMetaclass):
-    """
-    Improve error message when running something
-    like: 'hv.opts.Curve()' without a plotting backend.
+    """Improve error message when running something
+    like : 'hv.opts.Curve()' without a plotting backend.
+
     """
 
     def __getattr__(self, attr):
@@ -71,8 +71,7 @@ class OptsMeta(param.parameterized.ParameterizedMetaclass):
 
 
 class opts(param.ParameterizedFunction, metaclass=OptsMeta):
-    """
-    Utility function to set options at the global level or to provide an
+    """Utility function to set options at the global level or to provide an
     Options object that can be used with the .options method of an
     element or container.
 
@@ -97,6 +96,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     curve.options(opts.Curve(color='red'))
 
     The options method also accepts lists of Option objects.
+
     """
 
     __original_docstring__ = None
@@ -122,7 +122,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _group_kwargs_to_options(cls, obj, kwargs):
-        "Format option group kwargs into canonical options format"
+        """Format option group kwargs into canonical options format
+
+        """
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
             raise Exception("Keyword options {} must be one of  {}".format(groups,
@@ -157,7 +159,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _apply_groups_to_backend(cls, obj, options, backend, clone):
-        "Apply the groups to a single specified backend"
+        """Apply the groups to a single specified backend
+
+        """
         obj_handle = obj
         if options is None:
             if clone:
@@ -172,8 +176,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _grouped_backends(cls, options, backend):
-        "Group options by backend and filter out output group appropriately"
+        """Group options by backend and filter out output group appropriately
 
+        """
         if options is None:
             return [(backend or Store.current_backend, options)]
         dfltdict = defaultdict(dict)
@@ -213,22 +218,27 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         If no opts are supplied all options on the object will be reset.
 
-        Args:
-            options (dict): Options specification
-                Options specification should be indexed by
-                type[.group][.label] or option type ('plot', 'style',
-                'norm').
-            backend (optional): Backend to apply options to
-                Defaults to current selected backend
-            clone (bool, optional): Whether to clone object
-                Options can be applied inplace with clone=False
-            **kwargs: Keywords of options by type
-                Applies options directly to the object by type
-                (e.g. 'plot', 'style', 'norm') specified as
-                dictionaries.
+        Parameters
+        ----------
+        options : dict
+            Options specification
+            Options specification should be indexed by
+            type[.group][.label] or option type ('plot', 'style',
+            'norm').
+        backend : optional
+            Backend to apply options to
+            Defaults to current selected backend
+        clone : bool, optional
+            Whether to clone object
+            Options can be applied inplace with clone=False
+        **kwargs: Keywords of options by type
+            Applies options directly to the object by type
+            (e.g. 'plot', 'style', 'norm') specified as
+            dictionaries.
 
-        Returns:
-            Returns the object or a clone with the options applied
+        Returns
+        -------
+        Returns the object or a clone with the options applied
         """
         if isinstance(options, str):
             from ..util.parser import OptsSpec
@@ -275,9 +285,12 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         Set default options for a session. whether in a Python script or
         a Jupyter notebook.
 
-        Args:
-           *options: Option objects used to specify the defaults.
-           backend:  The plotting extension the options apply to
+        Parameters
+        ----------
+        *options
+            Option objects used to specify the defaults.
+        backend
+            The plotting extension the options apply to
         """
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
@@ -288,9 +301,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
-        """
-        Given a list of flat Option objects which may or may not have
+        """Given a list of flat Option objects which may or may not have
         'backend' in their kwargs, return a list of grouped backend
+
         """
         groups = defaultdict(list)
         used_fallback = False
@@ -314,16 +327,15 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _expand_options(cls, options, backend=None):
-        """
-        Validates and expands a dictionaries of options indexed by
+        """Validates and expands a dictionaries of options indexed by
         type[.group][.label] keys into separate style, plot, norm and
         output options. If the backend is not loaded, ``None`` is returned.
 
             opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
-        returns
-
-            {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
+        Returns
+        -------
+        {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
         current_backend = Store.current_backend
 
@@ -371,9 +383,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _options_error(cls, opt, objtype, backend, valid_options):
-        """
-        Generates an error message for an invalid option suggesting
+        """Generates an error message for an invalid option suggesting
         similar options through fuzzy matching.
+
         """
         current_backend = Store.current_backend
         loaded_backends = Store.loaded_backends()
@@ -415,12 +427,12 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _builder_reprs(cls, options, namespace=None, ns=None):
-        """
-        Given a list of Option objects (such as those returned from
+        """Given a list of Option objects (such as those returned from
         OptsSpec.parse_options) or an %opts or %%opts magic string,
         return a list of corresponding option builder reprs. The
         namespace is typically given as 'hv' if fully qualified
         namespaces are desired.
+
         """
         if isinstance(options, str):
             from .parser import OptsSpec
@@ -500,7 +512,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     @classmethod
     def _element_keywords(cls, backend, elements=None):
-        "Returns a dictionary of element names to allowed keywords"
+        """Returns a dictionary of element names to allowed keywords
+
+        """
         if backend not in Store.loaded_backends():
             return {}
 
@@ -545,8 +559,7 @@ Store._backend_switch_hooks.append(opts._update_backend)
 
 
 class output(param.ParameterizedFunction):
-    """
-    Utility function to set output either at the global level or on a
+    """Utility function to set output either at the global level or on a
     specific object.
 
     To set output globally use:
@@ -576,6 +589,7 @@ class output(param.ParameterizedFunction):
 
     These two modes are equivalent to the IPython output line magic and
     the cell magic respectively.
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -636,8 +650,8 @@ output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):
-    """
-    Helper utility to access the active renderer for a given extension.
+    """Helper utility to access the active renderer for a given extension.
+
     """
     try:
         if name not in Store.renderers:
@@ -655,8 +669,7 @@ def renderer(name):
 
 
 class extension(_pyviz_extension):
-    """
-    Helper utility used to load holoviews extensions. These can be
+    """Helper utility used to load holoviews extensions. These can be
     plotting extensions, element extensions or anything else that can be
     registered to work with HoloViews.
 
@@ -750,7 +763,9 @@ class extension(_pyviz_extension):
 
     @classmethod
     def register_backend_callback(cls, backend, callback):
-        """Registers a hook which is run when a backend is loaded"""
+        """Registers a hook which is run when a backend is loaded
+
+        """
         cls._backend_hooks[backend].append(callback)
 
     def _ignore_bokeh_warnings(self):
@@ -761,8 +776,7 @@ class extension(_pyviz_extension):
 
 
 def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
-    """
-    Saves the supplied object to file.
+    """Saves the supplied object to file.
 
     The available output formats depend on the backend being used. By
     default and if the filename is a string the output format will be
@@ -773,27 +787,27 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
     default to fmt='widgets', which may be changed to scrubber widgets
     using fmt='scrubber'.
 
-    Arguments
-    ---------
-    obj: HoloViews object
+    Parameters
+    ----------
+    obj : HoloViews object
         The HoloViews object to save to file
-    filename: string or IO object
+    filename : string or IO object
         The filename or BytesIO/StringIO object to save to
-    fmt: string
+    fmt : string
         The format to save the object as, e.g. png, svg, html, or gif
         and if widgets are desired either 'widgets' or 'scrubber'
-    backend: string
+    backend : string
         A valid HoloViews rendering backend, e.g. bokeh or matplotlib
-    resources: string or bokeh.resource.Resources
+    resources : string or bokeh.resource.Resources
         Bokeh resources used to load bokehJS components. Defaults to
         CDN, to embed resources inline for offline usage use 'inline'
         or bokeh.resources.INLINE.
-    toolbar: bool or None
+    toolbar : bool or None
         Whether to include toolbars in the exported plot. If None,
         display the toolbar unless fmt is `png` and backend is `bokeh`.
         If `True`, always include the toolbar.  If `False`, do not include the
         toolbar.
-    title: string
+    title : string
         Custom title for exported HTML file
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
@@ -826,8 +840,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
 
 
 def render(obj, backend=None, **kwargs):
-    """
-    Renders the HoloViews object to the corresponding object in the
+    """Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
 
     The backend defaults to the currently declared default
@@ -838,11 +851,11 @@ def render(obj, backend=None, **kwargs):
     you can use like any hand-constructed Bokeh figure in a Bokeh
     layout.
 
-    Arguments
-    ---------
-    obj: HoloViews object
+    Parameters
+    ----------
+    obj : HoloViews object
         The HoloViews object to render
-    backend: string
+    backend : string
         A valid HoloViews rendering backend
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
@@ -850,7 +863,7 @@ def render(obj, backend=None, **kwargs):
 
     Returns
     -------
-    rendered:
+    rendered :
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
@@ -866,8 +879,7 @@ def render(obj, backend=None, **kwargs):
 
 
 class Dynamic(param.ParameterizedFunction):
-    """
-    Dynamically applies a callable to the Elements in any HoloViews
+    """Dynamically applies a callable to the Elements in any HoloViews
     object. Will return a DynamicMap wrapping the original map object,
     which will lazily evaluate when a key is requested. By default
     Dynamic applies a no-op, making it useful for converting HoloMaps
@@ -879,6 +891,7 @@ class Dynamic(param.ParameterizedFunction):
     decorated with parameter dependencies Dynamic will automatically
     create a stream to watch the parameter changes. This default
     behavior may be disabled by setting watch=False.
+
     """
 
     operation = param.Callable(default=lambda x: x, doc="""
@@ -932,12 +945,12 @@ class Dynamic(param.ParameterizedFunction):
 
 
     def _get_streams(self, map_obj, watch=True):
-        """
-        Generates a list of streams to attach to the returned DynamicMap.
+        """Generates a list of streams to attach to the returned DynamicMap.
         If the input is a DynamicMap any streams that are supplying values
         for the key dimension of the input are inherited. And the list
         of supplied stream classes and instances are processed and
         added to the list.
+
         """
         from panel.widgets.base import Widget
 
@@ -1029,9 +1042,9 @@ class Dynamic(param.ParameterizedFunction):
             return self.p.operation(element, **kwargs)
 
     def _dynamic_operation(self, map_obj):
-        """
-        Generate function to dynamically apply the operation.
+        """Generate function to dynamically apply the operation.
         Wraps an existing HoloMap or DynamicMap.
+
         """
         def resolve(key, kwargs):
             if not isinstance(map_obj, HoloMap):
@@ -1064,9 +1077,9 @@ class Dynamic(param.ParameterizedFunction):
 
 
     def _make_dynamic(self, hmap, dynamic_fn, streams):
-        """
-        Accepts a HoloMap and a dynamic callback function creating
+        """Accepts a HoloMap and a dynamic callback function creating
         an equivalent DynamicMap from the HoloMap.
+
         """
         if isinstance(hmap, ViewableElement):
             dmap = DynamicMap(dynamic_fn, streams=streams)

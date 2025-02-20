@@ -9,8 +9,8 @@ from ..streams import PlotSize, RangeX, RangeXY
 
 
 class LinkableOperation(Operation):
-    """
-    Abstract baseclass for operations supporting linked inputs.
+    """Abstract baseclass for operations supporting linked inputs.
+
     """
 
     link_inputs = param.Boolean(default=True, doc="""
@@ -25,8 +25,8 @@ class LinkableOperation(Operation):
 
 
 class ResampleOperation1D(LinkableOperation):
-    """
-    Abstract baseclass for resampling operations
+    """Abstract baseclass for resampling operations
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -61,8 +61,8 @@ class ResampleOperation1D(LinkableOperation):
 
 
 class ResampleOperation2D(ResampleOperation1D):
-    """
-    Abstract baseclass for resampling operations
+    """Abstract baseclass for resampling operations
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
