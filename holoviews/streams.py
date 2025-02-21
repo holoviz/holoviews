@@ -593,7 +593,6 @@ class Buffer(Pipe):
 
 
     def verify(self, x):
-        """ Verify consistency of dataframes that pass through this stream """
         """Verify consistency of dataframes that pass through this stream
 
         """

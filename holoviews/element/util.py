@@ -24,6 +24,8 @@ from ..core.util import (
 if TYPE_CHECKING:
     from typing import TypeVar
 
+    import pandas as pd
+
     Array = TypeVar("Array", np.ndarray, pd.api.extensions.ExtensionArray)
 
 
@@ -349,6 +351,8 @@ def connect_edges(graph):
 
 
 def sort_arr(arr: Array) -> Array:
+    import pandas as pd
+
     if isinstance(arr, pd.api.extensions.ExtensionArray):
         return arr[arr.argsort()]
     return np.sort(arr)

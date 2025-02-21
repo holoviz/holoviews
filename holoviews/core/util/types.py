@@ -26,7 +26,8 @@ class _GeneratorIs(metaclass=_GeneratorIsMeta):
 def gen_types(gen_func):
     """
     Decorator which takes a generator function which yields difference types
-    make it so it can be called with isinstance and issubclass."""
+    make it so it can be called with isinstance and issubclass.
+    """
     if not inspect.isgeneratorfunction(gen_func):
         msg = "gen_types decorator can only be applied to generator"
         raise TypeError(msg)

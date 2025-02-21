@@ -4,7 +4,8 @@ from packaging.version import Version
 
 
 class VersionError(Exception):
-    "Raised when there is a library version mismatch."
+    """Raised when there is a library version mismatch."""
+
     def __init__(self, msg, version=None, min_version=None, **kwargs):
         self.version = version
         self.min_version = min_version
@@ -12,7 +13,7 @@ class VersionError(Exception):
 
 
 def _no_import_version(name) -> tuple[int, int, int]:
-    """ Get version number without importing the library """
+    """Get version number without importing the library"""
     try:
         return Version(version(name)).release
     except PackageNotFoundError:
