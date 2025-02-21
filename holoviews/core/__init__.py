@@ -29,7 +29,7 @@ Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[datetime] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[date] = '%Y-%m-%d'
-# Dimension.type_formatters['pandas.Timestamp'] = "%Y-%m-%d %H:%M:%S"  # TODO: Implement this
+Dimension.type_formatters['pandas._libs.tslibs.timestamps.Timestamp'] = "%Y-%m-%d %H:%M:%S"
 
 
 def public(obj):
