@@ -1,7 +1,7 @@
 import datetime as dt
 import inspect
 import sys
-import types
+from types import GeneratorType
 
 
 # gen_types is copied from param, can be removed when
@@ -35,7 +35,7 @@ def gen_types(gen_func):
 
 
 # Types
-generator_types = (zip, range, types.GeneratorType)
+generator_types = (zip, range, GeneratorType)
 
 
 @gen_types

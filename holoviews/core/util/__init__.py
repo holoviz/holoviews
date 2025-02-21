@@ -12,14 +12,13 @@ import pickle
 import string
 import sys
 import time
-import types
 import unicodedata
 import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
 from threading import Event, Thread
-from types import FunctionType
+from types import FunctionType, GeneratorType
 
 import numpy as np
 import param
@@ -507,7 +506,7 @@ def callable_name(callable_obj):
             return callable_obj.__name__
         elif inspect.ismethod(callable_obj):    # instance and class methods
             return callable_obj.__func__.__qualname__.replace('.__call__', '')
-        elif isinstance(callable_obj, types.GeneratorType):
+        elif isinstance(callable_obj, GeneratorType):
             return callable_obj.__name__
         else:
             return type(callable_obj).__name__
