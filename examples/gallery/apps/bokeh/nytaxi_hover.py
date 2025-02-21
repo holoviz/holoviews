@@ -16,10 +16,10 @@ You can now run this app with:
   bokeh serve --show nytaxi_hover.py
 
 """
-import numpy as np
-import holoviews as hv
 import dask.dataframe as dd
+import numpy as np
 
+import holoviews as hv
 from holoviews import opts
 from holoviews.operation.datashader import aggregate
 

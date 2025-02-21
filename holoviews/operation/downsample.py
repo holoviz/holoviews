@@ -1,5 +1,4 @@
-"""
-Implements downsampling algorithms for large 1D datasets.
+"""Implements downsampling algorithms for large 1D datasets.
 
 The algorithms implemented in this module have been adapted from
 https://github.com/predict-idlab/plotly-resampler and are reproduced
@@ -26,6 +25,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
 """
 
 import math
@@ -56,6 +56,7 @@ def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket):
         All x values in the bucket
     y_bucket : np.ndarray
         All y values in the bucket
+
     Returns
     -------
     int
@@ -101,24 +102,29 @@ def _lttb_inner(x, y, n_out, sampled_x, offset):
 
 
 def _ensure_contiguous(x, y):
-    """
-    Ensures the arrays are contiguous in memory (required by tsdownsample).
+    """Ensures the arrays are contiguous in memory (required by tsdownsample).
+
     """
     return np.ascontiguousarray(x), np.ascontiguousarray(y)
 
 
 def _lttb(x, y, n_out, **kwargs):
-    """
-    Downsample the data using the LTTB algorithm.
+    """Downsample the data using the LTTB algorithm.
 
     Will use a Python/Numpy implementation if tsdownsample is not available.
 
-    Args:
-        x (np.ndarray): The x-values of the data.
-        y (np.ndarray): The y-values of the data.
-        n_out (int): The number of output points.
-    Returns:
-        np.array: The indexes of the selected datapoints.
+    Parameters
+    ----------
+    x : np.ndarray
+        The x-values of the data.
+    y : np.ndarray
+        The y-values of the data.
+    n_out : int
+        The number of output points.
+
+    Returns
+    -------
+    np.array: The indexes of the selected datapoints.
     """
     try:
         from tsdownsample import LTTBDownsampler
@@ -152,15 +158,20 @@ def _lttb(x, y, n_out, **kwargs):
     return sampled_x
 
 def _nth_point(x, y, n_out, **kwargs):
-    """
-    Downsampling by selecting every n-th datapoint
+    """Downsampling by selecting every n-th datapoint
 
-    Args:
-        x (np.ndarray): The x-values of the data.
-        y (np.ndarray): The y-values of the data.
-        n_out (int): The number of output points.
-    Returns:
-        slice: The slice of selected datapoints.
+    Parameters
+    ----------
+    x : np.ndarray
+        The x-values of the data.
+    y : np.ndarray
+        The y-values of the data.
+    n_out : int
+        The number of output points.
+
+    Returns
+    -------
+    slice : The slice of selected datapoints.
     """
     n_samples = len(x)
     return slice(0, n_samples, max(1, math.ceil(n_samples / n_out)))
@@ -213,11 +224,11 @@ _ALGORITHMS = {
 }
 
 class downsample1d(ResampleOperation1D):
-    """
-    Implements downsampling of a regularly sampled 1D dataset.
+    """Implements downsampling of a regularly sampled 1D dataset.
 
     If available uses the `tsdownsample` library to perform massively
     accelerated downsampling.
+
     """
 
     algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS), doc="""
@@ -282,8 +293,8 @@ class downsample1d(ResampleOperation1D):
         return element.iloc[samples]
 
     def _compute_mask(self, element):
-        """
-        Computes the mask to apply to the element before downsampling.
+        """Computes the mask to apply to the element before downsampling.
+
         """
         neighbor_enabled = (
             self.p.neighbor_points

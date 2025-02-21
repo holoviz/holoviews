@@ -1,10 +1,16 @@
 import sqlite3
+import warnings
 from tempfile import NamedTemporaryFile
 from unittest import SkipTest
 
 try:
     import ibis
-    from ibis import sqlite
+    # Getting this Warnings on Python 3.13 and Ibis 9.5
+    # DeprecationWarning: Attribute.__init__ missing 1 required positional argument: 'value'.
+    # This will become an error in Python 3.15.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from ibis import sqlite
 except ImportError:
     raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
 

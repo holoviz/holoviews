@@ -281,9 +281,9 @@ class IbisInterface(Interface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if IBIS_GE_4_0_0:
             count = data.count().execute()

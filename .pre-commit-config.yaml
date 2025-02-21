@@ -17,17 +17,17 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.1
+    rev: v0.9.3
     hooks:
       - id: ruff
-        files: holoviews/|scripts/
+        exclude: \.ipynb$
   - repo: https://github.com/hoxbro/clean_notebook
     rev: v0.1.15
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.0
     hooks:
       - id: codespell
         additional_dependencies:
@@ -43,7 +43,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: v3.4.1
+    rev: v3.4.2
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml

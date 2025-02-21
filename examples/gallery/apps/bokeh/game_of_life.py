@@ -1,10 +1,10 @@
 import numpy as np
-import holoviews as hv
 import panel as pn
-
-from holoviews import opts
-from holoviews.streams import Tap, Counter, DoubleTap
 from scipy.signal import convolve2d
+
+import holoviews as hv
+from holoviews import opts
+from holoviews.streams import Counter, DoubleTap, Tap
 
 hv.extension('bokeh')
 

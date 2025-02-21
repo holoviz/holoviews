@@ -1,7 +1,7 @@
-"""
-Minimal set of functionality of Matplotlib's MaxNLocator to choose contour
+"""Minimal set of functionality of Matplotlib's MaxNLocator to choose contour
 levels without having to have Matplotlib installed.
 Taken from Matplotlib 3.8.0.
+
 """
 import math
 
@@ -9,12 +9,13 @@ import numpy as np
 
 
 class _Edge_integer:
-    """
-    Helper for `.MaxNLocator`, `.MultipleLocator`, etc.
+    """Helper for `.MaxNLocator`, `.MultipleLocator`, etc.
 
     Take floating-point precision limitations into account when calculating
     tick locations as integer multiples of a step.
+
     """
+
     def __init__(self, step, offset):
         """
         Parameters
@@ -41,14 +42,18 @@ class _Edge_integer:
         return abs(ms - edge) < tol
 
     def le(self, x):
-        """Return the largest n: n*step <= x."""
+        """Return the largest n: n*step <= x.
+
+        """
         d, m = divmod(x, self.step)
         if self.closeto(m / self.step, 1):
             return d + 1
         return d
 
     def ge(self, x):
-        """Return the smallest n: n*step >= x."""
+        """Return the smallest n: n*step >= x.
+
+        """
         d, m = divmod(x, self.step)
         if self.closeto(m / self.step, 0):
             return d
@@ -56,8 +61,7 @@ class _Edge_integer:
 
 
 def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
-    """
-    Modify the endpoints of a range as needed to avoid singularities.
+    """Modify the endpoints of a range as needed to avoid singularities.
 
     Parameters
     ----------
@@ -82,7 +86,6 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
         If either input is inf or NaN, or if both inputs are 0 or very
         close to zero, it returns -*expander*, *expander*.
     """
-
     if (not np.isfinite(vmin)) or (not np.isfinite(vmax)):
         return -expander, expander
 

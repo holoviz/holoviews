@@ -11,10 +11,10 @@ from .interface import DataError, Interface
 
 
 class DictInterface(Interface):
-    """
-    Interface for simple dictionary-based dataset format. The dictionary
+    """Interface for simple dictionary-based dataset format. The dictionary
     keys correspond to the column (i.e. dimension) names and the values
     are collections representing the values in that column.
+
     """
 
     types = (dict, OrderedDict)
@@ -135,9 +135,9 @@ class DictInterface(Interface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if len(data) != 1:
             return data

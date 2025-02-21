@@ -14,8 +14,7 @@ from .util import finite_range
 
 
 class cuDFInterface(PandasInterface):
-    """
-    The cuDFInterface allows a Dataset objects to wrap a cuDF
+    """The cuDFInterface allows a Dataset objects to wrap a cuDF
     DataFrame object. Using cuDF allows working with columnar
     data on a GPU. Most operations leave the data in GPU memory,
     however to plot the data it has to be loaded into memory.
@@ -27,6 +26,7 @@ class cuDFInterface(PandasInterface):
        (see https://github.com/rapidsai/cudf/issues/4237)
     3) Not all functions can be easily applied to a cuDF so
        some functions applied with aggregate and reduce will not work.
+
     """
 
     datatype = 'cuDF'
@@ -182,11 +182,11 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        """
-        Given a Dataset object and a dictionary with dimension keys and
+        """Given a Dataset object and a dictionary with dimension keys and
         selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
+
         """
         mask = None
         for dim, sel in selection.items():

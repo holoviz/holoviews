@@ -105,8 +105,8 @@ class SankeyPlot(GraphPlot):
             arc_glyph.update(**styles)
 
     def _compute_quads(self, element, data, mapping):
-        """
-        Computes the node quad glyph data.x
+        """Computes the node quad glyph data.x
+
         """
         quad_mapping = {'left': 'x0', 'right': 'x1', 'bottom': 'y0', 'top': 'y1'}
         quad_data = dict(data['scatter_1'])
@@ -121,8 +121,8 @@ class SankeyPlot(GraphPlot):
         mapping['quad_1'] = quad_mapping
 
     def _compute_labels(self, element, data, mapping):
-        """
-        Computes labels for the nodes and adds it to the data.
+        """Computes labels for the nodes and adds it to the data.
+
         """
         if element.vdims:
             edges = Dataset(element)[element[element.vdims[0].name]>0]
@@ -211,8 +211,8 @@ class SankeyPlot(GraphPlot):
                                  text_baseline='middle', text_align=align)
 
     def _patch_hover(self, element, data):
-        """
-        Replace edge start and end hover data with label_index data.
+        """Replace edge start and end hover data with label_index data.
+
         """
         if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
@@ -227,7 +227,9 @@ class SankeyPlot(GraphPlot):
         data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """Return the extents of the Sankey box"""
+        """Return the extents of the Sankey box
+
+        """
         if range_type == 'extents':
             return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
