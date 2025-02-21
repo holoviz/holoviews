@@ -1,4 +1,5 @@
 import sys
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -9,6 +10,23 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import PANDAS_GE_2_1_0
 from .interface import DataError, Interface
 from .util import finite_range
+
+
+class _pd:
+    module = None
+
+    def __getattr__(self, attr):
+        if self.module is None:
+            import pandas as pd
+            self.module = pd
+        return getattr(self.module, attr)
+
+
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    pd = _pd()
+
 
 
 class PandasAPI:
@@ -23,7 +41,6 @@ class PandasAPI:
 
     """
 
-pd = None  # Set when PandasInterface.applies is successful
 
 class PandasInterface(Interface, PandasAPI):
 
@@ -39,8 +56,6 @@ class PandasInterface(Interface, PandasAPI):
     def applies(cls, obj):
         if not cls.loaded():
             return False
-        global pd  # noqa: PLW0603
-        import pandas as pd
         return isinstance(obj, (pd.DataFrame, pd.Series))
 
     @classmethod
