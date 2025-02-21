@@ -1,4 +1,3 @@
-import sys
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -50,7 +49,10 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def loaded(cls):
-        return 'pandas' in sys.modules
+        # return 'pandas' in sys.modules
+        # 2025-02: As long as it is a required dependency and to not break
+        # existing behavior we will for now always return True
+        return True
 
     @classmethod
     def applies(cls, obj):
