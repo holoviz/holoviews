@@ -194,6 +194,7 @@ cuda-version = "12.2.*"
 cudf = "24.12.*"
 cupy = "*"
 cuspatial = "*"
+numba = "<0.61"
 librmm = { version = "*", channel = "rapidsai" }
 rmm = { version = "*", channel = "rapidsai" }
 
