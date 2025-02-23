@@ -32,8 +32,11 @@ class _lazy_module:
     __module = None
     __module_name = None
 
-    def __init__(self, module_name):
+    def __init__(self, module_name, package_name=None):
+        # Module name is what you use to import with and package name
+        # is what you install with
         self.__module_name = module_name
+        self.__package_name = package_name or module_name
 
     @property
     def _module(self):
@@ -53,9 +56,12 @@ class _lazy_module:
     def __bool__(self):
         return bool(self.__module or find_spec(self.__module_name))
 
+    def __repr__(self):
+        return repr(self.__module).replace("<module", "<lazy-module")
+
     @property
     def __version__(self):
-        return _get_version(self.__module_name)
+        return self.__module and self.__module.__version__ or _get_version(self.__package_name)
 
 
 # Versions
