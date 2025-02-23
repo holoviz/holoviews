@@ -6,25 +6,14 @@ from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import PANDAS_GE_2_1_0
+from ..util.compat import PANDAS_GE_2_1_0, _lazy_module
 from .interface import DataError, Interface
 from .util import finite_range
-
-
-class _pd:
-    module = None
-
-    def __getattr__(self, attr):
-        if self.module is None:
-            import pandas as pd
-            self.module = pd
-        return getattr(self.module, attr)
-
 
 if TYPE_CHECKING:
     import pandas as pd
 else:
-    pd = _pd()
+    pd = _lazy_module("pandas")
 
 
 

@@ -1,3 +1,4 @@
+from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 
 from packaging.version import Version
@@ -18,6 +19,30 @@ def _no_import_version(name) -> tuple[int, int, int]:
         return Version(version(name)).release
     except PackageNotFoundError:
         return (0, 0, 0)
+
+
+class _lazy_module:
+    __module = None
+    __module_name = None
+
+    def __init__(self, module_name):
+        self.__module_name = module_name
+
+    @property
+    def _module(self):
+        if self.__module is None:
+            try:
+                self.__module = import_module(self.__module_name)
+            except PackageNotFoundError:
+                raise ModuleNotFoundError(f"No module named {self.__module_name!r}") from None
+        return self.__module
+
+    def __getattr__(self, attr):
+        return getattr(self._module, attr)
+
+    def __dir__(self):
+        return list(self._module.__all__)
+
 
 # Versions
 NUMPY_VERSION = _no_import_version("numpy")

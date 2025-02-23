@@ -9,7 +9,7 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
 from .util import cached
 
-IBIS_VERSION = util.versions._no_import_version("ibis-framework")
+IBIS_VERSION = util.compat._no_import_version("ibis-framework")
 IBIS_GE_4_0_0 = IBIS_VERSION >= (4, 0, 0)
 IBIS_GE_5_0_0 = IBIS_VERSION >= (5, 0, 0)
 IBIS_GE_9_5_0 = IBIS_VERSION >= (9, 5, 0)
