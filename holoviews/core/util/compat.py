@@ -1,6 +1,7 @@
 from functools import lru_cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
+from importlib.util import find_spec
 
 from packaging.version import Version
 
@@ -48,6 +49,9 @@ class _lazy_module:
 
     def __dir__(self):
         return list(self._module.__all__)
+
+    def __bool__(self):
+        return bool(self.__module or find_spec(self.__module_name))
 
     @property
     def __version__(self):
