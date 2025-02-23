@@ -22,6 +22,10 @@ def _get_version(name):
     except PackageNotFoundError:
         return "0.0.0"
 
+@lru_cache
+def _is_installed(name):
+    return find_spec(name) is not None
+
 
 def _no_import_version(name) -> tuple[int, int, int]:
     """Get version number without importing the library"""
@@ -51,10 +55,10 @@ class _lazy_module:
         return getattr(self._module, attr)
 
     def __dir__(self):
-        return list(self._module.__all__)
+        return dir(self._module)
 
     def __bool__(self):
-        return bool(self.__module or find_spec(self.__module_name))
+        return bool(self.__module or _is_installed(self.__module_name))
 
     def __repr__(self):
         return repr(self.__module).replace("<module", "<lazy-module")
