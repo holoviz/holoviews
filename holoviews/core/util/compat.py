@@ -16,20 +16,21 @@ class VersionError(Exception):
 
 
 @lru_cache
-def _get_version(name):
+def _is_installed(module_name):
+    return find_spec(module_name) is not None
+
+
+@lru_cache
+def _get_version(package_name):
     try:
-        return version(name)
+        return version(package_name)
     except PackageNotFoundError:
         return "0.0.0"
 
-@lru_cache
-def _is_installed(name):
-    return find_spec(name) is not None
 
-
-def _no_import_version(name) -> tuple[int, int, int]:
+def _no_import_version(package_name) -> tuple[int, int, int]:
     """Get version number without importing the library"""
-    return Version(_get_version(name)).release
+    return Version(_get_version(package_name)).release
 
 
 class _lazy_module:
@@ -61,7 +62,10 @@ class _lazy_module:
         return bool(self.__module or _is_installed(self.__module_name))
 
     def __repr__(self):
-        return repr(self.__module).replace("<module", "<lazy-module")
+        if self.__module:
+            return repr(self.__module).replace("<module", "<lazy-module")
+        else:
+            return f"<lazy-module {self.__module_name!r}>"
 
     @property
     def __version__(self):
