@@ -1,3 +1,4 @@
+from functools import lru_cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 
@@ -13,12 +14,17 @@ class VersionError(Exception):
         super().__init__(msg, **kwargs)
 
 
+@lru_cache
+def _get_version(name):
+    try:
+        return version(name)
+    except PackageNotFoundError:
+        return "0.0.0"
+
+
 def _no_import_version(name) -> tuple[int, int, int]:
     """Get version number without importing the library"""
-    try:
-        return Version(version(name)).release
-    except PackageNotFoundError:
-        return (0, 0, 0)
+    return Version(_get_version(name)).release
 
 
 class _lazy_module:
@@ -42,6 +48,10 @@ class _lazy_module:
 
     def __dir__(self):
         return list(self._module.__all__)
+
+    @property
+    def __version__(self):
+        return _get_version(self.__module_name)
 
 
 # Versions
