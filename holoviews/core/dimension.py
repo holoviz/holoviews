@@ -410,9 +410,8 @@ class Dimension(param.Parameterized):
             return self.type_formatters[own_type]
 
         own_type_str = f"{own_type.__module__}.{own_type.__qualname__}"
-        for otype, formatter in self.type_formatters.items():
-            if otype == own_type_str:
-                return formatter
+        if own_type_str in self.type_formatters:
+            return self.type_formatters[own_type_str]
 
     def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.

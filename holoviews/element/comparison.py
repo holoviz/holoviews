@@ -18,7 +18,6 @@ considered different.
 
 """
 import contextlib
-import sys
 from functools import partial
 from unittest import TestCase
 from unittest.util import safe_repr
@@ -43,6 +42,7 @@ from ..core import (
 )
 from ..core.options import Cycle, Options
 from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
+from ..core.util.compat import _is_installed
 from . import *  # noqa (All Elements need to support comparison)
 
 
@@ -131,7 +131,8 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
 
         # Pandas dataframe comparison
-        if pd := sys.modules.get("pandas"):
+        if _is_installed("pandas"):
+            import pandas as pd
             cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
