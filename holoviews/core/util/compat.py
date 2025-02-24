@@ -52,7 +52,7 @@ class _lazy_module:
             Used for the __version__ if the module is not imported.
             If not set uses the module_name.
         module_bool_check: bool, optional, default False
-            Use sys.modules for __bool__ check if True, else uses importlib.util.find_spec.
+            Use `sys.modules` for __bool__ check if True, else uses `importlib.util.find_spec`.
         """
         self.__module = None
         self.__module_name = module_name
@@ -100,4 +100,4 @@ NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
 PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
 PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
 
-__all__ = ["NUMPY_GE_2_0_0", "NUMPY_VERSION", "PANDAS_GE_2_1_0", "PANDAS_GE_2_2_0", "PANDAS_VERSION", "PARAM_VERSION"]
+__all__ = ["NUMPY_GE_2_0_0", "NUMPY_VERSION", "PANDAS_GE_2_1_0", "PANDAS_GE_2_2_0", "PANDAS_VERSION", "PARAM_VERSION", "_lazy_module"]

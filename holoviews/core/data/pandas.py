@@ -6,7 +6,7 @@ from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.compat import PANDAS_GE_2_1_0, _is_installed, _lazy_module
+from ..util.compat import PANDAS_GE_2_1_0, _lazy_module
 from .interface import DataError, Interface
 from .util import finite_range
 
@@ -41,7 +41,7 @@ class PandasInterface(Interface, PandasAPI):
         # return 'pandas' in sys.modules
         # 2025-02: As long as it is a required dependency and to not break
         # existing behavior we will for now always return True
-        return _is_installed("pandas")
+        return bool(pd)
 
     @classmethod
     def applies(cls, obj):
