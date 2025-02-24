@@ -15,6 +15,7 @@ from ..core import (
     Dataset,
     Dimension,
     Element,
+    Empty,
     GridMatrix,
     HoloMap,
     NdOverlay,
@@ -1258,6 +1259,9 @@ class dendrogram(Operation):
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
         main = HeatMap(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+
+        if i == 0 and str(element_kdims[0]) == self.p.adjoint_dims[0]:
+            main = main << Empty()
         for dendro in dendros:
             main = main << dendro
 
