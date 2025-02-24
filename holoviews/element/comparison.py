@@ -42,7 +42,7 @@ from ..core import (
 )
 from ..core.options import Cycle, Options
 from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
-from ..core.util.compat import _is_installed
+from ..core.util.dependencies import _is_installed
 from . import *  # noqa (All Elements need to support comparison)
 
 

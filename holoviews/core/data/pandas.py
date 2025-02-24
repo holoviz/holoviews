@@ -6,7 +6,7 @@ from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.compat import PANDAS_GE_2_1_0, _lazy_module
+from ..util.dependencies import PANDAS_GE_2_1_0, _lazy_module
 from .interface import DataError, Interface
 from .util import finite_range
 

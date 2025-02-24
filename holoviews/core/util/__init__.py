@@ -23,7 +23,7 @@ from types import FunctionType, GeneratorType
 import numpy as np
 import param
 
-from .compat import (  # noqa: F401
+from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
     NUMPY_VERSION,
     PANDAS_GE_2_1_0,

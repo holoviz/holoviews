@@ -7,7 +7,7 @@ import numpy as np
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.compat import _lazy_module, _no_import_version
+from ..util.dependencies import _lazy_module, _no_import_version
 from .interface import DataError, Interface
 from .util import cached
 
