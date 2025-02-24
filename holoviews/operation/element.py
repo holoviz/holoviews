@@ -35,8 +35,8 @@ from ..core.util import (
     label_sanitizer,
 )
 from ..element.chart import Histogram, Scatter
-from ..element.path import Contours, Polygons
-from ..element.raster import RGB, Image
+from ..element.path import Contours, Dendrogram, Polygons
+from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
@@ -1218,3 +1218,47 @@ class gridmatrix(param.ParameterizedFunction):
                                   datatype=[default_datatype])
             data[(d1.name, d2.name)] = el
         return data
+
+
+class dendrogram(Operation):
+
+    main_dim = param.String()
+
+    adjoint_dims = param.List(item_type=str) # , bounds=(1, 2))
+
+    # main_element = param.ClassSelector(default=HeatMap, class_=Dataset)
+
+    def _compute_linkage(self, dataset, dim, vdim):
+        from scipy.cluster.hierarchy import dendrogram, linkage  # TODO: Add scipy check
+
+        arrays, labels = [], []
+        for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
+            labels.append(k)
+            arrays.append(v.dimension_values(vdim))
+        X = np.vstack(arrays)
+        X = np.ma.array(X, mask=np.logical_not(np.isfinite(X)))
+        Z = linkage(X)
+        ddata = dendrogram(Z, labels=labels, no_plot=True)
+        ddata["mh"] = np.max(Z[:, 2])
+        return ddata
+
+    def _process(self, element, key=None):
+        element_kdims = element.kdims
+        dataset = Dataset(element)
+        sort_dims, dendros = [], []
+        for i, d in enumerate(self.p.adjoint_dims):
+            ddata = self._compute_linkage(dataset, d, self.p.main_dim)
+            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
+            sort_dim = f"sort{i}"
+            dataset = dataset.add_dimension(sort_dim, 0, order)
+            sort_dims.append(sort_dim)
+
+            dendro = Dendrogram(zip(ddata["icoord"], ddata["dcoord"]))
+            dendros.append(dendro)
+
+        vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        main = HeatMap(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+        for dendro in dendros:
+            main = main << dendro
+
+        return main
