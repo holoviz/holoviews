@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
+from bokeh.models import FactorRange
 
 from ...core import util
 from ...element import Contours, Polygons
@@ -225,12 +226,31 @@ class DendrogramPlot(LegendPlot, ColorbarPlot):
             if pos == "right":
                 if self.width == self.param.width.default:
                     plot.width = 80
-                plot.y_range, plot.y_scale = main.y_range, main.y_scale
+                self._update_adjoined_figure(main, plot, "y")
             elif pos == "top":
                 if self.height == self.param.height.default:
                     plot.height = 80
-                plot.x_range, plot.x_scale = main.x_range, main.x_scale
+                self._update_adjoined_figure(main, plot, "x")
         return plot
+
+    def _update_adjoined_figure(self, main, side, dim):
+        main_dim = getattr(main, f"{dim}_range").name
+        side_dim = f"{dim}s"
+        data = side.renderers[0].data_source.data
+        if isinstance(getattr(main, f"{dim}_range"), FactorRange):
+            # 0.5 is the factor used by Bokeh to convert a synthetic
+            # coordinate into a categorical factor.
+            # data_min.min() will for Scipy dendogram calculation be 5.
+            data_adj = np.asarray(data[side_dim])
+            data[side_dim] = list(0.5 / data_adj.min() * data_adj)
+        else:
+            data_adj, data_main = np.asarray(data[side_dim]), np.asarray(main.renderers[0].data_source.data[main_dim])
+            x1, x2, y1, y2 = data_adj.min(), data_adj.max(), data_main.min(), data_main.max()
+            data[side_dim] = list((y2 - y1) / (x2 - x1) * (data_adj - x1) + y1)
+
+        # Update range and scale to match main plot
+        setattr(side, f"{dim}_range", getattr(main, f"{dim}_range"))
+        setattr(side, f"{dim}_scale", getattr(main, f"{dim}_scale"))
 
     def _get_hover_data(self, data, element):
         """
