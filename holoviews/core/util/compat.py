@@ -1,3 +1,4 @@
+import sys
 from functools import lru_cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
@@ -34,14 +35,29 @@ def _no_import_version(package_name) -> tuple[int, int, int]:
 
 
 class _lazy_module:
-    __module = None
-    __module_name = None
+    __slots__ = ("__module", "__module_bool_check", "__module_name", "__package_name")
 
-    def __init__(self, module_name, package_name=None):
-        # Module name is what you use to import with and package name
-        # is what you install with
+    def __init__(self, module_name, package_name=None, *, module_bool_check=False):
+        """
+        Lazy import module
+
+        This will wait and import the module when an attribute is accessed.
+
+        Parameters
+        ----------
+        module_name: str
+            The import name of the module, e.g. `import PIL`
+        package_name: str, optional
+            Name of the package, this is the named used for installing the package, e.g. `pip install pillow`.
+            Used for the __version__ if the module is not imported.
+            If not set uses the module_name.
+        module_bool_check: bool, optional, default False
+            Use sys.modules for __bool__ check if True, else uses importlib.util.find_spec.
+        """
+        self.__module = None
         self.__module_name = module_name
         self.__package_name = package_name or module_name
+        self.__module_bool_check = module_bool_check
 
     @property
     def _module(self):
@@ -59,7 +75,10 @@ class _lazy_module:
         return dir(self._module)
 
     def __bool__(self):
-        return bool(self.__module or _is_installed(self.__module_name))
+        if self.__module_bool_check:
+            return bool(self.__module or self.__module_name in sys.modules)
+        else:
+            return bool(self.__module or _is_installed(self.__module_name))
 
     def __repr__(self):
         if self.__module:
