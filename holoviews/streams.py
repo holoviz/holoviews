@@ -26,7 +26,11 @@ else:
 
 
 # Types supported by Pointer derived streams
-pointer_types = (Number, str, tuple, *util.datetime_types)
+@util.types.gen_types
+def pointer_types():
+    yield from (Number, str, tuple)
+    yield from util.datetime_types
+
 
 POPUP_POSITIONS = [
     "top_right",
