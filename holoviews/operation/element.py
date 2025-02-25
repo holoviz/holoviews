@@ -1227,7 +1227,7 @@ class dendrogram(Operation):
 
     adjoint_dims = param.List(item_type=str) # , bounds=(1, 2))
 
-    # main_element = param.ClassSelector(default=HeatMap, class_=Dataset)
+    main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False)
 
     def _compute_linkage(self, dataset, dim, vdim):
         from scipy.cluster.hierarchy import dendrogram, linkage  # TODO: Add scipy check
@@ -1258,7 +1258,10 @@ class dendrogram(Operation):
             dendros.append(dendro)
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
-        main = HeatMap(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+        if type(element) is not Dataset:
+            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+        else:
+            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
 
         if i == 0 and str(element_kdims[0]) == self.p.adjoint_dims[0]:
             main = main << Empty()
