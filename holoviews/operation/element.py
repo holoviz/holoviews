@@ -1237,10 +1237,8 @@ class dendrogram(Operation):
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
         X = np.vstack(arrays)
-        X = np.ma.array(X, mask=np.logical_not(np.isfinite(X)))
         Z = linkage(X)
         ddata = dendrogram(Z, labels=labels, no_plot=True)
-        ddata["mh"] = np.max(Z[:, 2])
         return ddata
 
     def _process(self, element, key=None):
