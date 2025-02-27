@@ -624,9 +624,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     is_scalars = [isscalar(value) for value in column]
     all_scalar = all(is_scalars)
     if all_scalar and not expanded:
-        scal_unique = column.unique()
-        # .unique() on categorical dtype doesn't return a np array
-        return scal_unique if isinstance(scal_unique, np.ndarray) else scal_unique.to_numpy()
+        return np.asarray(column)
     arrays, scalars = [], []
     for i, geom in enumerate(data[geom_col]):
         val = column.iloc[i]
