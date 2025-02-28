@@ -11,7 +11,7 @@ from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import get_directed_graph_paths, process_cmap
 from .element import ColorbarPlot
-from .util import filter_styles
+from .util import MPL_GE_3_10_1, filter_styles
 
 
 class GraphPlot(GraphMixin, ColorbarPlot):
@@ -166,6 +166,12 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         xs, ys = plot_args['nodes']
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups)
+        # Matplotlib 3.10.1 started emitting this UserWarning:
+        #   You passed both c and facecolor/facecolors for the markers.
+        #   c has precedence over facecolor/facecolors.
+        if MPL_GE_3_10_1 and "c" in node_opts:
+            node_opts.pop("facecolor", None)
+            node_opts.pop("facecolors", None)
         with warnings.catch_warnings():
             # scatter have a default cmap and with an empty array will emit this warning
             warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
