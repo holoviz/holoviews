@@ -190,10 +190,9 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "24.12.*"
+cudf = "25.02.*"
 cupy = "*"
 cuspatial = "*"
-numba = "<0.61"
 librmm = { version = "*", channel = "rapidsai" }
 rmm = { version = "*", channel = "rapidsai" }
 
