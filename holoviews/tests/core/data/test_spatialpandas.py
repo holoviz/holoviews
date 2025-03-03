@@ -4,6 +4,7 @@ Tests for the spatialpandas interface.
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 
 try:
     import spatialpandas
@@ -24,12 +25,14 @@ try:
 except ImportError:
     dd = None
 
+from holoviews import Dimension
 from holoviews.core.data import (
     DaskSpatialPandasInterface,
     Dataset,
     SpatialPandasInterface,
 )
 from holoviews.core.data.interface import DataError
+from holoviews.core.data.spatialpandas import get_value_array
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -301,3 +304,14 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     def test_sort_by_value(self):
         raise SkipTest("Not supported")
+
+
+
+def test_regression_get_value_array():
+    # See: https://github.com/holoviz/holoviews/pull/6519
+    df = pd.DataFrame(
+        {"Longitude": [0, 1, 2], "Latitude": [0, 1, 2], "Sensor": ["S1", "S2", "S1"]}
+    )
+    result = get_value_array(df, Dimension("Sensor"), False, None, None, None)
+
+    np.testing.assert_array_equal(df.Sensor, result)
