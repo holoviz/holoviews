@@ -1,7 +1,18 @@
 import datetime as dt
 import inspect
-import sys
 from types import GeneratorType
+from typing import TYPE_CHECKING
+
+from .dependencies import _lazy_module
+
+if TYPE_CHECKING:
+    import cftime
+    import numpy as np
+    import pandas as pd
+else:
+    cftime = _lazy_module("cftime", bool_use_sys_modules=True)
+    np = _lazy_module("numpy", bool_use_sys_modules=True)
+    pd = _lazy_module("pandas", bool_use_sys_modules=True)
 
 
 # gen_types is copied from param, can be removed when
@@ -40,7 +51,7 @@ generator_types = (zip, range, GeneratorType)
 
 @gen_types
 def pandas_datetime_types():
-    if pd := sys.modules.get("pandas"):
+    if pd:
         from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
         yield from (pd.Timestamp, pd.Period, DatetimeTZDtype)
@@ -48,20 +59,20 @@ def pandas_datetime_types():
 
 @gen_types
 def pandas_timedelta_types():
-    if pd := sys.modules.get("pandas"):
+    if pd:
         yield pd.Timedelta
 
 
 @gen_types
 def cftime_types():
-    if cftime := sys.modules.get("cftime"):
+    if cftime:
         yield cftime.datetime
 
 
 @gen_types
 def datetime_types():
     yield from (dt.datetime, dt.date, dt.time)
-    if np := sys.modules.get("numpy"):
+    if np:
         yield np.datetime64
     yield from pandas_datetime_types()
     yield from cftime_types()
@@ -70,16 +81,16 @@ def datetime_types():
 @gen_types
 def timedelta_types():
     yield dt.timedelta
-    if np := sys.modules.get("numpy"):
+    if np:
         yield np.timedelta64
     yield from pandas_timedelta_types()
 
 
 @gen_types
 def arraylike_types():
-    if np := sys.modules.get("numpy"):
+    if np:
         yield np.ndarray
-    if "pandas" in sys.modules:
+    if pd:
         from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
@@ -87,7 +98,7 @@ def arraylike_types():
 
 @gen_types
 def masked_types():
-    if "pandas" in sys.modules:
+    if pd:
         from pandas.core.arrays.masked import BaseMaskedArray
 
         yield BaseMaskedArray
