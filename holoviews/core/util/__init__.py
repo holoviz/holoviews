@@ -2370,6 +2370,10 @@ def lazy_isinstance(obj, class_or_tuple):
         3) Do an isinstance check for dask.dataframe.DataFrame
 
     """
+    from ...util.warnings import deprecated
+
+    deprecated("1.22.0", "lazy_isinstance") # Not used in HoloViews anymore
+
     if isinstance(class_or_tuple, str):
         class_or_tuple = (class_or_tuple,)
 
