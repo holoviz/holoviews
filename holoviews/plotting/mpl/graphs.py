@@ -170,7 +170,6 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         #   You passed both c and facecolor/facecolors for the markers.
         #   c has precedence over facecolor/facecolors.
         if MPL_GE_3_10_1 and "c" in node_opts:
-            node_opts.pop("facecolor", None)
             node_opts.pop("facecolors", None)
         with warnings.catch_warnings():
             # scatter have a default cmap and with an empty array will emit this warning
