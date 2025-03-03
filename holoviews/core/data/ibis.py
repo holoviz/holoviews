@@ -1,4 +1,3 @@
-import sys
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
@@ -14,7 +13,7 @@ from .util import cached
 if TYPE_CHECKING:
     import ibis
 else:
-    ibis = _lazy_module("ibis", "ibis-framework")
+    ibis = _lazy_module("ibis", "ibis-framework", bool_use_sys_modules=True)
 
 IBIS_VERSION = _no_import_version("ibis-framework")
 IBIS_GE_4_0_0 = IBIS_VERSION >= (4, 0, 0)
@@ -50,7 +49,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def loaded(cls):
-        return "ibis" in sys.modules
+        return bool(ibis)
 
     @classmethod
     def applies(cls, obj):

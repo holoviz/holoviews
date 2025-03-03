@@ -22,7 +22,7 @@ from .core.ndmapping import UniformNdMapping
 if TYPE_CHECKING:
     import pandas as pd
 else:
-    pd = util.dependencies._lazy_module("pandas", module_bool_check=True)
+    pd = util.dependencies._lazy_module("pandas", bool_use_sys_modules=True)
 
 
 # Types supported by Pointer derived streams

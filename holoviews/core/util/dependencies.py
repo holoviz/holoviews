@@ -35,9 +35,9 @@ def _no_import_version(package_name) -> tuple[int, int, int]:
 
 
 class _lazy_module:
-    __slots__ = ("__module", "__module_bool_check", "__module_name", "__package_name")
+    __slots__ = ("__bool_use_sys_modules", "__module", "__module_name", "__package_name")
 
-    def __init__(self, module_name, package_name=None, *, module_bool_check=False):
+    def __init__(self, module_name, package_name=None, *, bool_use_sys_modules=False):
         """
         Lazy import module
 
@@ -51,13 +51,13 @@ class _lazy_module:
             Name of the package, this is the named used for installing the package, e.g. `pip install pillow`.
             Used for the __version__ if the module is not imported.
             If not set uses the module_name.
-        module_bool_check: bool, optional, default False
-            Use `sys.modules` for __bool__ check if True, else uses `importlib.util.find_spec`.
+        bool_use_sys_modules: bool, optional, default False
+            Also check `sys.modules` for module in __bool__ check if True.
         """
         self.__module = None
         self.__module_name = module_name
         self.__package_name = package_name or module_name
-        self.__module_bool_check = module_bool_check
+        self.__bool_use_sys_modules = bool_use_sys_modules
 
     @property
     def _module(self):
@@ -75,8 +75,8 @@ class _lazy_module:
         return dir(self._module)
 
     def __bool__(self):
-        if self.__module_bool_check:
-            return bool(self.__module or self.__module_name in sys.modules)
+        if self.__bool_use_sys_modules:
+            return bool(self.__module or (_is_installed(self.__module_name) and self.__module_name in sys.modules))
         else:
             return bool(self.__module or _is_installed(self.__module_name))
 
