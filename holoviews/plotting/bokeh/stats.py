@@ -28,8 +28,8 @@ from .util import decode_bytes
 
 
 class DistributionPlot(AreaPlot):
-    """
-    DistributionPlot visualizes a distribution of values as a KDE.
+    """DistributionPlot visualizes a distribution of values as a KDE.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -45,11 +45,11 @@ class DistributionPlot(AreaPlot):
 
 
 class BivariatePlot(PolygonPlot):
-    """
-    Bivariate plot visualizes two-dimensional kernel density
+    """Bivariate plot visualizes two-dimensional kernel density
     estimates. Additionally, by enabling the joint option, the
     marginals distributions can be plotted alongside each axis (does
     not animate or compose).
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -117,8 +117,8 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         return super()._apply_transforms(element, data, ranges, style, group)
 
     def _get_factors(self, element, ranges):
-        """
-        Get factors for categorical axes.
+        """Get factors for categorical axes.
+
         """
         if not element.kdims:
             xfactors, yfactors = [element.label], []
@@ -372,8 +372,8 @@ class ViolinPlot(BoxWhiskerPlot):
         return kdims, element.vdims[0]
 
     def _get_factors(self, element, ranges):
-        """
-        Get factors for categorical axes.
+        """Get factors for categorical axes.
+
         """
         split_dim = dim(self.split) if isinstance(self.split, str) else self.split
         kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]

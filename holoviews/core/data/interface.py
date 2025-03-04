@@ -11,7 +11,9 @@ from .util import finite_range
 
 
 class DataError(ValueError):
-    "DataError is raised when the data cannot be interpreted"
+    """DataError is raised when the data cannot be interpreted
+
+    """
 
     def __init__(self, msg, interface=None):
         if interface is not None:
@@ -53,12 +55,12 @@ class Accessor:
 
 
 class iloc(Accessor):
-    """
-    iloc is small wrapper object that allows row, column based
+    """iloc is small wrapper object that allows row, column based
     indexing into a Dataset using the ``.iloc`` property.  It supports
     the usual numpy and pandas iloc indexing semantics including
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.iloc`` property docstring.
+
     """
 
     @classmethod
@@ -99,13 +101,14 @@ class iloc(Accessor):
 
 
 class ndloc(Accessor):
-    """
-    ndloc is a small wrapper object that allows ndarray-like indexing
+    """ndloc is a small wrapper object that allows ndarray-like indexing
     for gridded Datasets using the ``.ndloc`` property. It supports
     the standard NumPy ndarray indexing semantics including
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.ndloc`` property docstring.
+
     """
+
     @classmethod
     def _perform_getitem(cls, dataset, indices):
         ds = dataset
@@ -140,19 +143,19 @@ class Interface(param.Parameterized):
 
     @classmethod
     def loaded(cls):
-        """
-        Indicates whether the required dependencies are loaded.
+        """Indicates whether the required dependencies are loaded.
+
         """
         return True
 
     @classmethod
     def applies(cls, obj):
-        """
-        Indicates whether the interface is designed specifically to
+        """Indicates whether the interface is designed specifically to
         handle the supplied object's type. By default simply checks
         if the object is one of the types declared on the class,
         however if the type is expensive to import at load time the
         method may be overridden.
+
         """
         return type(obj) in cls.types
 
@@ -162,10 +165,10 @@ class Interface(param.Parameterized):
 
     @classmethod
     def cast(cls, datasets, datatype=None, cast_type=None):
-        """
-        Given a list of Dataset objects, cast them to the specified
+        """Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
+
         """
         datatype = datatype or cls.datatype
         cast = []
@@ -282,15 +285,15 @@ class Interface(param.Parameterized):
 
     @classmethod
     def persist(cls, dataset):
-        """
-        Should return a persisted version of the Dataset.
+        """Should return a persisted version of the Dataset.
+
         """
         return dataset
 
     @classmethod
     def compute(cls, dataset):
-        """
-        Should return a computed version of the Dataset.
+        """Should return a computed version of the Dataset.
+
         """
         return dataset
 
@@ -304,9 +307,9 @@ class Interface(param.Parameterized):
 
     @classmethod
     def isunique(cls, dataset, dim, per_geom=False):
-        """
-        Compatibility method introduced for v1.13.0 to smooth
+        """Compatibility method introduced for v1.13.0 to smooth
         over addition of per_geom kwarg for isscalar method.
+
         """
         try:
             return cls.isscalar(dataset, dim, per_geom)
@@ -324,8 +327,8 @@ class Interface(param.Parameterized):
 
     @classmethod
     def replace_value(cls, data, nodata):
-        """
-        Replace `nodata` value in data with NaN
+        """Replace `nodata` value in data with NaN
+
         """
         data = data.astype('float64')
         mask = data != nodata
@@ -335,11 +338,11 @@ class Interface(param.Parameterized):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        """
-        Given a Dataset object and a dictionary with dimension keys and
+        """Given a Dataset object and a dictionary with dimension keys and
         selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
+
         """
         mask = np.ones(len(dataset), dtype=np.bool_)
         for dim, sel in selection.items():
@@ -395,9 +398,9 @@ class Interface(param.Parameterized):
 
     @classmethod
     def indexed(cls, dataset, selection):
-        """
-        Given a Dataset object and selection to be applied returns
+        """Given a Dataset object and selection to be applied returns
         boolean to indicate whether a scalar value has been indexed.
+
         """
         selected = list(selection.keys())
         all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
@@ -427,8 +430,8 @@ class Interface(param.Parameterized):
 
     @classmethod
     def concatenate(cls, datasets, datatype=None, new_type=None):
-        """
-        Utility function to concatenate an NdMapping of Dataset objects.
+        """Utility function to concatenate an NdMapping of Dataset objects.
+
         """
         from . import Dataset, default_datatype
         new_type = new_type or Dataset
@@ -524,8 +527,8 @@ class Interface(param.Parameterized):
 
     @classmethod
     def as_dframe(cls, dataset):
-        """
-        Returns the data of a Dataset as a dataframe avoiding copying
+        """Returns the data of a Dataset as a dataframe avoiding copying
         if it already a dataframe type.
+
         """
         return dataset.dframe()

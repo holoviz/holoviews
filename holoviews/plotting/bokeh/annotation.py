@@ -246,8 +246,8 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         return (data, mapping, style)
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         box = Span(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
@@ -256,11 +256,9 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
         loc = element.data
         if isinstance(element, VLine):
-            dim = 'x'
+            dim = 'y' if self.invert_axes else 'x'
         elif isinstance(element, HLine):
-            dim = 'y'
-        if self.invert_axes:
-            dim = 'x' if dim == 'y' else 'x'
+            dim = 'x' if self.invert_axes else 'y'
         ranges[dim]['soft'] = loc, loc
         return super().get_extents(element, ranges, range_type)
 
@@ -298,8 +296,8 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         return super()._update_glyph(renderer, properties, mapping, glyph, source, data)
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
@@ -327,8 +325,8 @@ class SlopePlot(ElementPlot, AnnotationPlot):
         return (data, mapping, style)
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         slope = Slope(level=properties.get('level', 'glyph'), **mapping)
         plot.add_layout(slope)
@@ -340,9 +338,9 @@ class SlopePlot(ElementPlot, AnnotationPlot):
 
 
 class SplinePlot(ElementPlot, AnnotationPlot):
-    """
-    Draw the supplied Spline annotation (see Spline docstring).
+    """Draw the supplied Spline annotation (see Spline docstring).
     Does not support matplotlib Path codes.
+
     """
 
     style_opts = [*line_properties, 'visible']
@@ -428,8 +426,8 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
 
     def _init_glyph(self, plot, mapping, properties, key):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         properties = {k: v for k, v in properties.items() if 'legend' not in k}
 
@@ -528,8 +526,8 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         return element.data, {}, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
-        """
-        Initializes a new plot object with the last available frame.
+        """Initializes a new plot object with the last available frame.
+
         """
         # Get element key and ranges for frame
         element = self.hmap.last
@@ -546,9 +544,9 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         return div
 
     def update_frame(self, key, ranges=None, plot=None):
-        """
-        Updates an existing plot with data corresponding
+        """Updates an existing plot with data corresponding
         to the key.
+
         """
         element = self._get_frame(key)
         text, _, _ = self.get_data(element, ranges, {})

@@ -9,10 +9,10 @@ from .plot import mpl_rc_context
 
 
 class TablePlot(ElementPlot):
-    """
-    A TablePlot can plot both TableViews and ViewMaps which display
+    """A TablePlot can plot both TableViews and ViewMaps which display
     as either a single static table or as an animated table
     respectively.
+
     """
 
     border = param.Number(default=0.05, bounds=(0.0, 0.5), doc="""

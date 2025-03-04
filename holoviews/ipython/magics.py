@@ -40,8 +40,8 @@ class OutputMagic(Magics):
 
     @classmethod
     def pprint(cls):
-        """
-        Pretty print the current element options
+        """Pretty print the current element options
+
         """
         current, count = '', 0
         for k,v in Store.output_settings.options.items():
@@ -101,9 +101,9 @@ class OutputMagic(Magics):
 
 @magics_class
 class CompositorMagic(Magics):
-    """
-    Magic allowing easy definition of compositor operations.
+    """Magic allowing easy definition of compositor operations.
     Consult %compositor? for more information.
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -146,14 +146,17 @@ class CompositorMagic(Magics):
 
 
 class OptsCompleter:
+    """Implements the TAB-completion for the %%opts magic.
+
     """
-    Implements the TAB-completion for the %%opts magic.
-    """
+
     _completions = {} # Contains valid plot and style keywords per Element
 
     @classmethod
     def setup_completer(cls):
-        "Get the dictionary of valid completions"
+        """Get the dictionary of valid completions
+
+        """
         try:
             for element in Store.options().keys():
                 options = Store.options()['.'.join(element)]
@@ -167,9 +170,9 @@ class OptsCompleter:
 
     @classmethod
     def dotted_completion(cls, line, sorted_keys, compositor_defs):
-        """
-        Supply the appropriate key in Store.options and supply
+        """Supply the appropriate key in Store.options and supply
         suggestions for further completion.
+
         """
         completion_key, suggestions = None, []
         tokens = [t for t in reversed(line.replace('.', ' ').split())]
@@ -201,7 +204,9 @@ class OptsCompleter:
 
     @classmethod
     def option_completer(cls, k,v):
-        "Tab completion hook for the %%opts cell magic."
+        """Tab completion hook for the %%opts cell magic.
+
+        """
         line = v.text_until_cursor
         completions = cls.setup_completer()
         compositor_defs = {el.group:el.output_type.__name__
@@ -236,22 +241,23 @@ class OptsCompleter:
 
 @magics_class
 class OptsMagic(Magics):
-    """
-    Magic for easy customising of normalization, plot and style options.
+    """Magic for easy customising of normalization, plot and style options.
     Consult %%opts? for more information.
+
     """
+
     error_message = None # If not None, the error message that will be displayed
     opts_spec = None       # Next id to propagate, binding displayed object together.
     strict = False
 
     @classmethod
     def process_element(cls, obj):
-        """
-        To be called by the display hook which supplies the element to
+        """To be called by the display hook which supplies the element to
         be displayed. Any customisation of the object can then occur
         before final display. If there is any error, a HTML message
         may be returned. If None is returned, display will proceed as
         normal.
+
         """
         if cls.error_message:
             if cls.strict:
@@ -273,9 +279,9 @@ class OptsMagic(Magics):
 
     @classmethod
     def _partition_lines(cls, line, cell):
-        """
-        Check the code for additional use of %%opts. Enables
+        """Check the code for additional use of %%opts. Enables
         multi-line use of %%opts in a single call to the magic.
+
         """
         if cell is None: return (line, cell)
         specs, code = [line], []
@@ -289,15 +295,14 @@ class OptsMagic(Magics):
 
     @line_cell_magic
     def opts(self, line='', cell=None):
-        """
-        The opts line/cell magic with tab-completion.
+        """The opts line/cell magic with tab-completion.
 
         %%opts [ [path] [normalization] [plotting options] [style options]]+
 
-        path:             A dotted type.group.label specification
+        path :             A dotted type.group.label specification
                           (e.g. Image.Grayscale.Photo)
 
-        normalization:    List of normalization options delimited by braces.
+        normalization :    List of normalization options delimited by braces.
                           One of | -axiswise | -framewise | +axiswise | +framewise |
                           E.g. { +axiswise +framewise }
 
@@ -313,6 +318,7 @@ class OptsMagic(Magics):
 
         More information may be found in the class docstring of
         util.parser.OptsSpec.
+
         """
         line, cell = self._partition_lines(line, cell)
         try:
@@ -354,11 +360,11 @@ class OptsMagic(Magics):
 
 @magics_class
 class TimerMagic(Magics):
-    """
-    A line magic for measuring the execution time of multiple cells.
+    """A line magic for measuring the execution time of multiple cells.
 
     After you start/reset the timer with '%timer start' you may view
     elapsed time with any subsequent calls to %timer.
+
     """
 
     start_time = None
@@ -376,8 +382,7 @@ class TimerMagic(Magics):
 
     @line_magic
     def timer(self, line=''):
-        """
-        Timer magic to print initial date/time information and
+        """Timer magic to print initial date/time information and
         subsequent elapsed time intervals.
 
         To start the timer, run:
@@ -389,6 +394,7 @@ class TimerMagic(Magics):
         Subsequent calls to %timer will print the elapsed time
         relative to the time when %timer start was called. Subsequent
         calls to %timer start may also be used to reset the timer.
+
         """
         if line.strip() not in ['', 'start']:
             print("Invalid argument to %timer. For more information consult %timer?")

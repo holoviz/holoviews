@@ -6,6 +6,7 @@ from ...operation import interpolate_curve
 from ..mixins import AreaMixin, BarsMixin
 from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
+from .util import PLOTLY_SCATTERMAP
 
 
 class ChartPlot(ElementPlot):
@@ -59,7 +60,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
     @classmethod
     def trace_kwargs(cls, is_geo=False, **kwargs):
         if is_geo:
-            return {'type': 'scattermapbox', 'mode': 'markers'}
+            return {'type': PLOTLY_SCATTERMAP, 'mode': 'markers'}
         else:
             return {'type': 'scatter', 'mode': 'markers'}
 
@@ -101,7 +102,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
     @classmethod
     def trace_kwargs(cls, is_geo=False, **kwargs):
         if is_geo:
-            return {'type': 'scattermapbox', 'mode': 'lines'}
+            return {'type': PLOTLY_SCATTERMAP, 'mode': 'lines'}
         else:
             return {'type': 'scatter', 'mode': 'lines'}
 

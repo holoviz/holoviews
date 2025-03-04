@@ -80,9 +80,9 @@ class LinkCallback:
 
     @classmethod
     def find_links(cls, root_plot):
-        """
-        Traverses the supplied plot and searches for any Links on
+        """Traverses the supplied plot and searches for any Links on
         the plotted objects.
+
         """
         plot_fn = lambda x: isinstance(x, (GenericElementPlot, GenericOverlayPlot))
         plots = root_plot.traverse(lambda x: x, [plot_fn])
@@ -103,16 +103,20 @@ class LinkCallback:
 
     @classmethod
     def find_link(cls, plot, link=None, target=False):
-        """
-        Searches a plot for any Links declared on the sources of the plot.
+        """Searches a plot for any Links declared on the sources of the plot.
 
-        Args:
-            plot: The plot to search for Links
-            link: A Link instance to check for matches
-            target: Whether to check against the Link.target
+        Parameters
+        ----------
+        plot
+            The plot to search for Links
+        link
+            A Link instance to check for matches
+        target
+            Whether to check against the Link.target
 
-        Returns:
-            A tuple containing the matched plot and list of matching Links.
+        Returns
+        -------
+        A tuple containing the matched plot and list of matching Links.
         """
         attr = 'target' if target else 'source'
         if link is None:
@@ -136,16 +140,16 @@ class LinkCallback:
                     return (plot, links)
 
     def validate(self):
-        """
-        Should be subclassed to check if the source and target plots
+        """Should be subclassed to check if the source and target plots
         are compatible to perform the linking.
+
         """
 
 
 class RangeToolLinkCallback(LinkCallback):
-    """
-    Attaches a RangeTool to the source plot and links it to the
+    """Attaches a RangeTool to the source plot and links it to the
     specified axes on the target plot
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
@@ -162,6 +166,14 @@ class RangeToolLinkCallback(LinkCallback):
             else:
                 target_range_name = range_name
             axes[range_name] = ax = target_plot.handles[target_range_name]
+            if ax is source_plot.handles.get(target_range_name):
+                # Cloning the axis as it does not make sense to have a link
+                # for the same axis
+                new_ax = ax.clone()
+                source_plot.handles[target_range_name] = new_ax
+                setattr(source_plot.handles["plot"], range_name, new_ax)
+                # So it is not re-linked by pn.pane.HoloViews(..., linked_axes=True)
+                new_ax.tags = []
             interval = getattr(link, f'intervals{axis}', None)
             if interval is not None and BOKEH_GE_3_4_0:
                 min, max = interval
@@ -221,8 +233,8 @@ class RangeToolLinkCallback(LinkCallback):
 
 
 class DataLinkCallback(LinkCallback):
-    """
-    Merges the source and target ColumnDataSource
+    """Merges the source and target ColumnDataSource
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):

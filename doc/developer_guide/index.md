@@ -27,7 +27,9 @@ To contribute to HoloViews, you will also need [Github account](https://github.c
 
 ### Pixi
 
-Developing all aspects of HoloViews requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://pixi.sh/latest/#installation).
+Developing all aspects of HoloViews requires a wide range of packages in different environments, but for new contributors the `default` environment will be more than enough.
+
+To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://pixi.sh/latest/#installation).
 
 #### Glossary
 
@@ -43,6 +45,7 @@ For more information, see the [Pixi documentation](https://pixi.sh/latest/).
 The first time you run `pixi`, it will create a `.pixi` directory in the source directory.
 This directory will contain all the files needed for the virtual environments.
 The `.pixi` directory can be large, so it is advised not to put the source directory into a cloud-synced directory.
+
 :::
 
 ## Installing the Project
@@ -60,13 +63,30 @@ This `holoviews` directory is the _source checkout_ for the remainder of this do
 
 ## Start developing
 
-To start developing, run the following command
+To start developing, run the following command, this will create an environment called `default` and install HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
-pixi install
+pixi run install
 ```
 
-The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
+:::{admonition} Note
+:class: info
+
+The first time you run it, it will create a `pixi.lock` file with information for all available environments.
+This command will take a minute or so to run.
+
+:::
+:::{admonition} Advanced usage
+:class: tip
+
+Currently, an editable install needs to be run in each environment. So, if you want to install in the `test-core` environment, you can add `--environment` / `-e` to the command:
+
+```bash
+pixi run -e test-core install
+```
+
+:::
+
 When this is finished, it is possible to run the following command to download the data HoloViews tests and examples depend upon.
 
 ```bash
@@ -74,6 +94,14 @@ pixi run download-data
 ```
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
+
+For setting up a complete development you can run:
+
+```bash
+pixi run setup-dev
+```
+
+This will run the `install` and `download-data` tasks, among other tasks deemed necessary for a development environment.
 
 ### Syncing Git tags with upstream repository
 
@@ -85,24 +113,41 @@ Syncing the git tags can be done with:
 pixi run sync-git-tags
 ```
 
-### Editable install
+## Developer Environment
 
-It can be advantageous to install the HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+The `default` environment is meant to provide all the tools needed to develop HoloViews.
 
-```bash
-pixi run install
-```
+This environment can be created by running `pixi run install`, which will set up the environment and make an editable install of HoloViews.
 
-:::{admonition} Note
-:class: info
+To activate this environment you can run `pixi shell`, this is equivalent to `source venv/bin/activate` in a virtual environment or `conda activate` in a conda environment.
 
-Currently, this needs to be run for each environment. So, if you want to install in the `test-ui` environment, you can add `--environment` / `-e` to the command:
+If you need to run a command directly instead of via `pixi`, you activate the environment and run your command (e.g. `pytest holoviews/tests/<somefile.py>`).
 
-```bash
-pixi run -e test-ui install
-```
+### VS Code
 
-:::
+This environment can also be selected in your IDE. In VS Code, this can be done by running the command `Python: Select Interpreter` and choosing `{'default': Pixi}`.
+
+<p style="text-align: center">
+  <img
+    src="https://assets.holoviews.org/static/dev_guide/001.png"
+    alt="001"
+    style="width: 45%; display: inline-block"
+  />
+  <img
+    src="https://assets.holoviews.org/static/dev_guide/002.png"
+    alt="002"
+    style="width: 45%; display: inline-block"
+  />
+</p>
+
+To confirm you are using this dev environment, check the bottom right corner:
+
+![003](https://assets.holoviews.org/static/dev_guide/003.png)
+
+### Jupyter Lab
+
+You can launch Jupyter lab with the `default` environment with `pixi run lab`.
+This can be advantageous when you need to edit the documentation or debug an example notebook.
 
 ## Linting
 
@@ -117,6 +162,18 @@ Linting can also be set up to run automatically with each commit; this is the re
 ```bash
 pixi run lint-install
 ```
+
+:::{admonition} Note
+:class: info
+
+Alternatively, if you have `pre-commit` installed elsewhere you can run
+
+```bash
+pre-commit install  # To install
+pre-commit run --all-files  # To run on all files
+```
+
+:::
 
 ## Testing
 
@@ -133,9 +190,18 @@ Unit tests can be run with the `test-unit` task:
 pixi run test-unit
 ```
 
+:::{admonition} Advanced usage
+:class: tip
+
 The task is available in the following environments: `test-39`, `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
 
-If you haven't set the environment flag in the command, a menu will help you select which one of the environments to use.
+You can run the task in a specific environment with the `-e` flag. For example, to run the `test-unit` task in the `test-39` environment, you can run:
+
+```bash
+pixi run -e test-39 test-unit
+```
+
+:::
 
 ### Example tests
 

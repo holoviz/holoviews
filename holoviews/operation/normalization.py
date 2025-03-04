@@ -1,5 +1,4 @@
-"""
-Data normalization operations.
+"""Data normalization operations.
 
 Normalizing input data into a valid range is a common operation and
 often required before further processing. The semantics of
@@ -11,6 +10,7 @@ subclasses are used to implement the appropriate normalization
 operations per element type. Unlike display normalization, data
 normalizations result in transformations to the stored data within
 each element.
+
 """
 from collections import defaultdict
 
@@ -24,14 +24,14 @@ from ..element import Chart, Raster
 
 
 class Normalization(Operation):
-    """
-    Base class for all normalization operation.
+    """Base class for all normalization operation.
 
     This class standardizes how normalization is specified using the
     ranges and keys parameter. The ranges parameter is designed to be
     very flexible, allowing a concise description for simple
     normalization while allowing complex key- and element- specific
     normalization to also be specified.
+
     """
 
     data_range = param.Boolean(default=False, doc="""
@@ -98,9 +98,9 @@ class Normalization(Operation):
 
 
     def get_ranges(self, element, key):
-        """
-        Method to get the appropriate normalization range dictionary
+        """Method to get the appropriate normalization range dictionary
         given a key and element.
+
         """
         keys = self.p['keys']
         ranges = self.p['ranges']
@@ -132,8 +132,7 @@ class Normalization(Operation):
 
 
 class raster_normalization(Normalization):
-    """
-    Normalizes elements of type Raster.
+    """Normalizes elements of type Raster.
 
     For Raster elements containing (NxM) data, this will normalize the
     array/matrix into the specified range if value_dimension matches
@@ -143,6 +142,7 @@ class raster_normalization(Normalization):
     third dimensional are normalized independently if the
     corresponding value dimensions are selected by the ranges
     dictionary.
+
     """
 
     def _process(self, raster, key=None):
@@ -180,13 +180,13 @@ class raster_normalization(Normalization):
 
 
 class subcoordinate_group_ranges(Operation):
-    """
-    Compute the data range group-wise in a subcoordinate_y overlay,
+    """Compute the data range group-wise in a subcoordinate_y overlay,
     and set the dimension range of each Chart element based on the
     value computed for its group.
 
     This operation is useful to visually apply a group-wise min-max
     normalisation.
+
     """
 
     def _process(self, overlay, key=None):

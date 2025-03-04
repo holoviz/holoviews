@@ -14,13 +14,13 @@ from .util import get_param_values
 
 
 class Element(ViewableElement, Composable, Overlayable):
-    """
-    Element is the atomic datastructure used to wrap some data with
+    """Element is the atomic datastructure used to wrap some data with
     an associated visual representation, e.g. an element may
     represent a set of points, an image or a curve. Elements provide
     a common API for interacting with data of different types and
     define how the data map to a set of dimensions and how those
     map to the visual representation.
+
     """
 
     group = param.String(default='Element', constant=True)
@@ -39,15 +39,21 @@ class Element(ViewableElement, Composable, Overlayable):
         Defaults to first value dimension if present otherwise falls
         back to first key dimension.
 
-        Args:
-            dimension: Dimension(s) to compute histogram on
-            num_bins (int, optional): Number of bins
-            bin_range (tuple optional): Lower and upper bounds of bins
-            adjoin (bool, optional): Whether to adjoin histogram
+        Parameters
+        ----------
+        dimension
+            Dimension(s) to compute histogram on
+        num_bins : int, optional
+            Number of bins
+        bin_range : tuple, optional
+            Lower and upper bounds of bins
+        adjoin : bool, optional
+            Whether to adjoin histogram
 
-        Returns:
-            AdjointLayout of element and histogram or just the
-            histogram
+        Returns
+        -------
+        AdjointLayout of element and histogram or just the
+        histogram
         """
         from ..operation import histogram
         if not isinstance(dimension, list): dimension = [dimension]
@@ -82,29 +88,40 @@ class Element(ViewableElement, Composable, Overlayable):
 
         Subclasses may override this to signal that the Element
         contains no data and can safely be dropped during indexing.
+
         """
         return True
 
     def __contains__(self, dimension):
-        "Whether element contains the Dimension"
+        """Whether element contains the Dimension
+
+        """
         return dimension in self.dimensions()
 
     def __iter__(self):
-        "Disable iterator interface."
+        """Disable iterator interface.
+
+        """
         raise NotImplementedError('Iteration on Elements is not supported.')
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.
 
-        Args:
-            coords: List of 1D or 2D coordinates
-            **kwargs: Coordinates specified as keyword pairs
+        Parameters
+        ----------
+        coords
+            List of 1D or 2D coordinates
+        **kwargs
+            Coordinates specified as keyword pairs
 
-        Returns:
-            List of tuples of the snapped coordinates
+        Returns
+        -------
+        List of tuples of the snapped coordinates
 
-        Raises:
-            NotImplementedError: Raised if snapping is not supported
+        Raises
+        ------
+        NotImplementedError
+            Raised if snapping is not supported
         """
         raise NotImplementedError
 
@@ -121,24 +138,30 @@ class Element(ViewableElement, Composable, Overlayable):
 
         Sampling a range or grid of coordinates, e.g.:
 
-            1D: ds.sample(3)
-            2D: ds.sample((3, 3))
+            1D : ds.sample(3)
+            2D : ds.sample((3, 3))
 
         Sampling by keyword, e.g.:
 
             ds.sample(x=0)
 
-        Args:
-            samples: List of nd-coordinates to sample
-            bounds: Bounds of the region to sample
-                Defined as two-tuple for 1D sampling and four-tuple
-                for 2D sampling.
-            closest: Whether to snap to closest coordinates
-            **kwargs: Coordinates specified as keyword pairs
-                Keywords of dimensions and scalar coordinates
+        Parameters
+        ----------
+        samples
+            List of nd-coordinates to sample
+        bounds
+            Bounds of the region to sample
+            Defined as two-tuple for 1D sampling and four-tuple
+            for 2D sampling.
+        closest
+            Whether to snap to closest coordinates
+        **kwargs
+            Coordinates specified as keyword pairs
+            Keywords of dimensions and scalar coordinates
 
-        Returns:
-            Element containing the sampled coordinates
+        Returns
+        -------
+        Element containing the sampled coordinates
         """
         if samples is None:
             samples = []
@@ -159,19 +182,25 @@ class Element(ViewableElement, Composable, Overlayable):
 
             ds.reduce(x=np.mean)
 
-        Args:
-            dimensions: Dimension(s) to apply reduction on
-                Defaults to all key dimensions
-            function: Reduction operation to apply, e.g. numpy.mean
-            spreadfn: Secondary reduction to compute value spread
-                Useful for computing a confidence interval, spread, or
-                standard deviation.
-            **reductions: Keyword argument defining reduction
-                Allows reduction to be defined as keyword pair of
-                dimension and function
+        Parameters
+        ----------
+        dimensions
+            Dimension(s) to apply reduction on
+            Defaults to all key dimensions
+        function
+            Reduction operation to apply, e.g. numpy.mean
+        spreadfn
+            Secondary reduction to compute value spread
+            Useful for computing a confidence interval, spread, or
+            standard deviation.
+        **reductions
+            Keyword argument defining reduction
+            Allows reduction to be defined as keyword pair of
+            dimension and function
 
-        Returns:
-            The element after reductions have been applied.
+        Returns
+        -------
+        The element after reductions have been applied.
         """
         if dimensions is None:
             dimensions = []
@@ -203,12 +232,16 @@ class Element(ViewableElement, Composable, Overlayable):
         Returns a pandas dataframe of columns along each dimension,
         either completely flat or indexed by key dimensions.
 
-        Args:
-            dimensions: Dimensions to return as columns
-            multi_index: Convert key dimensions to (multi-)index
+        Parameters
+        ----------
+        dimensions
+            Dimensions to return as columns
+        multi_index
+            Convert key dimensions to (multi-)index
 
-        Returns:
-            DataFrame of columns corresponding to each dimension
+        Returns
+        -------
+        DataFrame of columns corresponding to each dimension
         """
         if dimensions is None:
             dimensions = [d.name for d in self.dimensions()]
@@ -225,11 +258,14 @@ class Element(ViewableElement, Composable, Overlayable):
     def array(self, dimensions=None):
         """Convert dimension values to columnar array.
 
-        Args:
-            dimensions: List of dimensions to return
+        Parameters
+        ----------
+        dimensions
+            List of dimensions to return
 
-        Returns:
-            Array of columns corresponding to each dimension
+        Returns
+        -------
+        Array of columns corresponding to each dimension
         """
         if dimensions is None:
             dims = [d for d in self.kdims + self.vdims]
@@ -247,33 +283,41 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
 class Tabular(Element):
-    """
-    Baseclass to give an elements providing an API to generate a
+    """Baseclass to give an elements providing an API to generate a
     tabular representation of the object.
+
     """
 
     __abstract = True
 
     @property
     def rows(self):
-        "Number of rows in table (including header)"
+        """Number of rows in table (including header)
+
+        """
         return len(self) + 1
 
     @property
     def cols(self):
-        "Number of columns in table"
+        """Number of columns in table
+
+        """
         return len(self.dimensions())
 
 
     def pprint_cell(self, row, col):
         """Formatted contents of table cell.
 
-        Args:
-            row (int): Integer index of table row
-            col (int): Integer index of table column
+        Parameters
+        ----------
+        row : int
+            Integer index of table row
+        col : int
+            Integer index of table column
 
-        Returns:
-            Formatted table cell contents
+        Returns
+        -------
+        Formatted table cell contents
         """
         ndims = self.ndims
         if col >= self.cols:
@@ -295,12 +339,16 @@ class Tabular(Element):
     def cell_type(self, row, col):
         """Type of the table cell, either 'data' or 'heading'
 
-        Args:
-            row (int): Integer index of table row
-            col (int): Integer index of table column
+        Parameters
+        ----------
+        row : int
+            Integer index of table row
+        col : int
+            Integer index of table column
 
-        Returns:
-            Type of the table cell, either 'data' or 'heading'
+        Returns
+        -------
+        Type of the table cell, either 'data' or 'heading'
         """
         return 'heading' if row == 0 else 'data'
 
@@ -327,13 +375,13 @@ class Element3D(Element2D):
 
 
 class Collator(NdMapping):
-    """
-    Collator is an NdMapping type which can merge any number
+    """Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
     by inserting the Collators key dimensions on the HoloMaps.
     If the items in the Collator do not contain HoloMaps
     they will be created. Collator also supports filtering
     of Tree structures and dropping of constant dimensions.
+
     """
 
     drop = param.List(default=[], doc="""
@@ -387,12 +435,12 @@ class Collator(NdMapping):
 
 
     def __call__(self):
-        """
-        Filter each Layout in the Collator with the supplied
+        """Filter each Layout in the Collator with the supplied
         path_filters. If merge is set to True all Layouts are
         merged, otherwise an NdMapping containing all the
         Layouts is returned. Optionally a list of dimensions
         to be ignored can be supplied.
+
         """
         constant_dims = self.static_dimensions
         ndmapping = NdMapping(kdims=self.kdims)
@@ -408,14 +456,12 @@ class Collator(NdMapping):
                 raise ValueError("Collator values must be Dimensioned objects "
                                  "before collation.")
 
-            dim_keys = zip(self.kdims, key)
-            varying_keys = [(d, k) for d, k in dim_keys if not self.drop_constant or
+            varying_keys = [(d, k) for d, k in zip(self.kdims, key) if not self.drop_constant or
                             (d not in constant_dims and d not in self.drop)]
-            constant_keys = [(d, k) for d, k in dim_keys if d in constant_dims
-                             and d not in self.drop and self.drop_constant]
+            constant_keys = {d: k for d, k in zip(self.kdims, key) if d in constant_dims
+                             and d not in self.drop and self.drop_constant}
             if varying_keys or constant_keys:
-                data = self._add_dimensions(data, varying_keys,
-                                            dict(constant_keys))
+                data = self._add_dimensions(data, varying_keys, constant_keys)
             ndmapping[key] = data
             if self.progress_bar is not None:
                 self.progress_bar(float(idx+1)/num_elements*100)
@@ -429,8 +475,8 @@ class Collator(NdMapping):
 
     @property
     def static_dimensions(self):
-        """
-        Return all constant dimensions.
+        """Return all constant dimensions.
+
         """
         dimensions = []
         for dim in self.kdims:
@@ -440,10 +486,10 @@ class Collator(NdMapping):
 
 
     def _add_dimensions(self, item, dims, constant_keys):
-        """
-        Recursively descend through an Layout and NdMapping objects
+        """Recursively descend through an Layout and NdMapping objects
         in order to add the supplied dimension values to all contained
         HoloMaps.
+
         """
         if isinstance(item, Layout):
             item.fixed = False

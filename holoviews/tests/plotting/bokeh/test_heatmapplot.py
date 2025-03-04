@@ -156,3 +156,15 @@ class TestHeatMapPlot(TestBokehPlot):
         np.testing.assert_array_equal(data["X"], df["X"])
         np.testing.assert_array_equal(data["Y"], df["Y"])
         np.testing.assert_array_equal(data["zvalues"], df["Z"])
+
+    def test_heatmap_pandas_multiindex(self):
+        df = pd.DataFrame(
+            data={'C': [5, 2, -1, 5]},
+            index=pd.MultiIndex.from_product([(0, 1), (0, 1)], names=['A', 'B']),
+        )
+        hm = HeatMap(df, ['A', 'B'], 'C')
+        plot = bokeh_renderer.get_plot(hm)
+        data = plot.handles["cds"].data
+        np.testing.assert_array_equal(data['A'], df.index.get_level_values('A'))
+        np.testing.assert_array_equal(data['B'], df.index.get_level_values('B'))
+        np.testing.assert_array_equal(data['zvalues'], df['C'])

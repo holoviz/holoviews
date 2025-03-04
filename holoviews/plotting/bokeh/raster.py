@@ -1,9 +1,15 @@
 import sys
+import uuid
 
+import bokeh.core.properties as bp
 import numpy as np
 import param
-from bokeh.models import CustomJSHover, DatetimeAxis
+from bokeh.model import DataModel
+from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
+from bokeh.models.dom import Div, Span, Styles, ValueOf
+from panel.io import hold
 
+from ...core.data import XArrayInterface
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
 from ..util import categorical_legend
@@ -14,7 +20,93 @@ from .styles import base_properties, fill_properties, line_properties, mpl_to_bo
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
 
 
-class RasterPlot(ColorbarPlot):
+class ServerHoverMixin:
+    _model_cache = {}
+
+    def _update_hover(self, element):
+        tool = self.handles['hover']
+        if 'hv_created' in tool.tags and isinstance(tool.tooltips, Div):
+            self._hover_data = element.data
+            return
+        super()._update_hover(element)
+
+    def _init_tools(self, element, callbacks=None):
+        tools = super()._init_tools(element, callbacks=callbacks)
+
+        hover = None
+        for tool in tools or ():
+            if isinstance(tool, HoverTool):
+                hover = tool
+                break
+
+        data = element.data
+        if (
+            hover is None
+            or "hv_created" not in tool.tags
+            or not (XArrayInterface.applies(data) and "selector_columns" in data.attrs)
+        ):
+            return tools
+
+        self._hover_data = data
+
+        # Get dimensions
+        coords, vars = list(data.coords), list(data.data_vars)
+        vars.remove("__index__")
+        if ht := self.hover_tooltips:
+            ht = [ht] if isinstance(ht, str) else ht
+            coords = [c for c in coords if c in ht]
+            vars = [v for v in vars if v in ht]
+        elif isinstance(self, RGBPlot):
+            # Remove vdims (RGBA) as they are not very useful
+            for vdim in map(str, element.vdims):
+                if vdim in vars:
+                    vars.remove(vdim)
+
+        dims = (*coords, *vars)
+
+        # Create a dynamic custom DataModel with the dims as attributes
+        # __xy__ is the cursor position
+        if dims in self._model_cache:
+            HoverModel = self._model_cache[dims]
+        else:
+            HoverModel = self._model_cache[dims] = type(
+                f"HoverModel_{uuid.uuid4().hex}",
+                (DataModel,),
+                {d: bp.Any() for d in ("__xy__", *dims)},
+            )
+
+        hover_model = HoverModel()
+        _create_row = lambda attr: (
+            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
+            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
+        )
+        style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
+        grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
+        hover.tooltips = grid
+        hover.callback = CustomJS(
+            args={"position": hover_model},
+            code="export default ({position}, _, {geometry: {x, y}}) => {position.__xy__ = [x, y]}",
+        )
+
+        def on_change(attr, old, new):
+            if np.isinf(new).all():
+                return
+            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new)), method="nearest").to_dict()
+            # TODO: When ValueOf support formatter remove the rounding
+            # https://github.com/bokeh/bokeh/issues/14123
+            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
+            with hold(self.document):
+                hover_model.update(**data_coords, **data_vars)
+                if self.comm:  # Jupyter Notebook
+                    self.push()
+
+        hover_model.on_change("__xy__", on_change)
+
+        return tools
+
+
+class RasterPlot(ServerHoverMixin, ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
@@ -131,7 +223,7 @@ class RasterPlot(ColorbarPlot):
         return (data, mapping, style)
 
 
-class RGBPlot(LegendPlot):
+class RGBPlot(ServerHoverMixin, LegendPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -430,14 +522,14 @@ class QuadMeshPlot(ColorbarPlot):
         return data, mapping, style
 
     def _collect_hover_data(self, element, mask=(), irregular=False):
-        """
-        Returns a dict mapping hover dimension names to flattened arrays.
+        """Returns a dict mapping hover dimension names to flattened arrays.
 
         Note that `Quad` glyphs are used when given 1-D coords but `Patches` are
         used for "irregular" 2-D coords, and Bokeh inserts data into these glyphs
         in the opposite order such that the relationship b/w the `invert_axes`
         parameter and the need to transpose the arrays before flattening is
         reversed.
+
         """
         transpose = self.invert_axes if irregular else not self.invert_axes
 
@@ -451,8 +543,8 @@ class QuadMeshPlot(ColorbarPlot):
         return hover_data
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         properties = mpl_to_bokeh(properties)
         properties = dict(properties, **mapping)

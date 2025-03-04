@@ -9,9 +9,9 @@ from .styles import base_properties, fill_properties, line_properties
 
 
 class SegmentPlot(GeomMixin, ColorbarPlot):
-    """
-    Segments are lines in 2D space where each two each dimensions specify a
+    """Segments are lines in 2D space where each two each dimensions specify a
     (x, y) node of the line.
+
     """
 
     selected = param.List(default=None, doc="""
