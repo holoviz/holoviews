@@ -74,6 +74,7 @@ from .util import (
     BOKEH_GE_3_4_0,
     BOKEH_GE_3_5_0,
     BOKEH_GE_3_6_0,
+    BOKEH_GE_3_7_0,
     TOOL_TYPES,
     cds_column_replace,
     compute_layout_properties,
@@ -2485,6 +2486,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 </g>
                 </svg>"""
                 encoded_icon = base64.b64encode(dedent(ruler_icon).encode()).decode('ascii')
+                active_kwargs = {"active_callback": "auto", "active": True} if BOKEH_GE_3_7_0 else {}
                 scalebar_tool = CustomAction(
                     icon=f"data:image/svg+xml;base64,{encoded_icon}",
                     description="Toggle ScaleBar",
@@ -2496,7 +2498,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                 scale_bars[i].visible = !scale_bars[i].visible
                             }
                         }""",
-                    )
+                    ),
+                    **active_kwargs,
                 )
                 plot.toolbar.tools.append(scalebar_tool)
 
