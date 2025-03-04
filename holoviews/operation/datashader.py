@@ -2,6 +2,7 @@ import enum
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
+from typing import TYPE_CHECKING
 
 import datashader as ds
 import datashader.reductions as rd
@@ -45,8 +46,8 @@ from ..core.util import (
     datetime_types,
     dt_to_int,
     get_param_values,
-    lazy_isinstance,
 )
+from ..core.util.dependencies import _lazy_module
 from ..element import (
     RGB,
     Area,
@@ -75,6 +76,11 @@ DATASHADER_VERSION = ds_version.release
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
 DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
 DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
+
+if TYPE_CHECKING:
+    import dask.dataframe as dd
+else:
+    dd = _lazy_module("dask.dataframe", bool_use_sys_modules=True)
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -322,24 +328,24 @@ class aggregate(LineAggregationOperation):
         else:
             x, y = dims
 
+        bool_dd = bool(dd)  # Lazy module
         if len(paths) > 1:
             if glyph == 'line':
                 path = paths[0][:1]
-                if lazy_isinstance(path, "dask.dataframe:DataFrame"):
+                if bool_dd and isinstance(path, dd.DataFrame):
                     path = path.compute()
                 empty = path.copy()
                 empty.iloc[0, :] = (np.nan,) * empty.shape[1]
                 paths = [elem for p in paths for elem in (p, empty)][:-1]
-            if all(lazy_isinstance(path,"dask.dataframe:DataFrame") for path in paths):
-                import dask.dataframe as dd
+            if bool_dd and all(isinstance(path, dd.DataFrame) for path in paths):
                 df = dd.concat(paths)
             else:
-                paths = [p.compute() if lazy_isinstance(p, "dask.dataframe:DataFrame") else p for p in paths]
+                paths = [p.compute() if bool_dd and isinstance(p, dd.DataFrame) else p for p in paths]
                 df = pd.concat(paths)
         else:
             df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
 
-        is_custom = lazy_isinstance(df, "dask.dataframe:DataFrame") or cuDFInterface.applies(df)
+        is_custom = (bool_dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
         category_check = category and df[category].dtype.name != 'category'
         if (
             category_check or
