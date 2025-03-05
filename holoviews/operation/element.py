@@ -1230,7 +1230,10 @@ class dendrogram(Operation):
     main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False)
 
     def _compute_linkage(self, dataset, dim, vdim):
-        from scipy.cluster.hierarchy import dendrogram, linkage  # TODO: Add scipy check
+        try:
+            from scipy.cluster.hierarchy import dendrogram, linkage
+        except ImportError:
+            raise ImportError("scipy is needed for the dendrogram operation") from None
 
         arrays, labels = [], []
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
