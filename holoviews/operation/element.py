@@ -1253,7 +1253,7 @@ class dendrogram(Operation):
             sort_dims.append(sort_dim)
 
             # Important the kdims are unique
-            dendro = Dendrogram(zip(ddata["icoord"], ddata["dcoord"]), kdims=[f"__dendrogram_x_{i}", f"__dendrogram_y_{i}"])
+            dendro = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{i}", f"__dendrogram_y_{i}"])
             dendros.append(dendro)
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]

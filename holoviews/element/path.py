@@ -184,31 +184,28 @@ class Dendrogram(Path):
 
     datatype = param.List(default=['multitabular'])
 
-    def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, tuple) and len(data) == 2:
-            # Add support for (x, ys) where ys defines multiple paths
-            x, y = map(np.asarray, data)
-            if y.ndim > 1:
-                if len(x) != y.shape[0]:
-                    raise ValueError("Path x and y values must be the same length.")
-                data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
-        elif isinstance(data, list) and all(isinstance(dendro, Dendrogram) for dendro in data):
-            # Allow unpacking of a list of Path elements
-            kdims = kdims or self.kdims
-            dendros = []
-            for dendro in data:
-                if dendro.kdims != kdims:
-                    redim = {okd.name: nkd for okd, nkd in zip(dendro.kdims, kdims)}
-                    dendro = dendro.redim(**redim)
-                if dendro.interface.multi and isinstance(dendro.data, list):
-                    dendros += dendro.data
-                else:
-                    dendros.append(dendro.data)
-            data = dendros
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
 
+    def __init__(self, x, y, kdims=None, vdims=None, **params):
+        data = list(zip(x, y))  # strict=True
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
+    def clone(self, *args, **overrides):
+        """Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs.
 
+        """
+        settings = dict(self.param.values(), **overrides)
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
+        new_args = [settings[n] for n in pos_args]
+        new_kwargs = {k: v for k, v in settings.items() if k not in pos_args}
+
+        # Unpacking the data to x, y if it is empty list
+        if new_args == []:
+            new_args = [], []
+
+        return self.__class__(*new_args, **new_kwargs)
 
 
 class Contours(Path):
