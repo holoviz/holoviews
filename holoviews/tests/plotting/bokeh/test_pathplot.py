@@ -6,7 +6,7 @@ from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core import HoloMap, NdOverlay
 from holoviews.core.options import Cycle
-from holoviews.element import Contours, Dendrogram, Path, Polygons
+from holoviews.element import Contours, Dendrogram, Path, Polygons, Scatter
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
@@ -583,3 +583,55 @@ class TestDendrogramPlot(TestBokehPlot):
         path_source = path_plot.handles['source']
         np.testing.assert_array_equal(dendro_source.data["xs"], path_source.data["xs"])
         np.testing.assert_array_equal(dendro_source.data["ys"], path_source.data["ys"])
+
+    def test_1_adjoint_plot_1_kdims_empty_main(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Scatter([])
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_1_adjoint_plot_1_kdims(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Scatter([1, 2, 3])
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_2_adjoint_plot_1_kdims(self):
+        dendrogram1 = Dendrogram(self.x, self.y)
+        dendrogram2 = Dendrogram(self.y, self.x)
+        main = Scatter([1, 2, 3])
+        adjoint = main << dendrogram1 << dendrogram2
+        top, main, right = self.get_childrens(adjoint)
+        assert top.height == 80
+        assert main.x_range is top.x_range
+        assert main.x_scale is top.x_scale
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    # def test_1_adjoint_plot_2_kdims_empty_main(self):
+    #     x, y = self.data
+    #     dendrogram = Dendrogram(x, y)
+    #     main = Path([])
+    #     adjoint = main << dendrogram
+    #     top, main, right = self.get_children(adjoint)
+    #
+    # def test_1_adjoint_plot_2_kdims(self):
+    #     x, y = self.data
+    #     dendrogram = Dendrogram(x, y)
+    #     main = Path(zip(x, y))
+    #     adjoint = main << dendrogram
+    #     top, main, right = self.get_children(adjoint)
+
+
+# TODO:
+# - Add kdim check for operation
+# - Check dims are not shared
