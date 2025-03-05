@@ -187,25 +187,9 @@ class Dendrogram(Path):
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
 
-    def __init__(self, x, y, kdims=None, vdims=None, **params):
-        data = list(zip(x, y))  # strict=True
+    def __init__(self, x, y=None, kdims=None, vdims=None, **params):
+        data = x if y is None else zip(x, y)  # strict=True
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
-
-    def clone(self, *args, **overrides):
-        """Returns a clone of the object with matching parameter values
-        containing the specified args and kwargs.
-
-        """
-        settings = dict(self.param.values(), **overrides)
-        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        new_args = [settings[n] for n in pos_args]
-        new_kwargs = {k: v for k, v in settings.items() if k not in pos_args}
-
-        # Unpacking the data to x, y if it is empty list
-        if new_args == []:
-            new_args = [], []
-
-        return self.__class__(*new_args, **new_kwargs)
 
 
 class Contours(Path):
