@@ -621,21 +621,13 @@ class TestDendrogramPlot(TestBokehPlot):
         assert main.y_range is right.y_range
         assert main.y_scale is right.y_scale
 
-    # def test_1_adjoint_plot_2_kdims_empty_main(self):
-    #     x, y = self.data
-    #     dendrogram = Dendrogram(x, y)
-    #     main = Path([])
-    #     adjoint = main << dendrogram
-    #     top, main, right = self.get_children(adjoint)
-    #
-    # def test_1_adjoint_plot_2_kdims(self):
-    #     x, y = self.data
-    #     dendrogram = Dendrogram(x, y)
-    #     main = Path(zip(x, y))
-    #     adjoint = main << dendrogram
-    #     top, main, right = self.get_children(adjoint)
-
-
-# TODO:
-# - Add kdim check for operation
-# - Check dims are not shared
+    def test_1_adjoint_plot_2_kdims(self):
+        x, y = self.data
+        dendrogram = Dendrogram(x, y)
+        main = Path(zip(x, y))
+        adjoint = main << dendrogram
+        top, main, right = self.get_children(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale

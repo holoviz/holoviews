@@ -211,7 +211,8 @@ class DendrogramPlot(PathPlot):
             data_adj = np.asarray(data[side_dim])
             data[side_dim] = list(0.5 / data_adj.min() * data_adj)
         else:
-            data_adj, data_main = np.asarray(data[side_dim]), np.asarray(main.renderers[0].data_source.data[main_dim])
+            main_src = main.renderers[0].data_source.data
+            data_adj, data_main = np.asarray(data[side_dim]), np.asarray(main_src.get(main_dim, main_src.get(f"{main_dim}s")))
             if data_adj.size and data_main.size:
                 x1, x2, y1, y2 = data_adj.min(), data_adj.max(), data_main.min(), data_main.max()
                 data[side_dim] = list((y2 - y1) / (x2 - x1) * (data_adj - x1) + y1)
