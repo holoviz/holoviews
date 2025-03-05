@@ -15,6 +15,7 @@ from ..core import (
     Dataset,
     Dimension,
     Element,
+    Empty,
     GridMatrix,
     HoloMap,
     NdOverlay,
@@ -35,8 +36,8 @@ from ..core.util import (
     label_sanitizer,
 )
 from ..element.chart import Histogram, Scatter
-from ..element.path import Contours, Polygons
-from ..element.raster import RGB, Image
+from ..element.path import Contours, Dendrogram, Polygons
+from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
@@ -1218,3 +1219,55 @@ class gridmatrix(param.ParameterizedFunction):
                                   datatype=[default_datatype])
             data[(d1.name, d2.name)] = el
         return data
+
+
+class dendrogram(Operation):
+
+    main_dim = param.String()
+
+    adjoint_dims = param.List(item_type=str) # , bounds=(1, 2))
+
+    main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False)
+
+    def _compute_linkage(self, dataset, dim, vdim):
+        try:
+            from scipy.cluster.hierarchy import dendrogram, linkage
+        except ImportError:
+            raise ImportError("scipy is needed for the dendrogram operation") from None
+
+        arrays, labels = [], []
+        for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
+            labels.append(k)
+            arrays.append(v.dimension_values(vdim))
+        X = np.vstack(arrays)
+        Z = linkage(X)
+        ddata = dendrogram(Z, labels=labels, no_plot=True)
+        return ddata
+
+    def _process(self, element, key=None):
+        element_kdims = element.kdims
+        dataset = Dataset(element)
+        sort_dims, dendros = [], []
+        for i, d in enumerate(self.p.adjoint_dims):
+            ddata = self._compute_linkage(dataset, d, self.p.main_dim)
+            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
+            sort_dim = f"sort{i}"
+            dataset = dataset.add_dimension(sort_dim, 0, order)
+            sort_dims.append(sort_dim)
+
+            # Important the kdims are unique
+            dendro = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{i}", f"__dendrogram_y_{i}"])
+            dendros.append(dendro)
+
+        vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        if type(element) is not Dataset:
+            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+        else:
+            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
+
+        if i == 0 and str(element_kdims[0]) == self.p.adjoint_dims[0]:
+            main = main << Empty()
+        for dendro in dendros:
+            main = main << dendro
+
+        return main
