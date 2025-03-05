@@ -1,4 +1,5 @@
 import datetime as dt
+import random
 from importlib.util import find_spec
 from unittest import SkipTest, skipIf
 
@@ -22,11 +23,15 @@ except ImportError:
     cudf = None
 
 from holoviews import (
+    AdjointLayout,
     Area,
     Contours,
     Curve,
     Dataset,
+    Dendrogram,
+    Empty,
     GridSpace,
+    HeatMap,
     Histogram,
     HoloMap,
     Image,
@@ -42,6 +47,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (
     contours,
     decimate,
+    dendrogram,
     gradient,
     histogram,
     interpolate_curve,
@@ -702,3 +708,51 @@ class OperationTests(ComparisonTestCase):
 
         index = decimated.data[()].data.index
         assert np.all(index == np.sort(index))
+
+
+class TestDendrogramOperation:
+
+    @pytest.mark.usefixtures("bokeh_backend")
+    def setup_class(self):
+        pytest.importorskip("scipy")
+
+        random.seed(1)
+        self.df = pd.DataFrame(
+            [(i, chr(65 + j), random.random()) for j in range(10) for i in range(5)],
+            columns=["z", "x", "y"],
+        )
+
+    def test_right_only(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x"], main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], HeatMap)
+        assert isinstance(dendro["right"], Dendrogram)
+        assert "top" not in dendro
+        assert dendro["right"].kdims == ["__dendrogram_x_0", "__dendrogram_y_0"]
+
+    def test_top_only(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["z"], main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], HeatMap)
+        assert isinstance(dendro["right"], Empty)
+        assert isinstance(dendro["top"], Dendrogram)
+        assert dendro["top"].kdims == ["__dendrogram_x_0", "__dendrogram_y_0"]
+
+    @pytest.mark.parametrize("adjoint_dims", [["x", "z"], ["z", "x"]], ids=["xz", "zx"])
+    def test_both_xz(self, adjoint_dims):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=adjoint_dims, main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], HeatMap)
+        assert isinstance(dendro["right"], Dendrogram)
+        assert isinstance(dendro["top"], Dendrogram)
+        assert dendro["right"].kdims == ["__dendrogram_x_0", "__dendrogram_y_0"]
+        assert dendro["top"].kdims == ["__dendrogram_x_1", "__dendrogram_y_1"]
+
+    def test_point_plot(self):
+        dataset = Points(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], Points)
