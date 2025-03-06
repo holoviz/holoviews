@@ -722,6 +722,14 @@ class TestDendrogramOperation:
             columns=["z", "x", "y"],
         )
 
+    def get_childrens(self, adjoint):
+        bk_childrens = renderer("bokeh").get_plot(adjoint).handles["plot"].children
+        (atop, *_), (amain, *_), (aright, *_) = bk_childrens
+        top = renderer("bokeh").get_plot(adjoint["top"]).handles["plot"]
+        main = renderer("bokeh").get_plot(adjoint["main"]).handles["plot"]
+        right = renderer("bokeh").get_plot(adjoint["right"]).handles["plot"]
+        return (atop, amain, aright), (top, main, right)
+
     def test_right_only(self):
         dataset = Dataset(self.df)
         dendro = dendrogram(dataset, adjoint_dims=["x"], main_dim="y")
@@ -756,3 +764,25 @@ class TestDendrogramOperation:
         dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
         assert isinstance(dendro, AdjointLayout)
         assert isinstance(dendro["main"], Points)
+
+    def test_depth_matches_non_adjoint(self):
+        # depth dimensions is the orthogonal axis to the main plot
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
+        (atop, amain, aright), (top, main, right) = self.get_childrens(dendro)
+
+        # Verify no shared axis is changing the depth dimension of the right
+        assert atop.y_range.start == top.y_range.start
+        assert atop.y_range.end == top.y_range.end
+        assert atop.y_range.end == top.y_range.end
+
+        # These should be shared with the main plot
+        assert atop.x_range.start == amain.x_range.start
+        assert atop.x_range.end == amain.x_range.end
+
+        # Verify no shared axis is changing the depth dimension of the right
+        assert aright.x_range.start == right.y_range.start
+        assert aright.x_range.end == right.y_range.end
+
+        # These should be shared with the main plot
+        assert aright.y_range.factors == amain.y_range.factors
