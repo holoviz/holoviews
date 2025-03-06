@@ -748,8 +748,8 @@ class TestDendrogramOperation:
         assert isinstance(dendro["main"], HeatMap)
         assert isinstance(dendro["right"], Dendrogram)
         assert isinstance(dendro["top"], Dendrogram)
-        assert dendro["right"].kdims == ["__dendrogram_x_0", "__dendrogram_y_0"]
-        assert dendro["top"].kdims == ["__dendrogram_x_1", "__dendrogram_y_1"]
+        assert dendro["right"].kdims == ["__dendrogram_x_x", "__dendrogram_y_x"]
+        assert dendro["top"].kdims == ["__dendrogram_x_z", "__dendrogram_y_z"]
 
     def test_point_plot(self):
         dataset = Points(self.df)
