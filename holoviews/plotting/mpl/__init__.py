@@ -284,6 +284,7 @@ options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Dendrogram = Options('style', color="black")
+options.Dendrogram = Options('plot', xaxis=None, yaxis=None)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
                            cmap=dflt_cmap)
 options.Rectangles = Options('style', cmap=dflt_cmap)
