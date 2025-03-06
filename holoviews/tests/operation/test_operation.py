@@ -728,8 +728,8 @@ class TestDendrogramOperation:
         assert isinstance(dendro, AdjointLayout)
         assert isinstance(dendro["main"], HeatMap)
         assert isinstance(dendro["right"], Dendrogram)
-        assert "top" not in dendro
-        assert dendro["right"].kdims == ["__dendrogram_x_0", "__dendrogram_y_0"]
+        assert isinstance(dendro["top"], Empty)
+        assert dendro["right"].kdims == ["__dendrogram_x_x", "__dendrogram_y_x"]
 
     def test_top_only(self):
         dataset = Dataset(self.df)
@@ -738,7 +738,7 @@ class TestDendrogramOperation:
         assert isinstance(dendro["main"], HeatMap)
         assert isinstance(dendro["right"], Empty)
         assert isinstance(dendro["top"], Dendrogram)
-        assert dendro["top"].kdims == ["__dendrogram_x_0", "__dendrogram_y_0"]
+        assert dendro["top"].kdims == ["__dendrogram_x_z", "__dendrogram_y_z"]
 
     @pytest.mark.parametrize("adjoint_dims", [["x", "z"], ["z", "x"]], ids=["xz", "zx"])
     def test_both_xz(self, adjoint_dims):

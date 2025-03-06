@@ -1247,17 +1247,16 @@ class dendrogram(Operation):
     def _process(self, element, key=None):
         element_kdims = element.kdims
         dataset = Dataset(element)
-        sort_dims, dendros = [], []
-        for i, d in enumerate(self.p.adjoint_dims):
+        sort_dims, dendros = [], {}
+        for d in self.p.adjoint_dims:
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
             order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
-            sort_dim = f"sort{i}"
+            sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
             sort_dims.append(sort_dim)
 
             # Important the kdims are unique
-            dendro = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{i}", f"__dendrogram_y_{i}"])
-            dendros.append(dendro)
+            dendros[d] = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
         if type(element) is not Dataset:
@@ -1265,9 +1264,10 @@ class dendrogram(Operation):
         else:
             main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
 
-        if i == 0 and str(element_kdims[0]) == self.p.adjoint_dims[0]:
-            main = main << Empty()
-        for dendro in dendros:
-            main = main << dendro
+        for dim in map(str, main.kdims[::-1]):
+            if dim not in self.p.adjoint_dims:
+                main = main << Empty()
+            else:
+                main = main << dendros[dim]
 
         return main
