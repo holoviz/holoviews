@@ -1222,12 +1222,28 @@ class gridmatrix(param.ParameterizedFunction):
 
 
 class dendrogram(Operation):
+    """The dendrogram operation computes one or two adjoint dendrogram of the
+    data along the specified dimension(s). The operation uses the scipy
+    dendrogram algorithm to compute the tree structure of the data. The
+    operation is typically used to visualize hierarchical clustering of the
+    data.
+    """
 
-    main_dim = param.String()
+    main_dim = param.String(doc="The main dimension to cluster on")
 
-    adjoint_dims = param.List(item_type=str) # , bounds=(1, 2))
+    adjoint_dims = param.List(item_type=str, doc="The adjoint dimension to cluster on")
 
-    main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False)
+    main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False, doc="""
+        The Element type to use for the main plot if the input is a Dataset.""")
+
+    optimal_ordering = param.Boolean(default=False, doc="""
+         If True, the linkage matrix will be reordered so that the distance
+         between successive leaves is minimal. This results in a more intuitive
+         tree structure when the data are visualized. defaults to False,
+         because this algorithm can be slow, particularly on large datasets.
+         See for more information:
+         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+         """)
 
     def _compute_linkage(self, dataset, dim, vdim):
         try:
@@ -1240,7 +1256,7 @@ class dendrogram(Operation):
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
         X = np.vstack(arrays)
-        Z = linkage(X)
+        Z = linkage(X, optimal_ordering=self.p.optimal_ordering)
         ddata = dendrogram(Z, labels=labels, no_plot=True)
         return ddata
 
