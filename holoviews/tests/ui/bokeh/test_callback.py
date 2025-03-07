@@ -418,6 +418,7 @@ class TestPopup:
         locator = page.locator(".bk-btn")
         expect(locator).to_have_count(2)
 
+    @pytest.mark.filterwarnings("ignore:reference already known")
     def test_callback_visible(self, serve_hv, points):
         def popup_form(x, y):
             def hide(_):
