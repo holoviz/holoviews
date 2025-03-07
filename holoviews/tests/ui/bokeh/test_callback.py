@@ -5,7 +5,7 @@ import pytest
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
-from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_7_0
 from holoviews.streams import (
     BoundsX,
     BoundsXY,
@@ -220,8 +220,12 @@ def test_multi_axis_tap_datetime(serve_hv):
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
         assert s.xs == {'x': np.datetime64('2024-01-12T13:26:44.819277')}
         assert len(s.ys) == 2
-        assert np.isclose(s.ys["y1"], 18.130705394191)
-        assert np.isclose(s.ys["y2"], 76.551867219917)
+        if BOKEH_GE_3_7_0:
+            assert np.isclose(s.ys["y1"], 16.19603524229075)
+            assert np.isclose(s.ys["y2"], 68.38325991189429)
+        else:
+            assert np.isclose(s.ys["y1"], 18.130705394191)
+            assert np.isclose(s.ys["y2"], 76.551867219917)
 
     wait_until(test, page)
 
