@@ -34,6 +34,11 @@ def _no_import_version(package_name) -> tuple[int, int, int]:
     return Version(_get_version(package_name)).release
 
 
+_MIN_SUPPORTED_VERSION = {
+    "pandas": (1, 3, 0),
+}
+
+
 class _lazy_module:
     __slots__ = ("__bool_use_sys_modules", "__module", "__module_name", "__package_name")
 
@@ -66,6 +71,15 @@ class _lazy_module:
                 self.__module = import_module(self.__module_name)
             except PackageNotFoundError:
                 raise ModuleNotFoundError(f"No module named {self.__module_name!r}") from None
+            if self.__package_name in _MIN_SUPPORTED_VERSION:
+                min_version = _MIN_SUPPORTED_VERSION[self.__package_name]
+                mod_version = _no_import_version(self.__package_name)
+                if mod_version < min_version:
+                    min_version_str = ".".join(map(str, min_version))
+                    mod_version_str = ".".join(map(str, mod_version))
+                    msg = f"{self.__package_name} requires {min_version_str} or higher (found {mod_version_str})"
+                    raise VersionError(msg, mod_version_str, min_version_str)
+
         return self.__module
 
     def __getattr__(self, attr):
