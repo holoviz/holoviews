@@ -76,11 +76,20 @@ class ServerHoverMixin:
             )
 
         hover_model = HoverModel()
-        valueof_kwargs = {"formatter": "basic"} if BOKEH_GE_3_7_0 else {}
-        _create_row = lambda attr: (
-            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
-            Span(children=[ValueOf(obj=hover_model, attr=attr, **valueof_kwargs)], style={"text_align": "left"}),
-        )
+        dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
+        def _create_row(attr):
+            kwargs = {}
+            if BOKEH_GE_3_7_0:
+                kind = dtypes[attr].kind
+                print(attr, kind)
+                if kind in "uifO":
+                    kwargs["formatter"] = "basic"
+                elif kind == "M":
+                    kwargs["formatter"] = "datetime"  # TODO: Does not work currently
+            return (
+                Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
+                Span(children=[ValueOf(obj=hover_model, attr=attr, **kwargs)], style={"text_align": "left"}),
+            )
         style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
         grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
         hover.tooltips = grid
