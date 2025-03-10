@@ -17,7 +17,7 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, BOKEH_GE_3_7_0, colormesh
 
 
 class ServerHoverMixin:
@@ -76,9 +76,10 @@ class ServerHoverMixin:
             )
 
         hover_model = HoverModel()
+        valueof_kwargs = {"formatter": "basic"} if BOKEH_GE_3_7_0 else {}
         _create_row = lambda attr: (
             Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
-            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
+            Span(children=[ValueOf(obj=hover_model, attr=attr, **valueof_kwargs)], style={"text_align": "left"}),
         )
         style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
         grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
@@ -92,9 +93,10 @@ class ServerHoverMixin:
             if np.isinf(new).all():
                 return
             data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new)), method="nearest").to_dict()
-            # TODO: When ValueOf support formatter remove the rounding
-            # https://github.com/bokeh/bokeh/issues/14123
-            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            if BOKEH_GE_3_7_0:
+                data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
+            else:
+                data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             with hold(self.document):
                 hover_model.update(**data_coords, **data_vars)
