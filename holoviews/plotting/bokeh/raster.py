@@ -81,11 +81,12 @@ class ServerHoverMixin:
             kwargs = {}
             if BOKEH_GE_3_7_0:
                 kind = dtypes[attr].kind
-                print(attr, kind)
                 if kind in "uifO":
                     kwargs["formatter"] = "basic"
                 elif kind == "M":
-                    kwargs["formatter"] = "datetime"  # TODO: Does not work currently
+                    # Currently weird behavior with nan
+                    kwargs["formatter"] = "datetime"
+                    kwargs["format"] = "%Y-%m-%d %H:%M:%S"
             return (
                 Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr=attr, **kwargs)], style={"text_align": "left"}),
