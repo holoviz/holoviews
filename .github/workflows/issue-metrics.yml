@@ -18,7 +18,7 @@ jobs:
         uses: github/issue-metrics@v3
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          SEARCH_QUERY: 'repo:holoviz/holoviews is:issue created:2024-01-01..2024-12-31 -label:"duplicate"'
+          SEARCH_QUERY: 'repo:holoviz/holoviews is:issue created:2025-01-01..2025-02-28 -label:"duplicate"'
 
       - name: Create issue
         uses: peter-evans/create-issue-from-file@v4
