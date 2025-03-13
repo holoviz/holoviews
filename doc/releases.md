@@ -2,6 +2,27 @@
 
 ## Version 1.20
 
+### Version 1.20.2
+
+**March 13, 2025**
+
+This micro release includes a couple of bug fixes, an enhancement, and compatibility updates.
+Thank you to the new contributor @MikalaiPrakapenka, as well as the returning contributor @hoxbro.
+
+Enhancements:
+
+- Add active toggle to scalebar icon ([#6473](https://github.com/holoviz/holoviews/pull/6473))
+
+Bug fixes:
+
+- PolyEdit stream not synchronizes with CDS ([#6534](https://github.com/holoviz/holoviews/pull/6534))
+- Regression in `get_value_array` ([#6519](https://github.com/holoviz/holoviews/pull/6519))
+
+Compatibility:
+
+- Bokeh 3.7 ([#6529](https://github.com/holoviz/holoviews/pull/6529))
+- Matplotlib 3.10.1 ([#6526](https://github.com/holoviz/holoviews/pull/6526))
+
 ### Version 1.20.1
 
 **February 19, 2025**
