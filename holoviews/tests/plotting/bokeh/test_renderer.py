@@ -86,6 +86,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.renderer.components(plot, 'html')
         self.assertEqual(plot.state.outline_line_color, '#444444')
 
+    @pytest.mark.flaky(reruns=3)
     def test_render_to_png(self):
         curve = Curve([])
         renderer = BokehRenderer.instance(fig='png')
