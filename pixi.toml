@@ -133,7 +133,6 @@ spatialpandas = "*"
 streamz = ">=0.5.0"
 xarray = ">=0.10.4"
 xyzservices = "*"
-urllib3 = "<2.3"
 pyzmq = "!=26.3.0"
 
 [feature.optional.target.unix.dependencies]
