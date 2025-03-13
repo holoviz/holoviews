@@ -468,6 +468,31 @@ def test_msg_with_base64_array():
     assert np.equal(data_expected, data_after).all()
 
 
+def test_msg_with_polyedit_polyline():
+    # Account for issue seen in https://github.com/holoviz/holoviews/issues/6532
+    data_before = {
+        "xs": [
+            [10.0, 20.0, 30.0, 40.0],
+            np.array([10.0, 20.0, 30.0, 40.0]),
+            np.array([10.0, 20.0, 30.0, 40.0]),
+            np.array([10.0, 20.0, 30.0, 40.0])
+        ],
+        "ys": [
+            [10.0, 20.0, 30.0, 40.0],
+            np.array([10.0, 20.0, 30.0, 40.0]),
+            np.array([10.0, 20.0, 30.0, 40.0]),
+            np.array([10.0, 20.0, 30.0, 40.0])
+        ],
+        "color": ["#FF0000", "#FF0000", "#FF0000", "#FF0000"],
+        "line_color": ["#FF0000", "#FF0000", "#FF0000", "#FF0000"],
+        "line_width": np.array([2, 2, 2, 2]),
+    }
+    msg_before = {"data": data_before}
+    msg_after = CDSCallback(None, None, None)._process_msg(msg_before)
+    data_after = msg_after["data"]
+    assert np.equal(data_before, data_after).all()
+
+
 @pytest.mark.usefixtures('bokeh_backend')
 def test_rangexy_multi_yaxes():
     c1 = Curve(np.arange(100).cumsum(), vdims='y')

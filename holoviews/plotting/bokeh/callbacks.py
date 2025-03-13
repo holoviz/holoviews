@@ -1407,6 +1407,7 @@ class CDSCallback(Callback):
             elif (
                 isinstance(values, list)
                 and len(values) == 4
+                and isinstance(values[2], str)
                 and values[2] in ("big", "little")
                 and isinstance(values[3], list)
             ):
