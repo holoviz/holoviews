@@ -1,5 +1,5 @@
+import sys
 from io import BytesIO
-from unittest import SkipTest
 
 import numpy as np
 import panel as pn
@@ -86,13 +86,12 @@ class BokehRendererTest(ComparisonTestCase):
         self.renderer.components(plot, 'html')
         self.assertEqual(plot.state.outline_line_color, '#444444')
 
+    @pytest.mark.skipif(sys.platform == "linux", reason="2025-03: Flaky test on Linux")
     def test_render_to_png(self):
+        pytest.importorskip("selenium")
         curve = Curve([])
         renderer = BokehRenderer.instance(fig='png')
-        try:
-            png, info = renderer(curve)
-        except RuntimeError:
-            raise SkipTest("Test requires selenium")
+        png, info = renderer(curve)
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
 
