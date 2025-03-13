@@ -14,13 +14,22 @@ jobs:
       pull-requests: read
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Run issue-metrics tool
         uses: github/issue-metrics@v3
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          SEARCH_QUERY: 'repo:holoviz/holoviews is:issue created:2025-01-01..2025-02-28 -label:"duplicate"'
+          SEARCH_QUERY: 'repo:holoviz/holoviews is:issue created:2024-01-01..2024-12-31 -label:"duplicate"'
 
-      - name: Create issue
+      - name: Check if issue_metrics.md exists
+        run: |
+          if [ ! -f issue_metrics.md ]; then
+            echo "No issues found for the specified query." > issue_metrics.md
+          fi
+
+      - name: Create issue from metrics report
         uses: peter-evans/create-issue-from-file@v4
         with:
           title: Yearly Issue Metrics Report
