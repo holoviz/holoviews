@@ -37,9 +37,9 @@ except ImportError:
 
 
 def set_style(key):
-    """
-    Select a style by name, e.g. set_style('default'). To revert to the
+    """Select a style by name, e.g. set_style('default'). To revert to the
     previous style use the key 'unset' or False.
+
     """
     if key is None:
         return

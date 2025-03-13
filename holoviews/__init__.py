@@ -72,6 +72,7 @@ In a notebook or ipython environment the usual
 
 To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
+
 """
 import builtins
 import os
@@ -158,8 +159,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
 
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
-    """
-    Extended version of the built-in help that supports parameterized
+    """Extended version of the built-in help that supports parameterized
     functions and objects. A pattern (regular expression) may be used to
     filter the output and if recursive is set to True, documentation for
     the supplied object is shown. Note that the recursive option will
@@ -167,6 +167,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
 
     If ansi is set to False, all ANSI color
     codes are stripped out.
+
     """
     backend = backend if backend else Store.current_backend
     info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,

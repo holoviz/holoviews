@@ -47,8 +47,8 @@ class SankeyPlot(GraphPlot):
     style_opts = [*GraphPlot.style_opts, 'label_text_font_size']
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """
-        A Chord plot is always drawn on a unit circle.
+        """A Chord plot is always drawn on a unit circle.
+
         """
         if range_type == 'extents':
             return element.nodes.extents

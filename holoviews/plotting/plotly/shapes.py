@@ -4,6 +4,7 @@ import param
 from ...element import HLine, HSpan, Tiles, VLine, VSpan
 from ..mixins import GeomMixin
 from .element import ElementPlot
+from .util import PLOTLY_SCATTERMAP
 
 
 class ShapePlot(ElementPlot):
@@ -17,7 +18,7 @@ class ShapePlot(ElementPlot):
     def init_graph(self, datum, options, index=0, is_geo=False, **kwargs):
         if is_geo:
             trace = {
-                'type': 'scattermapbox',
+                'type': PLOTLY_SCATTERMAP,
                 'mode': 'lines',
                 'showlegend': False,
                 'hoverinfo': 'skip',

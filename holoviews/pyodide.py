@@ -49,9 +49,9 @@ def render_html(obj):
     return {'text/html': wrap_in_script_tag(script)}, {}
 
 def render_image(element, fmt):
-    """
-    Used to render elements to an image format (svg or png) if requested
+    """Used to render elements to an image format (svg or png) if requested
     in the display formats.
+
     """
     if fmt not in Store.display_formats:
         return None

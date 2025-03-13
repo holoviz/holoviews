@@ -55,15 +55,17 @@ class BokehRenderer(Renderer):
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
-        "Hook to prefix content for instance JS when saving HTML"
+        """Hook to prefix content for instance JS when saving HTML
+
+        """
         return
 
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding plot instance.
+        """Given a HoloViews Viewable return a corresponding plot instance.
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
+
         """
         plot = super().get_plot(obj, doc, renderer, **kwargs)
         if plot.document is None:
@@ -73,10 +75,10 @@ class BokehRenderer(Renderer):
         return plot
 
     def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):
-        """
-        Given a plot instance, an output format and an optional bokeh
+        """Given a plot instance, an output format and an optional bokeh
         document, return the corresponding data. If as_script is True,
         the content will be split in an HTML and a JS component.
+
         """
         model = plot.state
         if doc is None:
@@ -143,8 +145,7 @@ class BokehRenderer(Renderer):
 
     @classmethod
     def plot_options(cls, obj, percent_size):
-        """
-        Given a holoviews object and a percentage size, apply heuristics
+        """Given a holoviews object and a percentage size, apply heuristics
         to compute a suitable figure size. For instance, scaling layouts
         and grids linearly can result in unwieldy figure sizes when there
         are a large number of elements. As ad hoc heuristics are used,
@@ -154,6 +155,7 @@ class BokehRenderer(Renderer):
         Used by the IPython Notebook display hooks and the save
         utility. Note that this can be overridden explicitly per object
         using the fig_size and size plot options.
+
         """
         obj = obj.last if isinstance(obj, HoloMap) else obj
         plot = Store.registry[cls.backend].get(type(obj), None)
@@ -171,12 +173,12 @@ class BokehRenderer(Renderer):
 
     @bothmethod
     def get_size(self_or_cls, plot):
-        """
-        Return the display size associated with a plot before
+        """Return the display size associated with a plot before
         rendering to any particular format. Used to generate
         appropriate HTML display.
 
         Returns a tuple of (width, height) in pixels.
+
         """
         if isinstance(plot, Plot):
             plot = plot.state

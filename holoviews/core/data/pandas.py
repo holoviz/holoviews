@@ -12,8 +12,7 @@ from .util import finite_range
 
 
 class PandasAPI:
-    """
-    This class is used to describe the interface as having a pandas-like API.
+    """This class is used to describe the interface as having a pandas-like API.
 
     The reason to have this class is that it is not always
     possible to directly inherit from the PandasInterface.
@@ -21,6 +20,7 @@ class PandasAPI:
     This class should not have any logic as it should be used like:
         if issubclass(interface, PandasAPI):
             ...
+
     """
 
 
@@ -312,9 +312,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if len(data) != 1 or len(data.columns) > 1:
             return data
@@ -480,9 +480,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def as_dframe(cls, dataset):
-        """
-        Returns the data of a Dataset as a dataframe avoiding copying
+        """Returns the data of a Dataset as a dataframe avoiding copying
         if it already a dataframe type.
+
         """
         if issubclass(dataset.interface, PandasInterface):
             if any(cls.isindex(dataset, dim) for dim in dataset.dimensions()):

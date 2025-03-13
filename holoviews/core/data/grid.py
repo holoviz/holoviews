@@ -12,8 +12,7 @@ from .util import dask_array_module, finite_range, get_array_types, is_dask
 
 
 class GridInterface(DictInterface):
-    """
-    Interface for simple dictionary-based dataset format using a
+    """Interface for simple dictionary-based dataset format using a
     compressed representation that uses the cartesian product between
     key dimensions. As with DictInterface, the dictionary keys correspond
     to the column (i.e. dimension) names and the values are NumPy arrays
@@ -25,6 +24,7 @@ class GridInterface(DictInterface):
     instance, given an temperature recordings sampled regularly across
     the earth surface, a list of N unique latitudes and M unique
     longitudes can specify the position of NxM temperature samples.
+
     """
 
     types = (dict,)
@@ -245,6 +245,7 @@ class GridInterface(DictInterface):
         >>> GridInterface._infer_interval_breaks([[0, 1], [3, 4]], axis=1)
         array([[-0.5,  0.5,  1.5],
                [ 2.5,  3.5,  4.5]])
+
         """
         coord = np.asarray(coord)
         if coord.shape[axis] == 0:
@@ -262,10 +263,10 @@ class GridInterface(DictInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
-        """
-        Returns the coordinates along a dimension.  Ordered ensures
+        """Returns the coordinates along a dimension.  Ordered ensures
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
+
         """
         dim = dataset.get_dimension(dim, strict=True)
         irregular = cls.irregular(dataset, dim)
@@ -298,8 +299,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=None):
-        """
-        Canonicalize takes an array of values as input and reorients
+        """Canonicalize takes an array of values as input and reorients
         and transposes it to match the canonical format expected by
         plotting functions. In certain cases the dimensions defined
         via the kdims of an Element may not match the dimensions of
@@ -311,6 +311,7 @@ class GridInterface(DictInterface):
         by some interfaces (e.g. xarray) to index irregular datasets
         with a virtual integer index. This ensures these coordinates
         are not simply dropped.
+
         """
         if virtual_coords is None:
             virtual_coords = []
@@ -642,8 +643,8 @@ class GridInterface(DictInterface):
 
     @classmethod
     def sample(cls, dataset, samples=None):
-        """
-        Samples the gridded data into dataset of samples.
+        """Samples the gridded data into dataset of samples.
+
         """
         if samples is None:
             samples = []

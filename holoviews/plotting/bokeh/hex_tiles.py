@@ -15,11 +15,11 @@ from .styles import base_properties, fill_properties, line_properties
 
 
 class hex_binning(Operation):
-    """
-    Applies hex binning by computing aggregates on a hexagonal grid.
+    """Applies hex binning by computing aggregates on a hexagonal grid.
 
     Should not be user facing as the returned element is not directly
     usable.
+
     """
 
     aggregator = param.ClassSelector(

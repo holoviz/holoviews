@@ -1,12 +1,8 @@
 import logging
 import os
 import sys
-from contextlib import contextmanager
-from importlib import reload
-from importlib.util import find_spec
 
 import param
-import pytest
 
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -115,28 +111,3 @@ class LoggingComparisonTestCase(ComparisonTestCase):
         for level, msgs in messages.items():
             for msg in msgs:
                 log.log(LEVELS[level], msg)
-
-
-DASK_UNAVAILABLE = find_spec("dask") is None
-EXPR_UNAVAILABLE = find_spec("dask_expr") is None
-
-
-@contextmanager
-def dask_switcher(*, query=False, extras=()):
-    """
-    Context manager to switch on/off dask-expr query planning.
-    Using a context manager as it is an easy way to
-    change the function to a decorator.
-    """
-    if DASK_UNAVAILABLE:
-        pytest.skip("dask is not available")
-    if query and EXPR_UNAVAILABLE:
-        pytest.skip("dask-expr is not available")
-
-    import dask
-
-    dask.config.set(**{"dataframe.query-planning": query})
-    for module in ("dask.dataframe", *extras):
-        if module in sys.modules:
-            reload(sys.modules[module])
-    yield

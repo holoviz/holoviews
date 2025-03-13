@@ -1,6 +1,6 @@
-"""
-Defines mix-in classes to handle support for linked brushing on
+"""Defines mix-in classes to handle support for linked brushing on
 elements.
+
 """
 
 import sys
@@ -215,9 +215,9 @@ def spatial_bounds_select(xvals, yvals, bounds):
 
 
 class Selection2DExpr(SelectionIndexExpr):
-    """
-    Mixin class for Cartesian 2D elements to add basic support for
+    """Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
+
     """
 
     _selection_dims = 2
@@ -405,9 +405,9 @@ class SelectionGeomExpr(Selection2DExpr):
 class SelectionPolyExpr(Selection2DExpr):
 
     def _skip(self, **kwargs):
-        """
-        Do not skip geometry selections until polygons support returning
+        """Do not skip geometry selections until polygons support returning
         indexes on lasso based selections.
+
         """
         skip = kwargs.get('index_cols') and self._index_skip and 'geometry' not in kwargs
         if skip:
@@ -441,9 +441,9 @@ class SelectionPolyExpr(Selection2DExpr):
 
 
 class Selection1DExpr(Selection2DExpr):
-    """
-    Mixin class for Cartesian 1D Chart elements to add basic support for
+    """Mixin class for Cartesian 1D Chart elements to add basic support for
     SelectionExpr streams.
+
     """
 
     _selection_dims = 1

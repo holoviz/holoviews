@@ -40,11 +40,12 @@ MPL_VERSION = Version(mpl.__version__).release
 MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)
 MPL_GE_3_9_0 = MPL_VERSION >= (3, 9, 0)
 MPL_GE_3_10_0 = MPL_VERSION >= (3, 10, 0)
+MPL_GE_3_10_1 = MPL_VERSION >= (3, 10, 1)
 
 
 def is_color(color):
-    """
-    Checks if supplied object is a valid color spec.
+    """Checks if supplied object is a valid color spec.
+
     """
     if not isinstance(color, str):
         return False
@@ -101,21 +102,20 @@ def get_validator(style):
 
 
 def validate(style, value, vectorized=True):
-    """
-    Validates a style and associated value.
+    """Validates a style and associated value.
 
-    Arguments
-    ---------
-    style: str
+    Parameters
+    ----------
+    style : str
        The style to validate (e.g. 'color', 'size' or 'marker')
-    value:
+    value :
        The style value to validate
-    vectorized: bool
+    vectorized : bool
        Whether validator should allow vectorized setting
 
     Returns
     -------
-    valid: boolean or None
+    valid : boolean or None
        If validation is supported returns boolean, otherwise None
     """
     validator = get_validator(style)
@@ -131,25 +131,24 @@ def validate(style, value, vectorized=True):
 
 
 def filter_styles(style, group, other_groups, blacklist=None):
-    """
-    Filters styles which are specific to a particular artist, e.g.
+    """Filters styles which are specific to a particular artist, e.g.
     for a GraphPlot this will filter options specific to the nodes and
     edges.
 
-    Arguments
-    ---------
-    style: dict
+    Parameters
+    ----------
+    style : dict
         Dictionary of styles and values
-    group: str
+    group : str
         Group within the styles to filter for
-    other_groups: list
+    other_groups : list
         Other groups to filter out
-    blacklist: list (optional)
+    blacklist : list, optional
         List of options to filter out
 
     Returns
     -------
-    filtered: dict
+    filtered : dict
         Filtered dictionary of styles
     """
     if blacklist is None:
@@ -169,9 +168,9 @@ def filter_styles(style, group, other_groups, blacklist=None):
 
 
 def wrap_formatter(formatter):
-    """
-    Wraps formatting function or string in
+    """Wraps formatting function or string in
     appropriate matplotlib formatter type.
+
     """
     if isinstance(formatter, ticker.Formatter):
         return formatter
@@ -221,8 +220,8 @@ def compute_ratios(ratios, normalized=True):
 
 
 def axis_overlap(ax1, ax2):
-    """
-    Tests whether two axes overlap vertically
+    """Tests whether two axes overlap vertically
+
     """
     b1, t1 = ax1.get_position().intervaly
     b2, t2 = ax2.get_position().intervaly
@@ -230,10 +229,10 @@ def axis_overlap(ax1, ax2):
 
 
 def resolve_rows(rows):
-    """
-    Recursively iterate over lists of axes merging
+    """Recursively iterate over lists of axes merging
     them by their vertical overlap leaving a list
     of rows.
+
     """
     merged_rows = []
     for row in rows:
@@ -254,9 +253,9 @@ def resolve_rows(rows):
 
 def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
                vspace=0.2, hspace=0.2):
-    """
-    Calculate heights and widths of axes and adjust
+    """Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
+
     """
     if extra_artists is None:
         extra_artists = []
@@ -295,8 +294,8 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
 
 
 def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
-    """
-    Compute a tight bounding box around all the artists in the figure.
+    """Compute a tight bounding box around all the artists in the figure.
+
     """
     if bbox_extra_artists is None:
         bbox_extra_artists = []
@@ -333,8 +332,8 @@ def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
 
 
 def get_raster_array(image):
-    """
-    Return the array data from any Raster or Image type
+    """Return the array data from any Raster or Image type
+
     """
     if isinstance(image, RGB):
         rgb = image.rgb
@@ -350,9 +349,9 @@ def get_raster_array(image):
 
 
 def ring_coding(array):
-    """
-    Produces matplotlib Path codes for exterior and interior rings
+    """Produces matplotlib Path codes for exterior and interior rings
     of a polygon geometry.
+
     """
     # The codes will be all "LINETO" commands, except for "MOVETO"s at the
     # beginning of each subpath
@@ -364,10 +363,10 @@ def ring_coding(array):
 
 
 def polygons_to_path_patches(element):
-    """
-    Converts Polygons into list of lists of matplotlib.patches.PathPatch
+    """Converts Polygons into list of lists of matplotlib.patches.PathPatch
     objects including any specified holes. Each list represents one
     (multi-)polygon.
+
     """
     paths = element.split(datatype='array', dimensions=element.kdims)
     has_holes = isinstance(element, Polygons) and element.interface.has_holes(element)
@@ -396,8 +395,8 @@ def polygons_to_path_patches(element):
 
 
 class CFTimeConverter(NetCDFTimeConverter):
-    """
-    Defines conversions for cftime types by extending nc_time_axis.
+    """Defines conversions for cftime types by extending nc_time_axis.
+
     """
 
     @classmethod

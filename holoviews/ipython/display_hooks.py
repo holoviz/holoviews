@@ -1,5 +1,5 @@
-"""
-Definition and registration of display hooks for the IPython Notebook.
+"""Definition and registration of display hooks for the IPython Notebook.
+
 """
 import sys
 import traceback
@@ -51,7 +51,9 @@ def max_frame_warning(max_frames):
     )
 
 def process_object(obj):
-    "Hook to process the object currently being displayed."
+    """Hook to process the object currently being displayed.
+
+    """
     invalid_options = OptsMagic.process_element(obj)
     if invalid_options: return invalid_options
     OutputMagic.info(obj)
@@ -77,8 +79,8 @@ def render(obj, **kwargs):
 
 
 def single_frame_plot(obj):
-    """
-    Returns plot, renderer and format for single frame export.
+    """Returns plot, renderer and format for single frame export.
+
     """
     obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
 
@@ -93,20 +95,26 @@ def single_frame_plot(obj):
 
 
 def first_frame(obj):
-    "Only display the first frame of an animated plot"
+    """Only display the first frame of an animated plot
+
+    """
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(0)
     return {'text/html': renderer.html(plot, fmt)}
 
 def middle_frame(obj):
-    "Only display the (approximately) middle frame of an animated plot"
+    """Only display the (approximately) middle frame of an animated plot
+
+    """
     plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
     return {'text/html': renderer.html(plot, fmt)}
 
 def last_frame(obj):
-    "Only display the last frame of an animated plot"
+    """Only display the last frame of an animated plot
+
+    """
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
     return {'text/html': renderer.html(plot, fmt)}
@@ -133,10 +141,10 @@ def option_state(element):
 
 
 def display_hook(fn):
-    """
-    A decorator to wrap display hooks that return a MIME bundle or None.
+    """A decorator to wrap display hooks that return a MIME bundle or None.
     Additionally it handles adding output to the notebook archive, saves
     files specified with the output magic and handles tracebacks.
+
     """
     @wraps(fn)
     def wrapped(element):
@@ -236,10 +244,10 @@ def grid_display(grid, max_frames):
 
 
 def display(obj, raw_output=False, **kwargs):
-    """
-    Renders any HoloViews object to HTML and displays it
+    """Renders any HoloViews object to HTML and displays it
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
+
     """
     if not Store.loaded_backends() and isinstance(obj, Dimensioned):
         raise RuntimeError('To use display on a HoloViews object ensure '
@@ -288,9 +296,9 @@ def pprint_display(obj):
 
 
 def image_display(element, max_frames, fmt):
-    """
-    Used to render elements to an image format (svg or png) if requested
+    """Used to render elements to an image format (svg or png) if requested
     in the display formats.
+
     """
     if fmt not in Store.display_formats:
         return None
@@ -315,16 +323,16 @@ def image_display(element, max_frames, fmt):
 
 @display_hook
 def png_display(element, max_frames):
-    """
-    Used to render elements to PNG if requested in the display formats.
+    """Used to render elements to PNG if requested in the display formats.
+
     """
     return image_display(element, max_frames, fmt='png')
 
 
 @display_hook
 def svg_display(element, max_frames):
-    """
-    Used to render elements to SVG if requested in the display formats.
+    """Used to render elements to SVG if requested in the display formats.
+
     """
     return image_display(element, max_frames, fmt='svg')
 

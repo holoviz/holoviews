@@ -9,8 +9,7 @@ from ..util.transform import easting_northing_to_lon_lat, lon_lat_to_easting_nor
 
 
 class Tiles(Element2D):
-    """
-    The Tiles element represents tile sources, specified as URL
+    """The Tiles element represents tile sources, specified as URL
     containing different template variables or xyzservices.TileProvider.
     These variables correspond to three different formats for specifying the spatial
     location and zoom level of the requested tiles:
@@ -25,6 +24,7 @@ class Tiles(Element2D):
     defined as eastings and northings. Any data overlaid on a tile
     source therefore has to be defined in those coordinates or be
     projected (e.g. using GeoViews).
+
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -51,23 +51,23 @@ class Tiles(Element2D):
 
     @staticmethod
     def lon_lat_to_easting_northing(longitude, latitude):
-        """
-        Projects the given longitude, latitude values into Web Mercator
+        """Projects the given longitude, latitude values into Web Mercator
         (aka Pseudo-Mercator or EPSG:3857) coordinates.
 
         See docstring for holoviews.util.transform.lon_lat_to_easting_northing
         for more information
+
         """
         return lon_lat_to_easting_northing(longitude, latitude)
 
     @staticmethod
     def easting_northing_to_lon_lat(easting, northing):
-        """
-        Projects the given easting, northing values into
+        """Projects the given easting, northing values into
         longitude, latitude coordinates.
 
         See docstring for holoviews.util.transform.easting_northing_to_lon_lat
         for more information
+
         """
         return easting_northing_to_lon_lat(easting, northing)
 

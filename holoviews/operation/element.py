@@ -1,6 +1,6 @@
-"""
-Collection of either extremely generic or simple Operation
+"""Collection of either extremely generic or simple Operation
 examples.
+
 """
 import warnings
 from functools import partial
@@ -47,8 +47,7 @@ column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 def identity(x,k): return x
 
 class operation(Operation):
-    """
-    The most generic operation that wraps any callable into an
+    """The most generic operation that wraps any callable into an
     Operation. The callable needs to accept an HoloViews
     component and a key (that may be ignored) and must return a new
     HoloViews component.
@@ -61,6 +60,7 @@ class operation(Operation):
 
     Could be used to implement a collapse operation to subtracts the
     data between Rasters in an Overlay.
+
     """
 
     output_type = param.Parameter(default=None, doc="""
@@ -89,10 +89,10 @@ class operation(Operation):
 
 
 class factory(Operation):
-    """
-    Simple operation that constructs any element that accepts some
+    """Simple operation that constructs any element that accepts some
     other element as input. For instance, RGB and HSV elements can be
     created from overlays of Image elements.
+
     """
 
     output_type = param.Parameter(default=RGB, doc="""
@@ -133,8 +133,8 @@ class function(Operation):
 
 
 class method(Operation):
-    """
-    Operation that wraps a method call
+    """Operation that wraps a method call
+
     """
 
     output_type = param.ClassSelector(class_=type, doc="""
@@ -158,8 +158,7 @@ class method(Operation):
 
 
 class apply_when(param.ParameterizedFunction):
-    """
-    Applies a selection depending on the current zoom range. If the
+    """Applies a selection depending on the current zoom range. If the
     supplied predicate function returns a True it will apply the
     operation otherwise it will return the raw element after the
     selection. For example the following will apply datashading if
@@ -167,6 +166,7 @@ class apply_when(param.ParameterizedFunction):
     just returning the selected points element:
 
        apply_when(points, operation=datashade, predicate=lambda x: x > 1000)
+
     """
 
     operation = param.Callable(default=lambda x: x)
@@ -203,8 +203,7 @@ class apply_when(param.ParameterizedFunction):
 
 
 class chain(Operation):
-    """
-    Defining an Operation chain is an easy way to define a new
+    """Defining an Operation chain is an easy way to define a new
     Operation from a series of existing ones. The argument is a
     list of Operation (or Operation instances) that are
     called in sequence to generate the returned element.
@@ -218,6 +217,7 @@ class chain(Operation):
     Instances are only required when arguments need to be passed to
     individual operations so the resulting object is a function over a
     single argument.
+
     """
 
     output_type = param.Parameter(default=Image, doc="""
@@ -245,9 +245,9 @@ class chain(Operation):
             return processed.clone(group=self.p.group)
 
     def find(self, operation, skip_nonlinked=True):
-        """
-        Returns the first found occurrence of an operation while
+        """Returns the first found occurrence of an operation while
         performing a backward traversal of the chain pipeline.
+
         """
         found = None
         for op in self.operations[::-1]:
@@ -260,8 +260,7 @@ class chain(Operation):
 
 
 class transform(Operation):
-    """
-    Generic Operation to transform an input Image or RGBA
+    """Generic Operation to transform an input Image or RGBA
     element into an output Image. The transformation is defined by
     the supplied callable that accepts the data of the input Image
     (typically a numpy array) and returns the transformed data of the
@@ -276,6 +275,7 @@ class transform(Operation):
     autocorrelation using the scipy library with:
 
     operator=lambda x: scipy.signal.correlate2d(x, x)
+
     """
 
     output_type = Image
@@ -296,8 +296,7 @@ class transform(Operation):
 
 
 class image_overlay(Operation):
-    """
-    Operation to build a overlay of images to a specification from a
+    """Operation to build a overlay of images to a specification from a
     subset of the required elements.
 
     This is useful for reordering the elements of an overlay,
@@ -313,6 +312,7 @@ class image_overlay(Operation):
     strongest match will be used. In the case of a tie in match
     strength, the first layer in the input is used. One successful
     match is always required.
+
     """
 
     output_type = Overlay
@@ -341,7 +341,9 @@ class image_overlay(Operation):
 
     @classmethod
     def _match(cls, el, spec):
-        "Return the strength of the match (None if no match)"
+        """Return the strength of the match (None if no match)
+
+        """
         spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
         if not isinstance(el, Image) or spec_dict['type'] != 'Image':
             raise NotImplementedError("Only Image currently supported")
@@ -357,10 +359,10 @@ class image_overlay(Operation):
 
 
     def _match_overlay(self, raster, overlay_spec):
-        """
-        Given a raster or input overlay, generate a list of matched
+        """Given a raster or input overlay, generate a list of matched
         elements (None if no match) and corresponding tuple of match
         strength values.
+
         """
         ordering = [None]*len(overlay_spec) # Elements to overlay
         strengths = [0]*len(overlay_spec)   # Match strengths
@@ -399,11 +401,12 @@ class image_overlay(Operation):
 
 
 class threshold(Operation):
-    """
-    Threshold a given Image whereby all values higher than a given
+    """Threshold a given Image whereby all values higher than a given
     level map to the specified high value and all values lower than
     that level map to the specified low value.
+
     """
+
     output_type = Image
 
     level = param.Number(default=0.5, doc="""
@@ -438,11 +441,11 @@ class threshold(Operation):
 
 
 class gradient(Operation):
-    """
-    Compute the gradient plot of the supplied Image.
+    """Compute the gradient plot of the supplied Image.
 
     If the Image value dimension is cyclic, the smallest step is taken
     considered the cyclic range
+
     """
 
     output_type = Image
@@ -490,10 +493,10 @@ class gradient(Operation):
 
 
 class convolve(Operation):
-    """
-    Apply a convolution to an overlay using the top layer as the
+    """Apply a convolution to an overlay using the top layer as the
     kernel for convolving the bottom layer. Both Image elements in
     the input overlay should have a single value dimension.
+
     """
 
     output_type = Image
@@ -536,12 +539,12 @@ class convolve(Operation):
 
 
 class contours(Operation):
-    """
-    Given a Image with a single channel, annotate it with contour
+    """Given a Image with a single channel, annotate it with contour
     lines for a given set of contour levels.
 
     The return is an NdOverlay with a Contours layer for each given
     level, overlaid on top of the input Image.
+
     """
 
     output_type = Overlay
@@ -728,10 +731,10 @@ class contours(Operation):
 
 
 class histogram(Operation):
-    """
-    Returns a Histogram of the input element data, binned into
+    """Returns a Histogram of the input element data, binned into
     num_bins over the bin_range (if specified) along the specified
     dimension.
+
     """
 
     bin_range = param.NumericTuple(default=None, length=2,  doc="""
@@ -957,11 +960,11 @@ class histogram(Operation):
 
 
 class decimate(Operation):
-    """
-    Decimates any column based Element to a specified number of random
+    """Decimates any column based Element to a specified number of random
     rows if the current element defined by the x_range and y_range
     contains more than max_samples. By default the operation returns a
     DynamicMap with a RangeXY stream allowing dynamic downsampling.
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -1018,9 +1021,9 @@ class decimate(Operation):
 
 
 class interpolate_curve(Operation):
-    """
-    Resamples a Curve using the defined interpolation method, e.g.
+    """Resamples a Curve using the defined interpolation method, e.g.
     to represent changes in y-values as steps.
+
     """
 
     interpolation = param.Selector(objects=['steps-pre', 'steps-mid',
@@ -1105,13 +1108,13 @@ class interpolate_curve(Operation):
 
 
 class collapse(Operation):
-    """
-    Given an overlay of Element types, collapse into single Element
+    """Given an overlay of Element types, collapse into single Element
     object using supplied function. Collapsing aggregates over the
     key dimensions of each object applying the supplied fn to each group.
 
     This is an example of an Operation that does not involve
     any Raster types.
+
     """
 
     fn = param.Callable(default=np.mean, doc="""
@@ -1127,13 +1130,13 @@ class collapse(Operation):
 
 
 class gridmatrix(param.ParameterizedFunction):
-    """
-    The gridmatrix operation takes an Element or HoloMap
+    """The gridmatrix operation takes an Element or HoloMap
     of Elements as input and creates a GridMatrix object,
     which plots each dimension in the Element against
     each other dimension. This provides a very useful
     overview of high-dimensional data and is inspired
     by pandas and seaborn scatter_matrix implementations.
+
     """
 
     chart_type = param.Parameter(default=Scatter, doc="""

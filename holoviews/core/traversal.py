@@ -1,7 +1,7 @@
-"""
-Advanced utilities for traversing nesting/hierarchical Dimensioned
+"""Advanced utilities for traversing nesting/hierarchical Dimensioned
 objects either to inspect the structure of their declared dimensions
 or mutate the matching elements.
+
 """
 
 from collections import defaultdict
@@ -18,10 +18,10 @@ def create_ndkey(length, indexes, values):
     return tuple(key)
 
 def uniform(obj):
-    """
-    Finds all common dimension keys in the object including subsets of
+    """Finds all common dimension keys in the object including subsets of
     dimensions. If there are is no common subset of dimensions, None
     is returned.
+
     """
     from .spaces import HoloMap
     dim_groups = obj.traverse(lambda x: tuple(x.kdims),
@@ -33,13 +33,13 @@ def uniform(obj):
 
 
 def unique_dimkeys(obj, default_dim='Frame'):
-    """
-    Finds all common dimension keys in the object including subsets of
+    """Finds all common dimension keys in the object including subsets of
     dimensions. If there are is no common subset of dimensions, None
     is returned.
 
     Returns the list of dimensions followed by the list of unique
     keys.
+
     """
     from .ndmapping import NdMapping, item_check
     from .spaces import HoloMap
@@ -106,13 +106,13 @@ def bijective(keys):
 
 
 def hierarchical(keys):
-    """
-    Iterates over dimension values in keys, taking two sets
+    """Iterates over dimension values in keys, taking two sets
     of dimension values at a time to determine whether two
     consecutive dimensions have a one-to-many relationship.
     If they do a mapping between the first and second dimension
     values is returned. Returns a list of n-1 mappings, between
     consecutive dimensions.
+
     """
     ndims = len(keys[0])
     if ndims <= 1:

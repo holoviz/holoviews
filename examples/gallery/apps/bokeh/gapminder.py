@@ -3,12 +3,12 @@ Gapminder demo demonstrating how to combine to extend a HoloViews plot
 with custom bokeh widgets to deploy an app.
 """
 
-import pandas as pd
 import numpy as np
-import holoviews as hv
+import pandas as pd
 import panel as pn
-
 from bokeh.sampledata import gapminder
+
+import holoviews as hv
 from holoviews import dim, opts
 
 renderer = hv.renderer('bokeh')

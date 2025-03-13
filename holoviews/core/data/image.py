@@ -12,9 +12,9 @@ from .util import finite_range
 
 
 class ImageInterface(GridInterface):
-    """
-    Interface for 2 or 3D arrays representing images
+    """Interface for 2 or 3D arrays representing images
     of raw luminance values, RGB values or HSV values.
+
     """
 
     types = (np.ndarray,)
@@ -69,7 +69,9 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def irregular(cls, dataset, dim):
-        "ImageInterface does not support irregular data"
+        """ImageInterface does not support irregular data
+
+        """
         return False
 
     @classmethod
@@ -165,8 +167,8 @@ class ImageInterface(GridInterface):
     def values(
             cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
     ):
-        """
-        The set of samples available along a particular dimension.
+        """The set of samples available along a particular dimension.
+
         """
         dim_idx = dataset.get_dimension_index(dim)
         if dim_idx in [0, 1]:
@@ -214,8 +216,8 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """
-        Slice the underlying numpy array in sheet coordinates.
+        """Slice the underlying numpy array in sheet coordinates.
+
         """
         selection = {k: slice(*sel) if isinstance(sel, tuple) else sel
                      for k, sel in selection.items()}
@@ -240,13 +242,13 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def sample(cls, dataset, samples=None):
-        """
-        Sample the Raster along one or both of its dimensions,
+        """Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a ItemTable, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
+
         """
         if samples is None:
             samples = []
@@ -293,9 +295,9 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if np.isscalar(data) or len(data) != 1:
             return data
