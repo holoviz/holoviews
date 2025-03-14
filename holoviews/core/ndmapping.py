@@ -8,7 +8,6 @@ from itertools import cycle
 from operator import itemgetter
 
 import numpy as np
-import pandas as pd
 import param
 
 from . import util
@@ -963,6 +962,8 @@ class UniformNdMapping(NdMapping):
         -------
         DataFrame of columns corresponding to each dimension
         """
+        import pandas as pd
+
         if dimensions is None:
             outer_dimensions = self.kdims
             inner_dimensions = None

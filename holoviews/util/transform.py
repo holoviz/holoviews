@@ -2,7 +2,6 @@ import operator
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
-import pandas as pd
 import param
 
 from ..core.data import PandasInterface
@@ -91,6 +90,7 @@ class iloc:
         return dim(self.expr, self)
 
     def __call__(self, values):
+        import pandas as pd
         if isinstance(values, (pd.Series, pd.DataFrame)):
             return values.iloc[resolve_dependent_value(self.index)]
         else:
@@ -898,6 +898,7 @@ class df_dim(dim):
     _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
+        import pandas as pd
         super().__init__(obj, *args, **kwargs)
         self._ns = pd.Series
 
