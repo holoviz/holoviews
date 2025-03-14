@@ -191,7 +191,7 @@ class Raster(Element2D):
         return self.data
 
     def _coord2matrix(self, coord):
-        return int(round(coord[1])), int(round(coord[0]))
+        return round(coord[1]), round(coord[0])
 
     def __len__(self):
         return np.prod(self._zdata.shape)

@@ -236,11 +236,11 @@ class Selection2DExpr(SelectionIndexExpr):
             xsel = kwargs['x_selection']
             if isinstance(xsel, list):
                 xcats = xsel
-                x0, x1 = int(round(x0)), int(round(x1))
+                x0, x1 = round(x0), round(x1)
             ysel = kwargs['y_selection']
             if isinstance(ysel, list):
                 ycats = ysel
-                y0, y1 = int(round(y0)), int(round(y1))
+                y0, y1 = round(y0), round(y1)
 
         # Handle invert_xaxis/invert_yaxis
         if x0 > x1:

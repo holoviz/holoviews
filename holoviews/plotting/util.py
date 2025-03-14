@@ -1005,11 +1005,11 @@ def color_intervals(colors, levels, clip=None, N=255):
     interval = cmax-cmin
     cmap = []
     for intv, c in zip(intervals, colors):
-        cmap += [c]*int(round(N*(intv/interval)))
+        cmap += [c]*round(N*(intv/interval))
     if clip is not None:
         clmin, clmax = clip
-        lidx = int(round(N*((clmin-cmin)/interval)))
-        uidx = len(cmap) - int(round(N*((cmax-clmax)/interval)))
+        lidx = round(N*((clmin-cmin)/interval))
+        uidx = len(cmap) - round(N*((cmax-clmax)/interval))
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]
