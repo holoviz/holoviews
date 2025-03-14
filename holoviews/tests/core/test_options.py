@@ -35,7 +35,7 @@ try:
 except ImportError:
     mpl = None
 with contextlib.suppress(ImportError):
-    from holoviews.plotting import plotly # noqa : F401
+    from holoviews.plotting import plotly  # noqa: F401
 
 
 class TestOptions(ComparisonTestCase):

@@ -477,7 +477,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise Exception("Given dimension labels not sufficient"
                             "to address all values uniquely")
 
-        if len(keys):
+        if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
         else:
             cdims = {}

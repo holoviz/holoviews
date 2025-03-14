@@ -2083,7 +2083,7 @@ def bound_range(vals, density, time_unit='us'):
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
     halfd = 0.5/density
     if isinstance(low, datetime_types):
-        halfd = np.timedelta64(int(round(halfd)), time_unit)
+        halfd = np.timedelta64(round(halfd), time_unit)
     return low-halfd, high+halfd, density, invert
 
 
@@ -2124,7 +2124,7 @@ def date_range(start, end, length, time_unit='us'):
     step = (1./compute_density(start, end, length, time_unit))
     if isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
-    step = np.timedelta64(int(round(step)), time_unit)
+    step = np.timedelta64(round(step), time_unit)
     return start+step/2.+np.arange(length)*step
 
 

@@ -1799,7 +1799,7 @@ class StoreOptions:
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
         # If no backends defined (e.g. plotting not imported) return zero
-        return max(max_ids) if len(max_ids) else 0
+        return max(max_ids) if max_ids else 0
 
     @classmethod
     def update_backends(cls, id_mapping, custom_trees, backend=None):
