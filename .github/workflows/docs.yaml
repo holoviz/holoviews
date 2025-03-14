@@ -78,10 +78,10 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          aws s3 sync --quiet --delete ./builtdocs s3://dev.holoviews.org/
+          aws s3 sync --delete ./builtdocs s3://dev.holoviews.org/
       - name: upload main
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          aws s3 sync --quiet --delete ./builtdocs s3://holoviews.org/
+          aws s3 sync --delete ./builtdocs s3://holoviews.org/
