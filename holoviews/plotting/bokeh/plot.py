@@ -1094,8 +1094,7 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
                 passed_plots = plots + adjoined_plots
                 adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
         self.drawn = True
-        if not adjoined_plots: adjoined_plots = [None]
-        return adjoined_plots
+        return adjoined_plots or [None]
 
     def update_frame(self, key, ranges=None):
         plot = None
