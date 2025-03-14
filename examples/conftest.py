@@ -17,8 +17,6 @@ PANDAS_GE_2_0_0 = Version(pd.__version__).release >= (2, 0, 0)
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
     "user_guide/Plotting_with_Bokeh.ipynb",
-    # Streaming data use streamz which is no longer maintained
-    "user_guide/16-Streaming_Data.ipynb",
     # Possible timeout error
     "user_guide/17-Dashboards.ipynb",
     # Give file not found
