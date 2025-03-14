@@ -147,7 +147,7 @@ class Apply(metaclass=AccessorPipelineMeta):
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
-            if not len(samples):
+            if not samples:
                 return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
                 apply_function, streams, link_inputs, link_dataset,

@@ -614,7 +614,7 @@ class Callable(param.Parameterized):
         elif len(args) != 0: # Turn positional arguments into keyword arguments
             pos_kwargs = {k:v for k,v in zip(self.argspec.args, args)}
             ignored = range(len(self.argspec.args),len(args))
-            if len(ignored):
+            if ignored:
                 self.param.warning('Ignoring extra positional argument {}'.format(', '.join(f'{i}' for i in ignored)))
             clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
             if clashes:
@@ -1886,7 +1886,7 @@ class GridSpace(Layoutable, UniformNdMapping):
             str_keys = iter(key[i] for i in range(self.ndims)
                             if i not in dim_inds)
             num_keys = []
-            if len(dim_inds):
+            if dim_inds:
                 keys = list({tuple(k[i] if ndims > 1 else k for i in dim_inds)
                              for k in self.keys()})
                 q = np.array([tuple(key[i] if ndims > 1 else key for i in dim_inds)])
