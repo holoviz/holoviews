@@ -2,6 +2,7 @@ import os
 from unittest import SkipTest
 
 import param
+from bokeh.settings import settings as bk_settings
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
@@ -20,17 +21,17 @@ from .magics import load_magics
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
 def show_traceback():
-    """
-    Display the full traceback after an abbreviated traceback has occurred.
+    """Display the full traceback after an abbreviated traceback has occurred.
+
     """
     from .display_hooks import FULL_TRACEBACK
     print(FULL_TRACEBACK)
 
 
 class IPTestCase(ComparisonTestCase):
-    """
-    This class extends ComparisonTestCase to handle IPython specific
+    """This class extends ComparisonTestCase to handle IPython specific
     objects and support the execution of cells and magic.
+
     """
 
     def setUp(self):
@@ -58,23 +59,29 @@ class IPTestCase(ComparisonTestCase):
 
 
     def cell(self, line):
-        "Run an IPython cell"
+        """Run an IPython cell
+
+        """
         self.ip.run_cell(line, silent=True)
 
     def cell_magic(self, *args, **kwargs):
-        "Run an IPython cell magic"
+        """Run an IPython cell magic
+
+        """
         self.ip.run_cell_magic(*args, **kwargs)
 
 
     def line_magic(self, *args, **kwargs):
-        "Run an IPython line magic"
+        """Run an IPython line magic
+
+        """
         self.ip.run_line_magic(*args, **kwargs)
 
 
 class notebook_extension(extension):
-    """
-    Notebook specific extension to hv.extension that offers options for
+    """Notebook specific extension to hv.extension that offers options for
     controlling the notebook environment.
+
     """
 
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
@@ -99,9 +106,7 @@ class notebook_extension(extension):
         export figures to other formats such as PDF with nbconvert.""")
 
     allow_jedi_completion = param.Boolean(default=True, doc="""
-       Whether to allow jedi tab-completion to be enabled in IPython.
-       Disabled by default because many HoloViews features rely on
-       tab-completion machinery not supported when using jedi.""")
+       Whether to allow jedi tab-completion to be enabled in IPython.""")
 
     case_sensitive_completion = param.Boolean(default=False, doc="""
        Whether to monkey patch IPython to use the correct tab-completion
@@ -138,7 +143,7 @@ class notebook_extension(extension):
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
             svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
-            hv.archive.exporters = [svg_exporter] + hv.archive.exporters
+            hv.archive.exporters = [svg_exporter, *hv.archive.exporters]
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         if p.case_sensitive_completion:
@@ -164,6 +169,7 @@ class notebook_extension(extension):
             Store.set_display_hook('html+js', LabelledData, pprint_display)
             Store.set_display_hook('png', LabelledData, png_display)
             Store.set_display_hook('svg', LabelledData, svg_display)
+            bk_settings.simple_ids.set_value(False)
             notebook_extension._loaded = True
 
         css = ''
@@ -204,7 +210,9 @@ class notebook_extension(extension):
 
     @classmethod
     def completions_sorting_key(cls, word):
-        "Fixed version of IPyton.completer.completions_sorting_key"
+        """Fixed version of IPyton.completer.completions_sorting_key
+
+        """
         prio1, prio2 = 0, 0
         if word.startswith('__'):  prio1 = 2
         elif word.startswith('_'): prio1 = 1
@@ -219,13 +227,13 @@ class notebook_extension(extension):
 
 
     def _get_resources(self, args, params):
-        """
-        Finds the list of resources from the keyword parameters and pops
+        """Finds the list of resources from the keyword parameters and pops
         them out of the params dictionary.
+
         """
         resources = []
         disabled = []
-        for resource in ['holoviews'] + list(Store.renderers.keys()):
+        for resource in ['holoviews', *Store.renderers]:
             if resource in args:
                 resources.append(resource)
 
@@ -243,13 +251,13 @@ class notebook_extension(extension):
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
-            resources = ['holoviews'] + resources
+            resources = ['holoviews', *resources]
         return resources
 
     @classmethod
     def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
-        """
-        Allow to display Holoviews' logo and the plotting extensions' logo.
+        """Allow to display Holoviews' logo and the plotting extensions' logo.
+
         """
         import jinja2
 

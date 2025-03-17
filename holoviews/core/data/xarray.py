@@ -93,7 +93,7 @@ class XArrayInterface(GridInterface):
         if isinstance(data, xr.DataArray):
             kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
             vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
-            if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
+            if kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
                 packed = True
             elif vdims:
                 vdim = vdims[0]
@@ -125,7 +125,33 @@ class XArrayInterface(GridInterface):
                     vdims = [vdim]
                     data = data.to_dataset(name=vdim.name)
 
-        if not isinstance(data, (xr.Dataset, xr.DataArray)):
+        if isinstance(data, (xr.Dataset, xr.DataArray)):
+            # Started to warn in xarray 2023.12.0:
+            # The return type of `Dataset.dims` will be changed to return a
+            # set of dimension names in future, in order to be more consistent
+            # with `DataArray.dims`. To access a mapping from dimension names to
+            # lengths, please use `Dataset.sizes`.
+            data_info =  data.sizes if hasattr(data, "sizes") else data.dims
+            if not data.coords:
+                data = data.assign_coords(**{k: range(v) for k, v in data_info.items()})
+            if vdims is None:
+                vdims = list(data.data_vars)
+            if kdims is None:
+                xrdims = list(data_info)
+                xrcoords = list(data.coords)
+                kdims = [name for name in data.indexes.keys()
+                         if isinstance(data[name].data, np.ndarray)]
+                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
+                if packed:
+                    kdims = kdims[:-1]
+                elif set(xrdims) != set(kdims):
+                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
+                    for c in data.coords:
+                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
+                            kdims.append(c)
+            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
+            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
+        else:
             if kdims is None:
                 kdims = kdim_param.default
             if vdims is None:
@@ -154,7 +180,7 @@ class XArrayInterface(GridInterface):
             data = {d: np.asarray(values) if d in kdims else values
                     for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
-            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+            dims = tuple(f'dim_{i}' for i in range(max(coord_dims)))[::-1]
             coords = {}
             for kd in kdims:
                 coord_vals = data[kd.name]
@@ -176,32 +202,6 @@ class XArrayInterface(GridInterface):
                         arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
                     arrays[vdim.name] = arr
                 data = xr.Dataset(arrays)
-        else:
-            # Started to warn in xarray 2023.12.0:
-            # The return type of `Dataset.dims` will be changed to return a
-            # set of dimension names in future, in order to be more consistent
-            # with `DataArray.dims`. To access a mapping from dimension names to
-            # lengths, please use `Dataset.sizes`.
-            data_info =  data.sizes if hasattr(data, "sizes") else data.dims
-            if not data.coords:
-                data = data.assign_coords(**{k: range(v) for k, v in data_info.items()})
-            if vdims is None:
-                vdims = list(data.data_vars)
-            if kdims is None:
-                xrdims = list(data_info)
-                xrcoords = list(data.coords)
-                kdims = [name for name in data.indexes.keys()
-                         if isinstance(data[name].data, np.ndarray)]
-                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
-                if packed:
-                    kdims = kdims[:-1]
-                elif set(xrdims) != set(kdims):
-                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
-                    for c in data.coords:
-                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
-                            kdims.append(c)
-            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
 
         not_found = []
         for d in kdims:
@@ -267,7 +267,7 @@ class XArrayInterface(GridInterface):
             nonmatching = [f'{kd}: {dims}' for kd, dims in irregular[1:]
                            if set(dims) != set(irregular[0][1])]
             if nonmatching:
-                nonmatching = ['{}: {}'.format(*irregular[0])] + nonmatching
+                nonmatching = ['{}: {}'.format(*irregular[0]), *nonmatching]
                 raise DataError("The dimensions of coordinate arrays "
                                 "on irregular data must match. The "
                                 "following kdims were found to have "
@@ -442,11 +442,14 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if not cls.packed(dataset) and len(data.data_vars) == 1:
+        if cls.packed(dataset):
+            array = data.squeeze()
+            if len(array.shape) == 0:
+                return array.item()
+        elif len(data.data_vars) == 1:
             array = data[dataset.vdims[0].name].squeeze()
             if len(array.shape) == 0:
                 return array.item()

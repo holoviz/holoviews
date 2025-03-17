@@ -115,7 +115,7 @@ from .sankey import SankeyPlot
 from .stats import BivariatePlot, BoxWhiskerPlot, DistributionPlot, ViolinPlot
 from .tabular import TablePlot
 from .tiles import TilePlot
-from .util import bokeh_version  # noqa (API import)
+from .util import BOKEH_VERSION  # noqa (API import)
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 

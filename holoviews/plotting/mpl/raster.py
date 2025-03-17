@@ -2,7 +2,6 @@ import sys
 
 import numpy as np
 import param
-from packaging.version import Version
 
 from ...core import CompositeOverlay, Element, traversal
 from ...core.util import isfinite, match_spec, max_range, unique_iterator
@@ -11,7 +10,7 @@ from ..util import categorical_legend
 from .chart import PointPlot
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .plot import GridPlot, MPLPlot, mpl_rc_context
-from .util import get_raster_array, mpl_version
+from .util import MPL_VERSION, get_raster_array
 
 
 class RasterBasePlot(ElementPlot):
@@ -179,7 +178,7 @@ class QuadMeshPlot(ColorbarPlot):
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
-        cmesh_data = coords + [data]
+        cmesh_data = [*coords, data]
         if expanded:
             style['locs'] = np.concatenate(coords)
         vdim = element.vdims[0]
@@ -193,7 +192,7 @@ class QuadMeshPlot(ColorbarPlot):
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
             plot_kwargs.pop('vmin', None)
             plot_kwargs.pop('vmax', None)
-        if colorbar and mpl_version < Version('3.1'):
+        if colorbar and MPL_VERSION < (3, 1, 0):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
                 # Compatibility with mpl < 3
@@ -207,11 +206,11 @@ class QuadMeshPlot(ColorbarPlot):
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
-    """
-    RasterGridPlot evenly spaces out plots of individual projections on
+    """RasterGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single
     axis to generate all the individual plots it is much faster than the
     equivalent using subplots.
+
     """
 
     padding = param.Number(default=0.1, doc="""

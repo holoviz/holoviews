@@ -50,8 +50,7 @@ class HeatMapPlot(ColorbarPlot):
 
     _plot_methods = dict(single='rect')
 
-    style_opts = (['cmap', 'color', 'dilate'] + base_properties +
-                  line_properties + fill_properties)
+    style_opts = ['cmap', 'color', 'dilate', *base_properties, *line_properties, *fill_properties]
 
     selection_display = BokehOverlaySelectionDisplay()
 
@@ -245,11 +244,10 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         self.yaxis = None
 
     def _get_bins(self, kind, order, reverse=False):
-        """
-        Map elements from given `order` array to bins of start and end values
+        """Map elements from given `order` array to bins of start and end values
         for radius or angle dimension.
-        """
 
+        """
         if kind == "radius":
             start = self.max_radius * self.radius_inner
             end = self.max_radius
@@ -268,24 +266,23 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _get_bounds(mapper, values):
-        """
-        Extract first and second value from tuples of mapped bins.
-        """
+        """Extract first and second value from tuples of mapped bins.
 
+        """
         array = np.array([mapper.get(x) for x in values])
         return array[:, 0], array[:, 1]
 
     def _postprocess_hover(self, renderer, source):
-        """
-        Limit hover tool to annular wedges only.
-        """
+        """Limit hover tool to annular wedges only.
 
+        """
         if isinstance(renderer.glyph, AnnularWedge):
             super()._postprocess_hover(renderer, source)
 
     def get_extents(self, view, ranges, range_type='combined', **kwargs):
         """Supply custom, static extents because radial heatmaps always have
         the same boundaries.
+
         """
         if range_type not in ('data', 'combined'):
             return (None,)*4
@@ -304,7 +301,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         missing radial axes in bokeh.
 
         """
-
         return {}
 
     def get_default_mapping(self, z, cmapper):
@@ -312,7 +308,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         mappings.
 
         """
-
         map_annular = dict(x=self.max_radius, y=self.max_radius,
                            inner_radius="inner_radius",
                            outer_radius="outer_radius",
@@ -339,8 +334,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                 'arc_1': map_ymarks}
 
     def _pprint(self, element, dim_label, vals):
-        """
-        Helper function to convert values to corresponding dimension type.
+        """Helper function to convert values to corresponding dimension type.
+
         """
         if vals.dtype.kind not in 'SU':
             dim = element.gridded.get_dimension(dim_label)
@@ -349,9 +344,9 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         return vals
 
     def _compute_tick_mapping(self, kind, order, bins):
-        """
-        Helper function to compute tick mappings based on `ticks` and
+        """Helper function to compute tick mappings based on `ticks` and
         default orders and bins.
+
         """
         if kind == "angle":
             ticks = self.xticks
@@ -374,8 +369,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         return {x: bins[x] for x in text_nth}
 
     def _get_seg_labels_data(self, order_seg, bins_seg):
-        """
-        Generate ColumnDataSource dictionary for segment labels.
+        """Generate ColumnDataSource dictionary for segment labels.
+
         """
         if self.xticks is None:
             return dict(x=[], y=[], text=[], angle=[])
@@ -397,8 +392,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                     angle=1.5 * np.pi + radiant)
 
     def _get_ann_labels_data(self, order_ann, bins_ann):
-        """
-        Generate ColumnDataSource dictionary for annular labels.
+        """Generate ColumnDataSource dictionary for annular labels.
+
         """
         if self.yticks is None:
             return dict(x=[], y=[], text=[], angle=[])
@@ -419,8 +414,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _get_markers(marks, order, bins):
-        """
-        Helper function to get marker positions depending on mark type.
+        """Helper function to get marker positions depending on mark type.
+
         """
         if callable(marks):
             markers = [x for x in order if marks(x)]
@@ -435,8 +430,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         return np.array([bins[x][1] for x in markers])
 
     def _get_xmarks_data(self, order_seg, bins_seg):
-        """
-        Generate ColumnDataSource dictionary for segment separation lines.
+        """Generate ColumnDataSource dictionary for segment separation lines.
+
         """
         if not self.xmarks:
             return dict(xs=[], ys=[])
@@ -458,8 +453,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         return dict(xs=list(xs), ys=list(ys))
 
     def _get_ymarks_data(self, order_ann, bins_ann):
-        """
-        Generate ColumnDataSource dictionary for segment separation lines.
+        """Generate ColumnDataSource dictionary for segment separation lines.
+
         """
         if not self.ymarks:
             return dict(radius=[])

@@ -1,16 +1,16 @@
-"""
-Module defining input/output interfaces to HoloViews.
+"""Module defining input/output interfaces to HoloViews.
 
 There are two components for input/output:
 
-Exporters: Process (composite) HoloViews objects one at a time. For
+Exporters : Process (composite) HoloViews objects one at a time. For
            instance, an exporter may render a HoloViews object as a
            svg or perhaps pickle it.
 
-Archives: A collection of HoloViews objects that are first collected
+Archives : A collection of HoloViews objects that are first collected
           then processed together. For instance, collecting HoloViews
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
+
 """
 import itertools
 import os
@@ -37,8 +37,8 @@ from .util import group_sanitizer, label_sanitizer, unique_iterator
 
 
 def sanitizer(name, replacements=None):
-    """
-    String sanitizer to avoid problematic characters in filenames.
+    """String sanitizer to avoid problematic characters in filenames.
+
     """
     if replacements is None:
         replacements = [(':', '_'), ('/', '_'), ('\\', '_')]
@@ -48,8 +48,7 @@ def sanitizer(name, replacements=None):
 
 
 class Reference(param.Parameterized):
-    """
-    A Reference allows access to an object to be deferred until it is
+    """A Reference allows access to an object to be deferred until it is
     needed in the appropriate context. References are used by
     Collector to capture the state of an object at collection time.
 
@@ -61,35 +60,36 @@ class Reference(param.Parameterized):
     A Reference only needs to have a resolved_type property and a
     resolve method. The constructor will take some specification of
     where to find the target object (may be the object itself).
+
     """
 
     @property
     def resolved_type(self):
-        """
-        Returns the type of the object resolved by this references. If
+        """Returns the type of the object resolved by this references. If
         multiple types are possible, the return is a tuple of types.
+
         """
         raise NotImplementedError
 
 
     def resolve(self, container=None):
-        """
-        Return the referenced object. Optionally, a container may be
+        """Return the referenced object. Optionally, a container may be
         passed in from which the object is to be resolved.
+
         """
         raise NotImplementedError
 
 
 
 class Exporter(param.ParameterizedFunction):
-    """
-    An Exporter is a parameterized function that accepts a HoloViews
+    """An Exporter is a parameterized function that accepts a HoloViews
     object and converts it to a new some new format. This mechanism is
     designed to be very general so here are a few examples:
 
-    Pickling:   Native Python, supported by HoloViews.
-    Rendering:  Any plotting backend may be used (default uses matplotlib)
-    Storage:    Saving to a database (e.g. SQL), HDF5 etc.
+    Pickling :  Native Python, supported by HoloViews.
+    Rendering : Any plotting backend may be used (default uses matplotlib)
+    Storage :   Saving to a database (e.g. SQL), HDF5 etc.
+
     """
 
     # Mime-types that need encoding as utf-8 upon export
@@ -116,10 +116,10 @@ class Exporter(param.ParameterizedFunction):
 
     @classmethod
     def encode(cls, entry):
-        """
-        Classmethod that applies conditional encoding based on
+        """Classmethod that applies conditional encoding based on
         mime-type. Given an entry as returned by __call__ return the
         data in the appropriate encoding.
+
         """
         (data, info) = entry
         if info['mime_type'] in cls.utf8_mime_types:
@@ -129,7 +129,9 @@ class Exporter(param.ParameterizedFunction):
 
     @bothmethod
     def _filename(self_or_cls, filename):
-        "Add the file extension if not already present"
+        """Add the file extension if not already present
+
+        """
         filename = os.fspath(filename)
         if not filename.endswith(self_or_cls.file_ext):
             return f'{filename}.{self_or_cls.file_ext}'
@@ -138,16 +140,15 @@ class Exporter(param.ParameterizedFunction):
 
     @bothmethod
     def _merge_metadata(self_or_cls, obj, fn, *dicts):
-        """
-        Returns a merged metadata info dictionary from the supplied
+        """Returns a merged metadata info dictionary from the supplied
         function and additional dictionaries
+
         """
         merged = {k:v for d in dicts for (k,v) in d.items()}
         return dict(merged, **fn(obj)) if fn else merged
 
     def __call__(self, obj, fmt=None):
-        """
-        Given a HoloViews object return the raw exported data and
+        """Given a HoloViews object return the raw exported data and
         corresponding metadata as the tuple (data, metadata). The
         metadata should include:
 
@@ -157,14 +158,14 @@ class Exporter(param.ParameterizedFunction):
         The fmt argument may be used with exporters that support multiple
         output formats. If not supplied, the exporter is to pick an
         appropriate format automatically.
+
         """
         raise NotImplementedError("Exporter not implemented.")
 
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt=None, key=None, info=None, **kwargs):
-        """
-        Similar to the call method except saves exporter data to disk
+        """Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
         support multiple formats, the fmt argument may also be
         supplied (which typically corresponds to the file-extension).
@@ -172,6 +173,7 @@ class Exporter(param.ParameterizedFunction):
         The supplied metadata key and info dictionaries will be used
         to update the output of the relevant key and info functions
         which is then saved (if supported).
+
         """
         if info is None:
             info = {}
@@ -182,31 +184,31 @@ class Exporter(param.ParameterizedFunction):
 
 
 class Importer(param.ParameterizedFunction):
-    """
-    An Importer is a parameterized function that accepts some data in
+    """An Importer is a parameterized function that accepts some data in
     some format and returns a HoloViews object. This mechanism is
     designed to be very general so here are a few examples:
 
-    Unpickling: Native Python, supported by HoloViews.
-    Servers:    Loading data over a network connection.
-    Storage:    Loading from a database (e.g. SQL), HDF5 etc.
+    Unpickling : Native Python, supported by HoloViews.
+    Servers :    Loading data over a network connection.
+    Storage :    Loading from a database (e.g. SQL), HDF5 etc.
+
     """
 
     def __call__(self, data):
-        """
-        Given raw data in the appropriate format return the
+        """Given raw data in the appropriate format return the
         corresponding HoloViews object. Acts as the inverse of
         Exporter when supplied the data portion of an Exporter's
         output.
+
         """
         raise NotImplementedError("Importer not implemented.")
 
 
     @bothmethod
     def load(self_or_cls, src, entries=None):
-        """
-        Given some source (e.g. a filename, a network connection etc),
+        """Given some source (e.g. a filename, a network connection etc),
         return the loaded HoloViews object.
+
         """
         raise NotImplementedError("Importer load method not implemented.")
 
@@ -218,22 +220,24 @@ class Importer(param.ParameterizedFunction):
 
     @bothmethod
     def info(self_or_cls, src):
-        """
-        Returns the 'info' portion of the metadata (if available).
+        """Returns the 'info' portion of the metadata (if available).
+
         """
         raise NotImplementedError("Importer info method not implemented.")
 
     @bothmethod
     def key(self_or_cls, src):
-        """
-        Returns the metadata key (if available).
+        """Returns the metadata key (if available).
+
         """
         raise NotImplementedError("Importer keys method not implemented.")
 
 
 
 class Serializer(Exporter):
-    "A generic exporter that supports any arbitrary serializer"
+    """A generic exporter that supports any arbitrary serializer
+
+    """
 
     serializer=param.Callable(default=Store.dumps, doc="""
        The serializer function, set to Store.dumps by default. The
@@ -273,7 +277,9 @@ class Serializer(Exporter):
 
 
 class Deserializer(Importer):
-    "A generic importer that supports any arbitrary de-serializer."
+    """A generic importer that supports any arbitrary de-serializer.
+
+    """
 
     deserializer=param.Callable(default=Store.load, doc="""
        The deserializer function, set to Store.load by default. The
@@ -316,8 +322,7 @@ class Deserializer(Importer):
 
 
 class Pickler(Exporter):
-    """
-    The recommended pickler for serializing HoloViews object to a .hvz
+    """The recommended pickler for serializing HoloViews object to a .hvz
     file (a simple zip archive of pickle files). In addition to the
     functionality offered by Store.dump and Store.load, this file
     format offers three additional features:
@@ -328,6 +333,7 @@ class Pickler(Exporter):
 
     The output file with the .hvz file extension is simply a zip
     archive containing pickled HoloViews objects.
+
     """
 
     protocol = param.Integer(default=2, doc="""
@@ -382,8 +388,7 @@ class Pickler(Exporter):
 
 
 class Unpickler(Importer):
-    """
-    The inverse of Pickler used to load the .hvz file format which is
+    """The inverse of Pickler used to load the .hvz file format which is
     simply a zip archive of pickle objects.
 
     Unlike a regular pickle file, info and key metadata as well as
@@ -392,6 +397,7 @@ class Unpickler(Importer):
 
     The components that may be individually loaded may be found using
     the entries method.
+
     """
 
     def __call__(self, data, entries=None):
@@ -439,8 +445,7 @@ class Unpickler(Importer):
 
     @bothmethod
     def collect(self_or_cls, files, drop=None, metadata=True):
-        """
-        Given a list or NdMapping type containing file paths return a
+        """Given a list or NdMapping type containing file paths return a
         Layout of Collators, which can be called to load a given set
         of files using the current Importer.
 
@@ -449,6 +454,7 @@ class Unpickler(Importer):
         supplied additional key dimensions may be supplied as long as
         they do not clash with the file metadata. Any key dimension
         may be dropped by name by supplying a drop argument.
+
         """
         if drop is None:
             drop = []
@@ -494,14 +500,14 @@ class Unpickler(Importer):
 
 
 class Archive(param.Parameterized):
-    """
-    An Archive is a means to collect and store a collection of
+    """An Archive is a means to collect and store a collection of
     HoloViews objects in any number of different ways. Examples of
     possible archives:
 
     * Generating tar or zip files (compressed or uncompressed).
     * Collating a report or document (e.g. PDF, HTML, LaTex).
     * Storing a collection of HoloViews objects to a database or HDF5.
+
     """
 
     exporters= param.List(default=[], doc="""
@@ -509,30 +515,29 @@ class Archive(param.Parameterized):
         appropriate format(s)."""  )
 
     def add(self, obj, *args, **kwargs):
-        """
-        Add a HoloViews object to the archive.
+        """Add a HoloViews object to the archive.
+
         """
         raise NotImplementedError
 
     def export(self,*args, **kwargs):
-        """
-        Finalize and close the archive.
+        """Finalize and close the archive.
+
         """
         raise NotImplementedError
 
 
 
 def simple_name_generator(obj):
-    """
-    Simple name_generator designed for HoloViews objects.
+    """Simple name_generator designed for HoloViews objects.
 
     Objects are labeled with {group}-{label} for each nested
     object, based on a depth-first search.  Adjacent objects with
     identical representations yield only a single copy of the
     representation, to avoid long names for the common case of
     a container whose element(s) share the same group and label.
-    """
 
+    """
     if isinstance(obj, LabelledData):
         labels = obj.traverse(lambda x:
                               (x.group + ('-'  +x.label if x.label else '')))
@@ -545,9 +550,9 @@ def simple_name_generator(obj):
 
 
 class FileArchive(Archive):
-    """
-    A file archive stores files on disk, either unpacked in a
+    """A file archive stores files on disk, either unpacked in a
     directory or in an archive format (e.g. a zip file).
+
     """
 
     exporters= param.List(default=[Pickler], doc="""
@@ -586,7 +591,7 @@ class FileArchive(Archive):
         The root directory in which the output directory is
         located. May be an absolute or relative path.""")
 
-    archive_format = param.ObjectSelector(default='zip', objects=['zip', 'tar'], doc="""
+    archive_format = param.Selector(default='zip', objects=['zip', 'tar'], doc="""
         The archive format to use if there are multiple files and pack
         is set to True. Supported formats include 'zip' and 'tar'.""")
 
@@ -629,7 +634,9 @@ class FileArchive(Archive):
 
     @classmethod
     def parse_fields(cls, formatter):
-        "Returns the format fields otherwise raise exception"
+        """Returns the format fields otherwise raise exception
+
+        """
         if formatter is None: return []
         try:
             parse = list(string.Formatter().parse(formatter))
@@ -678,14 +685,14 @@ class FileArchive(Archive):
 
 
     def add(self, obj=None, filename=None, data=None, info=None, **kwargs):
-        """
-        If a filename is supplied, it will be used. Otherwise, a
+        """If a filename is supplied, it will be used. Otherwise, a
         filename will be generated from the supplied object. Note that
         if the explicit filename uses the {timestamp} field, it will
         be formatted upon export.
 
         The data to be archived is either supplied explicitly as
         'data' or automatically rendered from the object.
+
         """
         if info is None:
             info = {}
@@ -790,14 +797,14 @@ class FileArchive(Archive):
 
 
     def _unique_name(self, basename, ext, existing, force=False):
-        """
-        Find a unique basename for a new file/key where existing is
+        """Find a unique basename for a new file/key where existing is
         either a list of (basename, ext) pairs or an absolute path to
         a directory.
 
         By default, uniqueness is enforced depending on the state of
         the unique_name parameter (for export names). If force is
         True, this parameter is ignored and uniqueness is guaranteed.
+
         """
         skip = False if force else (not self.unique_name)
         if skip: return (basename, ext)
@@ -832,8 +839,8 @@ class FileArchive(Archive):
 
 
     def export(self, timestamp=None, info=None):
-        """
-        Export the archive, directory or file.
+        """Export the archive, directory or file.
+
         """
         if info is None:
             info = {}
@@ -863,14 +870,18 @@ class FileArchive(Archive):
         return formatter.format(**filtered)
 
     def __len__(self):
-        "The number of files currently specified in the archive"
+        """The number of files currently specified in the archive.
+
+        """
         return len(self._files)
 
     def __repr__(self):
         return self.param.pprint()
 
     def contents(self, maxlen=70):
-        "Print the current (unexported) contents of the archive"
+        """Print the current (unexported) contents of the archive.
+
+        """
         lines = []
         if len(self._files) == 0:
             print(f"Empty {self.__class__.__name__}")
@@ -884,9 +895,13 @@ class FileArchive(Archive):
         print('\n'.join(lines))
 
     def listing(self):
-        "Return a list of filename entries currently in the archive"
+        """Return a list of filename entries currently in the archive.
+
+        """
         return [f'{f}.{ext}' if ext else f for (f,ext) in self._files.keys()]
 
     def clear(self):
-        "Clears the file archive"
+        """Clears the file archive
+
+        """
         self._files.clear()

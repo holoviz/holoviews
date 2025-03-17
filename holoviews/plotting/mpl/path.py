@@ -160,12 +160,12 @@ class ContourPlot(PathPlot):
 
 
 class PolygonPlot(ContourPlot):
-    """
-    PolygonPlot draws the polygon paths in the supplied Polygons
+    """PolygonPlot draws the polygon paths in the supplied Polygons
     object. If the Polygon has an associated value the color of
     Polygons will be drawn from the supplied cmap, otherwise the
     supplied facecolor will apply. Facecolor also determines the color
     for non-finite values.
+
     """
 
     show_legend = param.Boolean(default=False, doc="""

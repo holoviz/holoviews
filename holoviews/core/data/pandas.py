@@ -1,19 +1,18 @@
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import PANDAS_GE_2_1_0
 from .interface import DataError, Interface
 from .util import finite_range
 
 
 class PandasAPI:
-    """
-    This class is used to describe the interface as having a pandas-like API.
+    """This class is used to describe the interface as having a pandas-like API.
 
     The reason to have this class is that it is not always
     possible to directly inherit from the PandasInterface.
@@ -21,6 +20,7 @@ class PandasAPI:
     This class should not have any logic as it should be used like:
         if issubclass(interface, PandasAPI):
             ...
+
     """
 
 
@@ -122,9 +122,8 @@ class PandasInterface(Interface, PandasAPI):
                 if any(d.ndim > 1 for d in data):
                     raise ValueError('PandasInterface cannot interpret multi-dimensional arrays.')
                 elif len(data) < min_dims:
-                    raise DataError('Data contains fewer columns than the %s element expects. Expected '
-                                    'at least %d columns but found only %d columns.' %
-                                    (eltype.__name__, min_dims, len(data)))
+                    raise DataError(f'Data contains fewer columns than the {eltype.__name__} element expects. Expected '
+                                    f'at least {min_dims} columns but found only {len(data)} columns.')
                 elif not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame(dict(zip(columns, data)), columns=columns)
@@ -250,16 +249,15 @@ class PandasInterface(Interface, PandasAPI):
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
-        if len(group_by) == 1 and util.pandas_version >= Version("1.5.0"):
+        if len(group_by) == 1 and util.PANDAS_VERSION >= (1, 5, 0):
             # Because of this deprecation warning from pandas 1.5.0:
             # In a future version of pandas, a length 1 tuple will be returned
             # when iterating over a groupby with a grouper equal to a list of length 1.
             # Don't supply a list with a single grouper to avoid this warning.
             group_by = group_by[0]
-        if util.pandas_version >= Version("2.1.0"):
-            groupby_kwargs = {"sort": False, "observed": False}
-        else:
-            groupby_kwargs = {"sort": False}
+        groupby_kwargs = {"sort": False}
+        if PANDAS_GE_2_1_0:
+            groupby_kwargs["observed"] = False
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, **groupby_kwargs)]
         if issubclass(container_type, NdMapping):
@@ -295,7 +293,10 @@ class PandasInterface(Interface, PandasAPI):
                     c for c, d in zip(reindexed.columns, reindexed.dtypes)
                     if is_numeric_dtype(d) and c not in cols
                 ]
-            grouped = reindexed.groupby(cols, sort=False)
+            groupby_kwargs = {"sort": False}
+            if PANDAS_GE_2_1_0:
+                groupby_kwargs["observed"] = False
+            grouped = reindexed.groupby(cols, **groupby_kwargs)
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
@@ -311,9 +312,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if len(data) != 1 or len(data.columns) > 1:
             return data
@@ -479,9 +480,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def as_dframe(cls, dataset):
-        """
-        Returns the data of a Dataset as a dataframe avoiding copying
+        """Returns the data of a Dataset as a dataframe avoiding copying
         if it already a dataframe type.
+
         """
         if issubclass(dataset.interface, PandasInterface):
             if any(cls.isindex(dataset, dim) for dim in dataset.dimensions()):

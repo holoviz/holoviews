@@ -21,7 +21,7 @@ from .stats import *
 from .tabular import *
 from .tiles import *
 
-if Version(plotly.__version__) < Version('4.0.0'):
+if Version(plotly.__version__).release < (4, 0, 0):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
         f"please upgrade from plotly {plotly.__version__} to a more recent version.", plotly.__version__, '4.0.0')

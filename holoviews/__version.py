@@ -1,6 +1,7 @@
 """Define the package version.
 
 Called __version.py as setuptools_scm will create a _version.py
+
 """
 
 import os.path

@@ -193,6 +193,27 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(property_to_dict(item.label), legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
+    def test_path_multiple_segments_with_single_vdim(self):
+
+        # two segments, each with its own color
+        data = [{
+            'x': [0, 1, 1],
+            'y': [0, 0, 1],
+            'color': '#FF0000',
+        }, {
+            'x': [0, 0, 1],
+            'y': [0, 1, 1],
+            'color': '#0000FF',
+        }]
+
+        path = Path(data, vdims='color').opts(line_color='color')
+        plot = bokeh_renderer.get_plot(path)
+        cds = plot.handles['cds']
+        source = plot.handles['source']
+        np.testing.assert_equal(source.data['xs'], [np.array([0, 1]), np.array([1, 1]), np.array([0, 0]), np.array([0, 1])])
+        np.testing.assert_equal(source.data['ys'], [np.array([0, 0]), np.array([0, 1]), np.array([0, 1]), np.array([1, 1])])
+        assert list(cds.data['line_color']) == ['#FF0000', '#FF0000', '#0000FF', '#0000FF']
+
 
 class TestPolygonPlot(TestBokehPlot):
 

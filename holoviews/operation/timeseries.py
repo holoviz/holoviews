@@ -9,8 +9,8 @@ from ..element import Scatter
 
 
 class RollingBase(param.Parameterized):
-    """
-    Parameters shared between `rolling` and `rolling_outlier_std`.
+    """Parameters shared between `rolling` and `rolling_outlier_std`.
+
     """
 
     center = param.Boolean(default=True, doc="""
@@ -31,11 +31,11 @@ class RollingBase(param.Parameterized):
 
 
 class rolling(Operation,RollingBase):
-    """
-    Applies a function over a rolling window.
+    """Applies a function over a rolling window.
+
     """
 
-    window_type = param.ObjectSelector(default=None, allow_None=True,
+    window_type = param.Selector(default=None, allow_None=True,
         objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
                  'parzen', 'bohman', 'blackmanharris', 'nuttall',
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
@@ -65,17 +65,17 @@ class rolling(Operation,RollingBase):
 
 
 class resample(Operation):
-    """
-    Resamples a timeseries of dates with a frequency and function.
+    """Resamples a timeseries of dates with a frequency and function.
+
     """
 
-    closed = param.ObjectSelector(default=None, objects=['left', 'right'],
+    closed = param.Selector(default=None, objects=['left', 'right'],
         doc="Which side of bin interval is closed", allow_None=True)
 
     function = param.Callable(default=np.mean, doc="""
         Function for computing new values out of existing ones.""")
 
-    label = param.ObjectSelector(default='right', doc="""
+    label = param.Selector(default='right', doc="""
         The bin edge to label the bin with.""")
 
     rule = param.String(default='D', doc="""
@@ -95,8 +95,7 @@ class resample(Operation):
 
 
 class rolling_outlier_std(Operation, RollingBase):
-    """
-    Detect outliers using the standard deviation within a rolling window.
+    """Detect outliers using the standard deviation within a rolling window.
 
     Outliers are the array elements outside `sigma` standard deviations from
     the smoothed trend line, as calculated from the trend line residuals.
@@ -104,6 +103,7 @@ class rolling_outlier_std(Operation, RollingBase):
     The rolling window is controlled by parameters shared with the
     `rolling` operation via the base class RollingBase, to make it
     simpler to use the same settings for both.
+
     """
 
     sigma = param.Number(default=2.0, doc="""

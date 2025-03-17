@@ -100,7 +100,7 @@ class MultiDistributionPlot(MultiDistributionMixin, ElementPlot):
 
 class BoxWhiskerPlot(MultiDistributionPlot):
 
-    boxpoints = param.ObjectSelector(objects=["all", "outliers",
+    boxpoints = param.Selector(objects=["all", "outliers",
                                               "suspectedoutliers", False],
                                      default='outliers', doc="""
         Which points to show, valid options are 'all', 'outliers',
@@ -112,7 +112,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         the sample points are drawn in a random jitter of width equal
         to the width of the box(es).""")
 
-    mean = param.ObjectSelector(default=False, objects=[True, False, 'sd'],
+    mean = param.Selector(default=False, objects=[True, False, 'sd'],
                                 doc="""
         If "True", the mean of the box(es)' underlying distribution
         is drawn as a dashed line inside the box(es). If "sd" the

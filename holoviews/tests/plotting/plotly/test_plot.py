@@ -2,14 +2,66 @@ import plotly.graph_objs as go
 import pyviz_comms as comms
 from param import concrete_descendents
 
-from holoviews.core import Store
+from holoviews.core import DynamicMap, Store
+from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.plotly.element import ElementPlot
 from holoviews.plotting.plotly.util import figure_grid
+from holoviews.streams import Pipe
 
 from .. import option_intersections
 
 plotly_renderer = Store.renderers['plotly']
+
+
+def test_element_plot_stream_cleanup():
+    stream = Pipe()
+
+    dmap = DynamicMap(Curve, streams=[stream])
+
+    plot = plotly_renderer.get_plot(dmap)
+
+    assert len(stream._subscribers) == 1
+
+    plot.cleanup()
+
+    assert not stream._subscribers
+
+
+def test_overlay_plot_stream_cleanup():
+    stream1 = Pipe()
+    stream2 = Pipe()
+
+    dmap1 = DynamicMap(Curve, streams=[stream1])
+    dmap2 = DynamicMap(Curve, streams=[stream2])
+
+    plot = plotly_renderer.get_plot(dmap1 * dmap2)
+
+    assert len(stream1._subscribers) == 4
+    assert len(stream2._subscribers) == 4
+
+    plot.cleanup()
+
+    assert not stream1._subscribers
+    assert not stream2._subscribers
+
+
+def test_layout_plot_stream_cleanup():
+    stream1 = Pipe()
+    stream2 = Pipe()
+
+    dmap1 = DynamicMap(Curve, streams=[stream1])
+    dmap2 = DynamicMap(Curve, streams=[stream2])
+
+    plot = plotly_renderer.get_plot(dmap1 + dmap2)
+
+    assert len(stream1._subscribers) == 2
+    assert len(stream2._subscribers) == 2
+
+    plot.cleanup()
+
+    assert not stream1._subscribers
+    assert not stream2._subscribers
 
 
 class TestPlotlyPlot(ComparisonTestCase):
@@ -31,7 +83,7 @@ class TestPlotlyPlot(ComparisonTestCase):
             plot.padding = padding
 
     def _get_plot_state(self, element):
-        fig_dict = plotly_renderer.get_plot_state(element)
+        fig_dict = plotly_renderer.get_plot_state(element, numpy_convert=True)
         return fig_dict
 
     def assert_property_values(self, obj, props):

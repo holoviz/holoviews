@@ -9,9 +9,9 @@ from .util import get_axis_padding
 class GeomMixin:
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """
-        Use first two key dimensions to set names, and all four
+        """Use first two key dimensions to set names, and all four
         to set the data range.
+
         """
         kdims = element.kdims
         # loop over start and end points of segments
@@ -39,8 +39,8 @@ class GeomMixin:
 class ChordMixin:
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """
-        A Chord plot is always drawn on a unit circle.
+        """A Chord plot is always drawn on a unit circle.
+
         """
         xdim, ydim = element.nodes.kdims[:2]
         if range_type not in ('combined', 'data', 'extents'):
@@ -143,10 +143,10 @@ class BarsMixin:
         return (xdims, element.vdims[0])
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """
-        Make adjustments to plot extents by computing
+        """Make adjustments to plot extents by computing
         stacked bar heights, adjusting the bar baseline
         and forcing the x-axis to be categorical.
+
         """
         if self.batched:
             overlay = self.current_frame
@@ -174,7 +174,7 @@ class BarsMixin:
         else:
             y0, y1 = ranges[vdim]['combined']
 
-        x0, x1 = (l, r) if util.isnumeric(l) and len(element.kdims) == 1 else ('', '')
+        x0, x1 = (l, r) if (util.isnumeric(l) or isinstance(l, util.datetime_types)) else ('', '')
         if range_type == 'data':
             return (x0, y0, x1, y1)
 
@@ -185,8 +185,8 @@ class BarsMixin:
         return (x0, y0, x1, y1)
 
     def _get_coords(self, element, ranges, as_string=True):
-        """
-        Get factors for categorical axes.
+        """Get factors for categorical axes.
+
         """
         gdim = None
         sdim = None

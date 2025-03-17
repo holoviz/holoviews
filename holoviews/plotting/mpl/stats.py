@@ -6,12 +6,12 @@ from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
-from .util import MPL_GE_3_9
+from .util import MPL_GE_3_9_0, MPL_GE_3_10_0
 
 
 class DistributionPlot(AreaPlot):
-    """
-    DistributionPlot visualizes a distribution of values as a KDE.
+    """DistributionPlot visualizes a distribution of values as a KDE.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -25,11 +25,11 @@ class DistributionPlot(AreaPlot):
 
 
 class BivariatePlot(PolygonPlot):
-    """
-    Bivariate plot visualizes two-dimensional kernel density
+    """Bivariate plot visualizes two-dimensional kernel density
     estimates. Additionally, by enabling the joint option, the
     marginals distributions can be plotted alongside each axis (does
     not animate or compose).
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -46,10 +46,10 @@ class BivariatePlot(PolygonPlot):
 
 
 class BoxPlot(MultiDistributionMixin, ChartPlot):
-    """
-    BoxPlot plots the ErrorBar Element type and supporting
+    """BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     style_opts = ['notch', 'sym', 'whis', 'bootstrap',
@@ -78,13 +78,16 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
             d = group[group.vdims[0]]
             data.append(d[np.isfinite(d)])
             labels.append(label)
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             style['tick_labels'] = labels
         else:
             style['labels'] = labels
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
-        style['vert'] = not self.invert_axes
+        if MPL_GE_3_10_0:
+            style["orientation"] = "horizontal" if self.invert_axes else "vertical"
+        else:
+            style["vert"] = not self.invert_axes
         format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]]}
 
@@ -107,14 +110,14 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
     border_size = param.Number(default=0, doc="""
         The size of the border expressed as a fraction of the main plot.""")
 
-    xaxis = param.ObjectSelector(default='bare',
+    xaxis = param.Selector(default='bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel. Valid options are 'top',
         'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
-    yaxis = param.ObjectSelector(default='bare',
+    yaxis = param.Selector(default='bare',
                                  objects=['left', 'right', 'bare', 'left-bare',
                                           'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
@@ -128,17 +131,17 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
 
 
 class ViolinPlot(BoxPlot):
-    """
-    BoxPlot plots the ErrorBar Element type and supporting
+    """BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
         Allows supplying explicit bandwidth value rather than relying
         on scott or silverman method.""")
 
-    inner = param.ObjectSelector(objects=['box', 'medians', None],
+    inner = param.Selector(objects=['box', 'medians', None],
                                  default='box', doc="""
         Inner visual indicator for distribution values:
 
@@ -161,7 +164,7 @@ class ViolinPlot(BoxPlot):
         stats_color = plot_kwargs.pop('stats_color', 'black')
         facecolors = plot_kwargs.pop('facecolors', [])
         edgecolors = plot_kwargs.pop('edgecolors', 'black')
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             labels = {'tick_labels': plot_kwargs.pop('tick_labels')}
         else:
             labels = {'labels': plot_kwargs.pop('labels')}
@@ -171,11 +174,15 @@ class ViolinPlot(BoxPlot):
         artists = ax.violinplot(*plot_args, bw_method=bw_method,
                                showmedians=showmedians, **plot_kwargs)
         if self.inner == 'box':
+            if MPL_GE_3_10_0:
+                invert_axes = {"orientation": "horizontal" if self.invert_axes else "vertical"}
+            else:
+                invert_axes = {"vert": not self.invert_axes}
             box = ax.boxplot(*plot_args, positions=plot_kwargs['positions'],
                              showfliers=False, showcaps=False, patch_artist=True,
                              boxprops={'facecolor': box_color},
                              medianprops={'color': 'white'}, widths=0.1,
-                             **labels)
+                             **invert_axes, **labels)
             artists.update(box)
         for body, color in zip(artists['bodies'], facecolors):
             body.set_facecolors(color)
@@ -206,7 +213,7 @@ class ViolinPlot(BoxPlot):
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = list(range(len(data)))
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             style['tick_labels'] = labels
         else:
             style['labels'] = labels
@@ -220,7 +227,10 @@ class ViolinPlot(BoxPlot):
         new_style = self._apply_transforms(element, ranges, style)
         style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}
-        style['vert'] = not self.invert_axes
+        if MPL_GE_3_10_0:
+            style["orientation"] = "horizontal" if self.invert_axes else "vertical"
+        else:
+            style["vert"] = not self.invert_axes
         format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         ticks = {'yticks' if self.invert_axes else 'xticks': list(enumerate(labels))}
         return (data,), style, dict(dimensions=[format_kdims, element.vdims[0]], **ticks)

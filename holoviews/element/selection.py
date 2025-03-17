@@ -1,6 +1,6 @@
-"""
-Defines mix-in classes to handle support for linked brushing on
+"""Defines mix-in classes to handle support for linked brushing on
 elements.
+
 """
 
 import sys
@@ -32,10 +32,12 @@ class SelectionIndexExpr:
         self._index_skip = True
         if not index:
             return None, None, None
-        ds = self.clone(kdims=index_cols, new_type=Dataset)
+        clone_vdims = [vdim.name for vdim in self.vdims if vdim.name not in index_cols]
+        cols = clone_vdims + index_cols
+        ds = self.clone(kdims=index_cols, vdims=clone_vdims, new_type=Dataset)
         if len(index_cols) == 1:
             index_dim = index_cols[0]
-            vals = dim(index_dim).apply(ds.iloc[index], expanded=False)
+            vals = dim(index_dim).apply(ds.iloc[index, cols], expanded=False)
             if vals.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in vals):
                 vals = [v for arr in vals for v in util.unique_iterator(arr)]
             expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
@@ -43,7 +45,7 @@ class SelectionIndexExpr:
             get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
             index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                ds.iloc[index], expanded=True, flat=True
+                ds.iloc[index, cols], expanded=True, flat=True
             )
             contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
             expr = dim(contains, np.reshape, get_shape)
@@ -213,9 +215,9 @@ def spatial_bounds_select(xvals, yvals, bounds):
 
 
 class Selection2DExpr(SelectionIndexExpr):
-    """
-    Mixin class for Cartesian 2D elements to add basic support for
+    """Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
+
     """
 
     _selection_dims = 2
@@ -234,11 +236,11 @@ class Selection2DExpr(SelectionIndexExpr):
             xsel = kwargs['x_selection']
             if isinstance(xsel, list):
                 xcats = xsel
-                x0, x1 = int(round(x0)), int(round(x1))
+                x0, x1 = round(x0), round(x1)
             ysel = kwargs['y_selection']
             if isinstance(ysel, list):
                 ycats = ysel
-                y0, y1 = int(round(y0)), int(round(y1))
+                y0, y1 = round(y0), round(y1)
 
         # Handle invert_xaxis/invert_yaxis
         if x0 > x1:
@@ -403,9 +405,9 @@ class SelectionGeomExpr(Selection2DExpr):
 class SelectionPolyExpr(Selection2DExpr):
 
     def _skip(self, **kwargs):
-        """
-        Do not skip geometry selections until polygons support returning
+        """Do not skip geometry selections until polygons support returning
         indexes on lasso based selections.
+
         """
         skip = kwargs.get('index_cols') and self._index_skip and 'geometry' not in kwargs
         if skip:
@@ -439,9 +441,9 @@ class SelectionPolyExpr(Selection2DExpr):
 
 
 class Selection1DExpr(Selection2DExpr):
-    """
-    Mixin class for Cartesian 1D Chart elements to add basic support for
+    """Mixin class for Cartesian 1D Chart elements to add basic support for
     SelectionExpr streams.
+
     """
 
     _selection_dims = 1

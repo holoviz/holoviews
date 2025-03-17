@@ -8,8 +8,7 @@ from .interface import DataError, Interface
 
 
 class MultiInterface(Interface):
-    """
-    MultiInterface allows wrapping around a list of tabular datasets
+    """MultiInterface allows wrapping around a list of tabular datasets
     including dataframes, the columnar dictionary format or 2D tabular
     NumPy arrays. Using the split method the list of tabular data can
     be split into individual datasets.
@@ -17,6 +16,7 @@ class MultiInterface(Interface):
     The interface makes the data appear a list of tabular datasets as
     a single dataset. The interface may be used to represent geometries
     so the behavior depends on the type of geometry being represented.
+
     """
 
     types = ()
@@ -121,9 +121,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def _inner_dataset_template(cls, dataset, validate_vdims=True):
-        """
-        Returns a Dataset template used as a wrapper around the data
+        """Returns a Dataset template used as a wrapper around the data
         contained within the multi-interface dataset.
+
         """
         from . import Dataset
         vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
@@ -193,8 +193,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
-        """
-        Tests if dimension is scalar in each subpath.
+        """Tests if dimension is scalar in each subpath.
+
         """
         if not dataset.data:
             return True
@@ -218,8 +218,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """
-        Applies selectiong on all the subpaths.
+        """Applies selectiong on all the subpaths.
+
         """
         from ...element import Polygons
         if not dataset.data:
@@ -245,8 +245,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def select_paths(cls, dataset, index):
-        """
-        Allows selecting paths with usual NumPy slicing index.
+        """Allows selecting paths with usual NumPy slicing index.
+
         """
         selection = np.array([{0: p} for p in dataset.data])[index]
         if isinstance(selection, dict):
@@ -307,9 +307,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def shape(cls, dataset):
-        """
-        Returns the shape of all subpaths, making it appear like a
+        """Returns the shape of all subpaths, making it appear like a
         single array of concatenated subpaths separated by NaN values.
+
         """
         if not dataset.data:
             return (0, len(dataset.dimensions()))
@@ -326,10 +326,10 @@ class MultiInterface(Interface):
 
     @classmethod
     def length(cls, dataset):
-        """
-        Returns the length of the multi-tabular dataset making it appear
+        """Returns the length of the multi-tabular dataset making it appear
         like a single array of concatenated subpaths separated by NaN
         values.
+
         """
         if not dataset.data:
             return 0
@@ -388,10 +388,10 @@ class MultiInterface(Interface):
     @classmethod
     def values(cls, dataset, dimension, expanded=True, flat=True,
                compute=True, keep_index=False):
-        """
-        Returns a single concatenated array of all subpaths separated
+        """Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
         is returned.
+
         """
         if not dataset.data:
             return np.array([])
@@ -440,9 +440,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
-        """
-        Splits a multi-interface Dataset into regular Datasets using
+        """Splits a multi-interface Dataset into regular Datasets using
         regular tabular interfaces.
+
         """
         objs = []
         if datatype is None:
@@ -556,19 +556,24 @@ def ensure_ring(geom, values=None):
     length) then the insertion will occur on the values instead,
     ensuring that they will match the ring geometry.
 
-    Args:
-        geom: 2-D array of geometry coordinates
-        values: Optional array of values
+    Parameters
+    ----------
+        geom
+            2-D array of geometry coordinates
+        values
+            Optional array of values
 
-    Returns:
-        Array where values have been inserted and ring closing indexes
+    Returns
+    -------
+    Array where values have been inserted and ring closing indexes
+
     """
     if values is None:
         values = geom
 
     breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
-    starts = [0] + list(breaks+1)
-    ends = list(breaks-1) + [len(geom)-1]
+    starts = [0, *(breaks + 1)]
+    ends = [*(breaks - 1), len(geom) - 1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts])
     unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
                      if (s!=e).any()]))

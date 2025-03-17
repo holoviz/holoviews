@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from holoviews.core import Dimension, Dimensioned
-from holoviews.core.util import NUMPY_GE_200
+from holoviews.core.util import NUMPY_GE_2_0_0
 from holoviews.element.comparison import ComparisonTestCase
 
 from ..utils import LoggingComparisonTestCase
@@ -244,7 +244,7 @@ class DimensionCloneTest(ComparisonTestCase):
 class DimensionDefaultTest(ComparisonTestCase):
 
     def test_validate_default_against_values(self):
-        if NUMPY_GE_200:
+        if NUMPY_GE_2_0_0:
             msg = r"Dimension\('A'\) default 1\.1 not found in declared values: \[np\.int64\(0\), np\.int64\(1\)\]"
         else:
             msg = r"Dimension\('A'\) default 1\.1 not found in declared values: \[0, 1\]"

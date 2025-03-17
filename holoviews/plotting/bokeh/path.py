@@ -39,7 +39,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
     _batched_style_opts = line_properties
 
     def _element_transform(self, transform, element, ranges):
@@ -52,8 +52,17 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 else:
                     new_data.append(d)
             return np.array(new_data)
-        return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
-                               for el in element.split()])
+
+        transformed = []
+        for el in element.split():
+            new_el = transform.apply(el, ranges=ranges, flat=True)
+            if len(new_el) == 1:
+                kdim_length = len(el[el.kdims[0]])
+                transformed.append(np.tile(new_el, kdim_length - 1))
+            else:
+                transformed.append(new_el)
+
+        return np.concatenate(transformed)
 
     def _hover_opts(self, element):
         cdim = element.get_dimension(self.color_index)
@@ -67,8 +76,8 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
 
     def _get_hover_data(self, data, element):
-        """
-        Initializes hover data based on Element dimension values.
+        """Initializes hover data based on Element dimension values.
+
         """
         if 'hover' not in self.handles or self.static_source:
             return
@@ -189,7 +198,7 @@ class ContourPlot(PathPlot):
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     _color_style = 'line_color'
-    _nonvectorized_styles = base_properties + ['cmap']
+    _nonvectorized_styles = [*base_properties, 'cmap']
 
     def __init__(self, *args, **params):
         super().__init__(*args, **params)
@@ -203,9 +212,9 @@ class ContourPlot(PathPlot):
         return dims, {}
 
     def _get_hover_data(self, data, element):
-        """
-        Initializes hover data based on Element dimension values.
+        """Initializes hover data based on Element dimension values.
         If empty initializes with no data.
+
         """
         if 'hover' not in self.handles or self.static_source:
             return
@@ -281,8 +290,8 @@ class ContourPlot(PathPlot):
         return data, mapping, style
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         plot_method = properties.pop('plot_method', None)
         properties = mpl_to_bokeh(properties)

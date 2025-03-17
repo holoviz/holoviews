@@ -9,11 +9,12 @@ from .path import PathPlot, PolygonPlot
 
 
 class SegmentPlot(GeomMixin, ColorbarPlot):
-    """
-    Segments are lines in 2D space where each two key dimensions specify a
+    """Segments are lines in 2D space where each two key dimensions specify a
     (x, y) node of the line.
+
     """
-    style_opts = PathPlot.style_opts + ['cmap']
+
+    style_opts = [*PathPlot.style_opts, 'cmap']
 
     _nonvectorized_styles = ['cmap']
 
@@ -42,9 +43,9 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
 
 class RectanglesPlot(GeomMixin, ColorbarPlot):
-    """
-    Rectangles are polygons in 2D space where the key dimensions represent
+    """Rectangles are polygons in 2D space where the key dimensions represent
     the bottom-left and top-right corner of the rectangle.
+
     """
 
     style_opts = PolygonPlot.style_opts

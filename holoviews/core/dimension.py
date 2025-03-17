@@ -1,8 +1,10 @@
-"""
-Provides Dimension objects for tracking the properties of a value,
+"""Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
+
 """
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 import re
@@ -33,11 +35,12 @@ title_format = "{name}: {val}{unit}"
 redim = Redim # pickle compatibility - remove in 2.0
 
 def param_aliases(d):
-    """
-    Called from __setstate__ in LabelledData in order to load
+    """Called from __setstate__ in LabelledData in order to load
     old pickles with outdated parameter names.
 
-    Warning: We want to keep pickle hacking to a minimum!
+    Warning
+    -------
+    We want to keep pickle hacking to a minimum!
     """
     for old, new in ALIASES.items():
         old_param = f'_{old}_param_value'
@@ -50,12 +53,14 @@ def param_aliases(d):
 def asdim(dimension):
     """Convert the input to a Dimension.
 
-    Args:
-        dimension: tuple, dict or string type to convert to Dimension
+    Parameters
+    ----------
+    dimension : tuple, dict or string type to convert to Dimension
 
-    Returns:
-        A Dimension object constructed from the dimension spec. No
-        copy is performed if the input is already a Dimension.
+    Returns
+    -------
+    A Dimension object constructed from the dimension spec. No
+    copy is performed if the input is already a Dimension.
     """
     return dimension if isinstance(dimension, Dimension) else Dimension(dimension)
 
@@ -63,12 +68,14 @@ def asdim(dimension):
 def dimension_name(dimension):
     """Return the Dimension.name for a dimension-like object.
 
-    Args:
-        dimension: Dimension or dimension string, tuple or dict
+    Parameters
+    ----------
+    dimension : Dimension or dimension string, tuple or dict
 
-    Returns:
-        The name of the Dimension or what would be the name if the
-        input as converted to a Dimension.
+    Returns
+    -------
+    The name of the Dimension or what would be the name if the
+    input as converted to a Dimension.
     """
     if isinstance(dimension, Dimension):
         return dimension.name
@@ -89,16 +96,17 @@ def dimension_name(dimension):
 def process_dimensions(kdims, vdims):
     """Converts kdims and vdims to Dimension objects.
 
-    Args:
-        kdims: List or single key dimension(s) specified as strings,
-            tuples dicts or Dimension objects.
-        vdims: List or single value dimension(s) specified as strings,
-            tuples dicts or Dimension objects.
+    Parameters
+    ----------
+    kdims : List or single key dimension(s) specified as strings,
+        tuples dicts or Dimension objects.
+    vdims : List or single value dimension(s) specified as strings,
+        tuples dicts or Dimension objects.
 
-    Returns:
-        Dictionary containing kdims and vdims converted to Dimension
-        objects:
-
+    Returns
+    -------
+    Dictionary containing kdims and vdims converted to Dimension
+    objects
         {'kdims': [Dimension('x')], 'vdims': [Dimension('y')]
     """
     dimensions = {}
@@ -120,8 +128,7 @@ def process_dimensions(kdims, vdims):
 
 
 class Dimension(param.Parameterized):
-    """
-    Dimension objects are used to specify some important general
+    """Dimension objects are used to specify some important general
     features that may be associated with a collection of values.
 
     For instance, a Dimension may specify that a set of numeric values
@@ -163,6 +170,7 @@ class Dimension(param.Parameterized):
     name of the unit and whether or not it is cyclic. The name of the
     unit is used as part of the pretty-printed representation and
     knowing whether it is cyclic is important for certain operations.
+
     """
 
     name = param.String(doc="""
@@ -226,8 +234,8 @@ class Dimension(param.Parameterized):
                  # (name, unit) to a preset Dimension object
 
     def __init__(self, spec, **params):
-        """
-        Initializes the Dimension object with the given name.
+        """Initializes the Dimension object with the given name.
+
         """
         if 'name' in params:
             raise KeyError('Dimension name must only be passed as the positional argument')
@@ -297,8 +305,9 @@ class Dimension(param.Parameterized):
     def spec(self):
         """"Returns the Dimensions tuple specification
 
-        Returns:
-            tuple: Dimension tuple specification
+        Returns
+        -------
+        tuple : Dimension tuple specification
         """
         return (self.name, self.label)
 
@@ -308,12 +317,15 @@ class Dimension(param.Parameterized):
         Derive a new Dimension that inherits existing parameters
         except for the supplied, explicit overrides
 
-        Args:
-            spec (tuple, optional): Dimension tuple specification
-            **overrides: Dimension parameter overrides
+        Parameters
+        ----------
+        spec : tuple, optional
+            Dimension tuple specification
+        **overrides: Dimension parameter overrides
 
-        Returns:
-            Cloned Dimension object
+        Returns
+        -------
+        Cloned Dimension object
         """
         settings = dict(self.param.values(), **overrides)
 
@@ -336,16 +348,17 @@ class Dimension(param.Parameterized):
         return hash(self.spec)
 
     def __setstate__(self, d):
-        """
-        Compatibility for pickles before alias attribute was introduced.
+        """Compatibility for pickles before alias attribute was introduced.
+
         """
         super().__setstate__(d)
         if '_label_param_value' not in d:
             self.label = self.name
 
     def __eq__(self, other):
-        "Implements equals operator including sanitized comparison."
+        """Implements equals operator including sanitized comparison.
 
+        """
         if isinstance(other, Dimension):
             return self.label == other.label
 
@@ -353,11 +366,15 @@ class Dimension(param.Parameterized):
         return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
 
     def __ne__(self, other):
-        "Implements not equal operator including sanitized comparison."
+        """Implements not equal operator including sanitized comparison.
+
+        """
         return not self.__eq__(other)
 
     def __lt__(self, other):
-        "Dimensions are sorted alphanumerically by name"
+        """Dimensions are sorted alphanumerically by name
+
+        """
         return self.name < other.name if isinstance(other, Dimension) else self.name < other
 
     def __str__(self):
@@ -368,7 +385,9 @@ class Dimension(param.Parameterized):
 
     @property
     def pprint_label(self):
-        "The pretty-printed label string for the Dimension"
+        """The pretty-printed label string for the Dimension
+
+        """
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
@@ -390,11 +409,14 @@ class Dimension(param.Parameterized):
     def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.
 
-        Args:
-            value: Dimension value to format
+        Parameters
+        ----------
+        value
+            Dimension value to format
 
-        Returns:
-            Formatted dimension value
+        Returns
+        -------
+        Formatted dimension value
         """
         own_type = type(value) if self.type is None else self.type
         formatter = (self.value_format if self.value_format
@@ -421,11 +443,14 @@ class Dimension(param.Parameterized):
     def pprint_value_string(self, value):
         """Pretty print the dimension value and unit with title_format
 
-        Args:
-            value: Dimension value to format
+        Parameters
+        ----------
+        value
+            Dimension value to format
 
-        Returns:
-            Formatted dimension value string with unit
+        Returns
+        -------
+        Formatted dimension value string with unit
         """
         unit = '' if self.unit is None else ' ' + bytes_to_unicode(self.unit)
         value = self.pprint_value(value)
@@ -433,8 +458,7 @@ class Dimension(param.Parameterized):
 
 
 class LabelledData(param.Parameterized):
-    """
-    LabelledData is a mix-in class designed to introduce the group and
+    """LabelledData is a mix-in class designed to introduce the group and
     label parameters (and corresponding methods) to any class
     containing data. This class assumes that the core data contents
     will be held in the attribute called 'data'.
@@ -449,7 +473,9 @@ class LabelledData(param.Parameterized):
     [group='Height', label='Children'] and another may use
     [group='Height', label='Adults'].
 
-    Note: Another level of specification is implicit in the type (i.e
+    Note
+    ----
+    Another level of specification is implicit in the type (i.e
     class) of the LabelledData object. A full specification of a
     LabelledData object is therefore given by the tuple
     (<type>, <group>, label>). This additional level of specification is
@@ -462,6 +488,7 @@ class LabelledData(param.Parameterized):
     Otherwise the strings provided will be sanitized to be valid
     capitalized Python identifiers, which works fine but can sometimes
     be confusing.
+
     """
 
     group = param.String(default='LabelledData', constant=True, doc="""
@@ -476,8 +503,7 @@ class LabelledData(param.Parameterized):
     _deep_indexable = False
 
     def __init__(self, data, id=None, plot_id=None, **params):
-        """
-        All LabelledData subclasses must supply data to the
+        """All LabelledData subclasses must supply data to the
         constructor, which will be held on the .data attribute.
         This class also has an id instance attribute, which
         may be set to associate some custom options with the object.
@@ -525,18 +551,26 @@ class LabelledData(param.Parameterized):
               *args, **overrides):
         """Clones the object, overriding data and parameters.
 
-        Args:
-            data: New data replacing the existing data
-            shared_data (bool, optional): Whether to use existing data
-            new_type (optional): Type to cast object to
-            link (bool, optional): Whether clone should be linked
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            *args: Additional arguments to pass to constructor
-            **overrides: New keyword arguments to pass to constructor
+        Parameters
+        ----------
+        data
+            New data replacing the existing data
+        shared_data : bool, optional
+            Whether to use existing data
+        new_type : optional
+            Type to cast object to
+        link : bool, optional
+            Whether clone should be linked
+            Determines whether Streams and Links attached to
+            original object will be inherited.
+        *args
+            Additional arguments to pass to constructor
+        **overrides
+            New keyword arguments to pass to constructor
 
-        Returns:
-            Cloned object
+        Returns
+        -------
+        Cloned object
         """
         params = self.param.values()
         if new_type is None:
@@ -567,15 +601,20 @@ class LabelledData(param.Parameterized):
 
         Applies relabeling to children up to the supplied depth.
 
-        Args:
-            label (str, optional): New label to apply to returned object
-            group (str, optional): New group to apply to returned object
-            depth (int, optional): Depth to which relabel will be applied
-                If applied to container allows applying relabeling to
-                contained objects up to the specified depth
+        Parameters
+        ----------
+        label : str, optional
+            New label to apply to returned object
+        group : str, optional
+            New group to apply to returned object
+        depth : int, optional
+            Depth to which relabel will be applied
+            If applied to container allows applying relabeling to
+            contained objects up to the specified depth
 
-        Returns:
-            Returns relabelled object
+        Returns
+        -------
+        Returns relabelled object
         """
         new_data = self.data
         if (depth > 0) and getattr(self, '_deep_indexable', False):
@@ -591,16 +630,19 @@ class LabelledData(param.Parameterized):
     def matches(self, spec):
         """Whether the spec applies to this object.
 
-        Args:
-            spec: A function, spec or type to check for a match
-                * A 'type[[.group].label]' string which is compared
-                  against the type, group and label of this object
-                * A function which is given the object and returns
-                  a boolean.
-                * An object type matched using isinstance.
+        Parameters
+        ----------
+        spec : A function, spec or type to check for a match
+            * A 'type[[.group].label]' string which is compared
+                against the type, group and label of this object
+            * A function which is given the object and returns
+                a boolean.
+            * An object type matched using isinstance.
 
-        Returns:
-            bool: Whether the spec matched this object.
+        Returns
+        -------
+        bool
+            Whether the spec matched this object.
         """
         if callable(spec) and not isinstance(spec, type): return spec(self)
         elif isinstance(spec, type): return isinstance(self, spec)
@@ -624,17 +666,23 @@ class LabelledData(param.Parameterized):
         Traverses the set of children of the object, collecting the
         all objects matching the defined specs. Each object can be
         processed with the supplied function.
-        Args:
-            fn (function, optional): Function applied to matched objects
-            specs: List of specs to match
-                Specs must be types, functions or type[.group][.label]
-                specs to select objects to return, by default applies
-                to all objects.
-            full_breadth: Whether to traverse all objects
-                Whether to traverse the full set of objects on each
-                container or only the first.
-        Returns:
-            list: List of objects that matched
+
+        Parameters
+        ----------
+        fn : function, optional
+            Function applied to matched objects
+        specs : List of specs to match
+            Specs must be types, functions or type[.group][.label]
+            specs to select objects to return, by default applies
+            to all objects.
+        full_breadth : Whether to traverse all objects
+            Whether to traverse the full set of objects on each
+            container or only the first.
+
+        Returns
+        -------
+        list
+            List of objects that matched
         """
         if fn is None:
             fn = lambda x: x
@@ -668,16 +716,19 @@ class LabelledData(param.Parameterized):
 
             dmap.map(fn, hv.Curve)
 
-        Args:
-            map_fn: Function to apply to each object
-            specs: List of specs to match
-                List of types, functions or type[.group][.label] specs
-                to select objects to return, by default applies to all
-                objects.
-            clone: Whether to clone the object or transform inplace
+        Parameters
+        ----------
+        map_fn : Function to apply to each object
+        specs : List of specs to match
+            List of types, functions or type[.group][.label] specs
+            to select objects to return, by default applies to all
+            objects.
+        clone
+            Whether to clone the object or transform inplace
 
-        Returns:
-            Returns the object after the map_fn has been applied
+        Returns
+        -------
+        Returns the object after the map_fn has been applied
         """
         if specs is not None and not isinstance(specs, (list, set, tuple)):
             specs = [specs]
@@ -696,11 +747,13 @@ class LabelledData(param.Parameterized):
 
 
     def __getstate__(self):
-        "Ensures pickles save options applied to this objects."
+        """Ensures pickles save options applied to this objects.
+
+        """
         obj_dict = self.__dict__.copy()
         try:
             if Store.save_option_state and (obj_dict.get('_id', None) is not None):
-                custom_key = '_custom_option_%d' % obj_dict['_id']
+                custom_key = '_custom_option_{}'.format(obj_dict['_id'])
                 if custom_key not in obj_dict:
                     obj_dict[custom_key] = {backend:s[obj_dict['_id']]
                                             for backend,s in Store._custom_options.items()
@@ -713,7 +766,9 @@ class LabelledData(param.Parameterized):
 
 
     def __setstate__(self, d):
-        "Restores options applied to this object."
+        """Restores options applied to this object.
+
+        """
         d = param_aliases(d)
 
         load_options = Store.load_counter_offset is not None
@@ -740,46 +795,48 @@ class LabelledData(param.Parameterized):
 
 
 class Dimensioned(LabelledData):
-    """
-    Dimensioned is a base class that allows the data contents of a
+    """Dimensioned is a base class that allows the data contents of a
     class to be associated with dimensions. The contents associated
     with dimensions may be partitioned into one of three types
 
-    * key dimensions: These are the dimensions that can be indexed via
-                      the __getitem__ method. Dimension objects
-                      supporting key dimensions must support indexing
-                      over these dimensions and may also support
-                      slicing. This list ordering of dimensions
-                      describes the positional components of each
-                      multi-dimensional indexing operation.
+    * key dimensions
+        These are the dimensions that can be indexed via
+        the __getitem__ method. Dimension objects
+        supporting key dimensions must support indexing
+        over these dimensions and may also support
+        slicing. This list ordering of dimensions
+        describes the positional components of each
+        multi-dimensional indexing operation.
 
-                      For instance, if the key dimension names are
-                      'weight' followed by 'height' for Dimensioned
-                      object 'obj', then obj[80,175] indexes a weight
-                      of 80 and height of 175.
+        For instance, if the key dimension names are
+        'weight' followed by 'height' for Dimensioned
+        object 'obj', then obj[80,175] indexes a weight
+        of 80 and height of 175.
 
-                      Accessed using either kdims.
+        Accessed using either kdims.
 
-    * value dimensions: These dimensions correspond to any data held
-                        on the Dimensioned object not in the key
-                        dimensions. Indexing by value dimension is
-                        supported by dimension name (when there are
-                        multiple possible value dimensions); no
-                        slicing semantics is supported and all the
-                        data associated with that dimension will be
-                        returned at once. Note that it is not possible
-                        to mix value dimensions and deep dimensions.
+    * value dimensions
+        These dimensions correspond to any data held
+        on the Dimensioned object not in the key
+        dimensions. Indexing by value dimension is
+        supported by dimension name (when there are
+        multiple possible value dimensions); no
+        slicing semantics is supported and all the
+        data associated with that dimension will be
+        returned at once. Note that it is not possible
+        to mix value dimensions and deep dimensions.
 
-                        Accessed using either vdims.
+        Accessed using either vdims.
 
-    * deep dimensions: These are dynamically computed dimensions that
-                       belong to other Dimensioned objects that are
-                       nested in the data. Objects that support this
-                       should enable the _deep_indexable flag. Note
-                       that it is not possible to mix value dimensions
-                       and deep dimensions.
+    * deep dimensions
+        These are dynamically computed dimensions that
+        belong to other Dimensioned objects that are
+        nested in the data. Objects that support this
+        should enable the _deep_indexable flag. Note
+        that it is not possible to mix value dimensions
+        and deep dimensions.
 
-                       Accessed using either ddims.
+        Accessed using either ddims.
 
     Dimensioned class support generalized methods for finding the
     range and type of values along a particular Dimension. The range
@@ -789,6 +846,7 @@ class Dimensioned(LabelledData):
     The index of an arbitrary dimension is its positional index in the
     list of all dimensions, starting with the key dimensions, followed
     by the value dimensions and ending with the deep dimensions.
+
     """
 
     cdims = param.Dict(default={}, doc="""
@@ -849,7 +907,9 @@ class Dimensioned(LabelledData):
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input
 
-        Returns kdims if no dimensions are specified"""
+        Returns kdims if no dimensions are specified
+
+        """
         if dimensions is None:
             dimensions = self.kdims
         elif not isinstance(dimensions, list):
@@ -866,7 +926,9 @@ class Dimensioned(LabelledData):
 
     @property
     def ddims(self):
-        "The list of deep dimensions"
+        """The list of deep dimensions
+
+        """
         if self._deep_indexable and self:
             return self.values()[0].dimensions()
         else:
@@ -881,16 +943,18 @@ class Dimensioned(LabelledData):
         or 'value' dimensions. By default 'all' dimensions are
         returned.
 
-        Args:
-            selection: Type of dimensions to return
-                The type of dimension, i.e. one of 'key', 'value',
-                'constant' or 'all'.
-            label: Whether to return the name, label or Dimension
-                Whether to return the Dimension objects (False),
-                the Dimension names (True/'name') or labels ('label').
+        Parameters
+        ----------
+        selection : Type of dimensions to return
+            The type of dimension, i.e. one of 'key', 'value',
+            'constant' or 'all'.
+        label : Whether to return the name, label or Dimension
+            Whether to return the Dimension objects (False),
+            the Dimension names (True/'name') or labels ('label').
 
-        Returns:
-            List of Dimension objects or their names or labels
+        Returns
+        -------
+        List of Dimension objects or their names or labels
         """
         if label in ['name', True]:
             label = 'short'
@@ -922,16 +986,20 @@ class Dimensioned(LabelledData):
                 if label else dim for dim in dims]
 
 
-    def get_dimension(self, dimension, default=None, strict=False):
+    def get_dimension(self, dimension, default=None, strict=False) -> Dimension | None:
         """Get a Dimension object by name or index.
 
-        Args:
-            dimension: Dimension to look up by name or integer index
-            default (optional): Value returned if Dimension not found
-            strict (bool, optional): Raise a KeyError if not found
+        Parameters
+        ----------
+        dimension : Dimension to look up by name or integer index
+        default : optional
+            Value returned if Dimension not found
+        strict : bool, optional
+            Raise a KeyError if not found
 
-        Returns:
-            Dimension object for the requested dimension or default
+        Returns
+        -------
+        Dimension object for the requested dimension or default
         """
         if dimension is not None and not isinstance(dimension, (int, str, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
@@ -969,11 +1037,14 @@ class Dimensioned(LabelledData):
     def get_dimension_index(self, dimension):
         """Get the index of the requested dimension.
 
-        Args:
-            dimension: Dimension to look up by name or by index
+        Parameters
+        ----------
+        dimension
+            Dimension to look up by name or by index
 
-        Returns:
-            Integer index of the requested dimension
+        Returns
+        -------
+        Integer index of the requested dimension
         """
         if isinstance(dimension, int):
             if (dimension < (self.ndims + len(self.vdims)) or
@@ -995,11 +1066,14 @@ class Dimensioned(LabelledData):
         Type is determined by Dimension.type attribute or common
         type of the dimension values, otherwise None.
 
-        Args:
-            dimension: Dimension to look up by name or by index
+        Parameters
+        ----------
+        dimension
+            Dimension to look up by name or by index
 
-        Returns:
-            Declared type of values along the dimension
+        Returns
+        -------
+        Declared type of values along the dimension
         """
         dim_obj = self.get_dimension(dim)
         if dim_obj and dim_obj.type is not None:
@@ -1012,8 +1086,7 @@ class Dimensioned(LabelledData):
 
 
     def __getitem__(self, key):
-        """
-        Multi-dimensional indexing semantics is determined by the list
+        """Multi-dimensional indexing semantics is determined by the list
         of key dimensions. For instance, the first indexing component
         will index the first key dimension.
 
@@ -1035,39 +1108,41 @@ class Dimensioned(LabelledData):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact
-                 match, e.g.:
+        * value
+            Scalar values will select rows along with an exact match, e.g.:
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and
-                 lower bound, e.g.:
+        * slice
+            Slices may be declared as tuples of the upper and lower bound, e.g.:
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or
-                  set, e.g.:
+        * values
+            A list of values may be selected using a list or set, e.g.:
 
             ds.select(x=[0, 1, 2])
 
-        Args:
-            selection_specs: List of specs to match on
-                A list of types, functions, or type[.group][.label]
-                strings specifying which objects to apply the
-                selection on.
-            **selection: Dictionary declaring selections by dimension
-                Selections can be scalar values, tuple ranges, lists
-                of discrete values and boolean arrays
+        Parameters
+        ----------
+        selection_specs : List of specs to match on
+            A list of types, functions, or type[.group][.label]
+            strings specifying which objects to apply the
+            selection on.
+        **selection: Dictionary declaring selections by dimension
+            Selections can be scalar values, tuple ranges, lists
+            of discrete values and boolean arrays
 
-        Returns:
-            Returns an Dimensioned object containing the selected data
-            or a scalar if a single value was selected
+        Returns
+        -------
+        Returns an Dimensioned object containing the selected data
+        or a scalar if a single value was selected
         """
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
 
         # Apply all indexes applying on this object
-        vdims = self.vdims+['value'] if self.vdims else []
+        vdims = [*self.vdims, 'value'] if self.vdims else []
         kdims = self.kdims
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in kdims+vdims}
@@ -1106,14 +1181,14 @@ class Dimensioned(LabelledData):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
-            dimensions = selection.dimensions() + ['value']
+            dimensions = [*selection.dimensions(), 'value']
             if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs=selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
-                dimensions = v.dimensions() + ['value']
+                dimensions = [*v.dimensions(), 'value']
                 if any(kw in dimensions for kw in kwargs):
                     items.append((k, v.select(selection_specs=selection_specs, **kwargs)))
                 else:
@@ -1125,18 +1200,26 @@ class Dimensioned(LabelledData):
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
 
-        Args:
-            dimension: The dimension to return values for
-            expanded (bool, optional): Whether to expand values
-                Whether to return the expanded values, behavior depends
-                on the type of data:
-                  * Columnar: If false returns unique values
-                  * Geometry: If false returns scalar values per geometry
-                  * Gridded: If false returns 1D coordinates
-            flat (bool, optional): Whether to flatten array
+        Parameters
+        ----------
+        dimension
+            The dimension to return values for
+        expanded : bool, optional
+            Whether to expand values
+            Whether to return the expanded values, behavior depends
+            on the type of data:
+                * Columnar
+                    If false returns unique values
+                * Geometry
+                    If false returns scalar values per geometry
+                * Gridded
+                    If false returns 1D coordinates
+        flat : bool, optional
+            Whether to flatten array
 
-        Returns:
-            NumPy array of values along the requested dimension
+        Returns
+        -------
+        NumPy array of values along the requested dimension
         """
         val = self._cached_constants.get(dimension, None)
         if val:
@@ -1148,15 +1231,20 @@ class Dimensioned(LabelledData):
     def range(self, dimension, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
-        Args:
-            dimension: The dimension to compute the range on.
-            data_range (bool): Compute range from data values
-            dimension_range (bool): Include Dimension ranges
-                Whether to include Dimension range and soft_range
-                in range calculation
+        Parameters
+        ----------
+        dimension
+            The dimension to compute the range on.
+        data_range : bool
+            Compute range from data values
+        dimension_range : bool
+            Include Dimension ranges
+            Whether to include Dimension range and soft_range
+            in range calculation
 
-        Returns:
-            Tuple containing the lower and upper bound
+        Returns
+        -------
+        Tuple containing the lower and upper bound
         """
         dimension = self.get_dimension(dimension)
         if dimension is None or (not data_range and not dimension_range):
@@ -1207,21 +1295,25 @@ class Dimensioned(LabelledData):
         Identical to the .opts method but returns a clone of the object
         by default.
 
-        Args:
-            *args: Sets of options to apply to object
-                Supports a number of formats including lists of Options
-                objects, a type[.group][.label] followed by a set of
-                keyword options to apply and a dictionary indexed by
-                type[.group][.label] specs.
-            backend (optional): Backend to apply options to
-                Defaults to current selected backend
-            clone (bool, optional): Whether to clone object
-                Options can be applied inplace with clone=False
-            **kwargs: Keywords of options
-                Set of options to apply to the object
+        Parameters
+        ----------
+        *args: Sets of options to apply to object
+            Supports a number of formats including lists of Options
+            objects, a type[.group][.label] followed by a set of
+            keyword options to apply and a dictionary indexed by
+            type[.group][.label] specs.
+        backend : optional
+            Backend to apply options to
+            Defaults to current selected backend
+        clone : bool, optional
+            Whether to clone object
+            Options can be applied inplace with clone=False
+        **kwargs: Keywords of options
+            Set of options to apply to the object
 
-        Returns:
-            Returns the cloned object with the options applied
+        Returns
+        -------
+        Returns the cloned object with the options applied
         """
         backend = kwargs.get('backend', None)
 
@@ -1266,24 +1358,24 @@ class Dimensioned(LabelledData):
         return obj
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        """
-        Resolves the class hierarchy for the class rendering the
+        """Resolves the class hierarchy for the class rendering the
         object using any display hooks registered on Store.display
         hooks.  The output of all registered display_hooks is then
         combined and returned.
+
         """
         return Store.render(self)
 
 
 
 class ViewableElement(Dimensioned):
-    """
-    A ViewableElement is a dimensioned datastructure that may be
+    """A ViewableElement is a dimensioned datastructure that may be
     associated with a corresponding atomic visualization. An atomic
     visualization will display the data on a single set of axes
     (i.e. excludes multiple subplots that are displayed at once). The
     only new parameter introduced by ViewableElement is the title
     associated with the object for display.
+
     """
 
     __abstract = True
@@ -1294,11 +1386,11 @@ class ViewableElement(Dimensioned):
 
 
 class ViewableTree(AttrTree, Dimensioned):
-    """
-    A ViewableTree is an AttrTree with Viewable objects as its leaf
+    """A ViewableTree is an AttrTree with Viewable objects as its leaf
     nodes. It combines the tree like data structure of a tree while
     extending it with the deep indexable properties of Dimensioned
     and LabelledData objects.
+
     """
 
     group = param.String(default='ViewableTree', constant=True)
@@ -1308,14 +1400,16 @@ class ViewableTree(AttrTree, Dimensioned):
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.param)+['id', 'plot_id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in [*self.param, 'id', 'plot_id'] if p in kwargs}
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
 
     @classmethod
     def _process_items(cls, vals):
-        "Processes list of items assigning unique paths to each."
+        """Processes list of items assigning unique paths to each.
+
+        """
         from .layout import AdjointLayout
 
         if type(vals) is cls:
@@ -1334,8 +1428,7 @@ class ViewableTree(AttrTree, Dimensioned):
 
 
     def __setstate__(self, d):
-        """
-        Ensure that object does not try to reference its parent during
+        """Ensure that object does not try to reference its parent during
         unpickling.
         """
         parent = d.pop('parent', None)
@@ -1346,7 +1439,9 @@ class ViewableTree(AttrTree, Dimensioned):
 
     @classmethod
     def _deduplicate_items(cls, items):
-        "Deduplicates assigned paths by incrementing numbering"
+        """Deduplicates assigned paths by incrementing numbering
+
+        """
         counter = Counter([path[:i] for path, _ in items for i in range(1, len(path)+1)])
         if sum(counter.values()) == len(counter):
             return items
@@ -1355,7 +1450,7 @@ class ViewableTree(AttrTree, Dimensioned):
         counts = defaultdict(lambda: 0)
         for path, item in items:
             if counter[path] > 1:
-                path = path + (util.int_to_roman(counts[path]+1),)
+                path = (*path, util.int_to_roman(counts[path] + 1))
             else:
                 inc = 1
                 while counts[path]:
@@ -1368,8 +1463,7 @@ class ViewableTree(AttrTree, Dimensioned):
 
     @classmethod
     def _unpack_paths(cls, objs, items, counts):
-        """
-        Recursively unpacks lists and ViewableTree-like objects, accumulating
+        """Recursively unpacks lists and ViewableTree-like objects, accumulating
         into the supplied list of items.
         """
         if type(objs) is cls:
@@ -1387,7 +1481,9 @@ class ViewableTree(AttrTree, Dimensioned):
 
     @property
     def uniform(self):
-        "Whether items in tree have uniform dimensions"
+        """Whether items in tree have uniform dimensions
+
+        """
         from .traversal import uniform
         return uniform(self)
 
@@ -1397,18 +1493,26 @@ class ViewableTree(AttrTree, Dimensioned):
 
         Concatenates values on all nodes with requested dimension.
 
-        Args:
-            dimension: The dimension to return values for
-            expanded (bool, optional): Whether to expand values
-                Whether to return the expanded values, behavior depends
-                on the type of data:
-                  * Columnar: If false returns unique values
-                  * Geometry: If false returns scalar values per geometry
-                  * Gridded: If false returns 1D coordinates
-            flat (bool, optional): Whether to flatten array
+        Parameters
+        ----------
+        dimension
+            The dimension to return values for
+        expanded : bool, optional
+            Whether to expand values
+            Whether to return the expanded values, behavior depends
+            on the type of data:
+                * Columnar
+                    If false returns unique values
+                * Geometry
+                    If false returns scalar values per geometry
+                * Gridded
+                    If false returns 1D coordinates
+        flat : bool, optional
+            Whether to flatten array
 
-        Returns:
-            NumPy array of values along the requested dimension
+        Returns
+        -------
+        NumPy array of values along the requested dimension
         """
         dimension = self.get_dimension(dimension, strict=True).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
