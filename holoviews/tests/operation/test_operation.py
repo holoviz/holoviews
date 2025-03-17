@@ -4,6 +4,7 @@ from unittest import SkipTest, skipIf
 
 import numpy as np
 import pandas as pd
+import panel as pn
 import pytest
 
 try:
@@ -592,6 +593,25 @@ class OperationTests(ComparisonTestCase):
                             mean_weighted=True, normed=True)
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
+
+    @pytest.mark.usefixtures("mpl_backend")
+    def test_histogram_dask_array_mpl(self):
+        # Regression test for https://github.com/holoviz/holoviews/issues/5111
+        dd = pytest.importorskip("dask.dataframe")
+
+        data = {
+            "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
+            "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
+        }
+        flights = dd.from_pandas(pd.DataFrame(data))
+
+        by = "carrier"
+        ds = Dataset(flights, by)
+        ds_grouped = ds.groupby(by)
+        hists = histogram(ds_grouped, dimension="depdelay")
+
+        # Should not error
+        pn.panel(hists).get_root()
 
     def test_interpolate_curve_pre(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-pre')
