@@ -312,4 +312,5 @@ options.Sankey = Options('style', edge_color='grey', node_edgecolors='black',
 # Statistics
 options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
                                alpha=0.5)
+options.Distribution = Options('plot', show_legend=True)
 options.Violin = Options('style', facecolors=Cycle(), showextrema=False, alpha=0.7)

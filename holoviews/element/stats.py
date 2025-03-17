@@ -34,7 +34,8 @@ class StatisticsElement(Dataset, Element2D):
         elif len(vdims) > 1:
             raise ValueError(f"{type(self).__name__} expects at most one vdim.")
         else:
-            self.vdims = process_dimensions(None, vdims)['vdims']
+            with param.edit_constant(self):
+                self.vdims = process_dimensions(None, vdims)['vdims']
 
     @property
     def dataset(self):
