@@ -603,7 +603,7 @@ class OperationTests(ComparisonTestCase):
             "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
             "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
         }
-        flights = dd.from_pandas(pd.DataFrame(data))
+        flights = dd.from_pandas(pd.DataFrame(data), npartitions=2)
 
         by = "carrier"
         ds = Dataset(flights, by)
