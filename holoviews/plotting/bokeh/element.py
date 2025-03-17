@@ -919,7 +919,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         axis_specs = {'x': {}, 'y': {}}
         axis_specs['x']['x'] = (*self._axis_props(plots, subplots, element, ranges, pos=0), self.xaxis, {})
-        if self.multi_y:
+        if self.multi_y and self.subplots:
             if not BOKEH_GE_3_2_0:
                 self.param.warning('Independent axis zooming for multi_y=True only supported for Bokeh >=3.2')
             yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
