@@ -369,6 +369,8 @@ class HistogramPlot(ColorbarPlot):
         xlim = hist.range(0)
         ylim = hist.range(1)
         is_datetime = isdatetime(edges)
+        if hasattr(edges, "compute"):
+            edges = edges.compute()
         if is_datetime:
             edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
             edges = date2num(edges)
