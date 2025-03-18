@@ -4,7 +4,6 @@ from unittest import SkipTest, skipIf
 
 import numpy as np
 import pandas as pd
-import panel as pn
 import pytest
 
 try:
@@ -611,7 +610,7 @@ class OperationTests(ComparisonTestCase):
         hists = histogram(ds_grouped, dimension="depdelay")
 
         # Should not error
-        pn.panel(hists).get_root()
+        renderer("matplotlib").get_plot(hists)
 
     def test_interpolate_curve_pre(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-pre')
