@@ -150,7 +150,7 @@ class ImageInterface(GridInterface):
                 density = obj.xdensity
             halfd = (1./density)/2.
             if isinstance(low, util.datetime_types):
-                halfd = np.timedelta64(int(round(halfd)), obj._time_unit)
+                halfd = np.timedelta64(round(halfd), obj._time_unit)
             drange = (low+halfd, high-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2

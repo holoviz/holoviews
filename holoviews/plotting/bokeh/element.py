@@ -869,7 +869,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ax_name = yd.name
             dimensions[ax_name] = yd
             yaxes[ax_name] = {
-                'position': opts.get('yaxis', axpos1 if len(yaxes) else axpos0),
+                'position': opts.get('yaxis', axpos1 if yaxes else axpos0),
                 'autorange': opts.get('autorange', None),
                 'logx': opts.get('logx', False),
                 'logy': opts.get('logy', False),
