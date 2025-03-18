@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 import holoviews as hv
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0
 
 from .. import expect
 
@@ -257,5 +258,9 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
     expect(page.locator(".bk-Tooltip")).to_contain_text('x:4')
     expect(page.locator(".bk-Tooltip")).to_contain_text('y:8')
-    expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
-    expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
+    if BOKEH_GE_3_7_0:
+        expect(page.locator(".bk-Tooltip")).to_contain_text("val:-NaN")
+        expect(page.locator(".bk-Tooltip")).to_contain_text('cat:-')
+    else:
+        expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
+        expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
