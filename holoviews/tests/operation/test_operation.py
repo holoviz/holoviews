@@ -593,6 +593,25 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
 
+    @pytest.mark.usefixtures("mpl_backend")
+    def test_histogram_dask_array_mpl(self):
+        # Regression test for https://github.com/holoviz/holoviews/issues/5111
+        dd = pytest.importorskip("dask.dataframe")
+
+        data = {
+            "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
+            "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
+        }
+        flights = dd.from_pandas(pd.DataFrame(data), npartitions=2)
+
+        by = "carrier"
+        ds = Dataset(flights, by)
+        ds_grouped = ds.groupby(by)
+        hists = histogram(ds_grouped, dimension="depdelay")
+
+        # Should not error
+        renderer("matplotlib").get_plot(hists)
+
     def test_interpolate_curve_pre(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-pre')
         curve = Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
