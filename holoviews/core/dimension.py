@@ -855,7 +855,7 @@ class Dimensioned(LabelledData):
 
        Aliased with constant_dimensions.""")
 
-    kdims = param.List(bounds=(0, None), constant=True, doc="""
+    kdims = param.List(bounds=(0, None), doc="""
        The key dimensions defined as list of dimensions that may be
        used in indexing (and potential slicing) semantics. The order
        of the dimensions listed here determines the semantics of each
@@ -863,7 +863,7 @@ class Dimensioned(LabelledData):
 
        Aliased with key_dimensions.""")
 
-    vdims = param.List(bounds=(0, None), constant=True, doc="""
+    vdims = param.List(bounds=(0, None), doc="""
        The value dimensions defined as the list of dimensions used to
        describe the components of the data. If multiple value
        dimensions are supplied, a particular value dimension may be
