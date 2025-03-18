@@ -30,11 +30,13 @@ class StatisticsElement(Dataset, Element2D):
         params.update(dict(kdims=kdims, vdims=[], _validate_vdims=False))
         super().__init__(data, **params)
         if not vdims:
-            self.vdims = [Dimension('Density')]
+            with param.edit_constant(self):
+                self.vdims = [Dimension('Density')]
         elif len(vdims) > 1:
             raise ValueError(f"{type(self).__name__} expects at most one vdim.")
         else:
-            self.vdims = process_dimensions(None, vdims)['vdims']
+            with param.edit_constant(self):
+                self.vdims = process_dimensions(None, vdims)['vdims']
 
     @property
     def dataset(self):
