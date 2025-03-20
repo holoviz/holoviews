@@ -37,8 +37,8 @@ jobs:
           HIDE_TIME_TO_ANSWER: "true"
           DRAFT_PR_TRACKING: "true"
 
-      - name: Print output of issue metrics tools
-        run: echo "${{ steps.issue-metrics.outputs.metrics }}"
+      #   - name: Print output of issue metrics tools
+      #     run: echo "${{ steps.issue-metrics.outputs.metrics }}"
 
       - name: Create issue
         uses: peter-evans/create-issue-from-file@v5
