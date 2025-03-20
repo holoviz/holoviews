@@ -308,7 +308,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         assert plot.state.yaxis[1].axis_label_text_font_size == '13pt'
 
     def test_multi_y_on_curve(self):
-        # Regression test for https://github.com/holoviz/holoviews/issues/6322
+        # Test for https://github.com/holoviz/holoviews/issues/6322
         overlay = Curve(range(10), vdims='A').opts(multi_y=True)
 
         # Should not error
