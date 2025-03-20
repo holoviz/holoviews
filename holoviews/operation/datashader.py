@@ -374,7 +374,7 @@ class aggregate(LineAggregationOperation):
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
-        if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width):
+        if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
                 {p: v for p, v in self.param.values().items() if p != 'name'},
                 dynamic=False, **{p: v for p, v in self.p.items()
@@ -515,12 +515,25 @@ class overlay_aggregate(aggregate):
     """
 
     @classmethod
-    def applies(cls, element, agg_fn, line_width=None):
-        return (isinstance(element, NdOverlay) and
-                (element.type is not Curve or line_width is None) and
-                ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any)) and
-                  (agg_fn.column is None or agg_fn.column not in element.kdims)) or
-                 (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims)))
+    def applies(cls, element, agg_fn, line_width=None, sel_fn=None):
+        return (
+            isinstance(element, NdOverlay)
+            and sel_fn is None
+            and (element.type is not Curve or line_width is None)
+            and (
+                (
+                    isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
+                    and (agg_fn.column is None or agg_fn.column not in element.kdims)
+                )
+                or (
+                    (
+                        isinstance(agg_fn, ds.count_cat)
+                        or (isinstance(agg_fn, ds.by) and agg_fn.reduction is ds.count)
+                    )
+                    and agg_fn.column in element.kdims
+                )
+            )
+        )
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
@@ -1361,6 +1374,9 @@ class shade(LinkableOperation):
 
         # Dask is not supported by shade so materialize it
         array = array.compute()
+
+        if array.shape[-1] == 1:
+            array = array[..., 0]
 
         shade_opts = dict(
             how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha
