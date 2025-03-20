@@ -37,11 +37,14 @@ jobs:
           HIDE_TIME_TO_ANSWER: "true"
           DRAFT_PR_TRACKING: "true"
 
-      - name: Print output of issue metrics tool
+      - name: Save JSON output to file
         run: |
-          cat <<'EOF'
-          ${{ steps.issue-metrics.outputs.metrics }}
-          EOF
+          echo "${{ steps.issue-metrics.outputs.metrics }}" > metrics.json
+      - name: Upload JSON file as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-metrics-json
+          path: metrics.json
 
     #   - name: Create issue
     #     uses: peter-evans/create-issue-from-file@v5
