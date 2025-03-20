@@ -39,8 +39,9 @@ jobs:
 
       - name: Print output of issue metrics tool
         run: |
-          echo "${{ steps.issue-metrics.outputs.metrics }}" > metrics.json
-          cat metrics.json
+          cat <<'EOF'
+          ${{ steps.issue-metrics.outputs.metrics }}
+          EOF
 
     #   - name: Create issue
     #     uses: peter-evans/create-issue-from-file@v5
