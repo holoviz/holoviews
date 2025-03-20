@@ -37,10 +37,10 @@ jobs:
           HIDE_TIME_TO_ANSWER: "true"
           DRAFT_PR_TRACKING: "true"
 
-      - name: Print output of issue metrics tools
+      - name: Print output of issue metrics tool
         run: |
-          metrics="${{ steps.issue-metrics.outputs.metrics }}"
-          printf '%s\n' "$metrics"
+          echo "${{ steps.issue-metrics.outputs.metrics }}" > metrics.json
+          cat metrics.json
 
     #   - name: Create issue
     #     uses: peter-evans/create-issue-from-file@v5
