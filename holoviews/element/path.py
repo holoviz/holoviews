@@ -188,7 +188,7 @@ class Dendrogram(Path):
         return super().__new__(cls)
 
     def __init__(self, x, y=None, kdims=None, vdims=None, **params):
-        data = x if y is None else zip(x, y)  # strict=True
+        data = x if y is None else zip(x, y, strict=True)
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
