@@ -133,6 +133,7 @@ spatialpandas = "*"
 streamz = ">=0.5.0"
 xarray = ">=0.10.4"
 xyzservices = "*"
+pyparsing = "!=3.2.2" # Remove when no longer needed
 
 [feature.optional.target.unix.dependencies]
 tsdownsample = "*" # currently not available on Windows
