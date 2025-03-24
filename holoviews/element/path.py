@@ -178,6 +178,20 @@ class Path(SelectionPolyExpr, Geometry):
         return self.interface.split(self, start, end, datatype, **kwargs)
 
 
+class Dendrogram(Path):
+
+    group = param.String(default="Dendrogram", constant=True)
+
+    datatype = param.List(default=['multitabular'])
+
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
+    def __init__(self, x, y=None, kdims=None, vdims=None, **params):
+        data = x if y is None else zip(x, y)  # strict=True
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
+
 class Contours(Path):
     """The Contours element is a subtype of a Path which is characterized
     by the fact that each path geometry may only be associated with

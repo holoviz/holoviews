@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
+from bokeh.models import FactorRange
 
 from ...core import util
 from ...element import Contours, Polygons
@@ -180,6 +181,47 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 data[k].extend(list(v))
 
         return data, elmapping, style
+
+
+class DendrogramPlot(PathPlot):
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        if self.adjoined:
+            pos = ["main", "right", "top"][len(plots)]
+            main = self.adjoined[0]
+            if pos == "right":
+                if self.width == self.param.width.default:
+                    plot.width = 80
+                self._update_adjoined_figure(main, plot, "y")
+            elif pos == "top":
+                if self.height == self.param.height.default:
+                    plot.height = 80
+                self._update_adjoined_figure(main, plot, "x")
+        return plot
+
+    def _update_adjoined_figure(self, main, side, dim):
+        main_dim = getattr(main, f"{dim}_range").name
+        side_dim = f"{dim}s"
+        data = side.renderers[0].data_source.data
+        if isinstance(getattr(main, f"{dim}_range"), FactorRange):
+            # 0.5 is the factor used by Bokeh to convert a synthetic
+            # coordinate into a categorical factor.
+            # data_min.min() will for Scipy dendogram calculation be 5.
+            data_adj = np.asarray(data[side_dim])
+            data[side_dim] = list(0.5 / data_adj.min() * data_adj)
+        else:
+            main_src = main.renderers[0].data_source.data
+            data_adj, data_main = np.asarray(data[side_dim]), np.asarray(main_src.get(main_dim, main_src.get(f"{main_dim}s")))
+            if data_adj.size and data_main.size:
+                x1, x2, y1, y2 = data_adj.min(), data_adj.max(), data_main.min(), data_main.max()
+                data[side_dim] = list((y2 - y1) / (x2 - x1) * (data_adj - x1) + y1)
+            else:
+                data[side_dim] = data_adj
+
+        # Update range and scale to match main plot
+        setattr(side, f"{dim}_range", getattr(main, f"{dim}_range"))
+        setattr(side, f"{dim}_scale", getattr(main, f"{dim}_scale"))
 
 
 class ContourPlot(PathPlot):

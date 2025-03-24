@@ -6,7 +6,7 @@ from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core import HoloMap, NdOverlay
 from holoviews.core.options import Cycle
-from holoviews.element import Contours, Path, Polygons
+from holoviews.element import Contours, Dendrogram, Path, Polygons, Scatter
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
@@ -515,3 +515,112 @@ class TestContoursPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
+
+class TestDendrogramPlot(TestBokehPlot):
+    @property
+    def x(self):
+        return np.array(
+            [
+                [35.0, 35.0, 45.0, 45.0],
+                [25.0, 25.0, 40.0, 40.0],
+                [15.0, 15.0, 32.5, 32.5],
+                [5.0, 5.0, 23.75, 23.75],
+            ]
+        )
+    @property
+    def y(self):
+        return np.array(
+            [
+                [0.0, 1.04158712, 1.04158712, 0.0],
+                [0.0, 1.18037928, 1.18037928, 1.04158712],
+                [0.0, 1.20879035, 1.20879035, 1.18037928],
+                [0.0, 1.31643301, 1.31643301, 1.20879035],
+            ]
+        )
+
+    def get_childrens(self, adjoint):
+        bk_childrens = bokeh_renderer.get_plot(adjoint).handles["plot"].children
+        if len(bk_childrens) == 2:
+            top, (main, *_), (right, *_) = (None, *bk_childrens)
+        else:
+            (top, *_), (main, *_), (right, *_) = bk_childrens
+        return top, main, right
+
+    def test_empty_plot(self):
+        dendrogram = Dendrogram([])
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 0
+        assert len(source.data['ys']) == 0
+
+    def test_empty_plot_xy(self):
+        dendrogram = Dendrogram(x=[], y=[])
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 0
+        assert len(source.data['ys']) == 0
+
+    def test_plot(self):
+        dendrogram = Dendrogram(zip(self.x, self.y))
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 4
+        assert len(source.data['ys']) == 4
+
+    def test_plot_xy(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 4
+        assert len(source.data['ys']) == 4
+
+    def test_plot_equals_path_zip(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        path = Path(zip(self.x, self.y))
+        dendro_plot = bokeh_renderer.get_plot(dendrogram)
+        dendro_source = dendro_plot.handles['source']
+        path_plot = bokeh_renderer.get_plot(path)
+        path_source = path_plot.handles['source']
+        np.testing.assert_array_equal(dendro_source.data["xs"], path_source.data["xs"])
+        np.testing.assert_array_equal(dendro_source.data["ys"], path_source.data["ys"])
+
+    def test_1_adjoint_plot_1_kdims_empty_main(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Scatter([])
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_1_adjoint_plot_1_kdims(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Scatter([1, 2, 3])
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_2_adjoint_plot_1_kdims(self):
+        dendrogram1 = Dendrogram(self.x, self.y)
+        dendrogram2 = Dendrogram(self.y, self.x)
+        main = Scatter([1, 2, 3])
+        adjoint = main << dendrogram1 << dendrogram2
+        top, main, right = self.get_childrens(adjoint)
+        assert top.height == 80
+        assert main.x_range is top.x_range
+        assert main.x_scale is top.x_scale
+        assert right.width == 80
+
+    def test_1_adjoint_plot_2_kdims(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Path(zip(self.x, self.y))
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
