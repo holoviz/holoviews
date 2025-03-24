@@ -18,6 +18,7 @@ from ..core import (
     Empty,
     GridMatrix,
     HoloMap,
+    Layout,
     NdOverlay,
     Operation,
     Overlay,
@@ -1229,9 +1230,11 @@ class dendrogram(Operation):
     data.
     """
 
-    main_dim = param.String(doc="The main dimension to cluster on")
+    adjoined = param.Boolean(default=True, doc="Whether to adjoin the dendrogram(s) to the main plot")
 
     adjoint_dims = param.List(item_type=str, doc="The adjoint dimension to cluster on")
+
+    main_dim = param.String(doc="The main dimension to cluster on")
 
     main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False, doc="""
         The Element type to use for the main plot if the input is a Dataset.""")
@@ -1273,6 +1276,12 @@ class dendrogram(Operation):
 
             # Important the kdims are unique
             dendros[d] = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
+
+        if not self.p.adjoined:
+            if len(dendros) == 1:
+                return next(iter(dendros.values()))
+            else:
+                return Layout(dendros.values())
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
         if type(element) is not Dataset:

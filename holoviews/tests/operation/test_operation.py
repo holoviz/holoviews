@@ -35,6 +35,7 @@ from holoviews import (
     Histogram,
     HoloMap,
     Image,
+    Layout,
     NdLayout,
     NdOverlay,
     Points,
@@ -786,3 +787,18 @@ class TestDendrogramOperation:
 
         # These should be shared with the main plot
         assert aright.y_range.factors == amain.y_range.factors
+
+    def test_adjoned_False_1dim(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x"], main_dim="y", adjoined=False)
+
+        assert isinstance(dendro, Dendrogram)
+
+    def test_adjoned_False_2dim(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y", adjoined=False)
+
+        assert isinstance(dendro, Layout)
+        assert len(dendro) == 2
+        assert isinstance(dendro[0], Dendrogram)
+        assert isinstance(dendro[1], Dendrogram)
