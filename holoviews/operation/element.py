@@ -4,6 +4,7 @@ examples.
 """
 import warnings
 from functools import partial
+from itertools import pairwise
 
 import numpy as np
 import param
@@ -670,7 +671,7 @@ class contours(Operation):
         paths = []
         if self.p.filled:
             empty = np.array([[np.nan, np.nan]])
-            for lower_level, upper_level in zip(levels[:-1], levels[1:]):
+            for lower_level, upper_level in pairwise(levels):
                 filled = cont_gen.filled(lower_level, upper_level)
                 # Only have to consider last index 0 as we are using contourpy without chunking
                 if (points := filled[0][0]) is None:
@@ -685,7 +686,7 @@ class contours(Operation):
                 outer_offsets = filled[2][0]
 
                 # Loop through exterior polygon boundaries.
-                for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
+                for jstart, jend in pairwise(outer_offsets):
                     if exteriors:
                         exteriors.append(empty)
                     exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])

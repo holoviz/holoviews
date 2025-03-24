@@ -2,6 +2,7 @@ import copy
 import types
 from contextlib import contextmanager
 from functools import wraps
+from itertools import pairwise
 
 import numpy as np
 import param
@@ -805,7 +806,7 @@ class Dataset(Element, metaclass=PipelineMeta):
                 xlim = self.range(0)
                 lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
                 edges = np.linspace(lower, upper, samples+1)
-                linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
+                linsamples = [(l+u)/2.0 for l,u in pairwise(edges)]
             elif self.ndims == 2:
                 (rows, cols) = samples
                 if bounds:
@@ -816,8 +817,8 @@ class Dataset(Element, metaclass=PipelineMeta):
 
                 xedges = np.linspace(l, r, cols+1)
                 yedges = np.linspace(b, t, rows+1)
-                xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
-                ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
+                xsamples = [(lx+ux)/2.0 for lx,ux in pairwise(xedges)]
+                ysamples = [(ly+uy)/2.0 for ly,uy in pairwise(yedges)]
 
                 Y,X = np.meshgrid(ysamples, xsamples)
                 linsamples = list(zip(X.flat, Y.flat))
