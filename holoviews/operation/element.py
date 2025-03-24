@@ -347,7 +347,7 @@ class image_overlay(Operation):
         """Return the strength of the match (None if no match)
 
         """
-        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
+        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.'), strict=None))
         if not isinstance(el, Image) or spec_dict['type'] != 'Image':
             raise NotImplementedError("Only Image currently supported")
 
@@ -391,9 +391,9 @@ class image_overlay(Operation):
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
-        for el, spec in zip(ordering, specs):
+        for el, spec in zip(ordering, specs, strict=None):
             if el is None:
-                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
+                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.'), strict=None))
                 el = Image(np.ones(strongest.data.shape) * self.p.fill,
                             group=spec_dict.get('group','Image'),
                             label=spec_dict.get('label',''))
@@ -606,7 +606,7 @@ class contours(Operation):
 
             data = tuple(
                 date2num(d) if is_datetime else d
-                for d, is_datetime in zip(data, data_is_datetime)
+                for d, is_datetime in zip(data, data_is_datetime, strict=None)
             )
 
         xdim, ydim = element.dimensions('key', label=True)
@@ -1045,7 +1045,7 @@ class interpolate_curve(Operation):
         steps[1::2] = steps[0:-2:2]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[2::2]
             val_arrays.append(s)
@@ -1061,7 +1061,7 @@ class interpolate_curve(Operation):
         steps[0], steps[-1] = x[0], x[-1]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[0::2]
             val_arrays.append(s)
@@ -1077,7 +1077,7 @@ class interpolate_curve(Operation):
         steps[1::2] = steps[2::2]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[0:-2:2]
             val_arrays.append(s)

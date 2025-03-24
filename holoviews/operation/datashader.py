@@ -306,7 +306,7 @@ class aggregate(LineAggregationOperation):
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
                 if isinstance(obj, NdOverlay):
-                    df = df.assign(**dict(zip(obj.dimensions('key', True), key)))
+                    df = df.assign(**dict(zip(obj.dimensions('key', True), key, strict=None)))
                 paths.append(df)
             if element is None:
                 dims = None
@@ -1056,7 +1056,7 @@ class trimesh_rasterize(aggregate):
                     "DataFrames.")
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
-        for c, dtype in zip(simplices.columns[:3], simplices.dtypes):
+        for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=None):
             if dtype.kind != 'i':
                 simplices[c] = simplices[c].astype('int')
         mesh = mesh(verts, simplices)
@@ -1130,7 +1130,7 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
         if wireframe:
-            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name)) if k != v}
+            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name), strict=None) if k != v}
             agg = cvs.line(segments, x=['x0', 'x1', 'x2', 'x0'],
                            y=['y0', 'y1', 'y2', 'y0'], axis=1,
                            agg=agg).rename(rename_dict)
@@ -1395,7 +1395,7 @@ class shade(LinkableOperation):
                 shade_opts['color_key'] = self.p.color_key
             elif isinstance(self.p.color_key, Iterable):
                 shade_opts['color_key'] = [c for _, c in
-                                           zip(range(categories), self.p.color_key)]
+                                           zip(range(categories), self.p.color_key, strict=None)]
             else:
                 colors = [self.p.color_key(s) for s in np.linspace(0, 1, categories)]
                 shade_opts['color_key'] = map(self.rgb2hex, colors)
@@ -1506,7 +1506,7 @@ class geometry_rasterize(LineAggregationOperation):
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
             agg = cvs.points(data, **agg_kwargs)
-        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name)) if k != v}
+        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name), strict=None) if k != v}
         agg = agg.rename(rename_dict)
 
         if agg.ndim == 2:
@@ -1870,8 +1870,8 @@ class _connect_edges(Operation):
 
     def _process(self, element, key=None):
         index = element.nodes.kdims[2].name
-        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
-        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'])}
+        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'], strict=None)}
+        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'], strict=None)}
         position_df = element.nodes.redim(**rename_nodes).dframe([0, 1, 2]).set_index(index)
         edges_df = element.redim(**rename_edges).dframe([0, 1])
         paths = self._bundle(position_df, edges_df)

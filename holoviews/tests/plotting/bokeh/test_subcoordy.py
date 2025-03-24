@@ -382,7 +382,7 @@ class TestSubcoordinateY(TestBokehPlot):
         zoom_tools = [tool for tool in plot.state.tools if isinstance(tool, WheelZoomTool)]
         assert zoom_tools == plot.handles['zooms_subcoordy']['wheel_zoom']
         assert len(zoom_tools) == len(groups)
-        for zoom_tool, group in zip(zoom_tools, reversed(groups)):
+        for zoom_tool, group in zip(zoom_tools, reversed(groups), strict=None):
             assert len(zoom_tool.renderers) == 2
             assert len(set(zoom_tool.renderers)) == 2
             assert zoom_tool.dimensions == 'height'

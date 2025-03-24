@@ -956,7 +956,7 @@ def find_minmax(lims, olims):
 
     """
     try:
-        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
+        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax], strict=None)
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except Exception:
         limits = (np.nan, np.nan)
@@ -1109,7 +1109,7 @@ def max_extents(extents, zrange=False):
     else:
         num = 4
         inds = [(0, 2), (1, 3)]
-    arr = list(zip(*extents)) if extents else []
+    arr = list(zip(*extents, strict=None)) if extents else []
     extents = [np.nan] * num
     if len(arr) == 0:
         return extents
@@ -1187,14 +1187,14 @@ def lzip(*args):
     """Zip function that returns a list.
 
     """
-    return list(zip(*args))
+    return list(zip(*args, strict=None))
 
 
 def unique_zip(*args):
     """Returns a unique list of zipped values.
 
     """
-    return list(unique_iterator(zip(*args)))
+    return list(unique_iterator(zip(*args, strict=None)))
 
 
 def unique_array(arr):
@@ -1471,7 +1471,7 @@ def layer_sort(hmap):
       if len(okeys) == 1 and okeys[0] not in orderings:
          orderings[okeys[0]] = []
       else:
-         orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys)})
+         orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys, strict=None)})
    return [i for g in sort_topologically(orderings) for i in sorted(g)]
 
 
@@ -1693,7 +1693,7 @@ def disable_constant(parameterized):
     try:
         yield
     finally:
-        for (p, const) in zip(params, constants):
+        for (p, const) in zip(params, constants, strict=None):
             p.constant = const
 
 
@@ -1854,7 +1854,7 @@ def drop_streams(streams, kdims, keys):
     """
     stream_params = stream_parameters(streams)
     inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
-                       if kdim not in stream_params])
+                       if kdim not in stream_params], strict=None)
     get = operator.itemgetter(*inds) # itemgetter used for performance
     keys = (get(k) for k in keys)
     return dims, ([wrap_tuple(k) for k in keys] if len(inds) == 1 else list(keys))
@@ -1905,7 +1905,7 @@ def get_path(item):
             path = path[:1]
     else:
         path = (item.group, item.label) if item.label else (item.group,)
-    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
+    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers, strict=None))
 
 
 def make_path_unique(path, counts, new):
@@ -2017,7 +2017,7 @@ def cross_index(values, index):
         indexes.append(index//p)
         index -= indexes[-1] * p
     indexes.append(index)
-    return tuple(v[i] for v, i in zip(values, indexes))
+    return tuple(v[i] for v, i in zip(values, indexes, strict=None))
 
 
 def arglexsort(arrays):

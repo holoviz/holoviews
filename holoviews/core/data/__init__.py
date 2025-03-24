@@ -475,7 +475,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if xs.dtype.kind in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [type(s)(xs[idx]) for s, idx in zip(coords, idxs)]
+        return [type(s)(xs[idx]) for s, idx in zip(coords, idxs, strict=None)]
 
 
     def sort(self, by=None, reverse=False):
@@ -739,13 +739,13 @@ class Dataset(Element, metaclass=PipelineMeta):
         if len(slices) == 1 and slices[0] in self.dimensions():
             return self.dimension_values(slices[0])
         elif len(slices) == self.ndims+1 and slices[self.ndims] in self.dimensions():
-            selection = dict(zip(self.dimensions('key', label=True), slices))
+            selection = dict(zip(self.dimensions('key', label=True), slices, strict=None))
             value_select = slices[self.ndims]
         elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
                                                         (Dimension,str)):
             raise IndexError(f"{slices[self.ndims]!r} is not an available value dimension")
         else:
-            selection = dict(zip(self.dimensions(label=True), slices))
+            selection = dict(zip(self.dimensions(label=True), slices, strict=None))
         data = self.select(**selection)
         if value_select:
             if data.shape[0] == 1:
@@ -821,7 +821,7 @@ class Dataset(Element, metaclass=PipelineMeta):
                 ysamples = [(ly+uy)/2.0 for ly,uy in pairwise(yedges)]
 
                 Y,X = np.meshgrid(ysamples, xsamples)
-                linsamples = list(zip(X.flat, Y.flat))
+                linsamples = list(zip(X.flat, Y.flat, strict=None))
             else:
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for elements with more than two dimensions.")
@@ -833,7 +833,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         from ...element import Curve, Table
         datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
         if len(samples) == 1:
-            sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
+            sel = {kd.name: s for kd, s in zip(self.kdims, samples[0], strict=None)}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
             selection = self.select(**sel)
 
@@ -1042,7 +1042,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             group_kwargs = dict(core_util.get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
             def load_subset(*args):
-                constraint = dict(zip(dim_names, args))
+                constraint = dict(zip(dim_names, args, strict=None))
                 group = self.select(**constraint)
                 if np.isscalar(group):
                     return group_type(([group],), group=self.group,
@@ -1105,7 +1105,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             if len(signature) == 1:
                 new_data[signature[0]] = applied
             else:
-                for s, vals in zip(signature, applied):
+                for s, vals in zip(signature, applied, strict=None):
                     new_data[s] = vals
 
         new_dims = []

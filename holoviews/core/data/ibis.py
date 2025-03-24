@@ -167,7 +167,7 @@ class IbisInterface(Interface):
             # sort_by will be removed in Ibis 5.0
             hist_bins = binned.value_counts().sort_by('bucket').execute()
         metric_name = 'bucket_count' if IBIS_GE_5_0_0 else 'count'
-        for b, v in zip(hist_bins['bucket'], hist_bins[metric_name]):
+        for b, v in zip(hist_bins['bucket'], hist_bins[metric_name], strict=None):
             if np.isnan(b):
                 continue
             hist[int(b)] = v

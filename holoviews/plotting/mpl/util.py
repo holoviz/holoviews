@@ -204,7 +204,7 @@ def unpack_adjoints(ratios):
 
 def normalize_ratios(ratios):
     normalized = {}
-    for i, v in enumerate(zip(*ratios.values())):
+    for i, v in enumerate(zip(*ratios.values(), strict=None)):
         arr = np.array(v)
         normalized[i] = arr/float(np.nanmax(arr))
     return normalized
