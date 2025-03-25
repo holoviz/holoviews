@@ -437,7 +437,7 @@ class Interface(param.Parameterized):
         new_type = new_type or Dataset
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
-            keys, datasets = zip(*datasets.data.items(), strict=None)
+            keys, datasets = zip(*datasets.data.items(), strict=True)
         elif isinstance(datasets, list) and all(not isinstance(v, tuple) for v in datasets):
             # Allow concatenating list of datasets (by declaring no dimensions and keys)
             dimensions, keys = [], [()]*len(datasets)

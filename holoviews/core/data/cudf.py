@@ -288,7 +288,7 @@ class cuDFInterface(PandasInterface):
             if not hasattr(grouped, agg):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             numeric_cols = [
-                c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
+                c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=True)
                 if is_numeric_dtype(d) and c not in cols
             ]
             df = getattr(grouped[numeric_cols], agg)().reset_index()
@@ -299,12 +299,12 @@ class cuDFInterface(PandasInterface):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
             try:
-                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy(), strict=None)}
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy(), strict=True)}
             except Exception:
                 # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
-                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array(), strict=None)}
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array(), strict=True)}
             df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []

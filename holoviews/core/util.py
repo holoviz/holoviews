@@ -1183,18 +1183,18 @@ def unique_iterator(seq):
             yield item
 
 
-def lzip(*args):
+def lzip(*args, strict=None):
     """Zip function that returns a list.
 
     """
-    return list(zip(*args, strict=None))
+    return list(zip(*args, strict=strict))
 
 
-def unique_zip(*args):
+def unique_zip(*args, strict=None):
     """Returns a unique list of zipped values.
 
     """
-    return list(unique_iterator(zip(*args, strict=None)))
+    return list(unique_iterator(zip(*args, strict=strict)))
 
 
 def unique_array(arr):
