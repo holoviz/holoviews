@@ -52,10 +52,10 @@ class GridInterface(DictInterface):
             if (len(data) != len(dimensions) and len(data) == (ndims+1) and
                 len(data[-1].shape) == (ndims+1)):
                 value_array = data[-1]
-                data = {d: v for d, v in zip(dimensions, data[:-1])}
+                data = {d: v for d, v in zip(dimensions, data[:-1], strict=None)}
                 data[vdim_tuple] = value_array
             else:
-                data = {d: v for d, v in zip(dimensions, data)}
+                data = {d: v for d, v in zip(dimensions, data, strict=None)}
         elif (isinstance(data, list) and data == []):
             if len(kdims) == 1:
                 data = dict([(d, []) for d in dimensions])
@@ -67,7 +67,7 @@ class GridInterface(DictInterface):
                     data[vdim_tuple] = np.zeros((0, 0, len(vdims)))
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
-            data = {k: v for k, v in zip(dimensions, zip(*data))}
+            data = {k: v for k, v in zip(dimensions, zip(*data, strict=None), strict=None)}
         elif isinstance(data, np.ndarray):
             if data.shape == (0, 0) and len(vdims) == 1:
                 array = data
@@ -130,7 +130,7 @@ class GridInterface(DictInterface):
                             'match the expected dimensionality indicated '
                             f'by the key dimensions. Expected {len(expected)}-D array, '
                             f'found {len(shape)}-D array.')
-            elif any((e not in (s, s + 1)) for s, e in zip(shape, valid_shape)):
+            elif any((e not in (s, s + 1)) for s, e in zip(shape, valid_shape, strict=None)):
                 raise error(f'Key dimension values and value array {vdim} '
                             f'shapes do not match. Expected shape {valid_shape}, '
                             f'actual shape: {shape}', cls)
@@ -153,7 +153,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
-        values, grids = zip(*datasets.items())
+        values, grids = zip(*datasets.items(), strict=None)
         new_data = {k: v for k, v in grids[0].items() if k not in vdims}
         new_data[dim.name] = np.array(values)
         for vdim in vdims:
@@ -377,7 +377,7 @@ class GridInterface(DictInterface):
         selected = {}
         adjusted_inds = []
         all_scalar = True
-        for kd, ind in zip(dataset.kdims[::-1], indices):
+        for kd, ind in zip(dataset.kdims[::-1], indices, strict=None):
             coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]
@@ -467,8 +467,8 @@ class GridInterface(DictInterface):
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in zip(*util.cartesian_product(keys)):
-            select = dict(zip(dim_names, unique_key))
+        for unique_key in zip(*util.cartesian_product(keys), strict=None):
+            select = dict(zip(dim_names, unique_key, strict=None))
             if drop_dim:
                 group_data = dataset.select(**select)
                 group_data = group_data if np.isscalar(group_data) else group_data.columns()
@@ -477,7 +477,7 @@ class GridInterface(DictInterface):
 
             if np.isscalar(group_data) or (isinstance(group_data, get_array_types()) and group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
-                for dim, v in zip(dim_names, unique_key):
+                for dim, v in zip(dim_names, unique_key, strict=None):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
                 if isinstance(group_data, get_array_types()):
@@ -659,15 +659,15 @@ class GridInterface(DictInterface):
                 sample = [sample[i] if i < len(sample) else None
                           for i in range(ndims)]
             sampled, int_inds = [], []
-            for d, ind in zip(dimensions, sample):
+            for d, ind in zip(dimensions, sample, strict=None):
                 cdata = dataset.data[d]
                 mask = cls.key_select_mask(dataset, cdata, ind)
                 inds = np.arange(len(cdata)) if mask is None else np.argwhere(mask)
                 int_inds.append(inds)
                 sampled.append(cdata[mask])
-            for d, arr in zip(dimensions, np.meshgrid(*sampled)):
+            for d, arr in zip(dimensions, np.meshgrid(*sampled), strict=None):
                 data[d].append(arr)
-            for vdim, array in zip(dataset.vdims, arrays):
+            for vdim, array in zip(dataset.vdims, arrays, strict=None):
                 da = dask_array_module()
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
                 if da and isinstance(array, da.Array):

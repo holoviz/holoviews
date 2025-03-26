@@ -142,7 +142,7 @@ def bin(values, bins, labels=None):
         labels = np.asarray(labels)
     dtype = 'float' if labels.dtype.kind == 'f' else 'O'
     binned = np.full_like(values, (np.nan if dtype == 'f' else None), dtype=dtype)
-    for lower, upper, label in zip(bins[:-1], bins[1:], labels):
+    for lower, upper, label in zip(bins[:-1], bins[1:], labels, strict=None):
         condition = (values > lower) & (values <= upper)
         binned[np.where(condition)[0]] = label
     return binned

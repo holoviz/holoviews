@@ -437,7 +437,7 @@ class Interface(param.Parameterized):
         new_type = new_type or Dataset
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
-            keys, datasets = zip(*datasets.data.items())
+            keys, datasets = zip(*datasets.data.items(), strict=True)
         elif isinstance(datasets, list) and all(not isinstance(v, tuple) for v in datasets):
             # Allow concatenating list of datasets (by declaring no dimensions and keys)
             dimensions, keys = [], [()]*len(datasets)
@@ -462,7 +462,7 @@ class Interface(param.Parameterized):
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]
-        data = list(zip(keys, datasets)) if keys else datasets
+        data = list(zip(keys, datasets, strict=None)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 

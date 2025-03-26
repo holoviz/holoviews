@@ -245,7 +245,7 @@ class GeomTests(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        for arr1, arr2 in zip(mds.split(datatype='array'), arrays):
+        for arr1, arr2 in zip(mds.split(datatype='array'), arrays, strict=None):
             self.assertEqual(arr1, arr2)
 
     def test_split_empty(self):

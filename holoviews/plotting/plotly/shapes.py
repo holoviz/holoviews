@@ -37,7 +37,7 @@ class ShapePlot(ElementPlot):
     @staticmethod
     def build_path(xs, ys, closed=True):
         line_tos = ''.join([f'L{x} {y}'
-                            for x, y in zip(xs[1:], ys[1:])])
+                            for x, y in zip(xs[1:], ys[1:], strict=None)])
         path = f'M{xs[0]} {ys[0]}{line_tos}'
 
         if closed:
@@ -64,15 +64,15 @@ class BoxShapePlot(GeomMixin, ShapePlot):
                 lon_chunks, lat_chunks = zip(*[
                     ([lon0, lon0, lon1, lon1, lon0, np.nan],
                      [lat0, lat1, lat1, lat0, lat0, np.nan])
-                    for (lon0, lat0, lon1, lat1) in zip(lon0s, lat0s, lon1s, lat1s)
-                ])
+                    for (lon0, lat0, lon1, lat1) in zip(lon0s, lat0s, lon1s, lat1s, strict=None)
+                ], strict=None)
 
                 lon = np.concatenate(lon_chunks)
                 lat = np.concatenate(lat_chunks)
             return [{"lat": lat, "lon": lon}]
         else:
             return [dict(x0=x0, x1=x1, y0=y0, y1=y1, xref='x', yref='y')
-                    for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s)]
+                    for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s, strict=None)]
 
 
 class SegmentShapePlot(GeomMixin, ShapePlot):
@@ -92,15 +92,15 @@ class SegmentShapePlot(GeomMixin, ShapePlot):
                 lon_chunks, lat_chunks = zip(*[
                     ([lon0, lon1, np.nan],
                      [lat0, lat1, np.nan])
-                    for (lon0, lat0, lon1, lat1) in zip(lon0s, lat0s, lon1s, lat1s)
-                ])
+                    for (lon0, lat0, lon1, lat1) in zip(lon0s, lat0s, lon1s, lat1s, strict=None)
+                ], strict=None)
 
                 lon = np.concatenate(lon_chunks)
                 lat = np.concatenate(lat_chunks)
             return [{"lat": lat, "lon": lon}]
         else:
             return [dict(x0=x0, x1=x1, y0=y0, y1=y1, xref='x', yref='y')
-                    for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s)]
+                    for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s, strict=None)]
 
 
 class PathShapePlot(ShapePlot):

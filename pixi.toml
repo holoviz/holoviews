@@ -16,10 +16,6 @@ default = [
     "dev",
 ]
 
-[environments.test-39]
-features = ["required", "py39", "optional", "test-core", "test-example", "test-unit-task"]
-no-default-feature = true
-
 [environments.test-310]
 features = ["required", "py310", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
@@ -82,10 +78,6 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 [feature.required.activation.env]
 PYTHONIOENCODING = "utf-8"
 
-[feature.py39.dependencies]
-python = "3.9.*"
-panel = "1.4.*"
-
 [feature.py310.dependencies]
 python = "3.10.*"
 bokeh_sampledata = "*"
@@ -127,7 +119,7 @@ pooch = "*"
 pyarrow = "*"
 pyparsing = "!=3.2.2" # Pinned 2025-03
 scikit-image = "*"
-scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
+scipy = "*"
 selenium = "*"
 shapely = "*"
 spatialpandas = "*"

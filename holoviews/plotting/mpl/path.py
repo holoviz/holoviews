@@ -67,7 +67,7 @@ class PathPlot(ColorbarPlot):
                 paths.append(arr)
                 continue
             length = len(xarr)
-            for (s1, s2) in zip(range(length-1), range(1, length+1)):
+            for (s1, s2) in zip(range(length-1), range(1, length+1), strict=None):
                 if cdim:
                     cvals.append(path[cdim.name])
                 paths.append(arr[s1:s2+1])
@@ -149,7 +149,7 @@ class ContourPlot(PathPlot):
         if len(paths) != len(array):
             # If there are multi-geometries the list of scalar values
             # will not match the list of paths and has to be expanded
-            array = np.array([v for v, sps in zip(array, subpaths)
+            array = np.array([v for v, sps in zip(array, subpaths, strict=None)
                               for _ in range(len(sps))])
 
         if array.dtype.kind not in 'uif':

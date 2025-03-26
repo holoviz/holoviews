@@ -17,7 +17,7 @@ class GeomMixin:
         # loop over start and end points of segments
         # simultaneously in each dimension
         for kdim0, kdim1 in zip([kdims[i].label for i in range(2)],
-                                [kdims[i].label for i in range(2,4)]):
+                                [kdims[i].label for i in range(2,4)], strict=None):
             new_range = {}
             for kdim in [kdim0, kdim1]:
                 # for good measure, update ranges for both start and end kdim

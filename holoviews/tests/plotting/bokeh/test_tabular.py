@@ -37,7 +37,7 @@ class TestBokehTablePlot(ComparisonTestCase):
         dims = table.dimensions()
         formatters = (NumberFormatter, NumberFormatter, StringFormatter)
         editors = (IntEditor, NumberEditor, StringEditor)
-        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns):
+        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=None):
             self.assertEqual(column.title, dim.pprint_label)
             self.assertIsInstance(column.formatter, fmt)
             self.assertIsInstance(column.editor, edit)

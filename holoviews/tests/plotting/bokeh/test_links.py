@@ -208,7 +208,7 @@ class TestLinkCallbacks(TestBokehPlot):
     def test_data_link_nan(self):
         arr = np.random.rand(3, 5)
         arr[0, 0] = np.nan
-        data = {k: v for k, v in zip(['x', 'y', 'z'], arr)}
+        data = {k: v for k, v in zip(['x', 'y', 'z'], arr, strict=None)}
         a = Scatter(data, 'x', 'z')
         b = Scatter(data, 'x', 'y')
         DataLink(a, b)

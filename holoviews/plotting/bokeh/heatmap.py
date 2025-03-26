@@ -262,7 +262,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         if reverse:
             bins = bins[::-1]
 
-        return dict(zip(order, bins))
+        return dict(zip(order, bins, strict=None))
 
     @staticmethod
     def _get_bounds(mapper, values):
@@ -380,7 +380,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         values = [(text, ((end - start) / 2) + start)
                   for text, (start, end) in mapping.items()]
 
-        labels, radiant = zip(*values)
+        labels, radiant = zip(*values, strict=None)
         radiant = np.array(radiant)
 
         y_coord = np.sin(radiant) * self.max_radius + self.max_radius
@@ -401,7 +401,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         mapping = self._compute_tick_mapping("radius", order_ann, bins_ann)
         values = [(label, radius[0]) for label, radius in mapping.items()]
 
-        labels, radius = zip(*values)
+        labels, radius = zip(*values, strict=None)
         radius = np.array(radius)
 
         y_coord = np.sin(np.deg2rad(self.yrotation)) * radius + self.max_radius
@@ -447,8 +447,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         x_start = np.cos(angles) * inner + self.max_radius
         x_end = np.cos(angles) * outer + self.max_radius
 
-        xs = zip(x_start, x_end)
-        ys = zip(y_start, y_end)
+        xs = zip(x_start, x_end, strict=None)
+        ys = zip(y_start, y_end, strict=None)
 
         return dict(xs=list(xs), ys=list(ys))
 

@@ -849,7 +849,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         ax_specs, yaxes, dimensions = {}, {}, {}
         subcoordinate_axes = 0
-        for el, (sp_key, sp) in zip(element, self.subplots.items()):
+        for el, (sp_key, sp) in zip(element, self.subplots.items(), strict=None):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
                 ax_dims[::-1]
@@ -861,7 +861,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if opts.get('subcoordinate_y') is None:
                     continue
                 if sp.overlay_dims:
-                    ax_name = ', '.join(d.pprint_value(k) for d, k in zip(element.kdims, sp_key))
+                    ax_name = ', '.join(d.pprint_value(k) for d, k in zip(element.kdims, sp_key, strict=None))
                 else:
                     ax_name = el.label
                 subcoordinate_axes += 1
@@ -1173,7 +1173,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif not self.drawn:
                 ticks, labels = [], []
                 idx = 0
-                for el, (sp_key, sp) in zip(self.current_frame, self.subplots.items()):
+                for el, (sp_key, sp) in zip(self.current_frame, self.subplots.items(), strict=None):
                     if not sp.subcoordinate_y:
                         continue
                     ycenter = idx if isinstance(sp.subcoordinate_y, bool) else 0.5 * sum(sp.subcoordinate_y)
@@ -1182,10 +1182,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if el.label or not self.current_frame.kdims:
                         labels.append(el.label)
                     else:
-                        labels.append(', '.join(d.pprint_value(k) for d, k in zip(self.current_frame.kdims, sp_key)))
+                        labels.append(', '.join(d.pprint_value(k) for d, k in zip(self.current_frame.kdims, sp_key, strict=None)))
                 axis_props['ticker'] = FixedTicker(ticks=ticks)
                 if labels is not None:
-                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+                    axis_props['major_label_overrides'] = dict(zip(ticks, labels, strict=None))
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)
@@ -1246,7 +1246,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         el = el[0] if el else element
         dimensions = self._get_axis_dims(el)
         props = {axis: self._axis_properties(axis, key, plot, dim)
-                 for axis, dim in zip(['x', 'y'], dimensions)}
+                 for axis, dim in zip(['x', 'y'], dimensions, strict=None)}
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
@@ -3281,7 +3281,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if 'zooms_subcoordy' in subplot.handles and 'zooms_subcoordy' in self.handles:
             for subplot_zoom, overlay_zoom in zip(
                 subplot.handles['zooms_subcoordy'].values(),
-                self.handles['zooms_subcoordy'].values(),
+                self.handles['zooms_subcoordy'].values(), strict=None,
             ):
                 renderers = list(util.unique_iterator(overlay_zoom.renderers + subplot_zoom.renderers))
                 overlay_zoom.renderers = renderers

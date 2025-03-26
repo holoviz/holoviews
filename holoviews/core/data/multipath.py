@@ -225,7 +225,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         elif selection_mask is not None:
-            return [d for b, d in zip(selection_mask, dataset.data) if b]
+            return [d for b, d in zip(selection_mask, dataset.data, strict=None) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
         if hasattr(ds.interface, 'geo_column'):
@@ -288,8 +288,8 @@ class MultiInterface(Interface):
         keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key)))
-            selection = [data for data, m in zip(dataset.data, mask) if m]
+            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key, strict=None)))
+            selection = [data for data, m in zip(dataset.data, mask, strict=None) if m]
             group_data = group_type(selection, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -435,7 +435,7 @@ class MultiInterface(Interface):
             return np.concatenate(values) if values else np.array([])
         else:
             array = np.empty(len(values), dtype=object)
-            array[:] = [a[0] if s else a for s, a in zip(scalars, values)]
+            array[:] = [a[0] if s else a for s, a in zip(scalars, values, strict=None)]
             return array
 
     @classmethod
@@ -494,7 +494,7 @@ class MultiInterface(Interface):
         new_data = []
         template = cls._inner_dataset_template(dataset)
         array_type = template.interface.datatype == 'array'
-        for d, v in zip(dataset.data, values):
+        for d, v in zip(dataset.data, values, strict=None):
             template.data = d
             if array_type:
                 ds = template.clone(template.columns())
@@ -574,9 +574,9 @@ def ensure_ring(geom, values=None):
     breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
     starts = [0, *(breaks + 1)]
     ends = [*(breaks - 1), len(geom) - 1]
-    zipped = zip(geom[starts], geom[ends], ends, values[starts])
+    zipped = zip(geom[starts], geom[ends], ends, values[starts], strict=None)
     unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
-                     if (s!=e).any()]))
+                     if (s!=e).any()], strict=None))
     if not unpacked:
         return values
     inserts, inds = unpacked

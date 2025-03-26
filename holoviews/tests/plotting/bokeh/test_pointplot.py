@@ -501,7 +501,7 @@ class TestPointPlot(TestBokehPlot):
         markers = ['circle', 'triangle']
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
+        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers, strict=None):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
 

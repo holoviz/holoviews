@@ -186,7 +186,7 @@ class TestSpikesPlot(TestMPLPlot):
                              )
         plot = mpl_renderer.get_plot(overlay)
         colors = [(0, 0, 1, 1), (1, 0, 0, 1)]
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             children = subplot.handles['artist'].get_children()
             for c in children:
                 self.assertEqual(c.get_facecolor(), color)

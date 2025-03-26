@@ -35,7 +35,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
         nums = [1, 5, 2, 3, 4]
-        for pos, num in zip(positions, nums):
+        for pos, num in zip(positions, nums, strict=None):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
                 self.assertEqual(adjoint.subplots['main'].layout_num, num)

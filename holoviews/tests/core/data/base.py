@@ -466,35 +466,35 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_simple_zip_init(self):
-        dataset = Dataset(zip(self.xs, self.ys), kdims=['x'], vdims=['y'])
+        dataset = Dataset(zip(self.xs, self.ys, strict=None), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_simple_zip_init_alias(self):
-        dataset = Dataset(zip(self.xs, self.ys), kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        dataset = Dataset(zip(self.xs, self.ys, strict=None), kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_zip_init(self):
         dataset = Dataset(zip(self.gender, self.age,
-                              self.weight, self.height),
+                              self.weight, self.height, strict=None),
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_zip_init_alias(self):
         dataset = self.alias_table.clone(zip(self.gender, self.age,
-                                             self.weight, self.height))
+                                             self.weight, self.height, strict=None))
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init_alias(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys)),
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
                           kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dict_init(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_range_with_dimension_range(self):

@@ -557,7 +557,7 @@ def to_dash(
         store_data.setdefault("kdims", {})
         for i, kdim in zip(
                 range(num_figs * 2, num_figs * 2 + len(all_kdims)),
-                all_kdims
+                all_kdims, strict=None
         ):
             if kdim not in store_data["kdims"] or store_data["kdims"][kdim] != args[i]:
                 store_data["kdims"][kdim] = args[i]

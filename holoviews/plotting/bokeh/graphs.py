@@ -187,11 +187,11 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {node_indices[k]: (y, x) if self.invert_axes else (x, y)
-                      for k, (x, y) in zip(nodes, node_positions)}
+                      for k, (x, y) in zip(nodes, node_positions, strict=None)}
         else:
             index = nodes.astype(np.int32)
             layout = {k: (y, x) if self.invert_axes else (x, y)
-                      for k, (x, y) in zip(index, node_positions)}
+                      for k, (x, y) in zip(index, node_positions, strict=None)}
 
         point_data = {'index': index}
 

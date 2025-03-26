@@ -72,7 +72,7 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
         data, labels = [], []
         for key, group in groups:
             if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)])
             else:
                 label = key
             d = group[group.vdims[0]]
@@ -184,7 +184,7 @@ class ViolinPlot(BoxPlot):
                              medianprops={'color': 'white'}, widths=0.1,
                              **invert_axes, **labels)
             artists.update(box)
-        for body, color in zip(artists['bodies'], facecolors):
+        for body, color in zip(artists['bodies'], facecolors, strict=None):
             body.set_facecolors(color)
             body.set_edgecolors(edgecolors)
             body.set_alpha(alpha)
@@ -205,7 +205,7 @@ class ViolinPlot(BoxPlot):
         elstyle = self.lookup_options(element, 'style')
         for i, (key, group) in enumerate(groups):
             if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)])
             else:
                 label = key
             d = group[group.vdims[0]]

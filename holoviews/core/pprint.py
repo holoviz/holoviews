@@ -184,7 +184,7 @@ class InfoPrinter:
         if isinstance(obj, type): return ''
 
         targets = obj.traverse(cls.get_target)
-        elements, containers = zip(*targets)
+        elements, containers = zip(*targets, strict=None)
         element_set = {el for el in elements if el is not None}
         container_set = {c for c in containers if c is not None}
 

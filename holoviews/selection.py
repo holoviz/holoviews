@@ -676,7 +676,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             color_inds = np.zeros(n, dtype='int8')
 
-            for i, expr in zip(range(1, len(clrs)), selection_exprs):
+            for i, expr in zip(range(1, len(clrs)), selection_exprs, strict=None):
                 if not expr:
                     color_inds[:] = i
                 else:

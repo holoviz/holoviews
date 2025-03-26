@@ -227,7 +227,7 @@ class TestSpikesPlot(TestBokehPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Spikes(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Spikes', color='Color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             self.assertEqual(subplot.handles['glyph'].line_color, color)
 
     def test_spikes_color_index_color_clash(self):
