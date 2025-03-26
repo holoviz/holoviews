@@ -125,7 +125,7 @@ pillow = "*"
 plotly = ">=4.0"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
+pyparsing = "!=3.2.2" # Pinned 2025-03
 scikit-image = "*"
 scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
 selenium = "*"
