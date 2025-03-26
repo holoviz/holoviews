@@ -117,6 +117,7 @@ pillow = "*"
 plotly = ">=4.0"
 pooch = "*"
 pyarrow = "*"
+pyparsing = "!=3.2.2" # Pinned 2025-03
 scikit-image = "*"
 scipy = "*"
 selenium = "*"

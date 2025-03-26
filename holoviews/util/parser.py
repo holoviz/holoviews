@@ -8,7 +8,6 @@ Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 
 """
-from contextlib import suppress
 from itertools import groupby
 
 import numpy as np
@@ -30,8 +29,6 @@ allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
-with suppress(Exception):
-    pp.ParserElement.set_default_whitespace_chars(" ")
 
 class Parser:
     """Base class for magic line parsers, designed for forgiving parsing
