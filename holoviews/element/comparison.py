@@ -239,7 +239,7 @@ class Comparison(ComparisonInterface):
     def compare_lists(cls, l1, l2, msg=None):
         try:
             cls.assertEqual(len(l1), len(l2))
-            for v1, v2 in zip(l1, l2):
+            for v1, v2 in zip(l1, l2, strict=None):
                 cls.assertEqual(v1, v2)
         except AssertionError as e:
             raise AssertionError(msg or f'{l1!r} != {l2!r}') from e
@@ -249,7 +249,7 @@ class Comparison(ComparisonInterface):
     def compare_tuples(cls, t1, t2, msg=None):
         try:
             cls.assertEqual(len(t1), len(t2))
-            for i1, i2 in zip(t1, t2):
+            for i1, i2 in zip(t1, t2, strict=None):
                 cls.assertEqual(i1, i2)
         except AssertionError as e:
             raise AssertionError(msg or f'{t1!r} != {t2!r}') from e
@@ -282,7 +282,7 @@ class Comparison(ComparisonInterface):
         lbrt1 = el1.bounds.lbrt()
         lbrt2 = el2.bounds.lbrt()
         try:
-            for v1, v2 in zip(lbrt1, lbrt2):
+            for v1, v2 in zip(lbrt1, lbrt2, strict=None):
                 if isinstance(v1, datetime_types):
                     v1 = dt_to_int(v1)
                 if isinstance(v2, datetime_types):
@@ -332,7 +332,7 @@ class Comparison(ComparisonInterface):
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
         if len(dlist1) != len(dlist2):
             raise cls.failureException(f'{msg} mismatched')
-        for d1, d2 in zip(dlist1, dlist2):
+        for d1, d2 in zip(dlist1, dlist2, strict=None):
             cls.assertEqual(d1, d2)
 
     @classmethod
@@ -359,7 +359,7 @@ class Comparison(ComparisonInterface):
             raise cls.failureException(f"{msg} have mismatched path counts.")
         if el1.keys() != el2.keys():
             raise cls.failureException(f"{msg} have mismatched paths.")
-        for element1, element2 in zip(el1.values(),  el2.values()):
+        for element1, element2 in zip(el1.values(),  el2.values(), strict=None):
             cls.assertEqual(element1, element2)
 
     @classmethod
@@ -395,7 +395,7 @@ class Comparison(ComparisonInterface):
                                        + f"In first, not second {diff1}. "
                                        + f"In second, not first: {diff2}.")
 
-        for element1, element2 in zip(el1, el2):
+        for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1, element2)
 
     @classmethod
@@ -420,7 +420,7 @@ class Comparison(ComparisonInterface):
         if set(el1.keys()) != set(el2.keys()):
             raise cls.failureException("Layouts have different keys.")
 
-        for element1, element2 in zip(el1, el2):
+        for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1,element2)
 
 
@@ -430,13 +430,13 @@ class Comparison(ComparisonInterface):
         if len(el1) != len(el2):
             raise cls.failureException("NdOverlays have different lengths.")
 
-        for (layer1, layer2) in zip(el1, el2):
+        for (layer1, layer2) in zip(el1, el2, strict=None):
             cls.assertEqual(layer1, layer2)
 
     @classmethod
     def compare_adjointlayouts(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        for element1, element2 in zip(el1, el1):
+        for element1, element2 in zip(el1, el1, strict=None):
             cls.assertEqual(element1, element2)
 
 
@@ -493,7 +493,7 @@ class Comparison(ComparisonInterface):
         paths2 = el2.split()
         if len(paths1) != len(paths2):
             raise cls.failureException(f"{msg} objects do not have a matching number of paths.")
-        for p1, p2 in zip(paths1, paths2):
+        for p1, p2 in zip(paths1, paths2, strict=None):
             cls.compare_dataset(p1, p2, f'{msg} data')
 
     @classmethod
@@ -745,7 +745,7 @@ class Comparison(ComparisonInterface):
         if len(el1) != len(el2):
             raise cls.failureException(f"{name}s have different depths.")
 
-        for element1, element2 in zip(el1, el2):
+        for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1, element2)
 
     @classmethod

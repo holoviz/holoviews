@@ -179,7 +179,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         the dimension labels.
 
         """
-        return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
+        return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k, strict=None))
                 for k in self.keys()]
 
     def _dynamic_mul(self, dimensions, other, keys):
@@ -206,7 +206,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             streams = map_obj.streams
 
         def dynamic_mul(*key, **kwargs):
-            key_map = {d.name: k for d, k in zip(dimensions, key)}
+            key_map = {d.name: k for d, k in zip(dimensions, key, strict=None)}
             layers = []
             try:
                 self_el = self.select(HoloMap, **key_map) if self.kdims else self[()]
@@ -612,7 +612,7 @@ class Callable(param.Parameterized):
             # Missing information on positional argument names, cannot promote to keywords
             pass
         elif len(args) != 0: # Turn positional arguments into keyword arguments
-            pos_kwargs = {k:v for k,v in zip(self.argspec.args, args)}
+            pos_kwargs = {k:v for k,v in zip(self.argspec.args, args, strict=None)}
             ignored = range(len(self.argspec.args),len(args))
             if ignored:
                 self.param.warning('Ignoring extra positional argument {}'.format(', '.join(f'{i}' for i in ignored)))
@@ -1039,7 +1039,7 @@ class DynamicMap(HoloMap):
             kwargs = {}
             args = args + tuple([s.contents for s in self.streams])
         elif self._posarg_keys:
-            kwargs = dict(flattened, **dict(zip(self._posarg_keys, args)))
+            kwargs = dict(flattened, **dict(zip(self._posarg_keys, args, strict=None)))
             args = ()
         else:
             kwargs = dict(flattened)
@@ -1642,8 +1642,8 @@ class DynamicMap(HoloMap):
             def outer_fn(*outer_key, **dynkwargs):
                 if inner_dynamic:
                     def inner_fn(*inner_key, **dynkwargs):
-                        outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key))
-                        inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key))
+                        outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)
+                        inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key), strict=None)
                         inner_sel = [(k.name, v) for k, v in inner_vals]
                         outer_sel = [(k.name, v) for k, v in outer_vals]
                         return self.select(**dict(inner_sel+outer_sel))
@@ -1651,7 +1651,7 @@ class DynamicMap(HoloMap):
                 else:
                     dim_vals = [(d.name, d.values) for d in inner_kdims]
                     dim_vals += [(d.name, [v]) for d, v in
-                                   zip(outer_kdims, util.wrap_tuple(outer_key))]
+                                   zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)]
                     with item_check(False):
                         selected = HoloMap(self.select(**dict(dim_vals)))
                         return group_type(selected.reindex(inner_kdims))
@@ -1664,10 +1664,10 @@ class DynamicMap(HoloMap):
                                                 for d in dimensions])
             groups = []
             for outer in outer_product:
-                outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer)]
+                outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer, strict=None)]
                 if inner_dynamic or not inner_kdims:
                     def inner_fn(outer_vals, *key, **dynkwargs):
-                        inner_dims = zip(inner_kdims, util.wrap_tuple(key))
+                        inner_dims = zip(inner_kdims, util.wrap_tuple(key), strict=None)
                         inner_vals = [(d.name, k) for d, k in inner_dims]
                         return self.select(**dict(outer_vals+inner_vals)).last
                     if inner_kdims or self.streams:

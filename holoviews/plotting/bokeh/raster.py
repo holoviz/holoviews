@@ -91,7 +91,7 @@ class ServerHoverMixin:
         def on_change(attr, old, new):
             if np.isinf(new).all():
                 return
-            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new)), method="nearest").to_dict()
+            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new, strict=None)), method="nearest").to_dict()
             # TODO: When ValueOf support formatter remove the rounding
             # https://github.com/bokeh/bokeh/issues/14123
             data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
@@ -360,7 +360,7 @@ class ImageStackPlot(RasterPlot):
                     "The supplied cmap dictionary must have the same "
                     f"value dimensions as the element. Missing: '{missing_str}'"
                 )
-            keys, values = zip(*dict_cmap.items())
+            keys, values = zip(*dict_cmap.items(), strict=None)
             style["cmap"] = list(values)
             indices = [keys.index(vd.name) for vd in vdims]
 
@@ -483,7 +483,7 @@ class QuadMeshPlot(ColorbarPlot):
             XS, YS = [], []
             mask = []
             xc, yc = [], []
-            for xs, ys, zval in zip(X, Y, zvals):
+            for xs, ys, zval in zip(X, Y, zvals, strict=None):
                 xs, ys = xs[:-1], ys[:-1]
                 if isfinite(zval) and all(isfinite(xs)) and all(isfinite(ys)):
                     XS.append(list(xs))
@@ -537,7 +537,7 @@ class QuadMeshPlot(ColorbarPlot):
         hover_vals = [element.dimension_values(hover_dim, flat=False)
                       for hover_dim in hover_dims]
         hover_data = {}
-        for hdim, hvals in zip(hover_dims, hover_vals):
+        for hdim, hvals in zip(hover_dims, hover_vals, strict=None):
             hdat = hvals.T.flatten() if transpose else hvals.flatten()
             hover_data[dimension_sanitizer(hdim.name)] = hdat[mask]
         return hover_data
