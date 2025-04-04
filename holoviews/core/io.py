@@ -379,7 +379,7 @@ class Pickler(Exporter):
                 entries = [f'{group_sanitizer(obj.group, False)}.{label_sanitizer(obj.label, False)}']
                 components = [obj]
 
-            for component, entry in zip(components, entries):
+            for component, entry in zip(components, entries, strict=None):
                 f.writestr(entry,
                            Store.dumps(component, protocol=self_or_cls.protocol))
             f.writestr('metadata',
@@ -640,7 +640,7 @@ class FileArchive(Archive):
         if formatter is None: return []
         try:
             parse = list(string.Formatter().parse(formatter))
-            return {f for f in list(zip(*parse))[1] if f is not None}
+            return {f for f in list(zip(*parse, strict=None))[1] if f is not None}
         except Exception as e:
             raise SyntaxError(f"Could not parse formatter {formatter!r}") from e
 
@@ -889,7 +889,7 @@ class FileArchive(Archive):
 
         fnames = [self._truncate_name(*k, maxlen=maxlen) for k in self._files]
         max_len = max([len(f) for f in fnames])
-        for name,v in zip(fnames, self._files.values()):
+        for name,v in zip(fnames, self._files.values(), strict=None):
             mime_type = v[1].get('mime_type', 'no mime type')
             lines.append(f'{name.ljust(max_len)} : {mime_type}')
         print('\n'.join(lines))

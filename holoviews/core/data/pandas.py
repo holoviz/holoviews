@@ -124,8 +124,8 @@ class PandasInterface(Interface, PandasAPI):
                                     "per dimension or a mapping between key and value dimension "
                                     "values.")
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                                    for k, v in column_data))
-                data = dict(((c, col) for c, col in zip(columns, column_data)))
+                                    for k, v in column_data), strict=None)
+                data = dict(((c, col) for c, col in zip(columns, column_data, strict=None)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
@@ -145,7 +145,7 @@ class PandasInterface(Interface, PandasAPI):
                                     f'at least {min_dims} columns but found only {len(data)} columns.')
                 elif not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
-                data = pd.DataFrame(dict(zip(columns, data)), columns=columns)
+                data = pd.DataFrame(dict(zip(columns, data, strict=None)), columns=columns)
             elif ((isinstance(data, dict) and any(c not in data for c in columns)) or
                   (isinstance(data, list) and any(isinstance(d, dict) and c not in d for d in data for c in columns))):
                 raise ValueError('PandasInterface could not find specified dimensions in the data.')
@@ -246,7 +246,7 @@ class PandasInterface(Interface, PandasAPI):
         dataframes = []
         for key, ds in datasets:
             data = ds.data.copy()
-            for d, k in zip(dimensions, key):
+            for d, k in zip(dimensions, key, strict=None):
                 data[d.name] = k
             dataframes.append(data)
         return cls.concat_fn(dataframes)
@@ -310,7 +310,7 @@ class PandasInterface(Interface, PandasAPI):
             else:
                 from pandas.api.types import is_numeric_dtype
                 numeric_cols = [
-                    c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                    c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
                     if is_numeric_dtype(d) and c not in cols
                 ]
             groupby_kwargs = {"sort": False}
@@ -320,7 +320,7 @@ class PandasInterface(Interface, PandasAPI):
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            data = {col: [v] for col, v in zip(agg.index, agg.values)}
+            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=None)}
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []

@@ -17,12 +17,12 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.10.0
+    rev: v0.11.0
     hooks:
       - id: ruff
         exclude: \.ipynb$
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.15
+    rev: v0.1.17
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]

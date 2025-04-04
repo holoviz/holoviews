@@ -4,6 +4,7 @@ examples.
 """
 import warnings
 from functools import partial
+from itertools import pairwise
 
 import numpy as np
 import param
@@ -15,8 +16,10 @@ from ..core import (
     Dataset,
     Dimension,
     Element,
+    Empty,
     GridMatrix,
     HoloMap,
+    Layout,
     NdOverlay,
     Operation,
     Overlay,
@@ -35,8 +38,8 @@ from ..core.util import (
     label_sanitizer,
 )
 from ..element.chart import Histogram, Scatter
-from ..element.path import Contours, Polygons
-from ..element.raster import RGB, Image
+from ..element.path import Contours, Dendrogram, Polygons
+from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
@@ -344,7 +347,7 @@ class image_overlay(Operation):
         """Return the strength of the match (None if no match)
 
         """
-        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
+        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.'), strict=None))
         if not isinstance(el, Image) or spec_dict['type'] != 'Image':
             raise NotImplementedError("Only Image currently supported")
 
@@ -388,9 +391,9 @@ class image_overlay(Operation):
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
-        for el, spec in zip(ordering, specs):
+        for el, spec in zip(ordering, specs, strict=None):
             if el is None:
-                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
+                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.'), strict=None))
                 el = Image(np.ones(strongest.data.shape) * self.p.fill,
                             group=spec_dict.get('group','Image'),
                             label=spec_dict.get('label',''))
@@ -603,7 +606,7 @@ class contours(Operation):
 
             data = tuple(
                 date2num(d) if is_datetime else d
-                for d, is_datetime in zip(data, data_is_datetime)
+                for d, is_datetime in zip(data, data_is_datetime, strict=None)
             )
 
         xdim, ydim = element.dimensions('key', label=True)
@@ -668,7 +671,7 @@ class contours(Operation):
         paths = []
         if self.p.filled:
             empty = np.array([[np.nan, np.nan]])
-            for lower_level, upper_level in zip(levels[:-1], levels[1:]):
+            for lower_level, upper_level in pairwise(levels):
                 filled = cont_gen.filled(lower_level, upper_level)
                 # Only have to consider last index 0 as we are using contourpy without chunking
                 if (points := filled[0][0]) is None:
@@ -683,7 +686,7 @@ class contours(Operation):
                 outer_offsets = filled[2][0]
 
                 # Loop through exterior polygon boundaries.
-                for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
+                for jstart, jend in pairwise(outer_offsets):
                     if exteriors:
                         exteriors.append(empty)
                     exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])
@@ -1042,7 +1045,7 @@ class interpolate_curve(Operation):
         steps[1::2] = steps[0:-2:2]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[2::2]
             val_arrays.append(s)
@@ -1058,7 +1061,7 @@ class interpolate_curve(Operation):
         steps[0], steps[-1] = x[0], x[-1]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[0::2]
             val_arrays.append(s)
@@ -1074,7 +1077,7 @@ class interpolate_curve(Operation):
         steps[1::2] = steps[2::2]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[0:-2:2]
             val_arrays.append(s)
@@ -1218,3 +1221,79 @@ class gridmatrix(param.ParameterizedFunction):
                                   datatype=[default_datatype])
             data[(d1.name, d2.name)] = el
         return data
+
+
+class dendrogram(Operation):
+    """The dendrogram operation computes one or two adjoint dendrogram of the
+    data along the specified dimension(s). The operation uses the scipy
+    dendrogram algorithm to compute the tree structure of the data. The
+    operation is typically used to visualize hierarchical clustering of the
+    data.
+    """
+
+    adjoined = param.Boolean(default=True, doc="Whether to adjoin the dendrogram(s) to the main plot")
+
+    adjoint_dims = param.List(item_type=str, doc="The adjoint dimension to cluster on")
+
+    main_dim = param.String(doc="The main dimension to cluster on")
+
+    main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False, doc="""
+        The Element type to use for the main plot if the input is a Dataset.""")
+
+    optimal_ordering = param.Boolean(default=False, doc="""
+         If True, the linkage matrix will be reordered so that the distance
+         between successive leaves is minimal. This results in a more intuitive
+         tree structure when the data are visualized. defaults to False,
+         because this algorithm can be slow, particularly on large datasets.
+         See for more information:
+         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+         """)
+
+    def _compute_linkage(self, dataset, dim, vdim):
+        try:
+            from scipy.cluster.hierarchy import dendrogram, linkage
+        except ImportError:
+            raise ImportError("scipy is needed for the dendrogram operation") from None
+
+        arrays, labels = [], []
+        for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
+            labels.append(k)
+            arrays.append(v.dimension_values(vdim))
+        X = np.vstack(arrays)
+        Z = linkage(X, optimal_ordering=self.p.optimal_ordering)
+        ddata = dendrogram(Z, labels=labels, no_plot=True)
+        return ddata
+
+    def _process(self, element, key=None):
+        element_kdims = element.kdims
+        dataset = Dataset(element)
+        sort_dims, dendros = [], {}
+        for d in self.p.adjoint_dims:
+            ddata = self._compute_linkage(dataset, d, self.p.main_dim)
+            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
+            sort_dim = f"sort_{d}"
+            dataset = dataset.add_dimension(sort_dim, 0, order)
+            sort_dims.append(sort_dim)
+
+            # Important the kdims are unique
+            dendros[d] = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
+
+        if not self.p.adjoined:
+            if len(dendros) == 1:
+                return next(iter(dendros.values()))
+            else:
+                return Layout(dendros.values())
+
+        vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        if type(element) is not Dataset:
+            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+        else:
+            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
+
+        for dim in map(str, main.kdims[::-1]):
+            if dim not in self.p.adjoint_dims:
+                main = main << Empty()
+            else:
+                main = main << dendros[dim]
+
+        return main

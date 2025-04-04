@@ -59,7 +59,7 @@ class layout_nodes(Operation):
             graph = nx.from_edgelist(edges)
             if 'weight' in self.p.kwargs:
                 weight = self.p.kwargs['weight']
-                for (s, t), w in zip(edges, element[weight]):
+                for (s, t), w in zip(edges, element[weight], strict=None):
                     graph.edges[s, t][weight] = w
             positions = self.p.layout(graph, **self.p.kwargs)
             nodes = [(*pos, idx) for idx, pos in sorted(positions.items())]
@@ -170,7 +170,7 @@ class Graph(Dataset, Element2D):
         nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
         if isinstance(node_info, self.node_type):
             nodes = nodes.redim(**dict(zip(nodes.dimensions('key', label=True),
-                                           node_info.kdims)))
+                                           node_info.kdims, strict=None)))
 
         if not node_info.kdims and len(node_info) != len(nodes):
             raise ValueError("The supplied node data does not match "
@@ -206,7 +206,7 @@ class Graph(Dataset, Element2D):
         if self._edgepaths is None:
             return
         mismatch = []
-        for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
+        for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims, strict=None):
             if kd1 != kd2:
                 mismatch.append(f'{kd1} != {kd2}')
         if mismatch:
@@ -434,8 +434,8 @@ class Graph(Dataset, Element2D):
         if nodes:
             node_columns = nodes.columns()
             idx_dim = nodes.kdims[0].name
-            info_cols, values = zip(*((k, v) for k, v in node_columns.items() if k != idx_dim))
-            node_info = {i: vals for i, vals in zip(node_columns[idx_dim], zip(*values))}
+            info_cols, values = zip(*((k, v) for k, v in node_columns.items() if k != idx_dim), strict=None)
+            node_info = {i: vals for i, vals in zip(node_columns[idx_dim], zip(*values, strict=None), strict=None)}
         else:
             info_cols = []
             node_info = None
@@ -663,7 +663,7 @@ class layout_chords(Operation):
 
         # Compute connectivity matrix
         matrix = np.zeros((len(nodes), len(nodes)))
-        for s, t, v in zip(src_idx, tgt_idx, values):
+        for s, t, v in zip(src_idx, tgt_idx, values, strict=None):
             matrix[s, t] += v
 
         # Compute weighted angular slice for each connection
@@ -686,7 +686,7 @@ class layout_chords(Operation):
             n_conn = weights_of_areas[i]
             p0, p1 = points[i], points[i+1]
             angles = np.linspace(p0, p1, int(n_conn))
-            coords = list(zip(np.cos(angles), np.sin(angles)))
+            coords = list(zip(np.cos(angles), np.sin(angles), strict=None))
             all_areas.append(coords)
 
         # Draw each chord by interpolating quadratic splines

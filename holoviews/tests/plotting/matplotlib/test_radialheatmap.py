@@ -22,7 +22,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         x = [f"Seg {idx}" for idx in range(2)]
         y = [f"Ann {idx}" for idx in range(2)]
         self.z = list(range(4))
-        self.x, self.y = zip(*product(x, y))
+        self.x, self.y = zip(*product(x, y), strict=None)
 
         self.wedge_data = [((0.5, 0.5), 0.125, 0.375, 180.0, 360.0),
                            ((0.5, 0.5), 0.125, 0.375,   0.0, 180.0),
@@ -48,7 +48,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         plot = mpl_renderer.get_plot(self.element)
         data, style, ticks = plot.get_data(self.element, {'z': {'combined': (0, 3)}}, {})
         wedges = data['annular']
-        for wedge, wdata in zip(wedges, self.wedge_data):
+        for wedge, wdata in zip(wedges, self.wedge_data, strict=None):
             self.assertEqual((wedge.center, wedge.width, wedge.r,
                               wedge.theta1, wedge.theta2), wdata)
         self.assertEqual(ticks['xticks'], self.xticks)
@@ -68,7 +68,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         plot = mpl_renderer.get_plot(self.element.opts(ymarks=4))
         data, style, ticks = plot.get_data(self.element, {'z': {'combined': (0, 3)}}, {})
         yseparators = data['yseparator']
-        for circle, r in zip(yseparators, [0.25, 0.375]):
+        for circle, r in zip(yseparators, [0.25, 0.375], strict=None):
             self.assertEqual(circle.radius, r)
 
     def test_heatmap_holomap(self):

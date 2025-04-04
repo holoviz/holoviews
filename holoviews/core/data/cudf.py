@@ -166,7 +166,7 @@ class cuDFInterface(PandasInterface):
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            group_data = dataset.select(**dict(zip(dimensions, unique_key)))
+            group_data = dataset.select(**dict(zip(dimensions, unique_key, strict=None)))
             if not len(group_data):
                 continue
             group_data = group_type(group_data, **group_kwargs)
@@ -290,7 +290,7 @@ class cuDFInterface(PandasInterface):
             if not hasattr(grouped, agg):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             numeric_cols = [
-                c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=True)
                 if is_numeric_dtype(d) and c not in cols
             ]
             df = getattr(grouped[numeric_cols], agg)().reset_index()
@@ -301,12 +301,12 @@ class cuDFInterface(PandasInterface):
                 raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
             agg = getattr(reindexed, agg)()
             try:
-                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy())}
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy(), strict=True)}
             except Exception:
                 # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
-                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array())}
+                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array(), strict=True)}
             df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
