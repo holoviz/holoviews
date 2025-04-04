@@ -194,7 +194,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D', 'E'])
         self.assertIsInstance(y_range, Range1d)
         error_plot = plot.subplots[('ErrorBars', 'I')]
-        for xs, factor in zip(error_plot.handles['source'].data['base'], factors):
+        for xs, factor in zip(error_plot.handles['source'].data['base'], factors, strict=None):
             self.assertEqual(factor, xs)
 
     def test_overlay_categorical_two_level(self):

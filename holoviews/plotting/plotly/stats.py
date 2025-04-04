@@ -89,7 +89,7 @@ class MultiDistributionPlot(MultiDistributionMixin, ElementPlot):
             if element.kdims:
                 if isinstance(key, str):
                     key = (key,)
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)])
             else:
                 label = key
             data = {axis: group.dimension_values(group.vdims[0]), 'name': label}

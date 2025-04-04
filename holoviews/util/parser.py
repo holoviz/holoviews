@@ -29,6 +29,7 @@ allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
+
 class Parser:
     """Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
@@ -119,7 +120,7 @@ class Parser:
                 if cls.abort_on_eval_failure:
                     raise SyntaxError(f"Could not evaluate keyword: {keyword!r}") from None
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"
-                parsewarning.warning(msg % keyword)
+                parsewarning.param.warning(msg % keyword)
 
         return kwargs
 

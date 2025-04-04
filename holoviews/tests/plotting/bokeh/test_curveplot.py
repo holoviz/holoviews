@@ -51,7 +51,7 @@ class TestCurvePlot(TestBokehPlot):
                         for i in range(3)})
         colors = palette[3].values
         plot = bokeh_renderer.get_plot(hmap)
-        for subp, color in zip(plot.subplots.values(), colors):
+        for subp, color in zip(plot.subplots.values(), colors, strict=None):
             color = color if isinstance(color, str) else rgb2hex(color)
             self.assertEqual(subp.handles['glyph'].line_color, color)
 
@@ -361,7 +361,7 @@ class TestCurvePlot(TestBokehPlot):
                              for i, color in enumerate(colors)},
                             'color').opts('Curve', color='color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(), colors):
+        for subplot, color in zip(plot.subplots.values(), colors, strict=None):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, {}, style)
             self.assertEqual(style['color'], color)

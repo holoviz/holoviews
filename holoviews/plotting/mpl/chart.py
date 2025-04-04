@@ -369,6 +369,8 @@ class HistogramPlot(ColorbarPlot):
         xlim = hist.range(0)
         ylim = hist.range(1)
         is_datetime = isdatetime(edges)
+        if hasattr(edges, "compute"):
+            edges = edges.compute()
         if is_datetime:
             edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
             edges = date2num(edges)
@@ -408,7 +410,7 @@ class HistogramPlot(ColorbarPlot):
         and limits.
 
         """
-        axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)]))
+        axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)], strict=None))
         return axis_settings
 
     def _update_plot(self, key, hist, bars, lims, ranges):
@@ -423,7 +425,7 @@ class HistogramPlot(ColorbarPlot):
         allow updating of further artists.
 
         """
-        plot_vals = zip(self.handles['artist'], edges, hvals, widths)
+        plot_vals = zip(self.handles['artist'], edges, hvals, widths, strict=None)
         for bar, edge, height, width in plot_vals:
             if self.invert_axes:
                 bar.set_y(edge)
@@ -532,7 +534,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         lower_bound = main_range[0]
         colors = np.array(element.dimension_values(dim))
         colors = (colors - lower_bound) / (cmap_range)
-        for c, bar in zip(colors, bars):
+        for c, bar in zip(colors, bars, strict=None):
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
@@ -914,7 +916,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         alignments = None
         ticks = xticks or yticks
         if ticks is not None:
-            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]))
+            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]), strict=None)
             ticks = (list(ticks), list(labels))
         if xticks:
             xticks = ticks
@@ -923,10 +925,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         super()._finalize_ticks(axis, element, xticks, yticks, zticks)
         if alignments:
             if xticks:
-                for t, y in zip(axis.get_xticklabels(), alignments):
+                for t, y in zip(axis.get_xticklabels(), alignments, strict=None):
                     t.set_y(y)
             elif yticks:
-                for t, x in zip(axis.get_yticklabels(), alignments):
+                for t, x in zip(axis.get_yticklabels(), alignments, strict=None):
                     t.set_x(x)
 
     def _create_bars(self, axis, element, ranges, style):
@@ -1115,7 +1117,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         if ndims > 1 and 'spike_length' not in opts:
             data = element.columns([0, 1])
             xs, ys = data[dimensions[0]], data[dimensions[1]]
-            data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys)]
+            data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys, strict=None)]
         else:
             xs = element.array([0])
             height = self.spike_length
@@ -1127,7 +1129,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         dims = element.dimensions()
         clean_spikes = []
         for spike in data:
-            xs, ys = zip(*spike)
+            xs, ys = zip(*spike, strict=None)
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
