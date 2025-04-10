@@ -212,7 +212,7 @@ PANEL_EMBED_JSON_PREFIX = "json"
 
 [feature.doc.tasks]
 _docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
-_docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ --ext-autodoc --ext-intersphinx'
+_docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ holoviews/tests --ext-autodoc --ext-intersphinx'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
 
 [feature.doc.tasks.docs-build]
