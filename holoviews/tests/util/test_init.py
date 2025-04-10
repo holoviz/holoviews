@@ -8,7 +8,7 @@ def test_no_blocklist_imports():
     import sys
     import holoviews as hv
 
-    blocklist = {"panel", "IPython", "datashader", "ibis"}
+    blocklist = {"panel", "IPython", "datashader", "ibis", "pandas"}
     mods = blocklist & set(sys.modules)
 
     if mods:

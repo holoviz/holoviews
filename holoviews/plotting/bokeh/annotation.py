@@ -3,7 +3,6 @@ from collections import defaultdict
 from html import escape
 
 import numpy as np
-import pandas as pd
 import param
 from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
 from bokeh.transform import dodge
@@ -73,6 +72,8 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         return figure
 
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        import pandas as pd
+
         extents = super().get_extents(element, ranges, range_type)
         if isinstance(element, HLines):
             extents = np.nan, extents[0], np.nan, extents[2]
