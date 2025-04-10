@@ -204,5 +204,4 @@ convention = "numpy"
 
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc"
-skip = "doc/generate_modules.py"
 write-changes = true
