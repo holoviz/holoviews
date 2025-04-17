@@ -80,27 +80,24 @@ PYTHONIOENCODING = "utf-8"
 
 [feature.py310.dependencies]
 python = "3.10.*"
-bokeh_sampledata = "*"
 
 [feature.py311.dependencies]
 python = "3.11.*"
-bokeh_sampledata = "*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
-bokeh_sampledata = "*"
 
 [feature.py312.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.py313.dependencies]
 python = "3.13.*"
-bokeh_sampledata = "*"
 
 [feature.py313.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.optional.dependencies]
+bokeh_sampledata = "*"
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
@@ -197,7 +194,7 @@ test-gpu = "pytest holoviews/tests --gpu"
 # =============================================
 [feature.doc.dependencies]
 graphviz = "*"
-nbsite = ">=0.8.4,<0.9.0"
+nbsite = ">=0.8.4,<0.10.0"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
