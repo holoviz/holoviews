@@ -20,7 +20,6 @@ repos:
     rev: v0.11.0
     hooks:
       - id: ruff
-        exclude: \.ipynb$
   - repo: https://github.com/hoxbro/clean_notebook
     rev: v0.1.17
     hooks:
