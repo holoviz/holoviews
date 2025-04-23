@@ -194,6 +194,10 @@ extend-unsafe-fixes = [
     "B904", # Within an `except` clause, raise exceptions with from err or None
     "D", # pydocstyle
 ]
+"examples/*" = [
+    "NPY002", # Replace legacy `np.random.rand` call with Generator
+    "B905", # zip zip-without-explicit-strict
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
