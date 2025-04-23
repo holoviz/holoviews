@@ -195,6 +195,9 @@ extend-unsafe-fixes = [
     "D", # pydocstyle
 ]
 "examples/*" = [
+    "RUF001", # Ambiguous unicode character
+    "RUF002", # Ambiguous unicode character
+    "RUF003", # Ambiguous unicode character
     "NPY002", # Replace legacy `np.random.rand` call with Generator
     "B905", # zip zip-without-explicit-strict
 ]
