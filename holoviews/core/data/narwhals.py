@@ -3,7 +3,13 @@ from functools import cache
 import narwhals as nw
 import numpy as np
 import pandas as pd
-from narwhals.dependencies import is_into_dataframe, is_into_series
+from narwhals.dependencies import (
+    is_into_dataframe,
+    is_into_series,
+    is_narwhals_dataframe,
+    is_narwhals_lazyframe,
+    is_narwhals_series,
+)
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -68,13 +74,13 @@ class NarwhalsInterface(Interface):
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
-        data = nw.from_native(data, allow_series=True)
 
-        if is_into_series(data):
+        data = nw.from_native(data, allow_series=True)
+        if is_narwhals_series(data):
             name = data.name or util.anonymous_dimension_label
             # Currently does not work: data = data.to_frame(name=name)
             data = data.to_frame().rename({data.name: name})
-        if is_into_dataframe(data):
+        if is_narwhals_lazyframe(data) or is_narwhals_dataframe(data):
             if isinstance(kdim_param.bounds[1], int):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
             else:
