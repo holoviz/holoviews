@@ -1,3 +1,5 @@
+from functools import cache
+
 import narwhals as nw
 import numpy as np
 import pandas as pd
@@ -12,16 +14,41 @@ from .util import finite_range
 
 
 class NarwhalsDtype:
+    __slots__ = ("dtype",)
+
     def __init__(self, dtype):
         self.dtype = dtype
 
     @property
     def kind(self):
-        if self.dtype.is_integer():
+        if hasattr(self.dtype, "kind"):
+            return self.dtype.kind
+        return self._get_kind(self.dtype)
+
+    @staticmethod
+    @cache
+    def _get_kind(dtype: nw.dtypes.DType):
+        if dtype.is_signed_integer():
             return "i"
-        elif self.dtype.is_numeric():
+        elif dtype.is_unsigned_integer():
+            return "u"
+        elif dtype.is_numeric():
             return "f"
-        # TODO: FILL OUT
+        elif dtype.is_temporal():
+            return "M"
+        elif isinstance(dtype, nw.dtypes.Duration):
+            return "m"
+        elif isinstance(dtype, nw.dtypes.Boolean):
+            return "b"
+        elif isinstance(dtype, nw.dtypes.String):
+            return "U"
+        elif isinstance(dtype, nw.dtypes.Binary):
+            return "S"
+        else:
+            return "O"
+
+    def __repr__(self):
+        return repr(self.dtype)
 
 
 class NarwhalsInterface(Interface):
@@ -104,33 +131,31 @@ class NarwhalsInterface(Interface):
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if False: # dtype.kind == 'O':
-            column = column.sort_values()
+        if NarwhalsDtype(column.dtype).kind == 'O':
+            column = column.sort()
             if not len(column):
                 return np.nan, np.nan
-            return column.iloc[0], column.iloc[-1]
+            return column[0], column[-1]
         else:
             if dimension.nodata is not None:
-                column = cls.replace_value(column, dimension.nodata)
+                column = column.fill_null(dimension.nodata)
             cmin, cmax = finite_range(column, column.min(), column.max())
-            # if column.dtype.kind == 'M' and getattr(column.dtype, 'tz', None):
-            #     return (cmin.to_pydatetime().replace(tzinfo=None),
-            #             cmax.to_pydatetime().replace(tzinfo=None))
             return cmin, cmax
-
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
-        return pd.concat(dataframes, sort=False, **kwargs)
-
+        return nw.concat(dataframes, **kwargs)
 
     @classmethod
     def concat(cls, datasets, dimensions, vdims):
         dataframes = []
         for key, ds in datasets:
-            data = ds.data.copy()
-            for d, k in zip(dimensions, key, strict=None):
-                data[d.name] = k
+            data = ds.data.clone()
+            new_columns = [
+                nw.lit(val).alias(dim.name)
+                for dim, val in zip(dimensions, key, strict=None)
+            ]
+            data = data.with_columns(new_columns)
             dataframes.append(data)
         return cls.concat_fn(dataframes)
 
@@ -283,10 +308,10 @@ class NarwhalsInterface(Interface):
     ):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
-        # if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
-        #     data = (data if isindex else data.dt).tz_localize(None)
+        if getattr(data.dtype, "time_zone", False):
+            data = data.dt.replace_time_zone(None)
         if not expanded:
-            return pd.unique(data)
+            return data.unique()
         return data
 
 
