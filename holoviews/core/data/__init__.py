@@ -29,6 +29,7 @@ from .ibis import IbisInterface  # noqa (API import)
 from .image import ImageInterface  # noqa (API import)
 from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface  # noqa (API import)
+from .narwhals import NarwhalsInterface  # noqa: F401
 from .pandas import PandasAPI, PandasInterface  # noqa (API import)
 from .spatialpandas import SpatialPandasInterface  # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
@@ -38,7 +39,7 @@ default_datatype = 'dataframe'
 
 datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
              'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
-             'ibis']
+             'ibis', 'narwhals']
 
 
 def concat(datasets, datatype=None):
