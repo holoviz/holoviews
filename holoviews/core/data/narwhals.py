@@ -80,17 +80,18 @@ class NarwhalsInterface(Interface):
             else:
                 ndim = None
             nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
+            columns = list(data.collect_schema())
             if kdims and vdims is None:
-                vdims = [c for c in data.columns if c not in kdims]
+                vdims = [c for c in columns if c not in kdims]
             elif vdims and kdims is None:
-                kdims = [c for c in data.columns if c not in vdims][:ndim]
+                kdims = [c for c in columns if c not in vdims][:ndim]
             elif kdims is None:
-                kdims = list(data.columns[:ndim])
+                kdims = list(columns[:ndim])
                 if vdims is None:
-                    vdims = [d for d in data.columns[ndim:((ndim+nvdim) if nvdim else None)]
+                    vdims = [d for d in columns[ndim:((ndim+nvdim) if nvdim else None)]
                              if d not in kdims]
             elif kdims == [] and vdims is None:
-                vdims = list(data.columns[:nvdim if nvdim else None])
+                vdims = list(columns[:nvdim if nvdim else None])
 
             if any(not isinstance(d, (str, Dimension)) for d in kdims+vdims):
                 raise DataError(
@@ -98,7 +99,7 @@ class NarwhalsInterface(Interface):
                 )
             for d in kdims+vdims:
                 d = dimension_name(d)
-                if len([c for c in data.columns if c == d]) > 1:
+                if len([c for c in columns if c == d]) > 1:
                     raise DataError('Dimensions may not reference duplicated DataFrame '
                                     f'columns (found duplicate {d!r} columns). If you want to plot '
                                     'a column against itself simply declare two dimensions '
@@ -120,7 +121,7 @@ class NarwhalsInterface(Interface):
     def validate(cls, dataset, vdims=True):
         dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
-        cols = list(dataset.data.columns)
+        cols = list(dataset.data.collect_schema())
         not_found = [d for d in dimensions if d not in cols]
         if not_found:
             raise DataError("Supplied data does not contain specified "
@@ -243,7 +244,7 @@ class NarwhalsInterface(Interface):
         the interface, return a simple scalar.
 
         """
-        if len(data) != 1 or len(data.columns) > 1:
+        if len(data) != 1 or len(data.collect_schema()) > 1:
             return data
         return data.iat[0,0]
 
@@ -339,14 +340,16 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        data = dataset.data.copy()
+        data = dataset.data.clone()
         if dimension.name not in data:
-            data.insert(dim_pos, dimension.name, values)
+            cols = list(data.collect_schema())
+            cols = [cols[:dim_pos], dimension.name, cols[dim_pos:]]
+            data = data.with_columns(**{dimension.name: values})[cols]
         return data
 
     @classmethod
     def assign(cls, dataset, new_data):
-        return dataset.data.assign(**new_data)
+        return dataset.data.with_columns(**new_data)
 
     @classmethod
     def as_dframe(cls, dataset):
@@ -354,22 +357,17 @@ class NarwhalsInterface(Interface):
         if it already a dataframe type.
 
         """
-        if issubclass(dataset.interface, PandasInterface):
-            if any(cls.isindex(dataset, dim) for dim in dataset.dimensions()):
-                return dataset.data.reset_index()
+        if issubclass(dataset.interface, NarwhalsInterface):
             return dataset.data
         else:
             return dataset.dframe()
 
     @classmethod
     def dframe(cls, dataset, dimensions):
-        data = dataset.data
         if dimensions:
-            if any(cls.isindex(dataset, d) for d in dimensions):
-                data = data.reset_index()
-            return data[dimensions]
+            return dataset.data[dimensions].clone()
         else:
-            return data.copy()
+            return dataset.data.clone()
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -390,7 +388,7 @@ class NarwhalsInterface(Interface):
 
         data = dataset.data
         indexes = cls.indexes(data)
-        columns = list(data.columns)
+        columns = list(data.collect_schema())
         id_cols = [columns.index(c) for c in cols if c not in indexes]
         if not id_cols:
             if len(indexes) > 1:
