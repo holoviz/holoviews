@@ -52,8 +52,10 @@ class ServerHoverMixin:
         # Get dimensions
         coords, vars = list(data.coords), list(data.data_vars)
         vars.remove("__index__")
-        if ht := self.hover_tooltips:
+        ht = self.hover_tooltips or {}
+        if ht:
             ht = [ht] if isinstance(ht, str) else ht
+            ht = dict([t[::-1] if isinstance(t, tuple) else (t, t) for t in ht])
             coords = [c for c in coords if c in ht]
             vars = [v for v in vars if v in ht]
         elif isinstance(self, RGBPlot):
@@ -77,7 +79,7 @@ class ServerHoverMixin:
 
         hover_model = HoverModel()
         _create_row = lambda attr: (
-            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
+            Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
             Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
         )
         children = [el for dim in dims for el in _create_row(dim)]
