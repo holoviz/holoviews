@@ -142,7 +142,7 @@ class NarwhalsInterface(Interface):
             column = column.sort()
             if not len(column):
                 return np.nan, np.nan
-            return column[0], column[-1]
+            return column.head(0), column.tail(0)
         else:
             if dimension.nodata is not None:
                 column = column.fill_null(dimension.nodata)
@@ -166,34 +166,23 @@ class NarwhalsInterface(Interface):
             dataframes.append(data)
         return cls.concat_fn(dataframes)
 
-
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
-        element_dims = [kdim for kdim in dataset.kdims
-                        if kdim not in index_dims]
+        element_dims = [kdim for kdim in dataset.kdims if kdim not in index_dims]
 
         group_kwargs = {}
         if group_type != 'raw' and issubclass(group_type, Element):
-            group_kwargs = dict(util.get_param_values(dataset),
-                                kdims=element_dims)
+            group_kwargs = dict(
+                util.get_param_values(dataset), kdims=element_dims
+            )
         group_kwargs.update(kwargs)
-
-        # Propagate dataset
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
-        if len(group_by) == 1 and util.PANDAS_VERSION >= (1, 5, 0):
-            # Because of this deprecation warning from pandas 1.5.0:
-            # In a future version of pandas, a length 1 tuple will be returned
-            # when iterating over a groupby with a grouper equal to a list of length 1.
-            # Don't supply a list with a single grouper to avoid this warning.
-            group_by = group_by[0]
-        groupby_kwargs = {"sort": False}
-        if PANDAS_GE_2_1_0:
-            groupby_kwargs["observed"] = False
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                dataset.data.groupby(group_by, **groupby_kwargs)]
+                dataset.data.group_by(group_by)]
+
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
@@ -238,8 +227,9 @@ class NarwhalsInterface(Interface):
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []
+        columns = list(df.collect_schema())
         for vd in vdims:
-            if vd not in df.columns:
+            if vd not in columns:
                 dropped.append(vd)
         return df, dropped
 
@@ -318,7 +308,9 @@ class NarwhalsInterface(Interface):
         if getattr(data.dtype, "time_zone", False):
             data = data.dt.replace_time_zone(None)
         if not expanded:
-            return data.unique()
+            data = data.unique()
+        if is_narwhals_lazyframe(data):
+            data = data.collect()
         return data
 
 
@@ -371,7 +363,7 @@ class NarwhalsInterface(Interface):
     @classmethod
     def dframe(cls, dataset, dimensions):
         if dimensions:
-            return dataset.data[dimensions].clone()
+            return dataset.data.select(dimensions).clone()
         else:
             return dataset.data.clone()
 
@@ -407,5 +399,11 @@ class NarwhalsInterface(Interface):
             return data.iloc[rows[0], id_cols[0]]
         return data.iloc[rows, id_cols]
 
+    @classmethod
+    def nonzero(cls, dataset):
+        if is_narwhals_lazyframe(dataset.data):
+            return True
+        else:
+            return super().nonzero(dataset)
 
 Interface.register(NarwhalsInterface)
