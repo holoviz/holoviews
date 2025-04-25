@@ -43,6 +43,7 @@ _AGG_FUNC_LOOKUP = {
     np.size: "len",
 }
 
+
 class NarwhalsDtype:
     __slots__ = ("dtype",)
 
@@ -81,8 +82,7 @@ class NarwhalsDtype:
 
 
 class NarwhalsInterface(Interface):
-
-    datatype = 'narwhals'
+    datatype = "narwhals"
 
     @classmethod
     def applies(cls, obj):
@@ -95,8 +95,8 @@ class NarwhalsInterface(Interface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         element_params = eltype.param.objects()
-        kdim_param = element_params['kdims']
-        vdim_param = element_params['vdims']
+        kdim_param = element_params["kdims"]
+        vdim_param = element_params["vdims"]
 
         data = nw.from_native(data, allow_series=True)
         if is_narwhals_series(data):
@@ -108,7 +108,9 @@ class NarwhalsInterface(Interface):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
             else:
                 ndim = None
-            nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
+            nvdim = (
+                vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
+            )
             columns = list(data.collect_schema())
             if kdims and vdims is None:
                 vdims = [c for c in columns if c not in kdims]
@@ -117,23 +119,29 @@ class NarwhalsInterface(Interface):
             elif kdims is None:
                 kdims = list(columns[:ndim])
                 if vdims is None:
-                    vdims = [d for d in columns[ndim:((ndim+nvdim) if nvdim else None)]
-                             if d not in kdims]
+                    vdims = [
+                        d
+                        for d in columns[ndim : ((ndim + nvdim) if nvdim else None)]
+                        if d not in kdims
+                    ]
             elif kdims == [] and vdims is None:
-                vdims = list(columns[:nvdim if nvdim else None])
+                vdims = list(columns[: nvdim if nvdim else None])
 
-            if any(not isinstance(d, (str, Dimension)) for d in kdims+vdims):
+            if any(not isinstance(d, (str, Dimension)) for d in kdims + vdims):
                 raise DataError(
                     "Having a non-string as a column name in a DataFrame is not supported."
                 )
-            for d in kdims+vdims:
+            for d in kdims + vdims:
                 d = dimension_name(d)
                 if len([c for c in columns if c == d]) > 1:
-                    raise DataError('Dimensions may not reference duplicated DataFrame '
-                                    f'columns (found duplicate {d!r} columns). If you want to plot '
-                                    'a column against itself simply declare two dimensions '
-                                    'with the same name.', cls)
-        return data, {'kdims': kdims, 'vdims': vdims}, {}
+                    raise DataError(
+                        "Dimensions may not reference duplicated DataFrame "
+                        f"columns (found duplicate {d!r} columns). If you want to plot "
+                        "a column against itself simply declare two dimensions "
+                        "with the same name.",
+                        cls,
+                    )
+        return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
     def isscalar(cls, dataset, dim):
@@ -148,20 +156,23 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
-        dim_types = 'all' if vdims else 'key'
-        dimensions = dataset.dimensions(dim_types, label='name')
+        dim_types = "all" if vdims else "key"
+        dimensions = dataset.dimensions(dim_types, label="name")
         cols = list(dataset.data.collect_schema())
         not_found = [d for d in dimensions if d not in cols]
         if not_found:
-            raise DataError("Supplied data does not contain specified "
-                            "dimensions, the following dimensions were "
-                            f"not found: {not_found!r}", cls)
+            raise DataError(
+                "Supplied data does not contain specified "
+                "dimensions, the following dimensions were "
+                f"not found: {not_found!r}",
+                cls,
+            )
 
     @classmethod
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if NarwhalsDtype(column.dtype).kind == 'O':
+        if NarwhalsDtype(column.dtype).kind == "O":
             column = column.sort()
             if not len(column):
                 return np.nan, np.nan
@@ -195,16 +206,16 @@ class NarwhalsInterface(Interface):
         element_dims = [kdim for kdim in dataset.kdims if kdim not in index_dims]
 
         group_kwargs = {}
-        if group_type != 'raw' and issubclass(group_type, Element):
-            group_kwargs = dict(
-                util.get_param_values(dataset), kdims=element_dims
-            )
+        if group_type != "raw" and issubclass(group_type, Element):
+            group_kwargs = dict(util.get_param_values(dataset), kdims=element_dims)
         group_kwargs.update(kwargs)
-        group_kwargs['dataset'] = dataset.dataset
+        group_kwargs["dataset"] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
-        data = [(k, group_type(v, **group_kwargs)) for k, v in
-                dataset.data.group_by(group_by)]
+        data = [
+            (k, group_type(v, **group_kwargs))
+            for k, v in dataset.data.group_by(group_by)
+        ]
 
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
@@ -212,19 +223,22 @@ class NarwhalsInterface(Interface):
         else:
             return container_type(data)
 
-
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         cols = [d.name for d in dataset.kdims if d in dimensions]
-        vdims = dataset.dimensions('value', label='name')
-        reindexed = cls.dframe(dataset, dimensions=cols+vdims)
+        vdims = dataset.dimensions("value", label="name")
+        reindexed = cls.dframe(dataset, dimensions=cols + vdims)
         expr = getattr(nw.col("*"), _AGG_FUNC_LOOKUP.get(function, function))()
         if len(dimensions):
             columns = reindexed.collect_schema()
             if function in [np.size]:
                 numeric_cols = [c for c in columns if c not in cols]
             else:
-                numeric_cols = [k for k, v in columns.items() if isinstance(v, nw.dtypes.NumericType)]
+                numeric_cols = [
+                    k
+                    for k, v in columns.items()
+                    if isinstance(v, nw.dtypes.NumericType)
+                ]
             grouped = reindexed.select(numeric_cols + cols).groupby(cols)
             df = grouped.agg(expr, **kwargs)
         else:
@@ -236,7 +250,6 @@ class NarwhalsInterface(Interface):
             if vd not in columns:
                 dropped.append(vd)
         return df, dropped
-
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
@@ -253,7 +266,6 @@ class NarwhalsInterface(Interface):
         if size != 1:
             return data
         return (data.collect() if is_lazy else data).item()
-
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
@@ -281,7 +293,7 @@ class NarwhalsInterface(Interface):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is None:
-            if index_sel:= cls.index_selection(df, selection):
+            if index_sel := cls.index_selection(df, selection):
                 try:
                     if len(index_sel) == 1:
                         df = df[next(iter(index_sel.values()))]
@@ -323,7 +335,6 @@ class NarwhalsInterface(Interface):
             data = data.collect()
         return data
 
-
     @classmethod
     def sample(cls, dataset, samples=None):
         if samples is None:
@@ -332,9 +343,10 @@ class NarwhalsInterface(Interface):
         mask = None
         for sample in samples:
             sample_mask = None
-            if np.isscalar(sample): sample = [sample]
+            if np.isscalar(sample):
+                sample = [sample]
             for i, v in enumerate(sample):
-                submask = data.iloc[:, i]==v
+                submask = data.iloc[:, i] == v
                 if sample_mask is None:
                     sample_mask = submask
                 else:
@@ -344,7 +356,6 @@ class NarwhalsInterface(Interface):
             else:
                 mask |= sample_mask
         return data[mask]
-
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -387,7 +398,7 @@ class NarwhalsInterface(Interface):
             scalar = np.isscalar(rows)
             dim = dataset.get_dimension(cols)
             if dim is None:
-                raise ValueError('column is out of bounds')
+                raise ValueError("column is out of bounds")
             cols = [dim.name]
         else:
             cols = [dataset.get_dimension(d).name for d in cols]
@@ -415,5 +426,6 @@ class NarwhalsInterface(Interface):
             return True
         else:
             return super().nonzero(dataset)
+
 
 Interface.register(NarwhalsInterface)
