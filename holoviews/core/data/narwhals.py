@@ -244,9 +244,15 @@ class NarwhalsInterface(Interface):
         the interface, return a simple scalar.
 
         """
-        if len(data) != 1 or len(data.collect_schema()) > 1:
+        cols = data.collect_schema()
+        if len(cols) > 1:
             return data
-        return data.iat[0,0]
+        is_lazy = is_narwhals_lazyframe(data)
+        size = data.select(nw.col(cols[0]).len())
+        size = size.collect() if is_lazy else size
+        if size != 1:
+            return data
+        return (data.collect() if is_lazy else data).item()
 
 
     @classmethod
