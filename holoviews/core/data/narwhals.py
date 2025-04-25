@@ -102,7 +102,7 @@ class NarwhalsInterface(Interface):
         if is_narwhals_series(data):
             name = data.name or util.anonymous_dimension_label
             # Currently does not work: data = data.to_frame(name=name)
-            data = data.to_frame().rename({data.name: name})
+            data = data.rename(name).to_frame()
         if is_narwhals_lazyframe(data) or is_narwhals_dataframe(data):
             if isinstance(kdim_param.bounds[1], int):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
