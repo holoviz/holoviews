@@ -1,4 +1,4 @@
-from functools import cache
+import builtins
 
 import narwhals as nw
 import numpy as np
@@ -18,6 +18,30 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
 from .util import finite_range
 
+_AGG_FUNC_LOOKUP = {
+    builtins.sum: "sum",
+    builtins.max: "max",
+    builtins.min: "min",
+    np.all: "all",
+    np.any: "any",
+    np.sum: "sum",
+    np.nansum: "sum",
+    np.mean: "mean",
+    np.nanmean: "mean",
+    # np.prod: "prod",
+    # np.nanprod: "prod",
+    np.std: "std",
+    np.nanstd: "std",
+    np.var: "var",
+    np.nanvar: "var",
+    np.median: "median",
+    np.nanmedian: "median",
+    np.max: "max",
+    np.nanmax: "max",
+    np.min: "min",
+    np.nanmin: "min",
+    np.size: "len",
+}
 
 class NarwhalsDtype:
     __slots__ = ("dtype",)
@@ -32,7 +56,6 @@ class NarwhalsDtype:
         return self._get_kind(self.dtype)
 
     @staticmethod
-    @cache
     def _get_kind(dtype: nw.dtypes.DType):
         if dtype.is_signed_integer():
             return "i"
@@ -195,36 +218,17 @@ class NarwhalsInterface(Interface):
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions('value', label='name')
         reindexed = cls.dframe(dataset, dimensions=cols+vdims)
-        if function in [np.std, np.var]:
-            # Fix for consistency with other backend
-            # pandas uses ddof=1 for std and var
-            fn = lambda x: function(x, ddof=0)
-        else:
-            fn = util._PANDAS_FUNC_LOOKUP.get(function, function)
+        expr = getattr(nw.col("*"), _AGG_FUNC_LOOKUP.get(function, function))()
         if len(dimensions):
-            # The reason to use `numeric_cols` is to prepare for when pandas will not
-            # automatically drop columns that are not numerical for numerical
-            # functions, e.g., `np.mean`.
-            # pandas started warning about this in v1.5.0
+            columns = reindexed.collect_schema()
             if function in [np.size]:
-                # np.size actually works with non-numerical columns
-                numeric_cols = [
-                    c for c in reindexed.columns if c not in cols
-                ]
+                numeric_cols = [c for c in columns if c not in cols]
             else:
-                numeric_cols = [
-                    c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
-                    if is_numeric_dtype(d) and c not in cols
-                ]
-            groupby_kwargs = {"sort": False}
-            if PANDAS_GE_2_1_0:
-                groupby_kwargs["observed"] = False
-            grouped = reindexed.groupby(cols, **groupby_kwargs)
-            df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
+                numeric_cols = [k for k, v in columns.items() if isinstance(v, nw.dtypes.NumericType)]
+            grouped = reindexed.select(numeric_cols + cols).groupby(cols)
+            df = grouped.agg(expr, **kwargs)
         else:
-            agg = reindexed.apply(fn, **kwargs)
-            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=None)}
-            df = pd.DataFrame(data, columns=list(agg.index))
+            df = reindexed.select(expr, **kwargs)
 
         dropped = []
         columns = list(df.collect_schema())
