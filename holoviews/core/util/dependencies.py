@@ -1,11 +1,11 @@
+import re
 import sys
 from functools import lru_cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 
-from packaging.version import Version
-
+_re_no = re.compile(r"\d+")
 
 class VersionError(Exception):
     """Raised when there is a library version mismatch."""
@@ -31,7 +31,8 @@ def _get_version(package_name):
 
 def _no_import_version(package_name) -> tuple[int, int, int]:
     """Get version number without importing the library"""
-    return Version(_get_version(package_name)).release
+    version_str = _get_version(package_name)
+    return tuple(map(int, _re_no.findall(version_str)[:3]))
 
 
 _MIN_SUPPORTED_VERSION = {
