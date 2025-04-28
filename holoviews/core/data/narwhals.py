@@ -2,13 +2,7 @@ import builtins
 
 import narwhals as nw
 import numpy as np
-from narwhals.dependencies import (
-    is_into_dataframe,
-    is_into_series,
-    is_narwhals_dataframe,
-    is_narwhals_lazyframe,
-    is_narwhals_series,
-)
+from narwhals.dependencies import is_into_dataframe, is_into_series
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -98,11 +92,11 @@ class NarwhalsInterface(Interface):
         vdim_param = element_params["vdims"]
 
         data = nw.from_native(data, allow_series=True)
-        if is_narwhals_series(data):
+        if isinstance(data, nw.Series):
             name = data.name or util.anonymous_dimension_label
             # Currently does not work: data = data.to_frame(name=name)
             data = data.rename(name).to_frame()
-        if is_narwhals_lazyframe(data) or is_narwhals_dataframe(data):
+        if isinstance(data, (nw.DataFrame, nw.LazyFrame)):
             if isinstance(kdim_param.bounds[1], int):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
             else:
@@ -259,7 +253,7 @@ class NarwhalsInterface(Interface):
         cols = data.collect_schema()
         if len(cols) > 1:
             return data
-        is_lazy = is_narwhals_lazyframe(data)
+        is_lazy = isinstance(data, nw.LazyFrame)
         size = data.select(nw.col(cols[0]).len())
         size = size.collect() if is_lazy else size
         if size != 1:
@@ -334,7 +328,7 @@ class NarwhalsInterface(Interface):
             data = data.dt.replace_time_zone(None)
         if not expanded:
             data = data.unique()
-        if is_narwhals_lazyframe(data):
+        if isinstance(data, nw.LazyFrame):
             data = data.collect()
         return data
 
@@ -425,7 +419,7 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def nonzero(cls, dataset):
-        if is_narwhals_lazyframe(dataset.data):
+        if isinstance(dataset.data, nw.LazyFrame):
             return True
         else:
             return super().nonzero(dataset)
