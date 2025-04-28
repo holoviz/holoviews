@@ -337,13 +337,14 @@ class NarwhalsInterface(Interface):
         if samples is None:
             samples = []
         data = dataset.data
+        columns = list(data.collect_schema())
         mask = None
         for sample in samples:
             sample_mask = None
             if np.isscalar(sample):
                 sample = [sample]
-            for i, v in enumerate(sample):
-                submask = data.iloc[:, i] == v
+            for col, value in zip(columns, sample, strict=False):
+                submask = nw.col(col) == value
                 if sample_mask is None:
                     sample_mask = submask
                 else:
@@ -352,7 +353,7 @@ class NarwhalsInterface(Interface):
                 mask = sample_mask
             else:
                 mask |= sample_mask
-        return data[mask]
+        return data.filter(mask)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
