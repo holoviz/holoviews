@@ -268,26 +268,44 @@ class NarwhalsInterface(Interface):
         return (data.collect() if is_lazy else data).item()
 
     @classmethod
-    def mask(cls, dataset, mask, mask_value=np.nan):
-        masked = dataset.data.copy()
+    def mask(cls, dataset, mask, mask_value=None):
+        data = dataset.data
+        if not dataset.vdims:
+            return data
+
+        if data.implementation != nw.Implementation.POLARS:
+            # polars will convert None to Null
+            mask_value = np.nan
+
         cols = [vd.name for vd in dataset.vdims]
-        masked.loc[mask, cols] = mask_value
-        return masked
+        mask_series = nw.new_series(
+            name="__mask__", values=mask, backend=data.implementation
+        )
+        return (
+            data.with_columns(mask_series)
+            .with_columns(
+                [
+                    nw.when(nw.col("__mask__"))
+                    .then(nw.col(col))
+                    .otherwise(mask_value)
+                    .alias(col)
+                    for col in cols
+                ]
+            )
+            .drop("__mask__")
+        )
 
     @classmethod
     def redim(cls, dataset, dimensions):
         column_renames = {k: v.name for k, v in dimensions.items()}
-        return dataset.data.rename(columns=column_renames)
+        return dataset.data.rename(column_renames)
 
     @classmethod
     def sort(cls, dataset, by=None, reverse=False):
         if by is None:
             by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
-
-        if not isinstance(dataset.data, pd.DataFrame):
-            return dataset.data.sort(columns=cols, ascending=not reverse)
-        return dataset.data.sort_values(by=cols, ascending=not reverse)
+        return dataset.data.sort_values(by=cols, descending=reverse)
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
