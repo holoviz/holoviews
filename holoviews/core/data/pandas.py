@@ -1,14 +1,20 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import PANDAS_GE_2_1_0
+from ..util.dependencies import PANDAS_GE_2_1_0, _lazy_module
 from .interface import DataError, Interface
 from .util import finite_range
+
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    pd = _lazy_module("pandas")
+
 
 
 class PandasAPI:
@@ -26,9 +32,22 @@ class PandasAPI:
 
 class PandasInterface(Interface, PandasAPI):
 
-    types = (pd.DataFrame,)
+    types = ()
 
     datatype = 'dataframe'
+
+    @classmethod
+    def loaded(cls):
+        # return 'pandas' in sys.modules
+        # 2025-02: As long as it is a required dependency and to not break
+        # existing behavior we will for now always return True
+        return bool(pd)
+
+    @classmethod
+    def applies(cls, obj):
+        if not cls.loaded():
+            return False
+        return isinstance(obj, (pd.DataFrame, pd.Series))
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -289,6 +308,7 @@ class PandasInterface(Interface, PandasAPI):
                     c for c in reindexed.columns if c not in cols
                 ]
             else:
+                from pandas.api.types import is_numeric_dtype
                 numeric_cols = [
                     c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
                     if is_numeric_dtype(d) and c not in cols
