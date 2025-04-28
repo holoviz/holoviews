@@ -2,7 +2,6 @@ import builtins
 
 import narwhals as nw
 import numpy as np
-import pandas as pd
 from narwhals.dependencies import (
     is_into_dataframe,
     is_into_series,
@@ -311,26 +310,12 @@ class NarwhalsInterface(Interface):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is None:
-            if index_sel := cls.index_selection(df, selection):
-                try:
-                    if len(index_sel) == 1:
-                        df = df[next(iter(index_sel.values()))]
-                    else:
-                        df = df.loc[tuple(index_sel.values()), :]
-                except KeyError:
-                    # If index lookup fails we fall back to boolean indexing
-                    index_sel = {}
-            column_sel = {k: v for k, v in selection.items() if k not in index_sel}
+            column_sel = {k: v for k, v in selection.items()}
             if column_sel:
                 selection_mask = cls.select_mask(dataset, column_sel)
 
-        indexed = cls.indexed(dataset, selection)
-        if isinstance(selection_mask, pd.Series):
-            df = df[selection_mask]
-        elif selection_mask is not None:
-            df = df.iloc[selection_mask]
-        if indexed and len(df) == 1 and len(dataset.vdims) == 1:
-            return df[dataset.vdims[0].name].iloc[0]
+        if selection_mask is not None:
+            df = df.filter(selection_mask)
         return df
 
     @classmethod
