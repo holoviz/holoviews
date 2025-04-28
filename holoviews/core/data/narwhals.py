@@ -403,20 +403,9 @@ class NarwhalsInterface(Interface):
         if np.isscalar(rows):
             rows = [rows]
 
-        data = dataset.data
-        indexes = cls.indexes(data)
-        columns = list(data.collect_schema())
-        id_cols = [columns.index(c) for c in cols if c not in indexes]
-        if not id_cols:
-            if len(indexes) > 1:
-                data = data.index.to_frame()[cols].iloc[rows].reset_index(drop=True)
-                data = data.values.ravel()[0] if scalar else data
-            else:
-                data = data.index.values[rows[0]] if scalar else data.index[rows]
-            return data
         if scalar:
-            return data.iloc[rows[0], id_cols[0]]
-        return data.iloc[rows, id_cols]
+            return dataset.data.item(rows[0], cols[0])
+        return dataset.data[rows, cols]
 
     @classmethod
     def nonzero(cls, dataset):
