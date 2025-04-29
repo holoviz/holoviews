@@ -780,6 +780,56 @@ class ComparisonTestCase(Comparison, TestCase):
             self.addTypeEqualityFunc(k, v)
 
 
+class IPTestCase(ComparisonTestCase):
+    """This class extends ComparisonTestCase to handle IPython specific
+    objects and support the execution of cells and magic.
+
+    """
+
+    def setUp(self):
+        super().setUp()
+        try:
+            import IPython
+            from IPython.display import HTML, SVG
+            self.ip = IPython.InteractiveShell()
+            if self.ip is None:
+                raise TypeError()
+        except Exception as e:
+            raise SkipTest("IPython could not be started") from e
+
+        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
+        self.addTypeEqualityFunc(HTML, self.skip_comparison)
+        self.addTypeEqualityFunc(SVG,  self.skip_comparison)
+
+    def skip_comparison(self, obj1, obj2, msg): pass
+
+    def get_object(self, name):
+        obj = self.ip._object_find(name).obj
+        if obj is None:
+            raise self.failureException(f"Could not find object {name}")
+        return obj
+
+
+    def cell(self, line):
+        """Run an IPython cell
+
+        """
+        self.ip.run_cell(line, silent=True)
+
+    def cell_magic(self, *args, **kwargs):
+        """Run an IPython cell magic
+
+        """
+        self.ip.run_cell_magic(*args, **kwargs)
+
+
+    def line_magic(self, *args, **kwargs):
+        """Run an IPython line magic
+
+        """
+        self.ip.run_line_magic(*args, **kwargs)
+
+
 _assert_element_equal = ComparisonTestCase().assertEqual
 
 def assert_element_equal(element1, element2):
