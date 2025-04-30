@@ -195,6 +195,7 @@ test-gpu = "pytest holoviews/tests --gpu"
 [feature.doc.dependencies]
 graphviz = "*"
 nbsite = ">=0.8.4,<0.10.0"
+numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
