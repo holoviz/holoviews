@@ -40,8 +40,8 @@ from .util import compute_ratios, fix_aspect, get_old_rcparams
 
 @contextmanager
 def _rc_context(rcparams):
-    """
-    Context manager that temporarily overrides the pyplot rcParams.
+    """Context manager that temporarily overrides the pyplot rcParams.
+
     """
     old_rcparams = get_old_rcparams()
     mpl.rcParams.clear()
@@ -53,9 +53,9 @@ def _rc_context(rcparams):
         mpl.rcParams.update(old_rcparams)
 
 def mpl_rc_context(f):
-    """
-    Decorator for MPLPlot methods applying the matplotlib rc params
+    """Decorator for MPLPlot methods applying the matplotlib rc params
     in the plots fig_rcparams while when method is called.
+
     """
     def wrapper(self, *args, **kwargs):
         with _rc_context(self.fig_rcparams):
@@ -64,13 +64,13 @@ def mpl_rc_context(f):
 
 
 class MPLPlot(DimensionedPlot):
-    """
-    An MPLPlot object draws a matplotlib figure object when called or
+    """An MPLPlot object draws a matplotlib figure object when called or
     indexed but can also return a matplotlib animation object as
     appropriate. MPLPlots take element objects such as Image, Contours
     or Points as inputs and plots them in the appropriate format using
     matplotlib. As HoloMaps are supported, all plots support animation
     via the anim() method.
+
     """
 
     backend = 'matplotlib'
@@ -171,9 +171,9 @@ class MPLPlot(DimensionedPlot):
 
     @mpl_rc_context
     def _init_axis(self, fig, axis):
-        """
-        Return an axis which may need to be initialized from
+        """Return an axis which may need to be initialized from
         a new figure.
+
         """
         if not fig and self._create_fig:
             fig = plt.figure()
@@ -249,8 +249,8 @@ class MPLPlot(DimensionedPlot):
 
 
     def _finalize_axis(self, key):
-        """
-        General method to finalize the axis and plot.
+        """General method to finalize the axis and plot.
+
         """
         if 'title' in self.handles:
             self.handles['title'].set_visible(self.show_title)
@@ -270,9 +270,9 @@ class MPLPlot(DimensionedPlot):
         return self.handles['fig']
 
     def anim(self, start=0, stop=None, fps=30):
-        """
-        Method to return a matplotlib animation. The start and stop
+        """Method to return a matplotlib animation. The start and stop
         frames may be specified as well as the fps.
+
         """
         figure = self.state or self.initialize_plot()
         anim = animation.FuncAnimation(figure, self.update_frame,
@@ -291,9 +291,9 @@ class MPLPlot(DimensionedPlot):
 
 
 class CompositePlot(GenericCompositePlot, MPLPlot):
-    """
-    CompositePlot provides a baseclass for plots coordinate multiple
+    """CompositePlot provides a baseclass for plots coordinate multiple
     subplots to form a Layout.
+
     """
 
     shared_axes = param.Boolean(default=True, doc="""
@@ -301,9 +301,9 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         disabled switches axiswise normalization option on globally.""")
 
     def _link_dimensioned_streams(self):
-        """
-        Should perform any linking required to update titles when dimensioned
+        """Should perform any linking required to update titles when dimensioned
         streams change.
+
         """
         streams = [s for s in self.streams if any(k in self.dimensions for k in s.contents)]
         for s in streams:
@@ -311,7 +311,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
 
     def _stream_update(self, **kwargs):
         contents = [k for s in self.streams for k in s.contents]
-        key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key))
+        key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key, strict=None))
         key = wrap_tuple_streams(key, self.dimensions, self.streams)
         self._update_title(key)
 
@@ -333,9 +333,9 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
 
 
 class GridPlot(CompositePlot):
-    """
-    Plot a group of elements in a grid layout based on a GridSpace element
+    """Plot a group of elements in a grid layout based on a GridSpace element
     object.
+
     """
 
     aspect = param.Parameter(default='equal', doc="""
@@ -355,12 +355,12 @@ class GridPlot(CompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.Selector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
         Whether and where to display the xaxis, supported options are
         'bottom', 'top' and None.""")
 
-    yaxis = param.ObjectSelector(default='left',
+    yaxis = param.Selector(default='left',
                                  objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis, supported options are
         'left', 'right' and None.""")
@@ -551,7 +551,7 @@ class GridPlot(CompositePlot):
             layout_axis.set_position(self.position)
         layout_axis.patch.set_visible(False)
 
-        for ax, ax_obj in zip(['x', 'y'], [layout_axis.xaxis, layout_axis.yaxis]):
+        for ax, ax_obj in zip(['x', 'y'], [layout_axis.xaxis, layout_axis.yaxis], strict=None):
             tick_fontsize = self._fontsize(f'{ax}ticks','labelsize', common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
@@ -570,7 +570,7 @@ class GridPlot(CompositePlot):
             dim2_keys = [0]
             layout_axis.get_yaxis().set_visible(False)
         else:
-            dim1_keys, dim2_keys = zip(*keys)
+            dim1_keys, dim2_keys = zip(*keys, strict=None)
             layout_axis.set_ylabel(dims[1].pprint_label)
             layout_axis.set_aspect(float(self.rows)/self.cols)
 
@@ -655,11 +655,11 @@ class GridPlot(CompositePlot):
 
 
 class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
-    """
-    Initially, a AdjointLayoutPlot computes an appropriate layout based for
+    """Initially, a AdjointLayoutPlot computes an appropriate layout based for
     the number of Views in the AdjointLayout object it has been given, but
     when embedded in a NdLayout, it can recompute the layout to
     match the number of rows and columns as part of a larger grid.
+
     """
 
     layout_dict = {'Single': ['main'],
@@ -675,17 +675,17 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]
 
         # The supplied (axes, view) objects as indexed by position
-        self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions)}
+        self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions, strict=None)}
         super().__init__(subplots=subplots, **params)
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         for pos in self.view_positions:
             # Pos will be one of 'main', 'top' or 'right' or None
@@ -702,13 +702,13 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
         self.drawn = True
 
     def adjust_positions(self, redraw=True):
-        """
-        Make adjustments to the positions of subplots (if available)
+        """Make adjustments to the positions of subplots (if available)
         relative to the main plot axes as required.
 
         This method is called by LayoutPlot after an initial pass
         used to position all the Layouts together. This method allows
         LayoutPlots to make final adjustments to the axis positions.
+
         """
         checks = [self.view_positions, self.subaxes, self.subplots]
         right = all('right' in check for check in checks)
@@ -760,12 +760,12 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
 
 
 class LayoutPlot(GenericLayoutPlot, CompositePlot):
-    """
-    A LayoutPlot accepts either a Layout or a NdLayout and
+    """A LayoutPlot accepts either a Layout or a NdLayout and
     displays the elements in a cartesian grid in scanline order.
+
     """
 
-    absolute_scaling = param.ObjectSelector(default=False, doc="""
+    absolute_scaling = param.Selector(default=False, doc="""
       If aspect_weight is enabled absolute_scaling determines whether
       axes are scaled relative to the widest plot or whether the
       aspect scales the axes in absolute terms.""")
@@ -808,8 +808,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                           [GenericElementPlot])
 
     def _compute_gridspec(self, layout):
-        """
-        Computes the tallest and widest cell for each row and column
+        """Computes the tallest and widest cell for each row and column
         by examining the Layouts in the GridSpace. The GridSpec is then
         instantiated and the LayoutPlots are configured with the
         appropriate embedded layout_types. The first element of the
@@ -817,6 +816,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         by row and column. The second dictionary in the tuple supplies
         the grid indices needed to instantiate the axes for each
         LayoutPlot.
+
         """
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
@@ -970,7 +970,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = dict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=None))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -988,10 +988,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             else:
                 layout_count += 1
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
-                       for ind, proj in zip(gsinds, projs)]
+                       for ind, proj in zip(gsinds, projs, strict=None)]
             subplot_data = self._create_subplots(obj, positions,
                                                  layout_dimensions, frame_ranges,
-                                                 dict(zip(positions, subaxes)),
+                                                 dict(zip(positions, subaxes, strict=None)),
                                                  num=0 if empty else layout_count)
             subplots, adjoint_layout, _ = subplot_data
             layout_axes[(r, c)] = subaxes
@@ -1019,8 +1019,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         return layout_subplots, layout_axes, collapsed_layout
 
     def grid_situate(self, current_idx, layout_type, subgrid_width):
-        """
-        Situate the current AdjointLayoutPlot in a LayoutPlot. The
+        """Situate the current AdjointLayoutPlot in a LayoutPlot. The
         LayoutPlot specifies a layout_type into which the AdjointLayoutPlot
         must be embedded. This enclosing layout is guaranteed to have
         enough cells to display all the views.
@@ -1030,6 +1029,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         arrangement) is updated to the appropriate embedded value. It
         will also return a list of gridspec indices associated with
         the all the required layout axes.
+
         """
         # Set the layout configuration as situated in a NdLayout
 
@@ -1052,12 +1052,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         return start, inds
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes=None, num=1, create=True):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         if axes is None:
             axes = {}

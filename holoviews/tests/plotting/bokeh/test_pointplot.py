@@ -182,7 +182,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
         self.assertIsInstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
+        self.assertEqual(x_range.factors, [*map(str, range(10)), 'A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
@@ -270,7 +270,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     def test_points_padding_datetime_square(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(points)
@@ -281,7 +281,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_datetime_nonsquare(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(points)
@@ -501,7 +501,7 @@ class TestPointPlot(TestBokehPlot):
         markers = ['circle', 'triangle']
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
+        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers, strict=None):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
 

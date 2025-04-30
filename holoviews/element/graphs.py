@@ -21,27 +21,27 @@ from .util import (
 
 
 class RedimGraph(Redim):
-    """
-    Extension for the redim utility that allows re-dimensioning
+    """Extension for the redim utility that allows re-dimensioning
     Graph objects including their nodes and edgepaths.
+
     """
 
     def __call__(self, specs=None, **dimensions):
         redimmed = super().__call__(specs, **dimensions)
         new_data = (redimmed.data,)
         if self._obj.nodes:
-            new_data = new_data + (self._obj.nodes.redim(specs, **dimensions),)
+            new_data = (*new_data, self._obj.nodes.redim(specs, **dimensions))
         if self._obj._edgepaths:
-            new_data = new_data + (self._obj.edgepaths.redim(specs, **dimensions),)
+            new_data = (*new_data, self._obj.edgepaths.redim(specs, **dimensions))
         return redimmed.clone(new_data)
 
 
 class layout_nodes(Operation):
-    """
-    Accepts a Graph and lays out the corresponding nodes with the
+    """Accepts a Graph and lays out the corresponding nodes with the
     supplied networkx layout function. If no layout function is
     supplied uses a simple circular_layout function. Also supports
     LayoutAlgorithm function provided in datashader layouts.
+
     """
 
     only_nodes = param.Boolean(default=False, doc="""
@@ -60,10 +60,10 @@ class layout_nodes(Operation):
             graph = nx.from_edgelist(edges)
             if 'weight' in self.p.kwargs:
                 weight = self.p.kwargs['weight']
-                for (s, t), w in zip(edges, element[weight]):
+                for (s, t), w in zip(edges, element[weight], strict=None):
                     graph.edges[s, t][weight] = w
             positions = self.p.layout(graph, **self.p.kwargs)
-            nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
+            nodes = [(*pos, idx) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
@@ -85,10 +85,10 @@ class layout_nodes(Operation):
 
 
 class Nodes(Points):
-    """
-    Nodes is a simple Element representing Graph nodes as a set of
+    """Nodes is a simple Element representing Graph nodes as a set of
     Points.  Unlike regular Points, Nodes must define a third key
     dimension corresponding to the node index.
+
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y'),
@@ -98,17 +98,16 @@ class Nodes(Points):
 
 
 class EdgePaths(Path):
-    """
-    EdgePaths is a simple Element representing the paths of edges
+    """EdgePaths is a simple Element representing the paths of edges
     connecting nodes in a graph.
+
     """
 
     group = param.String(default='EdgePaths', constant=True)
 
 
 class Graph(Dataset, Element2D):
-    """
-    Graph is high-level Element representing both nodes and edges.
+    """Graph is high-level Element representing both nodes and edges.
     A Graph may be defined in an abstract form representing just
     the abstract edges between nodes and optionally may be made
     concrete by supplying a Nodes Element defining the concrete
@@ -119,6 +118,7 @@ class Graph(Dataset, Element2D):
     The constructor accepts regular columnar data defining the edges
     or a tuple of the abstract edges and nodes, or a tuple of the
     abstract edges, nodes, and edgepaths.
+
     """
 
     group = param.String(default='Graph', constant=True)
@@ -168,7 +168,7 @@ class Graph(Dataset, Element2D):
         nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
         if isinstance(node_info, self.node_type):
             nodes = nodes.redim(**dict(zip(nodes.dimensions('key', label=True),
-                                           node_info.kdims)))
+                                           node_info.kdims, strict=None)))
 
         if not node_info.kdims and len(node_info) != len(nodes):
             raise ValueError("The supplied node data does not match "
@@ -204,7 +204,7 @@ class Graph(Dataset, Element2D):
         if self._edgepaths is None:
             return
         mismatch = []
-        for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
+        for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims, strict=None):
             if kd1 != kd2:
                 mismatch.append(f'{kd1} != {kd2}')
         if mismatch:
@@ -223,26 +223,25 @@ class Graph(Dataset, Element2D):
                 mismatch = npaths != nedges
             if mismatch:
                 raise ValueError('Ensure that the number of edges supplied '
-                                 'to the Graph (%d) matches the number of '
-                                 'edgepaths (%d)' % (nedges, npaths))
+                                 f'to the Graph ({nedges}) matches the number of '
+                                 f'edgepaths ({npaths})')
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
         if data is None:
             data = (self.data, self.nodes)
             if self._edgepaths is not None:
-                data = data + (self.edgepaths,)
+                data = (*data, self.edgepaths)
             overrides['plot_id'] = self._plot_id
         elif not isinstance(data, tuple):
             data = (data, self.nodes)
             if self._edgepaths:
-                data = data + (self.edgepaths,)
+                data = (*data, self.edgepaths)
         return super().clone(data, shared_data, new_type, link,
                              *args, **overrides)
 
     def select(self, selection_expr=None, selection_specs=None, selection_mode='edges', **selection):
-        """
-        Allows selecting data by the slices, sets and scalar values
+        """Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
         keywords mapping between the selected dimension and
         value. Additionally selection_specs (taking the form of a list
@@ -253,16 +252,17 @@ class Graph(Dataset, Element2D):
         Selecting by a node dimensions selects all edges and nodes that are
         connected to the selected nodes. To select only edges between the
         selected nodes set the selection_mode to 'nodes'.
+
         """
         from ..util.transform import dim
         if selection_expr is not None and not isinstance(selection_expr, dim):
             raise ValueError("""\
-The first positional argument to the Dataset.select method is expected to be a
-holoviews.util.transform.dim expression. Use the selection_specs keyword
-argument to specify a selection specification""")
+            The first positional argument to the Dataset.select method is expected to be a
+            holoviews.util.transform.dim expression. Use the selection_specs keyword
+            argument to specify a selection specification""")
 
-        selection = {dim: sel for dim, sel in selection.items()
-                     if dim in self.dimensions('ranges')+['selection_mask']}
+        sel_dims = (*self.dimensions('ranges'), 'selection_mask')
+        selection = {dim: sel for dim, sel in selection.items() if dim in sel_dims}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or (not selection and not selection_expr)):
             return self
@@ -356,11 +356,10 @@ argument to specify a selection specification""")
 
     @property
     def nodes(self):
-        """
-        Computes the node positions the first time they are requested
+        """Computes the node positions the first time they are requested
         if no explicit node information was supplied.
-        """
 
+        """
         if self._nodes is None:
             from ..operation.element import chain
             self._nodes = layout_nodes(self, only_nodes=True)
@@ -370,9 +369,9 @@ argument to specify a selection specification""")
 
     @property
     def edgepaths(self):
-        """
-        Returns the fixed EdgePaths or computes direct connections
+        """Returns the fixed EdgePaths or computes direct connections
         between supplied nodes.
+
         """
         if self._edgepaths:
             return self._edgepaths
@@ -381,8 +380,7 @@ argument to specify a selection specification""")
 
     @classmethod
     def from_networkx(cls, G, positions, nodes=None, **kwargs):
-        """
-        Generate a HoloViews Graph from a networkx.Graph object and
+        """Generate a HoloViews Graph from a networkx.Graph object and
         networkx layout function or dictionary of node positions.
         Any keyword arguments will be passed to the layout
         function. By default it will extract all node and edge
@@ -390,16 +388,21 @@ argument to specify a selection specification""")
         information may also be supplied. Any non-scalar attributes,
         such as lists or dictionaries will be ignored.
 
-        Args:
-            G (networkx.Graph): Graph to convert to Graph element
-            positions (dict or callable): Node positions
-                Node positions defined as a dictionary mapping from
-                node id to (x, y) tuple or networkx layout function
-                which computes a positions dictionary
-            kwargs (dict): Keyword arguments for layout function
+        Parameters
+        ----------
+        G : networkx.Graph
+            Graph to convert to Graph element
+        positions : dict or callable
+            Node positions
+            Node positions defined as a dictionary mapping from
+            node id to (x, y) tuple or networkx layout function
+            which computes a positions dictionary
+        kwargs : dict
+            Keyword arguments for layout function
 
-        Returns:
-            Graph element
+        Returns
+        -------
+        Graph element
         """
         if not isinstance(positions, dict):
             positions = positions(G, **kwargs)
@@ -422,15 +425,15 @@ argument to specify a selection specification""")
         edge_cols = sorted([k for k in edges if k not in ('start', 'end')
                             and len(edges[k]) == len(edges['start'])])
         edge_vdims = [str(col) if isinstance(col, int) else col for col in edge_cols]
-        edge_data = tuple(edges[col] for col in ['start', 'end']+edge_cols)
+        edge_data = tuple(edges[col] for col in ['start', 'end', *edge_cols])
 
         # Unpack user node info
         xdim, ydim, idim = cls.node_type.kdims[:3]
         if nodes:
             node_columns = nodes.columns()
             idx_dim = nodes.kdims[0].name
-            info_cols, values = zip(*((k, v) for k, v in node_columns.items() if k != idx_dim))
-            node_info = {i: vals for i, vals in zip(node_columns[idx_dim], zip(*values))}
+            info_cols, values = zip(*((k, v) for k, v in node_columns.items() if k != idx_dim), strict=None)
+            node_info = {i: vals for i, vals in zip(node_columns[idx_dim], zip(*values, strict=None), strict=None)}
         else:
             info_cols = []
             node_info = None
@@ -455,7 +458,7 @@ argument to specify a selection specification""")
             node_columns[idim.name].append(idx)
         node_cols = sorted([k for k in node_columns if k not in cls.node_type.kdims
                             and len(node_columns[k]) == len(node_columns[xdim.name])])
-        columns = [xdim.name, ydim.name, idim.name]+node_cols+list(info_cols)
+        columns = [xdim.name, ydim.name, idim.name, *node_cols, *info_cols]
         node_data = tuple(node_columns[col] for col in columns)
 
         # Construct nodes
@@ -475,8 +478,7 @@ argument to specify a selection specification""")
 
 
 class TriMesh(Graph):
-    """
-    A TriMesh represents a mesh of triangles represented as the
+    """A TriMesh represents a mesh of triangles represented as the
     simplices and nodes. The simplices represent a indices into the
     nodes array. The mesh therefore follows a datastructure very
     similar to a graph, with the abstract connectivity between nodes
@@ -486,6 +488,7 @@ class TriMesh(Graph):
 
     Unlike a Graph each simplex is represented as the node indices of
     the three corners of each triangle.
+
     """
 
     kdims = param.List(default=['node1', 'node2', 'node3'],
@@ -522,7 +525,7 @@ class TriMesh(Graph):
             if is_dataframe(nodes):
                 coords = list(nodes.columns)[:2]
                 index = nodes.index.name or 'index'
-                nodes = self.node_type(nodes, coords+[index])
+                nodes = self.node_type(nodes, [*coords, index])
             else:
                 try:
                     points = self.point_type(nodes)
@@ -541,9 +544,9 @@ class TriMesh(Graph):
 
     @classmethod
     def from_vertices(cls, data):
-        """
-        Uses Delauney triangulation to compute triangle simplices for
+        """Uses Delauney triangulation to compute triangle simplices for
         each point.
+
         """
         try:
             from scipy.spatial import Delaunay
@@ -558,8 +561,8 @@ class TriMesh(Graph):
         return cls((tris.simplices, data))
 
     def _initialize_edgepaths(self):
-        """
-        Returns the EdgePaths by generating a triangle for each simplex.
+        """Returns the EdgePaths by generating a triangle for each simplex.
+
         """
         if self._edgepaths:
             return self._edgepaths
@@ -582,20 +585,20 @@ class TriMesh(Graph):
 
     @property
     def edgepaths(self):
-        """
-        Returns the EdgePaths by generating a triangle for each simplex.
+        """Returns the EdgePaths by generating a triangle for each simplex.
+
         """
         return self._initialize_edgepaths()
 
     def select(self, selection_specs=None, **selection):
-        """
-        Allows selecting data by the slices, sets and scalar values
+        """Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
         keywords mapping between the selected dimension and
         value. Additionally selection_specs (taking the form of a list
         of type.group.label strings, types or functions) may be
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
+
         """
         self._initialize_edgepaths()
         return super().select(selection_specs=None,
@@ -605,8 +608,7 @@ class TriMesh(Graph):
 
 
 class layout_chords(Operation):
-    """
-    layout_chords computes the locations of each node on a circle and
+    """layout_chords computes the locations of each node on a circle and
     the chords connecting them. The amount of radial angle devoted to
     each node and the number of chords are scaled by the value
     dimension of the Chord element. If the values are integers then
@@ -620,6 +622,7 @@ class layout_chords(Operation):
     source to the target node in the graph, the number of samples to
     interpolate the spline with is given by the chord_samples
     parameter.
+
     """
 
     chord_samples = param.Integer(default=50, bounds=(0, None), doc="""
@@ -658,7 +661,7 @@ class layout_chords(Operation):
 
         # Compute connectivity matrix
         matrix = np.zeros((len(nodes), len(nodes)))
-        for s, t, v in zip(src_idx, tgt_idx, values):
+        for s, t, v in zip(src_idx, tgt_idx, values, strict=None):
             matrix[s, t] += v
 
         # Compute weighted angular slice for each connection
@@ -681,7 +684,7 @@ class layout_chords(Operation):
             n_conn = weights_of_areas[i]
             p0, p1 = points[i], points[i+1]
             angles = np.linspace(p0, p1, int(n_conn))
-            coords = list(zip(np.cos(angles), np.sin(angles)))
+            coords = list(zip(np.cos(angles), np.sin(angles), strict=None))
             all_areas.append(coords)
 
         # Draw each chord by interpolating quadratic splines
@@ -723,7 +726,7 @@ class layout_chords(Operation):
             values, vdims = (), []
 
         if len(nodes):
-            node_data = (mxs, mys, nodes)+values
+            node_data = (mxs, mys, nodes, *values)
         else:
             node_data = tuple([] for _ in kdims+vdims)
 
@@ -735,8 +738,7 @@ class layout_chords(Operation):
 
 
 class Chord(Graph):
-    """
-    Chord is a special type of Graph which computes the locations of
+    """Chord is a special type of Graph which computes the locations of
     each node on a circle and the chords connecting them. The amount
     of radial angle devoted to each node and the number of chords are
     scaled by a weight supplied as a value dimension.
@@ -746,6 +748,7 @@ class Chord(Graph):
     chords are apportioned such that the lowest value edge is given
     one chord and all other nodes are given nodes proportional to
     their weight.
+
     """
 
     group = param.String(default='Chord', constant=True)

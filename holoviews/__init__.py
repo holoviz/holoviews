@@ -72,10 +72,12 @@ In a notebook or ipython environment the usual
 
 To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
+
 """
 import builtins
 import os
 import sys
+from typing import TYPE_CHECKING
 
 import param
 
@@ -132,6 +134,11 @@ if '_pyodide' in sys.modules:
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
 
+
+if TYPE_CHECKING:
+    # Adding this here to have better docstring in LSP
+    from .util import extension
+
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                os.path.abspath(os.path.join(os.path.split(__file__)[0],
@@ -152,8 +159,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
 
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
-    """
-    Extended version of the built-in help that supports parameterized
+    """Extended version of the built-in help that supports parameterized
     functions and objects. A pattern (regular expression) may be used to
     filter the output and if recursive is set to True, documentation for
     the supplied object is shown. Note that the recursive option will
@@ -161,6 +167,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
 
     If ansi is set to False, all ANSI color
     codes are stripped out.
+
     """
     backend = backend if backend else Store.current_backend
     info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,
@@ -186,7 +193,7 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [k for k in locals() if not k.startswith('_')]
-__all__ += ['annotate', '__version__']
+__all__ += ['__version__', 'annotate']
 
 def __dir__():
     return __all__

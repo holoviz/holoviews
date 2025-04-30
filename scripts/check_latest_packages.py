@@ -40,10 +40,10 @@ def main(*packages):
         resp = requests.get(url, timeout=1).json()
 
         found = False
-        for vrelease, release in list(resp["releases"].items())[::-1]:
+        for vrelease in sorted(resp["releases"], key=Version, reverse=True):
             if Version(vrelease).is_devrelease or Version(vrelease).is_prerelease:
                 continue
-            for info in release:
+            for info in resp["releases"][vrelease]:
                 if not compare_versions(PY_VERSION, info['requires_python']):
                     continue
 

@@ -13,7 +13,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import bokeh34, bokeh35
+from .util import BOKEH_GE_3_4_0, BOKEH_GE_3_5_0
 
 
 class LinkCallback:
@@ -42,7 +42,7 @@ class LinkCallback:
         references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
-        for sh in self.source_handles+[self.source_model]:
+        for sh in [*self.source_handles, self.source_model]:
             key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
@@ -52,7 +52,7 @@ class LinkCallback:
             references[p] = value
 
         if target_plot is not None:
-            for sh in self.target_handles+[self.target_model]:
+            for sh in [*self.target_handles, self.target_model]:
                 key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
@@ -80,9 +80,9 @@ class LinkCallback:
 
     @classmethod
     def find_links(cls, root_plot):
-        """
-        Traverses the supplied plot and searches for any Links on
+        """Traverses the supplied plot and searches for any Links on
         the plotted objects.
+
         """
         plot_fn = lambda x: isinstance(x, (GenericElementPlot, GenericOverlayPlot))
         plots = root_plot.traverse(lambda x: x, [plot_fn])
@@ -103,16 +103,20 @@ class LinkCallback:
 
     @classmethod
     def find_link(cls, plot, link=None, target=False):
-        """
-        Searches a plot for any Links declared on the sources of the plot.
+        """Searches a plot for any Links declared on the sources of the plot.
 
-        Args:
-            plot: The plot to search for Links
-            link: A Link instance to check for matches
-            target: Whether to check against the Link.target
+        Parameters
+        ----------
+        plot
+            The plot to search for Links
+        link
+            A Link instance to check for matches
+        target
+            Whether to check against the Link.target
 
-        Returns:
-            A tuple containing the matched plot and list of matching Links.
+        Returns
+        -------
+        A tuple containing the matched plot and list of matching Links.
         """
         attr = 'target' if target else 'source'
         if link is None:
@@ -136,16 +140,16 @@ class LinkCallback:
                     return (plot, links)
 
     def validate(self):
-        """
-        Should be subclassed to check if the source and target plots
+        """Should be subclassed to check if the source and target plots
         are compatible to perform the linking.
+
         """
 
 
 class RangeToolLinkCallback(LinkCallback):
-    """
-    Attaches a RangeTool to the source plot and links it to the
+    """Attaches a RangeTool to the source plot and links it to the
     specified axes on the target plot
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
@@ -162,8 +166,16 @@ class RangeToolLinkCallback(LinkCallback):
             else:
                 target_range_name = range_name
             axes[range_name] = ax = target_plot.handles[target_range_name]
+            if ax is source_plot.handles.get(target_range_name):
+                # Cloning the axis as it does not make sense to have a link
+                # for the same axis
+                new_ax = ax.clone()
+                source_plot.handles[target_range_name] = new_ax
+                setattr(source_plot.handles["plot"], range_name, new_ax)
+                # So it is not re-linked by pn.pane.HoloViews(..., linked_axes=True)
+                new_ax.tags = []
             interval = getattr(link, f'intervals{axis}', None)
-            if interval is not None and bokeh34:
+            if interval is not None and BOKEH_GE_3_4_0:
                 min, max = interval
                 if min is not None:
                     ax.min_interval = min
@@ -183,7 +195,7 @@ class RangeToolLinkCallback(LinkCallback):
 
         tool = RangeTool(**axes)
 
-        if bokeh35:
+        if BOKEH_GE_3_5_0:
             use_handles = getattr(link, 'use_handles', True)
             start_gesture = getattr(link, 'start_gesture', 'tap')
             inverted = getattr(link, 'inverted', True)
@@ -221,8 +233,8 @@ class RangeToolLinkCallback(LinkCallback):
 
 
 class DataLinkCallback(LinkCallback):
-    """
-    Merges the source and target ColumnDataSource
+    """Merges the source and target ColumnDataSource
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
@@ -235,8 +247,8 @@ class DataLinkCallback(LinkCallback):
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
             raise ValueError('DataLink source data length must match target '
-                            'data length, found source length of %d and '
-                            'target length of %d.' % (src_len[0], tgt_len[0]))
+                            f'data length, found source length of {src_len[0]} and '
+                            f'target length of {tgt_len[0]}.')
 
         # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():

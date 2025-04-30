@@ -282,7 +282,7 @@ class TestBarPlot(TestBokehPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Bars(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Bars', fill_color='Color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             self.assertEqual(subplot.handles['glyph'].fill_color, color)
 
     def test_bars_color_index_color_clash(self):
@@ -351,6 +351,27 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 1
 
+    def test_bars_categorical_order(self):
+        cells_dtype = pd.CategoricalDtype(
+            pd.array(["~1M", "~10M", "~100M"], dtype="string"),
+            ordered=True,
+        )
+        df = pd.DataFrame(dict(
+            cells=cells_dtype.categories.astype(cells_dtype),
+            time=pd.array([2.99, 18.5, 835.2]),
+            function=pd.array(["read", "read", "read"]),
+        ))
+
+        bars = Bars(df, ["function", "cells"], ["time"])
+        plot = bokeh_renderer.get_plot(bars)
+        x_factors = plot.handles["x_range"].factors
+
+        np.testing.assert_equal(x_factors, [
+            ("read", "~1M"),
+            ("read", "~10M"),
+            ("read", "~100M"),
+        ])
+
     def test_bars_group(self):
         samples = 100
 
@@ -391,3 +412,10 @@ class TestBarPlot(TestBokehPlot):
         bars = Bars(df, kdims=["a", "b"], vdims=["c"]).opts(stacked=True)
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 0.8
+
+    def test_bar_narrow_non_monotonous_xvals(self):
+        # Tests regression: https://github.com/holoviz/hvplot/issues/1450
+        dic = {"ratio": [0.82, 1.11, 3, 6], "count": [1, 2, 1, 3]}
+        bars = Bars(dic, kdims=["ratio"], vdims=["count"])
+        plot = bokeh_renderer.get_plot(bars)
+        assert np.isclose(plot.handles["glyph"].width, 0.232)

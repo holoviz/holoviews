@@ -73,16 +73,18 @@ def get_layout_ranges(plot):
 def plot_to_figure(
         plot, reset_nclicks=0, layout_ranges=None, responsive=True, use_ranges=True
 ):
-    """
-    Convert a HoloViews plotly plot to a plotly.py Figure.
+    """Convert a HoloViews plotly plot to a plotly.py Figure.
 
-    Args:
-        plot: A HoloViews plotly plot object
-        reset_nclicks: Number of times a reset button associated with the plot has been
-            clicked
+    Parameters
+    ----------
+    plot : A HoloViews plotly plot object
+    reset_nclicks : int
+        Number of times a reset button associated with the plot has been
+        clicked
 
-    Returns:
-        A plotly.py Figure
+    Returns
+    -------
+    A plotly.py Figure
     """
     fig_dict = plot.state
     clean_internal_figure_properties(fig_dict)
@@ -120,18 +122,19 @@ def plot_to_figure(
 
 
 def to_function_spec(hvobj):
-    """
-    Convert Dynamic HoloViews object into a pure function that accepts kdim values
+    """Convert Dynamic HoloViews object into a pure function that accepts kdim values
     and stream contents as positional arguments.
 
     This borrows the low-level holoviews decollate logic, but instead of returning
     DynamicMap with cloned streams, returns a HoloViewsFunctionSpec.
 
-    Args:
-        hvobj: A potentially dynamic Holoviews object
+    Parameters
+    ----------
+    hvobj : A potentially dynamic Holoviews object
 
-    Returns:
-        HoloViewsFunctionSpec
+    Returns
+    -------
+    HoloViewsFunctionSpec
     """
     kdims_list = []
     original_streams = []
@@ -166,15 +169,18 @@ def to_function_spec(hvobj):
 def populate_store_with_stream_contents(
         store_data, streams
 ):
-    """
-    Add contents of streams to the store dictionary
+    """Add contents of streams to the store dictionary
 
-    Args:
-        store_data: The store dictionary
-        streams: List of streams whose contents should be added to the store
+    Parameters
+    ----------
+    store_data
+        The store dictionary
+    streams
+        List of streams whose contents should be added to the store
 
-    Returns:
-        None
+    Returns
+    -------
+    None
     """
     for stream in streams:
         # Add stream
@@ -186,14 +192,16 @@ def populate_store_with_stream_contents(
 
 
 def build_derived_callback(derived_stream):
-    """
-    Build StreamCallback for Derived stream
+    """Build StreamCallback for Derived stream
 
-    Args:
-        derived_stream: A Derived stream
+    Parameters
+    ----------
+    derived_stream
+        A Derived stream
 
-    Returns:
-        StreamCallback
+    Returns
+    -------
+    StreamCallback
     """
     input_ids = [id(stream) for stream in derived_stream.input_streams]
     constants = copy.copy(derived_stream.constants)
@@ -208,14 +216,16 @@ def build_derived_callback(derived_stream):
 
 
 def build_history_callback(history_stream):
-    """
-    Build StreamCallback for History stream
+    """Build StreamCallback for History stream
 
-    Args:
-        history_stream: A History stream
+    Parameters
+    ----------
+    history_stream
+        A History stream
 
-    Returns:
-        StreamCallback
+    Returns
+    -------
+    StreamCallback
     """
     history_id = id(history_stream)
     input_stream_id = id(history_stream.input_stream)
@@ -233,21 +243,25 @@ def build_history_callback(history_stream):
 
 
 def populate_stream_callback_graph(stream_callbacks, streams):
-    """
-    Populate the stream_callbacks dict with StreamCallback instances
+    """Populate the stream_callbacks dict with StreamCallback instances
     associated with all of the History and Derived streams in input stream list.
 
     Input streams to any History or Derived streams are processed recursively
 
-    Args:
-        stream_callbacks:  dict from id(stream) to StreamCallbacks the should
-            be populated. Order will be a breadth-first traversal of the provided
-            streams list, and any input streams that these depend on.
+    Parameters
+    ----------
+    stream_callbacks
+        dict from id(stream) to StreamCallbacks that should
+        be populated.
+        Order will be a breadth-first traversal of the provided
+        streams list, and any input streams that these depend on.
 
-        streams: List of streams to build StreamCallbacks from
+    streams
+        List of streams to build StreamCallbacks from
 
-    Returns:
-        None
+    Returns
+    -------
+    None
     """
     for stream in streams:
         if isinstance(stream, Derived):
@@ -263,31 +277,33 @@ def populate_stream_callback_graph(stream_callbacks, streams):
 
 
 def encode_store_data(store_data):
-    """
-    Encode store_data dict into a JSON serializable dict
+    """Encode store_data dict into a JSON serializable dict
 
     This is currently done by pickling store_data and converting to a base64 encoded
     string. If HoloViews supports JSON serialization in the future, this method could
     be updated to use this approach instead
 
-    Args:
-        store_data: dict potentially containing HoloViews objects
+    Parameters
+    ----------
+    store_data : dict potentially containing HoloViews objects
 
-    Returns:
-        dict that can be JSON serialized
+    Returns
+    -------
+    dict that can be JSON serialized
     """
     return {"pickled": base64.b64encode(pickle.dumps(store_data)).decode("utf-8")}
 
 
 def decode_store_data(store_data):
-    """
-    Decode a dict that was encoded by the encode_store_data function.
+    """Decode a dict that was encoded by the encode_store_data function.
 
-    Args:
-        store_data: dict that was encoded by encode_store_data
+    Parameters
+    ----------
+    store_data : dict that was encoded by encode_store_data
 
-    Returns:
-        decoded dict
+    Returns
+    -------
+    decoded dict
     """
     return pickle.loads(base64.b64decode(store_data["pickled"]))
 
@@ -296,40 +312,48 @@ def to_dash(
         app, hvobjs, reset_button=False, graph_class=dcc.Graph,
         button_class=html.Button, responsive="width", use_ranges=True,
 ):
-    """
-    Build Dash components and callbacks from a collection of HoloViews objects
+    """Build Dash components and callbacks from a collection of HoloViews objects
 
-    Args:
-        app: dash.Dash application instance
-        hvobjs: List of HoloViews objects to build Dash components from
-        reset_button: If True, construct a Button component that, which clicked, will
-            reset the interactive stream values associated with the provided HoloViews
-            objects to their initial values. Defaults to False.
-        graph_class: Class to use when creating Graph components, one of dcc.Graph
-            (default) or ddk.Graph.
-        button_class: Class to use when creating reset button component.
-            E.g. html.Button (default) or dbc.Button
-        responsive: If True graphs will fill their containers width and height
-            responsively. If False, graphs will have a fixed size matching their
-            HoloViews size. If "width" (default), the width is responsive but
-            height matches the HoloViews size. If "height", the height is responsive
-            but the width matches the HoloViews size.
-        use_ranges: If True, initialize graphs with the dimension ranges specified
-            in the HoloViews objects. If False, allow Dash to perform its own
-            auto-range calculations.
-    Returns:
-        DashComponents named tuple with properties:
-            - graphs: List of graph components (with type matching the input
-                graph_class argument) with order corresponding to the order
-                of the input hvobjs list.
-            - resets: List of reset buttons that can be used to reset figure state.
-                List has length 1 if reset_button=True and is empty if
-                reset_button=False.
-            - kdims: Dict from kdim names to Dash Components that can be used to
-                set the corresponding kdim value.
-            - store: dcc.Store the must be included in the app layout
-            - children: Single list of all components above. The order is graphs,
-                kdims, resets, and then the store.
+    Parameters
+    ----------
+    app : dash.Dash application instance
+    hvobjs
+        List of HoloViews objects to build Dash components from
+    reset_button : bool
+        If True, construct a Button component that, when clicked, will
+        reset the interactive stream values associated with the provided HoloViews
+        objects to their initial values. Defaults to False.
+    graph_class
+        Class to use when creating Graph components, one of dcc.Graph
+        (default) or ddk.Graph.
+    button_class
+        Class to use when creating reset button component.
+        E.g. html.Button (default) or dbc.Button
+    responsive : bool, str
+        If True graphs will fill their containers width and height
+        responsively. If False, graphs will have a fixed size matching their
+        HoloViews size. If "width" (default), the width is responsive but
+        height matches the HoloViews size. If "height", the height is responsive
+        but the width matches the HoloViews size.
+    use_ranges : bool
+        If True, initialize graphs with the dimension ranges specified
+        in the HoloViews objects. If False, allow Dash to perform its own
+        auto-range calculations.
+
+    Returns
+    -------
+    DashComponents named tuple with properties:
+        - graphs: List of graph components (with type matching the input
+            graph_class argument) with order corresponding to the order
+            of the input hvobjs list.
+        - resets: List of reset buttons that can be used to reset figure state.
+            List has length 1 if reset_button=True and is empty if
+            reset_button=False.
+        - kdims: Dict from kdim names to Dash Components that can be used to
+            set the corresponding kdim value.
+        - store: dcc.Store the must be included in the app layout
+        - children: Single list of all components above. The order is graphs,
+            kdims, resets, and then the store.
     """
     # Number of figures
     num_figs = len(hvobjs)
@@ -533,7 +557,7 @@ def to_dash(
         store_data.setdefault("kdims", {})
         for i, kdim in zip(
                 range(num_figs * 2, num_figs * 2 + len(all_kdims)),
-                all_kdims
+                all_kdims, strict=None
         ):
             if kdim not in store_data["kdims"] or store_data["kdims"][kdim] != args[i]:
                 store_data["kdims"][kdim] = args[i]
@@ -610,7 +634,7 @@ def to_dash(
             ).to_dict()
             figs[fig_ind] = fig
 
-        return figs + [encode_store_data(store_data)]
+        return [*figs, encode_store_data(store_data)]
 
     # Register key dimension slider callbacks
     # Install callbacks to update kdim labels based on slider values
@@ -644,17 +668,23 @@ def to_dash(
 
 
 def update_stream_values_for_type(store_data, stream_event_data, uid_to_streams_for_type):
-    """
-    Update the store with values of streams for a single type
+    """Update the store with values of streams for a single type
 
-    Args:
-        store_data: Current store dictionary
-        stream_event_data:  Potential stream data for current plotly event and
-            traces in figures
-        uid_to_streams_for_type: Mapping from trace UIDs to HoloViews streams of
-            a particular type
-    Returns:
-        any_change: Whether any stream value has been updated
+    Parameters
+    ----------
+    store_data
+        Current store dictionary
+    stream_event_data
+        Potential stream data for current plotly event and
+        traces in figures
+    uid_to_streams_for_type
+        Mapping from trace UIDs to HoloViews streams of
+        a particular type
+
+    Returns
+    -------
+    any_change
+        Whether any stream value has been updated
     """
     any_change = False
     for uid, event_data in stream_event_data.items():

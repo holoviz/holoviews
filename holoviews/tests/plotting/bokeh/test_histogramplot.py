@@ -135,7 +135,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
-        histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(histogram)
@@ -146,7 +146,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_histogram_padding_datetime_nonsquare(self):
-        histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(histogram)
@@ -259,5 +259,5 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Histogram(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Histogram', fill_color='Color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             self.assertEqual(subplot.handles['glyph'].fill_color, color)

@@ -1,8 +1,8 @@
-"""
-The path module provides a set of elements to draw paths and polygon
+"""The path module provides a set of elements to draw paths and polygon
 geometries in 2D space. In addition to three general elements are
 Path, Contours and Polygons, it defines a number of elements to
 quickly draw common shapes.
+
 """
 
 import numpy as np
@@ -16,8 +16,7 @@ from .selection import SelectionPolyExpr
 
 
 class Path(SelectionPolyExpr, Geometry):
-    """
-    The Path element represents one or more of path geometries with
+    """The Path element represents one or more of path geometries with
     associated values. Each path geometry may be split into
     sub-geometries on NaN-values and may be associated with scalar
     values or array values varying along its length. In analogy to
@@ -51,6 +50,7 @@ class Path(SelectionPolyExpr, Geometry):
     the `Path.split` method, which returns each path geometry as a
     separate entity, while the other methods assume a flattened
     representation where all paths are separated by NaN values.
+
     """
 
     group = param.String(default="Path", constant=True)
@@ -73,7 +73,7 @@ class Path(SelectionPolyExpr, Geometry):
             paths = []
             for path in data:
                 if path.kdims != kdims:
-                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims)}
+                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims, strict=None)}
                     path = path.redim(**redim)
                 if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
@@ -127,20 +127,22 @@ class Path(SelectionPolyExpr, Geometry):
             from holoviews import dim
             ds.select(selection_expr=dim('x') % 2 == 0)
 
-        Args:
-            selection_expr: holoviews.dim predicate expression
-                specifying selection.
-            selection_specs: List of specs to match on
-                A list of types, functions, or type[.group][.label]
-                strings specifying which objects to apply the
-                selection on.
-            **selection: Dictionary declaring selections by dimension
-                Selections can be scalar values, tuple ranges, lists
-                of discrete values and boolean arrays
+        Parameters
+        ----------
+        selection_expr : holoviews.dim predicate expression
+            specifying selection.
+        selection_specs : List of specs to match on
+            A list of types, functions, or type[.group][.label]
+            strings specifying which objects to apply the
+            selection on.
+        **selection: Dictionary declaring selections by dimension
+            Selections can be scalar values, tuple ranges, lists
+            of discrete values and boolean arrays
 
-        Returns:
-            Returns an Dimensioned object containing the selected data
-            or a scalar if a single value was selected
+        Returns
+        -------
+        Returns an Dimensioned object containing the selected data
+        or a scalar if a single value was selected
         """
         xdim, ydim = self.kdims[:2]
         x_range = selection.pop(xdim.name, None)
@@ -154,10 +156,10 @@ class Path(SelectionPolyExpr, Geometry):
         return sel[x_range, y_range]
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
-        """
-        The split method allows splitting a Path type into a list of
+        """The split method allows splitting a Path type into a list of
         subpaths of the same type. A start and/or end may be supplied
         to select a subset of paths.
+
         """
         if not self.interface.multi:
             if not len(self):
@@ -176,9 +178,22 @@ class Path(SelectionPolyExpr, Geometry):
         return self.interface.split(self, start, end, datatype, **kwargs)
 
 
+class Dendrogram(Path):
+
+    group = param.String(default="Dendrogram", constant=True)
+
+    datatype = param.List(default=['multitabular'])
+
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
+    def __init__(self, x, y=None, kdims=None, vdims=None, **params):
+        data = x if y is None else zip(x, y, strict=True)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
+
 class Contours(Path):
-    """
-    The Contours element is a subtype of a Path which is characterized
+    """The Contours element is a subtype of a Path which is characterized
     by the fact that each path geometry may only be associated with
     scalar values. It supports all the same data formats as a `Path`
     but does not allow continuously varying values along the path
@@ -206,6 +221,7 @@ class Contours(Path):
     the `Contours.split` method, which returns each path geometry as a
     separate entity, while the other methods assume a flattened
     representation where all paths are separated by NaN values.
+
     """
 
     vdims = param.List(default=[], constant=True, doc="""
@@ -222,8 +238,7 @@ class Contours(Path):
 
 
 class Polygons(Contours):
-    """
-    The Polygons element represents one or more polygon geometries
+    """The Polygons element represents one or more polygon geometries
     with associated scalar values. Each polygon geometry may be split
     into sub-geometries on NaN-values and may be associated with
     scalar values. In analogy to GEOS geometry types a Polygons
@@ -265,6 +280,7 @@ class Polygons(Contours):
     the `Polygons.split` method, which returns each path geometry as a
     separate entity, while the other methods assume a flattened
     representation where all paths are separated by NaN values.
+
     """
 
     group = param.String(default="Polygons", constant=True)
@@ -280,30 +296,30 @@ class Polygons(Contours):
 
     @property
     def has_holes(self):
-        """
-        Detects whether any polygon in the Polygons element defines
+        """Detects whether any polygon in the Polygons element defines
         holes. Useful to avoid expanding Polygons unless necessary.
+
         """
         return self.interface.has_holes(self)
 
     def holes(self):
-        """
-        Returns a list-of-lists-of-lists of hole arrays. The three levels
+        """Returns a list-of-lists-of-lists of hole arrays. The three levels
         of nesting reflects the structure of the polygons:
 
           1. The first level of nesting corresponds to the list of geometries
           2. The second level corresponds to each Polygon in a MultiPolygon
           3. The third level of nesting allows for multiple holes per Polygon
+
         """
         return self.interface.holes(self)
 
 
 class BaseShape(Path):
-    """
-    A BaseShape is a Path that can be succinctly expressed by a small
+    """A BaseShape is a Path that can be succinctly expressed by a small
     number of parameters instead of a full path specification. For
     instance, a circle may be expressed by the center position and
     radius instead of an explicit list of path coordinates.
+
     """
 
     __abstract = True
@@ -316,9 +332,9 @@ class BaseShape(Path):
         self.interface = MultiInterface
 
     def clone(self, *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
+        """Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
+
         """
         link = overrides.pop('link', True)
         settings = dict(self.param.values(), **overrides)
@@ -335,9 +351,9 @@ class BaseShape(Path):
 
 
 class Box(BaseShape):
-    """
-    Draw a centered box of a given width at the given position with
+    """Draw a centered box of a given width at the given position with
     the specified aspect ratio (if any).
+
     """
 
     x = param.Number(default=0, doc="The x-position of the box center.")
@@ -385,8 +401,7 @@ class Box(BaseShape):
 
 
 class Ellipse(BaseShape):
-    """
-    Draw an axis-aligned ellipse at the specified x,y position with
+    """Draw an axis-aligned ellipse at the specified x,y position with
     the given orientation.
 
     The simplest (default) Ellipse is a circle, specified using:
@@ -405,7 +420,9 @@ class Ellipse(BaseShape):
     Note that as a subclass of Path, internally an Ellipse is a
     sequence of (x,y) sample positions. Ellipse could also be
     implemented as an annotation that uses a dedicated ellipse artist.
+
     """
+
     x = param.Number(default=0, doc="The x-position of the ellipse center.")
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")
@@ -447,7 +464,7 @@ class Ellipse(BaseShape):
         #create points
         ellipse = np.array(
             list(zip(half_width*np.sin(angles),
-                     half_height*np.cos(angles))))
+                     half_height*np.cos(angles), strict=None)))
         #rotate ellipse and add offset
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                [np.sin(self.orientation), np.cos(self.orientation)]])
@@ -455,13 +472,13 @@ class Ellipse(BaseShape):
 
 
 class Bounds(BaseShape):
-    """
-    An arbitrary axis-aligned bounding rectangle defined by the (left,
+    """An arbitrary axis-aligned bounding rectangle defined by the (left,
     bottom, right, top) coordinate positions.
 
     If supplied a single real number as input, this value will be
     treated as the radius of a square, zero-center box which will be
     used to compute the corresponding lbrt tuple.
+
     """
 
     lbrt = param.Tuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""

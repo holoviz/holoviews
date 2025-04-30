@@ -62,11 +62,13 @@ from ...core.util import (
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
-bokeh_version = Version(Version(bokeh.__version__).base_version)
-bokeh32 = bokeh_version >= Version("3.2")
-bokeh33 = bokeh_version >= Version("3.3")
-bokeh34 = bokeh_version >= Version("3.4")
-bokeh35 = bokeh_version >= Version("3.5")
+BOKEH_VERSION = Version(bokeh.__version__).release
+BOKEH_GE_3_2_0 = BOKEH_VERSION >= (3, 2, 0)
+BOKEH_GE_3_3_0 = BOKEH_VERSION >= (3, 3, 0)
+BOKEH_GE_3_4_0 = BOKEH_VERSION >= (3, 4, 0)
+BOKEH_GE_3_5_0 = BOKEH_VERSION >= (3, 5, 0)
+BOKEH_GE_3_6_0 = BOKEH_VERSION >= (3, 6, 0)
+BOKEH_GE_3_7_0 = BOKEH_VERSION >= (3, 7, 0)
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -109,16 +111,16 @@ TOOL_TYPES = {
 
 
 def convert_timestamp(timestamp):
-    """
-    Converts bokehJS timestamp to datetime64.
+    """Converts bokehJS timestamp to datetime64.
+
     """
     datetime = dt.datetime.fromtimestamp(timestamp/1000, tz=dt.timezone.utc)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
 def prop_is_none(value):
-    """
-    Checks if property value is None.
+    """Checks if property value is None.
+
     """
     return (value is None or
             (isinstance(value, dict) and 'value' in value
@@ -126,9 +128,9 @@ def prop_is_none(value):
 
 
 def decode_bytes(array):
-    """
-    Decodes an array, list or tuple of bytestrings to avoid python 3
+    """Decodes an array, list or tuple of bytestrings to avoid python 3
     bokeh serialization errors
+
     """
     if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
         return array
@@ -141,8 +143,8 @@ def decode_bytes(array):
 
 
 def layout_padding(plots, renderer):
-    """
-    Pads Nones in a list of lists of plots with empty plots.
+    """Pads Nones in a list of lists of plots with empty plots.
+
     """
     widths, heights = defaultdict(int), defaultdict(int)
     for r, row in enumerate(plots):
@@ -166,9 +168,9 @@ def layout_padding(plots, renderer):
 
 
 def compute_plot_size(plot):
-    """
-    Computes the size of bokeh models that make up a layout such as
+    """Computes the size of bokeh models that make up a layout such as
     figures, rows, columns, and Plot.
+
     """
     if isinstance(plot, (GridBox, GridPlot)):
         ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
@@ -188,7 +190,7 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.max)
         else:
             w_agg, h_agg = (np.max, np.sum)
-        widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
+        widths, heights = zip(*[compute_plot_size(child) for child in plot.children], strict=None)
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, figure):
         if plot.width:
@@ -210,26 +212,38 @@ def compute_layout_properties(
         width, height, frame_width, frame_height, explicit_width,
         explicit_height, aspect, data_aspect, responsive, size_multiplier,
         logger=None):
-    """
-    Utility to compute the aspect, plot width/height and sizing_mode
+    """Utility to compute the aspect, plot width/height and sizing_mode
     behavior.
 
-    Args:
-      width (int): Plot width
-      height (int): Plot height
-      frame_width (int): Plot frame width
-      frame_height (int): Plot frame height
-      explicit_width (list): List of user supplied widths
-      explicit_height (list): List of user supplied heights
-      aspect (float): Plot aspect
-      data_aspect (float): Scaling between x-axis and y-axis ranges
-      responsive (boolean): Whether the plot should resize responsively
-      size_multiplier (float): Multiplier for supplied plot dimensions
-      logger (param.Parameters): Parameters object to issue warnings on
+    Parameters
+    ----------
+    width : int
+        Plot width
+    height : int
+        Plot height
+    frame_width : int
+        Plot frame width
+    frame_height : int
+        Plot frame height
+    explicit_width : list
+        List of user supplied widths
+    explicit_height : list
+        List of user supplied heights
+    aspect : float
+        Plot aspect
+    data_aspect : float
+        Scaling between x-axis and y-axis ranges
+    responsive : boolean
+        Whether the plot should resize responsively
+    size_multiplier : float
+        Multiplier for supplied plot dimensions
+    logger : param.Parameters
+        Parameters object to issue warnings on
 
-    Returns:
-      Returns two dictionaries one for the aspect and sizing modes,
-      and another for the plot dimensions.
+    Returns
+    -------
+    Returns two dictionaries one for the aspect and sizing modes,
+    and another for the plot dimensions.
     """
     fixed_width = (explicit_width or frame_width)
     fixed_height = (explicit_height or frame_height)
@@ -388,11 +402,11 @@ def compute_layout_properties(
 
 
 def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False):
-    """
-    Merges tools defined on a grid of plots into a single toolbar.
+    """Merges tools defined on a grid of plots into a single toolbar.
     All tools of the same type are merged unless they define one
     of the disambiguation properties. By default `name`, `icon`, `tags`
     and `description` can be used to prevent tools from being merged.
+
     """
     tools = []
     for row in plot_grid:
@@ -468,7 +482,7 @@ def sync_legends(bokeh_layout):
 
 
 def select_legends(holoviews_layout, figure_index=None, legend_position="top_right"):
-    """ Only displays selected legends in plot layout.
+    """Only displays selected legends in plot layout.
 
     Parameters
     ----------
@@ -506,8 +520,8 @@ def select_legends(holoviews_layout, figure_index=None, legend_position="top_rig
 
 @contextmanager
 def silence_warnings(*warnings):
-    """
-    Context manager for silencing bokeh validation warnings.
+    """Context manager for silencing bokeh validation warnings.
+
     """
     for warning in warnings:
         silence(warning)
@@ -519,15 +533,15 @@ def silence_warnings(*warnings):
 
 
 def empty_plot(width, height):
-    """
-    Creates an empty and invisible plot of the specified size.
+    """Creates an empty and invisible plot of the specified size.
+
     """
     return Spacer(width=width, height=height)
 
 
 def remove_legend(plot, legend):
-    """
-    Removes a legend from a bokeh plot.
+    """Removes a legend from a bokeh plot.
+
     """
     valid_places = ['left', 'right', 'above', 'below', 'center']
     plot.legend[:] = [l for l in plot.legend if l is not legend]
@@ -538,8 +552,8 @@ def remove_legend(plot, legend):
 
 
 def font_size_to_pixels(size):
-    """
-    Convert a fontsize to a pixel value
+    """Convert a fontsize to a pixel value
+
     """
     if size is None or not isinstance(size, str):
         return
@@ -620,9 +634,9 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
 
 
 def hsv_to_rgb(hsv):
-    """
-    Vectorized HSV to RGB conversion, adapted from:
-    http://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
+    """Vectorized HSV to RGB conversion, adapted from:
+    https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
+
     """
     h, s, v = (hsv[..., i] for i in range(3))
     shape = h.shape
@@ -646,13 +660,13 @@ def hsv_to_rgb(hsv):
     order = np.array([[0,3,1],[2,0,1],[1,0,3],[1,2,0],[3,1,0],[0,1,2]])
     rgb = clist[order[i], np.arange(np.prod(shape))[:,None]]
 
-    return rgb.reshape(shape+(3,))
+    return rgb.reshape((*shape, 3))
 
 
 def pad_width(model, table_padding=0.85, tabs_padding=1.2):
-    """
-    Computes the width of a model and sets up appropriate padding
+    """Computes the width of a model and sets up appropriate padding
     for Tabs and DataTable types.
+
     """
     if isinstance(model, Row):
         vals = [pad_width(child) for child in model.children]
@@ -679,10 +693,10 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
 
 
 def pad_plots(plots):
-    """
-    Accepts a grid of bokeh plots in form of a list of lists and
+    """Accepts a grid of bokeh plots in form of a list of lists and
     wraps any DataTable or Tabs in a Column with appropriate
     padding. Required to avoid overlap in gridplot.
+
     """
     widths = []
     for row in plots:
@@ -693,14 +707,14 @@ def pad_plots(plots):
         widths.append(row_widths)
 
     plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
-              for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
+              for p, w in zip(row, ws, strict=None)] for row, ws in zip(plots, widths, strict=None)]
     return plots
 
 
 def filter_toolboxes(plots):
-    """
-    Filters out toolboxes out of a list of plots to be able to compose
+    """Filters out toolboxes out of a list of plots to be able to compose
     them into a larger plot.
+
     """
     if isinstance(plots, list):
         plots = [filter_toolboxes(plot) for plot in plots]
@@ -713,9 +727,9 @@ def filter_toolboxes(plots):
 
 
 def get_tab_title(key, frame, overlay):
-    """
-    Computes a title for bokeh tabs from the key in the overlay, the
+    """Computes a title for bokeh tabs from the key in the overlay, the
     element and the containing (Nd)Overlay.
+
     """
     if isinstance(overlay, Overlay):
         if frame is not None:
@@ -731,13 +745,13 @@ def get_tab_title(key, frame, overlay):
         title = ' '.join(title)
     else:
         title = ' | '.join([d.pprint_value_string(k) for d, k in
-                            zip(overlay.kdims, key)])
+                            zip(overlay.kdims, key, strict=None)])
     return title
 
 
 def get_default(model, name, theme=None):
-    """
-    Looks up the default value for a bokeh model property.
+    """Looks up the default value for a bokeh model property.
+
     """
     overrides = None
     if theme is not None:
@@ -749,10 +763,10 @@ def get_default(model, name, theme=None):
 
 
 def filter_batched_data(data, mapping):
-    """
-    Iterates over the data and mapping for a ColumnDataSource and
+    """Iterates over the data and mapping for a ColumnDataSource and
     replaces columns with repeating values with a scalar. This is
     purely and optimization for scalar types.
+
     """
     for k, v in list(mapping.items()):
         if isinstance(v, dict) and 'field' in v:
@@ -770,13 +784,13 @@ def filter_batched_data(data, mapping):
             pass
 
 def cds_column_replace(source, data):
-    """
-    Determine if the CDS.data requires a full replacement or simply
+    """Determine if the CDS.data requires a full replacement or simply
     needs to be updated. A replacement is required if untouched
     columns are not the same length as the columns being updated.
+
     """
     current_length = [len(v) for v in source.data.values()
-                      if isinstance(v, (list,)+arraylike_types)]
+                      if isinstance(v, (list, *arraylike_types))]
     new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
@@ -784,8 +798,8 @@ def cds_column_replace(source, data):
 
 @contextmanager
 def hold_policy(document, policy, server=False):
-    """
-    Context manager to temporary override the hold policy.
+    """Context manager to temporary override the hold policy.
+
     """
     old_policy = document.callbacks.hold_value
     document.callbacks._hold = policy
@@ -799,10 +813,10 @@ def hold_policy(document, policy, server=False):
 
 
 def recursive_model_update(model, props):
-    """
-    Recursively updates attributes on a model including other
+    """Recursively updates attributes on a model including other
     models. If the type of the new model matches the old model
     properties are simply updated, otherwise the model is replaced.
+
     """
     updates = {}
     valid_properties = model.properties_with_values()
@@ -828,12 +842,12 @@ def recursive_model_update(model, props):
 
 
 def update_shared_sources(f):
-    """
-    Context manager to ensures data sources shared between multiple
+    """Context manager to ensures data sources shared between multiple
     plots are cleared and updated appropriately avoiding warnings and
     allowing empty frames on subplots. Expects a list of
     shared_sources and a mapping of the columns expected columns for
     each source in the plots handles.
+
     """
     def wrapper(self, *args, **kwargs):
         source_cols = self.handles.get('source_cols', {})
@@ -858,9 +872,9 @@ def update_shared_sources(f):
 
 
 def hold_render(f):
-    """
-    Decorator that will hold render on a Bokeh ElementPlot until after
+    """Decorator that will hold render on a Bokeh ElementPlot until after
     the method has been called.
+
     """
     def wrapper(self, *args, **kwargs):
         hold = self.state.hold_render
@@ -881,18 +895,18 @@ def hold_render(f):
 
 
 def categorize_array(array, dim):
-    """
-    Uses a Dimension instance to convert an array of values to categorical
+    """Uses a Dimension instance to convert an array of values to categorical
     (i.e. string) values and applies escaping for colons, which bokeh
     treats as a categorical suffix.
+
     """
     return np.array([dim.pprint_value(x) for x in array])
 
 
 class periodic:
-    """
-    Mocks the API of periodic Thread in hv.core.util, allowing a smooth
+    """Mocks the API of periodic Thread in hv.core.util, allowing a smooth
     API transition on bokeh server.
+
     """
 
     def __init__(self, document):
@@ -956,8 +970,8 @@ class periodic:
 
 
 def attach_periodic(plot):
-    """
-    Attaches plot refresh to all streams on the object.
+    """Attaches plot refresh to all streams on the object.
+
     """
     def append_refresh(dmap):
         for subdmap in get_nested_dmaps(dmap):
@@ -973,11 +987,13 @@ def date_to_integer(date):
     If datetime is a cftime with a non-standard calendar the
     caveats described in hv.core.util.cftime_to_timestamp apply.
 
-    Args:
-        date: Date- or datetime-like object
+    Parameters
+    ----------
+    date : Date- or datetime-like object
 
-    Returns:
-        Milliseconds since 1970-01-01 00:00:00
+    Returns
+    -------
+    Milliseconds since 1970-01-01 00:00:00
     """
     if isinstance(date, pd.Timestamp):
         try:
@@ -998,12 +1014,12 @@ def date_to_integer(date):
 
 
 def glyph_order(keys, draw_order=None):
-    """
-    Orders a set of glyph handles using regular sort and an explicit
+    """Orders a set of glyph handles using regular sort and an explicit
     sort order. The explicit draw order must take the form of a list
     of glyph names while the keys should be glyph names with a custom
     suffix. The draw order may only match subset of the keys and any
     matched items will take precedence over other entries.
+
     """
     if draw_order is None:
         draw_order = []
@@ -1016,9 +1032,9 @@ def glyph_order(keys, draw_order=None):
 
 
 def colormesh(X, Y):
-    """
-    Generates line paths for a quadmesh given 2D arrays of X and Y
+    """Generates line paths for a quadmesh given 2D arrays of X and Y
     coordinates.
+
     """
     X1 = X[0:-1, 0:-1].ravel()
     Y1 = Y[0:-1, 0:-1].ravel()
@@ -1044,26 +1060,26 @@ def theme_attr_json(theme, attr):
 
 
 def multi_polygons_data(element):
-    """
-    Expands polygon data which contains holes to a bokeh multi_polygons
+    """Expands polygon data which contains holes to a bokeh multi_polygons
     representation. Multi-polygons split by nans are expanded and the
     correct list of holes is assigned to each sub-polygon.
+
     """
     xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
     holes = element.holes()
     xsh, ysh = [], []
-    for x, y, multi_hole in zip(xs, ys, holes):
+    for x, y, multi_hole in zip(xs, ys, holes, strict=None):
         xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
         yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
         array = np.column_stack([x, y])
         splits = np.where(np.isnan(array[:, :2].astype('float')).sum(axis=1))[0]
         arrays = np.split(array, splits+1) if len(splits) else [array]
         multi_xs, multi_ys = [], []
-        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs)):
+        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=None)):
             if i != (len(arrays)-1):
                 path = path[:-1]
-            multi_xs.append([path[:, 0]]+hx)
-            multi_ys.append([path[:, 1]]+hy)
+            multi_xs.append([path[:, 0], *hx])
+            multi_ys.append([path[:, 1], *hy])
         xsh.append(multi_xs)
         ysh.append(multi_ys)
     return xsh, ysh
@@ -1076,11 +1092,12 @@ def match_dim_specs(specs1, specs2):
     to each dimension, each tuple spec has the form (name, label, unit).
     The name and label must match exactly while the unit only has to
     match if both specs define one.
+
     """
     if (specs1 is None or specs2 is None) or (len(specs1) != len(specs2)):
         return False
-    for spec1, spec2 in zip(specs1, specs2):
-        for s1, s2 in zip(spec1, spec2):
+    for spec1, spec2 in zip(specs1, specs2, strict=None):
+        for s1, s2 in zip(spec1, spec2, strict=None):
             if s1 is None or s2 is None:
                 continue
             if s1 != s2:
@@ -1130,8 +1147,8 @@ def get_axis_class(axis_type, range_input, dim): # Copied from bokeh
 
 
 def match_ax_type(ax, range_type):
-    """
-    Ensure the range_type matches the axis model being matched.
+    """Ensure the range_type matches the axis model being matched.
+
     """
     if isinstance(ax, CategoricalAxis):
         return range_type == 'categorical'
@@ -1142,7 +1159,9 @@ def match_ax_type(ax, range_type):
 
 
 def match_yaxis_type_to_range(yax, range_type, range_name):
-    "Apply match_ax_type to the y-axis found by the given range name "
+    """Apply match_ax_type to the y-axis found by the given range name
+
+    """
     for axis in yax:
         if axis.y_range_name == range_name:
             return match_ax_type(axis, range_type)
@@ -1150,9 +1169,9 @@ def match_yaxis_type_to_range(yax, range_type, range_name):
 
 
 def wrap_formatter(formatter, axis):
-    """
-    Wraps formatting function or string in
+    """Wraps formatting function or string in
     appropriate bokeh formatter type.
+
     """
     if isinstance(formatter, TickFormatter):
         pass
@@ -1162,10 +1181,9 @@ def wrap_formatter(formatter, axis):
 
 
 def property_to_dict(x):
-    """
-    Convert Bokeh's property Field and Value to a dictionary
-    """
+    """Convert Bokeh's property Field and Value to a dictionary
 
+    """
     try:
         from bokeh.core.property.vectorization import Field, Unspecified, Value
 
@@ -1205,7 +1223,7 @@ def get_ticker_axis_props(ticker):
         axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
     elif isinstance(ticker, (tuple, list)):
         if all(isinstance(t, tuple) for t in ticker):
-            ticks, labels = zip(*ticker)
+            ticks, labels = zip(*ticker, strict=None)
             # Ensure floats which are integers are serialized as ints
             # because in JS the lookup fails otherwise
             ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
@@ -1218,5 +1236,5 @@ def get_ticker_axis_props(ticker):
             ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
         axis_props['ticker'] = FixedTicker(ticks=ticks)
         if labels is not None:
-            axis_props['major_label_overrides'] = dict(zip(ticks, labels))
+            axis_props['major_label_overrides'] = dict(zip(ticks, labels, strict=None))
     return axis_props
