@@ -1121,13 +1121,13 @@ def max_extents(extents, zrange=False):
             if lower and isinstance(lower[0], datetime_types):
                 extents[lidx] = np.min(lower)
             elif any(isinstance(l, str) for l in lower):
-                extents[lidx] = np.sort(lower)[0]
+                extents[lidx] = sorted(lower, key=str)[0]
             elif lower:
                 extents[lidx] = np.nanmin(lower)
             if upper and isinstance(upper[0], datetime_types):
                 extents[uidx] = np.max(upper)
             elif any(isinstance(u, str) for u in upper):
-                extents[uidx] = np.sort(upper)[-1]
+                extents[uidx] = sorted(upper, key=str)[-1]
             elif upper:
                 extents[uidx] = np.nanmax(upper)
     return tuple(extents)
