@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from ..dimension import dimension_name
-from ..util import isscalar, unique_array, unique_iterator
+from ..util import is_null_or_na_scalar, isscalar, unique_array, unique_iterator
 from .interface import DataError, Interface
 from .multipath import MultiInterface, ensure_ring
 from .pandas import PandasInterface
@@ -649,7 +649,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
         val = column.iloc[i]
         scalar = is_scalars[i]
         if scalar:
-            if pd.isna(val):
+            if is_null_or_na_scalar(val):
                 val = np.array([np.nan])
             else:
                 val = np.array([val])
