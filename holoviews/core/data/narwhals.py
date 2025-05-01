@@ -333,9 +333,10 @@ class NarwhalsInterface(Interface):
     ):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data.select(dim.name)
+        is_lazy = isinstance(data, nw.LazyFrame)
         if not expanded:
-            data = data.unique()
-        if isinstance(data, nw.LazyFrame):
+            data = data.unique(**({} if is_lazy else {"maintain_order": True}))
+        if is_lazy:
             data = data.collect()
         return data[dim.name]
 
