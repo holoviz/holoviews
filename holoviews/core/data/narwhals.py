@@ -421,5 +421,15 @@ class NarwhalsInterface(Interface):
         else:
             return super().nonzero(dataset)
 
+    @classmethod
+    def compute(cls, dataset):
+        """Should return a computed version of the Dataset.
+
+        """
+        if isinstance(dataset.data, nw.LazyFrame):
+            return dataset.clone(data=dataset.data.collect())
+        else:
+            return dataset
+
 
 Interface.register(NarwhalsInterface)
