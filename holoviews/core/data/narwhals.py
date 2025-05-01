@@ -44,30 +44,7 @@ class NarwhalsDtype:
 
     @property
     def kind(self):
-        if hasattr(self.dtype, "kind"):
-            return self.dtype.kind
-        return self._get_kind(self.dtype)
-
-    @staticmethod
-    def _get_kind(dtype: nw.dtypes.DType):
-        if dtype.is_signed_integer():
-            return "i"
-        elif dtype.is_unsigned_integer():
-            return "u"
-        elif dtype.is_numeric():
-            return "f"
-        elif dtype.is_temporal():
-            return "M"
-        elif isinstance(dtype, nw.dtypes.Duration):
-            return "m"
-        elif isinstance(dtype, nw.dtypes.Boolean):
-            return "b"
-        elif isinstance(dtype, nw.dtypes.String):
-            return "U"
-        elif isinstance(dtype, nw.dtypes.Binary):
-            return "S"
-        else:
-            return "O"
+        return util.dtype_kind(self.dtype)
 
     def __repr__(self):
         return repr(self.dtype)

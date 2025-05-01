@@ -22,6 +22,7 @@ from importlib.metadata import PackageNotFoundError, version
 from threading import Event, Thread
 from types import FunctionType
 
+import narwhals as nw
 import numpy as np
 import pandas as pd
 import param
@@ -2404,3 +2405,41 @@ def lazy_isinstance(obj, class_or_tuple):
         if isinstance(obj, functools.reduce(getattr, attr_name.split('.'), mod)):
             return True
     return False
+
+
+def dtype_kind(dtype) -> str:
+    """Return dtype kind as a single character string.
+
+    Parameters
+    ----------
+    dtype : DType
+    A dtype object, either a Numpy or narwhals.
+
+    Returns
+    -------
+    dtype_kind : str
+    The kind of the dtype as a single character string.
+    """
+    if hasattr(dtype, "kind"):
+        return dtype.kind
+
+    if not isinstance(dtype, nw.dtypes.DType):
+        raise TypeError(f"Not supported dtype: {dtype}")
+    if dtype.is_signed_integer():
+        return "i"
+    elif dtype.is_unsigned_integer():
+        return "u"
+    elif dtype.is_numeric():
+        return "f"
+    elif dtype.is_temporal():
+        return "M"
+    elif isinstance(dtype, nw.dtypes.Duration):
+        return "m"
+    elif isinstance(dtype, nw.dtypes.Boolean):
+        return "b"
+    elif isinstance(dtype, nw.dtypes.String):
+        return "U"
+    elif isinstance(dtype, nw.dtypes.Binary):
+        return "S"
+    else:
+        return "O"
