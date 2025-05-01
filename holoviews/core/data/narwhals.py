@@ -9,7 +9,6 @@ from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
-from .util import finite_range
 
 _AGG_FUNC_LOOKUP = {
     builtins.sum: "sum",
@@ -144,7 +143,7 @@ class NarwhalsInterface(Interface):
     @classmethod
     def dtype(cls, dataset, dimension):
         dim = dataset.get_dimension(dimension, strict=True)
-        nw_type = dataset.data.schema[dim.name]
+        nw_type = dataset.data.collect_schema()[dim.name]
         return NarwhalsDtype(nw_type)
 
     @classmethod
@@ -164,17 +163,27 @@ class NarwhalsInterface(Interface):
     @classmethod
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        column = dataset.data[dimension.name]
-        if NarwhalsDtype(column.dtype).kind == "O":
-            column = column.sort()
-            if not len(column):
+        dtype = cls.dtype(dataset, dimension)
+        name = dimension.name
+        is_lazy = isinstance(dataset.data, nw.LazyFrame)
+        df_column = dataset.data.select(name)
+        if dtype.kind == "O":
+            df_column = df_column.sort(by=name)
+            cmin, cmax = df_column.head(0), df_column.tail(0)
+            if is_lazy:
+                cmin, cmax = cmin.collect(), cmax.collect()
+            if not len(cmin):
                 return np.nan, np.nan
-            return column.head(0), column.tail(0)
+            return cmin.item(), cmax.item()
         else:
             if dimension.nodata is not None:
-                column = column.fill_null(dimension.nodata)
-            cmin, cmax = finite_range(column, column.min(), column.max())
-            return cmin, cmax
+                df_column = df_column.fill_null(dimension.nodata)
+            calc = df_column.select(cmin=nw.col(name).min(), cmax=nw.col(name).max())
+            if is_lazy:
+                calc = calc.collect()
+            if not len(calc):
+                return np.nan, np.nan
+            return calc.item(0, "cmin"), calc.item(0, "cmax")
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
@@ -323,14 +332,12 @@ class NarwhalsInterface(Interface):
         keep_index=False,
     ):
         dim = dataset.get_dimension(dim, strict=True)
-        data = dataset.data[dim.name]
-        if getattr(data.dtype, "time_zone", False):
-            data = data.dt.replace_time_zone(None)
+        data = dataset.data.select(dim.name)
         if not expanded:
             data = data.unique()
         if isinstance(data, nw.LazyFrame):
             data = data.collect()
-        return data
+        return data[dim.name]
 
     @classmethod
     def sample(cls, dataset, samples=None):

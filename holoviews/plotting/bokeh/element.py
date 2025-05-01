@@ -49,6 +49,7 @@ from bokeh.models.tickers import (
 from bokeh.models.tools import Tool
 
 from ...core import Dataset, Dimension, DynamicMap, Element, util
+from ...core.data.narwhals import NarwhalsDtype
 from ...core.options import Keywords, SkipRendering, abbreviated_exception
 from ...core.overlay import CompositeOverlay, NdOverlay
 from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
@@ -1715,7 +1716,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or column.dtype.kind not in 'SU')):
+                (isinstance(column, list) or NarwhalsDtype(column.dtype).kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
