@@ -1220,8 +1220,6 @@ def unique_array(arr):
     -------
     A new array of unique values
     """
-    if is_null_or_na_scalar(arr):
-        return np.array([np.nan])
     if not len(arr):
         return np.asarray(arr)
 
