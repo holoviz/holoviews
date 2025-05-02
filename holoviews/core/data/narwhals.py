@@ -352,9 +352,15 @@ class NarwhalsInterface(Interface):
         data = dataset.data.select(dim.name)
         is_lazy = isinstance(data, nw.LazyFrame)
         if not expanded:
+            # LazyFrame does not support maintain_order, it can therefore for some
+            # backends return non-determistic results even for the same data.
+            # It looks like polars.LazyFrame support it, but not duckdb
             data = data.unique(**({} if is_lazy else {"maintain_order": True}))
-        if is_lazy and compute:
-            data = data.collect()
+        if is_lazy:
+            if compute:
+                return data.collect()[dim.name]
+            else:
+                return data # Cannot slice LazyFrame
         return data[dim.name]
 
     @classmethod
