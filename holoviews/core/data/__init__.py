@@ -645,7 +645,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             return self
 
         # Handle selection dim expression
-        if selection_expr is not None:
+        if selection_expr is not None and selection_expr.ops:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
             selection = {'selection_mask': mask}
 
