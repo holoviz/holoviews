@@ -339,6 +339,21 @@ class NarwhalsInterface(Interface):
         return select_mask
 
     @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        if isinstance(dataset.data, nw.LazyFrame):
+            raise NotImplementedError("_select_mask_neighbor does not support LazyFrame")
+        mask = cls.select_mask(dataset, selection)
+        return mask | mask.shift(1).fill_null(False) | mask.shift(-1).fill_null(False)
+
+    @classmethod
     def values(
         cls,
         dataset,
