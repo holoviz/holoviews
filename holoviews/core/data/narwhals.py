@@ -313,7 +313,7 @@ class NarwhalsInterface(Interface):
         is_lazy = isinstance(data, nw.LazyFrame)
         if not expanded:
             data = data.unique(**({} if is_lazy else {"maintain_order": True}))
-        if is_lazy:
+        if is_lazy and compute:
             data = data.collect()
         return data[dim.name]
 
