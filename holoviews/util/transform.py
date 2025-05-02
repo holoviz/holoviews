@@ -685,6 +685,8 @@ class dim:
         """
         if hasattr(data, 'compute') and compute:
             data = data.compute()
+        if hasattr(data, 'collect') and compute:
+            data = data.colect()
         return data
 
     def _coerce(self, data):
