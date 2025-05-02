@@ -299,6 +299,46 @@ class NarwhalsInterface(Interface):
         return df
 
     @classmethod
+    def select_mask(cls, dataset, selection):
+        """Given a Dataset object and a dictionary with dimension keys and
+        selection keys (i.e. tuple ranges, slices, sets, lists. or literals)
+        return a boolean mask over the rows in the Dataset object that
+        have been selected.
+
+        """
+        select_mask = None
+        for dim, k in selection.items():
+            if isinstance(k, tuple):
+                k = slice(*k)
+            masks = []
+            name = dataset.get_dimension(dim).name
+            if isinstance(k, slice):
+                if k.start is not None:
+                    masks.append(k.start <= nw.col(name))
+                if k.stop is not None:
+                    masks.append(nw.col(name) < k.stop)
+            elif isinstance(k, (set, list)):
+                iter_slc = None
+                for ik in k:
+                    mask = nw.col(name) == ik
+                    if iter_slc is None:
+                        iter_slc = mask
+                    else:
+                        iter_slc |= mask
+                masks.append(iter_slc)
+            elif callable(k):
+                masks.append(nw.col(name).pipe(k))
+            else:
+                masks.append(nw.col(name) == k)
+
+            for mask in masks:
+                if select_mask is not None:
+                    select_mask &= mask
+                else:
+                    select_mask = mask
+        return select_mask
+
+    @classmethod
     def values(
         cls,
         dataset,
