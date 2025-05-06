@@ -52,10 +52,11 @@ class NarwhalsDtype:
 
 class NarwhalsInterface(Interface):
     datatype = "narwhals"
+    narwhals_backend = None
 
     @classmethod
     def applies(cls, obj):
-        return is_into_dataframe(obj) or is_into_series(obj)
+        return is_into_dataframe(obj) or is_into_series(obj) or (cls.narwhals_backend and isinstance(obj, (dict, tuple)))
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -67,7 +68,14 @@ class NarwhalsInterface(Interface):
         kdim_param = element_params["kdims"]
         vdim_param = element_params["vdims"]
 
-        data = nw.from_native(data, allow_series=True)
+        if cls.narwhals_backend and isinstance(data, dict):
+            data = nw.from_dict(data, backend=cls.narwhals_backend)
+        elif cls.narwhals_backend and isinstance(data, tuple):
+            dims = map(str, (*(kdims or ()), *(vdims or ())))
+            data = nw.from_dict(dict(zip(dims, data, strict=False)), backend=cls.narwhals_backend)
+        else:
+            data = nw.from_native(data, allow_series=True)
+
         if isinstance(data, nw.Series):
             name = data.name or util.anonymous_dimension_label
             # Currently does not work: data = data.to_frame(name=name)

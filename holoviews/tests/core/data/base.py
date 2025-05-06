@@ -78,6 +78,9 @@ class HomogeneousColumnTests:
 
     __test__ = False
 
+    def frame(self, *args, **kwargs):
+        return pd.DataFrame
+
     def init_column_data(self):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
@@ -107,13 +110,13 @@ class HomogeneousColumnTests:
 
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+        dataset = Dataset(self.frame({'x':self.xs, 'x2':self.xs_2}),
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dataframe_init_hm_alias(self):
         "Tests support for homogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+        dataset = Dataset(self.frame({'x':self.xs, 'x2':self.xs_2}),
                           kdims=[('x', 'X-label')], vdims=[('x2', 'X2-label')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
@@ -377,7 +380,7 @@ class HomogeneousColumnTests:
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
-        self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes.iloc[0]))
+        self.assertEqual(df, self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]))
 
     def test_dataset_transform_replace_hm(self):
         transformed = self.dataset_hm.transform(y=dim('y')*2)
@@ -424,12 +427,12 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
     def test_dataset_dataframe_init_ht(self):
         "Tests support for heterogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
+        dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dataframe_init_ht_alias(self):
         "Tests support for heterogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}),
+        dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys}),
                           kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
@@ -505,9 +508,9 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     # Operations
 
     def test_dataset_redim_with_alias_dframe(self):
-        test_df = pd.DataFrame({'x': range(10), 'y': range(0,20,2)})
+        test_df = self.frame({'x': range(10), 'y': range(0,20,2)})
         dataset = Dataset(test_df, kdims=[('x', 'X-label')], vdims=['y'])
-        redim_df = pd.DataFrame({'X': range(10), 'y': range(0,20,2)})
+        redim_df = self.frame({'X': range(10), 'y': range(0,20,2)})
         dataset_redim = Dataset(redim_df, kdims=['X'], vdims=['y'])
         self.assertEqual(dataset.redim(**{'X-label':'X'}), dataset_redim)
         self.assertEqual(dataset.redim(x='X'), dataset_redim)
