@@ -39,7 +39,8 @@ def norm(values, min=None, max=None):
 
     Parameters
     ----------
-    values : Array of values to be normalized
+    values
+        Array of values to be normalized
     min : float, optional
         Lower bound of normalization range
     max : float, optional
@@ -60,7 +61,8 @@ def lognorm(values, min=None, max=None):
 
     Parameters
     ----------
-    values : Array of values to be normalized
+    values
+        Array of values to be normalized
     min : float, optional
         Lower bound of normalization range
     max : float, optional
@@ -506,6 +508,7 @@ class dim:
         Parameters
         ----------
         bins : List or array containing the bin boundaries
+
         labels : List of labels to assign to each bin
             If the bins are length N the labels should be length N-1
         """
@@ -519,8 +522,10 @@ class dim:
 
         Parameters
         ----------
-        categories : List or dict of categories to map inputs to
-        default : Default value to assign if value not in categories
+        categories
+            List or dict of categories to map inputs to
+        default
+            Default value to assign if value not in categories
         """
         return type(self)(self, categorize, categories=categories, default=default)
 
@@ -530,7 +535,8 @@ class dim:
 
         Parameters
         ----------
-        limits : tuple of (min, max) defining the normalization range
+        limits
+            tuple of (min, max) defining the normalization range
         """
         kwargs = {}
         if limits is not None:
@@ -544,7 +550,8 @@ class dim:
 
         Parameters
         ----------
-        limits : tuple of (min, max) defining the normalization range
+        limits
+            tuple of (min, max) defining the normalization range
         """
         kwargs = {}
         if limits is not None:
@@ -975,6 +982,7 @@ def lon_lat_to_easting_northing(longitude, latitude):
     Parameters
     ----------
     longitude
+
     latitude
 
     Returns
@@ -1019,6 +1027,7 @@ def easting_northing_to_lon_lat(easting, northing):
     Parameters
     ----------
     easting
+
     northing
 
     Returns

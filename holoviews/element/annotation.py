@@ -337,12 +337,12 @@ class Spline(Annotation):
     Follows format of matplotlib spline definitions as used in
     matplotlib.path.Path with the following codes:
 
-    Path.STOP     : 0
-    Path.MOVETO   : 1
-    Path.LINETO   : 2
-    Path.CURVE3   : 3
-    Path.CURVE4   : 4
-    Path.CLOSEPLOY: 79
+        Path.STOP     : 0
+        Path.MOVETO   : 1
+        Path.LINETO   : 2
+        Path.CURVE3   : 3
+        Path.CURVE4   : 4
+        Path.CLOSEPLOY: 79
 
     """
 
@@ -377,7 +377,8 @@ class Spline(Annotation):
 
         Parameters
         ----------
-        dimension : The dimension to return values for
+        dimension
+            The dimension to return values for
         expanded : bool, optional
             Whether to expand values
         flat : bool, optional
