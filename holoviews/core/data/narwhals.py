@@ -262,15 +262,21 @@ class NarwhalsInterface(Interface):
         the interface, return a simple scalar.
 
         """
+        ncols, nrows, is_lazy = cls._get_size_if_scalar(data)
+        if ncols == 1 and nrows == 1:
+            return (data.collect() if is_lazy else data).item()
+        return data
+
+    @classmethod
+    def _get_size_if_scalar(cls, data) -> tuple[int, None, None] | tuple[int, int, bool]:
         cols = data.collect_schema()
-        if len(cols) != 1:
-            return data
+        ncols = len(cols)
+        if ncols != 1:
+            return ncols, None, None
         is_lazy = isinstance(data, nw.LazyFrame)
-        size = data.select(nw.col(next(iter(cols))).len())
-        size = (size.collect() if is_lazy else size).item()
-        if size != 1:
-            return data
-        return (data.collect() if is_lazy else data).item()
+        nrows = data.select(nw.col(next(iter(cols))).len())
+        nrows = (nrows.collect() if is_lazy else nrows).item()
+        return ncols, nrows, is_lazy
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=None):
@@ -326,9 +332,13 @@ class NarwhalsInterface(Interface):
                 # If the dtype is not boolean, we let narwhals error in filter
                 selection_mask = selection_mask.tolist()
             df = df.filter(selection_mask)
-        if len(dataset.vdims) == 1:
-            df = df.select(str(dataset.vdims[0]))
-            return cls.unpack_scalar(dataset, df)
+        if selection and len(dataset.vdims) == 1:
+            indexed = selection.keys() - set(map(str, dataset.kdims))
+            if not indexed:
+                df_tmp = df.select(str(dataset.vdims[0]))
+                _, nrows, is_lazy = cls._get_size_if_scalar(df_tmp)
+                if nrows == 1:
+                    return (df_tmp.collect() if is_lazy else df_tmp).item()
         return df
 
     @classmethod
