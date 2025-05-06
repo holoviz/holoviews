@@ -1,4 +1,5 @@
 import narwhals as nw
+import numpy as np
 import pytest
 
 from holoviews.core.data import NarwhalsInterface
@@ -30,12 +31,45 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         mod = pytest.importorskip(self.narwhals_backend)
         return mod.DataFrame(*args, **kwargs)
 
+    def test_dataset_dtypes(self):
+        assert self.dataset_hm.interface.dtype(self.dataset_hm, 'x').dtype == nw.Int64
+        assert self.dataset_hm.interface.dtype(self.dataset_hm, 'y').dtype == nw.Int64
+
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
         assert isinstance(ds.interface.dtype(ds, 'Gender').dtype, nw.String)
         assert isinstance(ds.interface.dtype(ds, 'Age').dtype, nw.Int64)
         assert isinstance(ds.interface.dtype(ds, 'Weight').dtype, nw.Int64)
         assert isinstance(ds.interface.dtype(ds, 'Height').dtype, nw.Float64)
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_dict_init(self):
+        super().test_dataset_dict_init()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_dict_init_alias(self):
+        super().test_dataset_dict_init_alias()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_empty_aggregate(self):
+        super().test_dataset_empty_aggregate()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_empty_aggregate_with_spreadfn(self):
+        super().test_dataset_empty_aggregate_with_spreadfn()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_empty_list_init(self):
+        super().test_dataset_empty_list_init()
+
+    def test_dataset_get_dframe(self):
+        df = self.dataset_hm.dframe()
+        np.testing.assert_array_equal(df["x"], self.xs)
+        np.testing.assert_array_equal(df["y"], self.y_ints)
+
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(['x'])
+        np.testing.assert_array_equal(df, nw.from_native(self.frame({'x': self.xs})))
 
 
 class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):

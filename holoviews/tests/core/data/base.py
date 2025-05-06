@@ -487,17 +487,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                                              self.weight, self.height, strict=None))
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
-    def test_dataset_odict_init(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
-
-    def test_dataset_odict_init_alias(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
-                          kdims=[('a', 'A')], vdims=[('b', 'B')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
-
     def test_dataset_dict_init(self):
         dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(dataset.data, self.data_type))
+
+    def test_dataset_dict_init_alias(self):
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
+                          kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_range_with_dimension_range(self):
