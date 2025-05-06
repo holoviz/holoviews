@@ -1,7 +1,10 @@
+from datetime import datetime
+
 import narwhals as nw
 import numpy as np
 import pytest
 
+from holoviews import Dataset, Dimension
 from holoviews.core.data import NarwhalsInterface
 
 from .base import HeterogeneousColumnTests, InterfaceTests
@@ -74,6 +77,11 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
         np.testing.assert_array_equal(df, nw.from_native(self.frame({'x': self.xs})))
+
+    def test_dataset_range_with_dimension_range(self):
+        dt64 = [datetime(2017, 1, i) for i in range(1, 4)]
+        ds = Dataset(self.frame({"Date": dt64}), [Dimension('Date', range=(dt64[0], dt64[-1]))])
+        assert ds.range('Date'), (dt64[0], dt64[-1])
 
 
 class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
