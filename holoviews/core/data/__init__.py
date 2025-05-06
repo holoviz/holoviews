@@ -832,7 +832,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Curve, Table
-        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
+        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF', 'narwhals']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0], strict=None)}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
