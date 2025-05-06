@@ -165,8 +165,14 @@ class NarwhalsInterface(Interface):
             return cmin.item(), cmax.item()
         else:
             if dimension.nodata is not None:
-                df_column = df_column.with_columns(nw.col(name).fill_null(dimension.nodata))
-            calc = df_column.select(cmin=nw.col(name).min(), cmax=nw.col(name).max())
+                expr = nw.col(name).fill_null(dimension.nodata)
+            else:
+                expr = nw.col(name).drop_nulls()
+            calc = (
+                df_column
+                .select(expr)
+                .select(cmin=nw.col(name).min(), cmax=nw.col(name).max())
+            )
             if is_lazy:
                 calc = calc.collect()
             if not len(calc):
