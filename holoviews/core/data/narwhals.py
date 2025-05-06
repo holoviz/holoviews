@@ -165,7 +165,7 @@ class NarwhalsInterface(Interface):
             return cmin.item(), cmax.item()
         else:
             if dimension.nodata is not None:
-                df_column = df_column.fill_null(dimension.nodata)
+                df_column = df_column.with_columns(nw.col(name).fill_null(dimension.nodata))
             calc = df_column.select(cmin=nw.col(name).min(), cmax=nw.col(name).max())
             if is_lazy:
                 calc = calc.collect()
@@ -296,7 +296,7 @@ class NarwhalsInterface(Interface):
         if by is None:
             by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
-        return dataset.data.sort_values(by=cols, descending=reverse)
+        return dataset.data.sort(by=cols, descending=reverse)
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -487,6 +487,10 @@ class NarwhalsInterface(Interface):
             return dataset.clone(data=dataset.data.collect())
         else:
             return dataset
+
+    @classmethod
+    def reindex(cls, dataset, kdims=None, vdims=None):
+        return dataset.data
 
 
 Interface.register(NarwhalsInterface)
