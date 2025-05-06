@@ -99,6 +99,14 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(self.frame({"Date": dt64}), [Dimension('Date', range=(dt64[0], dt64[-1]))])
         assert ds.range('Date'), (dt64[0], dt64[-1])
 
+    @pytest.mark.filterwarnings("ignore:Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated:FutureWarning")
+    def test_select_with_neighbor(self):
+        select = self.table.interface.select_mask(self.table.dataset, {"Weight": 18})
+        select_neighbor = self.table.interface._select_mask_neighbor(self.table.dataset, {"Weight": 18})
+
+        assert len(self.table.data.filter(select)) == 1
+        assert len(self.table.data.filter(select_neighbor)) == 3
+
 
 class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True
@@ -108,3 +116,12 @@ class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
 # class PolarsNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
 #     __test__ = True
 #     narwhals_backend = "polars"
+#
+#
+# class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
+#     __test__ = True
+#     narwhals_backend = "pyarrow"
+#
+#     def frame(self, *args, **kwargs):
+#         mod = pytest.importorskip(self.narwhals_backend)
+#         return mod.table(*args, **kwargs)
