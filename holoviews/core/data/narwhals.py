@@ -165,19 +165,18 @@ class NarwhalsInterface(Interface):
             return cmin.item(), cmax.item()
         else:
             if dimension.nodata is not None:
-                expr = nw.col(name).fill_null(dimension.nodata)
-            else:
-                expr = nw.col(name).drop_nulls()
-            calc = (
+                expr = nw.when(nw.col(name) == dimension.nodata).then(None).otherwise(nw.col(name)).alias(name)
+                df_column = df_column.select(expr)
+            df_column = (
                 df_column
-                .select(expr)
+                .select(nw.col(name).drop_nulls())
                 .select(cmin=nw.col(name).min(), cmax=nw.col(name).max())
             )
             if is_lazy:
-                calc = calc.collect()
-            if not len(calc):
+                df_column = df_column.collect()
+            if not len(df_column):
                 return np.nan, np.nan
-            return calc.item(0, "cmin"), calc.item(0, "cmax")
+            return df_column.item(0, "cmin"), df_column.item(0, "cmax")
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
