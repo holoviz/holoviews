@@ -56,7 +56,11 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def applies(cls, obj):
-        return is_into_dataframe(obj) or is_into_series(obj) or (cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
+        return (
+            is_into_dataframe(obj)
+            or is_into_series(obj)
+            or (cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
+        )
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -72,7 +76,9 @@ class NarwhalsInterface(Interface):
             data = nw.from_dict(data, backend=cls.narwhals_backend)
         elif cls.narwhals_backend and isinstance(data, tuple):
             dims = map(str, (*(kdims or ()), *(vdims or ())))
-            data = nw.from_dict(dict(zip(dims, data, strict=False)), backend=cls.narwhals_backend)
+            data = nw.from_dict(
+                dict(zip(dims, data, strict=False)), backend=cls.narwhals_backend
+            )
         elif cls.narwhals_backend and isinstance(data, np.ndarray):
             dims = list(map(str, (*(kdims or ()), *(vdims or ()))))
             data = nw.from_numpy(data, schema=dims, backend=cls.narwhals_backend)
@@ -165,12 +171,15 @@ class NarwhalsInterface(Interface):
             return cmin.item(), cmax.item()
         else:
             if dimension.nodata is not None:
-                expr = nw.when(nw.col(name) == dimension.nodata).then(None).otherwise(nw.col(name)).alias(name)
+                expr = (
+                    nw.when(nw.col(name) == dimension.nodata)
+                    .then(None)
+                    .otherwise(nw.col(name))
+                    .alias(name)
+                )
                 df_column = df_column.select(expr)
-            df_column = (
-                df_column
-                .select(nw.col(name).drop_nulls())
-                .select(cmin=nw.col(name).min(), cmax=nw.col(name).max())
+            df_column = df_column.select(nw.col(name).drop_nulls()).select(
+                cmin=nw.col(name).min(), cmax=nw.col(name).max()
             )
             if is_lazy:
                 df_column = df_column.collect()
@@ -373,7 +382,9 @@ class NarwhalsInterface(Interface):
 
         """
         if isinstance(dataset.data, nw.LazyFrame):
-            raise NotImplementedError("_select_mask_neighbor does not support LazyFrame")
+            raise NotImplementedError(
+                "_select_mask_neighbor does not support LazyFrame"
+            )
         mask = cls.select_mask(dataset, selection)
         return mask | mask.shift(1).fill_null(False) | mask.shift(-1).fill_null(False)
 
@@ -399,7 +410,7 @@ class NarwhalsInterface(Interface):
             if compute:
                 return data.collect()[dim.name]
             else:
-                return data # Cannot slice LazyFrame
+                return data  # Cannot slice LazyFrame
         return data[dim.name]
 
     @classmethod
@@ -488,9 +499,7 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def compute(cls, dataset):
-        """Should return a computed version of the Dataset.
-
-        """
+        """Should return a computed version of the Dataset."""
         if isinstance(dataset.data, nw.LazyFrame):
             return dataset.clone(data=dataset.data.collect())
         else:
