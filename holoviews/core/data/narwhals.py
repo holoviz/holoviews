@@ -56,7 +56,7 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def applies(cls, obj):
-        return is_into_dataframe(obj) or is_into_series(obj) or (cls.narwhals_backend and isinstance(obj, (dict, tuple)))
+        return is_into_dataframe(obj) or is_into_series(obj) or (cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -73,6 +73,9 @@ class NarwhalsInterface(Interface):
         elif cls.narwhals_backend and isinstance(data, tuple):
             dims = map(str, (*(kdims or ()), *(vdims or ())))
             data = nw.from_dict(dict(zip(dims, data, strict=False)), backend=cls.narwhals_backend)
+        elif cls.narwhals_backend and isinstance(data, np.ndarray):
+            dims = list(map(str, (*(kdims or ()), *(vdims or ()))))
+            data = nw.from_numpy(data, schema=dims, backend=cls.narwhals_backend)
         else:
             data = nw.from_native(data, allow_series=True)
 
@@ -304,6 +307,10 @@ class NarwhalsInterface(Interface):
                 selection_mask = cls.select_mask(dataset, column_sel)
 
         if selection_mask is not None:
+            if isinstance(selection_mask, np.ndarray):
+                # Boolean ndarray does not work, so we convert it to list
+                # If the dtype is not boolean, we let narwhals error in filter
+                selection_mask = selection_mask.tolist()
             df = df.filter(selection_mask)
         return df
 
@@ -415,7 +422,9 @@ class NarwhalsInterface(Interface):
         data = dataset.data.clone()
         if dimension.name not in data:
             cols = list(data.collect_schema())
-            cols = [cols[:dim_pos], dimension.name, cols[dim_pos:]]
+            cols = [*cols[:dim_pos], dimension.name, *cols[dim_pos:]]
+            if not isinstance(values, nw.Series):
+                values = nw.lit(values)
             data = data.with_columns(**{dimension.name: values})[cols]
         return data
 
