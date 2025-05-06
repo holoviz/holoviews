@@ -69,6 +69,22 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_implicit_indexing_init(self):
         super().test_dataset_implicit_indexing_init(self)
 
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_zip_init(self):
+        super().test_dataset_zip_init()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_zip_init_alias(self):
+        super().test_dataset_zip_init_alias()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_simple_zip_init(self):
+        super().test_dataset_simple_zip_init()
+
+    @pytest.mark.xfail(reason="Doesn't really make sense")
+    def test_dataset_simple_zip_init_alias(self):
+        super().test_dataset_simple_zip_init_alias()
+
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
         np.testing.assert_array_equal(df["x"], self.xs)
