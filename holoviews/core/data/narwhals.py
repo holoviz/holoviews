@@ -215,7 +215,7 @@ class NarwhalsInterface(Interface):
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions("value", label="name")
         reindexed = cls.dframe(dataset, dimensions=cols + vdims)
-        expr = getattr(nw.col("*"), _AGG_FUNC_LOOKUP.get(function, function))()
+        expr = getattr(nw.all(), _AGG_FUNC_LOOKUP.get(function, function))()
         if len(dimensions):
             columns = reindexed.collect_schema()
             if function in [np.size]:
@@ -226,7 +226,8 @@ class NarwhalsInterface(Interface):
                     for k, v in columns.items()
                     if isinstance(v, nw.dtypes.NumericType)
                 ]
-            grouped = reindexed.select(numeric_cols + cols).groupby(cols)
+            all_cols = list(set(numeric_cols) | set(cols))
+            grouped = reindexed.select(all_cols).group_by(cols)
             df = grouped.agg(expr, **kwargs)
         else:
             df = reindexed.select(expr, **kwargs)
@@ -245,11 +246,11 @@ class NarwhalsInterface(Interface):
 
         """
         cols = data.collect_schema()
-        if len(cols) > 1:
+        if len(cols) != 1:
             return data
         is_lazy = isinstance(data, nw.LazyFrame)
-        size = data.select(nw.col(cols[0]).len())
-        size = size.collect() if is_lazy else size
+        size = data.select(nw.col(next(iter(cols))).len())
+        size = (size.collect() if is_lazy else size).item()
         if size != 1:
             return data
         return (data.collect() if is_lazy else data).item()

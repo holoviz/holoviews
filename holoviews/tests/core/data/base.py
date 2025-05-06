@@ -79,7 +79,7 @@ class HomogeneousColumnTests:
     __test__ = False
 
     def frame(self, *args, **kwargs):
-        return pd.DataFrame
+        return pd.DataFrame(*args, **kwargs)
 
     def init_column_data(self):
         self.xs = np.array(range(11))
