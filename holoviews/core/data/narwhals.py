@@ -312,6 +312,9 @@ class NarwhalsInterface(Interface):
                 # If the dtype is not boolean, we let narwhals error in filter
                 selection_mask = selection_mask.tolist()
             df = df.filter(selection_mask)
+        if len(dataset.vdims) == 1:
+            df = df.select(str(dataset.vdims[0]))
+            return cls.unpack_scalar(dataset, df)
         return df
 
     @classmethod
@@ -490,6 +493,10 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
+        dims = [*(kdims or ()), *(vdims or ())]
+        if dims:
+            expr = nw.col(list(map(str, dims)))
+            return dataset.data.select(expr)
         return dataset.data
 
 
