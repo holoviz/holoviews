@@ -93,6 +93,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     For instance:
 
         curve = hv.Curve([1,2,3])
+
         curve.options(opts.Curve(color='red'))
 
     The options method also accepts lists of Option objects.

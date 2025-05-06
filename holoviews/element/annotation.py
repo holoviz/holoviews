@@ -338,10 +338,15 @@ class Spline(Annotation):
     matplotlib.path.Path with the following codes:
 
         Path.STOP     : 0
+
         Path.MOVETO   : 1
+
         Path.LINETO   : 2
+
         Path.CURVE3   : 3
+
         Path.CURVE4   : 4
+
         Path.CLOSEPLOY: 79
 
     """
