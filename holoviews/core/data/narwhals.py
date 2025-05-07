@@ -449,8 +449,8 @@ class NarwhalsInterface(Interface):
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         data = cls._narwhals_clone(dataset.data)
-        if dimension.name not in data:
-            cols = list(data.collect_schema())
+        cols = list(data.collect_schema())
+        if dimension.name not in cols:
             cols = [*cols[:dim_pos], dimension.name, *cols[dim_pos:]]
             if not isinstance(values, nw.Series):
                 if np.isscalar(values):
@@ -539,7 +539,7 @@ class NarwhalsInterface(Interface):
         if ncols == 0:
             return 0, 0
         nrows = data.select(nw.col(next(iter(cols))).len()).collect().item()
-        return ncols, nrows
+        return nrows, ncols
 
     @classmethod
     def _narwhals_clone(cls, data):
