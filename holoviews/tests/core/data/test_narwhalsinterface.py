@@ -35,15 +35,15 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         return mod.DataFrame(*args, **kwargs)
 
     def test_dataset_dtypes(self):
-        assert self.dataset_hm.interface.dtype(self.dataset_hm, 'x').dtype == nw.Int64
-        assert self.dataset_hm.interface.dtype(self.dataset_hm, 'y').dtype == nw.Int64
+        assert self.dataset_hm.interface.dtype(self.dataset_hm, "x").dtype == nw.Int64
+        assert self.dataset_hm.interface.dtype(self.dataset_hm, "y").dtype == nw.Int64
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        assert isinstance(ds.interface.dtype(ds, 'Gender').dtype, nw.String)
-        assert isinstance(ds.interface.dtype(ds, 'Age').dtype, nw.Int64)
-        assert isinstance(ds.interface.dtype(ds, 'Weight').dtype, nw.Int64)
-        assert isinstance(ds.interface.dtype(ds, 'Height').dtype, nw.Float64)
+        assert isinstance(ds.interface.dtype(ds, "Gender").dtype, nw.String)
+        assert isinstance(ds.interface.dtype(ds, "Age").dtype, nw.Int64)
+        assert isinstance(ds.interface.dtype(ds, "Weight").dtype, nw.Int64)
+        assert isinstance(ds.interface.dtype(ds, "Height").dtype, nw.Float64)
 
     @pytest.mark.xfail(reason="Doesn't really make sense")
     def test_dataset_dict_init(self):
@@ -91,18 +91,24 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         np.testing.assert_array_equal(df["y"], self.y_ints)
 
     def test_dataset_get_dframe_by_dimension(self):
-        df = self.dataset_hm.dframe(['x'])
-        np.testing.assert_array_equal(df, nw.from_native(self.frame({'x': self.xs})))
+        df = self.dataset_hm.dframe(["x"])
+        np.testing.assert_array_equal(df, nw.from_native(self.frame({"x": self.xs})))
 
     def test_dataset_range_with_dimension_range(self):
         dt64 = [datetime(2017, 1, i) for i in range(1, 4)]
-        ds = Dataset(self.frame({"Date": dt64}), [Dimension('Date', range=(dt64[0], dt64[-1]))])
-        assert ds.range('Date'), (dt64[0], dt64[-1])
+        ds = Dataset(
+            self.frame({"Date": dt64}), [Dimension("Date", range=(dt64[0], dt64[-1]))]
+        )
+        assert ds.range("Date"), (dt64[0], dt64[-1])
 
-    @pytest.mark.filterwarnings("ignore:Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated:FutureWarning")
+    @pytest.mark.filterwarnings(
+        "ignore:Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated:FutureWarning"
+    )
     def test_select_with_neighbor(self):
         select = self.table.interface.select_mask(self.table.dataset, {"Weight": 18})
-        select_neighbor = self.table.interface._select_mask_neighbor(self.table.dataset, {"Weight": 18})
+        select_neighbor = self.table.interface._select_mask_neighbor(
+            self.table.dataset, {"Weight": 18}
+        )
 
         assert len(self.table.data.filter(select)) == 1
         assert len(self.table.data.filter(select_neighbor)) == 3

@@ -456,7 +456,9 @@ class NarwhalsInterface(Interface):
                 if np.isscalar(values):
                     values = nw.lit(values)
                 else:
-                    values = nw.new_series(dimension.name, values, backend=data.implementation)
+                    values = nw.new_series(
+                        dimension.name, values, backend=data.implementation
+                    )
             data = data.with_columns(**{dimension.name: values})[cols]
         return data
 
