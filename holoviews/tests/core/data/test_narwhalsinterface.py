@@ -144,10 +144,13 @@ class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         return pa.table(*args, **kwargs)
 
 
-class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
+class BaseNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
+    data_type = (nw.DataFrame, nw.LazyFrame)
+
+
+class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "polars"
-    data_type = (nw.DataFrame, nw.LazyFrame)
 
     def frame(self, *args, **kwargs):
         pl = pytest.importorskip(self.narwhals_backend)
