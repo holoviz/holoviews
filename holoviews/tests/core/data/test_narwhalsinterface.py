@@ -126,10 +126,10 @@ class PolarsNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     narwhals_backend = "polars"
 
 
-# class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
-#     __test__ = True
-#     narwhals_backend = "pyarrow"
-#
-#     def frame(self, *args, **kwargs):
-#         mod = pytest.importorskip(self.narwhals_backend)
-#         return mod.table(*args, **kwargs)
+class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
+    __test__ = True
+    narwhals_backend = "pyarrow"
+
+    def frame(self, *args, **kwargs):
+        pa = pytest.importorskip(self.narwhals_backend)
+        return pa.table(*args, **kwargs)
