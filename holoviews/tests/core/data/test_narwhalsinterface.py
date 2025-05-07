@@ -107,17 +107,25 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         assert len(self.table.data.filter(select)) == 1
         assert len(self.table.data.filter(select_neighbor)) == 3
 
+    def test_dataset_groupby(self):
+        # group_by can give different output for different backend
+        super().test_dataset_groupby(sort=True)
+
+    def test_dataset_groupby_alias(self):
+        # group_by can give different output for different backend
+        super().test_dataset_groupby_alias(sort=True)
+
 
 class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True
     narwhals_backend = "pandas"
 
 
-# class PolarsNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
-#     __test__ = True
-#     narwhals_backend = "polars"
-#
-#
+class PolarsNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
+    __test__ = True
+    narwhals_backend = "polars"
+
+
 # class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
 #     __test__ = True
 #     narwhals_backend = "pyarrow"

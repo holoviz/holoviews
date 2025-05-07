@@ -453,7 +453,10 @@ class NarwhalsInterface(Interface):
             cols = list(data.collect_schema())
             cols = [*cols[:dim_pos], dimension.name, *cols[dim_pos:]]
             if not isinstance(values, nw.Series):
-                values = nw.lit(values)
+                if np.isscalar(values):
+                    values = nw.lit(values)
+                else:
+                    values = nw.new_series(dimension.name, values, backend=data.implementation)
             data = data.with_columns(**{dimension.name: values})[cols]
         return data
 

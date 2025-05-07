@@ -216,11 +216,11 @@ class HomogeneousColumnTests:
 
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
-        self.assertEqual(samples, np.array([0, 10, 20]))
+        self.assertEqual(np.array([0, 10, 20]), samples)
 
     def test_dataset_sample_hm_alias(self):
         samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
-        self.assertEqual(samples, np.array([0, 10, 20]))
+        self.assertEqual(np.array([0, 10, 20]), samples)
 
     def test_dataset_array_hm(self):
         self.assertEqual(self.dataset_hm.array(),
@@ -534,7 +534,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
     def test_dataset_sample_ht(self):
         samples = self.dataset_ht.sample([0, 5, 10]).dimension_values('y')
-        self.assertEqual(samples, np.array([0, 0.5, 1]))
+        self.assertEqual(np.array([0, 0.5, 1]), samples)
 
     def test_dataset_reduce_ht(self):
         reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
@@ -612,7 +612,10 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
                           kdims=['Gender'], sort=sort)
-        self.assertEqual(self.table.groupby(['Gender']), grouped)
+        output = self.table.groupby(['Gender'])
+        if sort:
+            output = output.select(Gender=["F", "M"])
+        self.assertEqual(output, grouped)
 
     def test_dataset_groupby_alias(self, sort=False):
         group1 = {'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]}
@@ -622,7 +625,10 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
                           kdims=[('gender', 'Gender')], sort=sort)
-        self.assertEqual(self.alias_table.groupby('Gender'), grouped)
+        output = self.alias_table.groupby('Gender')
+        if sort:
+            output = output.select(Gender=["F", "M"])
+        self.assertEqual(output, grouped)
 
     def test_dataset_groupby_second_dim(self):
         group1 = {'Gender':['M'], 'Weight':[15], 'Height':[0.8]}
