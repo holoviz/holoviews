@@ -290,7 +290,8 @@ class Annotator(PaneBase):
 
         Parameters
         ----------
-        annotators : Annotator objects or elements to compose
+        annotators
+            Annotator objects or elements to compose
 
         Returns
         -------

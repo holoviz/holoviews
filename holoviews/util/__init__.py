@@ -81,19 +81,20 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     To set opts globally you can pass these option objects into opts.defaults:
 
-    opts.defaults(*options)
+        opts.defaults(*options)
 
     For instance:
 
-    opts.defaults(opts.Curve(color='red'))
+        opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
     objects to the .options method.
 
     For instance:
 
-    curve = hv.Curve([1,2,3])
-    curve.options(opts.Curve(color='red'))
+        curve = hv.Curve([1,2,3])
+
+        curve.options(opts.Curve(color='red'))
 
     The options method also accepts lists of Option objects.
 
@@ -683,6 +684,7 @@ class extension(_pyviz_extension):
 
     ```python
     import holoviews as hv
+
     hv.extension("bokeh")
     ```
 
