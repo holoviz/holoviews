@@ -195,7 +195,7 @@ class NarwhalsInterface(Interface):
     def concat(cls, datasets, dimensions, vdims):
         dataframes = []
         for key, ds in datasets:
-            data = ds.data.clone()
+            data = cls._narwhals_clone(ds.data)
             new_columns = [
                 nw.lit(val).alias(dim.name)
                 for dim, val in zip(dimensions, key, strict=None)
@@ -448,7 +448,7 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        data = dataset.data.clone()
+        data = cls._narwhals_clone(dataset.data)
         if dimension.name not in data:
             cols = list(data.collect_schema())
             cols = [*cols[:dim_pos], dimension.name, *cols[dim_pos:]]
@@ -480,9 +480,10 @@ class NarwhalsInterface(Interface):
     @classmethod
     def dframe(cls, dataset, dimensions):
         if dimensions:
-            return dataset.data.select(dimensions).clone()
+            data = dataset.data.select(dimensions)
         else:
-            return dataset.data.clone()
+            data = dataset.data
+        return cls._narwhals_clone(data)
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -527,6 +528,26 @@ class NarwhalsInterface(Interface):
             expr = nw.col(list(map(str, dims)))
             return dataset.data.select(expr)
         return dataset.data
+
+    @classmethod
+    def shape(cls, dataset):
+        data = dataset.data
+        if not isinstance(data, nw.LazyFrame):
+            return data.shape
+        cols = data.collect_schema()
+        ncols = len(cols)
+        if ncols == 0:
+            return 0, 0
+        nrows = data.select(nw.col(next(iter(cols))).len()).collect().item()
+        return ncols, nrows
+
+    @classmethod
+    def _narwhals_clone(cls, data):
+        if isinstance(data, nw.LazyFrame):
+            # nw.LazyFrame cannot be cloned
+            # though it seems like polars can
+            return data
+        return data.clone()
 
 
 Interface.register(NarwhalsInterface)

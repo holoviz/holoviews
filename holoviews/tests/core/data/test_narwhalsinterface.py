@@ -18,7 +18,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     __test__ = False
 
     datatype = "narwhals"
-    data_type = (nw.DataFrame, nw.Series)
+    data_type = nw.DataFrame
     narwhals_backend = None
 
     def setUp(self):
@@ -142,3 +142,13 @@ class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     def frame(self, *args, **kwargs):
         pa = pytest.importorskip(self.narwhals_backend)
         return pa.table(*args, **kwargs)
+
+
+class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
+    __test__ = True
+    narwhals_backend = "polars"
+    data_type = (nw.DataFrame, nw.LazyFrame)
+
+    def frame(self, *args, **kwargs):
+        pl = pytest.importorskip(self.narwhals_backend)
+        return pl.LazyFrame(*args, **kwargs)

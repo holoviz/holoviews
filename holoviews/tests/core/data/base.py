@@ -547,7 +547,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertEqual(self.dataset_ht.reduce('x', np.mean), np.float64(0.5))
 
     def test_dataset_2D_reduce_ht(self):
-        reduced = Dataset({'Weight':[14.333333333333334], 'Height':[0.73333333333333339]},
+        reduced = Dataset(self.init_frame({'Weight':[14.333333333333334], 'Height':[0.73333333333333339]}),
                           kdims=[], vdims=self.vdims)
         self.assertEqual(self.table.reduce(function=np.mean), reduced)
 
