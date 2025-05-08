@@ -20,8 +20,11 @@ from .styles import base_properties, fill_properties, line_properties, mpl_to_bo
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
 
 
-class ServerHoverMixin:
+class ServerHoverMixin(param.Parameterized):
     _model_cache = {}
+
+    selector_in_hovertool = param.Boolean(default=True, doc="""
+        Whether to show the selector in HoverTool.""")
 
     def _update_hover(self, element):
         tool = self.handles['hover']
@@ -95,7 +98,7 @@ class ServerHoverMixin:
                 "margin": "4px 0",
                 "grid-column": "span 2",
             }
-            if data.attrs.get("selector"):
+            if data.attrs.get("selector") and self.selector_in_hovertool:
                 selector_row = (
                     Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
                     Span(children=[data.attrs["selector"]], style={"font-weight": "bold", "text_align": "left"}),
