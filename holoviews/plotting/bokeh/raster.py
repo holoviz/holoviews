@@ -108,7 +108,14 @@ class ServerHoverMixin:
                 new[0] = _EPOCH + np.timedelta64(int(new[0] * 1e6), "ns")
             if is_datetime[1]:
                 new[1] = _EPOCH + np.timedelta64(int(new[1] * 1e6), "ns")
-            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new, strict=True)), method="nearest").to_dict()
+            try:
+                data_sel = self._hover_data.sel(
+                    **dict(zip(self._hover_data.coords, new, strict=True)),
+                    method="nearest"
+                ).to_dict()
+            except KeyError:
+                # Can happen when a coord is empty, e.g. xlim=(0, 0)
+                return
             data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             with hold(self.document):
