@@ -19,6 +19,8 @@ from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, BOKEH_GE_3_7_0, colormesh
 
+_EPOCH = np.datetime64("1970-01-01", "ns")
+
 
 class ServerHoverMixin:
     _model_cache = {}
@@ -77,6 +79,7 @@ class ServerHoverMixin:
 
         hover_model = HoverModel()
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
+        is_datetime = [dtypes[c].kind == "M" for c in coords]
         def _create_row(attr):
             kwargs = {}
             if BOKEH_GE_3_7_0:
@@ -101,6 +104,10 @@ class ServerHoverMixin:
         def on_change(attr, old, new):
             if np.isinf(new).all():
                 return
+            if is_datetime[0]:
+                new[0] = _EPOCH + np.timedelta64(int(new[0] * 1e6), "ns")
+            if is_datetime[1]:
+                new[1] = _EPOCH + np.timedelta64(int(new[1] * 1e6), "ns")
             data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new, strict=True)), method="nearest").to_dict()
             data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
