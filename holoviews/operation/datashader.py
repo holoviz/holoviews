@@ -75,6 +75,7 @@ DATASHADER_VERSION = ds_version.release
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
 DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
 DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
+DATASHADER_GE_0_17_1 = DATASHADER_VERSION >= (0, 17, 1)
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -417,6 +418,7 @@ class aggregate(LineAggregationOperation):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, agg_state)
+            agg.attrs["selector"] = str(sel_fn) if DATASHADER_GE_0_17_1 else None
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
 
@@ -1448,6 +1450,7 @@ class shade(LinkableOperation):
             img_data = img_data.to_dataset(dim="band")
             img_data.update({k: sel_data[k] for k in sel_data.attrs["selector_columns"]})
             img_data.attrs["selector_columns"] = sel_data.attrs["selector_columns"]
+            img_data.attrs["selector"] = sel_data.attrs.get("selector")
         return img_data
 
 
