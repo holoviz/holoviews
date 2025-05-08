@@ -17,7 +17,9 @@ from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, BOKEH_GE_3_7_0, colormesh
+
+_EPOCH = np.datetime64("1970-01-01", "ns")
 
 
 class ServerHoverMixin(param.Parameterized):
@@ -81,10 +83,21 @@ class ServerHoverMixin(param.Parameterized):
             )
 
         hover_model = HoverModel()
-        _create_row = lambda attr: (
-            Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
-            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
-        )
+        dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
+        is_datetime = [dtypes[c].kind == "M" for c in coords]
+        def _create_row(attr):
+            kwargs = {}
+            if BOKEH_GE_3_7_0:
+                kind = dtypes[attr].kind
+                if kind in "uifO":
+                    kwargs["formatter"] = "basic"
+                elif kind == "M":
+                    kwargs["formatter"] = "datetime"
+                    kwargs["format"] = "%Y-%m-%d %H:%M:%S"
+            return (
+                Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
+                Span(children=[ValueOf(obj=hover_model, attr=attr, **kwargs)], style={"text_align": "left"}),
+            )
         children = [el for dim in dims for el in _create_row(dim)]
 
         # Add a horizontal ruler and show the selector if available
@@ -123,10 +136,19 @@ class ServerHoverMixin(param.Parameterized):
         def on_change(attr, old, new):
             if np.isinf(new).all():
                 return
-            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new, strict=None)), method="nearest").to_dict()
-            # TODO: When ValueOf support formatter remove the rounding
-            # https://github.com/bokeh/bokeh/issues/14123
-            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            if is_datetime[0]:
+                new[0] = _EPOCH + np.timedelta64(int(new[0] * 1e6), "ns")
+            if is_datetime[1]:
+                new[1] = _EPOCH + np.timedelta64(int(new[1] * 1e6), "ns")
+            try:
+                data_sel = self._hover_data.sel(
+                    **dict(zip(self._hover_data.coords, new, strict=True)),
+                    method="nearest"
+                ).to_dict()
+            except KeyError:
+                # Can happen when a coord is empty, e.g. xlim=(0, 0)
+                return
+            data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             with hold(self.document):
                 hover_model.update(**data_coords, **data_vars)
