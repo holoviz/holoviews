@@ -84,7 +84,7 @@ class ServerHoverMixin:
         )
         children = [el for dim in dims for el in _create_row(dim)]
 
-        # Add a horizontal rule to separate selector columns
+        # Add a horizontal ruler and show the selector if available
         selector_columns = data.attrs["selector_columns"]
         first_selector = next((i for i, dim in enumerate(dims) if dim in selector_columns), None)
         if first_selector is not None:
@@ -95,7 +95,19 @@ class ServerHoverMixin:
                 "margin": "4px 0",
                 "grid-column": "span 2",
             }
-            children = [*children[:first_selector * 2], Div(style=divider_style), *children[first_selector * 2:]]
+            if data.attrs.get("selector"):
+                selector_row = (
+                    Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
+                    Span(children=[data.attrs["selector"]], style={"font-weight": "bold", "text_align": "left"}),
+                 )
+            else:
+                selector_row = ()
+            children = [
+                *children[:first_selector * 2],
+                Div(style=divider_style),
+                *selector_row,
+                *children[first_selector * 2:],
+            ]
 
         style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
         grid = Div(children=children, style=style)
