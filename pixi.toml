@@ -80,27 +80,24 @@ PYTHONIOENCODING = "utf-8"
 
 [feature.py310.dependencies]
 python = "3.10.*"
-bokeh_sampledata = "*"
 
 [feature.py311.dependencies]
 python = "3.11.*"
-bokeh_sampledata = "*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
-bokeh_sampledata = "*"
 
 [feature.py312.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.py313.dependencies]
 python = "3.13.*"
-bokeh_sampledata = "*"
 
 [feature.py313.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.optional.dependencies]
+bokeh_sampledata = "*"
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
@@ -183,7 +180,7 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "25.02.*"
+cudf = "25.04.*"
 cupy = "*"
 cuspatial = "*"
 librmm = { version = "*", channel = "rapidsai" }
@@ -197,7 +194,8 @@ test-gpu = "pytest holoviews/tests --gpu"
 # =============================================
 [feature.doc.dependencies]
 graphviz = "*"
-nbsite = ">=0.8.4,<0.9.0"
+nbsite = ">=0.8.4,<0.10.0"
+numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
@@ -208,10 +206,11 @@ MPLBACKEND = "Agg"
 PANEL_EMBED = "true"
 PANEL_EMBED_JSON = "true"
 PANEL_EMBED_JSON_PREFIX = "json"
+SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.tasks]
 _docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
-_docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
+_docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ holoviews/tests --ext-autodoc --ext-intersphinx'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
 
 [feature.doc.tasks.docs-build]

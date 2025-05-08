@@ -139,7 +139,7 @@ class OptsSpec(Parser):
 
     For instance, the following string:
 
-    Image (interpolation=None) plot(show_title=False) Curve style(color='r')
+        Image (interpolation=None) plot(show_title=False) Curve style(color='r')
 
     Would specify an OptionTree where Image has "interpolation=None"
     for style and 'show_title=False' for plot options. The Curve has a
@@ -380,13 +380,17 @@ class CompositorSpec(Parser):
 
     The components are:
 
-    mode      : Operation mode, either 'data' or 'display'.
-    group     : Value identifier with capitalized initial letter.
-    op        : The name of the operation to apply.
-    spec      : Overlay specification of form (A * B) where A and B are
-                 dotted path specifications.
-    settings  : Optional list of keyword arguments to be used as
-                parameters to the operation (in square brackets).
+        mode      : Operation mode, either 'data' or 'display'.
+
+        group     : Value identifier with capitalized initial letter.
+
+        op        : The name of the operation to apply.
+
+        spec      : Overlay specification of form (A * B) where A and B are
+        dotted path specifications.
+
+        settings  : Optional list of keyword arguments to be used as
+        parameters to the operation (in square brackets).
 
     """
 
