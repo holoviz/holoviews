@@ -84,7 +84,6 @@ class ServerHoverMixin:
                 if kind in "uifO":
                     kwargs["formatter"] = "basic"
                 elif kind == "M":
-                    # Currently weird behavior with nan
                     kwargs["formatter"] = "datetime"
                     kwargs["format"] = "%Y-%m-%d %H:%M:%S"
             return (
@@ -103,10 +102,7 @@ class ServerHoverMixin:
             if np.isinf(new).all():
                 return
             data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new, strict=True)), method="nearest").to_dict()
-            if BOKEH_GE_3_7_0:
-                data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
-            else:
-                data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             with hold(self.document):
                 hover_model.update(**data_coords, **data_vars)
