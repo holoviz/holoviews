@@ -7,7 +7,8 @@ name = "holoviews"
 dynamic = ["version"]
 description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
 readme = "README.md"
-license = { text = "BSD" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
 requires-python = ">=3.10"
 authors = [
     { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
@@ -15,7 +16,6 @@ authors = [
 ]
 maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
