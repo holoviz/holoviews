@@ -78,14 +78,19 @@ class HomogeneousColumnTests:
 
     __test__ = False
 
+    init_frame = dict
+
+    def frame(self, *args, **kwargs):
+        return pd.DataFrame(*args, **kwargs)
+
     def init_column_data(self):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
 
         self.y_ints = self.xs*2
-        self.dataset_hm = Dataset((self.xs, self.y_ints),
+        self.dataset_hm = Dataset(self.init_frame({"x": self.xs, "y": self.y_ints}),
                                   kdims=['x'], vdims=['y'])
-        self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
+        self.dataset_hm_alias = Dataset(self.init_frame({"x": self.xs, "y": self.y_ints}),
                                         kdims=[('x', 'X')], vdims=[('y', 'Y')])
 
     # Test the array constructor (homogeneous data) to be supported by
@@ -107,13 +112,13 @@ class HomogeneousColumnTests:
 
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+        dataset = Dataset(self.frame({'x':self.xs, 'x2':self.xs_2}),
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dataframe_init_hm_alias(self):
         "Tests support for homogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+        dataset = Dataset(self.frame({'x':self.xs, 'x2':self.xs_2}),
                           kdims=[('x', 'X-label')], vdims=[('x2', 'X2-label')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
@@ -213,11 +218,11 @@ class HomogeneousColumnTests:
 
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
-        self.assertEqual(samples, np.array([0, 10, 20]))
+        self.assertEqual(np.array([0, 10, 20]), samples)
 
     def test_dataset_sample_hm_alias(self):
         samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
-        self.assertEqual(samples, np.array([0, 10, 20]))
+        self.assertEqual(np.array([0, 10, 20]), samples)
 
     def test_dataset_array_hm(self):
         self.assertEqual(self.dataset_hm.array(),
@@ -377,7 +382,7 @@ class HomogeneousColumnTests:
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
-        self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes.iloc[0]))
+        self.assertEqual(df, self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]))
 
     def test_dataset_transform_replace_hm(self):
         transformed = self.dataset_hm.transform(y=dim('y')*2)
@@ -403,20 +408,20 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.vdims = ['Weight', 'Height']
         self.gender, self.age = np.array(['M','M','F']), np.array([10,16,12])
         self.weight, self.height = np.array([15,18,10]), np.array([0.8,0.6,0.8])
-        self.table = Dataset({'Gender':self.gender, 'Age':self.age,
-                              'Weight':self.weight, 'Height':self.height},
+        self.table = Dataset(self.init_frame({'Gender':self.gender, 'Age':self.age,
+                              'Weight':self.weight, 'Height':self.height}),
                              kdims=self.kdims, vdims=self.vdims)
 
         self.alias_kdims = [('gender', 'Gender'), ('age', 'Age')]
         self.alias_vdims = [('weight', 'Weight'), ('height', 'Height')]
-        self.alias_table = Dataset({'gender':self.gender, 'age':self.age,
-                                    'weight':self.weight, 'height':self.height},
+        self.alias_table = Dataset(self.init_frame({'gender':self.gender, 'age':self.age,
+                                    'weight':self.weight, 'height':self.height}),
                                    kdims=self.alias_kdims, vdims=self.alias_vdims)
 
         super().init_column_data()
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
-        self.dataset_ht = Dataset({'x':self.xs, 'y':self.ys},
+        self.dataset_ht = Dataset(self.init_frame({'x':self.xs, 'y':self.ys}),
                                   kdims=['x'], vdims=['y'])
 
     # Test the constructor to be supported by all interfaces supporting
@@ -424,12 +429,12 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
     def test_dataset_dataframe_init_ht(self):
         "Tests support for heterogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
+        dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dataframe_init_ht_alias(self):
         "Tests support for heterogeneous DataFrames"
-        dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}),
+        dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys}),
                           kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
@@ -484,17 +489,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                                              self.weight, self.height, strict=None))
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
-    def test_dataset_odict_init(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
-
-    def test_dataset_odict_init_alias(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
-                          kdims=[('a', 'A')], vdims=[('b', 'B')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
-
     def test_dataset_dict_init(self):
         dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(dataset.data, self.data_type))
+
+    def test_dataset_dict_init_alias(self):
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
+                          kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_range_with_dimension_range(self):
@@ -505,9 +506,9 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     # Operations
 
     def test_dataset_redim_with_alias_dframe(self):
-        test_df = pd.DataFrame({'x': range(10), 'y': range(0,20,2)})
+        test_df = self.frame({'x': range(10), 'y': range(0,20,2)})
         dataset = Dataset(test_df, kdims=[('x', 'X-label')], vdims=['y'])
-        redim_df = pd.DataFrame({'X': range(10), 'y': range(0,20,2)})
+        redim_df = self.frame({'X': range(10), 'y': range(0,20,2)})
         dataset_redim = Dataset(redim_df, kdims=['X'], vdims=['y'])
         self.assertEqual(dataset.redim(**{'X-label':'X'}), dataset_redim)
         self.assertEqual(dataset.redim(x='X'), dataset_redim)
@@ -535,7 +536,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
     def test_dataset_sample_ht(self):
         samples = self.dataset_ht.sample([0, 5, 10]).dimension_values('y')
-        self.assertEqual(samples, np.array([0, 0.5, 1]))
+        self.assertEqual(np.array([0, 0.5, 1]), samples)
 
     def test_dataset_reduce_ht(self):
         reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
@@ -613,7 +614,10 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
                           kdims=['Gender'], sort=sort)
-        self.assertEqual(self.table.groupby(['Gender']), grouped)
+        output = self.table.groupby(['Gender'])
+        if sort:
+            output = output.select(Gender=["F", "M"])
+        self.assertEqual(output, grouped)
 
     def test_dataset_groupby_alias(self, sort=False):
         group1 = {'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]}
@@ -623,7 +627,10 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
                           kdims=[('gender', 'Gender')], sort=sort)
-        self.assertEqual(self.alias_table.groupby('Gender'), grouped)
+        output = self.alias_table.groupby('Gender')
+        if sort:
+            output = output.select(Gender=["F", "M"])
+        self.assertEqual(output, grouped)
 
     def test_dataset_groupby_second_dim(self):
         group1 = {'Gender':['M'], 'Weight':[15], 'Height':[0.8]}

@@ -29,6 +29,7 @@ from .ibis import IbisInterface  # noqa (API import)
 from .image import ImageInterface  # noqa (API import)
 from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface  # noqa (API import)
+from .narwhals import NarwhalsInterface  # noqa: F401
 from .pandas import PandasAPI, PandasInterface  # noqa (API import)
 from .spatialpandas import SpatialPandasInterface  # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
@@ -38,7 +39,7 @@ default_datatype = 'dataframe'
 
 datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
              'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
-             'ibis']
+             'ibis', 'narwhals']
 
 
 def concat(datasets, datatype=None):
@@ -472,7 +473,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)
-        if xs.dtype.kind in 'SO':
+        if core_util.dtype_kind(xs.dtype) in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
         return [type(s)(xs[idx]) for s, idx in zip(coords, idxs, strict=None)]
@@ -644,7 +645,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             return self
 
         # Handle selection dim expression
-        if selection_expr is not None:
+        if selection_expr is not None and selection_expr.ops:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
             selection = {'selection_mask': mask}
 
@@ -831,7 +832,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Curve, Table
-        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
+        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF', 'narwhals']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0], strict=None)}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
