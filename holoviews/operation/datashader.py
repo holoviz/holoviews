@@ -418,7 +418,11 @@ class aggregate(LineAggregationOperation):
                 params["vdims"] = [params["vdims"]]
             sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, agg_state)
-            agg.attrs["selector"] = str(sel_fn) if DATASHADER_GE_0_17_1 else None
+            agg.attrs["selector"] = (
+                str(sel_fn)
+                if DATASHADER_GE_0_17_1
+                else f"{type(sel_fn).__name__}({getattr(sel_fn, 'column', '...')!r})"
+            )
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
 
