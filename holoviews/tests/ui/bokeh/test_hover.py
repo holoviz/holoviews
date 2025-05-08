@@ -267,6 +267,59 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.parametrize(
+    "hover_tooltips",
+    [None, ["x", "y"], ["x", "y", "s"], ["s"]],
+    ids=["default", "only_coords", "reduced_vars", "only_vars"],
+)
+@pytest.mark.parametrize("selector_in_hovertool", [True, False])
+def test_hover_tooltips_rasterize_server_hover_selector_ux(serve_hv, rng, hover_tooltips, selector_in_hovertool):
+    import datashader as ds
+
+    from holoviews.operation.datashader import rasterize
+
+    df = pd.DataFrame({
+        "x": rng.normal(45, 1, 100),
+        "y": rng.normal(85, 1, 100),
+        "s": 2,
+        "val": 10,
+        "cat": "cat1",
+    })
+    img = rasterize(hv.Points(df), selector=ds.first("val"))
+    img.opts(tools=["hover"], hover_tooltips=hover_tooltips, selector_in_hovertool=selector_in_hovertool)
+
+    page = serve_hv(img)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over the plot, first time the hovertool only have null
+    # we then timeout and hover again to get hovertool with actual values
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    page.wait_for_timeout(100)
+
+    page.mouse.move(bbox["x"] + bbox["width"] / 4, bbox["y"] + bbox["height"] / 4)
+    page.mouse.up()
+
+
+    # Selector test
+    if hover_tooltips == ["x", "y"] or not selector_in_hovertool:
+        expect(page.locator(".bk-Tooltip")).not_to_contain_text("Selector:first('val')")
+    else:
+        expect(page.locator(".bk-Tooltip")).to_contain_text("Selector:first('val')")
+
+    # The dividing line
+    line_expect = expect(page.locator("div[style*='height: 1px'][style*='grid-column: span 2']"))
+    if hover_tooltips in (["x", "y"], ["s"]):
+        line_expect.to_have_count(0)
+    else:
+        line_expect.to_have_count(1)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize("convert_x", [True, False])
 @pytest.mark.parametrize("convert_y", [True, False])
 def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x, convert_y):
