@@ -58,14 +58,20 @@ def streams_list_from_dict(streams):
     """Converts a streams dictionary into a streams list
 
     """
-    params = {}
+    params, rxs = {}, []
     for k, v in streams.items():
+        if isinstance(v, param.reactive.rx):
+            rxs.append(v)
+            continue
         v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
             raise TypeError(f'Cannot handle value {v!r} in streams dictionary')
-    return Params.from_params(params)
+    if rxs and params:
+        msg = "Currently, you can only passes either a dictionary of parameters or a dictionary of reactive expressions."
+        raise NotImplementedError(msg)
+    return rxs or Params.from_params(params)
 
 
 class Stream(param.Parameterized):
