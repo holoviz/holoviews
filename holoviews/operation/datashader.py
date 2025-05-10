@@ -75,7 +75,7 @@ DATASHADER_VERSION = ds_version.release
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
 DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
 DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
-DATASHADER_GE_0_17_1 = DATASHADER_VERSION >= (0, 17, 1)
+DATASHADER_GE_0_18_1 = DATASHADER_VERSION >= (0, 18, 1)
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -420,7 +420,7 @@ class aggregate(LineAggregationOperation):
             agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, agg_state)
             agg.attrs["selector"] = (
                 str(sel_fn)
-                if DATASHADER_GE_0_17_1
+                if DATASHADER_GE_0_18_1
                 else f"{type(sel_fn).__name__}({getattr(sel_fn, 'column', '...')!r})"
             )
         else:
