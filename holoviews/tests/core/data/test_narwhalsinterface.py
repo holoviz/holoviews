@@ -34,9 +34,6 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         mod = pytest.importorskip(self.narwhals_backend)
         return mod.DataFrame(*args, **kwargs)
 
-    def init_frame(self, *args, **kwargs):
-        return self.frame(*args, **kwargs)
-
     def test_dataset_dtypes(self):
         assert self.dataset_hm.interface.dtype(self.dataset_hm, "x").dtype == nw.Int64
         assert self.dataset_hm.interface.dtype(self.dataset_hm, "y").dtype == nw.Int64

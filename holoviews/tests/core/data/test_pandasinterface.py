@@ -18,6 +18,9 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     __test__ = False
 
+    frame = pd.DataFrame
+
+
     def test_duplicate_dimension_constructor(self):
         ds = Dataset(([1, 2, 3], [1, 2, 3]), ['A', 'B'], ['A'])
         self.assertEqual(list(ds.data.columns), ['A', 'B'])
