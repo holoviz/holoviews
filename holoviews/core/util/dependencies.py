@@ -41,8 +41,6 @@ _MIN_SUPPORTED_VERSION = {
 
 
 class _LazyModule:
-    __slots__ = ("__bool_use_sys_modules", "__module", "__module_name", "__package_name")
-
     def __init__(self, module_name, package_name=None, *, bool_use_sys_modules=False):
         """
         Lazy import module
