@@ -59,6 +59,7 @@ class _lazy_module:
             If not set uses the module_name.
         bool_use_sys_modules: bool, optional, default False
             Also check `sys.modules` for module in __bool__ check if True.
+            This means that bool can only be True if the module is already imported.
         """
         self.__module = None
         self.__module_name = module_name
@@ -68,10 +69,7 @@ class _lazy_module:
     @property
     def _module(self):
         if self.__module is None:
-            try:
-                self.__module = import_module(self.__module_name)
-            except PackageNotFoundError:
-                raise ModuleNotFoundError(f"No module named {self.__module_name!r}") from None
+            self.__module = import_module(self.__module_name)
             if self.__package_name in _MIN_SUPPORTED_VERSION:
                 min_version = _MIN_SUPPORTED_VERSION[self.__package_name]
                 mod_version = _no_import_version(self.__package_name)

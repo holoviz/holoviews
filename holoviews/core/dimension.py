@@ -406,6 +406,12 @@ class Dimension(param.Parameterized):
         return f'Dimension({self.name!r}, {kws})'
 
     def _get_type_formatters(self, own_type):
+        """_get_type_formatters returns the formatter for the type of the value.
+
+        It first checks if the type itself is in self.type_formatters and if
+        not, it checks if the qualified name of the type type is in
+        self.type_formatters.
+        """
         if own_type in self.type_formatters:
             return self.type_formatters[own_type]
 

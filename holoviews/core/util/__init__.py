@@ -2372,7 +2372,7 @@ def lazy_isinstance(obj, class_or_tuple):
     """
     from ...util.warnings import deprecated
 
-    deprecated("1.22.0", "lazy_isinstance") # Not used in HoloViews anymore
+    deprecated("1.23.0", "lazy_isinstance") # Not used in HoloViews anymore
 
     if isinstance(class_or_tuple, str):
         class_or_tuple = (class_or_tuple,)
