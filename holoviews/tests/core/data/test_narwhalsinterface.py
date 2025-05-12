@@ -102,7 +102,9 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         expected = self.frame({"x": self.xs})
         if isinstance(df, nw.LazyFrame):
             df = df.collect()
-        if isinstance(expected, nw.LazyFrame):
+        if hasattr(expected, "compute"):
+            expected = expected.compute()
+        if hasattr(expected, "collect"):
             expected = expected.collect()
         np.testing.assert_array_equal(df, expected)
 
@@ -149,7 +151,7 @@ class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     narwhals_backend = "pyarrow"
 
     def frame(self, *args, **kwargs):
-        pa = pytest.importorskip(self.narwhals_backend)
+        pa = pytest.importorskip("pyarrow")
         return pa.table(*args, **kwargs)
 
 
@@ -166,7 +168,7 @@ class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "polars"
 
     def frame(self, *args, **kwargs):
-        pl = pytest.importorskip(self.narwhals_backend)
+        pl = pytest.importorskip("polars")
         return pl.LazyFrame(*args, **kwargs)
 
 

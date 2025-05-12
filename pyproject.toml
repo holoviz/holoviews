@@ -129,7 +129,6 @@ filterwarnings = [
     "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
     # 2025-05
     "ignore:The 'shapely.geos' module is deprecated, and will be removed in a future version:DeprecationWarning", # https://github.com/geopandas/geopandas/pull/3453
-
 ]
 
 [tool.coverage]
