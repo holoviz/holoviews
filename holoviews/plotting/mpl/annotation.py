@@ -1,6 +1,5 @@
 import matplotlib as mpl
 import numpy as np
-import pandas as pd
 import param
 from matplotlib import patches
 from matplotlib.lines import Line2D
@@ -329,6 +328,7 @@ class _SyntheticAnnotationPlot(AnnotationPlot):
         return [fn(*val, **opts) for val in values]
 
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        import pandas as pd
         extents = super().get_extents(element, ranges, range_type)
         if isinstance(element, HLines):
             extents = np.nan, extents[0], np.nan, extents[2]

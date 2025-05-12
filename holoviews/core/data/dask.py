@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-import pandas as pd
 
 from .. import util
 from ..dimension import Dimension
@@ -252,6 +251,7 @@ class DaskInterface(PandasInterface):
                 agg = getattr(reindexed, inbuilts[function.__name__])()
             else:
                 raise NotImplementedError
+            import pandas as pd
             df = pd.DataFrame(agg.compute()).T
 
         dropped = []

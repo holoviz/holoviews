@@ -26,6 +26,7 @@ from bokeh.models import (
     tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
+from bokeh.models.dom import Div
 from bokeh.models.formatters import (
     CustomJSTickFormatter,
     MercatorTickFormatter,
@@ -2074,7 +2075,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
-        if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
+        if not isinstance(hover.tooltips, (str, Div)) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
                 key = f'@{{{k}}}'
                 if (

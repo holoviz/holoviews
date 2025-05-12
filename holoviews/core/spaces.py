@@ -1921,7 +1921,7 @@ class GridSpace(Layoutable, UniformNdMapping):
 
         Returns
         -------
-            List of keys
+        List of keys
         """
         keys = super().keys()
         if self.ndims == 1 or not full_grid:

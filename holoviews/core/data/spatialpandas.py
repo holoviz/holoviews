@@ -2,7 +2,6 @@ import sys
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 
 from ..dimension import dimension_name
 from ..util import isscalar, unique_array, unique_iterator
@@ -97,6 +96,8 @@ class SpatialPandasInterface(MultiInterface):
             raise ValueError(f"{cls.__name__} only support spatialpandas DataFrames.")
         elif 'geometry' not in data:
             cls.geo_column(data)
+
+        import pandas as pd
 
         index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
         if index_names == [None]:
@@ -495,6 +496,7 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
     Parameters
     ----------
     geom : spatialpandas geometry
+
     index
         The column index to return
     multi
@@ -553,6 +555,7 @@ def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
     Parameters
     ----------
     geom : spatialpandas geometry
+
     index
         The column index to return
 
@@ -618,6 +621,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     Parameters
     ----------
     data : GeoDataFrame
+
     dimension
         The dimension to get the values from
     expanded
@@ -714,12 +718,14 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
 
     Parameters
     ----------
-    data : List of dictionaries representing individual geometries
+    data
+        List of dictionaries representing individual geometries
     xdim
         Name of x-coordinates column
     ydim
         Name of y-coordinates column
-    columns : List of columns to add
+    columns
+        List of columns to add
     geom
         The type of geometry
 
@@ -901,6 +907,7 @@ def from_multi(eltype, data, kdims, vdims):
     -------
     A GeoDataFrame containing in the list based format.
     """
+    import pandas as pd
     from spatialpandas import GeoDataFrame
 
     xname, yname = (kd.name for kd in kdims[:2])
