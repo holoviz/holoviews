@@ -216,10 +216,15 @@ class NarwhalsInterface(Interface):
         group_kwargs.update(kwargs)
         group_kwargs["dataset"] = dataset.dataset
 
+        org_data = dataset.data
+        if isinstance(org_data, nw.LazyFrame):
+            # NOTE(LazyFrame): forced conversion
+            org_data = org_data.collect()
+
         group_by = [d.name for d in index_dims]
         data = [
             (k, group_type(v, **group_kwargs))
-            for k, v in dataset.data.group_by(group_by)
+            for k, v in org_data.group_by(group_by, )
         ]
 
         if issubclass(container_type, NdMapping):
@@ -333,7 +338,7 @@ class NarwhalsInterface(Interface):
                 # If the dtype is not boolean, we let narwhals error in filter
                 selection_mask = selection_mask.tolist()
             if not isinstance(selection_mask, nw.Expr) and isinstance(df, nw.LazyFrame):
-                # NOTE(LazyFrame): non-optimal conversion
+                # NOTE(LazyFrame): forced conversion
                 df = df.collect()
             df = df.filter(selection_mask)
         if selection and len(dataset.vdims) == 1:
@@ -464,7 +469,7 @@ class NarwhalsInterface(Interface):
                         dimension.name, values, backend=data.implementation
                     )
             if isinstance(data, nw.LazyFrame) and isinstance(values, nw.Series):
-                # NOTE(LazyFrame): non-optimal conversion
+                # NOTE(LazyFrame): forced conversion
                 data = data.collect()
             data = data.with_columns(**{dimension.name: values}).select(cols)
         return data
@@ -518,7 +523,7 @@ class NarwhalsInterface(Interface):
             if isinstance(rows, slice) and rows == slice(None):
                 return data.select(cols) # Special case
             else:
-                # NOTE(LazyFrame): non-optimal conversion
+                # NOTE(LazyFrame): forced conversion
                 data = data.select(cols).collect()
                 return data[rows]
         return data[rows, cols]
