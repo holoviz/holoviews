@@ -2,7 +2,6 @@ import sys
 import types
 
 import numpy as np
-import pandas as pd
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
@@ -653,6 +652,8 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def sample(cls, dataset, samples=None):
+        import pandas as pd
+
         if samples is None:
             samples = []
         names = [kd.name for kd in dataset.kdims]

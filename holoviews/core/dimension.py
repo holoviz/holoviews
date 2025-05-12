@@ -405,6 +405,19 @@ class Dimension(param.Parameterized):
         kws = ", ".join(f'{k}={changed[k]!r}' for k in ordering if k != 'name')
         return f'Dimension({self.name!r}, {kws})'
 
+    def _get_type_formatters(self, own_type):
+        """_get_type_formatters returns the formatter for the type of the value.
+
+        It first checks if the type itself is in self.type_formatters and if
+        not, it checks if the qualified name of the type type is in
+        self.type_formatters.
+        """
+        if own_type in self.type_formatters:
+            return self.type_formatters[own_type]
+
+        own_type_str = f"{own_type.__module__}.{own_type.__qualname__}"
+        if own_type_str in self.type_formatters:
+            return self.type_formatters[own_type_str]
 
     def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.
@@ -420,7 +433,7 @@ class Dimension(param.Parameterized):
         """
         own_type = type(value) if self.type is None else self.type
         formatter = (self.value_format if self.value_format
-                     else self.type_formatters.get(own_type))
+                     else self._get_type_formatters(own_type))
         if formatter:
             if callable(formatter):
                 formatted_value = formatter(value)

@@ -2,7 +2,6 @@ import sys
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 
 from ..dimension import dimension_name
 from ..util import isscalar, unique_array, unique_iterator
@@ -97,6 +96,8 @@ class SpatialPandasInterface(MultiInterface):
             raise ValueError(f"{cls.__name__} only support spatialpandas DataFrames.")
         elif 'geometry' not in data:
             cls.geo_column(data)
+
+        import pandas as pd
 
         index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
         if index_names == [None]:
@@ -906,6 +907,7 @@ def from_multi(eltype, data, kdims, vdims):
     -------
     A GeoDataFrame containing in the list based format.
     """
+    import pandas as pd
     from spatialpandas import GeoDataFrame
 
     xname, yname = (kd.name for kd in kdims[:2])
