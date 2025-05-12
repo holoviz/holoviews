@@ -331,6 +331,10 @@ class NarwhalsInterface(Interface):
                 # Boolean ndarray does not work, so we convert it to list
                 # If the dtype is not boolean, we let narwhals error in filter
                 selection_mask = selection_mask.tolist()
+            if not isinstance(selection_mask, nw.Expr) and isinstance(df, nw.LazyFrame):
+                # TODO(hoxbro): In an ideal world this shouldn't be necessary
+                # but cannot figure out how to do this with LazyFrame
+                df = df.collect()
             df = df.filter(selection_mask)
         if selection and len(dataset.vdims) == 1:
             indexed = selection.keys() - set(map(str, dataset.kdims))
@@ -459,7 +463,11 @@ class NarwhalsInterface(Interface):
                     values = nw.new_series(
                         dimension.name, values, backend=data.implementation
                     )
-            data = data.with_columns(**{dimension.name: values})[cols]
+            if isinstance(data, nw.LazyFrame) and isinstance(values, nw.Series):
+                # TODO(hoxbro): In an ideal world this shouldn't be necessary
+                # but cannot figure out how to do this with LazyFrame
+                data = data.collect()
+            data = data.with_columns(**{dimension.name: values}).select(cols)
         return data
 
     @classmethod
@@ -548,6 +556,11 @@ class NarwhalsInterface(Interface):
             # though it seems like polars can
             return data
         return data.clone()
+
+    @classmethod
+    def length(cls, dataset):
+        nrows, _ = cls.shape(dataset)
+        return nrows
 
 
 Interface.register(NarwhalsInterface)
