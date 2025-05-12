@@ -627,8 +627,9 @@ class dim:
             if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
                 kwargs['axis'] = None
             fn = fn_name
-        if isinstance(data, (nw.Series, nw.DataFrame, nw.LazyFrame)):
-            fn = lambda self, other, fn=fn, name=self.dimension.name: fn(nw.col(name), other)
+        # TODO: Figure out if this is needed
+        # if isinstance(data, (nw.Series, nw.DataFrame, nw.LazyFrame)):
+        #     fn = lambda self, other, fn=fn, name=self.dimension.name: fn(nw.col(name), other)
 
         if isinstance(fn, str):
             accessor = kwargs.pop('accessor', None)
@@ -780,6 +781,9 @@ class dim:
             eldim = None
         elif isinstance(dimension, param.Parameter):
             data = getattr(dimension.owner, dimension.name)
+            eldim = None
+        elif isinstance(dataset.data, (nw.LazyFrame, nw.DataFrame)):
+            data = nw.col(dimension.name)
             eldim = None
         else:
             lookup = dimension if strict else dimension.name
