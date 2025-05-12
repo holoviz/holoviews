@@ -6,14 +6,14 @@ import numpy as np
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.dependencies import _lazy_module, _no_import_version
+from ..util.dependencies import _LazyModule, _no_import_version
 from .interface import DataError, Interface
 from .util import cached
 
 if TYPE_CHECKING:
     import ibis
 else:
-    ibis = _lazy_module("ibis", "ibis-framework", bool_use_sys_modules=True)
+    ibis = _LazyModule("ibis", "ibis-framework", bool_use_sys_modules=True)
 
 IBIS_VERSION = _no_import_version("ibis-framework")
 IBIS_GE_4_0_0 = IBIS_VERSION >= (4, 0, 0)

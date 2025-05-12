@@ -3,16 +3,16 @@ import inspect
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
-from .dependencies import _lazy_module
+from .dependencies import _LazyModule
 
 if TYPE_CHECKING:
     import cftime
     import numpy as np
     import pandas as pd
 else:
-    cftime = _lazy_module("cftime", bool_use_sys_modules=True)
-    np = _lazy_module("numpy", bool_use_sys_modules=True)
-    pd = _lazy_module("pandas", bool_use_sys_modules=True)
+    cftime = _LazyModule("cftime", bool_use_sys_modules=True)
+    np = _LazyModule("numpy", bool_use_sys_modules=True)
+    pd = _LazyModule("pandas", bool_use_sys_modules=True)
 
 
 # gen_types is copied from param, can be removed when

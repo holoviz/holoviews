@@ -47,7 +47,7 @@ from ..core.util import (
     dt_to_int,
     get_param_values,
 )
-from ..core.util.dependencies import _lazy_module
+from ..core.util.dependencies import _LazyModule
 from ..element import (
     RGB,
     Area,
@@ -80,7 +80,7 @@ DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
 if TYPE_CHECKING:
     import dask.dataframe as dd
 else:
-    dd = _lazy_module("dask.dataframe", bool_use_sys_modules=True)
+    dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
 
 
 class AggregationOperation(ResampleOperation2D):

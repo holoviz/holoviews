@@ -40,7 +40,7 @@ _MIN_SUPPORTED_VERSION = {
 }
 
 
-class _lazy_module:
+class _LazyModule:
     __slots__ = ("__bool_use_sys_modules", "__module", "__module_name", "__package_name")
 
     def __init__(self, module_name, package_name=None, *, bool_use_sys_modules=False):
@@ -113,4 +113,4 @@ NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
 PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
 PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
 
-__all__ = ["NUMPY_GE_2_0_0", "NUMPY_VERSION", "PANDAS_GE_2_1_0", "PANDAS_GE_2_2_0", "PANDAS_VERSION", "PARAM_VERSION", "_lazy_module"]
+__all__ = ["NUMPY_GE_2_0_0", "NUMPY_VERSION", "PANDAS_GE_2_1_0", "PANDAS_GE_2_2_0", "PANDAS_VERSION", "PARAM_VERSION", "_LazyModule"]

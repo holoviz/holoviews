@@ -6,14 +6,14 @@ from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.dependencies import PANDAS_GE_2_1_0, _lazy_module
+from ..util.dependencies import PANDAS_GE_2_1_0, _LazyModule
 from .interface import DataError, Interface
 from .util import finite_range
 
 if TYPE_CHECKING:
     import pandas as pd
 else:
-    pd = _lazy_module("pandas")
+    pd = _LazyModule("pandas")
 
 
 
