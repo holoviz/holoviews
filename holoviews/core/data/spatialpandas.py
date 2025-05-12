@@ -496,6 +496,7 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
     Parameters
     ----------
     geom : spatialpandas geometry
+
     index
         The column index to return
     multi
@@ -554,6 +555,7 @@ def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
     Parameters
     ----------
     geom : spatialpandas geometry
+
     index
         The column index to return
 
@@ -619,6 +621,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     Parameters
     ----------
     data : GeoDataFrame
+
     dimension
         The dimension to get the values from
     expanded
@@ -715,12 +718,14 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
 
     Parameters
     ----------
-    data : List of dictionaries representing individual geometries
+    data
+        List of dictionaries representing individual geometries
     xdim
         Name of x-coordinates column
     ydim
         Name of y-coordinates column
-    columns : List of columns to add
+    columns
+        List of columns to add
     geom
         The type of geometry
 

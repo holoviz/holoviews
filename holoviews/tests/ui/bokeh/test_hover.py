@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 import holoviews as hv
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0
 
 from .. import expect
 
@@ -257,5 +258,55 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
     expect(page.locator(".bk-Tooltip")).to_contain_text('x:4')
     expect(page.locator(".bk-Tooltip")).to_contain_text('y:8')
-    expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
-    expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
+    if BOKEH_GE_3_7_0:
+        expect(page.locator(".bk-Tooltip")).to_contain_text("val:-NaN")
+        expect(page.locator(".bk-Tooltip")).to_contain_text('cat:-')
+    else:
+        expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
+        expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.parametrize("convert_x", [True, False])
+@pytest.mark.parametrize("convert_y", [True, False])
+def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x, convert_y):
+    if not convert_x and not convert_y:
+        pytest.skip("Skipping case where both convert_x and convert_y are False")
+    import datashader as ds
+
+    from holoviews.operation.datashader import rasterize
+
+    df = pd.DataFrame({
+        "x": rng.normal(0, 0.1, 500),
+        "y": rng.normal(0, 0.1, 500),
+        "s": 1,
+        "val": 10,
+        "cat": "cat1",
+    })
+    if convert_x:
+        df['x'] = pd.Timestamp(2020, 1, 1, 12) + (df['x'] * 5e8).apply(pd.Timedelta)
+    if convert_y:
+        df['y'] = pd.Timestamp(2020, 1, 1, 12) + (df['y'] * 5e8).apply(pd.Timedelta)
+    img = rasterize(hv.Points(df), selector=ds.first("val")).opts(tools=["hover"])
+
+    page = serve_hv(img)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over the plot, first time the hovertool only have null
+    # we then timeout and hover again to get hovertool with actual values
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    page.wait_for_timeout(100)
+
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    if convert_x:
+        expect(page.locator(".bk-Tooltip")).to_contain_text('x:2020-01-01')
+    if convert_y:
+        expect(page.locator(".bk-Tooltip")).to_contain_text('y:2020-01-01')

@@ -2334,7 +2334,7 @@ def cast_array_to_int64(array):
 def flatten(line):
     """Flatten an arbitrarily nested sequence.
 
-    Inspired by: pd.core.common.flatten
+    Inspired by: ``pd.core.common.flatten``
 
     Parameters
     ----------

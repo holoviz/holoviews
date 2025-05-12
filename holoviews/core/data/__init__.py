@@ -669,7 +669,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         Parameters
         ----------
         kdims : optional
-            New list of key dimensionsx
+            New list of key dimensions
         vdims : optional
             New list of value dimensions
 

@@ -615,7 +615,8 @@ class LabelledData(param.Parameterized):
         group : str, optional
             New group to apply to returned object
         depth : int, optional
-            Depth to which relabel will be applied
+            Depth to which relabel will be applied.
+
             If applied to container allows applying relabeling to
             contained objects up to the specified depth
 
@@ -641,9 +642,11 @@ class LabelledData(param.Parameterized):
         ----------
         spec : A function, spec or type to check for a match
             * A 'type[[.group].label]' string which is compared
-                against the type, group and label of this object
+            against the type, group and label of this object.
+
             * A function which is given the object and returns
-                a boolean.
+            a boolean.
+
             * An object type matched using isinstance.
 
         Returns
@@ -725,7 +728,8 @@ class LabelledData(param.Parameterized):
 
         Parameters
         ----------
-        map_fn : Function to apply to each object
+        map_fn
+            Function to apply to each object
         specs : List of specs to match
             List of types, functions or type[.group][.label] specs
             to select objects to return, by default applies to all
@@ -998,7 +1002,8 @@ class Dimensioned(LabelledData):
 
         Parameters
         ----------
-        dimension : Dimension to look up by name or integer index
+        dimension
+            Dimension to look up by name or integer index
         default : optional
             Value returned if Dimension not found
         strict : bool, optional
