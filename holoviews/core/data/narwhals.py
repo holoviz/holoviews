@@ -178,8 +178,9 @@ class NarwhalsInterface(Interface):
                     .alias(name)
                 )
                 df_column = df_column.select(expr)
-            df_column = df_column.select(nw.col(name).drop_nulls()).select(
-                cmin=nw.col(name).min(), cmax=nw.col(name).max()
+            df_column = df_column.select(
+                cmin=nw.col(name).drop_nulls().min(),
+                cmax=nw.col(name).drop_nulls().max(),
             )
             if is_lazy:
                 df_column = df_column.collect()
@@ -332,8 +333,7 @@ class NarwhalsInterface(Interface):
                 # If the dtype is not boolean, we let narwhals error in filter
                 selection_mask = selection_mask.tolist()
             if not isinstance(selection_mask, nw.Expr) and isinstance(df, nw.LazyFrame):
-                # TODO(hoxbro): In an ideal world this shouldn't be necessary
-                # but cannot figure out how to do this with LazyFrame
+                # NOTE(LazyFrame): non-optimal conversion
                 df = df.collect()
             df = df.filter(selection_mask)
         if selection and len(dataset.vdims) == 1:
@@ -464,8 +464,7 @@ class NarwhalsInterface(Interface):
                         dimension.name, values, backend=data.implementation
                     )
             if isinstance(data, nw.LazyFrame) and isinstance(values, nw.Series):
-                # TODO(hoxbro): In an ideal world this shouldn't be necessary
-                # but cannot figure out how to do this with LazyFrame
+                # NOTE(LazyFrame): non-optimal conversion
                 data = data.collect()
             data = data.with_columns(**{dimension.name: values}).select(cols)
         return data
@@ -510,9 +509,19 @@ class NarwhalsInterface(Interface):
         if np.isscalar(rows):
             rows = [rows]
 
+        data = dataset.data
+        is_lazy = isinstance(data, nw.LazyFrame)
         if scalar:
-            return dataset.data.item(rows[0], cols[0])
-        return dataset.data[rows, cols]
+            data = data.collect() if is_lazy else data
+            return data.item(rows[0], cols[0])
+        if is_lazy:
+            if isinstance(rows, slice) and rows == slice(None):
+                return data.select(cols) # Special case
+            else:
+                # NOTE(LazyFrame): non-optimal conversion
+                data = data.select(cols).collect()
+                return data[rows]
+        return data[rows, cols]
 
     @classmethod
     def nonzero(cls, dataset):
@@ -552,6 +561,7 @@ class NarwhalsInterface(Interface):
     @classmethod
     def _narwhals_clone(cls, data):
         if isinstance(data, nw.LazyFrame):
+            # NOTE(LazyFrame): No Conversion
             # nw.LazyFrame cannot be cloned
             # though it seems like polars can
             return data

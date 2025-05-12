@@ -87,12 +87,23 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
-        np.testing.assert_array_equal(df["x"], self.xs)
-        np.testing.assert_array_equal(df["y"], self.y_ints)
+        if isinstance(df, nw.LazyFrame):
+            exp_x = df.select("x").collect()["x"]
+            exp_y = df.select("y").collect()["y"]
+        else:
+            exp_x = df["x"]
+            exp_y = df["y"]
+
+        np.testing.assert_array_equal(exp_x, self.xs)
+        np.testing.assert_array_equal(exp_y, self.y_ints)
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(["x"])
-        np.testing.assert_array_equal(df, nw.from_native(self.frame({"x": self.xs})))
+        expected = self.frame({"x": self.xs})
+        if isinstance(df, nw.LazyFrame):
+            df = df.collect()
+            expected = expected.collect()
+        np.testing.assert_array_equal(df, expected)
 
     def test_dataset_range_with_dimension_range(self):
         dt64 = [datetime(2017, 1, i) for i in range(1, 4)]
@@ -143,6 +154,10 @@ class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
 
 class BaseNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
     data_type = (nw.DataFrame, nw.LazyFrame)
+
+    @pytest.mark.xfail(reason="Not supported", raises=NotImplementedError)
+    def test_select_with_neighbor(self):
+        super().test_select_with_neighbor()
 
 
 class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
