@@ -328,7 +328,7 @@ class aggregate(LineAggregationOperation):
         else:
             x, y = dims
 
-        bool_dd = bool(dd)  # NOTE: A lazy module and this avoids repeated lookups in `sys.modules`. 
+        bool_dd = bool(dd)  # NOTE: A lazy module and this avoids repeated lookups in `sys.modules`.
         if len(paths) > 1:
             if glyph == 'line':
                 path = paths[0][:1]
