@@ -102,6 +102,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         expected = self.frame({"x": self.xs})
         if isinstance(df, nw.LazyFrame):
             df = df.collect()
+        if isinstance(expected, nw.LazyFrame):
             expected = expected.collect()
         np.testing.assert_array_equal(df, expected)
 
@@ -167,3 +168,34 @@ class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     def frame(self, *args, **kwargs):
         pl = pytest.importorskip(self.narwhals_backend)
         return pl.LazyFrame(*args, **kwargs)
+
+
+class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
+    __test__ = True
+    narwhals_backend = "pandas"
+
+    def frame(self, *args, **kwargs):
+        pd = pytest.importorskip("pandas")
+        dd = pytest.importorskip("dask.dataframe")
+        return dd.from_pandas(pd.DataFrame(*args, **kwargs), npartitions=2)
+
+    def test_dataset_add_dimensions_values_hm(self):
+        msg = "Dask support in Narwhals is lazy-only, so `new_series` is not supported"
+        with pytest.raises(NotImplementedError, match=msg):
+            super().test_dataset_add_dimensions_values_hm()
+
+    def test_dataset_add_dimensions_values_ht(self):
+        msg = "Dask support in Narwhals is lazy-only, so `new_series` is not supported"
+        with pytest.raises(NotImplementedError, match=msg):
+            super().test_dataset_add_dimensions_values_ht()
+
+
+@pytest.mark.gpu
+class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
+    __test__ = False  # 5 failing tests
+    narwhals_backend = "cudf"
+
+    def frame(self, *args, **kwargs):
+        import cudf
+        import pandas as pd
+        return cudf.from_pandas(pd.DataFrame(*args, **kwargs))
