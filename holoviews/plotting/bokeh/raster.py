@@ -22,8 +22,11 @@ from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, BOKEH_GE_3_7_0, colormesh
 _EPOCH = np.datetime64("1970-01-01", "ns")
 
 
-class ServerHoverMixin:
+class ServerHoverMixin(param.Parameterized):
     _model_cache = {}
+
+    selector_in_hovertool = param.Boolean(default=True, doc="""
+        Whether to show the selector in HoverTool.""")
 
     def _update_hover(self, element):
         tool = self.handles['hover']
@@ -54,8 +57,10 @@ class ServerHoverMixin:
         # Get dimensions
         coords, vars = list(data.coords), list(data.data_vars)
         vars.remove("__index__")
-        if ht := self.hover_tooltips:
+        ht = self.hover_tooltips or {}
+        if ht:
             ht = [ht] if isinstance(ht, str) else ht
+            ht = dict([t[::-1] if isinstance(t, tuple) else (t, t) for t in ht])
             coords = [c for c in coords if c in ht]
             vars = [v for v in vars if v in ht]
         elif isinstance(self, RGBPlot):
@@ -79,7 +84,7 @@ class ServerHoverMixin:
 
         hover_model = HoverModel()
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
-        is_datetime = [dtypes[c].kind == "M" for c in coords]
+        is_datetime = [dtypes[c].kind == "M" for c in data.coords]
         def _create_row(attr):
             kwargs = {}
             if BOKEH_GE_3_7_0:
@@ -90,11 +95,44 @@ class ServerHoverMixin:
                     kwargs["formatter"] = "datetime"
                     kwargs["format"] = "%Y-%m-%d %H:%M:%S"
             return (
-                Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
+                Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr=attr, **kwargs)], style={"text_align": "left"}),
             )
+        children = [el for dim in dims for el in _create_row(dim)]
+
+        # Add a horizontal ruler and show the selector if available
+        selector_columns = data.attrs["selector_columns"]
+        first_selector = next((i for i, dim in enumerate(dims) if dim in selector_columns), None)
+        if first_selector:  # Don't show if first
+            divider = [Div(style={
+                "border": "none",
+                "height": "1px",
+                "background-color": "#ccc",
+                "margin": "4px 0",
+                "grid-column": "span 2",
+            })]
+        else:
+            divider = ()
+
+
+        if first_selector is not None and data.attrs.get("selector") and self.selector_in_hovertool:
+            selector_row = (
+                Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
+                Span(children=[data.attrs["selector"]], style={"font-weight": "bold", "text_align": "left"}),
+             )
+        else:
+            selector_row = ()
+
+        first_selector = first_selector or 0
+        children = [
+            *children[:first_selector * 2],
+            *divider,
+            *selector_row,
+            *children[first_selector * 2:],
+        ]
+
         style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
-        grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
+        grid = Div(children=children, style=style)
         hover.tooltips = grid
         hover.callback = CustomJS(
             args={"position": hover_model},
