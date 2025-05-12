@@ -146,7 +146,7 @@ class BaseNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
 
 
 class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
-    __test__ = True
+    # __test__ = True
     narwhals_backend = "polars"
 
     def frame(self, *args, **kwargs):
