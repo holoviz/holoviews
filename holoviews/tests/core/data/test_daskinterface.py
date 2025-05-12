@@ -26,6 +26,11 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     __test__ = True
 
+    # TODO: Should work
+    # def frame(self, *args, **kwargs):
+    #     df = pd.DataFrame(*args, **kwargs)
+    #     return dd.from_pandas(df, npartitions=2)
+
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         raise SkipTest("Not supported")
@@ -130,15 +135,9 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     def test_dataset_groupby(self):
         # Dask-expr unique sort the order when running unique on column
-        try:
-            super().test_dataset_groupby(sort=True)
-        except AssertionError:
-            super().test_dataset_groupby()
+        super().test_dataset_groupby(sort=True)
 
 
     def test_dataset_groupby_alias(self):
         # Dask-expr unique sort the order when running unique on column
-        try:
-            super().test_dataset_groupby_alias(sort=True)
-        except AssertionError:
-            super().test_dataset_groupby_alias()
+        super().test_dataset_groupby_alias(sort=True)
