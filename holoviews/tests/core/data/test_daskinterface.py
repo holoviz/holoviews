@@ -26,10 +26,9 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     __test__ = True
 
-    # TODO: Should work
-    # def frame(self, *args, **kwargs):
-    #     df = pd.DataFrame(*args, **kwargs)
-    #     return dd.from_pandas(df, npartitions=2)
+    def frame(self, *args, **kwargs):
+        df = pd.DataFrame(*args, **kwargs)
+        return dd.from_pandas(df, npartitions=2)
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -109,23 +108,23 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
 
     def test_dataset_range_categorical_dimension(self):
-        ddf = dd.from_pandas(pd.DataFrame({'a': ['1', '2', '3']}), 1)
+        ddf = self.frame({'a': ['1', '2', '3']})
         ds = Dataset(ddf)
         self.assertEqual(ds.range(0), ('1', '3'))
 
     def test_dataset_range_categorical_dimension_empty(self):
-        ddf = dd.from_pandas(pd.DataFrame({'a': ['1', '2', '3']}), 1)
+        ddf = self.frame({'a': ['1', '2', '3']})
         ds = Dataset(ddf).iloc[:0]
         ds_range = ds.range(0)
-        self.assertTrue(np.isnan(ds_range[0]))
-        self.assertTrue(np.isnan(ds_range[1]))
+        assert np.isnan(ds_range[0])
+        assert np.isnan(ds_range[1])
 
     def test_select_expression_lazy(self):
         df = pd.DataFrame({
             'a': [1, 2, 3, 4, 5],
             'b': [10, 10, 11, 11, 10],
         })
-        ddf = dd.from_pandas(df, npartitions=2)
+        ddf = self.frame(df)
         ds = Dataset(ddf)
         new_ds = ds.select(selection_expr=dim('b') == 10)
 
@@ -137,7 +136,11 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         # Dask-expr unique sort the order when running unique on column
         super().test_dataset_groupby(sort=True)
 
-
-    def test_dataset_groupby_alias(self):
+    def test_dataset_groupby_second_dim(self):
         # Dask-expr unique sort the order when running unique on column
-        super().test_dataset_groupby_alias(sort=True)
+        return super().test_dataset_groupby_second_dim(sort=True)
+
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(['x'])
+        expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]).compute()
+        self.assertEqual(df, expected)

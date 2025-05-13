@@ -643,15 +643,18 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
             output = output.select(Gender=["F", "M"])
         self.assertEqual(output, grouped)
 
-    def test_dataset_groupby_second_dim(self):
+    def test_dataset_groupby_second_dim(self, sort=False):
         group1 = self.frame({'Gender':['M'], 'Weight':[15], 'Height':[0.8]})
         group2 = self.frame({'Gender':['M'], 'Weight':[18], 'Height':[0.6]})
         group3 = self.frame({'Gender':['F'], 'Weight':[10], 'Height':[0.8]})
         grouped = HoloMap([(10, Dataset(group1, kdims=['Gender'], vdims=self.vdims)),
                            (16, Dataset(group2, kdims=['Gender'], vdims=self.vdims)),
                            (12, Dataset(group3, kdims=['Gender'], vdims=self.vdims))],
-                          kdims=['Age'], sort=False)
-        self.assertEqual(self.table.groupby(['Age']), grouped)
+                          kdims=['Age'], sort=sort)
+        output = self.table.groupby(['Age'])
+        if sort:
+            output = output.select(Age=[10, 12, 16])
+        self.assertEqual(output, grouped)
 
     def test_dataset_groupby_dynamic(self):
         grouped_dataset = self.table.groupby('Gender', dynamic=True)
