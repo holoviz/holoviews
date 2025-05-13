@@ -181,9 +181,14 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pandas"
 
+    def setUp(self):
+        pytest.importorskip("dask.dataframe")
+        super().setUp()
+
     def frame(self, *args, **kwargs):
-        pd = pytest.importorskip("pandas")
-        dd = pytest.importorskip("dask.dataframe")
+        import dask.dataframe as dd
+        import pandas as pd
+
         return dd.from_pandas(pd.DataFrame(*args, **kwargs), npartitions=2)
 
     def test_dataset_add_dimensions_values_hm(self):
@@ -205,4 +210,5 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     def frame(self, *args, **kwargs):
         import cudf
         import pandas as pd
+
         return cudf.from_pandas(pd.DataFrame(*args, **kwargs))
