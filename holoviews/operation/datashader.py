@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
+import narwhals as nw
 import numpy as np
 import pandas as pd
 import param
@@ -345,6 +346,12 @@ class aggregate(LineAggregationOperation):
                 df = pd.concat(paths)
         else:
             df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
+
+        if isinstance(df, (nw.DataFrame, nw.LazyFrame)):
+            df = df.select(list(map(str, kdims + vdims)))
+            if isinstance(df, nw.LazyFrame):
+                df = df.collect()
+            df = df.to_pandas()
 
         is_custom = (bool_dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
         category_check = category and df[category].dtype.name != 'category'
