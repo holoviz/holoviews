@@ -100,12 +100,17 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(["x"])
         expected = self.frame({"x": self.xs})
+        df_lazy, expected_lazy = False, False
         if isinstance(df, nw.LazyFrame):
             df = df.collect()
+            df_lazy = True
         if hasattr(expected, "compute"):
             expected = expected.compute()
+            expected_lazy = True
         if hasattr(expected, "collect"):
             expected = expected.collect()
+            expected_lazy = True
+        assert df_lazy == expected_lazy
         np.testing.assert_array_equal(df, expected)
 
     def test_dataset_range_with_dimension_range(self):
