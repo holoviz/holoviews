@@ -35,6 +35,10 @@ _AGG_FUNC_LOOKUP = {
     np.size: "len",
 }
 
+_EAGER_TYPE = {
+    nw.Implementation.DASK: nw.Implementation.PANDAS
+}
+
 
 class NarwhalsDtype:
     __slots__ = ("dtype",)
@@ -296,7 +300,9 @@ class NarwhalsInterface(Interface):
 
         cols = [vd.name for vd in dataset.vdims]
         mask_series = nw.new_series(
-            name="__mask__", values=mask, backend=data.implementation
+            name="__mask__",
+            values=mask,
+            backend=_EAGER_TYPE.get(data.implementation, data.implementation),
         )
         return (
             data.with_columns(mask_series)
@@ -466,7 +472,9 @@ class NarwhalsInterface(Interface):
                     values = nw.lit(values)
                 else:
                     values = nw.new_series(
-                        dimension.name, values, backend=data.implementation
+                        dimension.name,
+                        values,
+                        backend=_EAGER_TYPE.get(data.implementation, data.implementation),
                     )
             if isinstance(data, nw.LazyFrame) and isinstance(values, nw.Series):
                 # NOTE(LazyFrame): forced conversion

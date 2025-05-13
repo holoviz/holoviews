@@ -192,16 +192,6 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
         return dd.from_pandas(pd.DataFrame(*args, **kwargs), npartitions=2)
 
-    def test_dataset_add_dimensions_values_hm(self):
-        msg = "Dask support in Narwhals is lazy-only, so `new_series` is not supported"
-        with pytest.raises(NotImplementedError, match=re.escape(msg)):
-            super().test_dataset_add_dimensions_values_hm()
-
-    def test_dataset_add_dimensions_values_ht(self):
-        msg = "Dask support in Narwhals is lazy-only, so `new_series` is not supported"
-        with pytest.raises(NotImplementedError, match=re.escape(msg)):
-            super().test_dataset_add_dimensions_values_ht()
-
 
 @pytest.mark.gpu
 class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
