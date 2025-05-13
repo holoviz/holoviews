@@ -41,6 +41,7 @@ datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
              'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
              'ibis', 'narwhals']
 
+_TABULAR_DATATYPE = ['dataframe', 'dask', 'ibis', 'cuDF', 'narwhals']
 
 def concat(datasets, datatype=None):
     """Concatenates collection of datasets along NdMapping dimensions.
@@ -832,7 +833,9 @@ class Dataset(Element, metaclass=PipelineMeta):
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Curve, Table
-        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF', 'narwhals']
+        datatype = [d for d in _TABULAR_DATATYPE if d in self.datatype]
+        if not datatype:  # If no datatype is selected, default to dictionary
+            datatype = ["dictionary"]
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0], strict=None)}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
@@ -852,7 +855,6 @@ class Dataset(Element, metaclass=PipelineMeta):
                 reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
-            datatype = list(core_util.unique_iterator([*self.datatype, 'dataframe', 'dict']))
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
