@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 import narwhals as nw
@@ -193,18 +194,18 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
     def test_dataset_add_dimensions_values_hm(self):
         msg = "Dask support in Narwhals is lazy-only, so `new_series` is not supported"
-        with pytest.raises(NotImplementedError, match=msg):
+        with pytest.raises(NotImplementedError, match=re.escape(msg)):
             super().test_dataset_add_dimensions_values_hm()
 
     def test_dataset_add_dimensions_values_ht(self):
         msg = "Dask support in Narwhals is lazy-only, so `new_series` is not supported"
-        with pytest.raises(NotImplementedError, match=msg):
+        with pytest.raises(NotImplementedError, match=re.escape(msg)):
             super().test_dataset_add_dimensions_values_ht()
 
 
 @pytest.mark.gpu
 class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
-    __test__ = False  # 5 failing tests
+    __test__ = True
     narwhals_backend = "cudf"
 
     def frame(self, *args, **kwargs):
@@ -212,3 +213,28 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         import pandas as pd
 
         return cudf.from_pandas(pd.DataFrame(*args, **kwargs))
+
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(["x"])
+        expected = self.frame({"x": self.xs})
+        np.testing.assert_array_equal(df.to_numpy(), expected.to_numpy())
+
+    def test_dataset_aggregate_string_types_size(self):
+        msg = "object type does not support size operations"
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            super().test_dataset_aggregate_string_types_size()
+
+    def test_dataset_groupby_dynamic(self):
+        msg = "Series object is not iterable."
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            super().test_dataset_groupby_dynamic()
+
+    def test_dataset_groupby_dynamic_alias(self):
+        msg = "Series object is not iterable."
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            super().test_dataset_groupby_dynamic()
+
+    def test_dataset_nodata_range(self):
+        msg = "cudf does not support mixed types, please type-cast the column of dataframe/series and other to same dtypes."
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            return super().test_dataset_nodata_range()
