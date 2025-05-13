@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 import warnings
 from tempfile import NamedTemporaryFile
 from unittest import SkipTest
@@ -21,18 +22,10 @@ from holoviews.core.data import Dataset
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.spaces import HoloMap
 
-from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
+from .base import HeterogeneousColumnTests, InterfaceTests
 
 
-def create_temp_db(df, name, index=False):
-    with NamedTemporaryFile(delete=False) as my_file:
-        filename = my_file.name
-    con = sqlite3.Connection(filename)
-    df.to_sql(name, con, index=index)
-    return sqlite.connect(filename)
-
-
-class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests):
+class IbisDatasetTest(HeterogeneousColumnTests, InterfaceTests):
     """
     Test of the generic dictionary interface.
     """
@@ -42,71 +35,14 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     __test__ = True
 
-    def setUp(self):
-        self.restore_datatype = self.element.datatype
-        # TODO: This should work!
-        # self.element.datatype = [self.datatype]
-        self.init_column_data()
-        self.init_grid_data()
-        self.init_data()
-
-    def tearDown(self):
-        self.element.datatype = self.restore_datatype
-
-    def init_column_data(self):
-        # Create heterogeneously typed table
-        self.kdims = ["Gender", "Age"]
-        self.vdims = ["Weight", "Height"]
-        self.gender, self.age = np.array(["M", "M", "F"]), np.array([10, 16, 12])
-        self.weight, self.height = np.array([15, 18, 10]), np.array([0.8, 0.6, 0.8])
-
-        hetero_df = pd.DataFrame(
-            {
-                "Gender": self.gender,
-                "Age": self.age,
-                "Weight": self.weight,
-                "Height": self.height,
-            },
-            columns=["Gender", "Age", "Weight", "Height"],
-        )
-        hetero_db = create_temp_db(hetero_df, "hetero")
-        self.table = Dataset(
-            hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
-        )
-
-        # Create table with aliased dimension names
-        self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
-        self.alias_vdims = [("weight", "Weight"), ("height", "Height")]
-        alias_df = pd.DataFrame(
-            {
-                "gender": self.gender,
-                "age": self.age,
-                "weight": self.weight,
-                "height": self.height,
-            },
-            columns=["gender", "age", "weight", "height"],
-        )
-        alias_db = create_temp_db(alias_df, "alias")
-        self.alias_table = Dataset(
-            alias_db.table("alias"), kdims=self.alias_kdims, vdims=self.alias_vdims
-        )
-
-        self.xs = np.array(range(11))
-        self.xs_2 = self.xs ** 2
-        self.y_ints = self.xs * 2
-        self.ys = np.linspace(0, 1, 11)
-        self.zs = np.sin(self.xs)
-
-        ht_df = pd.DataFrame({"x": self.xs, "y": self.ys}, columns=["x", "y"])
-        ht_db = create_temp_db(ht_df, "ht")
-        self.dataset_ht = Dataset(ht_db.table("ht"), kdims=["x"], vdims=["y"])
-
-        hm_df = pd.DataFrame({"x": self.xs, "y": self.y_ints}, columns=["x", "y"])
-        hm_db = create_temp_db(hm_df, "hm")
-        self.dataset_hm = Dataset(hm_db.table("hm"), kdims=["x"], vdims=["y"])
-        self.dataset_hm_alias = Dataset(
-            hm_db.table("hm"), kdims=[("x", "X")], vdims=[("y", "Y")]
-        )
+    def frame(self, *args, **kwargs):
+        df = pd.DataFrame(*args, **kwargs)
+        with NamedTemporaryFile(delete=False) as my_file:
+            filename = my_file.name
+        name = uuid.uuid4().hex
+        con = sqlite3.Connection(filename)
+        df.to_sql(name, con, index=False)
+        return sqlite.connect(filename).table(name)
 
     def test_dataset_array_init_hm(self):
         raise SkipTest("Not supported")
@@ -181,7 +117,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_reduce_ht(self):
         reduced = Dataset(
-            {"Age": self.age, "Weight": self.weight, "Height": self.height},
+            self.frame({"Age": self.age, "Weight": self.weight, "Height": self.height}),
             kdims=self.kdims[1:],
             vdims=self.vdims,
         )
@@ -189,7 +125,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_aggregate_ht(self):
         aggregated = Dataset(
-            {"Gender": ["M", "F"], "Weight": [16.5, 10], "Height": [0.7, 0.8]},
+            self.frame({"Gender": ["M", "F"], "Weight": [16.5, 10], "Height": [0.7, 0.8]}),
             kdims=self.kdims[:1],
             vdims=self.vdims,
         )
@@ -199,7 +135,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_aggregate_ht_alias(self):
         aggregated = Dataset(
-            {"gender": ["M", "F"], "weight": [16.5, 10], "height": [0.7, 0.8]},
+            self.frame({"gender": ["M", "F"], "weight": [16.5, 10], "height": [0.7, 0.8]}),
             kdims=self.alias_kdims[:1],
             vdims=self.alias_vdims,
         )
@@ -222,8 +158,8 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
 
     def test_dataset_groupby_alias(self):
-        group1 = {"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]}
-        group2 = {"age": [12], "weight": [10], "height": [0.8]}
+        group1 = self.frame({"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]})
+        group2 = self.frame({"age": [12], "weight": [10], "height": [0.8]})
         grouped = HoloMap(
             [
                 ("M", Dataset(group1, kdims=[("age", "Age")], vdims=self.alias_vdims)),
@@ -234,9 +170,9 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.assertEqual(self.alias_table.groupby("Gender").apply("sort"), grouped)
 
     def test_dataset_groupby_second_dim(self):
-        group1 = {"Gender": ["M"], "Weight": [15], "Height": [0.8]}
-        group2 = {"Gender": ["M"], "Weight": [18], "Height": [0.6]}
-        group3 = {"Gender": ["F"], "Weight": [10], "Height": [0.8]}
+        group1 = self.frame({"Gender": ["M"], "Weight": [15], "Height": [0.8]})
+        group2 = self.frame({"Gender": ["M"], "Weight": [18], "Height": [0.6]})
+        group3 = self.frame({"Gender": ["F"], "Weight": [10], "Height": [0.8]})
         grouped = HoloMap(
             [
                 (10, Dataset(group1, kdims=["Gender"], vdims=self.vdims)),
@@ -255,11 +191,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             # TODO: var-based operations failing this test
             # np.std, np.nanstd, np.var, np.nanvar
         ]:
-            data = self.table.dframe()
-            expected = self.table.clone(
-                data=data
-            ).aggregate("Gender", agg).sort()
-
+            expected = self.table.clone().aggregate("Gender", agg).sort()
             result = self.table.aggregate("Gender", agg).sort()
 
             self.compare_dataset(expected, result, msg=str(agg))

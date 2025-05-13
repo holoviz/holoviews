@@ -278,7 +278,7 @@ class HomogeneousColumnTests:
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.y_ints, 'z':z_ints}),
                           kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean),
-                         Dataset({'x':self.xs, 'z':z_ints}, kdims=['x'], vdims=['z']))
+                         Dataset(self.frame({'x':self.xs, 'z':z_ints}), kdims=['x'], vdims=['z']))
 
     # Indexing
 
@@ -605,7 +605,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_2D_aggregate_partial_ht(self):
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys, 'z':self.zs}),
                           kdims=['x', 'y'], vdims=['z'])
-        reduced = Dataset({'x':self.xs, 'z':self.zs},
+        reduced = Dataset(self.frame({'x':self.xs, 'z':self.zs}),
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean), reduced)
 

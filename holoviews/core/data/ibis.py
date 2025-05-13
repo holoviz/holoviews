@@ -87,6 +87,9 @@ class IbisInterface(Interface):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
+        from ibis.expr.types import Expr
+        if not isinstance(dataset.data, Expr):
+            return DataError("Not correct backend")
         dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
         cols = list(dataset.data.columns)
