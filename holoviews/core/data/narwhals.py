@@ -224,7 +224,7 @@ class NarwhalsInterface(Interface):
         group_by = [d.name for d in index_dims]
         data = [
             (k, group_type(v, **group_kwargs))
-            for k, v in org_data.group_by(group_by, )
+            for k, v in org_data.group_by(group_by)
         ]
 
         if issubclass(container_type, NdMapping):
@@ -521,7 +521,7 @@ class NarwhalsInterface(Interface):
             return data.item(rows[0], cols[0])
         if is_lazy:
             if isinstance(rows, slice) and rows == slice(None):
-                return data.select(cols) # Special case
+                return data.select(cols)  # Special case
             else:
                 # NOTE(LazyFrame): forced conversion
                 data = data.select(cols).collect()
