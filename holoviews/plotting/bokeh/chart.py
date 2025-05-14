@@ -430,20 +430,43 @@ class HistogramPlot(ColorbarPlot):
     _nonvectorized_styles = [*base_properties, "line_dash"]
     _plot_methods = dict(single='quad')
 
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        if self.logy:
+            source = self.handles["source"]
+            source.data["bottom"] = [plot.y_range.start] * len(source.data["bottom"])
+            callback = CustomJS(
+                args=dict(source=source, y_range=plot.y_range),
+                code="""
+                const data = source.data;
+                const fixed_min = y_range.start;
+                for (let i = 0; i < data['bottom'].length; i++) {
+                    data['bottom'][i] = fixed_min;
+                }
+                source.change.emit();
+            """,
+            )
+            plot.y_range.js_on_change("start", callback)
+
+        return plot
+
     def get_data(self, element, ranges, style):
         if self.invert_axes:
             mapping = dict(top='right', bottom='left', left=0, right='top')
-        else:
-            mapping = dict(top='top', bottom=0, left='left', right='right')
+        else:  # noqa: PLR5501
+            if self.logy:
+                mapping = dict(top='top', bottom='bottom', left='left', right='right')
+            else:
+                mapping = dict(top='top', bottom=0, left='left', right='right')
         if self.static_source:
-            data = dict(top=[], left=[], right=[])
+            data = dict(top=[], left=[], right=[], bottom=[])
         else:
             x = element.kdims[0]
             values = element.dimension_values(1)
             edges = element.interface.coords(element, x, edges=True)
             if hasattr(edges, 'compute'):
                 edges = edges.compute()
-            data = dict(top=values, left=edges[:-1], right=edges[1:])
+            data = dict(top=values, left=edges[:-1], right=edges[1:], bottom=[np.nan] * len(values))
             self._get_hover_data(data, element)
         return (data, mapping, style)
 
