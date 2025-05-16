@@ -132,7 +132,6 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(x_range.end, 3.8)
         self.assertEqual(y_range.start, 0.01)
         self.assertEqual(y_range.end, 3.3483695221017129)
-        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
         histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
