@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 
 import numpy as np
@@ -478,6 +479,12 @@ class HistogramPlot(ColorbarPlot):
         s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.label]['soft'] = (s0, s1)
         return super().get_extents(element, ranges, range_type)
+
+    def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
+        # We allow zero values with histogram
+        if log and low == 0:
+            low = 0.01 if high > 0.01 else 10**(math.log10(high)-2)
+        return super()._update_range(axis_range, low, high, factors, invert, shared, log, streaming)
 
 
 class SideHistogramPlot(HistogramPlot):
