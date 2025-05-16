@@ -432,34 +432,35 @@ class HistogramPlot(ColorbarPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         plot = super().initialize_plot(ranges, plot, plots, source)
-        if self.logy:
+        logx = self.logx and self.invert_axes
+        logy = self.logy and not self.invert_axes
+        if logx or logy:
+            label = "bottom"
+            pos = "start"
+            range_ = plot.y_range if logy else plot.x_range
+
             source = self.handles["source"]
-            source.data["bottom"] = [plot.y_range.start] * len(source.data["bottom"])
+            source.data[label] = [getattr(range_, pos)] * len(source.data[label])
             callback = CustomJS(
-                args=dict(source=source, y_range=plot.y_range),
+                args=dict(source=source, range=range_, label=label, pos=pos),
                 code="""
-                const data = source.data;
-                const fixed_min = y_range.start;
-                for (let i = 0; i < data['bottom'].length; i++) {
-                    data['bottom'][i] = fixed_min;
-                }
+                source.data[label].fill(range[pos]);
                 source.change.emit();
             """,
             )
-            plot.y_range.js_on_change("start", callback)
+            range_.js_on_change(pos, callback)
 
         return plot
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
-            mapping = dict(top='right', bottom='left', left=0, right='top')
-        else:  # noqa: PLR5501
-            if self.logy:
-                mapping = dict(top='top', bottom='bottom', left='left', right='right')
-            else:
-                mapping = dict(top='top', bottom=0, left='left', right='right')
+            left = 'bottom' if self.logx else 0
+            mapping = dict(top='right', bottom='left', left=left, right='top')
+        else:
+            bottom = 'bottom' if self.logy else 0
+            mapping = dict(top='top', bottom=bottom, left='left', right='right')
         if self.static_source:
-            data = dict(top=[], left=[], right=[], bottom=[])
+            data = dict(top=[], left=[], right=[])
         else:
             x = element.kdims[0]
             values = element.dimension_values(1)
@@ -468,7 +469,7 @@ class HistogramPlot(ColorbarPlot):
                 edges = edges.compute()
             data = dict(top=values, left=edges[:-1], right=edges[1:], bottom=[np.nan] * len(values))
             self._get_hover_data(data, element)
-        return (data, mapping, style)
+        return data, mapping, style
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
