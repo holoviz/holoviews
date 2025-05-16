@@ -436,16 +436,18 @@ class HistogramPlot(ColorbarPlot):
         logx = self.logx and self.invert_axes
         logy = self.logy and not self.invert_axes
         if logx or logy:
-            label = "bottom"
-            pos = "start"
-            range_ = plot.y_range if logy else plot.x_range
-
+            if logy:
+                range_ = plot.y_range
+                pos = "end" if self.invert_yaxis else "start"
+            else:
+                range_ = plot.x_range
+                pos = "end" if self.invert_xaxis else "start"
             source = self.handles["source"]
-            source.data[label] = [getattr(range_, pos)] * len(source.data[label])
+            source.data['bottom'] = [getattr(range_, pos)] * len(source.data['bottom'])
             callback = CustomJS(
-                args=dict(source=source, range=range_, label=label, pos=pos),
+                args=dict(source=source, range=range_, pos=pos),
                 code="""
-                source.data[label].fill(range[pos]);
+                source.data['bottom'].fill(range[pos]);
                 source.change.emit();
             """,
             )
