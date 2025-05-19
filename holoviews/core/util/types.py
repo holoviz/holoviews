@@ -74,8 +74,8 @@ def datetime_types():
     yield from (dt.datetime, dt.date, dt.time)
     if np:
         yield np.datetime64
-    yield from pandas_datetime_types()
-    yield from cftime_types()
+    yield from pandas_datetime_types
+    yield from cftime_types
 
 
 @gen_types
@@ -83,7 +83,7 @@ def timedelta_types():
     yield dt.timedelta
     if np:
         yield np.timedelta64
-    yield from pandas_timedelta_types()
+    yield from pandas_timedelta_types
 
 
 @gen_types
