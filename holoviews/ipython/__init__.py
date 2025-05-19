@@ -1,5 +1,4 @@
 import os
-from unittest import SkipTest
 
 import param
 from bokeh.settings import settings as bk_settings
@@ -12,8 +11,6 @@ import holoviews as hv
 from ..core.dimension import LabelledData
 from ..core.options import Store
 from ..core.tree import AttrTree
-from ..element.comparison import ComparisonTestCase
-from ..plotting.renderer import Renderer
 from ..util import extension
 from .display_hooks import display, png_display, pprint_display, svg_display
 from .magics import load_magics
@@ -28,54 +25,13 @@ def show_traceback():
     print(FULL_TRACEBACK)
 
 
-class IPTestCase(ComparisonTestCase):
-    """This class extends ComparisonTestCase to handle IPython specific
-    objects and support the execution of cells and magic.
-
-    """
-
-    def setUp(self):
-        super().setUp()
-        try:
-            import IPython
-            from IPython.display import HTML, SVG
-            self.ip = IPython.InteractiveShell()
-            if self.ip is None:
-                raise TypeError()
-        except Exception as e:
-            raise SkipTest("IPython could not be started") from e
-
-        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
-        self.addTypeEqualityFunc(HTML, self.skip_comparison)
-        self.addTypeEqualityFunc(SVG,  self.skip_comparison)
-
-    def skip_comparison(self, obj1, obj2, msg): pass
-
-    def get_object(self, name):
-        obj = self.ip._object_find(name).obj
-        if obj is None:
-            raise self.failureException(f"Could not find object {name}")
-        return obj
-
-
-    def cell(self, line):
-        """Run an IPython cell
-
-        """
-        self.ip.run_cell(line, silent=True)
-
-    def cell_magic(self, *args, **kwargs):
-        """Run an IPython cell magic
-
-        """
-        self.ip.run_cell_magic(*args, **kwargs)
-
-
-    def line_magic(self, *args, **kwargs):
-        """Run an IPython line magic
-
-        """
-        self.ip.run_line_magic(*args, **kwargs)
+def __getattr__(attr):
+    if attr == "IPTestCase":
+        from ..element.comparison import IPTestCase
+        from ..util.warnings import deprecated
+        deprecated("1.23.0", old="holoviews.ipython.IPTestCase", new="holoviews.element.comparison.IPTestCase")
+        return IPTestCase
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class notebook_extension(extension):
@@ -191,6 +147,8 @@ class notebook_extension(extension):
         same_cell_execution = published = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+
+        from ..plotting.renderer import Renderer
         Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
 
         if not published and hasattr(panel_extension, "_display_globals"):
@@ -271,7 +229,11 @@ class notebook_extension(extension):
         publish_display_data(data={'text/html': html})
 
 
-notebook_extension.add_delete_action(Renderer._delete_plot)
+def _delete_plot(plot_id):
+    from ..plotting.renderer import Renderer
+    return Renderer._delete_plot(plot_id)
+
+notebook_extension.add_delete_action(_delete_plot)
 
 
 def load_ipython_extension(ip):
