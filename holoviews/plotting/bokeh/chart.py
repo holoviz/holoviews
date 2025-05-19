@@ -443,7 +443,8 @@ class HistogramPlot(ColorbarPlot):
                 range_ = plot.x_range
                 pos = "end" if self.invert_xaxis else "start"
             source = self.handles["source"]
-            source.data['bottom'] = [getattr(range_, pos)] * len(source.data['bottom'])
+            # Insert bottom to the lower value of the axis
+            source.data['bottom'] = [getattr(range_, pos)] * len(source.data['top'])
             callback = CustomJS(
                 args=dict(source=source, range=range_, pos=pos),
                 code="""
@@ -470,7 +471,7 @@ class HistogramPlot(ColorbarPlot):
             edges = element.interface.coords(element, x, edges=True)
             if hasattr(edges, 'compute'):
                 edges = edges.compute()
-            data = dict(top=values, left=edges[:-1], right=edges[1:], bottom=[np.nan] * len(values))
+            data = dict(top=values, left=edges[:-1], right=edges[1:])
             self._get_hover_data(data, element)
         return data, mapping, style
 
