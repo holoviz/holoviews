@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import param
 
 from ..core import Element, Operation
@@ -110,6 +109,7 @@ class rolling_outlier_std(Operation, RollingBase):
         Minimum sigma before a value is considered an outlier.""")
 
     def _process_layer(self, element, key=None):
+        import pandas as pd
         ys = element.dimension_values(1)
 
         # Calculate the variation in the distribution of the residual

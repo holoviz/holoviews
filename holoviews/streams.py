@@ -11,16 +11,26 @@ from functools import partial
 from itertools import groupby
 from numbers import Number
 from types import FunctionType
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
 
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
+
+
 # Types supported by Pointer derived streams
-pointer_types = (Number, str, tuple, *util.datetime_types)
+@util.types.gen_types
+def pointer_types():
+    yield from (Number, str, tuple)
+    yield from util.datetime_types
+
 
 POPUP_POSITIONS = [
     "top_right",
@@ -549,7 +559,7 @@ class Buffer(Pipe):
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
-        if isinstance(data, pd.DataFrame):
+        if pd and isinstance(data, pd.DataFrame):
             example = data
         elif isinstance(data, np.ndarray):
             if data.ndim != 2:
@@ -604,7 +614,7 @@ class Buffer(Pipe):
             elif x.shape[1] != self.data.shape[1]:
                 raise ValueError(f"Streamed array data expected to have {self.data.shape[1]} columns, "
                                  f"got {x.shape[1]}.")
-        elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
+        elif pd and isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
             raise IndexError(f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}")
         elif isinstance(x, dict):
             if any(c not in x for c in self.data):
@@ -620,7 +630,7 @@ class Buffer(Pipe):
         """
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
-        elif isinstance(self.data, pd.DataFrame):
+        elif pd and isinstance(self.data, pd.DataFrame):
             data = self.data.iloc[:0]
         elif isinstance(self.data, dict):
             data = {k: v[:0] for k, v in self.data.items()}
@@ -643,7 +653,7 @@ class Buffer(Pipe):
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
                 data = data[-self.length:]
-        elif isinstance(data, pd.DataFrame):
+        elif pd and isinstance(data, pd.DataFrame):
             data_length = len(data)
             if not self.length:
                 data = pd.concat([self.data, data])

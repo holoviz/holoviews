@@ -810,8 +810,10 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
 
     Parameters
     ----------
-    cmap : A recognized colormap by name or list of colors
-    levels : A list or integer declaring the color-levels
+    cmap
+        A recognized colormap by name or list of colors
+    levels
+        A list or integer declaring the color-levels
     cmin
         The lower bound of the color range
     cmax

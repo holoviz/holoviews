@@ -1,15 +1,21 @@
-import sys
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util.dependencies import _LazyModule, _no_import_version
 from .interface import DataError, Interface
 from .util import cached
 
-IBIS_VERSION = util._no_import_version("ibis-framework")
+if TYPE_CHECKING:
+    import ibis
+else:
+    ibis = _LazyModule("ibis", "ibis-framework", bool_use_sys_modules=True)
+
+IBIS_VERSION = _no_import_version("ibis-framework")
 IBIS_GE_4_0_0 = IBIS_VERSION >= (4, 0, 0)
 IBIS_GE_5_0_0 = IBIS_VERSION >= (5, 0, 0)
 IBIS_GE_9_5_0 = IBIS_VERSION >= (9, 5, 0)
@@ -30,7 +36,6 @@ class IbisInterface(Interface):
     # the rowid is needed until ibis updates versions
     @classmethod
     def has_rowid(cls):
-        import ibis.expr.operations
         return hasattr(ibis.expr.operations, "RowID")
 
     @classmethod
@@ -44,7 +49,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def loaded(cls):
-        return "ibis" in sys.modules
+        return bool(ibis)
 
     @classmethod
     def applies(cls, obj):
@@ -141,8 +146,6 @@ class IbisInterface(Interface):
         compute=True,
         keep_index=False,
     ):
-        import ibis
-
         dimension = dataset.get_dimension(dimension, strict=True)
         data = dataset.data[dimension.name]
         if (
@@ -196,7 +199,6 @@ class IbisInterface(Interface):
         if by is None:
             by = []
         if IBIS_VERSION >= (6, 0, 0):
-            import ibis
             order = ibis.desc if reverse else ibis.asc
             return dataset.data.order_by([order(dataset.get_dimension(x).name) for x in by])
         elif IBIS_GE_4_0_0:
@@ -219,7 +221,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def _index_ibis_table(cls, data):
-        import ibis
         if not cls.has_rowid():
             raise ValueError(
                 f"iloc expressions are not supported for ibis version {ibis.__version__}."
@@ -340,7 +341,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        import ibis
         data = dataset.data
         if dimension.name not in data.columns:
             if not isinstance(values, ibis.Expr) and not np.isscalar(values):
@@ -390,7 +390,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        import ibis
         predicates = []
         for dim, object in selection.items():
             if isinstance(object, tuple):
@@ -437,7 +436,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def sample(cls, dataset, samples=None):
-        import ibis
         if samples is None:
             samples = []
         dims = dataset.dimensions()
@@ -468,7 +466,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        import ibis.expr.operations
         data = dataset.data
         columns = [d.name for d in dataset.kdims if d in dimensions]
         values = dataset.dimensions("value", label="name")

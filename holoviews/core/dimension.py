@@ -405,6 +405,19 @@ class Dimension(param.Parameterized):
         kws = ", ".join(f'{k}={changed[k]!r}' for k in ordering if k != 'name')
         return f'Dimension({self.name!r}, {kws})'
 
+    def _get_type_formatters(self, own_type):
+        """_get_type_formatters returns the formatter for the type of the value.
+
+        It first checks if the type itself is in self.type_formatters and if
+        not, it checks if the qualified name of the type type is in
+        self.type_formatters.
+        """
+        if own_type in self.type_formatters:
+            return self.type_formatters[own_type]
+
+        own_type_str = f"{own_type.__module__}.{own_type.__qualname__}"
+        if own_type_str in self.type_formatters:
+            return self.type_formatters[own_type_str]
 
     def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.
@@ -420,7 +433,7 @@ class Dimension(param.Parameterized):
         """
         own_type = type(value) if self.type is None else self.type
         formatter = (self.value_format if self.value_format
-                     else self.type_formatters.get(own_type))
+                     else self._get_type_formatters(own_type))
         if formatter:
             if callable(formatter):
                 formatted_value = formatter(value)
@@ -608,7 +621,8 @@ class LabelledData(param.Parameterized):
         group : str, optional
             New group to apply to returned object
         depth : int, optional
-            Depth to which relabel will be applied
+            Depth to which relabel will be applied.
+
             If applied to container allows applying relabeling to
             contained objects up to the specified depth
 
@@ -634,9 +648,11 @@ class LabelledData(param.Parameterized):
         ----------
         spec : A function, spec or type to check for a match
             * A 'type[[.group].label]' string which is compared
-                against the type, group and label of this object
+            against the type, group and label of this object.
+
             * A function which is given the object and returns
-                a boolean.
+            a boolean.
+
             * An object type matched using isinstance.
 
         Returns
@@ -718,7 +734,8 @@ class LabelledData(param.Parameterized):
 
         Parameters
         ----------
-        map_fn : Function to apply to each object
+        map_fn
+            Function to apply to each object
         specs : List of specs to match
             List of types, functions or type[.group][.label] specs
             to select objects to return, by default applies to all
@@ -991,7 +1008,8 @@ class Dimensioned(LabelledData):
 
         Parameters
         ----------
-        dimension : Dimension to look up by name or integer index
+        dimension
+            Dimension to look up by name or integer index
         default : optional
             Value returned if Dimension not found
         strict : bool, optional
