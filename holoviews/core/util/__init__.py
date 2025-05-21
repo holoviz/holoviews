@@ -31,6 +31,7 @@ from .dependencies import (  # noqa: F401
     PANDAS_VERSION,
     PARAM_VERSION,
     VersionError,
+    _LazyModule,
 )
 from .types import (
     arraylike_types,
@@ -42,6 +43,9 @@ from .types import (
     pandas_timedelta_types,
     timedelta_types,
 )
+
+pd = _LazyModule("pandas", bool_use_sys_modules=True)
+pl = _LazyModule("polars", bool_use_sys_modules=True)
 
 # Python 2 builtins
 basestring = str
@@ -812,7 +816,7 @@ def is_null_or_na_scalar(val):
     return bool(
         val is None
         or (pd and (val is pd.NA or val is pd.NaT))
-        # or (pl and val is pl.Null)
+        or (pl and val is pl.Null)
         or (np.isscalar(val) and np.isnan(val))
     )
 
