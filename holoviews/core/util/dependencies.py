@@ -18,6 +18,8 @@ class VersionError(Exception):
 
 @lru_cache
 def _is_installed(module_name):
+    # So we don't accidentally import it
+    module_name, *_ = module_name.split(".")
     return find_spec(module_name) is not None
 
 
