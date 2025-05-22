@@ -66,6 +66,13 @@ extensions += [
     'numpydoc',
 ]
 
+intersphinx_mapping = {
+    'panel':    ('https://panel.holoviz.org/', None),
+}
+
+numpydoc_xref_param_type = True
+numpydoc_xref_type       = True
+
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
