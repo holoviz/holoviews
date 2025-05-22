@@ -31,6 +31,7 @@ from .dependencies import (  # noqa: F401
     PANDAS_VERSION,
     PARAM_VERSION,
     VersionError,
+    _LazyModule,
 )
 from .types import (
     arraylike_types,
@@ -42,6 +43,14 @@ from .types import (
     pandas_timedelta_types,
     timedelta_types,
 )
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import pandas as pd
+    import polars as pl
+else:
+    pd = _LazyModule("pandas", bool_use_sys_modules=True)
+    pl = _LazyModule("polars", bool_use_sys_modules=True)
 
 # Python 2 builtins
 basestring = str
@@ -800,10 +809,21 @@ label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def isscalar(val):
-    """Value is scalar or None
+    """Value is scalar or nullable
 
     """
-    return val is None or np.isscalar(val) or isinstance(val, datetime_types)
+    return is_null_or_na_scalar(val) or np.isscalar(val) or isinstance(val, datetime_types)
+
+
+def is_null_or_na_scalar(val):
+    if hasattr(val, "__len__"):
+        return False
+    return bool(
+        val is None
+        or (pd and (val is pd.NA or val is pd.NaT))
+        or (pl and val is pl.Null)
+        or (np.isscalar(val) and np.isnan(val))
+    )
 
 
 def isnumeric(val):
