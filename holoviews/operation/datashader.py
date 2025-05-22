@@ -1789,12 +1789,7 @@ class SpreadingOperation(LinkableOperation):
 
             for k, v in sel_data.items():
                 new_data[k].data = v
-
-            # TODO: Investigate why this does not work
-            # element = element.clone(data=new_data, kdims=element.vdims.copy(), vdims=element.vdims.copy())
-            element = element.clone()
-            element.data = new_data
-            return element
+            return element.clone(data=new_data)
 
         kwargs = {}
         if isinstance(element, RGB):
