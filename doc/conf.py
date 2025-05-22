@@ -63,6 +63,7 @@ extensions += [
     'nbsite.gallery',
     'sphinx_copybutton',
     'nbsite.analytics',
+    'numpydoc',
 ]
 
 myst_enable_extensions = ["colon_fence", "deflist"]
