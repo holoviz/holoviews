@@ -31,6 +31,7 @@ from holoviews import (
     Spikes,
     Spread,
     TriMesh,
+    renderer,
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import apply_when
@@ -1389,6 +1390,12 @@ def test_selector_rasterize(point_plot, sel_fn):
     # Checking the count is also the same
     img_count = rasterize(point_plot, **inputs)
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_selector_hover_in_overlay(point_plot):
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    overlay = rasterize(point_plot, selector=ds.first("val"), **inputs).opts(tools=["hover"]) * Points([])
+    renderer("bokeh").get_plot(overlay)
 
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_selector_datashade(point_plot, sel_fn):

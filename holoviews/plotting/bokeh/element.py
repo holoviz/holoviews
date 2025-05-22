@@ -3237,7 +3237,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     else:
                         tool_type = type(tool)
                     if isinstance(tool, tools.HoverTool):
-                        tooltips = tuple(tool.tooltips) if tool.tooltips else ()
+                        if isinstance(tool.tooltips, bokeh.models.dom.Div):
+                            tooltips = tool.tooltips
+                        else:
+                            tooltips = tuple(tool.tooltips) if tool.tooltips else ()
                         if tooltips in hover_tools:
                             continue
                         else:
@@ -3267,7 +3270,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['hover'] = subplot.handles['hover']
         elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
             hover = subplot.handles['hover']
-            if hover.tooltips and not isinstance(hover.tooltips, str):
+            if hover.tooltips and isinstance(hover.tooltips, bokeh.models.dom.Div):
+                tooltips = hover.tooltips
+            elif hover.tooltips and not isinstance(hover.tooltips, str):
                 tooltips = tuple((name, spec.replace('{%F %T}', '')) for name, spec in hover.tooltips)
             else:
                 tooltips = ()
