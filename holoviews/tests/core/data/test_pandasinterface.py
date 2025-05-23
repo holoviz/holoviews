@@ -4,6 +4,7 @@ import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
+from holoviews.core.data.pandas import PandasInterface
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Distribution, Points, Scatter
@@ -404,3 +405,10 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
 
         plot = Scatter(self.df, kdims="number")
         np.testing.assert_equal(plot.dimension_values('number'), self.df.index.get_level_values('number'))
+
+
+def test_no_subclasse_interface_applies():
+    spd = pytest.importorskip("spatialpandas")
+    square = spd.geometry.Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+    sdf = spd.GeoDataFrame({"geometry": spd.GeoSeries([square, square]), "name": ["A", "B"]})
+    assert PandasInterface.applies(sdf) is False
