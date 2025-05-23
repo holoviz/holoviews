@@ -352,6 +352,16 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         expected = self.df.loc[[2]]
         pd.testing.assert_frame_equal(selected.data, expected)
 
+    def test_select_index_and_column(self):
+        # See https://github.com/holoviz/holoviews/issues/6578
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
+        index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
+        df = pd.DataFrame({"cat": list("abab"), "values": range(4)}, index=index)
+        ds = Dataset(df, kdims=["number"], vdims=["cat", "values"])
+        selected = ds.select(number=[1], cat=["a"])
+        expected = df[(df.index.get_level_values(0) == 1) & (df["cat"] == "a")]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
     def test_sample(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         sample = ds.interface.sample(ds, [1])
