@@ -44,7 +44,7 @@ class PandasInterface(Interface, PandasAPI):
     def applies(cls, obj):
         if not cls.loaded():
             return False
-        return isinstance(obj, (pd.DataFrame, pd.Series))
+        return type(obj) is pd.DataFrame
 
     @classmethod
     def dimension_type(cls, dataset, dim):
