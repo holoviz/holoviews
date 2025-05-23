@@ -1108,18 +1108,20 @@ def max_extents(extents, zrange=False):
         for lidx, uidx in inds:
             lower = [v for v in arr[lidx] if v is not None and not is_nan(v)]
             upper = [v for v in arr[uidx] if v is not None and not is_nan(v)]
-            if lower and isinstance(lower[0], datetime_types):
-                extents[lidx] = np.min(lower)
-            elif any(isinstance(l, str) for l in lower):
-                extents[lidx] = np.sort(lower)[0]
-            elif lower:
-                extents[lidx] = np.nanmin(lower)
-            if upper and isinstance(upper[0], datetime_types):
-                extents[uidx] = np.max(upper)
-            elif any(isinstance(u, str) for u in upper):
-                extents[uidx] = np.sort(upper)[-1]
-            elif upper:
-                extents[uidx] = np.nanmax(upper)
+            if lower:
+                if any(isinstance(l, str) for l in lower):
+                    extents[lidx] = sorted(lower, key=str)[0]
+                elif isinstance(lower[0], datetime_types):
+                    extents[lidx] = np.min(lower)
+                else:
+                    extents[lidx] = np.nanmin(lower)
+            if upper:
+                if any(isinstance(u, str) for u in upper):
+                    extents[uidx] = sorted(upper, key=str)[-1]
+                elif isinstance(upper[0], datetime_types):
+                    extents[uidx] = np.max(upper)
+                else:
+                    extents[uidx] = np.nanmax(upper)
     return tuple(extents)
 
 
