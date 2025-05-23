@@ -246,7 +246,7 @@ class notebook_extension(extension):
             bokeh_version = bokeh.__version__
         if mpl_logo:
             import matplotlib as mpl
-            bokeh_version = mpl.__version__
+            mpl_version = mpl.__version__
         if plotly_logo:
             import plotly
             plotly_version = plotly.__version__
