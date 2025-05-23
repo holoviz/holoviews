@@ -239,13 +239,28 @@ class notebook_extension(extension):
             logo_link = 'https://holoviews.org'
             logo_title = f'HoloViews {__version__}'
 
+        bokeh_version = mpl_version = plotly_version = ''
+        # Backends are already imported at this stage.
+        if bokeh_logo:
+            import bokeh
+            bokeh_version = bokeh.__version__
+        if mpl_logo:
+            import matplotlib as mpl
+            bokeh_version = mpl.__version__
+        if plotly_logo:
+            import plotly
+            plotly_version = plotly.__version__
+
         html = template.render({'logo':        logo,
                                 'logo_src':    logo_src,
                                 'logo_link':   logo_link,
                                 'logo_title':  logo_title,
                                 'bokeh_logo':  bokeh_logo,
                                 'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo})
+                                'plotly_logo': plotly_logo,
+                                'bokeh_version':  bokeh_version,
+                                'mpl_version':    mpl_version,
+                                'plotly_version': plotly_version})
         publish_display_data(data={'text/html': html})
 
 
