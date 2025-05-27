@@ -1,5 +1,4 @@
 import sys
-import uuid
 
 import bokeh.core.properties as bp
 import numpy as np
