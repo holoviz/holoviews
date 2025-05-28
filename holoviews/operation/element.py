@@ -1249,6 +1249,23 @@ class dendrogram(Operation):
          https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
          """)
 
+    linkage_method = param.Selector(
+        default="single",
+        objects=["single", "complete", "average", "centroid", "median", "ward", "weighted"]
+    )
+    linkage_metric=param.Selector(
+        default='euclidean',
+        objects=[
+            'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+            'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+            'jaccard', 'jensenshannon', 'kulczynski1',
+            'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+            'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+            'sqeuclidean', 'yule']
+    )
+
+    scanpy_like = param.Boolean(default=False)
+
     def _compute_linkage(self, dataset, dim, vdim):
         try:
             from scipy.cluster.hierarchy import dendrogram, linkage
@@ -1259,9 +1276,29 @@ class dendrogram(Operation):
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
+
         X = np.vstack(arrays)
-        Z = linkage(X, optimal_ordering=self.p.optimal_ordering)
+
+        if self.p.scanpy_like:
+            import pandas as pd
+            from scipy.spatial import distance
+            corr_matrix = pd.DataFrame(X).T.corr(method='pearson').clip(-1, 1)
+            corr_condensed = distance.squareform(1 - corr_matrix)
+            Z = linkage(
+                corr_condensed,
+                method=self.p.linkage_method,
+                # metric=self.p.linkage_metric,
+                optimal_ordering=self.p.optimal_ordering
+            )
+        else:
+            Z = linkage(
+                X,
+                method=self.p.linkage_method,
+                metric=self.p.linkage_metric,
+                optimal_ordering=self.p.optimal_ordering
+            )
         ddata = dendrogram(Z, labels=labels, no_plot=True)
+        print(ddata)
         return ddata
 
     def _process(self, element, key=None):
@@ -1270,7 +1307,7 @@ class dendrogram(Operation):
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
-            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
+            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
             sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
             sort_dims.append(sort_dim)
