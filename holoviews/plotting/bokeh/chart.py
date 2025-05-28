@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import override
 
 import numpy as np
 import param
@@ -63,21 +62,17 @@ class PointPlot(LegendPlot, ColorbarPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = [
-        "cmap", "palette", "marker", "size", "angle", "hit_dilation", "radius", "radius_dimension",
+        "cmap", "palette", "marker", "size", "angle", "hit_dilation",
+        "radius", "radius_dimension",
         *base_properties, *line_properties, *fill_properties
     ]
 
+    _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
-    _has_radius = False
 
-    @property
-    def _plot_methods(self):
-        plot_type = "circle" if self._has_radius else "scatter"
-        return dict(single=plot_type, batched=plot_type)
-
-    @override
     def _init_glyph(self, plot, mapping, properties):
-        self._has_radius = "radius" in properties
+        if "radius" in properties:
+            self._plot_methods = dict(single='circle', batched='circle')
         if properties.get("size", False) is None:
             properties.pop("size")
         else:
