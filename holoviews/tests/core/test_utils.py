@@ -8,6 +8,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews import Dimension, Element
 from holoviews.core.util import (
@@ -22,6 +23,7 @@ from holoviews.core.util import (
     find_range,
     get_path,
     is_nan,
+    is_null_or_na_scalar,
     isfinite,
     make_path_unique,
     max_range,
@@ -817,3 +819,30 @@ def test_is_nan():
     assert is_nan([1, 1]) == False
     assert is_nan([np.nan]) == True
     assert is_nan([np.nan, np.nan]) == False
+
+
+def test_is_null_or_na_scalar():
+    assert is_null_or_na_scalar(np.nan)
+    assert is_null_or_na_scalar(pd.NA)
+    assert is_null_or_na_scalar(pd.NaT)
+    assert is_null_or_na_scalar(None)
+    assert is_null_or_na_scalar(np.datetime64("NAT"))
+
+    assert not is_null_or_na_scalar(datetime.datetime.today())
+    assert not is_null_or_na_scalar(pd.Timestamp.now())
+    assert not is_null_or_na_scalar("AAAA")
+    assert not is_null_or_na_scalar(...)
+    assert not is_null_or_na_scalar([1, 2])
+    assert not is_null_or_na_scalar((1, 2))
+    assert not is_null_or_na_scalar({1, 2})
+    assert not is_null_or_na_scalar({"a": 1, "b": 2})
+    assert not is_null_or_na_scalar(slice(None))
+    assert not is_null_or_na_scalar(np.array([1, 2]))
+    assert not is_null_or_na_scalar(pd.DataFrame([1, 2]))
+
+
+def test_is_null_or_na_scalar_polars():
+    pl = pytest.importorskip("polars")
+    assert is_null_or_na_scalar(pl.Null)
+    assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
+    assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))

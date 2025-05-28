@@ -244,7 +244,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axes_str += 'z'
             axes_list.append(axis.zaxis)
 
-        for ax, ax_obj in zip(axes_str, axes_list):
+        for ax, ax_obj in zip(axes_str, axes_list, strict=None):
             tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
@@ -487,7 +487,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         elif isinstance(ticks, (list, tuple)):
             labels = None
             if all(isinstance(t, tuple) for t in ticks):
-                ticks, labels = zip(*ticks)
+                ticks, labels = zip(*ticks, strict=None)
             axis.set_ticks(ticks)
             if labels:
                 axis.set_ticklabels(labels)
@@ -560,7 +560,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         element = self.hmap.last
         ax = self.handles['axis']
         key = list(self.hmap.data.keys())[-1]
-        dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
+        dim_map = dict(zip((d.name for d in self.hmap.kdims), key, strict=None))
         key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         self.current_ranges = ranges
@@ -823,10 +823,10 @@ class ColorbarPlot(ElementPlot):
             cbar.ax.yaxis.set_major_locator(locator)
         elif isinstance(self.cbar_ticks, list):
             if all(isinstance(t, tuple) for t in self.cbar_ticks):
-                ticks, labels = zip(*self.cbar_ticks)
+                ticks, labels = zip(*self.cbar_ticks, strict=None)
             else:
                 ticks, labels = zip(*[(t, dim.pprint_value(t))
-                                        for t in self.cbar_ticks])
+                                        for t in self.cbar_ticks], strict=None)
             cbar.set_ticks(ticks)
             cbar.set_ticklabels(labels)
 
@@ -1154,17 +1154,17 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 legend_plot = True
             elif isinstance(overlay, NdOverlay):
                 label = ','.join([dim.pprint_value(k, print_unit=True)
-                                  for k, dim in zip(key, dimensions)])
+                                  for k, dim in zip(key, dimensions, strict=None)])
                 if handle:
                     legend_data.append((handle, label))
             elif isinstance(subplot, OverlayPlot):
                 legend_data += subplot.handles.get('legend_data', {}).items()
             elif element.label and handle:
                 legend_data.append((handle, labels.get(element.label, element.label)))
-        all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
+        all_handles, all_labels = list(zip(*legend_data, strict=None)) if legend_data else ([], [])
         data = {}
         used_labels = []
-        for handle, label in zip(all_handles, all_labels):
+        for handle, label in zip(all_handles, all_labels, strict=None):
             # Ensure that artists with multiple handles are supported
             if isinstance(handle, list): handle = tuple(handle)
             handle = tuple(h for h in handle if not isinstance(h, (AxesImage, list)))

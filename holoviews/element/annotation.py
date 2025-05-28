@@ -128,7 +128,7 @@ class VLine(Annotation):
 
     group = param.String(default='VLine', constant=True)
 
-    x = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    x = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The x-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['x']
@@ -170,7 +170,7 @@ class HLine(Annotation):
 
     group = param.String(default='HLine', constant=True)
 
-    y = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    y = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The y-position of the HLine which make be numeric or a timestamp.""")
 
     __pos_params = ['y']
@@ -250,10 +250,10 @@ class VSpan(Annotation):
 
     group = param.String(default='VSpan', constant=True)
 
-    x1 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    x1 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The start x-position of the VSpan which must be numeric or a timestamp.""")
 
-    x2 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    x2 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The end x-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['x1', 'x2']
@@ -293,10 +293,10 @@ class HSpan(Annotation):
 
     group = param.String(default='HSpan', constant=True)
 
-    y1 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    y1 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The start y-position of the VSpan which must be numeric or a timestamp.""")
 
-    y2 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    y2 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The end y-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['y1', 'y2']
@@ -337,12 +337,17 @@ class Spline(Annotation):
     Follows format of matplotlib spline definitions as used in
     matplotlib.path.Path with the following codes:
 
-    Path.STOP     : 0
-    Path.MOVETO   : 1
-    Path.LINETO   : 2
-    Path.CURVE3   : 3
-    Path.CURVE4   : 4
-    Path.CLOSEPLOY: 79
+        Path.STOP     : 0
+
+        Path.MOVETO   : 1
+
+        Path.LINETO   : 2
+
+        Path.CURVE3   : 3
+
+        Path.CURVE4   : 4
+
+        Path.CLOSEPLOY: 79
 
     """
 
@@ -377,7 +382,8 @@ class Spline(Annotation):
 
         Parameters
         ----------
-        dimension : The dimension to return values for
+        dimension
+            The dimension to return values for
         expanded : bool, optional
             Whether to expand values
         flat : bool, optional
@@ -402,10 +408,10 @@ class Arrow(Annotation):
 
     """
 
-    x = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    x = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    y = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="Text associated with the arrow.")
@@ -478,10 +484,10 @@ class Text(Annotation):
 
     """
 
-    x = param.ClassSelector(default=0, class_=(Number, str, *datetime_types), doc="""
+    x = param.ClassSelector(default=0, class_=(Number, str, datetime_types), doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, str, *datetime_types), doc="""
+    y = param.ClassSelector(default=0, class_=(Number, str, datetime_types), doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")

@@ -7,7 +7,6 @@ import sys
 from importlib.util import find_spec
 
 import numpy as np
-import pandas as pd
 
 from ..core import Dataset, NdOverlay, util
 from ..streams import Lasso, Selection1D, SelectionXY
@@ -115,6 +114,7 @@ def _cuspatial_new(xvals, yvals, geometry):
 
 
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
+    import pandas as pd
     if 'cudf' in sys.modules:
         import cudf
         import cupy as cp
@@ -175,7 +175,7 @@ def _mask_spatialpandas(masked_xvals, masked_yvals, geometry):
 
 def _mask_shapely(masked_xvals, masked_yvals, geometry):
     from shapely.geometry import Point, Polygon
-    points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
+    points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals, strict=None))
     poly = Polygon(geometry)
     return np.array([poly.contains(p) for p in points], dtype=bool)
 
@@ -190,7 +190,7 @@ def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
     try:
         from shapely.geometry import Polygon, box
         boxes = (box(x0, y0, x1, y1) for x0, y0, x1, y1 in
-                 zip(x0vals, y0vals, x1vals, y1vals))
+                 zip(x0vals, y0vals, x1vals, y1vals, strict=None))
         poly = Polygon(geometry)
         return np.array([poly.contains(p) for p in boxes])
     except ImportError:
@@ -200,7 +200,7 @@ def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
 def spatial_poly_select(xvals, yvals, geometry):
     try:
         from shapely.geometry import Polygon
-        boxes = (Polygon(np.column_stack([xs, ys])) for xs, ys in zip(xvals, yvals))
+        boxes = (Polygon(np.column_stack([xs, ys])) for xs, ys in zip(xvals, yvals, strict=None))
         poly = Polygon(geometry)
         return np.array([poly.contains(p) for p in boxes])
     except ImportError:
@@ -211,7 +211,7 @@ def spatial_bounds_select(xvals, yvals, bounds):
     x0, y0, x1, y1 = bounds
     return np.array([((x0<=np.nanmin(xs)) & (y0<=np.nanmin(ys)) &
                       (x1>=np.nanmax(xs)) & (y1>=np.nanmax(ys)))
-                     for xs, ys in zip(xvals, yvals)])
+                     for xs, ys in zip(xvals, yvals, strict=None)])
 
 
 class Selection2DExpr(SelectionIndexExpr):

@@ -1,4 +1,5 @@
 import datetime as dt
+import random
 from importlib.util import find_spec
 from unittest import SkipTest, skipIf
 
@@ -22,14 +23,19 @@ except ImportError:
     cudf = None
 
 from holoviews import (
+    AdjointLayout,
     Area,
     Contours,
     Curve,
     Dataset,
+    Dendrogram,
+    Empty,
     GridSpace,
+    HeatMap,
     Histogram,
     HoloMap,
     Image,
+    Layout,
     NdLayout,
     NdOverlay,
     Points,
@@ -42,6 +48,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (
     contours,
     decimate,
+    dendrogram,
     gradient,
     histogram,
     interpolate_curve,
@@ -721,3 +728,96 @@ class OperationTests(ComparisonTestCase):
 
         index = decimated.data[()].data.index
         assert np.all(index == np.sort(index))
+
+
+class TestDendrogramOperation:
+
+    @pytest.mark.usefixtures("bokeh_backend")
+    def setup_class(self):
+        pytest.importorskip("scipy")
+
+        random.seed(1)
+        self.df = pd.DataFrame(
+            [(i, chr(65 + j), random.random()) for j in range(10) for i in range(5)],
+            columns=["z", "x", "y"],
+        )
+
+    def get_childrens(self, adjoint):
+        bk_childrens = renderer("bokeh").get_plot(adjoint).handles["plot"].children
+        (atop, *_), (amain, *_), (aright, *_) = bk_childrens
+        top = renderer("bokeh").get_plot(adjoint["top"]).handles["plot"]
+        main = renderer("bokeh").get_plot(adjoint["main"]).handles["plot"]
+        right = renderer("bokeh").get_plot(adjoint["right"]).handles["plot"]
+        return (atop, amain, aright), (top, main, right)
+
+    def test_right_only(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x"], main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], HeatMap)
+        assert isinstance(dendro["right"], Dendrogram)
+        assert isinstance(dendro["top"], Empty)
+        assert dendro["right"].kdims == ["__dendrogram_x_x", "__dendrogram_y_x"]
+
+    def test_top_only(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["z"], main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], HeatMap)
+        assert isinstance(dendro["right"], Empty)
+        assert isinstance(dendro["top"], Dendrogram)
+        assert dendro["top"].kdims == ["__dendrogram_x_z", "__dendrogram_y_z"]
+
+    @pytest.mark.parametrize("adjoint_dims", [["x", "z"], ["z", "x"]], ids=["xz", "zx"])
+    def test_both_xz(self, adjoint_dims):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=adjoint_dims, main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], HeatMap)
+        assert isinstance(dendro["right"], Dendrogram)
+        assert isinstance(dendro["top"], Dendrogram)
+        assert dendro["right"].kdims == ["__dendrogram_x_x", "__dendrogram_y_x"]
+        assert dendro["top"].kdims == ["__dendrogram_x_z", "__dendrogram_y_z"]
+
+    def test_point_plot(self):
+        dataset = Points(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
+        assert isinstance(dendro, AdjointLayout)
+        assert isinstance(dendro["main"], Points)
+
+    def test_depth_matches_non_adjoint(self):
+        # depth dimensions is the orthogonal axis to the main plot
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
+        (atop, amain, aright), (top, main, right) = self.get_childrens(dendro)
+
+        # Verify no shared axis is changing the depth dimension of the right
+        assert atop.y_range.start == top.y_range.start
+        assert atop.y_range.end == top.y_range.end
+        assert atop.y_range.end == top.y_range.end
+
+        # These should be shared with the main plot
+        assert atop.x_range.start == amain.x_range.start
+        assert atop.x_range.end == amain.x_range.end
+
+        # Verify no shared axis is changing the depth dimension of the right
+        assert aright.x_range.start == right.y_range.start
+        assert aright.x_range.end == right.y_range.end
+
+        # These should be shared with the main plot
+        assert aright.y_range.factors == amain.y_range.factors
+
+    def test_adjoned_False_1dim(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x"], main_dim="y", adjoined=False)
+
+        assert isinstance(dendro, Dendrogram)
+
+    def test_adjoned_False_2dim(self):
+        dataset = Dataset(self.df)
+        dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y", adjoined=False)
+
+        assert isinstance(dendro, Layout)
+        assert len(dendro) == 2
+        assert isinstance(dendro[0], Dendrogram)
+        assert isinstance(dendro[1], Dendrogram)

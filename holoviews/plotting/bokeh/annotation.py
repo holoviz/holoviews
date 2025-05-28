@@ -3,7 +3,6 @@ from collections import defaultdict
 from html import escape
 
 import numpy as np
-import pandas as pd
 import param
 from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
 from bokeh.transform import dodge
@@ -58,7 +57,7 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         data = element.columns(element.kdims)
         self._get_hover_data(data, element)
         default = self._element_default[self.invert_axes].kdims
-        mapping = {str(d): str(k) for d, k in zip(default, element.kdims)}
+        mapping = {str(d): str(k) for d, k in zip(default, element.kdims, strict=None)}
         return data, mapping, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -68,11 +67,13 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
             return figure
         labels = [self.xlabel or "x", self.ylabel or "y"]
         labels = labels[::-1] if self.invert_axes else labels
-        for ax, label in zip(figure.axis, labels):
+        for ax, label in zip(figure.axis, labels, strict=None):
             ax.axis_label = label
         return figure
 
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        import pandas as pd
+
         extents = super().get_extents(element, ranges, range_type)
         if isinstance(element, HLines):
             extents = np.nan, extents[0], np.nan, extents[2]
@@ -147,7 +148,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
-        for (_key, el), zorder in zip(element.data.items(), zorders):
+        for (_key, el), zorder in zip(element.data.items(), zorders, strict=None):
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -361,7 +362,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
             if len(vs) != 4:
                 skipped = len(vs) > 1
                 continue
-            for x, y, xl, yl in zip(vs[:, 0], vs[:, 1], data_attrs[::2], data_attrs[1::2]):
+            for x, y, xl, yl in zip(vs[:, 0], vs[:, 1], data_attrs[::2], data_attrs[1::2], strict=None):
                 data[xl].append(x)
                 data[yl].append(y)
         if skipped:
@@ -369,7 +370,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
                 'Bokeh SplinePlot only support cubic splines, unsupported '
                 'splines were skipped during plotting.')
         data = {da: data[da] for da in data_attrs}
-        return (data, dict(zip(data_attrs, data_attrs)), style)
+        return (data, dict(zip(data_attrs, data_attrs, strict=None)), style)
 
 
 

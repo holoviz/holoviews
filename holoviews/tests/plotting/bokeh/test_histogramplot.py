@@ -259,5 +259,5 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Histogram(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Histogram', fill_color='Color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             self.assertEqual(subplot.handles['glyph'].fill_color, color)

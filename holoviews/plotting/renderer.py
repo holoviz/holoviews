@@ -235,7 +235,7 @@ class Renderer(Exporter):
                                                    **plot_opts)
             defaults = [kd.default for kd in plot.dimensions]
             init_key = tuple(v if d is None else d for v, d in
-                             zip(plot.keys[0], defaults))
+                             zip(plot.keys[0], defaults, strict=None))
             plot.update(init_key)
         else:
             plot = obj
