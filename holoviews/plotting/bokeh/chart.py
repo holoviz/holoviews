@@ -63,7 +63,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = [
-        "cmap", "palette", "marker", "size", "angle", "hit_dilation", "radius",
+        "cmap", "palette", "marker", "size", "angle", "hit_dilation", "radius", "radius_dimension",
         *base_properties, *line_properties, *fill_properties
     ]
 
@@ -80,8 +80,8 @@ class PointPlot(LegendPlot, ColorbarPlot):
         self._has_radius = "radius" in properties
         if properties.get("size", False) is None:
             properties.pop("size")
-        # print(self._has_radius)
-        # print(properties)
+        else:
+            properties.pop("radius_dimension", None)
         return super()._init_glyph(plot, mapping, properties)
 
     def _get_size_data(self, element, ranges, style):
