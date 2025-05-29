@@ -25,6 +25,19 @@ class HoverModel(DataModel):
     xy = bp.Any()
     data = bp.Any()
 
+    code_js = """
+    export default ({hover_model, attr, fmt}) => {
+      const templating = Bokeh.require("core/util/templating");
+      const value = hover_model.data[attr];
+      if (fmt == "M") {
+        const formatter = templating.DEFAULT_FORMATTERS.datetime;
+        return formatter(value, "%Y-%m-%d %H:%M:%S")
+      } else {
+        const formatter = templating.get_formatter();
+        return formatter(value)
+      }
+    }; """
+
 
 class ServerHoverMixin(param.Parameterized):
 
@@ -80,18 +93,10 @@ class ServerHoverMixin(param.Parameterized):
             kwargs = {}
             if BOKEH_GE_3_7_0:
                 kwargs["format"] = "@{custom}"
-                kwargs["formatter"] = CustomJS(args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind), code="""
-                export default ({hover_model, attr, fmt}) => {
-                  const templating = Bokeh.require("core/util/templating");
-                  const value = hover_model.data[attr];
-                  if (fmt == "M") {
-                    const formatter = templating.DEFAULT_FORMATTERS.datetime;
-                    return formatter(value, "%Y-%m-%d %H:%M:%S")
-                  } else {
-                    const formatter = templating.get_formatter();
-                    return formatter(value)
-                  }
-                }; """)
+                kwargs["formatter"] = CustomJS(
+                    args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
+                    code=HoverModel.code_js
+                )
             return (
                 Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
