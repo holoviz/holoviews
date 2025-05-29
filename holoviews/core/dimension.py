@@ -157,9 +157,8 @@ class Dimension(param.Parameterized):
     the printed floating point precision) or a suitable range of values
     to consider for a particular analysis.
 
-    Units
+    Notes
     -----
-
     Full unit support with automated conversions are on the HoloViews
     roadmap. Once rich unit objects are supported, the unit (or more
     specifically the type of unit) will be part of the core dimension
