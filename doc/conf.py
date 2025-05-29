@@ -79,6 +79,8 @@ myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
+autodoc_mock_imports = ["dash", "holoviews.doc_convert", "js", "pytest", "pyodide"]
+
 nbsite_analytics = {
     'goatcounter_holoviz': True,
 }
