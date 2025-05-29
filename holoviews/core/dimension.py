@@ -38,8 +38,8 @@ def param_aliases(d):
     """Called from __setstate__ in LabelledData in order to load
     old pickles with outdated parameter names.
 
-    Warning
-    -------
+    Warnings
+    --------
     We want to keep pickle hacking to a minimum!
     """
     for old, new in ALIASES.items():
@@ -486,8 +486,8 @@ class LabelledData(param.Parameterized):
     [group='Height', label='Children'] and another may use
     [group='Height', label='Adults'].
 
-    Note
-    ----
+    Notes
+    -----
     Another level of specification is implicit in the type (i.e
     class) of the LabelledData object. A full specification of a
     LabelledData object is therefore given by the tuple

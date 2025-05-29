@@ -1848,7 +1848,7 @@ class StoreOptions:
 
 
         Relationship to the %%opts magic
-        ----------------------------------
+        --------------------------------
 
         This function matches the functionality supplied by the %%opts
         cell magic in the IPython extension. In fact, you can use the same
