@@ -1780,8 +1780,7 @@ class SpreadingOperation(LinkableOperation):
                     new_data[k].data = img[:, :, idx]
             elif isinstance(element, ImageStack):
                 if len(element.vdims) == 1:
-                    k = str(element.vdims[0])
-                    new_data[k].data = array
+                    new_data[element.vdims[0].name].data = array
                 else:
                     for k in map(str, element.vdims):
                         new_data[k].data = array.sel(z=k)
