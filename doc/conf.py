@@ -67,7 +67,9 @@ extensions += [
 ]
 
 intersphinx_mapping = {
-    'panel':    ('https://panel.holoviz.org/', None),
+    "panel": ("https://panel.holoviz.org/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
 numpydoc_xref_param_type = True
