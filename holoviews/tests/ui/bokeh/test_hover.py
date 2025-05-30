@@ -367,7 +367,7 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_selector_affects_tooltip(serve_panel):
+def test_hover_tooltips_selector_update_plot(serve_panel):
     import datashader as ds
 
     from holoviews.operation.datashader import rasterize
