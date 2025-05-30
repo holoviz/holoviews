@@ -243,7 +243,7 @@ options.Curve = Options('style', color=Cycle(), line_width=2)
 options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='black',
                              box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
-options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap, radius_dimension="min")
 options.Points = Options('plot', show_frame=True)
 options.Histogram = Options('style', line_color='black', color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
