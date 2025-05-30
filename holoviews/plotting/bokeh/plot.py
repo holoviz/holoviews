@@ -87,7 +87,15 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                                             "left", "right", None],
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
-        'left', 'right', None.""")
+        'left', 'right', None.""",
+    )
+
+    autohide_toolbar = param.Boolean(
+        default=False,
+        doc="""
+        Whether to automatically hide the toolbar until the user hovers over the plot.
+        This parameter has no effect if the toolbar is disabled (toolbar=None).""",
+    )
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
