@@ -1468,6 +1468,16 @@ def test_selector_datashade_bad_column_name(point_data):
         datashade(point_plot, selector=ds.min("val"), **inputs)
 
 
+@pytest.mark.usefixtures("bokeh_backend")
+def test_selector_single_categorical():
+    # Test for https://github.com/holoviz/holoviews/issues/6595
+    plot = Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
+    plot = rasterize(plot, aggregator=ds.count_cat("C"), selector=ds.first("X"))
+    plot = dynspread(plot)
+    # Should not fail
+    renderer("bokeh").get_plot(plot)
+
+
 class DatashaderSpreadTests(ComparisonTestCase):
 
     def test_spread_rgb_1px(self):
