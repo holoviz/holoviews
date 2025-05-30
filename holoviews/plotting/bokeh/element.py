@@ -340,9 +340,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
-
-    hide_toolbar = param.Boolean(default=False)
-
     _categorical = False
     _allow_implicit_categories = True
 
@@ -999,7 +996,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             fig = bokeh.plotting.figure(title=title, **properties)
         fig.xaxis[0].update(**axis_props['x'])
         fig.yaxis[0].update(**axis_props['y'])
-        fig.toolbar.autohide = self.hide_toolbar
+        fig.toolbar.autohide = self.autohide_toolbar
 
         # Set up handlers to configure following behavior on streaming plots
         if self.streaming:
@@ -3079,7 +3076,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale', 'autorange', 'default_tools', 'hide_toolbar']
+                          'subcoordinate_scale', 'autorange', 'default_tools', 'autohide_toolbar']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)

@@ -504,8 +504,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     sync_legends = param.Boolean(default=True, doc="""
         Whether to sync the legend when muted/unmuted based on the name""")
 
-    hide_toolbar = param.Boolean(default=False)
-
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
@@ -629,7 +627,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             sync_legends(plot)
         plot = self._make_axes(plot)
         if hasattr(plot, "toolbar") and self.merge_tools:
-            plot.toolbar = merge_tools(plots, hide_toolbar=True)
+            plot.toolbar = merge_tools(plots, autohide_toolbar=True)
         title = self._get_title_div(self.keys[-1])
         if title:
             plot = Column(title, plot)
@@ -681,7 +679,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 r1, r2 = r1[::-1], r2[::-1]
             plot = gridplot([r1, r2], merge_tools=False)
             if self.merge_tools:
-                plot.toolbar = merge_tools([r1, r2], autohide=self.hide_toolbar)
+                plot.toolbar = merge_tools([r1, r2], autohide=self.autohide_toolbar)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
@@ -744,8 +742,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
-
-    hide_toolbar = param.Boolean(default=False)
 
     def __init__(self, layout, keys=None, **params):
         super().__init__(layout, keys=keys, **params)
@@ -990,7 +986,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
                         if self.merge_tools:
-                            grid.toolbar = merge_tools(children, autohide=self.hide_toolbar)
+                            grid.toolbar = merge_tools(children, autohide=self.autohide_toolbar)
                     tab_plots.append((title, grid))
                     continue
 
@@ -1032,7 +1028,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             if self.sync_legends:
                 sync_legends(layout_plot)
             if self.merge_tools:
-                layout_plot.toolbar = merge_tools(plot_grid, autohide=self.hide_toolbar)
+                layout_plot.toolbar = merge_tools(plot_grid, autohide=self.autohide_toolbar)
 
         title = self._get_title_div(self.keys[-1])
         if title:
