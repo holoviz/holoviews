@@ -989,15 +989,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties.update(**self._plot_properties(key, element))
 
-        figure = bokeh.plotting.figure
-
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
-            fig = figure(title=title, **properties)
+            fig = bokeh.plotting.figure(title=title, **properties)
         fig.xaxis[0].update(**axis_props['x'])
         fig.yaxis[0].update(**axis_props['y'])
+        fig.toolbar.autohide = self.autohide_toolbar
 
         # Set up handlers to configure following behavior on streaming plots
         if self.streaming:
@@ -3077,7 +3076,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale', 'subcoordinate_y',
-                          'subcoordinate_scale', 'autorange', 'default_tools']
+                          'subcoordinate_scale', 'autorange', 'default_tools', 'autohide_toolbar']
 
     def __init__(self, overlay, **kwargs):
         self._multi_y_propagation = self.lookup_options(overlay, 'plot').options.get('multi_y', False)
