@@ -45,5 +45,5 @@ jobs:
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             didn't match the configured pattern. Please ensure that the subject
-            doesn't start with an uppercase character. Also make sure that the 
+            doesn't start with an uppercase character. Also make sure that the
             type ends with a colol, e.g. `docs:`
