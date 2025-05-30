@@ -1,5 +1,4 @@
 import sys
-import uuid
 
 import bokeh.core.properties as bp
 import numpy as np
@@ -22,8 +21,25 @@ from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, BOKEH_GE_3_7_0, colormesh
 _EPOCH = np.datetime64("1970-01-01", "ns")
 
 
+class HoverModel(DataModel):
+    xy = bp.Any()
+    data = bp.Any()
+
+    code_js = """
+    export default ({hover_model, attr, fmt}) => {
+      const templating = Bokeh.require("core/util/templating");
+      const value = hover_model.data[attr];
+      if (fmt == "M") {
+        const formatter = templating.DEFAULT_FORMATTERS.datetime;
+        return formatter(value, "%Y-%m-%d %H:%M:%S")
+      } else {
+        const formatter = templating.get_formatter();
+        return formatter(value)
+      }
+    }; """
+
+
 class ServerHoverMixin(param.Parameterized):
-    _model_cache = {}
 
     selector_in_hovertool = param.Boolean(default=True, doc="""
         Whether to show the selector in HoverTool.""")
@@ -69,34 +85,21 @@ class ServerHoverMixin(param.Parameterized):
                 if vdim in vars:
                     vars.remove(vdim)
 
+        hover_model = HoverModel(data={})
         dims = (*coords, *vars)
-
-        # Create a dynamic custom DataModel with the dims as attributes
-        # __xy__ is the cursor position
-        if dims in self._model_cache:
-            HoverModel = self._model_cache[dims]
-        else:
-            HoverModel = self._model_cache[dims] = type(
-                f"HoverModel_{uuid.uuid4().hex}",
-                (DataModel,),
-                {d: bp.Any() for d in ("__xy__", *dims)},
-            )
-
-        hover_model = HoverModel()
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
         is_datetime = [dtypes[c].kind == "M" for c in data.coords]
         def _create_row(attr):
             kwargs = {}
             if BOKEH_GE_3_7_0:
-                kind = dtypes[attr].kind
-                if kind in "uifO":
-                    kwargs["formatter"] = "basic"
-                elif kind == "M":
-                    kwargs["formatter"] = "datetime"
-                    kwargs["format"] = "%Y-%m-%d %H:%M:%S"
+                kwargs["format"] = "@{custom}"
+                kwargs["formatter"] = CustomJS(
+                    args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
+                    code=HoverModel.code_js
+                )
             return (
                 Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
-                Span(children=[ValueOf(obj=hover_model, attr=attr, **kwargs)], style={"text_align": "left"}),
+                Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
             )
         children = [el for dim in dims for el in _create_row(dim)]
 
@@ -136,7 +139,7 @@ class ServerHoverMixin(param.Parameterized):
         hover.tooltips = grid
         hover.callback = CustomJS(
             args={"position": hover_model},
-            code="export default ({position}, _, {geometry: {x, y}}) => {position.__xy__ = [x, y]}",
+            code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
 
         def on_change(attr, old, new):
@@ -157,11 +160,11 @@ class ServerHoverMixin(param.Parameterized):
             data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             with hold(self.document):
-                hover_model.update(**data_coords, **data_vars)
+                hover_model.update(data={**data_coords, **data_vars})
                 if self.comm:  # Jupyter Notebook
                     self.push()
 
-        hover_model.on_change("__xy__", on_change)
+        hover_model.on_change("xy", on_change)
 
         return tools
 

@@ -124,6 +124,14 @@ def serve_hv(page, port):  # noqa: F811
 
     return serve_and_return_page
 
+@pytest.fixture
+def serve_panel(page, port):  # noqa: F811
+    def serve_and_return_page(pn_obj):
+        serve_and_wait(pn.panel(pn_obj), port=port)
+        page.goto(f"http://localhost:{port}")
+        return page
+
+    return serve_and_return_page
 
 @pytest.fixture(autouse=True)
 def reset_store():
