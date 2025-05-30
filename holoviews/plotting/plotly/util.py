@@ -136,8 +136,8 @@ def _get_subplot_number(subplot_val):
     'scene' -> 1
     'y' -> 1
 
-    Note
-    ----
+    Notes
+    -----
     The absence of a subplot number (e.g. 'y') is treated by plotly as
     a subplot number of 1
 
@@ -222,8 +222,8 @@ def _normalize_subplot_ids(fig):
     has a `polar3` property, and will initialize it to an empty dict if it
     does not
 
-    Note
-    ----
+    Notes
+    -----
     This function mutates the input figure dict
 
     Parameters
@@ -549,8 +549,8 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
 def merge_figure(fig, subfig):
     """Merge a sub-figure into a parent figure
 
-    Note
-    ----
+    Notes
+    -----
     This function mutates the input fig dict, but it does not mutate
     the subfig dict
 
@@ -573,8 +573,8 @@ def merge_figure(fig, subfig):
 def merge_layout(obj, subobj):
     """Merge layout objects recursively
 
-    Note
-    ----
+    Notes
+    -----
     This function mutates the input obj dict, but it does not mutate
     the subobj dict
 
@@ -859,8 +859,8 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
 def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
     """Configure matching axes for a figure
 
-    Note
-    ----
+    Notes
+    -----
     This function mutates the input figure
 
     Parameters
@@ -905,8 +905,8 @@ def clean_internal_figure_properties(fig):
     """Remove all HoloViews internal properties (those with leading underscores) from the
     input figure.
 
-    Note
-    ----
+    Notes
+    -----
     This function mutates the input figure
 
     Parameters

@@ -67,7 +67,9 @@ extensions += [
 ]
 
 intersphinx_mapping = {
-    'panel':    ('https://panel.holoviz.org/', None),
+    "panel": ("https://panel.holoviz.org/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
 numpydoc_xref_param_type = True
@@ -76,6 +78,8 @@ numpydoc_xref_type       = True
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
+
+autodoc_mock_imports = ["dash", "holoviews.doc_convert", "js", "pytest", "pyodide"]
 
 nbsite_analytics = {
     'goatcounter_holoviz': True,

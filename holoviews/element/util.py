@@ -123,9 +123,9 @@ class categorical_aggregate2d(Operation):
     aggregation. The aggregation will retain the global sorting order
     of both dimensions.
 
-    >> table = Table([('USA', 2000, 282.2), ('UK', 2005, 58.89)],
+    >>> table = Table([('USA', 2000, 282.2), ('UK', 2005, 58.89)],
                      kdims=['Country', 'Year'], vdims=['Population'])
-    >> categorical_aggregate2d(table)
+    >>> categorical_aggregate2d(table)
     Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
              'Population': [[ 282.2 , np.nan], [np.nan,   58.89]]},
             kdims=['Country', 'Year'], vdims=['Population'])
