@@ -54,10 +54,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
 
 
 class OptsMeta(param.parameterized.ParameterizedMetaclass):
-    """Improve error message when running something
-    like : 'hv.opts.Curve()' without a plotting backend.
-
-    """
+    """Improve error message when running something like 'hv.opts.Curve()' without a plotting backend."""
 
     def __getattr__(self, attr):
         try:
@@ -93,11 +90,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     For instance:
 
         curve = hv.Curve([1,2,3])
-
         curve.options(opts.Curve(color='red'))
 
     The options method also accepts lists of Option objects.
-
     """
 
     __original_docstring__ = None
@@ -684,10 +679,8 @@ class extension(_pyviz_extension):
 
     ```python
     import holoviews as hv
-
     hv.extension("bokeh")
     ```
-
     """
 
     # Mapping between backend name and module name
@@ -893,7 +886,6 @@ class Dynamic(param.ParameterizedFunction):
     decorated with parameter dependencies Dynamic will automatically
     create a stream to watch the parameter changes. This default
     behavior may be disabled by setting watch=False.
-
     """
 
     operation = param.Callable(default=lambda x: x, doc="""

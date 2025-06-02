@@ -403,9 +403,9 @@ class Spline(Annotation):
 
 class Arrow(Annotation):
     """Draw an arrow to the given xy position with optional text at
-    distance 'points' away. The direction of the arrow may be
-    specified as well as the arrow head style.
+    distance 'points' away.
 
+    The direction of the arrow may be specified as well as the arrow head style.
     """
 
     x = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""

@@ -813,7 +813,7 @@ class LabelledData(param.Parameterized):
 class Dimensioned(LabelledData):
     """Dimensioned is a base class that allows the data contents of a
     class to be associated with dimensions. The contents associated
-    with dimensions may be partitioned into one of three types
+    with dimensions may be partitioned into one of three types:
 
     * key dimensions
         These are the dimensions that can be indexed via
@@ -862,7 +862,6 @@ class Dimensioned(LabelledData):
     The index of an arbitrary dimension is its positional index in the
     list of all dimensions, starting with the key dimensions, followed
     by the value dimensions and ending with the deep dimensions.
-
     """
 
     cdims = param.Dict(default={}, doc="""
