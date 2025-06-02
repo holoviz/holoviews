@@ -7,8 +7,8 @@ Features
 * Includes a rich `library of composable elements <http://www.holoviews.org/Tutorials/Elements.html>`_ that can be overlaid, nested and positioned with ease.
 * Supports `rapid data exploration <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ that naturally develops into a `fully reproducible workflow <http://www.holoviews.org/Tutorials/Exporting.html>`_.
 * Create interactive visualizations that can be controlled via widgets or via custom events in Python using the 'streams' system. When using the bokeh backend, you can use streams to directly interact with your plots.
-* Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <http://www.holoviews.org/Tutorials/Sampling_Data.html>`_.
-* Plotting output using the `Matplotlib <http://www.holoviews.org/Tutorials/Elements.html>`_, `Bokeh <http://www.holoviews.org/Tutorials/Bokeh_Elements.html>`_, and `plotly <http://plot.ly/>`_ backends.
+* Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <user_guide/Indexing_and_Selecting_Data.html>`_.
+* Plotting output using the `Matplotlib <user_guide/Plotting_with_Matplotlib.html>`_, `Bokeh <user_guide/Plotting_with_Bokeh.html>`_, and `plotly <http://plot.ly/>`_ backends.
 * A variety of data interfaces to work with tabular and N-dimensional array data using `NumPy <http://www.numpy.org/>`_, `pandas <http://pandas.pydata.org/>`_, `dask <http://dask.pydata.org/en/latest/>`_, `iris <http://scitools.org.uk/iris/>`_ and `xarray <http://xarray.pydata.org/en/stable/>`_.
 * Every parameter of every object includes easy-to-access documentation.
 * All features `available in vanilla Python 2 or 3 <http://www.holoviews.org/Tutorials/Options.html>`_, with minimal dependencies.
@@ -20,12 +20,12 @@ Features
 * All HoloViews objects can be pickled and unpickled.
 * Provides comparison utilities for testing, so you know when your results have changed and why.
 * Core data structures only depend on the numpy and param libraries.
-* Provides `export and archival facilities <http://www.holoviews.org/Tutorials/Exporting.html>`_ for keeping track of your work throughout the lifetime of a project.
+* Provides `export and archival facilities <user_guide/Exporting_and_Archiving.html>`_ for keeping track of your work throughout the lifetime of a project.
 
 **Analysis and data access features**
 
 * Allows you to annotate your data with dimensions, units, labels and data ranges.
-* Easily `slice and access <http://www.holoviews.org/Tutorials/Sampling_Data.html>`_ regions of your data, no matter how high the dimensionality.
+* Easily `slice and access <user_guide/Indexing_and_Selecting_Data.html>`_ regions of your data, no matter how high the dimensionality.
 * Apply any suitable function to collapse your data or reduce dimensionality.
 * Helpful textual representation to inform you how every level of your data may be accessed.
 * Includes small library of common operations for any scientific or engineering data.
@@ -35,10 +35,10 @@ Features
 
 * Useful default settings make it easy to inspect data, with minimal code.
 * Powerful normalization system to make understanding your data across plots easy.
-* Build `complex animations or interactive visualizations in seconds  <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ instead of hours or days.
+* Build `complex animations or interactive visualizations in seconds <user_guide/Live_Data.html>`_ instead of hours or days.
 * Refine the visualization of your data interactively and incrementally.
 * Separation of concerns: all visualization settings are kept separate from your data objects.
-* Support for fully interactive plots using the `Bokeh backend <http://www.holoviews.org/Tutorials/Bokeh_Backend.html>`_.
+* Support for fully interactive plots using the `Bokeh backend <user_guide/Plotting_with_Bokeh.html>`_.
 
 **Jupyter Notebook support**
 
@@ -48,4 +48,4 @@ Features
 * Custom interactivity using streams and notebook comms to dynamically updating plots.
 * Automatic display of animated formats in the notebook or for export, including gif, webm, and mp4.
 * Useful IPython magics for configuring global display options and for customizing objects.
-* `Automatic archival and export of notebooks <http://www.holoviews.org/Tutorials/Exporting.html>`_, including extracting figures as SVG, generating a static HTML copy of your results for reference, and storing your optional metadata like version control information.
+* `Automatic archival and export of notebooks <user_guide/Exporting_and_Archiving.html>`_, including extracting figures as SVG, generating a static HTML copy of your results for reference, and storing your optional metadata like version control information.

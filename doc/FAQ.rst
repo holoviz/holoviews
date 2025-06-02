@@ -143,7 +143,7 @@ determine the appropriate axis range yourself and set that, e.g. with
 the legends are generated from the labels of the Elements.
 Alternatively, you can construct an ``NdOverlay``, where the key dimensions
 and values will become part of the legend. The
-`Dimensioned Containers <user_guide/Dimensioned_Containers.html>`_ user guide
+`Dimensioned Containers <user_guide/Dimensioned_Containers.ipynb>`_ user guide
 shows an example of an ``NdOverlay`` in action.
 
 
@@ -271,7 +271,7 @@ include:
 
 It is also possible to generate web pages that do not actually include
 all of the data shown, by specifying a ``DynamicMap`` as described
-`Live Data <user_guide/Live_Data.html>`_ rather than a HoloMap. The
+`Live Data <user_guide/Live_Data.ipynb>`_ rather than a HoloMap. The
 DynamicMap will request data only as needed, and so requires a Python
 server to be running alongside the viewable web page. Such pages are
 more difficult to share by email or on web sites, but much more feasible
@@ -297,7 +297,7 @@ second name is the long descriptive name used in the title.
 **A:** In any Python session, you can look at ``print(obj)`` to see
 the structure of ``obj``. For
 an explanation of how this information helps you index into your
-object, see our `Composing Elements <user_guide/Composing_Elements.html>`_
+object, see our `Composing Elements <user_guide/Composing_Elements.ipynb>`_
 user guide.
 
 
@@ -338,7 +338,7 @@ present the available style and plotting options for that object.
 
 The same information is also available in any Python session using
 ``hv.help(obj)``. For more information on customizing the display
-of an object, see our `Customizing Plots <user_guide/Customizing_Plots.html>`_
+of an object, see our `Customizing Plots <user_guide/Customizing_Plots.ipynb>`_
 user guide.
 
 

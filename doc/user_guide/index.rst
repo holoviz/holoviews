@@ -15,61 +15,61 @@ Core guides
 These user guides provide detailed explanation of some of the core
 concepts in HoloViews:
 
-`Annotating your Data <Annotating_Data.html>`_
+`Annotating your Data <Annotating_Data.ipynb>`_
  Core concepts when annotating your data with semantic metadata.
 
-`Composing Elements <Composing_Elements.html>`_
+`Composing Elements <Composing_Elements.ipynb>`_
  Composing your data into layouts and overlays with the ``+`` and ``*`` operators.
 
-`Applying Customizations <Applying_Customizations.html>`_
+`Applying Customizations <Applying_Customizations.ipynb>`_
  Using the options system to declare customizations.
 
-`Style Mapping <Style_Mapping.html>`_
+`Style Mapping <Style_Mapping.ipynb>`_
  Mapping your data to the visual attributes of your plot.
 
-`Dimensioned Containers <Dimensioned_Containers.html>`_
+`Dimensioned Containers <Dimensioned_Containers.ipynb>`_
  Multi-dimensional containers for animating and faceting your data flexibly.
 
-`Building Composite Objects <Building_Composite_Objects.html>`_
+`Building Composite Objects <Building_Composite_Objects.ipynb>`_
  How to build and work with nested composite objects.
 
-`Live Data <Live_Data.html>`_
+`Live Data <Live_Data.ipynb>`_
  Lazily generate data on the fly and generate engaging interactive visualizations.
 
-`Tabular Datasets <Tabular_Datasets.html>`_
+`Tabular Datasets <Tabular_Datasets.ipynb>`_
  Explore tabular data with `NumPy <http://www.numpy.org/>`_, `pandas <http://pandas.pydata.org/>`_ and `dask <http://dask.pydata.org/>`_.
 
-`Gridded Datasets <Gridded_Datasets.html>`_
+`Gridded Datasets <Gridded_Datasets.ipynb>`_
  Explore gridded data (n-dimensional arrays) with `NumPy <http://www.numpy.org/>`_ and `XArray <http://xarray.pydata.org/>`_.
 
-`Geometry Data <Geometry_Data.html>`_
+`Geometry Data <Geometry_Data.ipynb>`_
  Working with and representing geometry data such as lines, multi-lines, polygons, multi-polygons and contours.
 
-`Indexing and Selecting Data <Indexing_and_Selecting_Data.html>`_
+`Indexing and Selecting Data <Indexing_and_Selecting_Data.ipynb>`_
  Select and index subsets of your data with HoloViews.
 
-`Transforming Elements <Transforming_Elements.html>`_
+`Transforming Elements <Transforming_Elements.ipynb>`_
  Apply operations to your data that can be used to build data analysis pipelines
 
-`Responding to Events <Responding_to_Events.html>`_
+`Responding to Events <Responding_to_Events.ipynb>`_
  Allow your visualizations to respond to Python events using the 'streams' system.
 
-`Custom Interactivity <Custom_Interactivity.html>`_
+`Custom Interactivity <Custom_Interactivity.ipynb>`_
  Use `Bokeh <https://bokeh.pydata.org>`_ and 'linked streams' to directly interact with your visualizations.
 
-`Data Processing Pipelines <Data_Pipelines.html>`_
+`Data Processing Pipelines <Data_Pipelines.ipynb>`_
  Chain operations to build sophisticated, interactive and lazy data analysis pipelines.
 
-`Creating interactive network graphs <Network_Graphs.html>`_
+`Creating interactive network graphs <Network_Graphs.ipynb>`_
  Using the Graph element to display small and large networks interactively.
 
-`Working with large data <Large_Data.html>`_
+`Working with large data <Large_Data.ipynb>`_
  Leverage Datashader to interactively explore millions or billions of datapoints.
 
-`Working with Streaming Data <Streaming_Data.html>`_
+`Working with Streaming Data <Streaming_Data.ipynb>`_
  Demonstrates how to leverage the streamz library with HoloViews to work with streaming datasets.
 
-`Creating interactive dashboards <Dashboards.html>`_
+`Creating interactive dashboards <Dashboards.ipynb>`_
  Use external widget libraries to build custom, interactive dashboards.
 
 
@@ -78,46 +78,46 @@ Supplementary guides
 
 These guides provide detail about specific additional features in HoloViews:
 
-`Configuring HoloViews <Configuring.html>`_
+`Configuring HoloViews <Configuring.ipynb>`_
  Information about configuration options.
 
-`Customizing Plots <Customizing_Plots.html>`_
+`Customizing Plots <Customizing_Plots.ipynb>`_
  How to customize plots including their titles, axis labels, ranges, ticks and more.
 
-`Colormaps <Colormaps.html>`_
+`Colormaps <Colormaps.ipynb>`_
  Overview of colormaps available, including when and how to use each type.
 
-`Plotting with Bokeh <Plotting_with_Bokeh.html>`_
+`Plotting with Bokeh <Plotting_with_Bokeh.ipynb>`_
  Styling options and unique `Bokeh <bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
 
-`Deploying Bokeh Apps <Deploying_Bokeh_Apps.html>`_
+`Deploying Bokeh Apps <Deploying_Bokeh_Apps.ipynb>`_
  Using `bokeh server <http://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
 
-`Linking Bokeh plots <Linking_Plots.html>`_
+`Linking Bokeh plots <Linking_Plots.ipynb>`_
  Using Links to define custom interactions on a plot without a Python server
 
-`Plotting with matplotlib <Plotting_with_Matplotlib.html>`_
+`Plotting with matplotlib <Plotting_with_Matplotlib.ipynb>`_
  Styling options and unique Matplotlib features such as GIF/MP4 support.
 
-`Plotting with plotly <Plotting_with_Plotly.html>`_
+`Plotting with plotly <Plotting_with_Plotly.ipynb>`_
  Styling options and unique plotly features, focusing on 3D plotting.
 
-`Working with renderers and plots <Plots_and_Renderers.html>`_
+`Working with renderers and plots <Plots_and_Renderers.ipynb>`_
  Using the ``Renderer`` and ``Plot`` classes for access to the plotting machinery.
 
-`Using linked brushing to cross-filter complex datasets <Linked_Brushing.html>`_
+`Using linked brushing to cross-filter complex datasets <Linked_Brushing.ipynb>`_
  Explains how to use the ``link_selections`` helper to cross-filter multiple elements.
 
-`Using Annotators to edit and label data <Annotators.html>`_
+`Using Annotators to edit and label data <Annotators.ipynb>`_
  Explains how to use the ``annotate`` helper to edit and annotate elements with the help of drawing tools and editable tables.
 
-`Exporting and Archiving <Exporting_and_Archiving.html>`_
+`Exporting and Archiving <Exporting_and_Archiving.ipynb>`_
  Archive both your data and visualization in scripts and notebooks.
 
-`Continuous Coordinates <Continuous_Coordinates.html>`_
+`Continuous Coordinates <Continuous_Coordinates.ipynb>`_
  How continuous coordinates are handled, specifically focusing on ``Image`` and ``Raster`` types.
 
-`Notebook Magics <Notebook_Magics.html>`_
+`Notebook Magics <Notebook_Magics.ipynb>`_
  IPython magics supported in Jupyter Notebooks.
 
 .. toctree::
