@@ -73,8 +73,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
     def _init_glyph(self, plot, mapping, properties):
         if "radius" in properties:
             self._plot_methods = dict(single='circle', batched='circle')
-        if properties.get("size", False) is None:
-            properties.pop("size")
+            properties.pop("size", None)
         else:
             properties.pop("radius_dimension", None)
         return super()._init_glyph(plot, mapping, properties)
