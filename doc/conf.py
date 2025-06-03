@@ -136,3 +136,11 @@ html_context.update({
 html_title = f'{project} v{version}'
 # Format of the last updated section in the footer
 html_last_updated_fmt = '%Y-%m-%d'
+
+# Exclude utility files from toctree warnings
+exclude_patterns = [
+    'assets/README.rst',
+    'features.rst',
+    'test_data/README.rst',
+    'user_guide/IPython_Magics.rst', # empty file
+]

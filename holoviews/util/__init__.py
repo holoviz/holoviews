@@ -74,9 +74,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     Option objects can be generated and validated in a tab-completable
     way (in appropriate environments such as Jupyter notebooks) using
-    completers such as opts.Curve, opts.Image, opts.Overlay, etc.
+    completers such as ``opts.Curve``, ``opts.Image``, ``opts.Overlay``, etc.
 
-    To set opts globally you can pass these option objects into opts.defaults:
+    To set opts globally you can pass these option objects into ``opts.defaults``:
 
         opts.defaults(*options)
 
@@ -85,14 +85,14 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
-    objects to the .options method.
+    objects to the ``.options`` method.
 
     For instance:
 
         curve = hv.Curve([1,2,3])
         curve.options(opts.Curve(color='red'))
 
-    The options method also accepts lists of Option objects.
+    The ``options`` method also accepts lists of Option objects.
     """
 
     __original_docstring__ = None

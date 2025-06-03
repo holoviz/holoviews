@@ -165,8 +165,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
     the supplied object is shown. Note that the recursive option will
     only work with an object instance and not a class.
 
-    If ansi is set to False, all ANSI color
-    codes are stripped out.
+    If ``ansi`` is set to False, all ANSI color codes are stripped out.
 
     """
     backend = backend if backend else Store.current_backend

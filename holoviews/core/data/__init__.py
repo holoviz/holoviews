@@ -1157,7 +1157,6 @@ class Dataset(Element, metaclass=PipelineMeta):
         dimension
             The dimension to return values for
         expanded : bool, optional
-            Whether to expand values
             Whether to return the expanded values, behavior depends
             on the type of data:
                 * Columnar: If false returns unique values

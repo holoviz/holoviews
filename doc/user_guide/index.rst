@@ -41,6 +41,9 @@ concepts in HoloViews:
 `Gridded Datasets`_
  Explore gridded data (n-dimensional arrays) with `NumPy <http://www.numpy.org/>`_ and `XArray <http://xarray.pydata.org/>`_.
 
+`Geometry Data`_
+ Explore geometry data with `Shapely <https://shapely.readthedocs.io/>`_ and `GeoPandas <https://geopandas.org/>`_.
+
 `Indexing and Selecting Data`_
  Select and index subsets of your data with HoloViews.
 
@@ -81,7 +84,7 @@ These guides provide detail about specific additional features in HoloViews:
  Overview of colormaps available, including when and how to use each type.
 
 `Plotting with Bokeh`_
- Styling options and unique `Bokeh <bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
+ Styling options and unique `Bokeh <https://bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
 
 `Deploying Bokeh Apps`_
  Using `bokeh server <http://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
@@ -91,9 +94,6 @@ These guides provide detail about specific additional features in HoloViews:
 
 `Plotting with matplotlib`_
  Styling options and unique Matplotlib features such as GIF/MP4 support.
-
-`Plotting with plotly`_
- Styling options and unique plotly features, focusing on 3D plotting.
 
 `Working with renderers and plots`_
  Using the ``Renderer`` and ``Plot`` classes for access to the plotting machinery.
@@ -140,13 +140,13 @@ These guides provide detail about specific additional features in HoloViews:
    Working with Large Data <Large_Data>
    Working with Streaming Data <Streaming_Data>
    Creating Interactive Dashboards <Dashboards>
+   Configuring HoloViews <Configuring>
    Customizing Plots <Customizing_Plots>
    Colormaps <Colormaps>
    Plotting with Bokeh <Plotting_with_Bokeh>
    Deploying Bokeh Apps <Deploying_Bokeh_Apps>
    Linking Bokeh Plots <Linking_Plots>
    Plotting with Matplotlib <Plotting_with_Matplotlib>
-   Plotting with Plotly <Plotting_with_Plotly>
    Working With Plots and Renderers <Plots_and_Renderers>
    Linked Brushing <Linked_Brushing>
    Annotators <Annotators>
@@ -158,23 +158,24 @@ These guides provide detail about specific additional features in HoloViews:
 .. _Getting Started: ../getting_started/index.html
 .. _Gallery: ../gallery/index.html
 .. _Reference Gallery: ../reference/index.html
-.. _Annotating your Data: 01-Annotating_Data.html
-.. _Composing Elements: 02-Composing_Elements.html
-.. _Applying Customizations: 03-Applying_Customizations.html
-.. _Style Mapping: 04-Style_Mapping.html
-.. _Dimensioned Containers: 05-Dimensioned_Containers.html
-.. _Building Composite Objects: 06-Building_Composite_Objects.html
-.. _Live Data: 07-Live_Data.html
-.. _Tabular Datasets: 08-Tabular_Datasets.html
-.. _Gridded Datasets: 09-Gridded_Datasets.html
-.. _Indexing and Selecting Data: 10-Indexing_and_Selecting_Data.html
-.. _Transforming Elements: 11-Transforming_Elements.html
-.. _Responding to Events: 12-Responding_to_Events.html
-.. _Custom Interactivity: 13-Custom_Interactivity.html
-.. _Data Processing Pipelines: 14-Data_Pipelines.html
-.. _Working with large data: 15-Large_Data.html
-.. _Working with Streaming Data: 16-Streaming_Data.html
-.. _Creating interactive dashboards: 17-Dashboards.html
+.. _Annotating your Data: Annotating_Data.html
+.. _Composing Elements: Composing_Elements.html
+.. _Applying Customizations: Applying_Customizations.html
+.. _Style Mapping: Style_Mapping.html
+.. _Dimensioned Containers: Dimensioned_Containers.html
+.. _Building Composite Objects: Building_Composite_Objects.html
+.. _Live Data: Live_Data.html
+.. _Tabular Datasets: Tabular_Datasets.html
+.. _Gridded Datasets: Gridded_Datasets.html
+.. _Geometry Data: Geometry_Data.html
+.. _Indexing and Selecting Data: Indexing_and_Selecting_Data.html
+.. _Transforming Elements: Transforming_Elements.html
+.. _Responding to Events: Responding_to_Events.html
+.. _Custom Interactivity: Custom_Interactivity.html
+.. _Data Processing Pipelines: Data_Pipelines.html
+.. _Working with large data: Large_Data.html
+.. _Working with Streaming Data: Streaming_Data.html
+.. _Creating interactive dashboards: Dashboards.html
 .. _Configuring HoloViews: Configuring.html
 .. _Customizing Plots: Customizing_Plots.html
 .. _Colormaps: Colormaps.html
@@ -182,7 +183,6 @@ These guides provide detail about specific additional features in HoloViews:
 .. _Deploying Bokeh Apps: Deploying_Bokeh_Apps.html
 .. _Linking Bokeh plots: Linking_Plots.html
 .. _Plotting with matplotlib: Plotting_with_Matplotlib.html
-.. _Plotting with plotly: Plotting_with_Plotly.html
 .. _Working with renderers and plots: Plots_and_Renderers.html
 .. _Using linked brushing to cross-filter complex datasets: Linked_Brushing.html
 .. _Using Annotators to edit and label data: Annotators.html

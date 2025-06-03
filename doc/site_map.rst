@@ -4,5 +4,12 @@ Map of the holoviews Site
 
 .. toctree::
     index
-    Tutorials/index
-    Reference_Manual/index
+    getting_started/index
+    user_guide/index
+    reference_manual/index
+    developer_guide/index
+    FAQ
+    about
+    roadmap
+    releases
+    install

@@ -120,4 +120,5 @@ API <reference_manual/index>
 FAQ <FAQ>
 Roadmap <roadmap>
 About <about>
+Installation <install>
 ```
