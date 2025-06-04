@@ -84,9 +84,6 @@ class Raster(Element2D):
         return super().range(dim, data_range, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
-        """The set of samples available along a particular dimension.
-
-        """
         dim_idx = self.get_dimension_index(dim)
         if not expanded and dim_idx == 0:
             return np.array(range(self.data.shape[1]))

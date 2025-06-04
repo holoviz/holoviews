@@ -1505,31 +1505,6 @@ class ViewableTree(AttrTree, Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Concatenates values on all nodes with requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar
-                    If false returns unique values
-                * Geometry
-                    If false returns scalar values per geometry
-                * Gridded
-                    If false returns 1D coordinates
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         dimension = self.get_dimension(dimension, strict=True).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
         if dimension in chain.from_iterable(all_dims):
