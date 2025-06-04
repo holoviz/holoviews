@@ -1245,26 +1245,35 @@ class dendrogram(Operation):
          between successive leaves is minimal. This results in a more intuitive
          tree structure when the data are visualized. defaults to False,
          because this algorithm can be slow, particularly on large datasets.
-         See for more information:
+         For more information:
          https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
          """)
 
     linkage_method = param.Selector(
-        default="single",
-        objects=["single", "complete", "average", "centroid", "median", "ward", "weighted"]
-    )
-    linkage_metric=param.Selector(
-        default='euclidean',
-        objects=[
-            'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-            'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-            'jaccard', 'jensenshannon', 'kulczynski1',
-            'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
-            'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
-            'sqeuclidean', 'yule']
-    )
+        default="complete",
+        objects=["single", "complete", "average", "centroid", "median", "ward", "weighted"],
+        doc="""
+        The linkage algorithm to use. For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
 
-    scanpy_like = param.Boolean(default=False)
+    )
+    linkage_metric = param.Selector(
+        default="correlation",
+        objects=[
+            "braycurtis", "canberra", "chebyshev", "cityblock",
+            "correlation", "cosine", "dice", "euclidean", "hamming",
+            "jaccard", "jensenshannon", "kulczynski1",
+            "mahalanobis", "matching", "minkowski", "rogerstanimoto",
+            "russellrao", "seuclidean", "sokalmichener", "sokalsneath",
+            "sqeuclidean", "yule"
+        ],
+        doc="""
+        The distance metric to use in the case that y is a collection of observation vectors; ignored otherwise.
+        For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+    )
 
     def _compute_linkage(self, dataset, dim, vdim):
         try:
@@ -1278,28 +1287,13 @@ class dendrogram(Operation):
             arrays.append(v.dimension_values(vdim))
 
         X = np.vstack(arrays)
-
-        if self.p.scanpy_like:
-            import pandas as pd
-            from scipy.spatial import distance
-            corr_matrix = pd.DataFrame(X).T.corr(method='pearson').clip(-1, 1)
-            corr_condensed = distance.squareform(1 - corr_matrix)
-            Z = linkage(
-                corr_condensed,
-                method=self.p.linkage_method,
-                # metric=self.p.linkage_metric,
-                optimal_ordering=self.p.optimal_ordering
-            )
-        else:
-            Z = linkage(
-                X,
-                method=self.p.linkage_method,
-                metric=self.p.linkage_metric,
-                optimal_ordering=self.p.optimal_ordering
-            )
-        ddata = dendrogram(Z, labels=labels, no_plot=True)
-        print(ddata)
-        return ddata
+        Z = linkage(
+            X,
+            method=self.p.linkage_method,
+            metric=self.p.linkage_metric,
+            optimal_ordering=self.p.optimal_ordering
+        )
+        return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
         element_kdims = element.kdims
