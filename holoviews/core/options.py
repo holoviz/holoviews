@@ -241,7 +241,7 @@ def options_policy(skip_invalid, warn_on_skip):
 class Keywords:
     """A keywords objects represents a set of Python keywords. It is
     list-like and ordered but it is also a set without duplicates. When
-    passed as ``**kwargs``, Python keywords are not ordered but this class
+    passed as `**kwargs`, Python keywords are not ordered but this class
     always lists keywords in sorted order.
 
     In addition to containing the list of keywords, Keywords has an

@@ -561,7 +561,7 @@ class dim:
     @classmethod
     def pipe(cls, func, *args, **kwargs):
         """Wrapper to give multidimensional transforms a more intuitive syntax.
-        For a custom function ``func`` with signature (*args, **kwargs), call as
+        For a custom function `func` with signature (*args, **kwargs), call as
         dim.pipe(func, *args, **kwargs).
 
         """
