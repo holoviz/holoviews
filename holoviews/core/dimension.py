@@ -1221,7 +1221,6 @@ class Dimensioned(LabelledData):
         dimension
             The dimension to return values for
         expanded : bool, optional
-            Whether to expand values
             Whether to return the expanded values, behavior depends
             on the type of data:
                 * Columnar
@@ -1235,7 +1234,8 @@ class Dimensioned(LabelledData):
 
         Returns
         -------
-        NumPy array of values along the requested dimension
+        np.array
+            NumPy array of values along the requested dimension
         """
         val = self._cached_constants.get(dimension, None)
         if val:
