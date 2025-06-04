@@ -42,7 +42,7 @@ concepts in HoloViews:
  Explore gridded data (n-dimensional arrays) with `NumPy <https://www.numpy.org/>`_ and `XArray <https://xarray.pydata.org/>`_.
 
 `Geometry Data`_
- Explore geometry data with `Shapely <https://shapely.readthedocs.io/>`_ and `GeoPandas <https://geopandas.org/>`_.
+ Represent and visualize path and polygon geometries with support for multi-geometries and value dimensions.
 
 `Indexing and Selecting Data`_
  Select and index subsets of your data with HoloViews.
