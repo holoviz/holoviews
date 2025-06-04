@@ -1222,8 +1222,11 @@ class Dimensioned(LabelledData):
             The dimension to return values for.
         expanded : bool, optional
             Whether to return the expanded values. Behavior depends on the type of data:
+
             * Columnar: If false, returns unique values
+
             * Geometry: If false, returns scalar values per geometry
+
             * Gridded: If false, returns 1D coordinates
         flat : bool, optional
             Whether to flatten array.
