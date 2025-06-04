@@ -11,12 +11,19 @@ from panel.io import hold
 from ...core.data import XArrayInterface
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
+from ...util.warnings import warn
 from ..util import categorical_legend
 from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, BOKEH_GE_3_7_0, colormesh
+from .util import (
+    BOKEH_GE_3_3_0,
+    BOKEH_GE_3_4_0,
+    BOKEH_GE_3_7_0,
+    BOKEH_VERSION,
+    colormesh,
+)
 
 _EPOCH = np.datetime64("1970-01-01", "ns")
 
@@ -68,6 +75,13 @@ class ServerHoverMixin(param.Parameterized):
         ):
             return tools
 
+        if not BOKEH_GE_3_7_0:
+            bk_str = ".".join(map(str, BOKEH_VERSION))
+            msg = f"selector needs Bokeh 3.7 or greater, you are using version {bk_str}."
+            warn(msg, RuntimeWarning)
+            hover.tooltips = Div(children=[msg])
+            return tools
+
         self._hover_data = data
 
         # Get dimensions
@@ -90,13 +104,13 @@ class ServerHoverMixin(param.Parameterized):
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
         is_datetime = [dtypes[c].kind == "M" for c in data.coords]
         def _create_row(attr):
-            kwargs = {}
-            if BOKEH_GE_3_7_0:
-                kwargs["format"] = "@{custom}"
-                kwargs["formatter"] = CustomJS(
+            kwargs = {
+                "format": "@{custom}",
+                "formatter": CustomJS(
                     args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
                     code=HoverModel.code_js
                 )
+            }
             return (
                 Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
