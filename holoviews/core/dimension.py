@@ -1218,24 +1218,20 @@ class Dimensioned(LabelledData):
 
         Parameters
         ----------
-        dimension
-            The dimension to return values for
+        dimension : str
+            The dimension to return values for.
         expanded : bool, optional
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar
-                    If false returns unique values
-                * Geometry
-                    If false returns scalar values per geometry
-                * Gridded
-                    If false returns 1D coordinates
+            Whether to return the expanded values. Behavior depends on the type of data:
+            * Columnar: If false, returns unique values
+            * Geometry: If false, returns scalar values per geometry
+            * Gridded: If false, returns 1D coordinates
         flat : bool, optional
-            Whether to flatten array
+            Whether to flatten array.
 
         Returns
         -------
-        np.array
-            NumPy array of values along the requested dimension
+        np.ndarray
+            Array of values along the requested dimension.
         """
         val = self._cached_constants.get(dimension, None)
         if val:
