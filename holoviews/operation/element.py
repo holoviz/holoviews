@@ -1245,9 +1245,35 @@ class dendrogram(Operation):
          between successive leaves is minimal. This results in a more intuitive
          tree structure when the data are visualized. defaults to False,
          because this algorithm can be slow, particularly on large datasets.
-         See for more information:
+         For more information:
          https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
          """)
+
+    linkage_method = param.Selector(
+        default="complete",
+        objects=["single", "complete", "average", "centroid", "median", "ward", "weighted"],
+        doc="""
+        The linkage algorithm to use. For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+
+    )
+    linkage_metric = param.Selector(
+        default="correlation",
+        objects=[
+            "braycurtis", "canberra", "chebyshev", "cityblock",
+            "correlation", "cosine", "dice", "euclidean", "hamming",
+            "jaccard", "jensenshannon", "kulczynski1",
+            "mahalanobis", "matching", "minkowski", "rogerstanimoto",
+            "russellrao", "seuclidean", "sokalmichener", "sokalsneath",
+            "sqeuclidean", "yule"
+        ],
+        doc="""
+        The distance metric to use in the case that y is a collection of observation vectors; ignored otherwise.
+        For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+    )
 
     def _compute_linkage(self, dataset, dim, vdim):
         try:
@@ -1259,10 +1285,15 @@ class dendrogram(Operation):
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
+
         X = np.vstack(arrays)
-        Z = linkage(X, optimal_ordering=self.p.optimal_ordering)
-        ddata = dendrogram(Z, labels=labels, no_plot=True)
-        return ddata
+        Z = linkage(
+            X,
+            method=self.p.linkage_method,
+            metric=self.p.linkage_metric,
+            optimal_ordering=self.p.optimal_ordering
+        )
+        return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
         element_kdims = element.kdims
@@ -1270,7 +1301,7 @@ class dendrogram(Operation):
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
-            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
+            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
             sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
             sort_dims.append(sort_dim)
