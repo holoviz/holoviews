@@ -14,15 +14,15 @@ HoloViews is supported and maintained by `Anaconda <https://www.anaconda.com>`_.
 Prior Funding
 -------------
 
-.. image:: http://www.anc.ed.ac.uk/anc.png
+.. image:: https://www.anc.ed.ac.uk/anc.png
    :height: 60px
    :alt: ANC website
    :align: left
-   :target: http://www.anc.ed.ac.uk
+   :target: https://www.anc.ed.ac.uk
 
 The original development of HoloViews was supported in part by Grants EP/F500385/1 and BB/F529254/1
 to the `University of Edinburgh
-Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <http://www.anc.ed.ac.uk/dtc>`_
+Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <https://www.anc.ed.ac.uk/dtc>`_
 from the UK Engineering and Physical Sciences Research Council,
 Biotechnology and Biological Sciences Research Council, and
 Medical Research Council.

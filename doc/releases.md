@@ -2717,37 +2717,37 @@ JupyterLab support:
 
 New components:
 
-- Added [`Sankey` element](http://holoviews.org/reference/elements/bokeh/Sankey.html)
+- Added [`Sankey` element](https://holoviews.org/reference/elements/bokeh/Sankey.html)
   to plot directed flow graphs
   ([#1123](https://github.com/pyviz/holoviews/issues/1123))
-- Added [`TriMesh` element](http://holoviews.org/reference/elements/bokeh/TriMesh.html)
+- Added [`TriMesh` element](https://holoviews.org/reference/elements/bokeh/TriMesh.html)
   and datashading operation to plot small and large irregular meshes
   ([#2143](https://github.com/pyviz/holoviews/issues/2143))
-- Added a [`Chord` element](http://holoviews.org/reference/elements/bokeh/Chord.html)
+- Added a [`Chord` element](https://holoviews.org/reference/elements/bokeh/Chord.html)
   to draw flow graphs between different
   nodes ([#2137](https://github.com/pyviz/holoviews/issues/2137),
   [#2143](https://github.com/pyviz/holoviews/pull/2143))
-- Added [`HexTiles` element](http://holoviews.org/reference/elements/bokeh/HexTiles.html)
+- Added [`HexTiles` element](https://holoviews.org/reference/elements/bokeh/HexTiles.html)
   to plot data binned into a hexagonal grid
   ([#1141](https://github.com/pyviz/holoviews/issues/1141))
-- Added [`Labels` element](http://holoviews.org/reference/elements/bokeh/Labels.html)
+- Added [`Labels` element](https://holoviews.org/reference/elements/bokeh/Labels.html)
   to plot a large number of text labels at once (as data rather than as annotations)
   ([#1837](https://github.com/pyviz/holoviews/issues/1837))
-- Added [`Div` element](http://holoviews.org/reference/elements/bokeh/Div.html)
+- Added [`Div` element](https://holoviews.org/reference/elements/bokeh/Div.html)
   to add arbitrary HTML elements to a Bokeh layout
   ([#2221](https://github.com/pyviz/holoviews/issues/2221))
 - Added
-  [`PointDraw`](http://holoviews.org/reference/streams/bokeh/PointDraw.html),
-  [`PolyDraw`](http://holoviews.org/reference/streams/bokeh/PolyDraw.html),
-  [`BoxEdit`](http://holoviews.org/reference/streams/bokeh/BoxEdit.html), and
-  [`PolyEdit`](http://holoviews.org/reference/streams/bokeh/PolyEdit.html)
+  [`PointDraw`](https://holoviews.org/reference/streams/bokeh/PointDraw.html),
+  [`PolyDraw`](https://holoviews.org/reference/streams/bokeh/PolyDraw.html),
+  [`BoxEdit`](https://holoviews.org/reference/streams/bokeh/BoxEdit.html), and
+  [`PolyEdit`](https://holoviews.org/reference/streams/bokeh/PolyEdit.html)
   streams to allow drawing, editing, and annotating glyphs on a Bokeh
   plot, and syncing the resulting data to Python
   ([#2268](https://github.com/pyviz/holoviews/issues/2459))
 
 Features:
 
-- Added [radial `HeatMap`](http://holoviews.org/reference/elements/bokeh/RadialHeatMap.html)
+- Added [radial `HeatMap`](https://holoviews.org/reference/elements/bokeh/RadialHeatMap.html)
   option to allow plotting heatmaps with a cyclic x-axis
   ([#2139](https://github.com/pyviz/holoviews/pull/2139))
 - All elements now support declaring bin edges as well as centers
@@ -2760,8 +2760,8 @@ Features:
 - n-dimensional Dask arrays are now supported directly via the gridded
   dictionary data interface
   ([#2305](https://github.com/pyviz/holoviews/pull/2305))
-- Added new [Styling Plots](http://holoviews.org/user_guide/Styling_Plots.html)
-  and [Colormaps](http://holoviews.org/user_guide/Colormaps.html)
+- Added new [Styling Plots](https://holoviews.org/user_guide/Styling_Plots.html)
+  and [Colormaps](https://holoviews.org/user_guide/Colormaps.html)
   user guides, including new functionality for working with colormaps.
 
 Enhancements:
@@ -2804,7 +2804,7 @@ Enhancements:
 - Added `color_levels` plot option to set discrete number of levels
   during colormapping
   ([#2483](https://github.com/pyviz/holoviews/pull/2483))
-- Expanded the [Large Data](http://holoviews.org/user_guide/Large_Data.html)
+- Expanded the [Large Data](https://holoviews.org/user_guide/Large_Data.html)
   user guide to show examples of all Element and Container types
   supported for datashading and give performance guidelines.
 
@@ -3330,7 +3330,7 @@ Changes affecting backwards compatibility:
 This version is a major new release incorporating seven months of work
 involving several hundred PRs and over 1700 commits. Highlights include
 extensive new support for easily building highly interactive
-[Bokeh](http://bokeh.pydata.org) plots, support for using
+[Bokeh](https://bokeh.pydata.org) plots, support for using
 [datashader](https://github.com/bokeh/datashader)-based plots for
 working with large datasets, support for rendering images interactively
 but outside of the notebook, better error handling, and support for
@@ -3803,7 +3803,7 @@ Features and improvements:
   data easily (PR
   [\#562](https://github.com/pyviz/holoviews/pull/542)).
 - Added data interface based on [iris
-  Cubes](http://scitools.org.uk/iris/docs/v1.9.2/index.html) (PR
+  Cubes](https://scitools.org.uk/iris/docs/v1.9.2/index.html) (PR
   [\#624](https://github.com/pyviz/holoviews/pull/624)).
 - Added support for dynamic operations and overlaying of DynamicMaps
   (PR [\#588](https://github.com/pyviz/holoviews/pull/588)).
@@ -3855,7 +3855,7 @@ A minor bugfix release to patch a number of small but important issues.
 Fixes and improvements:
 
 - Added a [DynamicMap
-  Tutorial](http://holoviews.org/Tutorials/Dynamic_Map.html) to
+  Tutorial](https://holoviews.org/Tutorials/Dynamic_Map.html) to
   explain how to explore very large or continuous parameter spaces in
   HoloViews ([PR
   \#470](https://github.com/pyviz/holoviews/issues/470)).

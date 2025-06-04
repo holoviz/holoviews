@@ -10,8 +10,8 @@ scientific Python distributions:
 
     conda install holoviews
 
-This installation includes the default [Matplotlib](http://matplotlib.org)
-plotting library backend, the more interactive [Bokeh](http://bokeh.pydata.org) plotting library backend.
+This installation includes the default [Matplotlib](https://matplotlib.org)
+plotting library backend, the more interactive [Bokeh](https://bokeh.pydata.org) plotting library backend.
 
 A similar set of packages can be installed using `pip`, if that command
 is available on your system:

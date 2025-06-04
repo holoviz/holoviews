@@ -36,10 +36,10 @@ concepts in HoloViews:
  Lazily generate data on the fly and generate engaging interactive visualizations.
 
 `Tabular Datasets`_
- Explore tabular data with `NumPy <http://www.numpy.org/>`_, `pandas <http://pandas.pydata.org/>`_ and `dask <http://dask.pydata.org/>`_.
+ Explore tabular data with `NumPy <https://www.numpy.org/>`_, `pandas <https://pandas.pydata.org/>`_ and `dask <https://dask.pydata.org/>`_.
 
 `Gridded Datasets`_
- Explore gridded data (n-dimensional arrays) with `NumPy <http://www.numpy.org/>`_ and `XArray <http://xarray.pydata.org/>`_.
+ Explore gridded data (n-dimensional arrays) with `NumPy <https://www.numpy.org/>`_ and `XArray <https://xarray.pydata.org/>`_.
 
 `Geometry Data`_
  Explore geometry data with `Shapely <https://shapely.readthedocs.io/>`_ and `GeoPandas <https://geopandas.org/>`_.
@@ -87,7 +87,7 @@ These guides provide detail about specific additional features in HoloViews:
  Styling options and unique `Bokeh <https://bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
 
 `Deploying Bokeh Apps`_
- Using `bokeh server <http://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
+ Using `bokeh server <https://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
 
 `Linking Bokeh plots`_
  Using Links to define custom interactions on a plot without a Python server
