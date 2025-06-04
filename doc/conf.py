@@ -143,4 +143,5 @@ exclude_patterns = [
     'features.rst',
     'test_data/README.rst',
     'user_guide/IPython_Magics.rst', # empty file
+    'site_map.rst',
 ]
