@@ -73,8 +73,9 @@ class Scatter3D(Element3D, Points):
 
     Scatter3D is not available for the default Bokeh backend.
 
-    Example - Matplotlib
-    --------------------
+    Examples
+    --------
+    Matplotlib
 
     .. code-block::
 
@@ -93,8 +94,7 @@ class Scatter3D(Element3D, Points):
             marker='^'
         )
 
-    Example - Plotly
-    ----------------
+    Plotly
 
     .. code-block::
 

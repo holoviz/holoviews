@@ -241,7 +241,7 @@ def options_policy(skip_invalid, warn_on_skip):
 class Keywords:
     """A keywords objects represents a set of Python keywords. It is
     list-like and ordered but it is also a set without duplicates. When
-    passed as **kwargs, Python keywords are not ordered but this class
+    passed as `**kwargs`, Python keywords are not ordered but this class
     always lists keywords in sorted order.
 
     In addition to containing the list of keywords, Keywords has an
@@ -1538,7 +1538,7 @@ class StoreOptions:
 
     @classmethod
     def capture_ids(cls, obj):
-        """Given an list of ids, capture a list of ids that can be
+        """Given an object, capture a list of ids that can be
         restored using the restore_ids.
 
         """
@@ -1711,7 +1711,6 @@ class StoreOptions:
         >>> merged = StoreOptions.merge_options(['style'], options, style=style)
         >>> sorted(merged['Curve']['style'].items())
         [('color', 'b'), ('linewidth', 10)]
-
         """
         groups = set(groups)
         if (options is not None and set(options.keys()) <= groups):
@@ -1847,8 +1846,9 @@ class StoreOptions:
                           Options('style', cmap='Blues')]}
 
 
-        Relationship to the %%opts magic
-        ----------------------------------
+        Notes
+        -----
+        Relationship to the %%opts magic:
 
         This function matches the functionality supplied by the %%opts
         cell magic in the IPython extension. In fact, you can use the same

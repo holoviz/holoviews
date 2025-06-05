@@ -38,8 +38,7 @@ Other things we'd like to see in HoloViews but have not currently scheduled for 
    HoloViews supports SVG export of Matplotlib plots, but does not currentlky use Bokeh's SVG generation support because it produces separate SVG files per plot instead of a coherent layout.  If Bokeh could be extended to generate a laid out SVG, then Bokeh plots would be far more usable for publications.
 
 4. **Additional element types**:
-   There are always more plotting types that can be added (see e.g. the
-   `PyViz roadmap <http://pyviz.org/Roadmap.html>`__), but none of these are
+   There are always more plotting types that can be added (see e.g. the `HoloViz Roadmap <https://holoviz.org/roadmap.html>`__), but none of these are
    needed by the core developers for current projects and so are unlikely
    to be added unless contributed by users.
 
@@ -48,4 +47,4 @@ Other things we'd like to see in HoloViews but have not currently scheduled for 
 
 If any of the functionality above is interesting to you (or you have ideas of your own!) and can offer help with implementation, please open an issue on this repository or on the specific subproject repository involved. And if you are lucky enough to be in a position to fund our developers to work on it, please contact ``jbednar@anaconda.com``.
 
-And please note that many of the features that you might think should be part of HoloViews may already be available or planned for one of the other `PyViz tools <http://pyviz.org>`__ that are designed to work well with HoloViews, so please also check out the   `PyViz Roadmap <http://http://pyviz.org/Roadmap.html>`__.
+And please note that many of the features that you might think should be part of HoloViews may already be available or planned for one of the other `HoloViz tools <https://holoviz.org>`__ that are designed to work well with HoloViews, so please also check out the   `HoloViz Roadmap <https://holoviz.org/about/roadmap.html>`__.

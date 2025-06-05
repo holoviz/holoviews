@@ -12,9 +12,9 @@ from .plot import mpl_rc_context
 
 
 class ABLine2D(Line2D):
-    """Draw a line based on its slope and y-intercept. Additional arguments are
-    passed to the <matplotlib.lines.Line2D> constructor.
+    """Draw a line based on its slope and y-intercept.
 
+    Additional arguments are passed to the matplotlib.lines.Line2D constructor.
     """
 
     def __init__(self, slope, intercept, *args, **kwargs):
@@ -35,9 +35,7 @@ class ABLine2D(Line2D):
         self.axes.callbacks.connect('ylim_changed', self._update_lim)
 
     def _update_lim(self, event):
-        """Called whenever axis x/y limits change
-
-        """
+        """Called whenever axis x/y limits change."""
         x = np.array(self.axes.get_xbound())
         y = (self._slope * x) + self._intercept
         self.set_data(x, y)

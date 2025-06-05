@@ -67,7 +67,10 @@ extensions += [
 ]
 
 intersphinx_mapping = {
-    'panel':    ('https://panel.holoviz.org/', None),
+    "panel": ("https://panel.holoviz.org/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
 }
 
 numpydoc_xref_param_type = True
@@ -76,6 +79,8 @@ numpydoc_xref_type       = True
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
+
+autodoc_mock_imports = ["dash", "holoviews.doc_convert", "js", "pytest", "pyodide"]
 
 nbsite_analytics = {
     'goatcounter_holoviz': True,
@@ -131,3 +136,12 @@ html_context.update({
 html_title = f'{project} v{version}'
 # Format of the last updated section in the footer
 html_last_updated_fmt = '%Y-%m-%d'
+
+# Exclude utility files from toctree warnings
+exclude_patterns = [
+    'assets/README.rst',
+    'features.rst',
+    'test_data/README.rst',
+    'user_guide/IPython_Magics.rst', # empty file
+    'site_map.rst',
+]

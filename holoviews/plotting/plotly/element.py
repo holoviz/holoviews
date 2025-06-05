@@ -287,12 +287,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Returns
         -------
         dict
-            Dictionary of the plotly components that represent the element.
-            Keys may include:
-             - 'traces': List of trace dicts
-             - 'annotations': List of annotations dicts
-             - 'images': List of image dicts
-             - 'shapes': List of shape dicts
+            Dictionary of the plotly components that represent the element. Keys may include:
+
+            - 'traces': List of trace dicts
+
+            - 'annotations': List of annotations dicts
+
+            - 'images': List of image dicts
+
+            - 'shapes': List of shape dicts
         """
         trace = dict(options)
         for k, v in datum.items():
