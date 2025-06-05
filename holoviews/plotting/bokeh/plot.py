@@ -87,7 +87,15 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                                             "left", "right", None],
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
-        'left', 'right', None.""")
+        'left', 'right', None.""",
+    )
+
+    autohide_toolbar = param.Boolean(
+        default=False,
+        doc="""
+        Whether to automatically hide the toolbar until the user hovers over the plot.
+        This parameter has no effect if the toolbar is disabled (toolbar=None).""",
+    )
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
@@ -671,7 +679,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 r1, r2 = r1[::-1], r2[::-1]
             plot = gridplot([r1, r2], merge_tools=False)
             if self.merge_tools:
-                plot.toolbar = merge_tools([r1, r2])
+                plot.toolbar = merge_tools([r1, r2], autohide=self.autohide_toolbar)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
@@ -978,7 +986,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
                         if self.merge_tools:
-                            grid.toolbar = merge_tools(children)
+                            grid.toolbar = merge_tools(children, autohide=self.autohide_toolbar)
                     tab_plots.append((title, grid))
                     continue
 
@@ -1020,7 +1028,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             if self.sync_legends:
                 sync_legends(layout_plot)
             if self.merge_tools:
-                layout_plot.toolbar = merge_tools(plot_grid)
+                layout_plot.toolbar = merge_tools(plot_grid, autohide=self.autohide_toolbar)
 
         title = self._get_title_div(self.keys[-1])
         if title:
