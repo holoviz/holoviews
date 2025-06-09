@@ -49,7 +49,7 @@ def find_stack_level():
     return stacklevel
 
 
-def deprecated(remove_version, old, new=None, extra=None):
+def deprecated(remove_version, old, new=None, extra=None, repr_old=True, repr_new=True):
     import holoviews as hv
 
     current_version = Version(Version(hv.__version__).base_version)
@@ -63,10 +63,12 @@ def deprecated(remove_version, old, new=None, extra=None):
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."
         )
 
-    message = f"{old!r} is deprecated and will be removed in version {remove_version}."
+    old = repr(old) if repr_old else str(old)
+    new = repr(new) if repr_new else str(new)
+    message = f"{old} is deprecated and will be removed in version {remove_version}."
 
     if new:
-        message = f"{message[:-1]}, use {new!r} instead."
+        message = f"{message[:-1]}, use {new} instead."
 
     if extra:
         message += " " + extra.strip()
