@@ -49,7 +49,7 @@ def find_stack_level():
     return stacklevel
 
 
-def deprecated(remove_version, old, new=None, extra=None, repr_old=True, repr_new=True):
+def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr_new=True):
     import holoviews as hv
 
     current_version = Version(Version(hv.__version__).base_version)
