@@ -1,5 +1,6 @@
 import sys
 import time
+import warnings
 
 from IPython.core.magic import Magics, line_cell_magic, line_magic, magics_class
 from IPython.display import HTML, display
@@ -7,6 +8,7 @@ from IPython.display import HTML, display
 from ..core.options import Options, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
 from ..operation import Compositor
+from ..util.warnings import HoloviewsDeprecationWarning, deprecated
 
 #========#
 # Magics #
@@ -320,6 +322,9 @@ class OptsMagic(Magics):
         util.parser.OptsSpec.
 
         """
+        with warnings.catch_warnings():
+            warnings.simplefilter("always", HoloviewsDeprecationWarning)
+            deprecated("1.23.0", old="IPython magic", repr_old=False)
         line, cell = self._partition_lines(line, cell)
         try:
             spec = OptsSpec.parse(line, ns=self.shell.user_ns)
