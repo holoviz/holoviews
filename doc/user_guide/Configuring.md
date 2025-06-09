@@ -3,25 +3,19 @@
 ## `hv.config` settings
 
 The default HoloViews installation will use the latest defaults and options available, which is appropriate for new users.
-If you want to work with code written for older HoloViews versions, you can use the top-level `hv.config` object to control various backwards-compatibility options:
-
-- `future_deprecations`: Enables warnings about future deprecations.
-- `warn_options_call`: Warn when using the to-be-deprecated `__call__` syntax for specifying options, instead of the recommended `.opts` method.
-
-It is recommended you set `warn_options_call` to `True` in your holoviews.rc file (see section below).
 
 It is possible to set the configuration using `hv.config` directly:
 
 ```python
 import holoviews as hv
 
-hv.config(future_deprecations=True)
+hv.config(no_padding=True)
 ```
 
 However, because in some cases this configuration needs to be declared before the plotting extensions are imported, the recommended way of setting configuration options is:
 
 ```python
-hv.extension("bokeh", config=dict(future_deprecations=True))
+hv.extension("bokeh", config=dict(no_padding=True))
 ```
 
 In addition to backwards-compatibility options, `hv.config` holds some global options:
@@ -44,13 +38,20 @@ hv.extension(case_sensitive_completion=True)
 
 HoloViews searches for the first rc file it finds in the following places (in order):
 
+1. `HOLOVIEWSRC` environment variable if it is a valid path
 1. `holoviews.rc` in the parent directory of the top-level `__init__.py` file (useful for developers working out of the HoloViews git repo)
-2. `~/.holoviews.rc`
-3. `~/.config/holoviews/holoviews.rc`
+1. `~/.holoviews.rc`
+1. `~/.config/holoviews/holoviews.rc`
 
-The rc file location can be overridden via the `HOLOVIEWSRC` environment variable.
+The rc file is a Python script and can be loaded with:
 
-The rc file is a Python script, executed as HoloViews is imported. An example rc file to include various options discussed above might look like this:
+```python
+import holoviews as hv
+
+hv.extensions(load_rc=True)
+```
+
+An example rc file to include various options discussed above might look like this:
 
 ```python
 import holoviews as hv
