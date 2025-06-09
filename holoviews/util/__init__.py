@@ -807,7 +807,7 @@ class extension(_pyviz_extension):
                     from .warnings import deprecated
                     deprecated(
                         "1.23.0",
-                        "Automatic rc_file",
+                        f"Automatic rc_file ({filename!r})",
                         "hv.extension(rc_file=True)",
                         "You can disable this warning by setting the environment variable 'HOLOVIEWSRCWARNING'.",
                         repr_old=False,
