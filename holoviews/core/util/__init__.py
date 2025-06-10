@@ -23,6 +23,7 @@ from types import FunctionType, GeneratorType
 import numpy as np
 import param
 
+from ...util.warnings import warn
 from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
     NUMPY_VERSION,
@@ -135,9 +136,11 @@ class Config(param.ParameterizedFunction):
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
     def __call__(self, **params):
-        # Old parameters, which does nothing
-        params.pop("future_deprecations", None)
-        params.pop("warn_options_call", None)
+        # Old parameters, removed in HoloViews 1.21.0
+        if params.pop("future_deprecations", None):
+            warn("The 'future_deprecations' parameter has no effect.")
+        if params.pop("warn_options_call", None):
+            warn("The 'warn_options_call' parameter has no effect.")
 
         self.param.update(**params)
         return self
