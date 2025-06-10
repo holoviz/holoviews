@@ -1,6 +1,7 @@
 import inspect
 import os
 import warnings
+from contextlib import suppress
 
 import param
 from packaging.version import Version
@@ -26,18 +27,29 @@ def find_stack_level():
     Inspired by: pandas.util._exceptions.find_stack_level
 
     """
+    import pyviz_comms
+
     import holoviews as hv
 
     pkg_dir = os.path.dirname(hv.__file__)
     test_dir = os.path.join(pkg_dir, "tests")
-    param_dir = os.path.dirname(param.__file__)
+
+    ignore_paths = (
+        pkg_dir,
+        os.path.dirname(param.__file__),
+        os.path.dirname(pyviz_comms.__file__),
+    )
+
+    with suppress(ImportError):
+        import IPython
+        ignore_paths = (*ignore_paths, os.path.dirname(IPython.core.__file__))
 
     frame = inspect.currentframe()
     try:
         stacklevel = 0
         while frame:
             fname = inspect.getfile(frame)
-            if fname.startswith((pkg_dir, param_dir)) and not fname.startswith(test_dir):
+            if fname.startswith(ignore_paths) and not fname.startswith(test_dir):
                 frame = frame.f_back
                 stacklevel += 1
             else:

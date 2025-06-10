@@ -2,7 +2,6 @@ import inspect
 import os
 import shutil
 import sys
-import warnings as std_warnings
 from collections import defaultdict
 from inspect import Parameter, Signature
 from pathlib import Path
@@ -27,7 +26,7 @@ from ..core.overlay import Overlay
 from ..operation.element import function
 from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
-from .warnings import HoloviewsDeprecationWarning, deprecated
+from .warnings import deprecated
 
 Store.output_settings = OutputSettings
 
