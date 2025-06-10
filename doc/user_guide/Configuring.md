@@ -34,28 +34,15 @@ import holoviews as hv
 hv.extension(case_sensitive_completion=True)
 ```
 
-## The holoviews.rc file
+## The HoloViews RC file
 
-HoloViews searches for the first rc file it finds in the following places (in order):
-
-1. `HOLOVIEWSRC` environment variable if it is a valid path
-1. `holoviews.rc` in the parent directory of the top-level `__init__.py` file (useful for developers working out of the HoloViews git repo)
-1. `~/.holoviews.rc`
-1. `~/.config/holoviews/holoviews.rc`
-
-The rc file is a Python script and can be loaded with:
+If the `HOLOVIEWSRC` environment variable is a valid path, HoloViews will load the configuration from that file.
+This allows users to set their preferred options globally without needing to modify their scripts each time.
+An example of an RC file to include the various options discussed above might look like this:
 
 ```python
 import holoviews as hv
 
-hv.extensions(load_rc=True)
-```
-
-An example rc file to include various options discussed above might look like this:
-
-```python
-import holoviews as hv
-
-hv.config(warn_options_call=True)
+hv.config(no_padding=True)
 hv.extension.case_sensitive_completion = True
 ```

@@ -700,14 +700,9 @@ class extension(_pyviz_extension):
 
     _loaded = False
 
-    rc_file = param.Boolean(False, doc="Whether to load rc file")
-
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
-        if "load_rc" in params:
-            self._load_rc_file(params["load_rc"])
-
         util.config.param.update(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
@@ -780,40 +775,6 @@ class extension(_pyviz_extension):
 
         from bokeh.util.warnings import BokehUserWarning
         warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
-
-    @classmethod
-    def _load_rc_file(cls, rc_file=None):
-        if rc_file is False:
-            return
-        files = [
-            os.environ.get("HOLOVIEWSRC", ''),
-            os.path.abspath(os.path.join(os.path.split(__file__)[0], '..', 'holoviews.rc')),
-            "~/.holoviews.rc",
-            "~/.config/holoviews/holoviews.rc"
-        ]
-
-        # A single holoviews.rc file may be executed if found.
-        for file in files:
-            filename = os.path.expanduser(file)
-            if os.path.isfile(filename):
-                with open(filename, encoding='utf8') as f:
-                    code = compile(f.read(), filename, 'exec')
-                    try:
-                        exec(code)
-                    except Exception as e:
-                        print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
-
-                if rc_file is None and not os.environ.get("HOLOVIEWSRCWARNING"):
-                    from .warnings import deprecated
-                    deprecated(
-                        "1.23.0",
-                        f"Automatic rc_file ({filename!r})",
-                        "hv.extension(rc_file=True)",
-                        "You can disable this warning by setting the environment variable 'HOLOVIEWSRCWARNING'.",
-                        repr_old=False,
-                    )
-
-                return
 
 
 def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
@@ -1132,3 +1093,32 @@ class Dynamic(param.ParameterizedFunction):
         kdims = [d.clone(values=list(util.unique_iterator(values))) for d, values in
                  zip(hmap.kdims, dim_values, strict=None)]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
+
+
+def _load_rc_file():
+    files = [
+        os.environ.get("HOLOVIEWSRC", ''),
+        os.path.abspath(os.path.join(os.path.split(__file__)[0], '..', '..', 'holoviews.rc')),
+        "~/.holoviews.rc",
+        "~/.config/holoviews/holoviews.rc"
+    ]
+
+    # A single holoviews.rc file may be executed if found.
+    for idx, file in enumerate(files):
+        filename = os.path.expanduser(file)
+        if os.path.isfile(filename):
+            with open(filename, encoding='utf8') as f:
+                try:
+                    exec(compile(f.read(), filename, 'exec'))
+                except Exception as e:
+                    print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
+
+            if idx != 0:
+                from .warnings import deprecated
+                deprecated(
+                    "1.23.0",
+                    "Automatic detections of HoloViews config file",
+                    extra=f"You can disable this warning by setting the environment variable 'HOLOVIEWSRC' to {filename!r}.",
+                    repr_old=False,
+                )
+            return
