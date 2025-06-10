@@ -329,13 +329,13 @@ class Arrow(Annotation):
     direction = param.Selector(default='<',
                                      objects=['<', '^', '>', 'v'], doc="""
         The cardinal direction in which the arrow is pointing. Accepted
-        arrow directions are '<', '^', '>' and 'v'.""")
+        arrow directions are ``'<'``, '^', ``'>'`` and 'v'.""")
 
     arrowstyle = param.Selector(default='->',
                                       objects=['-', '->', '-[', '-|>', '<->', '<|-|>'],
                                       doc="""
         The arrowstyle used to draw the arrow. Accepted arrow styles are
-        '-', '->', '-[', '-|>', '<->' and '<|-|>'""")
+        '-', ``'->'``, '-[', ``'-|>'``, ``'<->'`` and ``'<|-|>'``""")
 
     points = param.Number(default=40, doc="Font size of arrow text (if any).")
 

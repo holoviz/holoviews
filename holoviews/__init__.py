@@ -7,11 +7,11 @@ the process of plotting.
 
 HoloViews
 
-- supports a wide range of data sources including Pandas, Dask, XArray
-Rapids cuDF, Streamz, Intake, Geopandas, NetworkX and Ibis.
+- supports a wide range of data sources including Pandas, Dask, XArray Rapids cuDF, Streamz, Intake, Geopandas, NetworkX and Ibis.
+
 - supports the plotting backends Bokeh (default), Matplotlib and Plotly.
-- allows you to drop into the rest of the
-HoloViz ecosystem when more power or flexibility is needed.
+
+- allows you to drop into the rest of the HoloViz ecosystem when more power or flexibility is needed.
 
 For basic data exploration we recommend using the higher level hvPlot package,
 which provides the familiar Pandas `.plot` api. You can drop into HoloViews

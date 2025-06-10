@@ -62,11 +62,10 @@ concepts in HoloViews:
 `Working with large data`_
  Leverage Datashader to interactively explore millions or billions of datapoints.
 
-`Interactive Hover for Big Data <Interactive_Hover_for_Big_Data.html>`_
+`Interactive Hover for Big Data`_
  Use the ``selector`` with Datashader to enable fast, interactive hover tooltips that
  reveal individual data points without sacrificing aggregation.
 
-`Working with Streaming Data <Streaming_Data.html>`_
 `Working with Streaming Data`_
  Demonstrates how to leverage the streamz library with HoloViews to work with streaming datasets.
 
@@ -146,16 +145,53 @@ These guides provide detail about specific additional features in HoloViews:
     Interactive Hover for Big Data <Interactive_Hover_for_Big_Data>
     Working with streaming data <Streaming_Data>
     Creating interactive dashboards <Dashboards>
+    Configuring HoloViews <Configuring>
     Customizing Plots <Customizing_Plots>
     Colormaps <Colormaps>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>
     Linking Bokeh plots <Linking_Plots>
     Plotting with matplotlib <Plotting_with_Matplotlib>
-    Plotting with plotly <Plotting_with_Plotly>
     Working with Plot and Renderers <Plots_and_Renderers>
     Linked Brushing <Linked_Brushing>
     Annotators <Annotators>
     Exporting and Archiving <Exporting_and_Archiving>
     Continuous Coordinates <Continuous_Coordinates>
     Notebook Magics <Notebook_Magics>
+
+.. _Getting Started: ../getting_started/index.html
+.. _Gallery: ../gallery/index.html
+.. _Reference Gallery: ../reference/index.html
+.. _Annotating your Data: Annotating_Data.html
+.. _Composing Elements: Composing_Elements.html
+.. _Applying Customizations: Applying_Customizations.html
+.. _Style Mapping: Style_Mapping.html
+.. _Dimensioned Containers: Dimensioned_Containers.html
+.. _Building Composite Objects: Building_Composite_Objects.html
+.. _Live Data: Live_Data.html
+.. _Tabular Datasets: Tabular_Datasets.html
+.. _Gridded Datasets: Gridded_Datasets.html
+.. _Geometry Data: Geometry_Data.html
+.. _Indexing and Selecting Data: Indexing_and_Selecting_Data.html
+.. _Transforming Elements: Transforming_Elements.html
+.. _Responding to Events: Responding_to_Events.html
+.. _Custom Interactivity: Custom_Interactivity.html
+.. _Data Processing Pipelines: Data_Pipelines.html
+.. _Working with large data: Large_Data.html
+.. _Interactive Hover for Big Data: Interactive_Hover_for_Big_Data.html
+.. _Working with Streaming Data: Streaming_Data.html
+.. _Creating interactive dashboards: Dashboards.html
+.. _Configuring HoloViews: Configuring.html
+.. _Customizing Plots: Customizing_Plots.html
+.. _Colormaps: Colormaps.html
+.. _Plotting with Bokeh: Plotting_with_Bokeh.html
+.. _Deploying Bokeh Apps: Deploying_Bokeh_Apps.html
+.. _Linking Bokeh plots: Linking_Plots.html
+.. _Plotting with matplotlib: Plotting_with_Matplotlib.html
+.. _Working with renderers and plots: Plots_and_Renderers.html
+.. _Using linked brushing to cross-filter complex datasets: Linked_Brushing.html
+.. _Using Annotators to edit and label data: Annotators.html
+.. _Exporting and Archiving: Exporting_and_Archiving.html
+.. _Continuous Coordinates: Continuous_Coordinates.html
+.. _Interactive Hover for Big Data: Interactive_Hover_for_Big_Data.html
+.. _Notebook Magics: Notebook_Magics.html
