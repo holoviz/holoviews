@@ -63,12 +63,12 @@ def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."
         )
 
-    old = repr(old) if repr_old else str(old)
-    message = f"{old} is deprecated and will be removed in version {remove_version}."
+    old_str = repr(old) if repr_old else str(old)
+    message = f"{old_str} is deprecated and will be removed in version {remove_version}."
 
     if new:
-        new = repr(new) if repr_new else str(new)
-        message = f"{message[:-1]}, use {new} instead."
+        new_str = repr(new) if repr_new else str(new)
+        message = f"{message[:-1]}, use {new_str} instead."
 
     if extra:
         message += " " + extra.strip()
