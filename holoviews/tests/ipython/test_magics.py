@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 from pyviz_comms import CommManager
 
@@ -24,6 +26,20 @@ class ExtensionTestCase(IPTestCase):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
         super().tearDown()
+
+    def cell_magic(self, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            output = super().cell_magic(*args, **kwargs)
+        assert str(w[0].message).startswith("IPython magic is deprecated")
+        return output
+
+    def line_magic(self, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            output = super().line_magic(*args, **kwargs)
+        assert str(w[0].message).startswith("IPython magic is deprecated")
+        return output
 
 
 class TestOptsMagic(ExtensionTestCase):
