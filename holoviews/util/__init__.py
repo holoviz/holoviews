@@ -2,6 +2,7 @@ import inspect
 import os
 import shutil
 import sys
+import warnings as std_warnings
 from collections import defaultdict
 from inspect import Parameter, Signature
 from pathlib import Path
@@ -23,10 +24,10 @@ from ..core import (
 from ..core.operation import Operation, OperationCallable
 from ..core.options import Keywords, Options, options_policy
 from ..core.overlay import Overlay
-from ..core.util import merge_options_to_dict
 from ..operation.element import function
 from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
+from .warnings import HoloviewsDeprecationWarning, deprecated
 
 Store.output_settings = OutputSettings
 
@@ -296,7 +297,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
-        expanded = cls._expand_options(merge_options_to_dict(options))
+        expanded = cls._expand_options(util.merge_options_to_dict(options))
         expanded = expanded or {}
         cls._linemagic(expanded, backend=kwargs.get('backend'))
 
@@ -359,7 +360,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         expanded = {}
         if isinstance(options, list):
-            options = merge_options_to_dict(options)
+            options = util.merge_options_to_dict(options)
 
         for objspec, option_values in options.items():
             objtype = objspec.split('.')[0]
@@ -710,6 +711,7 @@ class extension(_pyviz_extension):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
+            deprecated("1.23.0", "hv.extension()", 'hv.extension("matplotlib")')
             args = ['matplotlib']
             imports = [('matplotlib', 'mpl')]
 
