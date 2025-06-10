@@ -66,6 +66,10 @@ concepts in HoloViews:
 `Working with large data <Large_Data.html>`_
  Leverage Datashader to interactively explore millions or billions of datapoints.
 
+`Interactive Hover for Big Data <Interactive_Hover_for_Big_Data.html>`_
+ Use the ``selector`` with Datashader to enable fast, interactive hover tooltips that
+ reveal individual data points without sacrificing aggregation.
+
 `Working with Streaming Data <Streaming_Data.html>`_
  Demonstrates how to leverage the streamz library with HoloViews to work with streaming datasets.
 
@@ -142,6 +146,7 @@ These guides provide detail about specific additional features in HoloViews:
     Data Processing Pipelines <Data_Pipelines>
     Creating interactive network graphs <Network_Graphs>
     Working with large data <Large_Data>
+    Interactive Hover for Big Data <Interactive_Hover_for_Big_Data>
     Working with streaming data <Streaming_Data>
     Creating interactive dashboards <Dashboards>
     Customizing Plots <Customizing_Plots>
