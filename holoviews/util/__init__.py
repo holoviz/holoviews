@@ -820,7 +820,8 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
     if backend == "bokeh":
         if toolbar is not None:
             if toolbar:
-                obj = obj.opts(toolbar="above", autohide_toolbar=False, backend="bokeh", clone=True)
+                toolbar_location = obj.opts.get().kwargs.get('toolbar', 'right')
+                obj = obj.opts(toolbar=toolbar_location, autohide_toolbar=False, backend="bokeh", clone=True)
             else:
                 obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
         elif (
