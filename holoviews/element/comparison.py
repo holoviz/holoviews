@@ -795,14 +795,17 @@ class IPTestCase(ComparisonTestCase):
             raise SkipTest("IPython could not be imported") from None
 
         super().setUp()
-        self.ip = IPython.InteractiveShell(history_length=0, history_load_length=0)
+        self.exits = []
+        with patch('atexit.register', lambda x: self.exits.append(x)):
+            self.ip = IPython.InteractiveShell(history_length=0, history_load_length=0)
         self.addTypeEqualityFunc(HTML, self.skip_comparison)
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
 
     def tearDown(self) -> None:
         # self.ip.displayhook.flush calls gc.collect
         with patch('gc.collect', lambda: None):
-            self.ip.reset()
+            for ex in self.exits:
+                ex()
         del self.ip
         super().tearDown()
 
