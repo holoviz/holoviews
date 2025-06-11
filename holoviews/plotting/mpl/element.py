@@ -618,11 +618,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if isinstance(v, (Dimension, str)):
                 if validate(k, v) == True:
                     continue
+                elif isinstance(element, Graph) and v in element.nodes:
+                    v = dim(element.nodes.get_element(v))
                 elif v in element:
-                    if isinstance(element, Graph) and v in element.nodes:
-                        v = dim(element.nodes.get_element(v))
-                    else:
-                        v = dim(element.get_dimension(v))
+                    v = dim(element.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
                     v = dim(next(d for d in self.overlay_dims if d==v))
 
