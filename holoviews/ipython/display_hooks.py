@@ -184,7 +184,7 @@ def _render_jupyter_exception(e):
       <summary><b>{exc_name}:</b> {exc_msg}</summary>
       <div class="hv-jupyter-full">{escaped_tb}</pre>
     </details>"""
-    return {"text/html": output_html}, {}
+    return {"text/html": output_html}
 
 
 def display_hook(fn):
@@ -225,7 +225,7 @@ def display_hook(fn):
             return {}, {}
         except AbbreviatedException as e:
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype, e.value, e.traceback))
-            return _render_jupyter_exception(e)
+            return _render_jupyter_exception(e), {}
         except Exception:
             raise
     return wrapped
