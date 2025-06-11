@@ -4,9 +4,10 @@ import param
 from matplotlib import patches
 from matplotlib.lines import Line2D
 
-from ...core.options import abbreviated_exception
-from ...core.util import match_spec
-from ...element import HLines, HSpans, VLines, VSpans
+from holoviews.core.options import abbreviated_exception
+from holoviews.core.util import match_spec
+from holoviews.element import HLines, HSpans, VLines, VSpans
+
 from .element import ColorbarPlot, ElementPlot
 from .plot import mpl_rc_context
 

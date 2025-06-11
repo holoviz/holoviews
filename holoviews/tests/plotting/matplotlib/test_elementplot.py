@@ -6,8 +6,8 @@ from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatte
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, HeatMap, Image, Scatter, Scatter3D
 from holoviews.streams import Stream
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

@@ -4,8 +4,8 @@ import pandas as pd
 from matplotlib.text import Text
 
 from holoviews.element import Bars
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

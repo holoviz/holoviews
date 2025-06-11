@@ -5,10 +5,11 @@ import param
 from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.patches import Circle, Wedge
 
-from ...core.data import GridInterface
-from ...core.spaces import HoloMap
-from ...core.util import dimension_sanitizer, is_nan
-from ..mixins import HeatMapMixin
+from holoviews.core.data import GridInterface
+from holoviews.core.spaces import HoloMap
+from holoviews.core.util import dimension_sanitizer, is_nan
+from holoviews.plotting.mixins import HeatMapMixin
+
 from .element import ColorbarPlot
 from .raster import QuadMeshPlot
 from .util import filter_styles

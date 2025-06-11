@@ -13,7 +13,7 @@ from matplotlib import (
 from matplotlib.font_manager import font_scalings
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 
-from ...core import (
+from holoviews.core import (
     AdjointLayout,
     Collator,
     CompositeOverlay,
@@ -25,16 +25,17 @@ from ...core import (
     Layout,
     NdLayout,
 )
-from ...core.options import SkipRendering, Store
-from ...core.util import int_to_alpha, int_to_roman, wrap_tuple_streams
-from ..plot import (
+from holoviews.core.options import SkipRendering, Store
+from holoviews.core.util import int_to_alpha, int_to_roman, wrap_tuple_streams
+from holoviews.plotting.plot import (
     DimensionedPlot,
     GenericAdjointLayoutPlot,
     GenericCompositePlot,
     GenericElementPlot,
     GenericLayoutPlot,
 )
-from ..util import attach_streams, collate, displayable
+from holoviews.plotting.util import attach_streams, collate, displayable
+
 from .util import compute_ratios, fix_aspect, get_old_rcparams
 
 

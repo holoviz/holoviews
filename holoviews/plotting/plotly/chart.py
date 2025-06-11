@@ -1,9 +1,10 @@
 import numpy as np
 import param
 
-from ...element import Tiles
-from ...operation import interpolate_curve
-from ..mixins import AreaMixin, BarsMixin
+from holoviews.element import Tiles
+from holoviews.operation import interpolate_curve
+from holoviews.plotting.mixins import AreaMixin, BarsMixin
+
 from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 from .util import PLOTLY_SCATTERMAP

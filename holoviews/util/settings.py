@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from ..core import Store
+from holoviews.core import Store
 
 
 class KeywordSettings:

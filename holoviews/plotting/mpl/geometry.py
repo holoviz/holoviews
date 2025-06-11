@@ -2,8 +2,9 @@ import numpy as np
 from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.patches import Rectangle
 
-from ...core.options import abbreviated_exception
-from ..mixins import GeomMixin
+from holoviews.core.options import abbreviated_exception
+from holoviews.plotting.mixins import GeomMixin
+
 from .element import ColorbarPlot
 from .path import PathPlot, PolygonPlot
 

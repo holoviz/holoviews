@@ -8,8 +8,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.plotly.element import ElementPlot
 from holoviews.plotting.plotly.util import figure_grid
 from holoviews.streams import Pipe
-
-from .. import option_intersections
+from holoviews.tests.plotting import option_intersections
 
 plotly_renderer = Store.renderers['plotly']
 

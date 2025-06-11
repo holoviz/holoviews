@@ -4,7 +4,7 @@ import numpy as np
 from bokeh.palettes import all_palettes
 from param import concrete_descendents
 
-from ...core import (
+from holoviews.core import (
     AdjointLayout,
     GridMatrix,
     GridSpace,
@@ -15,8 +15,8 @@ from ...core import (
     Store,
     config,
 )
-from ...core.options import Cycle, Options, Palette
-from ...element import (
+from holoviews.core.options import Cycle, Options, Palette
+from holoviews.element import (
     HSV,
     RGB,
     Area,
@@ -72,8 +72,9 @@ from ...element import (
     VSpan,
     VSpans,
 )
-from ..plot import PlotSelector
-from ..util import fire
+from holoviews.plotting.plot import PlotSelector
+from holoviews.plotting.util import fire
+
 from .annotation import (
     ArrowPlot,
     BoxAnnotationPlot,

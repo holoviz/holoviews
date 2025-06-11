@@ -2,8 +2,8 @@ import numpy as np
 
 from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve, Scatter
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
 
 try:

@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import param
 
-from ..core.util import dimension_sanitizer
+from holoviews.core.util import dimension_sanitizer
 
 
 class Link(param.Parameterized):

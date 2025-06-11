@@ -8,9 +8,10 @@ from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
 from bokeh.transform import dodge
 from panel.models import HTML
 
-from ...core.util import datetime_types, dimension_sanitizer
-from ...element import HLine, HLines, HSpans, VLine, VLines, VSpan, VSpans
-from ..plot import GenericElementPlot
+from holoviews.core.util import datetime_types, dimension_sanitizer
+from holoviews.element import HLine, HLines, HSpans, VLine, VLines, VSpan, VSpans
+from holoviews.plotting.plot import GenericElementPlot
+
 from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
 from .plot import BokehPlot
 from .selection import BokehOverlaySelectionDisplay

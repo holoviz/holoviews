@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import util
+from holoviews.core import util
 
 
 def finite_range(column, cmin, cmax):

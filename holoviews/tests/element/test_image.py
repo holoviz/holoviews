@@ -6,8 +6,7 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.element import Curve, Image
-
-from ..utils import LoggingComparisonTestCase
+from holoviews.tests.utils import LoggingComparisonTestCase
 
 
 class TestImage(LoggingComparisonTestCase):

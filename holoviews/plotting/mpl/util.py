@@ -32,9 +32,9 @@ except ImportError:
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
-from ...core.util import arraylike_types, cftime_types, is_number
-from ...element import RGB, Polygons, Raster
-from ..util import COLOR_ALIASES, RGB_HEX_REGEX
+from holoviews.core.util import arraylike_types, cftime_types, is_number
+from holoviews.element import RGB, Polygons, Raster
+from holoviews.plotting.util import COLOR_ALIASES, RGB_HEX_REGEX
 
 MPL_VERSION = Version(mpl.__version__).release
 MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)

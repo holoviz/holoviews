@@ -4,9 +4,10 @@ import numpy as np
 import param
 from bokeh.models import FactorRange
 
-from ...core import util
-from ...element import Contours, Polygons
-from ...util.transform import dim
+from holoviews.core import util
+from holoviews.element import Contours, Polygons
+from holoviews.util.transform import dim
+
 from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay

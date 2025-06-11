@@ -49,15 +49,21 @@ from bokeh.models.tickers import (
 )
 from bokeh.models.tools import Tool
 
-from ...core import Dataset, Dimension, DynamicMap, Element, util
-from ...core.options import Keywords, SkipRendering, abbreviated_exception
-from ...core.overlay import CompositeOverlay, NdOverlay
-from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
-from ...streams import Buffer, PlotSize, RangeXY
-from ...util.transform import dim
-from ...util.warnings import warn
-from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import color_intervals, dim_axis_label, dim_range_key, process_cmap
+from holoviews.core import Dataset, Dimension, DynamicMap, Element, util
+from holoviews.core.options import Keywords, SkipRendering, abbreviated_exception
+from holoviews.core.overlay import CompositeOverlay, NdOverlay
+from holoviews.element import Annotation, Contours, Graph, Path, Tiles, VectorField
+from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
+from holoviews.plotting.util import (
+    color_intervals,
+    dim_axis_label,
+    dim_range_key,
+    process_cmap,
+)
+from holoviews.streams import Buffer, PlotSize, RangeXY
+from holoviews.util.transform import dim
+from holoviews.util.warnings import warn
+
 from .plot import BokehPlot
 from .styles import (
     base_properties,

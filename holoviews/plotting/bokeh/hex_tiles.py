@@ -4,11 +4,12 @@ import numpy as np
 import param
 from bokeh.util.hex import cartesian_to_axial
 
-from ...core import Dimension, Operation
-from ...core.options import Compositor
-from ...core.util import isfinite, max_range
-from ...element import HexTiles
-from ...util.transform import dim as dim_transform
+from holoviews.core import Dimension, Operation
+from holoviews.core.options import Compositor
+from holoviews.core.util import isfinite, max_range
+from holoviews.element import HexTiles
+from holoviews.util.transform import dim as dim_transform
+
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties

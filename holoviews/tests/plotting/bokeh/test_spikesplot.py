@@ -6,8 +6,8 @@ from bokeh.models import CategoricalColorMapper, LinearColorMapper
 from holoviews.core import NdOverlay
 from holoviews.element import Spikes
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.tests.plotting.utils import ParamLogStream
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

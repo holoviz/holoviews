@@ -8,8 +8,8 @@ from holoviews.core.overlay import NdOverlay
 from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

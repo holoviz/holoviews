@@ -17,10 +17,10 @@ from collections import defaultdict
 import numpy as np
 import param
 
-from ..core import Overlay
-from ..core.operation import Operation
-from ..core.util import match_spec
-from ..element import Chart, Raster
+from holoviews.core import Overlay
+from holoviews.core.operation import Operation
+from holoviews.core.util import match_spec
+from holoviews.element import Chart, Raster
 
 
 class Normalization(Operation):

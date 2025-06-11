@@ -274,7 +274,7 @@ def deprecated_opts_signature(args, kwargs):
     corresponding options.
 
     """
-    from ..options import Options
+    from holoviews.core.options import Options
     groups = set(Options._option_groups)
     opts = {kw for kw in kwargs if kw != 'clone'}
     apply_groups = False
@@ -1731,7 +1731,7 @@ def stream_name_mapping(stream, exclude_params=None, reverse=False):
     """
     if exclude_params is None:
         exclude_params = ['name']
-    from ...streams import Params
+    from holoviews.streams import Params
     if isinstance(stream, Params):
         mapping = {}
         for p in stream.parameters:
@@ -1777,7 +1777,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
     """
     if exclude is None:
         exclude = ['name', '_memoize_key']
-    from ...streams import Params
+    from holoviews.streams import Params
     param_groups = {}
     for s in streams:
         if not s.contents and isinstance(s.hashkey, dict):
@@ -2392,7 +2392,7 @@ def lazy_isinstance(obj, class_or_tuple):
         3) Do an isinstance check for dask.dataframe.DataFrame
 
     """
-    from ...util.warnings import deprecated
+    from holoviews.util.warnings import deprecated
 
     deprecated("1.23.0", "lazy_isinstance") # Not used in HoloViews anymore
 

@@ -4,10 +4,11 @@ from types import FunctionType
 import numpy as np
 import param
 
-from ..core import Dataset, Dimension, Element2D
-from ..core.accessors import Redim
-from ..core.operation import Operation
-from ..core.util import is_dataframe, max_range, search_indices
+from holoviews.core import Dataset, Dimension, Element2D
+from holoviews.core.accessors import Redim
+from holoviews.core.operation import Operation
+from holoviews.core.util import is_dataframe, max_range, search_indices
+
 from .chart import Points
 from .path import Path
 from .util import (
@@ -256,7 +257,7 @@ class Graph(Dataset, Element2D):
         selected nodes set the selection_mode to 'nodes'.
 
         """
-        from ..util.transform import dim
+        from holoviews.util.transform import dim
         if selection_expr is not None and not isinstance(selection_expr, dim):
             raise ValueError("""\
             The first positional argument to the Dataset.select method is expected to be a
@@ -363,7 +364,7 @@ class Graph(Dataset, Element2D):
 
         """
         if self._nodes is None:
-            from ..operation.element import chain
+            from holoviews.operation.element import chain
             self._nodes = layout_nodes(self, only_nodes=True)
             self._nodes._dataset = None
             self._nodes._pipeline = chain.instance()

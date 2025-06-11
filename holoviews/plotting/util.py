@@ -8,7 +8,7 @@ import numpy as np
 import param
 from packaging.version import Version
 
-from ..core import (
+from holoviews.core import (
     AdjointLayout,
     CompositeOverlay,
     DynamicMap,
@@ -19,11 +19,11 @@ from ..core import (
     NdOverlay,
     Overlay,
 )
-from ..core.ndmapping import item_check
-from ..core.operation import Operation
-from ..core.options import CallbackError, Cycle
-from ..core.spaces import get_nested_streams
-from ..core.util import (
+from holoviews.core.ndmapping import item_check
+from holoviews.core.operation import Operation
+from holoviews.core.options import CallbackError, Cycle
+from holoviews.core.spaces import get_nested_streams
+from holoviews.core.util import (
     arraylike_types,
     closest_match,
     disable_constant,
@@ -34,9 +34,9 @@ from ..core.util import (
     unique_iterator,
     wrap_tuple,
 )
-from ..element import Points
-from ..streams import LinkedStream, Params
-from ..util.transform import dim
+from holoviews.element import Points
+from holoviews.streams import LinkedStream, Params
+from holoviews.util.transform import dim
 
 
 def displayable(obj):
@@ -1351,7 +1351,7 @@ class categorical_legend(Operation):
     def _process(self, element, key=None):
         import datashader as ds
 
-        from ..operation.datashader import datashade, rasterize, shade
+        from holoviews.operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
         if isinstance(rasterize_op, datashade):
             shade_op = rasterize_op
@@ -1405,7 +1405,7 @@ class flatten_stack(Operation):
 
     def _process(self, element, key=None):
         try:
-            from ..operation.datashader import shade
+            from holoviews.operation.datashader import shade
         except ImportError as exc:
             raise ImportError('Flattening ImageStacks requires datashader.') from exc
         return shade(element, **self.shade_params)

@@ -12,12 +12,13 @@ from bokeh.models import (
     StaticLayoutProvider,
 )
 
-from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
-from ...core.util import dimension_sanitizer, unique_array
-from ...util.transform import dim
-from ..mixins import ChordMixin, GraphMixin
-from ..util import get_directed_graph_paths, process_cmap
+from holoviews.core.data import Dataset
+from holoviews.core.options import Cycle, abbreviated_exception
+from holoviews.core.util import dimension_sanitizer, unique_array
+from holoviews.plotting.mixins import ChordMixin, GraphMixin
+from holoviews.plotting.util import get_directed_graph_paths, process_cmap
+from holoviews.util.transform import dim
+
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
 from .styles import (

@@ -1,7 +1,8 @@
 import numpy as np
 import param
 
-from ..core import Dataset, Dimension, Element2D
+from holoviews.core import Dataset, Dimension, Element2D
+
 from .selection import Selection2DExpr, SelectionGeomExpr
 
 

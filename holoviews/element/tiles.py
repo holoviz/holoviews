@@ -3,9 +3,12 @@ from types import FunctionType
 import numpy as np
 import param
 
-from ..core.dimension import Dimension
-from ..core.element import Element2D
-from ..util.transform import easting_northing_to_lon_lat, lon_lat_to_easting_northing
+from holoviews.core.dimension import Dimension
+from holoviews.core.element import Element2D
+from holoviews.util.transform import (
+    easting_northing_to_lon_lat,
+    lon_lat_to_easting_northing,
+)
 
 
 class Tiles(Element2D):

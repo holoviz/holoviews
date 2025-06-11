@@ -54,7 +54,7 @@ class Element(ViewableElement, Composable, Overlayable):
         AdjointLayout of element and histogram or just the
         histogram
         """
-        from ..operation import histogram
+        from holoviews.operation import histogram
         if not isinstance(dimension, list): dimension = [dimension]
         hists = []
         for d in dimension[::-1]:

@@ -2,10 +2,10 @@ import numpy as np
 import param
 from param.parameterized import bothmethod
 
-from ..core import Dataset, Operation
-from ..core.util import datetime_types, dt_to_int, isfinite, max_range
-from ..element import Image
-from ..streams import PlotSize, RangeX, RangeXY
+from holoviews.core import Dataset, Operation
+from holoviews.core.util import datetime_types, dt_to_int, isfinite, max_range
+from holoviews.element import Image
+from holoviews.streams import PlotSize, RangeX, RangeXY
 
 
 class LinkableOperation(Operation):

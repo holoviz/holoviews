@@ -1,6 +1,6 @@
-from ...core.options import Store
-from ...core.overlay import NdOverlay, Overlay
-from ...selection import OverlaySelectionDisplay
+from holoviews.core.options import Store
+from holoviews.core.overlay import NdOverlay, Overlay
+from holoviews.selection import OverlaySelectionDisplay
 
 
 class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
@@ -43,7 +43,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
         return element.opts(clone=True, backend='plotly', **filtered)
 
     def _style_region_element(self, region_element, unselected_color):
-        from ..util import linear_gradient
+        from holoviews.plotting.util import linear_gradient
         backend_options = Store.options(backend="plotly")
 
         el2_name = None

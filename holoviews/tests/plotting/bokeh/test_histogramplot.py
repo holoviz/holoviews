@@ -7,8 +7,8 @@ from holoviews.core.overlay import NdOverlay
 from holoviews.element import Dataset, Histogram, Image, Points
 from holoviews.operation import histogram
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

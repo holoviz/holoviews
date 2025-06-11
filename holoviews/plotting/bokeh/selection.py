@@ -1,8 +1,8 @@
 import numpy as np
 
-from ...core.options import Store
-from ...core.overlay import NdOverlay, Overlay
-from ...selection import OverlaySelectionDisplay, SelectionDisplay
+from holoviews.core.options import Store
+from holoviews.core.overlay import NdOverlay, Overlay
+from holoviews.selection import OverlaySelectionDisplay, SelectionDisplay
 
 
 class TabularSelectionDisplay(SelectionDisplay):
@@ -60,7 +60,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
                             **filtered)
 
     def _style_region_element(self, region_element, unselected_color):
-        from ..util import linear_gradient
+        from holoviews.plotting.util import linear_gradient
         backend_options = Store.options(backend="bokeh")
         el2_name = None
         if isinstance(region_element, NdOverlay):

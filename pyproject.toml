@@ -154,6 +154,7 @@ select = [
     "PLR",
     "PLW",
     "RUF",
+    "TID",
     "UP",
     "W",
 ]

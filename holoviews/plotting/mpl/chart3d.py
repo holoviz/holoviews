@@ -3,10 +3,11 @@ import param
 from matplotlib import cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
-from ...core import Dimension
-from ...core.options import abbreviated_exception
-from ...util.transform import dim as dim_expr
-from ..util import map_colors
+from holoviews.core import Dimension
+from holoviews.core.options import abbreviated_exception
+from holoviews.plotting.util import map_colors
+from holoviews.util.transform import dim as dim_expr
+
 from .chart import PointPlot
 from .element import ColorbarPlot
 from .path import PathPlot

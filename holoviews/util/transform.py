@@ -4,9 +4,9 @@ from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodTy
 import numpy as np
 import param
 
-from ..core.data import PandasInterface
-from ..core.dimension import Dimension
-from ..core.util import flatten, resolve_dependent_value, unique_iterator
+from holoviews.core.data import PandasInterface
+from holoviews.core.dimension import Dimension
+from holoviews.core.util import flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -586,7 +586,7 @@ class dim:
         resolved.
 
         """
-        from ..element import Graph
+        from holoviews.element import Graph
 
         if isinstance(self.dimension, param.Parameter):
             applies = True
@@ -732,7 +732,7 @@ class dim:
         values
             NumPy array computed by evaluating the expression
         """
-        from ..element import Graph
+        from holoviews.element import Graph
 
         if ranges is None:
             ranges = {}

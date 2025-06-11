@@ -2,8 +2,9 @@ import param
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
-from ...core.util import max_range
-from ...util.transform import dim
+from holoviews.core.util import max_range
+from holoviews.util.transform import dim
+
 from .graphs import GraphPlot
 from .util import filter_styles
 

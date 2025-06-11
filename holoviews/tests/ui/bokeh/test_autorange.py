@@ -3,8 +3,7 @@ import pytest
 
 from holoviews.element import Curve
 from holoviews.plotting.bokeh.renderer import BokehRenderer
-
-from .. import expect, wait_until
+from holoviews.tests.ui import expect, wait_until
 
 pytestmark = pytest.mark.ui
 

@@ -23,7 +23,7 @@ try:
 except ImportError:
     hammer_bundle, connect_edges = object, object
 
-from ..core import (
+from holoviews.core import (
     CompositeOverlay,
     Dimension,
     Element,
@@ -32,14 +32,14 @@ from ..core import (
     Overlay,
     Store,
 )
-from ..core.data import (
+from holoviews.core.data import (
     DaskInterface,
     Dataset,
     PandasInterface,
     XArrayInterface,
     cuDFInterface,
 )
-from ..core.util import (
+from holoviews.core.util import (
     cast_array_to_int64,
     cftime_to_timestamp,
     cftime_types,
@@ -47,8 +47,8 @@ from ..core.util import (
     dt_to_int,
     get_param_values,
 )
-from ..core.util.dependencies import _LazyModule
-from ..element import (
+from holoviews.core.util.dependencies import _LazyModule
+from holoviews.element import (
     RGB,
     Area,
     Contours,
@@ -67,8 +67,9 @@ from ..element import (
     Spread,
     TriMesh,
 )
-from ..element.util import connect_tri_edges_pd
-from ..streams import PointerXY
+from holoviews.element.util import connect_tri_edges_pd
+from holoviews.streams import PointerXY
+
 from .resample import LinkableOperation, ResampleOperation2D
 
 ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
@@ -1420,7 +1421,7 @@ class shade(LinkableOperation):
             if self.p.cmap.startswith('#') or self.p.cmap in color_lookup:
                 shade_opts['cmap'] = self.p.cmap
             else:
-                from ..plotting.util import process_cmap
+                from holoviews.plotting.util import process_cmap
                 shade_opts['cmap'] = process_cmap(self.p.cmap)
         else:
             shade_opts['cmap'] = self.p.cmap

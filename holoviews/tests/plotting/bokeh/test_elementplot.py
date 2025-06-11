@@ -24,9 +24,9 @@ from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import PointDraw, Stream
+from holoviews.tests.utils import LoggingComparisonTestCase
 from holoviews.util import render
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

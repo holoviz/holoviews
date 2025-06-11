@@ -15,8 +15,7 @@ from holoviews.streams import (
     RangeXY,
     Tap,
 )
-
-from .. import expect, wait_until
+from holoviews.tests.ui import expect, wait_until
 
 pytestmark = pytest.mark.ui
 

@@ -5,10 +5,10 @@ import numpy as np
 import param
 from bokeh.models import Circle, FactorRange, HBar, VBar
 
-from ...core import NdOverlay
-from ...core.dimension import Dimension, Dimensioned
-from ...core.ndmapping import sorted_context
-from ...core.util import (
+from holoviews.core import NdOverlay
+from holoviews.core.dimension import Dimension, Dimensioned
+from holoviews.core.ndmapping import sorted_context
+from holoviews.core.util import (
     dimension_sanitizer,
     is_cupy_array,
     is_dask_array,
@@ -16,9 +16,10 @@ from ...core.util import (
     unique_iterator,
     wrap_tuple,
 )
-from ...operation.stats import univariate_kde
-from ...util.transform import dim
-from ..mixins import MultiDistributionMixin
+from holoviews.operation.stats import univariate_kde
+from holoviews.plotting.mixins import MultiDistributionMixin
+from holoviews.util.transform import dim
+
 from .chart import AreaPlot
 from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .path import PolygonPlot

@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 
 import holoviews as hv
-
-from .. import expect
+from holoviews.tests.ui import expect
 
 pytestmark = pytest.mark.ui
 

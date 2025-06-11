@@ -22,7 +22,7 @@ from holoviews.streams import Pipe
 
 bokeh_renderer = Store.renderers['bokeh']
 
-from .. import option_intersections
+from holoviews.tests.plotting import option_intersections
 
 
 class TestPlotDefinitions(ComparisonTestCase):

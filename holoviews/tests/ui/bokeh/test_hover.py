@@ -5,8 +5,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0
-
-from .. import expect
+from holoviews.tests.ui import expect
 
 pytestmark = pytest.mark.ui
 

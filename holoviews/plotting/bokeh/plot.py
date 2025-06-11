@@ -16,7 +16,7 @@ from bokeh.models import (
 )
 from bokeh.models.layouts import TabPanel, Tabs
 
-from ...core import (
+from holoviews.core import (
     AdjointLayout,
     Element,
     Empty,
@@ -26,8 +26,8 @@ from ...core import (
     NdLayout,
     Store,
 )
-from ...core.options import SkipRendering
-from ...core.util import (
+from holoviews.core.options import SkipRendering
+from holoviews.core.util import (
     _STANDARD_CALENDARS,
     cftime_to_timestamp,
     cftime_types,
@@ -37,9 +37,8 @@ from ...core.util import (
     wrap_tuple,
     wrap_tuple_streams,
 )
-from ...selection import NoOpSelectionDisplay
-from ..links import Link
-from ..plot import (
+from holoviews.plotting.links import Link
+from holoviews.plotting.plot import (
     CallbackPlot,
     DimensionedPlot,
     GenericAdjointLayoutPlot,
@@ -48,7 +47,9 @@ from ..plot import (
     GenericLayoutPlot,
     GenericOverlayPlot,
 )
-from ..util import attach_streams, collate, displayable
+from holoviews.plotting.util import attach_streams, collate, displayable
+from holoviews.selection import NoOpSelectionDisplay
+
 from .links import LinkCallback
 from .util import (
     cds_column_replace,

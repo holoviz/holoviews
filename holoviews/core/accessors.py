@@ -23,10 +23,8 @@ class AccessorPipelineMeta(type):
     def pipelined(mcs, __call__):
         @wraps(__call__)
         def pipelined_call(*args, **kwargs):
-            from ..operation.element import (
-                factory,
-                method as method_op,
-            )
+            from holoviews.operation.element import factory, method as method_op
+
             from .data import Dataset, MultiDimensionalMapping
             inst = args[0]
 
@@ -131,7 +129,8 @@ class Apply(metaclass=AccessorPipelineMeta):
         """
         from panel.widgets.base import Widget
 
-        from ..util import Dynamic
+        from holoviews.util import Dynamic
+
         from .data import Dataset
         from .dimension import ViewableElement
         from .element import Element
@@ -232,8 +231,8 @@ class Apply(metaclass=AccessorPipelineMeta):
         :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
-        from ..streams import Params
-        from ..util.transform import dim
+        from holoviews.streams import Params
+        from holoviews.util.transform import dim
         params = {}
         for arg in kwargs.values():
             if isinstance(arg, dim):
@@ -289,8 +288,8 @@ class Apply(metaclass=AccessorPipelineMeta):
         :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
         for more information.
         """
-        from ..streams import Params
-        from ..util.transform import dim
+        from holoviews.streams import Params
+        from holoviews.util.transform import dim
         params = {}
         for _, arg in list(args)+list(kwargs.items()):
             if isinstance(arg, dim):
@@ -380,7 +379,8 @@ class Redim(metaclass=AccessorPipelineMeta):
         return dimension
 
     def _create_expression_transform(self, kdims, vdims, exclude=None):
-        from ..util.transform import dim
+        from holoviews.util.transform import dim
+
         from .dimension import dimension_name
 
         if exclude is None:
@@ -458,7 +458,7 @@ class Redim(metaclass=AccessorPipelineMeta):
         if self.mode != 'dynamic':
             return redimmed.clone(kdims=kdims, vdims=vdims)
 
-        from ..util import Dynamic
+        from holoviews.util import Dynamic
         def dynamic_redim(obj, **dynkwargs):
             return obj.redim(specs, **dimensions)
         dmap = Dynamic(obj, streams=obj.streams, operation=dynamic_redim)
@@ -652,7 +652,7 @@ class Opts(metaclass=AccessorPipelineMeta):
             return self._obj
 
     def _dynamicmap_opts(self, *args, **kwargs):
-        from ..util import Dynamic
+        from holoviews.util import Dynamic
 
         clone = kwargs.get('clone', None)
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
@@ -685,7 +685,7 @@ class Opts(metaclass=AccessorPipelineMeta):
         # By default do not clone in .opts method
         clone = kwargs.get('clone', None)
         if apply_groups:
-            from ..util import opts
+            from holoviews.util import opts
             if options is not None:
                 kwargs['options'] = options
             return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))

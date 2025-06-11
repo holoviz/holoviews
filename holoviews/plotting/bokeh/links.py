@@ -2,9 +2,9 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
-from ...core.spaces import HoloMap
-from ...core.util import isscalar
-from ..links import (
+from holoviews.core.spaces import HoloMap
+from holoviews.core.util import isscalar
+from holoviews.plotting.links import (
     DataLink,
     Link,
     RangeToolLink,
@@ -12,7 +12,8 @@ from ..links import (
     SelectionLink,
     VertexTableLink,
 )
-from ..plot import GenericElementPlot, GenericOverlayPlot
+from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
+
 from .util import BOKEH_GE_3_4_0, BOKEH_GE_3_5_0
 
 

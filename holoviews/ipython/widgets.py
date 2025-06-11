@@ -5,7 +5,7 @@ import time
 import param
 from IPython.core.display import clear_output
 
-from ..core.util import ProgressIndicator
+from holoviews.core.util import ProgressIndicator
 
 
 class ProgressBar(ProgressIndicator):

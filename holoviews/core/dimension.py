@@ -1361,7 +1361,7 @@ class Dimensioned(LabelledData):
         elif kwargs:
             options = {type(self).__name__: kwargs}
 
-        from ..util import opts
+        from holoviews.util import opts
         if options is None:
             expanded_backends = [(backend, {})]
         elif isinstance(options, list): # assuming a flat list of Options objects

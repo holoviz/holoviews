@@ -1,6 +1,7 @@
 import param
 
-from ...element import Tiles
+from holoviews.element import Tiles
+
 from .chart import ScatterPlot
 from .util import PLOTLY_SCATTERMAP
 

@@ -1,6 +1,7 @@
 import param
 
-from ..core import Dimension, Element3D
+from holoviews.core import Dimension, Element3D
+
 from .geom import Points
 from .path import Path
 from .raster import Image

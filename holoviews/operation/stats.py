@@ -1,10 +1,19 @@
 import numpy as np
 import param
 
-from ..core import Dataset, Dimension, NdOverlay
-from ..core.operation import Operation
-from ..core.util import cartesian_product, isfinite
-from ..element import Area, Bivariate, Contours, Curve, Distribution, Image, Polygons
+from holoviews.core import Dataset, Dimension, NdOverlay
+from holoviews.core.operation import Operation
+from holoviews.core.util import cartesian_product, isfinite
+from holoviews.element import (
+    Area,
+    Bivariate,
+    Contours,
+    Curve,
+    Distribution,
+    Image,
+    Polygons,
+)
+
 from .element import contours
 
 

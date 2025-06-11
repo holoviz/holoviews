@@ -3,7 +3,8 @@ import param
 from plotly import colors
 from plotly.figure_factory._trisurf import trisurf as trisurface
 
-from ...core.options import SkipRendering
+from holoviews.core.options import SkipRendering
+
 from .chart import CurvePlot, ScatterPlot
 from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay

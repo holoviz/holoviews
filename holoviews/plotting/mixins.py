@@ -1,8 +1,9 @@
 import numpy as np
 
-from ..core import Dataset, Dimension, util
-from ..element import Bars, Graph
-from ..element.util import categorical_aggregate2d
+from holoviews.core import Dataset, Dimension, util
+from holoviews.element import Bars, Graph
+from holoviews.element.util import categorical_aggregate2d
+
 from .util import get_axis_padding
 
 

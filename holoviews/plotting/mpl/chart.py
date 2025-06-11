@@ -4,9 +4,9 @@ import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 
-from ...core.dimension import Dimension
-from ...core.options import Store, abbreviated_exception
-from ...core.util import (
+from holoviews.core.dimension import Dimension
+from holoviews.core.options import Store, abbreviated_exception
+from holoviews.core.util import (
     dt64_to_dt,
     dt_to_int,
     isdatetime,
@@ -16,12 +16,18 @@ from ...core.util import (
     search_indices,
     unique_array,
 )
-from ...element import HeatMap, Raster
-from ...operation import interpolate_curve
-from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin
-from ..plot import PlotSelector
-from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
+from holoviews.element import HeatMap, Raster
+from holoviews.operation import interpolate_curve
+from holoviews.plotting.mixins import AreaMixin, BarsMixin, SpikesMixin
+from holoviews.plotting.plot import PlotSelector
+from holoviews.plotting.util import (
+    compute_sizes,
+    dim_range_key,
+    get_min_distance,
+    get_sideplot_ranges,
+)
+from holoviews.util.transform import dim
+
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context

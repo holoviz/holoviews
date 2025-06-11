@@ -25,7 +25,7 @@ from unittest.util import safe_repr
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from ..core import (
+from holoviews.core import (
     AdjointLayout,
     Dimension,
     Dimensioned,
@@ -40,9 +40,10 @@ from ..core import (
     NdOverlay,
     Overlay,
 )
-from ..core.options import Cycle, Options
-from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
-from ..core.util.dependencies import _is_installed
+from holoviews.core.options import Cycle, Options
+from holoviews.core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
+from holoviews.core.util.dependencies import _is_installed
+
 from . import *  # noqa (All Elements need to support comparison)
 
 

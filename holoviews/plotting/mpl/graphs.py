@@ -4,12 +4,13 @@ import numpy as np
 import param
 from matplotlib.collections import LineCollection, PolyCollection
 
-from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
-from ...core.util import is_number, isscalar, search_indices, unique_array
-from ...util.transform import dim
-from ..mixins import ChordMixin, GraphMixin
-from ..util import get_directed_graph_paths, process_cmap
+from holoviews.core.data import Dataset
+from holoviews.core.options import Cycle, abbreviated_exception
+from holoviews.core.util import is_number, isscalar, search_indices, unique_array
+from holoviews.plotting.mixins import ChordMixin, GraphMixin
+from holoviews.plotting.util import get_directed_graph_paths, process_cmap
+from holoviews.util.transform import dim
+
 from .element import ColorbarPlot
 from .util import MPL_GE_3_10_1, filter_styles
 

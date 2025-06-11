@@ -3,10 +3,11 @@ import param
 from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.dates import DateFormatter, date2num
 
-from ...core import util
-from ...core.dimension import Dimension
-from ...core.options import abbreviated_exception
-from ...element import Polygons
+from holoviews.core import util
+from holoviews.core.dimension import Dimension
+from holoviews.core.options import abbreviated_exception
+from holoviews.element import Polygons
+
 from .element import ColorbarPlot
 from .util import polygons_to_path_patches
 

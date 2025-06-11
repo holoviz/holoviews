@@ -12,9 +12,10 @@ from panel.io.notebook import render_mimebundle
 from panel.io.state import state
 from param.parameterized import bothmethod
 
-from ...core import HoloMap, Store
-from ..plot import Plot
-from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
+from holoviews.core import HoloMap, Store
+from holoviews.plotting.plot import Plot
+from holoviews.plotting.renderer import HTML_TAGS, MIME_TYPES, Renderer
+
 from .util import compute_plot_size
 
 default_theme = Theme(json={

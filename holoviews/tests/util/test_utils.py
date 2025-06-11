@@ -13,7 +13,7 @@ from holoviews.util import Options, OutputSettings, opts, output
 
 BACKENDS = ['matplotlib', 'bokeh']
 
-from ..utils import LoggingComparisonTestCase
+from holoviews.tests.utils import LoggingComparisonTestCase
 
 try:
     import notebook

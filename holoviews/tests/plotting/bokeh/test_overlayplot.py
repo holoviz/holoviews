@@ -18,9 +18,9 @@ from holoviews.element import (
 )
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import Pipe, Stream, Tap
+from holoviews.tests.utils import LoggingComparisonTestCase
 from holoviews.util import Dynamic
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

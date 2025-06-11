@@ -11,7 +11,7 @@ import param
 from packaging.version import Version
 from param import _is_number
 
-from ..core import (
+from holoviews.core import (
     Collator,
     Dataset,
     Dimension,
@@ -24,9 +24,14 @@ from ..core import (
     Operation,
     Overlay,
 )
-from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
-from ..core.data.util import dask_array_module
-from ..core.util import (
+from holoviews.core.data import (
+    ArrayInterface,
+    DictInterface,
+    PandasInterface,
+    default_datatype,
+)
+from holoviews.core.data.util import dask_array_module
+from holoviews.core.util import (
     datetime_types,
     dt_to_int,
     group_sanitizer,
@@ -37,12 +42,13 @@ from ..core.util import (
     isfinite,
     label_sanitizer,
 )
-from ..element.chart import Histogram, Scatter
-from ..element.path import Contours, Dendrogram, Polygons
-from ..element.raster import RGB, HeatMap, Image
+from holoviews.element.chart import Histogram, Scatter
+from holoviews.element.path import Contours, Dendrogram, Polygons
+from holoviews.element.raster import RGB, HeatMap, Image
+from holoviews.streams import RangeXY
+from holoviews.util.locator import MaxNLocator
+
 from ..element.util import categorical_aggregate2d  # noqa (API import)
-from ..streams import RangeXY
-from ..util.locator import MaxNLocator
 
 column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
@@ -836,7 +842,7 @@ class histogram(Operation):
 
         # Mask data
         if is_ibis_expr(data):
-            from ..core.data.ibis import IBIS_GE_5_0_0, IBIS_GE_9_5_0
+            from holoviews.core.data.ibis import IBIS_GE_5_0_0, IBIS_GE_9_5_0
 
             mask = data.notnull()
             if self.p.nonzero:

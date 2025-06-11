@@ -31,12 +31,13 @@ from panel.widgets.player import PlayerBase
 from param.parameterized import bothmethod
 from pyviz_comms import CommManager
 
-from ..core import AdjointLayout, DynamicMap, HoloMap, Layout
-from ..core.data import disable_pipeline
-from ..core.io import Exporter
-from ..core.options import Compositor, SkipRendering, Store, StoreOptions
-from ..core.util import unbound_dimensions
-from ..streams import Stream
+from holoviews.core import AdjointLayout, DynamicMap, HoloMap, Layout
+from holoviews.core.data import disable_pipeline
+from holoviews.core.io import Exporter
+from holoviews.core.options import Compositor, SkipRendering, Store, StoreOptions
+from holoviews.core.util import unbound_dimensions
+from holoviews.streams import Stream
+
 from . import Plot
 from .util import collate, displayable, initialize_dynamic
 

@@ -2,10 +2,19 @@ import plotly
 from packaging.version import Version
 from param import concrete_descendents
 
-from ...core import GridMatrix, GridSpace, Layout, NdLayout, NdOverlay, Overlay, config
-from ...core.options import Cycle, Options, Store
-from ...core.util import VersionError
-from ...element import *
+from holoviews.core import (
+    GridMatrix,
+    GridSpace,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
+    config,
+)
+from holoviews.core.options import Cycle, Options, Store
+from holoviews.core.util import VersionError
+from holoviews.element import *
+
 from .annotation import *
 from .callbacks import *
 from .chart import *

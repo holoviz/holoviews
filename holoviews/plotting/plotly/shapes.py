@@ -1,8 +1,9 @@
 import numpy as np
 import param
 
-from ...element import HLine, HSpan, Tiles, VLine, VSpan
-from ..mixins import GeomMixin
+from holoviews.element import HLine, HSpan, Tiles, VLine, VSpan
+from holoviews.plotting.mixins import GeomMixin
+
 from .element import ElementPlot
 from .util import PLOTLY_SCATTERMAP
 

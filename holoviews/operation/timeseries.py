@@ -1,10 +1,10 @@
 import numpy as np
 import param
 
-from ..core import Element, Operation
-from ..core.data import PandasInterface
-from ..core.util import _PANDAS_FUNC_LOOKUP
-from ..element import Scatter
+from holoviews.core import Element, Operation
+from holoviews.core.data import PandasInterface
+from holoviews.core.util import _PANDAS_FUNC_LOOKUP
+from holoviews.element import Scatter
 
 
 class RollingBase(param.Parameterized):

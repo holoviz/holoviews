@@ -3,8 +3,9 @@ from collections import defaultdict
 
 import numpy as np
 
-from ..dimension import dimension_name
-from ..util import isscalar, unique_array, unique_iterator
+from holoviews.core.dimension import dimension_name
+from holoviews.core.util import isscalar, unique_array, unique_iterator
+
 from .interface import DataError, Interface
 from .multipath import MultiInterface, ensure_ring
 from .pandas import PandasInterface
@@ -394,7 +395,7 @@ class SpatialPandasInterface(MultiInterface):
     def split(cls, dataset, start, end, datatype, **kwargs):
         from spatialpandas import GeoDataFrame, GeoSeries
 
-        from ...element import Polygons
+        from holoviews.element import Polygons
 
         objs = []
         if not len(dataset.data):
@@ -748,7 +749,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom='point'):
         RingArray,
     )
 
-    from ...element import Polygons
+    from holoviews.element import Polygons
 
     if columns is None:
         columns = []

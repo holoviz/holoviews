@@ -5,12 +5,13 @@ from operator import itemgetter
 import numpy as np
 import param
 
-from ..core import Dataset, Dimension, Element2D, Overlay, config, util
-from ..core.boundingregion import BoundingBox, BoundingRegion
-from ..core.data import ImageInterface
-from ..core.data.interface import DataError
-from ..core.dimension import dimension_name
-from ..core.sheetcoords import SheetCoordinateSystem, Slice
+from holoviews.core import Dataset, Dimension, Element2D, Overlay, config, util
+from holoviews.core.boundingregion import BoundingBox, BoundingRegion
+from holoviews.core.data import ImageInterface
+from holoviews.core.data.interface import DataError
+from holoviews.core.dimension import dimension_name
+from holoviews.core.sheetcoords import SheetCoordinateSystem, Slice
+
 from .chart import Curve
 from .geom import Selection2DExpr
 from .graphs import TriMesh

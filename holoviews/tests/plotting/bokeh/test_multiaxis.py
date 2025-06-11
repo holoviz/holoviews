@@ -1,8 +1,8 @@
 from bokeh.models import LinearAxis, LinearScale, LogAxis, LogScale
 
 from holoviews.element import Curve
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

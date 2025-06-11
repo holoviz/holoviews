@@ -2,11 +2,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .. import util
-from ..dimension import Dimension, dimension_name
-from ..element import Element
-from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.dependencies import PANDAS_GE_2_1_0, _LazyModule
+from holoviews.core import util
+from holoviews.core.dimension import Dimension, dimension_name
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping, item_check, sorted_context
+from holoviews.core.util.dependencies import PANDAS_GE_2_1_0, _LazyModule
+
 from .interface import DataError, Interface
 from .util import finite_range
 

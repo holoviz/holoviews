@@ -7,8 +7,7 @@ import pandas as pd
 from holoviews.core import Dimension, Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0
 from holoviews.element.comparison import ComparisonTestCase
-
-from ..utils import LoggingComparisonTestCase
+from holoviews.tests.utils import LoggingComparisonTestCase
 
 
 class DimensionNameLabelTest(LoggingComparisonTestCase):

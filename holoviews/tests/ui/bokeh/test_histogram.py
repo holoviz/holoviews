@@ -2,8 +2,7 @@ import pytest
 from bokeh.models import CustomJS
 
 from holoviews.element import Histogram
-
-from .. import expect, wait_until
+from holoviews.tests.ui import expect, wait_until
 
 
 def watch_hook(dim, pos):

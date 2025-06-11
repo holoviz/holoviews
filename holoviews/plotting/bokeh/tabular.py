@@ -12,11 +12,12 @@ from bokeh.models.widgets import (
     TableColumn,
 )
 
-from ...core import Dataset, Dimension
-from ...core.util import dimension_sanitizer, isdatetime
-from ...element import ItemTable
-from ...streams import Buffer
-from ..plot import GenericElementPlot
+from holoviews.core import Dataset, Dimension
+from holoviews.core.util import dimension_sanitizer, isdatetime
+from holoviews.element import ItemTable
+from holoviews.plotting.plot import GenericElementPlot
+from holoviews.streams import Buffer
+
 from .plot import BokehPlot
 from .selection import TabularSelectionDisplay
 

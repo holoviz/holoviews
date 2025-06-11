@@ -1,7 +1,7 @@
 from weakref import WeakValueDictionary
 
-from ...element import Tiles
-from ...streams import (
+from holoviews.element import Tiles
+from holoviews.streams import (
     BoundsX,
     BoundsXY,
     BoundsY,
@@ -12,6 +12,7 @@ from ...streams import (
     SelectionXY,
     Stream,
 )
+
 from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP, _trace_to_subplot
 
 

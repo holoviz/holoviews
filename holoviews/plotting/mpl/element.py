@@ -10,7 +10,7 @@ from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
 
-from ...core import (
+from holoviews.core import (
     CompositeOverlay,
     Dataset,
     DynamicMap,
@@ -19,12 +19,13 @@ from ...core import (
     NdOverlay,
     util,
 )
-from ...core.options import Keywords, abbreviated_exception
-from ...element import Graph, Path
-from ...streams import Stream
-from ...util.transform import dim
-from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import color_intervals, dim_range_key, process_cmap
+from holoviews.core.options import Keywords, abbreviated_exception
+from holoviews.element import Graph, Path
+from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
+from holoviews.plotting.util import color_intervals, dim_range_key, process_cmap
+from holoviews.streams import Stream
+from holoviews.util.transform import dim
+
 from .plot import MPLPlot, mpl_rc_context
 from .util import MPL_VERSION, EqHistNormalize, validate, wrap_formatter
 

@@ -5,10 +5,11 @@ This file defines the HTML tags used to wrap rendered output for
 display in the IPython Notebook (optional).
 
 """
-from ..core.options import Compositor, Cycle
-from ..element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster
-from ..element.sankey import Sankey, _layout_sankey
-from ..operation.stats import bivariate_kde, univariate_kde
+from holoviews.core.options import Compositor, Cycle
+from holoviews.element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster
+from holoviews.element.sankey import Sankey, _layout_sankey
+from holoviews.operation.stats import bivariate_kde, univariate_kde
+
 from .plot import Plot
 from .renderer import HTML_TAGS, Renderer  # noqa (API import)
 from .util import apply_nodata, flatten_stack, list_cmaps  # noqa (API import)

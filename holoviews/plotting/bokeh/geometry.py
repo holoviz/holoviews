@@ -1,8 +1,9 @@
 import numpy as np
 import param
 
-from ...core.util import dimension_sanitizer
-from ..mixins import GeomMixin
+from holoviews.core.util import dimension_sanitizer
+from holoviews.plotting.mixins import GeomMixin
+
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties

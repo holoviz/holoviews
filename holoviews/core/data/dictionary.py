@@ -2,11 +2,12 @@ from collections import OrderedDict, defaultdict
 
 import numpy as np
 
-from .. import util
-from ..dimension import dimension_name
-from ..element import Element
-from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import isscalar
+from holoviews.core import util
+from holoviews.core.dimension import dimension_name
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping, item_check, sorted_context
+from holoviews.core.util import isscalar
+
 from .interface import DataError, Interface
 
 

@@ -2,10 +2,11 @@ from collections import defaultdict
 
 import numpy as np
 
-from .. import util
-from ..dimension import dimension_name
-from ..element import Element
-from ..ndmapping import NdMapping, item_check, sorted_context
+from holoviews.core import util
+from holoviews.core.dimension import dimension_name
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping, item_check, sorted_context
+
 from .dictionary import DictInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range, get_array_types, is_dask

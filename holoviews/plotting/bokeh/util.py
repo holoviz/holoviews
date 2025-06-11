@@ -45,12 +45,12 @@ from bokeh.themes import built_in_themes
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
-from ...core import util
-from ...core.layout import Layout
-from ...core.ndmapping import NdMapping
-from ...core.overlay import NdOverlay, Overlay
-from ...core.spaces import DynamicMap, get_nested_dmaps
-from ...core.util import (
+from holoviews.core import util
+from holoviews.core.layout import Layout
+from holoviews.core.ndmapping import NdMapping
+from holoviews.core.overlay import NdOverlay, Overlay
+from holoviews.core.spaces import DynamicMap, get_nested_dmaps
+from holoviews.core.util import (
     arraylike_types,
     callable_name,
     cftime_to_timestamp,
@@ -58,8 +58,8 @@ from ...core.util import (
     isnumeric,
     unique_array,
 )
-from ...util.warnings import warn
-from ..util import dim_axis_label
+from holoviews.plotting.util import dim_axis_label
+from holoviews.util.warnings import warn
 
 BOKEH_VERSION = Version(bokeh.__version__).release
 BOKEH_GE_3_2_0 = BOKEH_VERSION >= (3, 2, 0)

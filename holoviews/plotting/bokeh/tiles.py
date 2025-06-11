@@ -1,8 +1,9 @@
 import numpy as np
 from bokeh.models import BBoxTileSource, QUADKEYTileSource, WMTSTileSource
 
-from ...core.options import SkipRendering
-from ...element.tiles import _ATTRIBUTIONS
+from holoviews.core.options import SkipRendering
+from holoviews.element.tiles import _ATTRIBUTIONS
+
 from .element import ElementPlot
 
 

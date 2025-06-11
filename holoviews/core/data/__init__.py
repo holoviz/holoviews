@@ -8,18 +8,19 @@ import numpy as np
 import param
 from param.parameterized import ParameterizedMetaclass
 
-from .. import util as core_util
-from ..accessors import Redim
-from ..dimension import (
+from holoviews.core import util as core_util
+from holoviews.core.accessors import Redim
+from holoviews.core.dimension import (
     Dimension,
     Dimensioned,
     LabelledData,
     dimension_name,
     process_dimensions,
 )
-from ..element import Element
-from ..ndmapping import MultiDimensionalMapping
-from ..spaces import DynamicMap, HoloMap
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import MultiDimensionalMapping
+from holoviews.core.spaces import DynamicMap, HoloMap
+
 from .array import ArrayInterface
 from .cudf import cuDFInterface  # noqa (API import)
 from .dask import DaskInterface  # noqa (API import)
@@ -189,7 +190,7 @@ class PipelineMeta(ParameterizedMetaclass):
     def pipelined(method_fn, method_name):
         @wraps(method_fn)
         def pipelined_fn(*args, **kwargs):
-            from ...operation.element import method as method_op
+            from holoviews.operation.element import method as method_op
             inst = args[0]
             inst_pipeline = copy.copy(getattr(inst, '_pipeline', None))
             in_method = inst._in_method
@@ -293,10 +294,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             return super().__new__(cls)
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
-        from ...operation.element import (
-            chain as chain_op,
-            factory,
-        )
+        from holoviews.operation.element import chain as chain_op, factory
         self._in_method = False
         input_data = data
         dataset_provided = 'dataset' in kwargs
@@ -628,7 +626,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         Returns an Dimensioned object containing the selected data
         or a scalar if a single value was selected
         """
-        from ...util.transform import dim
+        from holoviews.util.transform import dim
         if selection_expr is not None and not isinstance(selection_expr, dim):
             raise ValueError("""\
             The first positional argument to the Dataset.select method is expected to be a
@@ -830,7 +828,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
-        from ...element import Curve, Table
+        from holoviews.element import Curve, Table
         datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0], strict=None)}
@@ -939,7 +937,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         -------
         Returns the aggregated Dataset
         """
-        from ...util.transform import dim
+        from holoviews.util.transform import dim
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
         if isinstance(function, tuple) or any(isinstance(v, dim) for v in kwargs.values()):

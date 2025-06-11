@@ -2,9 +2,10 @@ import numpy as np
 import param
 from bokeh.models.glyphs import AnnularWedge
 
-from ...core.data import GridInterface
-from ...core.spaces import HoloMap
-from ...core.util import dimension_sanitizer, is_nan
+from holoviews.core.data import GridInterface
+from holoviews.core.spaces import HoloMap
+from holoviews.core.util import dimension_sanitizer, is_nan
+
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties

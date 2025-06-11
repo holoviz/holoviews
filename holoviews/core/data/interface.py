@@ -4,9 +4,10 @@ import warnings
 import numpy as np
 import param
 
-from .. import util
-from ..element import Element
-from ..ndmapping import NdMapping
+from holoviews.core import util
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping
+
 from .util import finite_range
 
 
@@ -26,8 +27,8 @@ class Accessor:
         self.dataset = dataset
 
     def __getitem__(self, index):
-        from ...operation.element import method
-        from ..data import Dataset
+        from holoviews.core.data import Dataset
+        from holoviews.operation.element import method
         in_method = self.dataset._in_method
         if not in_method:
             self.dataset._in_method = True

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ...util.locator import MaxNLocator
+from holoviews.util.locator import MaxNLocator
 
 
 @pytest.mark.parametrize(

@@ -11,8 +11,7 @@ from IPython import get_ipython
 from IPython.display import HTML
 
 import holoviews as hv
-
-from ..core import (
+from holoviews.core import (
     AdjointLayout,
     CompositeOverlay,
     Dimensioned,
@@ -24,11 +23,17 @@ from ..core import (
     NdLayout,
     ViewableElement,
 )
-from ..core.io import FileArchive
-from ..core.options import AbbreviatedException, SkipRendering, Store, StoreOptions
-from ..core.traversal import unique_dimkeys
-from ..core.util import mimebundle_to_html
-from ..util.settings import OutputSettings
+from holoviews.core.io import FileArchive
+from holoviews.core.options import (
+    AbbreviatedException,
+    SkipRendering,
+    Store,
+    StoreOptions,
+)
+from holoviews.core.traversal import unique_dimkeys
+from holoviews.core.util import mimebundle_to_html
+from holoviews.util.settings import OutputSettings
+
 from .magics import OptsMagic, OutputMagic
 
 # To assist with debugging of display hooks
@@ -156,7 +161,7 @@ def display_hook(fn):
             if mimebundle is None:
                 return {}, {}
             mime_data, mime_metadata = mimebundle
-            from ..plotting.renderer import MIME_TYPES
+            from holoviews.plotting.renderer import MIME_TYPES
             if MIME_TYPES['js'] in mime_data:
                 mime_data['text/html'] = mimebundle_to_html(mime_data)
                 del mime_data[MIME_TYPES['js']]
@@ -253,7 +258,7 @@ def display(obj, raw_output=False, **kwargs):
                            'a backend is loaded using the holoviews '
                            'extension.')
 
-    from ..plotting import Plot
+    from holoviews.plotting import Plot
 
     raw = True
     if isinstance(obj, GridSpace):

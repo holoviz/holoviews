@@ -2,8 +2,8 @@ import numpy as np
 
 from holoviews.element import VectorField
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.tests.plotting.utils import ParamLogStream
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:

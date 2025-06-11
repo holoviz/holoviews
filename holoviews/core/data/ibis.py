@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .. import util
-from ..element import Element
-from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util.dependencies import _LazyModule, _no_import_version
+from holoviews.core import util
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping, item_check, sorted_context
+from holoviews.core.util.dependencies import _LazyModule, _no_import_version
+
 from .interface import DataError, Interface
 from .util import cached
 

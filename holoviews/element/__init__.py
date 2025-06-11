@@ -1,5 +1,6 @@
-from ..core import HoloMap
-from ..core.data import DataConversion, Dataset
+from holoviews.core import HoloMap
+from holoviews.core.data import DataConversion, Dataset
+
 from .annotation import *
 from .chart import *
 from .chart3d import *

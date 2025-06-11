@@ -24,17 +24,17 @@ from panel.io.notebook import push_on_root
 from panel.io.state import set_curdoc, state
 from panel.pane import panel
 
-from ...core.data import Dataset
-from ...core.options import CallbackError
-from ...core.util import (
+from holoviews.core.data import Dataset
+from holoviews.core.options import CallbackError
+from holoviews.core.util import (
     VersionError,
     datetime_types,
     dimension_sanitizer,
     dt64_to_dt,
     isequal,
 )
-from ...element import Table
-from ...streams import (
+from holoviews.element import Table
+from holoviews.streams import (
     BoundsX,
     BoundsXY,
     BoundsY,
@@ -68,7 +68,8 @@ from ...streams import (
     Stream,
     Tap,
 )
-from ...util.warnings import warn
+from holoviews.util.warnings import warn
+
 from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, convert_timestamp
 
 if BOKEH_GE_3_4_0:

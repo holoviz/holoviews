@@ -18,10 +18,10 @@ try:
 except ImportError:
     cm, colors = None, None
 
-from ...core.options import abbreviated_exception
-from ...core.util import arraylike_types
-from ...util.transform import dim
-from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
+from holoviews.core.options import abbreviated_exception
+from holoviews.core.util import arraylike_types
+from holoviews.plotting.util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
+from holoviews.util.transform import dim
 
 # Define shared style properties for bokeh plots
 

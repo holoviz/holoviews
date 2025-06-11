@@ -5,12 +5,13 @@ from matplotlib import rc_params_from_file
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from param import concrete_descendents
 
-from ...core import Collator, GridMatrix, Layout, config
-from ...core.options import Cycle, Options, Palette
-from ...core.overlay import NdOverlay, Overlay
-from ...element import *
-from ..plot import PlotSelector
-from ..util import fire_colors
+from holoviews.core import Collator, GridMatrix, Layout, config
+from holoviews.core.options import Cycle, Options, Palette
+from holoviews.core.overlay import NdOverlay, Overlay
+from holoviews.element import *
+from holoviews.plotting.plot import PlotSelector
+from holoviews.plotting.util import fire_colors
+
 from .annotation import *
 from .chart import *
 from .chart3d import *

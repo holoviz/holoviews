@@ -1,6 +1,7 @@
 import param
 
-from ..mixins import MultiDistributionMixin
+from holoviews.plotting.mixins import MultiDistributionMixin
+
 from .chart import ChartPlot
 from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay

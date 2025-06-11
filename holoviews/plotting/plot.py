@@ -18,18 +18,19 @@ from panel.io.notebook import push
 from panel.io.state import state
 from pyviz_comms import JupyterComm
 
-from ..core import traversal, util
-from ..core.data import Dataset, disable_pipeline
-from ..core.element import Element, Element3D
-from ..core.layout import Empty, Layout, NdLayout
-from ..core.options import Compositor, SkipRendering, Store, lookup_options
-from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
-from ..core.spaces import DynamicMap, HoloMap
-from ..core.util import isfinite, stream_parameters, unique_iterator
-from ..element import Graph, Table
-from ..selection import NoOpSelectionDisplay
-from ..streams import RangeX, RangeXY, RangeY, Stream
-from ..util.transform import dim
+from holoviews.core import traversal, util
+from holoviews.core.data import Dataset, disable_pipeline
+from holoviews.core.element import Element, Element3D
+from holoviews.core.layout import Empty, Layout, NdLayout
+from holoviews.core.options import Compositor, SkipRendering, Store, lookup_options
+from holoviews.core.overlay import CompositeOverlay, NdOverlay, Overlay
+from holoviews.core.spaces import DynamicMap, HoloMap
+from holoviews.core.util import isfinite, stream_parameters, unique_iterator
+from holoviews.element import Graph, Table
+from holoviews.selection import NoOpSelectionDisplay
+from holoviews.streams import RangeX, RangeXY, RangeY, Stream
+from holoviews.util.transform import dim
+
 from .util import (
     attach_streams,
     compute_overlayable_zorders,

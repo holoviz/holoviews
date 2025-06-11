@@ -7,13 +7,14 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ...core.data import Dataset
-from ...core.dimension import dimension_name
-from ...core.util import dimension_sanitizer, isdatetime, isfinite
-from ...operation import interpolate_curve
-from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin
-from ..util import compute_sizes, get_min_distance
+from holoviews.core.data import Dataset
+from holoviews.core.dimension import dimension_name
+from holoviews.core.util import dimension_sanitizer, isdatetime, isfinite
+from holoviews.operation import interpolate_curve
+from holoviews.plotting.mixins import AreaMixin, BarsMixin, SpikesMixin
+from holoviews.plotting.util import compute_sizes, get_min_distance
+from holoviews.util.transform import dim
+
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (

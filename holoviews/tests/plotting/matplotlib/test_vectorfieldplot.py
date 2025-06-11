@@ -4,8 +4,8 @@ import pytest
 from holoviews.core.options import AbbreviatedException
 from holoviews.core.spaces import HoloMap
 from holoviews.element import VectorField
+from holoviews.tests.plotting.utils import ParamLogStream
 
-from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

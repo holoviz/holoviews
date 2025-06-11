@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 import param
 
-from ..core import Dataset
-from ..core.boundingregion import BoundingBox
-from ..core.data import PandasInterface, default_datatype
-from ..core.operation import Operation
-from ..core.sheetcoords import Slice
-from ..core.util import (
+from holoviews.core import Dataset
+from holoviews.core.boundingregion import BoundingBox
+from holoviews.core.data import PandasInterface, default_datatype
+from holoviews.core.operation import Operation
+from holoviews.core.sheetcoords import Slice
+from holoviews.core.util import (
     PANDAS_GE_2_1_0,
     cartesian_product,
     datetime_types,

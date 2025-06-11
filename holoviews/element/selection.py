@@ -8,9 +8,10 @@ from importlib.util import find_spec
 
 import numpy as np
 
-from ..core import Dataset, NdOverlay, util
-from ..streams import Lasso, Selection1D, SelectionXY
-from ..util.transform import dim
+from holoviews.core import Dataset, NdOverlay, util
+from holoviews.streams import Lasso, Selection1D, SelectionXY
+from holoviews.util.transform import dim
+
 from .annotation import HSpan, VSpan
 
 
@@ -68,7 +69,7 @@ def spatial_select_gridded(xvals, yvals, geometry):
         from .path import Polygons
         from .raster import Image
         try:
-            from ..operation.datashader import rasterize
+            from holoviews.operation.datashader import rasterize
         except ImportError:
             raise ImportError("Lasso selection on gridded data requires "
                               "datashader to be available.") from None

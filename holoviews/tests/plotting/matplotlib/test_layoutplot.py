@@ -3,8 +3,8 @@ import numpy as np
 from holoviews.core import DynamicMap, HoloMap, NdOverlay
 from holoviews.element import Curve, Image
 from holoviews.streams import Stream
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

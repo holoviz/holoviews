@@ -6,8 +6,7 @@ from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.mpl import MPL_VERSION
 from holoviews.plotting.mpl.element import ElementPlot
-
-from .. import option_intersections
+from holoviews.tests.plotting import option_intersections
 
 mpl_renderer = Store.renderers['matplotlib']
 MPL_GE_3_4_0 = MPL_VERSION >= (3, 4, 0)

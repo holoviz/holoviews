@@ -1,8 +1,9 @@
 import numpy as np
 
-from .. import util
-from ..element import Element
-from ..ndmapping import NdMapping, item_check, sorted_context
+from holoviews.core import util
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping, item_check, sorted_context
+
 from .dictionary import DictInterface
 from .interface import DataError, Interface
 
@@ -31,7 +32,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        from ...element import Path, Polygons
+        from holoviews.element import Path, Polygons
 
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
@@ -221,7 +222,7 @@ class MultiInterface(Interface):
         """Applies selectiong on all the subpaths.
 
         """
-        from ...element import Polygons
+        from holoviews.element import Polygons
         if not dataset.data:
             return dataset.data
         elif selection_mask is not None:

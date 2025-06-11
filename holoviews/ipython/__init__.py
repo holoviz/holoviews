@@ -7,11 +7,11 @@ from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
 
 import holoviews as hv
+from holoviews.core.dimension import LabelledData
+from holoviews.core.options import Store
+from holoviews.core.tree import AttrTree
+from holoviews.util import extension
 
-from ..core.dimension import LabelledData
-from ..core.options import Store
-from ..core.tree import AttrTree
-from ..util import extension
 from .display_hooks import display, png_display, pprint_display, svg_display
 from .magics import load_magics
 
@@ -27,8 +27,8 @@ def show_traceback():
 
 def __getattr__(attr):
     if attr == "IPTestCase":
-        from ..element.comparison import IPTestCase
-        from ..util.warnings import deprecated
+        from holoviews.element.comparison import IPTestCase
+        from holoviews.util.warnings import deprecated
         deprecated("1.23.0", old="holoviews.ipython.IPTestCase", new="holoviews.element.comparison.IPTestCase")
         return IPTestCase
     raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
@@ -148,7 +148,7 @@ class notebook_extension(extension):
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
 
-        from ..plotting.renderer import Renderer
+        from holoviews.plotting.renderer import Renderer
         Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
 
         if not published and hasattr(panel_extension, "_display_globals"):
@@ -230,7 +230,7 @@ class notebook_extension(extension):
 
 
 def _delete_plot(plot_id):
-    from ..plotting.renderer import Renderer
+    from holoviews.plotting.renderer import Renderer
     return Renderer._delete_plot(plot_id)
 
 notebook_extension.add_delete_action(_delete_plot)

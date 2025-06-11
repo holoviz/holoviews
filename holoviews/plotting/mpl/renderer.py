@@ -10,9 +10,10 @@ import param
 from matplotlib import pyplot as plt
 from param.parameterized import bothmethod
 
-from ...core import HoloMap
-from ...core.options import Store
-from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
+from holoviews.core import HoloMap
+from holoviews.core.options import Store
+from holoviews.plotting.renderer import HTML_TAGS, MIME_TYPES, Renderer
+
 from .util import get_old_rcparams, get_tight_bbox
 
 

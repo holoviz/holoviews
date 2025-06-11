@@ -10,8 +10,8 @@ from bokeh.models import (
 from holoviews.core.overlay import NdOverlay, Overlay
 from holoviews.element import Bars
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.tests.plotting.utils import ParamLogStream
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

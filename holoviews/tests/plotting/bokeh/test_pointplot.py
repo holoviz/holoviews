@@ -16,8 +16,8 @@ from holoviews.core.options import Cycle
 from holoviews.element import Points
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import Stream
+from holoviews.tests.plotting.utils import ParamLogStream
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

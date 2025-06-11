@@ -10,7 +10,8 @@ from types import FunctionType
 import numpy as np
 import param
 
-from ..streams import Params, Stream, streams_list_from_dict
+from holoviews.streams import Params, Stream, streams_list_from_dict
+
 from . import traversal, util
 from .accessors import Opts, Redim
 from .dimension import Dimension, ViewableElement
@@ -1015,7 +1016,7 @@ class DynamicMap(HoloMap):
         """Applies custom option tree to values return by the callback.
 
         """
-        from ..util import opts
+        from holoviews.util import opts
         if self.id not in Store.custom_options():
             return retval
         spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
@@ -1134,7 +1135,7 @@ class DynamicMap(HoloMap):
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
-            from ..operation import function
+            from holoviews.operation import function
             with util.disable_constant(clone):
                 op = function.instance(fn=lambda x, **kwargs: x)
                 clone.callback = clone.callback.clone(
@@ -1188,7 +1189,7 @@ class DynamicMap(HoloMap):
         product = self.clone(data)
 
         if data_slice:
-            from ..util import Dynamic
+            from holoviews.util import Dynamic
             dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj[data_slice],
                            streams=self.streams)
             dmap.data = product.data
@@ -1222,7 +1223,7 @@ class DynamicMap(HoloMap):
             if not isinstance(sliced, DynamicMap):
                 return self._dataslice(sliced, data_slice)
             else:
-                from ..util import Dynamic
+                from holoviews.util import Dynamic
                 if len(self):
                     slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
                     sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
@@ -1361,7 +1362,7 @@ class DynamicMap(HoloMap):
         if not isinstance(selection, DynamicMap):
             return dynamic_select(selection)
         else:
-            from ..util import Dynamic
+            from holoviews.util import Dynamic
             dmap = Dynamic(self, operation=dynamic_select, streams=self.streams)
             dmap.data = selection.data
             return dmap
@@ -1404,7 +1405,7 @@ class DynamicMap(HoloMap):
         """
         deep_mapped = super().map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
-            from ..util import Dynamic
+            from holoviews.util import Dynamic
             def apply_map(obj, **dynkwargs):
                 return obj.map(map_fn, specs, clone)
             dmap = Dynamic(self, operation=apply_map, streams=self.streams,
@@ -1436,7 +1437,7 @@ class DynamicMap(HoloMap):
         """
         relabelled = super().relabel(label, group, depth)
         if depth > 0:
-            from ..util import Dynamic
+            from holoviews.util import Dynamic
             def dynamic_relabel(obj, **dynkwargs):
                 return obj.relabel(group=group, label=label, depth=depth-1)
             dmap = Dynamic(self, streams=self.streams, operation=dynamic_relabel)
@@ -1457,7 +1458,7 @@ class DynamicMap(HoloMap):
         elif not issubclass(self.type, CompositeOverlay):
             return None, self
 
-        from ..util import Dynamic
+        from holoviews.util import Dynamic
         keys = list(self.last.data.keys())
         dmaps = []
         for key in keys:
@@ -1782,7 +1783,7 @@ class DynamicMap(HoloMap):
                 **kwargs
             )
 
-        from ..util import Dynamic
+        from holoviews.util import Dynamic
         hist = Dynamic(self, streams=self.streams, link_inputs=False,
                        operation=dynamic_hist)
         if adjoin:

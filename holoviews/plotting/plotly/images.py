@@ -1,8 +1,9 @@
 import numpy as np
 from plotly.graph_objs.layout import Image as _Image
 
-from ...core.util import VersionError
-from ...element import Tiles
+from holoviews.core.util import VersionError
+from holoviews.element import Tiles
+
 from .element import ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP

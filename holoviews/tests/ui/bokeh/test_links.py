@@ -6,8 +6,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.plotting.links import RangeToolLink
-
-from .. import expect
+from holoviews.tests.ui import expect
 
 pytestmark = pytest.mark.ui
 

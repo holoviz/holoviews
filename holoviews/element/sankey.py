@@ -5,10 +5,11 @@ from itertools import cycle
 import numpy as np
 import param
 
-from ..core.data import Dataset
-from ..core.dimension import Dimension
-from ..core.operation import Operation
-from ..core.util import get_param_values, unique_array
+from holoviews.core.data import Dataset
+from holoviews.core.dimension import Dimension
+from holoviews.core.operation import Operation
+from holoviews.core.util import get_param_values, unique_array
+
 from .graphs import EdgePaths, Graph, Nodes
 from .util import quadratic_bezier
 

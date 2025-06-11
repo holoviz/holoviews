@@ -4,14 +4,15 @@ import uuid
 import numpy as np
 import param
 
-from ... import Tiles
-from ...core import util
-from ...core.element import Element
-from ...core.spaces import DynamicMap
-from ...streams import Stream
-from ...util.transform import dim
-from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dim_range_key
+from holoviews import Tiles
+from holoviews.core import util
+from holoviews.core.element import Element
+from holoviews.core.spaces import DynamicMap
+from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
+from holoviews.plotting.util import dim_range_key
+from holoviews.streams import Stream
+from holoviews.util.transform import dim
+
 from .plot import PlotlyPlot
 from .util import (
     PLOTLY_MAP,

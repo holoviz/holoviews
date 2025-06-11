@@ -19,10 +19,10 @@ from holoviews.core import (
 )
 from holoviews.element import Curve, Histogram, Image, Points, Scatter
 from holoviews.streams import Stream
+from holoviews.tests.utils import LoggingComparisonTestCase
 from holoviews.util import opts, render
 from holoviews.util.transform import dim
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

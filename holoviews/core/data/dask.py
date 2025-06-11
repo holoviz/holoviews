@@ -2,10 +2,11 @@ import sys
 
 import numpy as np
 
-from .. import util
-from ..dimension import Dimension
-from ..element import Element
-from ..ndmapping import NdMapping, item_check, sorted_context
+from holoviews.core import util
+from holoviews.core.dimension import Dimension
+from holoviews.core.element import Element
+from holoviews.core.ndmapping import NdMapping, item_check, sorted_context
+
 from .interface import Interface
 from .pandas import PandasInterface
 

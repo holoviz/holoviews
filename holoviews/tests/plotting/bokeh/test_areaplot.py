@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 from holoviews.element import Area, Overlay
+from holoviews.tests.utils import LoggingComparisonTestCase
 
-from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

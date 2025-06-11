@@ -1,8 +1,9 @@
 import numpy as np
 import param
 
-from ..core import Dataset, Dimension, Element2D, NdOverlay, Overlay, util
-from ..core.dimension import process_dimensions
+from holoviews.core import Dataset, Dimension, Element2D, NdOverlay, Overlay, util
+from holoviews.core.dimension import process_dimensions
+
 from .geom import (  # noqa: F401 backward compatible import
     Points,
     Rectangles,

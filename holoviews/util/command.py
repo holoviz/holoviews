@@ -17,7 +17,7 @@ except ImportError:
     print('nbformat, nbconvert and ipython need to be installed to use the holoviews command')
     sys.exit()
 try:
-    from ..ipython.preprocessors import (
+    from holoviews.ipython.preprocessors import (
         OptsMagicProcessor,
         OutputMagicProcessor,
         StripMagicsProcessor,

@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import param
 
-from .. import (
+from holoviews import (
     Callable,
     DynamicMap,
     Element,
@@ -12,8 +12,9 @@ from .. import (
     NdOverlay,
     Overlay,
 )
-from ..plotting.util import initialize_dynamic
-from ..streams import Derived, Stream
+from holoviews.plotting.util import initialize_dynamic
+from holoviews.streams import Derived, Stream
+
 from . import AdjointLayout, ViewableTree
 from .operation import OperationCallable
 

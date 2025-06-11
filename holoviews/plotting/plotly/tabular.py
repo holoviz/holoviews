@@ -1,6 +1,7 @@
 import param
 
-from ...selection import ColorListSelectionDisplay
+from holoviews.selection import ColorListSelectionDisplay
+
 from .element import ElementPlot
 
 

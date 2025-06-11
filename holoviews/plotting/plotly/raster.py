@@ -1,10 +1,11 @@
 import numpy as np
 import param
 
-from ...core.options import SkipRendering
-from ...core.util import isfinite
-from ...element import Image, Raster
-from ..mixins import HeatMapMixin
+from holoviews.core.options import SkipRendering
+from holoviews.core.util import isfinite
+from holoviews.element import Image, Raster
+from holoviews.plotting.mixins import HeatMapMixin
+
 from .element import ColorbarPlot
 
 

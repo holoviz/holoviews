@@ -24,9 +24,9 @@ from holoviews.streams import (
     Stream,
     pointer_types,
 )
+from holoviews.tests.utils import LoggingComparisonTestCase
 from holoviews.util import Dynamic
 
-from ..utils import LoggingComparisonTestCase
 from .test_dimensioned import CustomBackendTestCase, ExampleElement
 
 XY = Stream.define('XY', x=0,y=0)

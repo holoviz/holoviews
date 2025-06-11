@@ -14,8 +14,9 @@ from nbconvert import HTMLExporter, NotebookExporter
 from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
 from nbformat import reader
 
-from ..core.io import FileArchive, Pickler
-from ..plotting.renderer import HTML_TAGS, MIME_TYPES
+from holoviews.core.io import FileArchive, Pickler
+from holoviews.plotting.renderer import HTML_TAGS, MIME_TYPES
+
 from .preprocessors import Substitute
 
 

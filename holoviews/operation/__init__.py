@@ -1,6 +1,6 @@
 from ..core import Overlay  # noqa (API import)
-from ..core.operation import Operation
-from ..core.options import Compositor
+from holoviews.core.operation import Operation
+from holoviews.core.options import Compositor
 from .element import *
 
 

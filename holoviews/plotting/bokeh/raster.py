@@ -8,11 +8,12 @@ from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
 from bokeh.models.dom import Div, Span, Styles, ValueOf
 from panel.io import hold
 
-from ...core.data import XArrayInterface
-from ...core.util import cartesian_product, dimension_sanitizer, isfinite
-from ...element import Raster
-from ...util.warnings import warn
-from ..util import categorical_legend
+from holoviews.core.data import XArrayInterface
+from holoviews.core.util import cartesian_product, dimension_sanitizer, isfinite
+from holoviews.element import Raster
+from holoviews.plotting.util import categorical_legend
+from holoviews.util.warnings import warn
+
 from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay

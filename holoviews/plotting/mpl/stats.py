@@ -1,8 +1,9 @@
 import numpy as np
 import param
 
-from ...core.ndmapping import sorted_context
-from ..mixins import MultiDistributionMixin
+from holoviews.core.ndmapping import sorted_context
+from holoviews.plotting.mixins import MultiDistributionMixin
+
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot

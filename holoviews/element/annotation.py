@@ -3,9 +3,9 @@ from numbers import Number
 import numpy as np
 import param
 
-from ..core import Dimension, Element, Element2D
-from ..core.data import Dataset
-from ..core.util import datetime_types
+from holoviews.core import Dimension, Element, Element2D
+from holoviews.core.data import Dataset
+from holoviews.core.util import datetime_types
 
 
 class VectorizedAnnotation(Dataset, Element2D):

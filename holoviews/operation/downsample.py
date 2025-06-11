@@ -34,8 +34,9 @@ from functools import partial
 import numpy as np
 import param
 
-from ..core import NdOverlay, Overlay
-from ..element.chart import Area
+from holoviews.core import NdOverlay, Overlay
+from holoviews.element.chart import Area
+
 from .resample import ResampleOperation1D
 
 
