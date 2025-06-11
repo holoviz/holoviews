@@ -19,7 +19,8 @@ considered different.
 """
 import contextlib
 from functools import partial
-from unittest import TestCase
+from unittest import SkipTest, TestCase
+from unittest.mock import patch
 from unittest.util import safe_repr
 
 import numpy as np
@@ -787,19 +788,26 @@ class IPTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super().setUp()
         try:
             import IPython
             from IPython.display import HTML, SVG
-            self.ip = IPython.InteractiveShell()
-            if self.ip is None:
-                raise TypeError()
-        except Exception as e:
-            raise SkipTest("IPython could not be started") from e
+        except Exception:
+            raise SkipTest("IPython could not be imported") from None
 
-        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
+        super().setUp()
+        self.exits = []
+        with patch('atexit.register', lambda x: self.exits.append(x)):
+            self.ip = IPython.InteractiveShell(history_length=0, history_load_length=0)
         self.addTypeEqualityFunc(HTML, self.skip_comparison)
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
+
+    def tearDown(self) -> None:
+        # self.ip.displayhook.flush calls gc.collect
+        with patch('gc.collect', lambda: None):
+            for ex in self.exits:
+                ex()
+        del self.ip
+        super().tearDown()
 
     def skip_comparison(self, obj1, obj2, msg): pass
 

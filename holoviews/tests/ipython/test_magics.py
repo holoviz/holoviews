@@ -22,7 +22,6 @@ class ExtensionTestCase(IPTestCase):
 
     def tearDown(self):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
-        del self.ip
         super().tearDown()
 
 
