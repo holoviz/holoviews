@@ -72,11 +72,13 @@ class PointPlot(LegendPlot, ColorbarPlot):
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
 
     def _init_glyph(self, plot, mapping, properties):
-        if "radius" in properties:
+        if properties.get("radius") is not None:
             self._plot_methods = dict(single='circle', batched='circle')
             properties.pop("size", None)
         else:
+            self._plot_methods = dict(single='scatter', batched='scatter')
             properties.pop("radius_dimension", None)
+            properties.pop("radius", None)
         return super()._init_glyph(plot, mapping, properties)
 
     def _get_size_data(self, element, ranges, style):
