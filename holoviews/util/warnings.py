@@ -41,7 +41,7 @@ def find_stack_level():
     )
 
     with suppress(ImportError):
-        import IPython
+        import IPython.core
         ignore_paths = (*ignore_paths, os.path.dirname(IPython.core.__file__))
 
     frame = inspect.currentframe()
