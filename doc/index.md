@@ -109,7 +109,7 @@ see [Getting Started](getting_started/index).
 :hidden:
 :maxdepth: 2
 
-index
+Home <self>
 Getting Started <getting_started/index>
 User Guide <user_guide/index>
 Gallery <gallery/index>

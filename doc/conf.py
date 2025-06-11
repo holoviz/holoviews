@@ -51,7 +51,7 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
-    "footer_items": [
+    "footer_start": [
         "copyright",
         "last-updated",
     ],
@@ -141,7 +141,8 @@ html_last_updated_fmt = '%Y-%m-%d'
 exclude_patterns = [
     'assets/README.rst',
     'features.rst',
+    'reference_manual/modules.rst',
+    'site_map.rst',
     'test_data/README.rst',
     'user_guide/IPython_Magics.rst', # empty file
-    'site_map.rst',
 ]
