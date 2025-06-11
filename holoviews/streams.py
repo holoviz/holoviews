@@ -584,7 +584,7 @@ class Buffer(Pipe):
             if loaded:
                 # NOTE: there could still be some code in these classes which handles
                 # the streaming interface.
-                deprecated("1.22.0", "Buffer's streamz interface")
+                deprecated("1.23.0", "Buffer's streamz interface")
             if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
                 raise ValueError("Buffer must be initialized with pandas DataFrame, "
                                  "streamz.StreamingDataFrame or streamz.StreamingSeries.")
