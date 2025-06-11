@@ -178,6 +178,7 @@ def _render_jupyter_exception(e):
         padding: 0.5em 0 0 1em;
         white-space: pre-wrap;
         background-color: #fdd;
+        color: #000;
       }}
     </style>
     <details class="hv-jupyter-exc">
