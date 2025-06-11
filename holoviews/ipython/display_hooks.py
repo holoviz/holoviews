@@ -137,6 +137,55 @@ def option_state(element):
         dynamic_optstate(element, state=optstate)
         raise
 
+def _render_jupyter_exception(e):
+    import html
+
+    raw_tb = "\n".join(traceback.format_exception(e.etype, e.value, e.traceback)).strip()
+
+    escaped_tb = html.escape(raw_tb)
+    exc_name = e.etype.__name__
+    exc_msg = str(e.value).split("\n")[0]
+    if len(exc_msg) > 80:
+        exc_msg = exc_msg[:80].strip() + " ..."
+    exc_msg = html.escape(exc_msg)
+
+    output_html = f"""
+    <style>
+      .hv-jupyter-exc {{
+        font-family: monospace;
+        border-radius: 3px;
+        padding: 0.5em;
+        margin: 0.5em 0;
+      }}
+      .hv-jupyter-exc summary {{
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        position: relative;
+        padding-left: 1.2em;
+      }}
+      .hv-jupyter-exc summary::after {{
+        content: "▶";
+        position: absolute;
+        left: 0;
+        top: 0;
+        transition: transform 0.2s ease;
+      }}
+      .hv-jupyter-exc[open] summary::after {{
+        transform: rotate(90deg);
+      }}
+      .hv-jupyter-full {{
+        padding: 0.5em 0 0 1em;
+        white-space: pre-wrap;
+        background-color: #fdd;
+      }}
+    </style>
+    <details class="hv-jupyter-exc">
+      <summary><b>{exc_name}:</b> {exc_msg}</summary>
+      <div class="hv-jupyter-full">{escaped_tb}</pre>
+    </details>"""
+    return {"text/html": output_html}, {}
+
 
 def display_hook(fn):
     """A decorator to wrap display hooks that return a MIME bundle or None.
@@ -175,14 +224,8 @@ def display_hook(fn):
                 sys.stderr.write(str(e))
             return {}, {}
         except AbbreviatedException as e:
-            FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
-                                                                  e.value,
-                                                                  e.traceback))
-            info = dict(name=e.etype.__name__,
-                        message=str(e.value).replace('\n','<br>'))
-            msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
-            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}, {}
-
+            FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype, e.value, e.traceback))
+            return _render_jupyter_exception(e)
         except Exception:
             raise
     return wrapped
