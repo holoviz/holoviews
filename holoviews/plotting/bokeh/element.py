@@ -1816,7 +1816,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         new_style = dict(style)
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
-            if isinstance(v, str):
+            if isinstance(v, (Dimension, str)):
                 if validate(k, v) == True:
                     continue
                 elif v in element:

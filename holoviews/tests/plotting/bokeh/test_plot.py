@@ -53,10 +53,10 @@ class TestBokehPlot(ComparisonTestCase):
         for plot, padding in self._padding.items():
             plot.padding = padding
 
-    def _test_colormapping(self, element, dim, log=False):
+    def _test_colormapping(self, element, dim, log=False, prefix=''):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles[f'{prefix}color_mapper']
         low, high = element.range(dim)
         self.assertEqual(cmapper.low, low)
         self.assertEqual(cmapper.high, high)
