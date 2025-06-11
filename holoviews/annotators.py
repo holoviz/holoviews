@@ -290,7 +290,8 @@ class Annotator(PaneBase):
 
         Parameters
         ----------
-        annotators : Annotator objects or elements to compose
+        annotators
+            Annotator objects or elements to compose
 
         Returns
         -------
@@ -307,7 +308,7 @@ class Annotator(PaneBase):
 
     @property
     def tables(self):
-        return list(zip(self.editor._names, self.editor))
+        return list(zip(self.editor._names, self.editor, strict=None))
 
     @property
     def selected(self):

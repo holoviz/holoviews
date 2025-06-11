@@ -28,8 +28,6 @@ from ..core.io import FileArchive
 from ..core.options import AbbreviatedException, SkipRendering, Store, StoreOptions
 from ..core.traversal import unique_dimkeys
 from ..core.util import mimebundle_to_html
-from ..plotting import Plot
-from ..plotting.renderer import MIME_TYPES
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -158,6 +156,7 @@ def display_hook(fn):
             if mimebundle is None:
                 return {}, {}
             mime_data, mime_metadata = mimebundle
+            from ..plotting.renderer import MIME_TYPES
             if MIME_TYPES['js'] in mime_data:
                 mime_data['text/html'] = mimebundle_to_html(mime_data)
                 del mime_data[MIME_TYPES['js']]
@@ -253,6 +252,8 @@ def display(obj, raw_output=False, **kwargs):
         raise RuntimeError('To use display on a HoloViews object ensure '
                            'a backend is loaded using the holoviews '
                            'extension.')
+
+    from ..plotting import Plot
 
     raw = True
     if isinstance(obj, GridSpace):

@@ -335,7 +335,7 @@ def get_nested_plot_frame(obj, key_map, cached=False):
 
     # Ensure that DynamicMaps in the cloned frame have
     # identical callback inputs to allow memoization to work
-    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x)):
+    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x), strict=None):
         if isinstance(it1, DynamicMap):
             with disable_constant(it2.callback):
                 it2.callback.inputs = it1.callback.inputs
@@ -518,7 +518,7 @@ def initialize_unbounded(obj, dimensions, key):
     """Initializes any DynamicMaps in unbounded mode.
 
     """
-    select = dict(zip([d.name for d in dimensions], key))
+    select = dict(zip([d.name for d in dimensions], key, strict=None))
     try:
         obj.select(selection_specs=[DynamicMap], **select)
     except KeyError:
@@ -1004,12 +1004,12 @@ def color_intervals(colors, levels, clip=None, N=255):
     cmin, cmax = min(levels), max(levels)
     interval = cmax-cmin
     cmap = []
-    for intv, c in zip(intervals, colors):
-        cmap += [c]*int(round(N*(intv/interval)))
+    for intv, c in zip(intervals, colors, strict=None):
+        cmap += [c]*round(N*(intv/interval))
     if clip is not None:
         clmin, clmax = clip
-        lidx = int(round(N*((clmin-cmin)/interval)))
-        uidx = len(cmap) - int(round(N*((cmax-clmax)/interval)))
+        lidx = round(N*((clmin-cmin)/interval))
+        uidx = len(cmap) - round(N*((cmax-clmax)/interval))
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]

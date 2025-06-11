@@ -17,12 +17,11 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.9
+    rev: v0.11.12
     hooks:
       - id: ruff
-        exclude: \.ipynb$
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.15
+    rev: v0.1.17
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
@@ -43,7 +42,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: v3.5.2
+    rev: v3.5.3
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml

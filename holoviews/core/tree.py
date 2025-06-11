@@ -166,7 +166,7 @@ class AttrTree:
                 del self.data[path]
             else:
                 items = [(key, v) for key, v in self.data.items()
-                         if not all(k==p for k, p in zip(key, path))]
+                         if not all(k==p for k, p in zip(key, path, strict=None))]
                 self.data = dict(items)
         else:
             self.data[path] = val

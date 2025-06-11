@@ -227,7 +227,7 @@ class SheetCoordinateSystem:
         xdensity = self.__xdensity
         if ((isinstance(x, np.ndarray) and x.dtype.kind == 'M') or
             isinstance(x, datetime_types)):
-            xdensity = np.timedelta64(int(round(1./xdensity)), self._time_unit)
+            xdensity = np.timedelta64(round(1/xdensity), self._time_unit)
             float_col = (x-self.lbrt[0]) / xdensity
         else:
             float_col = (x-self.lbrt[0]) * xdensity
@@ -235,7 +235,7 @@ class SheetCoordinateSystem:
         ydensity = self.__ydensity
         if ((isinstance(y, np.ndarray) and y.dtype.kind == 'M') or
             isinstance(y, datetime_types)):
-            ydensity = np.timedelta64(int(round(1./ydensity)), self._time_unit)
+            ydensity = np.timedelta64(round(1/ydensity), self._time_unit)
             float_row = (self.lbrt[3]-y) / ydensity
         else:
             float_row = (self.lbrt[3]-y) * ydensity
@@ -278,11 +278,11 @@ class SheetCoordinateSystem:
         """
         xoffset = float_col*self.__xstep
         if isinstance(self.lbrt[0], datetime_types):
-            xoffset = np.timedelta64(int(round(xoffset)), self._time_unit)
+            xoffset = np.timedelta64(round(xoffset), self._time_unit)
         x = self.lbrt[0] + xoffset
         yoffset = float_row*self.__ystep
         if isinstance(self.lbrt[3], datetime_types):
-            yoffset = np.timedelta64(int(round(yoffset)), self._time_unit)
+            yoffset = np.timedelta64(round(yoffset), self._time_unit)
         y = self.lbrt[3] - yoffset
         return x, y
 

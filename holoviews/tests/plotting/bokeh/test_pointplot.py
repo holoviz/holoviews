@@ -2,8 +2,15 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
-from bokeh.models import CategoricalColorMapper, FactorRange, LinearColorMapper, Scatter
+from bokeh.models import (
+    CategoricalColorMapper,
+    Circle,
+    FactorRange,
+    LinearColorMapper,
+    Scatter,
+)
 
+import holoviews as hv
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Points
@@ -501,7 +508,7 @@ class TestPointPlot(TestBokehPlot):
         markers = ['circle', 'triangle']
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
+        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers, strict=None):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
 
@@ -540,3 +547,19 @@ class TestPointPlot(TestBokehPlot):
             "size_index; ignoring the size_index.\n"
         )
         self.assertEqual(log_msg, warning)
+
+    def test_point_radius(self):
+        x, y = 4, 5
+        xs = np.arange(x)
+        ys = np.arange(y)
+        zs = np.arange(x * y).reshape(y, x)
+        plot = Points((xs, ys, zs,), kdims=["xs", "ys"], vdims="zs")
+        plot.opts(radius=hv.dim("zs").norm() / 2)
+
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+        assert glyph.radius_dimension == "min"
+
+        norm = zs.T.ravel() / np.max(zs) / 2
+        np.testing.assert_array_equal(handles["cds"].data["radius"], norm)

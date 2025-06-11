@@ -12,23 +12,45 @@ import pickle
 import string
 import sys
 import time
-import types
 import unicodedata
 import warnings
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
-from importlib.metadata import PackageNotFoundError, version
 from threading import Event, Thread
-from types import FunctionType
+from types import FunctionType, GeneratorType
 
 import numpy as np
-import pandas as pd
 import param
-from packaging.version import Version
-from pandas.core.arrays.masked import BaseMaskedArray
-from pandas.core.dtypes.dtypes import DatetimeTZDtype
-from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+
+from .dependencies import (  # noqa: F401
+    NUMPY_GE_2_0_0,
+    NUMPY_VERSION,
+    PANDAS_GE_2_1_0,
+    PANDAS_GE_2_2_0,
+    PANDAS_VERSION,
+    PARAM_VERSION,
+    VersionError,
+    _LazyModule,
+)
+from .types import (
+    arraylike_types,
+    cftime_types,
+    datetime_types,
+    generator_types,  # noqa: F401
+    masked_types,
+    pandas_datetime_types,
+    pandas_timedelta_types,
+    timedelta_types,
+)
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import pandas as pd
+    import polars as pl
+else:
+    pd = _LazyModule("pandas", bool_use_sys_modules=True)
+    pl = _LazyModule("polars", bool_use_sys_modules=True)
 
 # Python 2 builtins
 basestring = str
@@ -38,41 +60,16 @@ cmp = lambda a, b: (a>b)-(a<b)
 
 get_keywords = operator.attrgetter('varkw')
 
-# Versions
-NUMPY_VERSION = Version(np.__version__).release
-PARAM_VERSION = Version(param.__version__).release
-PANDAS_VERSION = Version(pd.__version__).release
-
-NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
-PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
-PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
-
-# Types
-generator_types = (zip, range, types.GeneratorType)
-pandas_datetime_types = (pd.Timestamp, DatetimeTZDtype, pd.Period)
-pandas_timedelta_types = (pd.Timedelta,)
-datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time, *pandas_datetime_types)
-timedelta_types = (np.timedelta64, dt.timedelta, *pandas_timedelta_types)
-arraylike_types = (np.ndarray, ABCSeries, ABCIndex, ABCExtensionArray)
-masked_types = (BaseMaskedArray,)
-
-try:
-    import cftime
-    cftime_types = (cftime.datetime,)
-    datetime_types += cftime_types
-except ImportError:
-    cftime_types = ()
-_STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
-
 anonymous_dimension_label = '_'
 
 # Argspec was removed in Python 3.11
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
-_NP_SIZE_LARGE = 1_000_000
-_NP_SAMPLE_SIZE = 1_000_000
-_PANDAS_ROWS_LARGE = 1_000_000
-_PANDAS_SAMPLE_SIZE = 1_000_000
+_STANDARD_CALENDARS = {'standard', 'gregorian', 'proleptic_gregorian'}
+_ARRAY_SIZE_LARGE = 1_000_000
+_ARRAY_SAMPLE_SIZE = 1_000_000
+_DATAFRAME_ROWS_LARGE = 1_000_000
+_DATAFRAME_SAMPLE_SIZE = 1_000_000
 
 # To avoid pandas warning about using DataFrameGroupBy.function
 # introduced in Pandas 2.1.
@@ -106,28 +103,6 @@ _PANDAS_FUNC_LOOKUP = {
     np.cumsum: "cumsum",
     np.nancumsum: "cumsum",
 }
-
-
-class VersionError(Exception):
-    """Raised when there is a library version mismatch.
-
-    """
-
-    def __init__(self, msg, version=None, min_version=None, **kwargs):
-        self.version = version
-        self.min_version = min_version
-        super().__init__(msg, **kwargs)
-
-
-def _no_import_version(name) -> tuple[int, int, int]:
-    """Get version number without importing the library
-
-    """
-    try:
-        return Version(version(name)).release
-    except PackageNotFoundError:
-        return (0, 0, 0)
-
 
 class Config(param.ParameterizedFunction):
     """Set of boolean configuration values to change HoloViews' global
@@ -213,14 +188,15 @@ class HashableJSON(json.JSONEncoder):
             h = hashlib.new("md5")
             for s in obj.shape:
                 h.update(_int_to_bytes(s))
-            if obj.size >= _NP_SIZE_LARGE:
+            if obj.size >= _ARRAY_SIZE_LARGE:
                 state = np.random.RandomState(0)
-                obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
+                obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
+        import pandas as pd
         if isinstance(obj, (pd.Series, pd.DataFrame)):
-            if len(obj) > _PANDAS_ROWS_LARGE:
-                obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
+            if len(obj) > _DATAFRAME_ROWS_LARGE:
+                obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
             try:
                 pd_values = list(pd.util.hash_pandas_object(obj, index=True).values)
             except TypeError:
@@ -298,7 +274,7 @@ def deprecated_opts_signature(args, kwargs):
     corresponding options.
 
     """
-    from .options import Options
+    from ..options import Options
     groups = set(Options._option_groups)
     opts = {kw for kw in kwargs if kw != 'clone'}
     apply_groups = False
@@ -539,7 +515,7 @@ def callable_name(callable_obj):
             return callable_obj.__name__
         elif inspect.ismethod(callable_obj):    # instance and class methods
             return callable_obj.__func__.__qualname__.replace('.__call__', '')
-        elif isinstance(callable_obj, types.GeneratorType):
+        elif isinstance(callable_obj, GeneratorType):
             return callable_obj.__name__
         else:
             return type(callable_obj).__name__
@@ -833,10 +809,21 @@ label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def isscalar(val):
-    """Value is scalar or None
+    """Value is scalar or nullable
 
     """
-    return val is None or np.isscalar(val) or isinstance(val, datetime_types)
+    return is_null_or_na_scalar(val) or np.isscalar(val) or isinstance(val, datetime_types)
+
+
+def is_null_or_na_scalar(val):
+    if hasattr(val, "__len__"):
+        return False
+    return bool(
+        val is None
+        or (pd and (val is pd.NA or val is pd.NaT))
+        or (pl and val is pl.Null)
+        or (np.isscalar(val) and np.isnan(val))
+    )
 
 
 def isnumeric(val):
@@ -888,12 +875,13 @@ def isnat(val):
     """Checks if the value is a NaT. Should only be called on datetimelike objects.
 
     """
+    import pandas as pd
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
         return np.isnat(val)
     elif val is pd.NaT:
         return True
-    elif isinstance(val, pandas_datetime_types+pandas_timedelta_types):
+    elif isinstance(val, (pandas_datetime_types, pandas_timedelta_types)):
         return pd.isna(val)
     else:
         return False
@@ -904,6 +892,7 @@ def isfinite(val):
     np.isfinite with support for None, string, datetime types.
 
     """
+    import pandas as pd
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
         if isinstance(val, np.ma.core.MaskedArray):
@@ -927,7 +916,7 @@ def isfinite(val):
         finite = np.isfinite(val)
         finite &= ~pd.isna(val)
         return finite
-    elif isinstance(val, datetime_types+timedelta_types):
+    elif isinstance(val, (datetime_types, timedelta_types)):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
@@ -956,7 +945,7 @@ def find_minmax(lims, olims):
 
     """
     try:
-        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
+        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax], strict=None)
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except Exception:
         limits = (np.nan, np.nan)
@@ -1005,6 +994,7 @@ def max_range(ranges, combined=True):
     -------
     The maximum range as a single tuple
     """
+    import pandas as pd
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1109,7 +1099,7 @@ def max_extents(extents, zrange=False):
     else:
         num = 4
         inds = [(0, 2), (1, 3)]
-    arr = list(zip(*extents)) if extents else []
+    arr = list(zip(*extents, strict=None)) if extents else []
     extents = [np.nan] * num
     if len(arr) == 0:
         return extents
@@ -1118,18 +1108,20 @@ def max_extents(extents, zrange=False):
         for lidx, uidx in inds:
             lower = [v for v in arr[lidx] if v is not None and not is_nan(v)]
             upper = [v for v in arr[uidx] if v is not None and not is_nan(v)]
-            if lower and isinstance(lower[0], datetime_types):
-                extents[lidx] = np.min(lower)
-            elif any(isinstance(l, str) for l in lower):
-                extents[lidx] = np.sort(lower)[0]
-            elif lower:
-                extents[lidx] = np.nanmin(lower)
-            if upper and isinstance(upper[0], datetime_types):
-                extents[uidx] = np.max(upper)
-            elif any(isinstance(u, str) for u in upper):
-                extents[uidx] = np.sort(upper)[-1]
-            elif upper:
-                extents[uidx] = np.nanmax(upper)
+            if lower:
+                if any(isinstance(l, str) for l in lower):
+                    extents[lidx] = sorted(lower, key=str)[0]
+                elif isinstance(lower[0], datetime_types):
+                    extents[lidx] = np.min(lower)
+                else:
+                    extents[lidx] = np.nanmin(lower)
+            if upper:
+                if any(isinstance(u, str) for u in upper):
+                    extents[uidx] = sorted(upper, key=str)[-1]
+                elif isinstance(upper[0], datetime_types):
+                    extents[uidx] = np.max(upper)
+                else:
+                    extents[uidx] = np.nanmax(upper)
     return tuple(extents)
 
 
@@ -1183,18 +1175,18 @@ def unique_iterator(seq):
             yield item
 
 
-def lzip(*args):
+def lzip(*args, strict=None):
     """Zip function that returns a list.
 
     """
-    return list(zip(*args))
+    return list(zip(*args, strict=strict))
 
 
-def unique_zip(*args):
+def unique_zip(*args, strict=None):
     """Returns a unique list of zipped values.
 
     """
-    return list(unique_iterator(zip(*args)))
+    return list(unique_iterator(zip(*args, strict=strict)))
 
 
 def unique_array(arr):
@@ -1212,6 +1204,7 @@ def unique_array(arr):
     if not len(arr):
         return np.asarray(arr)
 
+    import pandas as pd
     if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
         return pd.unique(arr)
@@ -1471,7 +1464,7 @@ def layer_sort(hmap):
       if len(okeys) == 1 and okeys[0] not in orderings:
          orderings[okeys[0]] = []
       else:
-         orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys)})
+         orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys, strict=None)})
    return [i for g in sort_topologically(orderings) for i in sorted(g)]
 
 
@@ -1535,6 +1528,7 @@ def is_dataframe(data):
     """Checks whether the supplied data is of DataFrame type.
 
     """
+    import pandas as pd
     dd = None
     if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
         import dask.dataframe as dd
@@ -1546,6 +1540,7 @@ def is_series(data):
     """Checks whether the supplied data is of Series type.
 
     """
+    import pandas as pd
     dd = None
     if 'dask.dataframe' in sys.modules:
         import dask.dataframe as dd
@@ -1693,7 +1688,7 @@ def disable_constant(parameterized):
     try:
         yield
     finally:
-        for (p, const) in zip(params, constants):
+        for (p, const) in zip(params, constants, strict=None):
             p.constant = const
 
 
@@ -1736,7 +1731,7 @@ def stream_name_mapping(stream, exclude_params=None, reverse=False):
     """
     if exclude_params is None:
         exclude_params = ['name']
-    from ..streams import Params
+    from ...streams import Params
     if isinstance(stream, Params):
         mapping = {}
         for p in stream.parameters:
@@ -1782,7 +1777,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
     """
     if exclude is None:
         exclude = ['name', '_memoize_key']
-    from ..streams import Params
+    from ...streams import Params
     param_groups = {}
     for s in streams:
         if not s.contents and isinstance(s.hashkey, dict):
@@ -1854,7 +1849,7 @@ def drop_streams(streams, kdims, keys):
     """
     stream_params = stream_parameters(streams)
     inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
-                       if kdim not in stream_params])
+                       if kdim not in stream_params], strict=None)
     get = operator.itemgetter(*inds) # itemgetter used for performance
     keys = (get(k) for k in keys)
     return dims, ([wrap_tuple(k) for k in keys] if len(inds) == 1 else list(keys))
@@ -1905,7 +1900,7 @@ def get_path(item):
             path = path[:1]
     else:
         path = (item.group, item.label) if item.label else (item.group,)
-    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
+    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers, strict=None))
 
 
 def make_path_unique(path, counts, new):
@@ -1945,6 +1940,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
     @param.parameterized.bothmethod
     def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
                        group_type, sort=False, **kwargs):
+        import pandas as pd
         if 'kdims' in kwargs:
             idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
         else:
@@ -2017,7 +2013,7 @@ def cross_index(values, index):
         indexes.append(index//p)
         index -= indexes[-1] * p
     indexes.append(index)
-    return tuple(v[i] for v, i in zip(values, indexes))
+    return tuple(v[i] for v, i in zip(values, indexes, strict=None))
 
 
 def arglexsort(arrays):
@@ -2079,6 +2075,7 @@ def is_nan(x):
     try:
         # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
         # Call bool() to raise an error if x is pd.NA, an array, etc.
+        import pandas as pd
         return bool(pd.isna(x))
     except Exception:
         return False
@@ -2108,7 +2105,7 @@ def bound_range(vals, density, time_unit='us'):
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
     halfd = 0.5/density
     if isinstance(low, datetime_types):
-        halfd = np.timedelta64(int(round(halfd)), time_unit)
+        halfd = np.timedelta64(round(halfd), time_unit)
     return low-halfd, high+halfd, density, invert
 
 
@@ -2145,10 +2142,11 @@ def date_range(start, end, length, time_unit='us'):
     of samples.
 
     """
+    import pandas as pd
     step = (1./compute_density(start, end, length, time_unit))
     if isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
-    step = np.timedelta64(int(round(step)), time_unit)
+    step = np.timedelta64(round(step), time_unit)
     return start+step/2.+np.arange(length)*step
 
 
@@ -2156,6 +2154,7 @@ def parse_datetime(date):
     """Parses dates specified as string or integer or pandas Timestamp
 
     """
+    import pandas as pd
     return pd.to_datetime(date).to_datetime64()
 
 
@@ -2179,6 +2178,7 @@ def dt_to_int(value, time_unit='us'):
     """Converts a datetime type to an integer with the supplied time unit.
 
     """
+    import pandas as pd
     if isinstance(value, pd.Period):
         value = value.to_timestamp()
     if isinstance(value, pd.Timestamp):
@@ -2356,7 +2356,7 @@ def cast_array_to_int64(array):
 def flatten(line):
     """Flatten an arbitrarily nested sequence.
 
-    Inspired by: pd.core.common.flatten
+    Inspired by: ``pd.core.common.flatten``
 
     Parameters
     ----------
@@ -2392,6 +2392,10 @@ def lazy_isinstance(obj, class_or_tuple):
         3) Do an isinstance check for dask.dataframe.DataFrame
 
     """
+    from ...util.warnings import deprecated
+
+    deprecated("1.23.0", "lazy_isinstance") # Not used in HoloViews anymore
+
     if isinstance(class_or_tuple, str):
         class_or_tuple = (class_or_tuple,)
 

@@ -29,6 +29,7 @@ allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
+
 class Parser:
     """Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
@@ -119,7 +120,7 @@ class Parser:
                 if cls.abort_on_eval_failure:
                     raise SyntaxError(f"Could not evaluate keyword: {keyword!r}") from None
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"
-                parsewarning.warning(msg % keyword)
+                parsewarning.param.warning(msg % keyword)
 
         return kwargs
 
@@ -138,7 +139,7 @@ class OptsSpec(Parser):
 
     For instance, the following string:
 
-    Image (interpolation=None) plot(show_title=False) Curve style(color='r')
+        Image (interpolation=None) plot(show_title=False) Curve style(color='r')
 
     Would specify an OptionTree where Image has "interpolation=None"
     for style and 'show_title=False' for plot options. The Curve has a
@@ -379,13 +380,17 @@ class CompositorSpec(Parser):
 
     The components are:
 
-    mode      : Operation mode, either 'data' or 'display'.
-    group     : Value identifier with capitalized initial letter.
-    op        : The name of the operation to apply.
-    spec      : Overlay specification of form (A * B) where A and B are
-                 dotted path specifications.
-    settings  : Optional list of keyword arguments to be used as
-                parameters to the operation (in square brackets).
+        mode      : Operation mode, either 'data' or 'display'.
+
+        group     : Value identifier with capitalized initial letter.
+
+        op        : The name of the operation to apply.
+
+        spec      : Overlay specification of form (A * B) where A and B are
+        dotted path specifications.
+
+        settings  : Optional list of keyword arguments to be used as
+        parameters to the operation (in square brackets).
 
     """
 

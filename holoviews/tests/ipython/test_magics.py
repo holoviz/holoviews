@@ -6,7 +6,8 @@ from holoviews.core.options import Store
 from holoviews.operation import Compositor
 
 try:
-    from holoviews.ipython import IPTestCase
+    import holoviews.ipython
+    from holoviews.element.comparison import IPTestCase
 except ImportError:
     pytest.skip("IPython required to test IPython magics", allow_module_level=True)
 

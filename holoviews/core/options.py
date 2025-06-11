@@ -962,7 +962,7 @@ class Compositor(param.Parameterized):
             if isinstance(overlay, Overlay):
                 result = [result]
             else:
-                result = list(zip(sliced.keys(), [result]))
+                result = list(zip(sliced.keys(), [result], strict=None))
             processed[applicable_op] += [el for r in result for el in r.traverse(lambda x: x, [Element])]
             overlay = overlay.clone(values[:start]+result+values[stop:])
 
@@ -984,7 +984,7 @@ class Compositor(param.Parameterized):
 
         # Apply compositors
         clone = holomap.clone(shared_data=False)
-        data = zip(ranges[1], holomap.data.values()) if ranges else holomap.data.items()
+        data = zip(ranges[1], holomap.data.values(), strict=None) if ranges else holomap.data.items()
         for key, overlay in data:
             clone[key] = cls.collapse_element(overlay, ranges, mode)
         return clone
@@ -1058,7 +1058,7 @@ class Compositor(param.Parameterized):
 
         """
         level = 0
-        for spec, el in zip(self._pattern_spec, overlay_items):
+        for spec, el in zip(self._pattern_spec, overlay_items, strict=None):
             if spec[0] != type(el).__name__:
                 return None
             level += 1      # Types match
@@ -1799,7 +1799,7 @@ class StoreOptions:
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
         # If no backends defined (e.g. plotting not imported) return zero
-        return max(max_ids) if len(max_ids) else 0
+        return max(max_ids) if max_ids else 0
 
     @classmethod
     def update_backends(cls, id_mapping, custom_trees, backend=None):

@@ -1103,7 +1103,7 @@ class SelectionXYCallback(BoundsCallback):
         x0, y0, x1, y1 = msg['bounds']
         x_range = self.plot.handles['x_range']
         if isinstance(x_range, FactorRange):
-            x0, x1 = int(round(x0)), int(round(x1))
+            x0, x1 = round(x0), round(x1)
             xfactors = x_range.factors[x0: x1]
             if x_range.tags and x_range.tags[0]:
                 xdim = el.get_dimension(x_range.tags[0][0][0])
@@ -1118,7 +1118,7 @@ class SelectionXYCallback(BoundsCallback):
             msg['x_selection'] = (x0, x1)
         y_range = self.plot.handles['y_range']
         if isinstance(y_range, FactorRange):
-            y0, y1 = int(round(y0)), int(round(y1))
+            y0, y1 = round(y0), round(y1)
             yfactors = y_range.factors[y0: y1]
             if y_range.tags and y_range.tags[0]:
                 ydim = el.get_dimension(y_range.tags[0][0][0])
@@ -1407,6 +1407,7 @@ class CDSCallback(Callback):
             elif (
                 isinstance(values, list)
                 and len(values) == 4
+                and isinstance(values[2], str)
                 and values[2] in ("big", "little")
                 and isinstance(values[3], list)
             ):
@@ -1635,7 +1636,7 @@ class BoxEditCallback(GlyphDrawCallback):
         element = self.plot.current_frame
 
         l, b, r, t =  [], [], [], []
-        for x, y in zip(data['xs'], data['ys']):
+        for x, y in zip(data['xs'], data['ys'], strict=None):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
             l.append(x0)

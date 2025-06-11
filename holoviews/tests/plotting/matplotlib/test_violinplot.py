@@ -27,7 +27,7 @@ class TestMPLViolinPlot(TestMPLPlot):
         p1, p2 = plot.subplots.values()
         self.assertEqual(p1.handles['boxes'][0].get_path().vertices,
                          p2.handles['boxes'][0].get_path().vertices)
-        for b1, b2 in zip(p1.handles['bodies'][0].get_paths(), p2.handles['bodies'][0].get_paths()):
+        for b1, b2 in zip(p1.handles['bodies'][0].get_paths(), p2.handles['bodies'][0].get_paths(), strict=None):
             self.assertEqual(b1.vertices, b2.vertices)
 
     def test_violin_multi(self):

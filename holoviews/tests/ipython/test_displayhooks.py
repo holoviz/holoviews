@@ -3,7 +3,8 @@ import pytest
 pytest.importorskip("IPython")
 
 from holoviews import Curve, Store
-from holoviews.ipython import IPTestCase, notebook_extension
+from holoviews.element.comparison import IPTestCase
+from holoviews.ipython import notebook_extension
 
 
 class TestDisplayHooks(IPTestCase):

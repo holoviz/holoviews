@@ -16,10 +16,6 @@ default = [
     "dev",
 ]
 
-[environments.test-39]
-features = ["required", "py39", "optional", "test-core", "test-example", "test-unit-task"]
-no-default-feature = true
-
 [environments.test-310]
 features = ["required", "py310", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
@@ -82,33 +78,26 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 [feature.required.activation.env]
 PYTHONIOENCODING = "utf-8"
 
-[feature.py39.dependencies]
-python = "3.9.*"
-panel = "1.4.*"
-
 [feature.py310.dependencies]
 python = "3.10.*"
-bokeh_sampledata = "*"
 
 [feature.py311.dependencies]
 python = "3.11.*"
-bokeh_sampledata = "*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
-bokeh_sampledata = "*"
 
 [feature.py312.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.py313.dependencies]
 python = "3.13.*"
-bokeh_sampledata = "*"
 
 [feature.py313.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.optional.dependencies]
+bokeh_sampledata = "*"
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
@@ -125,8 +114,9 @@ pillow = "*"
 plotly = ">=4.0"
 pooch = "*"
 pyarrow = "*"
+pyparsing = "!=3.2.2" # Pinned 2025-03
 scikit-image = "*"
-scipy = ">=1.10" # Python 3.9 + Windows downloads 1.9
+scipy = "*"
 selenium = "*"
 shapely = "*"
 spatialpandas = "*"
@@ -170,7 +160,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
+playwright = { version = "!=1.51.0", channel = "microsoft" } # https://github.com/microsoft/playwright-python/issues/2791
 pytest-playwright = { version = "*", channel = "microsoft" }
 
 [feature.test-ui.tasks]
@@ -189,7 +179,7 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "25.02.*"
+cudf = "25.04.*"
 cupy = "*"
 cuspatial = "*"
 librmm = { version = "*", channel = "rapidsai" }
@@ -203,7 +193,8 @@ test-gpu = "pytest holoviews/tests --gpu"
 # =============================================
 [feature.doc.dependencies]
 graphviz = "*"
-nbsite = ">=0.8.4,<0.9.0"
+nbsite = ">=0.8.4,<0.10.0"
+numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
@@ -214,10 +205,11 @@ MPLBACKEND = "Agg"
 PANEL_EMBED = "true"
 PANEL_EMBED_JSON = "true"
 PANEL_EMBED_JSON_PREFIX = "json"
+SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.tasks]
 _docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
-_docs-refmanual = 'python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests'
+_docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ holoviews/tests --ext-autodoc --ext-intersphinx'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
 
 [feature.doc.tasks.docs-build]

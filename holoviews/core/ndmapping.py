@@ -8,7 +8,6 @@ from itertools import cycle
 from operator import itemgetter
 
 import numpy as np
-import pandas as pd
 import param
 
 from . import util
@@ -164,9 +163,9 @@ class MultiDimensionalMapping(Dimensioned):
         self._item_check(dim_vals, data)
 
         # Apply dimension types
-        dim_types = zip([kd.type for kd in self.kdims], dim_vals)
+        dim_types = zip([kd.type for kd in self.kdims], dim_vals, strict=None)
         dim_vals = tuple(v if None in [t, v] else t(v) for t, v in dim_types)
-        valid_vals = zip(self.kdims, dim_vals)
+        valid_vals = zip(self.kdims, dim_vals, strict=None)
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
@@ -190,7 +189,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         """
         typed_key = ()
-        for dim, key in zip(self.kdims, keys):
+        for dim, key in zip(self.kdims, keys, strict=None):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -369,7 +368,7 @@ class MultiDimensionalMapping(Dimensioned):
                                 "as existing keys.")
 
         items = {}
-        for dval, (key, val) in zip(dim_val, self.data.items()):
+        for dval, (key, val) in zip(dim_val, self.data.items(), strict=None):
             if vdim:
                 new_val = list(val)
                 new_val.insert(dim_pos, dval)
@@ -469,7 +468,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = dict(
-            (k, v) for (k, v) in zip(keys, self.data.values()))
+            (k, v) for (k, v) in zip(keys, self.data.values(), strict=None))
         reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
@@ -478,7 +477,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise Exception("Given dimension labels not sufficient"
                             "to address all values uniquely")
 
-        if len(keys):
+        if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
         else:
             cdims = {}
@@ -574,7 +573,7 @@ class MultiDimensionalMapping(Dimensioned):
         """Returns all elements as a list in (key,value) format.
 
         """
-        return list(zip(list(self.keys()), list(self.values())))
+        return list(zip(list(self.keys()), list(self.values()), strict=None))
 
 
     def get(self, key, default=None):
@@ -660,7 +659,7 @@ class NdMapping(MultiDimensionalMapping):
         if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            selection = zip(indexslice, self.data.items())
+            selection = zip(indexslice, self.data.items(), strict=None)
             return self.clone([item for c, item in selection if c])
         elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
             return self.data[()]
@@ -679,7 +678,7 @@ class NdMapping(MultiDimensionalMapping):
         else:
             conditions = self._generate_conditions(map_slice)
             items = self.data.items()
-            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims)):
+            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims, strict=None)):
                 values = dim.values
                 items = [(k, v) for k, v in items
                          if condition(values.index(k[cidx])
@@ -732,7 +731,7 @@ class NdMapping(MultiDimensionalMapping):
 
         """
         conditions = []
-        for dim, dim_slice in zip(self.kdims, map_slice):
+        for dim, dim_slice in zip(self.kdims, map_slice, strict=None):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
@@ -935,7 +934,7 @@ class UniformNdMapping(NdMapping):
                 keys, maps = self._split_overlays()
                 group_data = group.type(dict([
                     (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
-                    for key, ndmap in zip(keys, maps)
+                    for key, ndmap in zip(keys, maps, strict=None)
                 ]))
             else:
                 raise ValueError(
@@ -963,6 +962,8 @@ class UniformNdMapping(NdMapping):
         -------
         DataFrame of columns corresponding to each dimension
         """
+        import pandas as pd
+
         if dimensions is None:
             outer_dimensions = self.kdims
             inner_dimensions = None

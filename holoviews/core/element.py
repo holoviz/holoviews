@@ -1,7 +1,6 @@
 from itertools import groupby
 
 import numpy as np
-import pandas as pd
 import param
 
 from .dimension import Dimensioned, ViewableElement, asdim
@@ -243,6 +242,8 @@ class Element(ViewableElement, Composable, Overlayable):
         -------
         DataFrame of columns corresponding to each dimension
         """
+        import pandas as pd
+
         if dimensions is None:
             dimensions = [d.name for d in self.dimensions()]
         else:
@@ -450,15 +451,15 @@ class Collator(NdMapping):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
             if len(self.vdims) and self.value_transform:
-                vargs = dict(zip(self.dimensions('value', label=True), data))
+                vargs = dict(zip(self.dimensions('value', label=True), data, strict=None))
                 data = self.value_transform(vargs)
             if not isinstance(data, Dimensioned):
                 raise ValueError("Collator values must be Dimensioned objects "
                                  "before collation.")
 
-            varying_keys = [(d, k) for d, k in zip(self.kdims, key) if not self.drop_constant or
+            varying_keys = [(d, k) for d, k in zip(self.kdims, key, strict=None) if not self.drop_constant or
                             (d not in constant_dims and d not in self.drop)]
-            constant_keys = {d: k for d, k in zip(self.kdims, key) if d in constant_dims
+            constant_keys = {d: k for d, k in zip(self.kdims, key, strict=None) if d in constant_dims
                              and d not in self.drop and self.drop_constant}
             if varying_keys or constant_keys:
                 data = self._add_dimensions(data, varying_keys, constant_keys)
@@ -503,8 +504,8 @@ class Collator(NdMapping):
                 if dim not in new_item.kdims:
                     new_item = new_item.add_dimension(dim, 0, val)
         elif isinstance(item, self._nest_order[self.merge_type]):
-            if len(dim_vals):
-                dimensions, key = zip(*dim_vals)
+            if dim_vals:
+                dimensions, key = zip(*dim_vals, strict=None)
                 new_item = self.merge_type({key: item}, kdims=list(dimensions),
                                            cdims=constant_keys)
             else:

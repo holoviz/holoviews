@@ -7,17 +7,16 @@ name = "holoviews"
 dynamic = ["version"]
 description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
 readme = "README.md"
-license = { text = "BSD" }
-requires-python = ">=3.9"
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.10"
 authors = [
     { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
     { name = "Philipp Rudiger", email = "developers@holoviz.org" },
 ]
 maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -48,6 +47,8 @@ HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
 recommended = ["matplotlib >=3", "plotly >=4.0"]
+
+[dependency-groups]
 tests = ["pytest", "pytest-rerunfailures", "pytest-asyncio"]
 
 [project.scripts]
@@ -177,6 +178,7 @@ ignore = [
     "D400", # Missing-trailing-period
     "D401", # Non-imperative-mood
     "D404", # Docstring-starts-with-this
+    "UP038", # isinstance and issubclass uses a |-separated union
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports
@@ -193,6 +195,14 @@ extend-unsafe-fixes = [
     "B904", # Within an `except` clause, raise exceptions with from err or None
     "D", # pydocstyle
 ]
+"examples/*" = [
+    "B905", # zip zip-without-explicit-strict
+    "NPY002", # Replace legacy `np.random.rand` call with Generator
+    "PLW0603", # Using global statement
+    "RUF001", # Ambiguous unicode character
+    "RUF002", # Ambiguous unicode character
+    "RUF003", # Ambiguous unicode character
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
@@ -203,5 +213,4 @@ convention = "numpy"
 
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc"
-skip = "doc/generate_modules.py"
 write-changes = true

@@ -904,7 +904,7 @@ class TestScalebarPlot:
         scalebars = [next(sb) if e else None for e in enabled]
         assert sum(map(bool, scalebars)) == sum(enabled)
 
-        for coordinate, scalebar, idx in zip(coordinates, scalebars, "123"):
+        for coordinate, scalebar, idx in zip(coordinates, scalebars, "123", strict=None):
             assert coordinate.y_source.name == f"c{idx}"
             if scalebar is None:
                 continue

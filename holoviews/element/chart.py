@@ -266,7 +266,7 @@ class Area(Curve):
             #   Creating a Groupby object with a length-1 list-like level parameter
             #   will yield indexes as tuples in a future version.
             levels = levels[0]
-        for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims):
+        for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims, strict=None):
             vdim = element_vdims[0]
             sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
             if baseline is None:

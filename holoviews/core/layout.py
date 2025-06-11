@@ -75,16 +75,16 @@ class AdjointLayout(Layoutable, Dimensioned):
     marginal plots next to a primary plot. This is often useful to
     display the marginal distributions of a plot next to the primary
     plot. AdjointLayout accepts a list of up to three elements, which
-    are laid out as follows with the names 'main', 'top' and 'right':
+    are laid out as follows with the names 'main', 'top' and 'right'::
 
-     _______________
-    |     3     |   |
-    |___________|___|
-    |           |   |  1:  main
-    |           |   |  2:  right
-    |     1     | 2 |  3:  top
-    |           |   |
-    |___________|___|
+        ________________
+        |     3     |   |
+        |___________|___|
+        |           |   |  1:  main
+        |           |   |  2:  right
+        |     1     | 2 |  3:  top
+        |           |   |
+        |___________|___|
 
     """
 
@@ -107,7 +107,7 @@ class AdjointLayout(Layoutable, Dimensioned):
             if wrong_pos:
                 raise Exception('Wrong AdjointLayout positions provided.')
         elif isinstance(data, list):
-            data = dict(zip(self.layout_order, data))
+            data = dict(zip(self.layout_order, data, strict=None))
         else:
             data = {}
 
@@ -219,9 +219,9 @@ class AdjointLayout(Layoutable, Dimensioned):
         Parameters
         ----------
         key : Numeric or string index
-            0: 'main'
-            1: 'right'
-            2: 'top'
+            * 0: 'main'
+            * 1: 'right'
+            * 2: 'top'
         default
             Value returned if key not found
 
@@ -242,7 +242,8 @@ class AdjointLayout(Layoutable, Dimensioned):
         dimension
             The dimension to return values for
         expanded : bool, optional
-            Whether to expand values
+            Whether to expand values.
+
             Whether to return the expanded values, behavior depends
             on the type of data:
                 * Columnar: If false returns unique values

@@ -31,6 +31,7 @@ from holoviews import (
     Spikes,
     Spread,
     TriMesh,
+    renderer,
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import apply_when
@@ -1390,6 +1391,12 @@ def test_selector_rasterize(point_plot, sel_fn):
     img_count = rasterize(point_plot, **inputs)
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
+@pytest.mark.usefixtures("bokeh_backend")
+def test_selector_hover_in_overlay(point_plot):
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    overlay = rasterize(point_plot, selector=ds.first("val"), **inputs).opts(tools=["hover"]) * Points([])
+    renderer("bokeh").get_plot(overlay)
+
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_selector_datashade(point_plot, sel_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
@@ -1459,6 +1466,16 @@ def test_selector_datashade_bad_column_name(point_data):
     msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
     with pytest.raises(ValueError, match=msg):
         datashade(point_plot, selector=ds.min("val"), **inputs)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_selector_single_categorical():
+    # Test for https://github.com/holoviz/holoviews/issues/6595
+    plot = Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
+    plot = rasterize(plot, aggregator=ds.count_cat("C"), selector=ds.first("X"))
+    plot = dynspread(plot)
+    # Should not fail
+    renderer("bokeh").get_plot(plot)
 
 
 class DatashaderSpreadTests(ComparisonTestCase):

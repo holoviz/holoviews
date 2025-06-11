@@ -81,19 +81,20 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     To set opts globally you can pass these option objects into opts.defaults:
 
-    opts.defaults(*options)
+        opts.defaults(*options)
 
     For instance:
 
-    opts.defaults(opts.Curve(color='red'))
+        opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
     objects to the .options method.
 
     For instance:
 
-    curve = hv.Curve([1,2,3])
-    curve.options(opts.Curve(color='red'))
+        curve = hv.Curve([1,2,3])
+
+        curve.options(opts.Curve(color='red'))
 
     The options method also accepts lists of Option objects.
 
@@ -683,6 +684,7 @@ class extension(_pyviz_extension):
 
     ```python
     import holoviews as hv
+
     hv.extension("bokeh")
     ```
 
@@ -1086,8 +1088,8 @@ class Dynamic(param.ParameterizedFunction):
             if isinstance(hmap, Overlay):
                 dmap.callback.inputs[:] = list(hmap)
             return dmap
-        dim_values = zip(*hmap.data.keys())
+        dim_values = zip(*hmap.data.keys(), strict=None)
         params = util.get_param_values(hmap)
         kdims = [d.clone(values=list(util.unique_iterator(values))) for d, values in
-                 zip(hmap.kdims, dim_values)]
+                 zip(hmap.kdims, dim_values, strict=None)]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))

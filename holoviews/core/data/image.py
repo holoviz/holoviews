@@ -33,7 +33,7 @@ class ImageInterface(GridInterface):
         kwargs = {}
         dimensions = [dimension_name(d) for d in kdims + vdims]
         if isinstance(data, tuple):
-            data = dict(zip(dimensions, data))
+            data = dict(zip(dimensions, data, strict=None))
         if isinstance(data, dict):
             xs, ys = np.asarray(data[kdims[0].name]), np.asarray(data[kdims[1].name])
             xvalid = util.validate_regular_sampling(xs, eltype.rtol or util.config.image_rtol)
@@ -150,7 +150,7 @@ class ImageInterface(GridInterface):
                 density = obj.xdensity
             halfd = (1./density)/2.
             if isinstance(low, util.datetime_types):
-                halfd = np.timedelta64(int(round(halfd)), obj._time_unit)
+                halfd = np.timedelta64(round(halfd), obj._time_unit)
             drange = (low+halfd, high-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
@@ -280,9 +280,9 @@ class ImageInterface(GridInterface):
                        for i in range(dataset.data.shape[abs(didx-1)])]
             data = np.flipud(dataset.data)
             groups = [(c, group_type((xvals, data[s]), **group_kwargs))
-                       for s, c in zip(samples, coords)]
+                       for s, c in zip(samples, coords, strict=None)]
         else:
-            data = zip(*[dataset.dimension_values(i) for i in range(len(dataset.dimensions()))])
+            data = zip(*[dataset.dimension_values(i) for i in range(len(dataset.dimensions()))], strict=None)
             groups = [(g[:dataset.ndims], group_type([g[dataset.ndims:]], **group_kwargs))
                       for g in data]
 
@@ -318,7 +318,7 @@ class ImageInterface(GridInterface):
             if len(dataset.vdims) == 1:
                 return (data if np.isscalar(data) else data[0], [])
             else:
-                return ({vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data)}, [])
+                return ({vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data, strict=None)}, [])
         elif len(axes) == 1:
             return ({kdims[0]: cls.values(dataset, axes[0], expanded=False),
                     dataset.vdims[0].name: data[::-1] if axes[0] else data}, [])

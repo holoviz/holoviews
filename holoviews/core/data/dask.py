@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-import pandas as pd
 
 from .. import util
 from ..dimension import Dimension
@@ -234,7 +233,7 @@ class DaskInterface(PandasInterface):
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions('value', label='name')
         dtypes = data.dtypes
-        numeric = [c for c, dtype in zip(dtypes.index, dtypes.values)
+        numeric = [c for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
                    if dtype.kind in 'iufc' and c in vdims]
         reindexed = data[cols+numeric]
 
@@ -252,6 +251,7 @@ class DaskInterface(PandasInterface):
                 agg = getattr(reindexed, inbuilts[function.__name__])()
             else:
                 raise NotImplementedError
+            import pandas as pd
             df = pd.DataFrame(agg.compute()).T
 
         dropped = []
@@ -282,7 +282,7 @@ class DaskInterface(PandasInterface):
         mask = None
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
-            for c, v in zip(dims, sample):
+            for c, v in zip(dims, sample, strict=None):
                 dim_mask = data[c]==v
                 if mask is None:
                     mask = dim_mask

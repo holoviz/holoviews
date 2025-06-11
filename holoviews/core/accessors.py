@@ -147,7 +147,7 @@ class Apply(metaclass=AccessorPipelineMeta):
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
-            if not len(samples):
+            if not samples:
                 return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
                 apply_function, streams, link_inputs, link_dataset,
@@ -366,7 +366,7 @@ class Redim(metaclass=AccessorPipelineMeta):
         """
         filtered = []
         for key, value in dmap.data.items():
-            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key)):
+            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key, strict=None)):
                 filtered.append((key, value))
         return filtered
 
@@ -439,7 +439,7 @@ class Redim(metaclass=AccessorPipelineMeta):
 
         kdims = self.replace_dimensions(obj.kdims, dimensions)
         vdims = self.replace_dimensions(obj.vdims, dimensions)
-        zipped_dims = zip(obj.kdims+obj.vdims, kdims+vdims)
+        zipped_dims = zip(obj.kdims+obj.vdims, kdims+vdims, strict=None)
         renames = {pk.name: nk for pk, nk in zipped_dims if pk.name != nk.name}
 
         if self.mode == 'dataset':

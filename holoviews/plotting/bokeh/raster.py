@@ -1,5 +1,4 @@
 import sys
-import uuid
 
 import bokeh.core.properties as bp
 import numpy as np
@@ -12,16 +11,45 @@ from panel.io import hold
 from ...core.data import XArrayInterface
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
+from ...util.warnings import warn
 from ..util import categorical_legend
 from .chart import PointPlot
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
-from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, colormesh
+from .util import (
+    BOKEH_GE_3_3_0,
+    BOKEH_GE_3_4_0,
+    BOKEH_GE_3_7_0,
+    BOKEH_VERSION,
+    colormesh,
+)
+
+_EPOCH = np.datetime64("1970-01-01", "ns")
 
 
-class ServerHoverMixin:
-    _model_cache = {}
+class HoverModel(DataModel):
+    xy = bp.Any()
+    data = bp.Any()
+
+    code_js = """
+    export default ({hover_model, attr, fmt}) => {
+      const templating = Bokeh.require("core/util/templating");
+      const value = hover_model.data[attr];
+      if (fmt == "M") {
+        const formatter = templating.DEFAULT_FORMATTERS.datetime;
+        return formatter(value, "%Y-%m-%d %H:%M:%S")
+      } else {
+        const formatter = templating.get_formatter();
+        return formatter(value)
+      }
+    }; """
+
+
+class ServerHoverMixin(param.Parameterized):
+
+    selector_in_hovertool = param.Boolean(default=True, doc="""
+        Whether to show the selector in HoverTool.""")
 
     def _update_hover(self, element):
         tool = self.handles['hover']
@@ -47,13 +75,22 @@ class ServerHoverMixin:
         ):
             return tools
 
+        if not BOKEH_GE_3_7_0:
+            bk_str = ".".join(map(str, BOKEH_VERSION))
+            msg = f"selector needs Bokeh 3.7 or greater, you are using version {bk_str}."
+            warn(msg, RuntimeWarning)
+            hover.tooltips = Div(children=[msg])
+            return tools
+
         self._hover_data = data
 
         # Get dimensions
         coords, vars = list(data.coords), list(data.data_vars)
         vars.remove("__index__")
-        if ht := self.hover_tooltips:
+        ht = self.hover_tooltips or {}
+        if ht:
             ht = [ht] if isinstance(ht, str) else ht
+            ht = dict([t[::-1] if isinstance(t, tuple) else (t, t) for t in ht])
             coords = [c for c in coords if c in ht]
             vars = [v for v in vars if v in ht]
         elif isinstance(self, RGBPlot):
@@ -62,46 +99,86 @@ class ServerHoverMixin:
                 if vdim in vars:
                     vars.remove(vdim)
 
+        hover_model = HoverModel(data={})
         dims = (*coords, *vars)
-
-        # Create a dynamic custom DataModel with the dims as attributes
-        # __xy__ is the cursor position
-        if dims in self._model_cache:
-            HoverModel = self._model_cache[dims]
-        else:
-            HoverModel = self._model_cache[dims] = type(
-                f"HoverModel_{uuid.uuid4().hex}",
-                (DataModel,),
-                {d: bp.Any() for d in ("__xy__", *dims)},
+        dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
+        is_datetime = [dtypes[c].kind == "M" for c in data.coords]
+        def _create_row(attr):
+            kwargs = {
+                "format": "@{custom}",
+                "formatter": CustomJS(
+                    args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
+                    code=HoverModel.code_js
+                )
+            }
+            return (
+                Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
+                Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
             )
+        children = [el for dim in dims for el in _create_row(dim)]
 
-        hover_model = HoverModel()
-        _create_row = lambda attr: (
-            Span(children=[f"{attr}:"], style={"color": "#26aae1", "text_align": "right"}),
-            Span(children=[ValueOf(obj=hover_model, attr=attr)], style={"text_align": "left"}),
-        )
+        # Add a horizontal ruler and show the selector if available
+        selector_columns = data.attrs["selector_columns"]
+        first_selector = next((i for i, dim in enumerate(dims) if dim in selector_columns), None)
+        if first_selector:  # Don't show if first
+            divider = [Div(style={
+                "border": "none",
+                "height": "1px",
+                "background-color": "#ccc",
+                "margin": "4px 0",
+                "grid-column": "span 2",
+            })]
+        else:
+            divider = ()
+
+
+        if first_selector is not None and data.attrs.get("selector") and self.selector_in_hovertool:
+            selector_row = (
+                Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
+                Span(children=[data.attrs["selector"]], style={"font-weight": "bold", "text_align": "left"}),
+             )
+        else:
+            selector_row = ()
+
+        first_selector = first_selector or 0
+        children = [
+            *children[:first_selector * 2],
+            *divider,
+            *selector_row,
+            *children[first_selector * 2:],
+        ]
+
         style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
-        grid = Div(children=[el for dim in dims for el in _create_row(dim)], style=style)
+        grid = Div(children=children, style=style)
         hover.tooltips = grid
         hover.callback = CustomJS(
             args={"position": hover_model},
-            code="export default ({position}, _, {geometry: {x, y}}) => {position.__xy__ = [x, y]}",
+            code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
 
         def on_change(attr, old, new):
             if np.isinf(new).all():
                 return
-            data_sel = self._hover_data.sel(**dict(zip(self._hover_data.coords, new)), method="nearest").to_dict()
-            # TODO: When ValueOf support formatter remove the rounding
-            # https://github.com/bokeh/bokeh/issues/14123
-            data_coords = {dim: round(data_sel['coords'][dim]['data'], 3) for dim in coords}
+            if is_datetime[0]:
+                new[0] = _EPOCH + np.timedelta64(int(new[0] * 1e6), "ns")
+            if is_datetime[1]:
+                new[1] = _EPOCH + np.timedelta64(int(new[1] * 1e6), "ns")
+            try:
+                data_sel = self._hover_data.sel(
+                    **dict(zip(self._hover_data.coords, new, strict=True)),
+                    method="nearest"
+                ).to_dict()
+            except KeyError:
+                # Can happen when a coord is empty, e.g. xlim=(0, 0)
+                return
+            data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
             data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
             with hold(self.document):
-                hover_model.update(**data_coords, **data_vars)
+                hover_model.update(data={**data_coords, **data_vars})
                 if self.comm:  # Jupyter Notebook
                     self.push()
 
-        hover_model.on_change("__xy__", on_change)
+        hover_model.on_change("xy", on_change)
 
         return tools
 
@@ -360,7 +437,7 @@ class ImageStackPlot(RasterPlot):
                     "The supplied cmap dictionary must have the same "
                     f"value dimensions as the element. Missing: '{missing_str}'"
                 )
-            keys, values = zip(*dict_cmap.items())
+            keys, values = zip(*dict_cmap.items(), strict=None)
             style["cmap"] = list(values)
             indices = [keys.index(vd.name) for vd in vdims]
 
@@ -483,7 +560,7 @@ class QuadMeshPlot(ColorbarPlot):
             XS, YS = [], []
             mask = []
             xc, yc = [], []
-            for xs, ys, zval in zip(X, Y, zvals):
+            for xs, ys, zval in zip(X, Y, zvals, strict=None):
                 xs, ys = xs[:-1], ys[:-1]
                 if isfinite(zval) and all(isfinite(xs)) and all(isfinite(ys)):
                     XS.append(list(xs))
@@ -537,7 +614,7 @@ class QuadMeshPlot(ColorbarPlot):
         hover_vals = [element.dimension_values(hover_dim, flat=False)
                       for hover_dim in hover_dims]
         hover_data = {}
-        for hdim, hvals in zip(hover_dims, hover_vals):
+        for hdim, hvals in zip(hover_dims, hover_vals, strict=None):
             hdat = hvals.T.flatten() if transpose else hvals.flatten()
             hover_data[dimension_sanitizer(hdim.name)] = hdat[mask]
         return hover_data
