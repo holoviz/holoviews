@@ -18,7 +18,6 @@ class TestDisplayHooks(IPTestCase):
 
     def tearDown(self):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
-        del self.ip
         Store.display_hooks = self.backup
         notebook_extension._loaded = False
         super().tearDown()

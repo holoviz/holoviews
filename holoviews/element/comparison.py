@@ -791,8 +791,8 @@ class IPTestCase(ComparisonTestCase):
         try:
             import IPython
             from IPython.display import HTML, SVG
-        except Exception as e:
-            raise SkipTest("IPython could not be started") from e
+        except Exception:
+            raise SkipTest("IPython could not be imported") from None
 
         super().setUp()
         self.ip = IPython.InteractiveShell(history_length=0, history_load_length=0)
