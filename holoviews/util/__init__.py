@@ -710,7 +710,12 @@ class extension(_pyviz_extension):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
-            deprecated("1.23.0", "hv.extension()", 'hv.extension("matplotlib")')
+            deprecated(
+                "1.23.0",
+                "Calling 'hv.extension()' without arguments",
+                'hv.extension("matplotlib")',
+                repr_old=False,
+            )
             args = ['matplotlib']
             imports = [('matplotlib', 'mpl')]
 
