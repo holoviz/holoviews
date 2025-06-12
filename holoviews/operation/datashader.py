@@ -380,8 +380,8 @@ class aggregate(LineAggregationOperation):
             category = agg_fn.cat_column
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
-        if sel_fn and sel_fn.column is None:
-            sel_fn.column = rd.SpecialColumn.RowIndex
+        if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
+            sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
