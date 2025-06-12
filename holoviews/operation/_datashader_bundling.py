@@ -20,8 +20,8 @@ class _connect_edges(Operation):
 
     def _process(self, element, key=None):
         index = element.nodes.kdims[2].name
-        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'], strict=None)}
-        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'], strict=None)}
+        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'], strict=True)}
+        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'], strict=True)}
         position_df = element.nodes.redim(**rename_nodes).dframe([0, 1, 2]).set_index(index)
         edges_df = element.redim(**rename_edges).dframe([0, 1])
         paths = self._bundle(position_df, edges_df)
