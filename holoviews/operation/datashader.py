@@ -15,14 +15,6 @@ from datashader.colors import color_lookup
 from packaging.version import Version
 from param.parameterized import bothmethod
 
-try:
-    from datashader.bundling import (
-        directly_connect_edges as connect_edges,
-        hammer_bundle,
-    )
-except ImportError:
-    hammer_bundle, connect_edges = object, object
-
 from ..core import (
     CompositeOverlay,
     Dimension,
@@ -80,8 +72,20 @@ DATASHADER_GE_0_18_1 = DATASHADER_VERSION >= (0, 18, 1)
 
 if TYPE_CHECKING:
     import dask.dataframe as dd
+
+    from ._datashader_bundling import bundle_graph, directly_connect_edges  # noqa: F401
 else:
     dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
+
+
+def __getattr__(attr):
+    if attr == "bundle_graph":
+        from ._datashader_bundling import bundle_graph
+        return bundle_graph
+    elif attr == "directly_connect_edges":
+        from ._datashader_bundling import directly_connect_edges
+        return directly_connect_edges
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -1867,50 +1871,6 @@ def split_dataframe(path_df):
     """
     splits = np.where(path_df.iloc[:, 0].isnull())[0]+1
     return [df for df in np.split(path_df, splits) if len(df) > 1]
-
-
-class _connect_edges(Operation):
-
-    split = param.Boolean(default=False, doc="""
-        Determines whether bundled edges will be split into individual edges
-        or concatenated with NaN separators.""")
-
-    def _bundle(self, position_df, edges_df):
-        raise NotImplementedError('_connect_edges is an abstract baseclass '
-                                  'and does not implement any actual bundling.')
-
-    def _process(self, element, key=None):
-        index = element.nodes.kdims[2].name
-        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'], strict=None)}
-        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'], strict=None)}
-        position_df = element.nodes.redim(**rename_nodes).dframe([0, 1, 2]).set_index(index)
-        edges_df = element.redim(**rename_edges).dframe([0, 1])
-        paths = self._bundle(position_df, edges_df)
-        paths = paths.rename(columns={v: k for k, v in rename_nodes.items()})
-        paths = split_dataframe(paths) if self.p.split else [paths]
-        return element.clone((element.data, element.nodes, paths))
-
-
-class bundle_graph(_connect_edges, hammer_bundle):
-    """Iteratively group edges and return as paths suitable for datashading.
-
-    Breaks each edge into a path with multiple line segments, and
-    iteratively curves this path to bundle edges into groups.
-
-    """
-
-    def _bundle(self, position_df, edges_df):
-        from datashader.bundling import hammer_bundle
-        return hammer_bundle.__call__(self, position_df, edges_df, **self.p)
-
-
-class directly_connect_edges(_connect_edges, connect_edges):
-    """Given a Graph object will directly connect all nodes.
-
-    """
-
-    def _bundle(self, position_df, edges_df):
-        return connect_edges.__call__(self, position_df, edges_df)
 
 
 def identity(x): return x
