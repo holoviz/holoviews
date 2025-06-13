@@ -65,7 +65,10 @@ def streams_list_from_dict(streams):
             params[k] = v
         else:
             refs[k] = v
-    return [*Params.from_params(params), ParamRefs(refs=refs)]
+    streams = Params.from_params(params)
+    if not refs:
+        return refs
+    return [*streams, ParamRefs(refs=refs)]
 
 
 class Stream(param.Parameterized):
