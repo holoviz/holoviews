@@ -38,8 +38,8 @@ def param_aliases(d):
     """Called from __setstate__ in LabelledData in order to load
     old pickles with outdated parameter names.
 
-    Warning
-    -------
+    Warnings
+    --------
     We want to keep pickle hacking to a minimum!
     """
     for old, new in ALIASES.items():
@@ -157,9 +157,8 @@ class Dimension(param.Parameterized):
     the printed floating point precision) or a suitable range of values
     to consider for a particular analysis.
 
-    Units
+    Notes
     -----
-
     Full unit support with automated conversions are on the HoloViews
     roadmap. Once rich unit objects are supported, the unit (or more
     specifically the type of unit) will be part of the core dimension
@@ -486,8 +485,8 @@ class LabelledData(param.Parameterized):
     [group='Height', label='Children'] and another may use
     [group='Height', label='Adults'].
 
-    Note
-    ----
+    Notes
+    -----
     Another level of specification is implicit in the type (i.e
     class) of the LabelledData object. A full specification of a
     LabelledData object is therefore given by the tuple
@@ -650,8 +649,7 @@ class LabelledData(param.Parameterized):
             * A 'type[[.group].label]' string which is compared
             against the type, group and label of this object.
 
-            * A function which is given the object and returns
-            a boolean.
+            * A function which is given the object and returns a boolean.
 
             * An object type matched using isinstance.
 
@@ -814,7 +812,7 @@ class LabelledData(param.Parameterized):
 class Dimensioned(LabelledData):
     """Dimensioned is a base class that allows the data contents of a
     class to be associated with dimensions. The contents associated
-    with dimensions may be partitioned into one of three types
+    with dimensions may be partitioned into one of three types:
 
     * key dimensions
         These are the dimensions that can be indexed via
@@ -863,7 +861,6 @@ class Dimensioned(LabelledData):
     The index of an arbitrary dimension is its positional index in the
     list of all dimensions, starting with the key dimensions, followed
     by the value dimensions and ending with the deep dimensions.
-
     """
 
     cdims = param.Dict(default={}, doc="""
@@ -1220,24 +1217,23 @@ class Dimensioned(LabelledData):
 
         Parameters
         ----------
-        dimension
-            The dimension to return values for
+        dimension : str
+            The dimension to return values for.
         expanded : bool, optional
-            Whether to expand values
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar
-                    If false returns unique values
-                * Geometry
-                    If false returns scalar values per geometry
-                * Gridded
-                    If false returns 1D coordinates
+            Whether to return the expanded values. Behavior depends on the type of data:
+
+            * Columnar: If false, returns unique values
+
+            * Geometry: If false, returns scalar values per geometry
+
+            * Gridded: If false, returns 1D coordinates
         flat : bool, optional
-            Whether to flatten array
+            Whether to flatten array.
 
         Returns
         -------
-        NumPy array of values along the requested dimension
+        np.ndarray
+            Array of values along the requested dimension.
         """
         val = self._cached_constants.get(dimension, None)
         if val:
@@ -1507,31 +1503,6 @@ class ViewableTree(AttrTree, Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Concatenates values on all nodes with requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar
-                    If false returns unique values
-                * Geometry
-                    If false returns scalar values per geometry
-                * Gridded
-                    If false returns 1D coordinates
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         dimension = self.get_dimension(dimension, strict=True).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
         if dimension in chain.from_iterable(all_dims):

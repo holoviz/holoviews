@@ -3,7 +3,7 @@ import sys
 import time
 
 import param
-from IPython.core.display import clear_output
+from IPython.display import clear_output
 
 from ..core.util import ProgressIndicator
 

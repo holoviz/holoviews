@@ -20,11 +20,13 @@ class DaskInterface(PandasInterface):
     by the PandasInterface with two notable exceptions:
 
     1) Sorting is not supported and any attempt at sorting will
-       be ignored with an warning.
+       be ignored with a warning.
+
     2) Dask does not easily support adding a new column to an existing
        dataframe unless it is a scalar, add_dimension will therefore
        error when supplied a non-scalar value.
-    4) Not all functions can be easily applied to a dask dataframe so
+
+    3) Not all functions can be easily applied to a dask dataframe so
        some functions applied with aggregate and reduce will not work.
 
     """
