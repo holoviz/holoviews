@@ -58,20 +58,14 @@ def streams_list_from_dict(streams):
     """Converts a streams dictionary into a streams list
 
     """
-    params, rxs = {}, []
+    params, refs = {}, {}
     for k, v in streams.items():
-        if isinstance(v, param.reactive.rx):
-            rxs.append(v)
-            continue
         v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
-            raise TypeError(f'Cannot handle value {v!r} in streams dictionary')
-    if rxs and params:
-        msg = "Currently, you can only passes either a dictionary of parameters or a dictionary of reactive expressions."
-        raise NotImplementedError(msg)
-    return rxs or Params.from_params(params)
+            refs[k] = v
+    return [*Params.from_params(params), ParamRefs(refs=refs)]
 
 
 class Stream(param.Parameterized):
@@ -692,6 +686,69 @@ class Buffer(Pipe):
     def hashkey(self):
         return {'hash': (self._count, self._memoize_counter)}
 
+
+class ParamRefs(Stream):
+    """
+    ParamRefs accepts a dictionary of parameter references, watching
+    their dependencies and returning their resolved values.
+    """
+
+    recursive = param.Boolean(default=False, constant=True, doc="Whether references should be resolved recursively.")
+
+    refs = param.Dict(doc="Dictionary of references", constant=True)
+
+    def __init__(self, refs=None, watch=True, **params):
+        super().__init__(refs=refs or {}, **params)
+        self._memoize_counter = 0
+        self._watchers = []
+        if not watch:
+            return
+
+        # Collect all dependencies of the provided references
+        parameters = []
+        for ref in self.refs.values():
+            prefs = param.parameterized.resolve_ref(ref, recursive=self.recursive)
+            parameters += [p for p in prefs if p not in parameters]
+
+        # Subscribe to parameters
+        keyfn = lambda x: id(x.owner)
+        for _, group in groupby(sorted(parameters, key=keyfn), key=keyfn):
+            group = list(group)
+            watcher = group[0].owner.param.watch(self._watcher, [p.name for p in group])
+            self._watchers.append(watcher)
+
+    def unwatch(self):
+        """Stop watching parameters."""
+        for watcher in self._watchers:
+            watcher.inst.param.unwatch(watcher)
+        self._watchers.clear()
+
+    def _watcher(self, *events):
+        try:
+            self._events = list(events)
+            self.trigger([self])
+        finally:
+            self._events = []
+
+    def _on_trigger(self):
+        if any(e.type == 'triggered' for e in self._events):
+            self._memoize_counter += 1
+
+    @property
+    def contents(self):
+        return {
+            p: param.parameterized.resolve_value(ref, recursive=self.recursive)
+            for p, ref in self.refs.items()
+        }
+
+    @property
+    def hashkey(self):
+        hashkey = dict(self.contents)
+        hashkey['_memoize_key'] = self._memoize_counter
+        return hashkey
+
+    def reset(self):
+        pass
 
 
 class Params(Stream):
