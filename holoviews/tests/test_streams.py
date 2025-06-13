@@ -341,6 +341,77 @@ class TestParamsStream(LoggingComparisonTestCase):
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
 
+
+class TestParamRefsStream(LoggingComparisonTestCase):
+
+    def setUp(self):
+        super().setUp()
+        class Inner(param.Parameterized):
+
+            x = param.Number(default = 0)
+            y = param.Number(default = 0)
+
+        class InnerAction(Inner):
+
+            action = param.Action(default=lambda o: o.param.trigger('action'))
+
+        self.inner = Inner
+        self.inner_action = InnerAction
+
+    def test_param_stream_class(self):
+        stream = ParamRefs(refs={'x': self.inner.param.x, 'y': self.inner.param.y})
+        self.assertEqual(stream.contents, {'x': 0, 'y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        self.inner.x = 1
+        self.assertEqual(values, [{'x': 1, 'y': 0}])
+
+    def test_param_stream_instance(self):
+        inner = self.inner(x=2)
+        stream = ParamRefs(refs={'x': inner.param.x, 'y': inner.param.y})
+        self.assertEqual(stream.contents, {'x': 2, 'y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.y = 2
+        self.assertEqual(values, [{'x': 2, 'y': 2}])
+        inner.param.update(x=3, y=3)
+        self.assertEqual(values, [{'x': 2, 'y': 2}, {'x': 3, 'y': 3}])
+
+    def test_param_stream_instance_separate_parameters(self):
+        inner = self.inner()
+
+        xparam = ParamRefs(refs={'x': inner.param.x})
+        yparam = ParamRefs(refs={'y': inner.param.y})
+
+        valid, invalid = Stream._process_streams([xparam, yparam])
+        self.assertEqual(len(valid), 2)
+        self.assertEqual(len(invalid), 0)
+
+    def test_param_stream_memoization(self):
+        inner = self.inner_action()
+        stream = ParamRefs(refs={'action': inner.param.action, 'x': inner.param.x})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+            self.assertEqual(
+                set(stream.hashkey),
+                {'action', 'x', '_memoize_key'})
+
+        stream.add_subscriber(subscriber)
+        inner.action(inner)
+        inner.x = 0
+        self.assertEqual(values, [{'action': inner.action, 'x': 0}])
+
+
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
