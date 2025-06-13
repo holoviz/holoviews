@@ -67,7 +67,7 @@ def streams_list_from_dict(streams):
             refs[k] = v
     streams = Params.from_params(params)
     if not refs:
-        return refs
+        return streams
     return [*streams, ParamRefs(refs=refs)]
 
 

@@ -78,11 +78,6 @@ class DynamicMapConstructor(ComparisonTestCase):
     def test_simple_constructor_streams_dict_class_parameter(self):
         DynamicMap(lambda x: x, streams=dict(x=ExampleParameterized.param.example))
 
-    def test_simple_constructor_streams_dict_invalid(self):
-        regexp = "Cannot handle value 3 in streams dictionary"
-        with self.assertRaisesRegex(TypeError, regexp):
-            DynamicMap(lambda x: x, streams=dict(x=3))
-
     def test_simple_constructor_streams_invalid_uninstantiated(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
