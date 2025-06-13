@@ -237,7 +237,7 @@ notebook_extension.add_delete_action(_delete_plot)
 
 
 def load_ipython_extension(ip):
-    notebook_extension(ip=ip)
+    notebook_extension("matplotlib", ip=ip)
 
 def unload_ipython_extension(ip):
     notebook_extension._loaded = False

@@ -23,6 +23,7 @@ from types import FunctionType, GeneratorType
 import numpy as np
 import param
 
+from ...util.warnings import warn
 from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
     NUMPY_VERSION,
@@ -111,9 +112,6 @@ class Config(param.ParameterizedFunction):
 
     """
 
-    future_deprecations = param.Boolean(default=False, doc="""
-       Whether to warn about future deprecations""")
-
     image_rtol = param.Number(default=10e-4, doc="""
       The tolerance used to enforce regular sampling for regular,
       gridded data where regular sampling is expected. Expressed as the
@@ -122,12 +120,6 @@ class Config(param.ParameterizedFunction):
 
     no_padding = param.Boolean(default=False, doc="""
        Disable default padding (introduced in 1.13.0).""")
-
-    warn_options_call = param.Boolean(default=True, doc="""
-       Whether to warn when the deprecated __call__ options syntax is
-       used (the opts method should now be used instead). It is
-       recommended that users switch this on to update any uses of
-       __call__ as it will be deprecated in future.""")
 
     default_cmap = param.String(default='kbc_r', doc="""
        Global default colormap. Prior to HoloViews 1.14.0, the default
@@ -144,6 +136,12 @@ class Config(param.ParameterizedFunction):
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
     def __call__(self, **params):
+        # Old parameters, removed in HoloViews 1.21.0
+        if params.pop("future_deprecations", None):
+            warn("The 'future_deprecations' parameter has no effect.")
+        if params.pop("warn_options_call", None):
+            warn("The 'warn_options_call' parameter has no effect.")
+
         self.param.update(**params)
         return self
 

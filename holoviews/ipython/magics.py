@@ -7,6 +7,7 @@ from IPython.display import HTML, display
 from ..core.options import Options, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
 from ..operation import Compositor
+from ..util.warnings import deprecated
 
 #========#
 # Magics #
@@ -27,6 +28,10 @@ STORE_HISTORY = False
 from IPython.core import page
 
 InfoPrinter.store = Store
+
+
+def _magic_deprecation():
+    deprecated("1.23.0", old="IPython magic", repr_old=False)
 
 
 @magics_class
@@ -77,6 +82,7 @@ class OutputMagic(Magics):
 
     @line_cell_magic
     def output(self, line, cell=None):
+        _magic_deprecation()
 
         if line == '':
             self.pprint()
@@ -114,6 +120,7 @@ class CompositorMagic(Magics):
 
     @line_magic
     def compositor(self, line):
+        _magic_deprecation()
         if line.strip():
             for definition in CompositorSpec.parse(line.strip(), ns=self.shell.user_ns):
                 group = {group:Options() for group in Options._option_groups}
@@ -320,6 +327,7 @@ class OptsMagic(Magics):
         util.parser.OptsSpec.
 
         """
+        _magic_deprecation()
         line, cell = self._partition_lines(line, cell)
         try:
             spec = OptsSpec.parse(line, ns=self.shell.user_ns)
@@ -396,6 +404,7 @@ class TimerMagic(Magics):
         calls to %timer start may also be used to reset the timer.
 
         """
+        _magic_deprecation()
         if line.strip() not in ['', 'start']:
             print("Invalid argument to %timer. For more information consult %timer?")
             return
