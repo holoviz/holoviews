@@ -1391,6 +1391,19 @@ def test_selector_rasterize(point_plot, sel_fn):
     img_count = rasterize(point_plot, **inputs)
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
+
+@pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
+def test_selector_rasterize_empty_selector(point_plot, sel_fn):
+    point_plot.data["index_col"] = point_plot.data.index
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    # Empty selector will use index
+    img = rasterize(point_plot, selector=sel_fn(), **inputs)
+    exp = rasterize(point_plot, selector=sel_fn("index_col"), **inputs)
+
+    for c in ["s", "val", "cat", "index_col"]:
+        np.testing.assert_array_equal(img.data[c], exp.data[c], err_msg=c)
+
+
 @pytest.mark.usefixtures("bokeh_backend")
 def test_selector_hover_in_overlay(point_plot):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
