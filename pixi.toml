@@ -112,6 +112,7 @@ networkx = "*"
 notebook = "*"
 pillow = "*"
 plotly = ">=4.0"
+polars = "*"
 pooch = "*"
 pyarrow = "*"
 pyparsing = "!=3.2.2" # Pinned 2025-03
