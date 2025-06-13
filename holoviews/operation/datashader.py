@@ -533,19 +533,11 @@ class overlay_aggregate(aggregate):
             and sel_fn is None
             and (element.type is not Curve or line_width is None)
             and (
-                (
-                    isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
-                    and (agg_fn.column is None or agg_fn.column not in element.kdims)
-                )
-                or (
-                    (
-                        isinstance(agg_fn, ds.count_cat)
-                        or (isinstance(agg_fn, ds.by) and agg_fn.reduction is ds.count)
-                    )
-                    and agg_fn.column in element.kdims
-                )
+                isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
+                and (agg_fn.column is None or agg_fn.column not in element.kdims)
             )
         )
+
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
