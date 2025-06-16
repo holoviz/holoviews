@@ -866,6 +866,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 props['group_text_baseline'] = 'middle'
         return props
 
+    def _element_transform(self, transform, element, ranges):
+        if self.multi_level or self.stacked and len(element.kdims) > 1:
+            return transform.apply(element.groupby(element.kdims[1]).collapse(), ranges=ranges, flat=True)
+        return transform.apply(element, ranges=ranges, flat=True)
+
     def _get_factors(self, element, ranges):
         xvals, gvals = self._get_coords(element, ranges)
         if gvals is not None:
