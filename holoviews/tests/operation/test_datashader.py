@@ -274,18 +274,25 @@ class DatashaderAggregateTests(ComparisonTestCase):
         curve = Curve((dates, [1, 2, 3]))
         curve2 = Curve((dates, [3, 2, 1]))
         ndoverlay = NdOverlay({0: curve, 1: curve2}, 'Cat')
-        imgs = aggregate(ndoverlay, aggregator=ds.count_cat('Cat'), width=2, height=2,
+        img = aggregate(ndoverlay, aggregator=ds.count_cat('Cat'), width=2, height=2,
                          x_range=(xstart, xend), dynamic=False)
-        bounds = (np.datetime64('2015-12-31T23:59:59.723518'), 1.0,
-                  np.datetime64('2016-01-03T00:00:00.276482'), 3.0)
-        dates = [np.datetime64('2016-01-01T11:59:59.861759000',),
-                 np.datetime64('2016-01-02T12:00:00.138241000')]
-        expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
-                         datatype=['xarray'], bounds=bounds, vdims=Dimension('Count', nodata=0))
-        expected2 = Image((dates, [1.5, 2.5], [[0, 1], [1, 1]]),
-                         datatype=['xarray'], bounds=bounds, vdims=Dimension('Count', nodata=0))
-        self.assertEqual(imgs[0], expected)
-        self.assertEqual(imgs[1], expected2)
+        assert isinstance(img, ImageStack)
+        x = pd.date_range(xstart, xend, periods=4).to_numpy()
+        y = np.array([1.25, 1.75, 2.25, 2.75])
+        cat = np.array([0.0, 1.0])
+        a = np.array([
+            [[1, 0], [0, 0], [0, 0], [0, 1]],
+            [[0, 0], [1, 0], [0, 1], [0, 0]],
+            [[0, 0], [0, 1], [1, 1], [0, 0]],
+            [[0, 1], [0, 0], [0, 0], [1, 0]],
+        ], dtype=np.uint32)
+        xrds = xr.DataArray(
+            a,
+            dims=('y', 'x', 'Cat'),
+            coords={"y": y, "Cat": cat, "x": x}
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["0.0", "1.0"])
+        assert (expected.data == a).all()
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
