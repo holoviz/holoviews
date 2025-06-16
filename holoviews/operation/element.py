@@ -1274,6 +1274,7 @@ class dendrogram(Operation):
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
         """
     )
+    invert_dendrogram = param.Boolean(default=False)
 
     def _compute_linkage(self, dataset, dim, vdim):
         try:
@@ -1298,16 +1299,22 @@ class dendrogram(Operation):
     def _process(self, element, key=None):
         element_kdims = element.kdims
         dataset = Dataset(element)
+        sign = -1 if self.p.invert_dendrogram else 1
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
-            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
+            order = [sign * ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
             sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
             sort_dims.append(sort_dim)
 
-            # Important the kdims are unique
-            dendros[d] = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
+            ic = ddata["icoord"]
+            if self.p.invert_dendrogram:
+                ic = np.asarray(ic)
+                # Convert the smallest to the largest, while still being
+                # positive, offset (5) so we don't divide by zero
+                ic = ic.max() - ic + 5
+            dendros[d] = Dendrogram(ic, ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
 
         if not self.p.adjoined:
             if len(dendros) == 1:
