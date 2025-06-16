@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 from importlib.metadata import version
@@ -48,6 +49,7 @@ def show_versions():
     print(f"Python              :  {sys.version}")
     print(f"Operating system    :  {platform.platform()}")
     _panel_comms()
+    _hv_rc_file()
     print()
     _package_version("holoviews")
     print()
@@ -66,6 +68,12 @@ def _panel_comms():
     import panel as pn
 
     print(f"{'Panel comms':20}:  {pn.config.comms}")
+
+
+def _hv_rc_file():
+    rc_file = os.getenv('HOLOVIEWSRC')
+    if rc_file:
+        print(f"{'HoloViews config':20}:  {rc_file}")
 
 
 if __name__ == "__main__":

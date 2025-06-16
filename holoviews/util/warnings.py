@@ -1,6 +1,7 @@
 import inspect
 import os
 import warnings
+from contextlib import suppress
 
 import param
 from packaging.version import Version
@@ -26,18 +27,29 @@ def find_stack_level():
     Inspired by: pandas.util._exceptions.find_stack_level
 
     """
+    import pyviz_comms
+
     import holoviews as hv
 
     pkg_dir = os.path.dirname(hv.__file__)
     test_dir = os.path.join(pkg_dir, "tests")
-    param_dir = os.path.dirname(param.__file__)
+
+    ignore_paths = (
+        pkg_dir,
+        os.path.dirname(param.__file__),
+        os.path.dirname(pyviz_comms.__file__),
+    )
+
+    with suppress(ImportError):
+        import IPython.core
+        ignore_paths = (*ignore_paths, os.path.dirname(IPython.core.__file__))
 
     frame = inspect.currentframe()
     try:
         stacklevel = 0
         while frame:
             fname = inspect.getfile(frame)
-            if fname.startswith((pkg_dir, param_dir)) and not fname.startswith(test_dir):
+            if fname.startswith(ignore_paths) and not fname.startswith(test_dir):
                 frame = frame.f_back
                 stacklevel += 1
             else:
@@ -49,7 +61,7 @@ def find_stack_level():
     return stacklevel
 
 
-def deprecated(remove_version, old, new=None, extra=None):
+def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr_new=True):
     import holoviews as hv
 
     current_version = Version(Version(hv.__version__).base_version)
@@ -63,10 +75,12 @@ def deprecated(remove_version, old, new=None, extra=None):
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."
         )
 
-    message = f"{old!r} is deprecated and will be removed in version {remove_version}."
+    old_str = repr(old) if repr_old else str(old)
+    message = f"{old_str} is deprecated and will be removed in version {remove_version}."
 
     if new:
-        message = f"{message[:-1]}, use {new!r} instead."
+        new_str = repr(new) if repr_new else str(new)
+        message = f"{message[:-1]}, use {new_str} instead."
 
     if extra:
         message += " " + extra.strip()
