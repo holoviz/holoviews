@@ -15,11 +15,11 @@ from .styles import base_properties, fill_properties, line_properties
 
 
 class hex_binning(Operation):
-    """
-    Applies hex binning by computing aggregates on a hexagonal grid.
+    """Applies hex binning by computing aggregates on a hexagonal grid.
 
     Should not be user facing as the returned element is not directly
     usable.
+
     """
 
     aggregator = param.ClassSelector(
@@ -34,7 +34,7 @@ class hex_binning(Operation):
 
     min_count = param.Number(default=None)
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
+    orientation = param.Selector(default='pointy', objects=['flat', 'pointy'])
 
     def _process(self, element, key=None):
         gridsize, aggregator, orientation = self.p.gridsize, self.p.aggregator, self.p.orientation
@@ -115,7 +115,7 @@ class HexTilesPlot(ColorbarPlot):
       The display threshold before a bin is shown, by default bins with
       a count of less than 1 are hidden.""")
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
+    orientation = param.Selector(default='pointy', objects=['flat', 'pointy'],
                                        doc="""
       The orientation of hexagon bins. By default the pointy side is on top.""")
 
@@ -145,7 +145,7 @@ class HexTilesPlot(ColorbarPlot):
 
     style_opts = base_properties + line_properties + fill_properties + ['cmap', 'scale']
 
-    _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
+    _nonvectorized_styles = [*base_properties, 'cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):

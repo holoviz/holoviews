@@ -1,5 +1,5 @@
-"""
-Module for accessor objects for viewable HoloViews objects.
+"""Module for accessor objects for viewable HoloViews objects.
+
 """
 import copy
 from functools import wraps
@@ -56,9 +56,7 @@ class AccessorPipelineMeta(type):
 
                     if isinstance(result, Dataset):
                         result._pipeline = inst_pipeline.instance(
-                            operations=inst_pipeline.operations + [
-                                init_op, call_op
-                            ],
+                            operations=[*inst_pipeline.operations, init_op, call_op],
                             output_type=type(result),
                         )
                     elif isinstance(result, MultiDimensionalMapping):
@@ -69,9 +67,7 @@ class AccessorPipelineMeta(type):
                                 args=[key],
                             )
                             element._pipeline = inst_pipeline.instance(
-                                operations=inst_pipeline.operations + [
-                                    init_op, call_op, getitem_op
-                                ],
+                                operations=[*inst_pipeline.operations, init_op, call_op, getitem_op],
                                 output_type=type(result),
                             )
             finally:
@@ -84,9 +80,8 @@ class AccessorPipelineMeta(type):
 
 
 class Apply(metaclass=AccessorPipelineMeta):
-    """
-    Utility to apply a function or operation to all viewable elements
-    inside the object.
+    """Utility to apply a function or operation to all viewable elements inside the object.
+
     """
 
     def __init__(self, obj, mode=None):
@@ -101,34 +96,36 @@ class Apply(metaclass=AccessorPipelineMeta):
         supplied the returned object will dynamically update in
         response to changes in those objects.
 
-        Args:
-            apply_function: A callable function
-                The function will be passed the return value of the
-                DynamicMap as the first argument and any supplied
-                stream values or keywords as additional keyword
-                arguments.
-            streams (list, optional): A list of Stream objects
-                The Stream objects can dynamically supply values which
-                will be passed to the function as keywords.
-            link_inputs (bool, optional): Whether to link the inputs
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            link_dataset (bool, optional): Whether to link the dataset
-                Determines whether the dataset will be inherited.
-            dynamic (bool, optional): Whether to make object dynamic
-                By default object is made dynamic if streams are
-                supplied, an instance parameter is supplied as a
-                keyword argument, or the supplied function is a
-                parameterized method.
-            per_element (bool, optional): Whether to apply per element
-                By default apply works on the leaf nodes, which
-                includes both elements and overlays. If set it will
-                apply directly to elements.
-            kwargs (dict, optional): Additional keyword arguments
-                Keyword arguments which will be supplied to the
-                function.
+        Parameters
+        ----------
+        apply_function : A callable function
+            The function will be passed the return value of the
+            DynamicMap as the first argument and any supplied
+            stream values or keywords as additional keyword
+            arguments.
+        streams : list, optional
+            The Stream objects can dynamically supply values which
+            will be passed to the function as keywords.
+        link_inputs : bool, optional
+            Determines whether Streams and Links attached to
+            original object will be inherited.
+        link_dataset : bool, optional
+            Determines whether the dataset will be inherited.
+        dynamic : bool, optional
+            By default object is made dynamic if streams are
+            supplied, an instance parameter is supplied as a
+            keyword argument, or the supplied function is a
+            parameterized method.
+        per_element : bool, optional
+            Whether to apply per element.
+            By default apply works on the leaf nodes, which
+            includes both elements and overlays. If set it will
+            apply directly to elements.
+        **kwargs : dict, optional
+            Keyword arguments which will be supplied to the function.
 
-        Returns:
+        Returns
+        -------
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
@@ -150,7 +147,7 @@ class Apply(metaclass=AccessorPipelineMeta):
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
-            if not len(samples):
+            if not samples:
                 return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
                 apply_function, streams, link_inputs, link_dataset,
@@ -218,7 +215,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a aggregate function to all ViewableElements.
 
-        See :py:meth:`Dimensioned.aggregate` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dimensioned.aggregate` and :py:meth:`Apply.__call__`
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
@@ -228,7 +227,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def opts(self, *args, **kwargs):
         """Applies options to all ViewableElement objects.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
         from ..streams import Params
@@ -245,7 +246,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def reduce(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a reduce function to all ViewableElement objects.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
         if dimensions is None:
@@ -257,7 +260,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def sample(self, samples=None, bounds=None, **kwargs):
         """Samples element values at supplied coordinates.
 
-        See :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
         for more information.
         """
         if samples is None:
@@ -269,7 +274,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def select(self, **kwargs):
         """Applies a selection to all ViewableElement objects.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
         return self.__call__('select', **kwargs)
@@ -277,7 +284,9 @@ class Apply(metaclass=AccessorPipelineMeta):
     def transform(self, *args, **kwargs):
         """Applies transforms to all Datasets.
 
-        See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
+        See Also
+        --------
+        :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
         for more information.
         """
         from ..streams import Params
@@ -294,9 +303,9 @@ class Apply(metaclass=AccessorPipelineMeta):
 
 
 class Redim(metaclass=AccessorPipelineMeta):
-    """
-    Utility that supports re-dimensioning any HoloViews object via the
+    """Utility that supports re-dimensioning any HoloViews object via the
     redim method.
+
     """
 
     def __init__(self, obj, mode=None):
@@ -311,12 +320,17 @@ class Redim(metaclass=AccessorPipelineMeta):
     def replace_dimensions(cls, dimensions, overrides):
         """Replaces dimensions in list with dictionary of overrides.
 
-        Args:
-            dimensions: List of dimensions
-            overrides: Dictionary of dimension specs indexed by name
+        Parameters
+        ----------
+        dimensions : list
+                List of dimensions
+        overrides : dict
+                Dictionary of dimension specs indexed by name
 
-        Returns:
-            list: List of dimensions with replacements applied
+        Returns
+        -------
+        list
+            List of dimensions with replacements applied
         """
         from .dimension import Dimension
 
@@ -346,13 +360,13 @@ class Redim(metaclass=AccessorPipelineMeta):
 
 
     def _filter_cache(self, dmap, kdims):
-        """
-        Returns a filtered version of the DynamicMap cache leaving only
+        """Returns a filtered version of the DynamicMap cache leaving only
         keys consistently with the newly specified values
+
         """
         filtered = []
         for key, value in dmap.data.items():
-            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key)):
+            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key, strict=None)):
                 filtered.append((key, value))
         return filtered
 
@@ -401,11 +415,13 @@ class Redim(metaclass=AccessorPipelineMeta):
         return _transform_expression
 
     def __call__(self, specs=None, **dimensions):
-        """
-        Replace dimensions on the dataset and allows renaming
-        dimensions in the dataset. Dimension mapping should map
-        between the old dimension name and a dictionary of the new
-        attributes, a completely new dimension or a new string name.
+        """Replace dimensions on the dataset and allows renaming
+        dimensions in the dataset.
+
+        Dimension mapping should map between the old dimension name
+        and a dictionary of the new attributes,
+        a completely new dimension or a new string name.
+
         """
         obj = self._obj
         redimmed = obj
@@ -423,7 +439,7 @@ class Redim(metaclass=AccessorPipelineMeta):
 
         kdims = self.replace_dimensions(obj.kdims, dimensions)
         vdims = self.replace_dimensions(obj.vdims, dimensions)
-        zipped_dims = zip(obj.kdims+obj.vdims, kdims+vdims)
+        zipped_dims = zip(obj.kdims+obj.vdims, kdims+vdims, strict=None)
         renames = {pk.name: nk for pk, nk in zipped_dims if pk.name != nk.name}
 
         if self.mode == 'dataset':
@@ -431,7 +447,7 @@ class Redim(metaclass=AccessorPipelineMeta):
             if renames:
                 data = obj.interface.redim(obj, renames)
             transform = self._create_expression_transform(kdims, vdims, list(renames.values()))
-            transforms = obj._transforms + [transform]
+            transforms = [*obj._transforms, transform]
             clone = obj.clone(data, kdims=kdims, vdims=vdims, transforms=transforms)
             if self._obj.dimensions(label='name') == clone.dimensions(label='name'):
                 # Ensure that plot_id is inherited as long as dimension
@@ -505,14 +521,19 @@ class Opts(metaclass=AccessorPipelineMeta):
     def get(self, group=None, backend=None, defaults=True):
         """Returns the corresponding Options object.
 
-        Args:
-            group: The options group. Flattens across groups if None.
-            backend: Current backend if None otherwise chosen backend.
-            defaults: Whether to include default option values
+        Parameters
+        ----------
+        group : The options group, optional
+            Flattens across groups if None.
+        backend : optional
+            Current backend if None otherwise chosen backend.
+        defaults : bool, optional
+            Whether to include default option values
 
-        Returns:
-            Options object associated with the object containing the
-            applied option keywords.
+        Returns
+        -------
+        Options object associated with the object containing the
+        applied option keywords.
         """
         from .options import Options, Store
         keywords = {}
@@ -544,26 +565,33 @@ class Opts(metaclass=AccessorPipelineMeta):
 
             obj.opts({'Image': dict(cmap='viridis', show_title=False)})
 
-        Args:
-            *args: Sets of options to apply to object
-                Supports a number of formats including lists of Options
-                objects, a type[.group][.label] followed by a set of
-                keyword options to apply and a dictionary indexed by
-                type[.group][.label] specs.
-            backend (optional): Backend to apply options to
-                Defaults to current selected backend
-            clone (bool, optional): Whether to clone object
-                Options can be applied in place with clone=False
-            **kwargs: Keywords of options
-                Set of options to apply to the object
+        Parameters
+        ----------
+        *args
+            Sets of options to apply to object.
+            Supports a number of formats including lists of Options
+            objects, a type[.group][.label] followed by a set of
+            keyword options to apply and a dictionary indexed by
+            type[.group][.label] specs.
+        backend : optional
+            Backend to apply options to
+            Defaults to current selected backend
+        clone : bool, optional
+            Whether to clone object
+            Options can be applied in place with clone=False
+        **kwargs : Keywords of options
+            Set of options to apply to the object
 
+        Notes
+        -----
         For backwards compatibility, this method also supports the
         option group semantics now offered by the hv.opts.apply_groups
         utility. This usage will be deprecated and for more
         information see the apply_options_type docstring.
 
-        Returns:
-            Returns the object or a clone with the options applied
+        Returns
+        -------
+        Returns the object or a clone with the options applied
         """
         if not(args) and not(kwargs):
             return self._obj
@@ -589,19 +617,24 @@ class Opts(metaclass=AccessorPipelineMeta):
     def clear(self, clone=False):
         """Clears any options applied to the object.
 
-        Args:
-            clone: Whether to return a cleared clone or clear inplace
+        Parameters
+        ----------
+        clone : bool
+            Whether to return a cleared clone or clear inplace
 
-        Returns:
-            The object cleared of any options applied to it
+        Returns
+        -------
+        The object cleared of any options applied to it
         """
         return self._obj.opts(clone=clone)
 
     def info(self, show_defaults=False):
         """Prints a repr of the object including any applied options.
 
-        Args:
-            show_defaults: Whether to include default options
+        Parameters
+        ----------
+        show_defaults : bool
+            Whether to include default options
         """
         pprinter = PrettyPrinter(show_options=True, show_defaults=show_defaults)
         print(pprinter.pprint(self._obj))

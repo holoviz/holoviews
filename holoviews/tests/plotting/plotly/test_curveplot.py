@@ -1,6 +1,7 @@
 import numpy as np
 
 from holoviews.element import Curve, Tiles
+from holoviews.plotting.plotly.util import PLOTLY_MAP
 
 from .test_plot import TestPlotlyPlot
 
@@ -86,7 +87,7 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['lat'], self.lats)
         self.assertEqual(state['data'][1]['mode'], 'lines')
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )

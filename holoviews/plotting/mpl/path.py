@@ -67,7 +67,7 @@ class PathPlot(ColorbarPlot):
                 paths.append(arr)
                 continue
             length = len(xarr)
-            for (s1, s2) in zip(range(length-1), range(1, length+1)):
+            for (s1, s2) in zip(range(length-1), range(1, length+1), strict=None):
                 if cdim:
                     cvals.append(path[cdim.name])
                 paths.append(arr[s1:s2+1])
@@ -149,7 +149,7 @@ class ContourPlot(PathPlot):
         if len(paths) != len(array):
             # If there are multi-geometries the list of scalar values
             # will not match the list of paths and has to be expanded
-            array = np.array([v for v, sps in zip(array, subpaths)
+            array = np.array([v for v, sps in zip(array, subpaths, strict=None)
                               for _ in range(len(sps))])
 
         if array.dtype.kind not in 'uif':
@@ -160,12 +160,12 @@ class ContourPlot(PathPlot):
 
 
 class PolygonPlot(ContourPlot):
-    """
-    PolygonPlot draws the polygon paths in the supplied Polygons
+    """PolygonPlot draws the polygon paths in the supplied Polygons
     object. If the Polygon has an associated value the color of
     Polygons will be drawn from the supplied cmap, otherwise the
     supplied facecolor will apply. Facecolor also determines the color
     for non-finite values.
+
     """
 
     show_legend = param.Boolean(default=False, doc="""

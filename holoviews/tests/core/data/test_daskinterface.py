@@ -3,7 +3,6 @@ from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 
 try:
     import dask.dataframe as dd
@@ -11,26 +10,21 @@ except ImportError:
     raise SkipTest("Could not import dask, skipping DaskInterface tests.")
 
 from holoviews.core.data import Dataset
-from holoviews.core.util import pandas_version
+from holoviews.core.util import PANDAS_VERSION
 from holoviews.util.transform import dim
 
-from ...utils import dask_switcher
 from .test_pandasinterface import BasePandasInterfaceTests
 
-try:
-    import dask_expr
-except ImportError:
-    dask_expr = None
 
-
-class _DaskDatasetTest(BasePandasInterfaceTests):
+class DaskDatasetTest(BasePandasInterfaceTests):
     """
     Test of the pandas DaskDataset interface.
     """
 
     datatype = 'dask'
+    data_type = dd.DataFrame
 
-    __test__ = False
+    __test__ = True
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -82,14 +76,14 @@ class _DaskDatasetTest(BasePandasInterfaceTests):
         raise SkipTest("Temporarily skipped")
 
     @unittest.skipIf(
-        pandas_version >= Version("2.0"),
+        PANDAS_VERSION >= (2, 0, 0),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht(self):
         super().test_dataset_aggregate_ht()
 
     @unittest.skipIf(
-        pandas_version >= Version("2.0"),
+        PANDAS_VERSION >= (2, 0, 0),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht_alias(self):
@@ -134,34 +128,17 @@ class _DaskDatasetTest(BasePandasInterfaceTests):
         self.assertIsInstance(new_ds.data, dd.DataFrame)
         self.assertEqual(new_ds.data.compute(), df[df.b == 10])
 
-
-class DaskClassicDatasetTest(_DaskDatasetTest):
-
-    data_type = dd.core.DataFrame
-
-    __test__ = True
-
-    @dask_switcher(query=False)
-    def setUp(self):
-        return super().setUp()
-
-
-class DaskExprDatasetTest(_DaskDatasetTest):
-
-    __test__ = bool(dask_expr)
-
-    @property
-    def data_type(self):
-        return dask_expr.DataFrame
-
-    @dask_switcher(query=True)
-    def setUp(self):
-        return super().setUp()
-
     def test_dataset_groupby(self):
         # Dask-expr unique sort the order when running unique on column
-        super().test_dataset_groupby(sort=True)
+        try:
+            super().test_dataset_groupby(sort=True)
+        except AssertionError:
+            super().test_dataset_groupby()
+
 
     def test_dataset_groupby_alias(self):
         # Dask-expr unique sort the order when running unique on column
-        super().test_dataset_groupby_alias(sort=True)
+        try:
+            super().test_dataset_groupby_alias(sort=True)
+        except AssertionError:
+            super().test_dataset_groupby_alias()

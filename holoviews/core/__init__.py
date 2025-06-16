@@ -1,7 +1,5 @@
 from datetime import date, datetime
 
-import pandas as pd
-
 from .boundingregion import *
 from .data import *
 from .dimension import *
@@ -31,7 +29,7 @@ Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[datetime] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[date] = '%Y-%m-%d'
-Dimension.type_formatters[pd.Timestamp] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters['pandas._libs.tslibs.timestamps.Timestamp'] = "%Y-%m-%d %H:%M:%S"
 
 
 def public(obj):
@@ -40,6 +38,7 @@ def public(obj):
                    SheetCoordinateSystem, AttrTree]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
-_public = list({_k for _k, _v in locals().items() if public(_v)})
-__all__ = _public + ["boundingregion", "dimension", "layer", "layout",
-                     "ndmapping", "operation", "options", "sheetcoords", "tree", "element"]
+__all__ = [
+    *{_k for _k, _v in locals().items() if public(_v)},
+    "boundingregion", "dimension", "layer", "layout", "ndmapping", "operation", "options", "sheetcoords", "tree", "element"
+]

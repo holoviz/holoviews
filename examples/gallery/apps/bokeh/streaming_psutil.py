@@ -1,6 +1,7 @@
-import psutil
-import panel as pn
 import pandas as pd
+import panel as pn
+import psutil
+
 import holoviews as hv
 from holoviews import dim, opts
 
@@ -54,4 +55,4 @@ callback = pn.io.PeriodicCallback(callback=cb, period=500)
 callback.start()
 
 # Show plot inside notebook
-plot
+plot  # noqa: B018

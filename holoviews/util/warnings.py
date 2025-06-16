@@ -6,10 +6,10 @@ import param
 from packaging.version import Version
 
 __all__ = (
-    "deprecated",
-    "find_stack_level",
     "HoloviewsDeprecationWarning",
     "HoloviewsUserWarning",
+    "deprecated",
+    "find_stack_level",
     "warn",
 )
 
@@ -22,11 +22,10 @@ def warn(message, category=None, stacklevel=None):
 
 
 def find_stack_level():
-    """
-    Find the first place in the stack that is not inside Holoviews and Param.
+    """Find the first place in the stack that is not inside Holoviews and Param.
     Inspired by: pandas.util._exceptions.find_stack_level
-    """
 
+    """
     import holoviews as hv
 
     pkg_dir = os.path.dirname(hv.__file__)
@@ -78,10 +77,12 @@ def deprecated(remove_version, old, new=None, extra=None):
 class HoloviewsDeprecationWarning(DeprecationWarning):
     """A Holoviews-specific ``DeprecationWarning`` subclass.
     Used to selectively filter Holoviews deprecations for unconditional display.
+
     """
 
 
 class HoloviewsUserWarning(UserWarning):
     """A Holoviews-specific ``UserWarning`` subclass.
     Used to selectively filter Holoviews warnings for unconditional display.
+
     """

@@ -3,7 +3,6 @@ import os
 from colorcet import kbc, register_cmap
 from matplotlib import rc_params_from_file
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
-from packaging.version import Version
 from param import concrete_descendents
 
 from ...core import Collator, GridMatrix, Layout, config
@@ -27,8 +26,7 @@ from .renderer import MPLRenderer
 from .sankey import *
 from .stats import *
 from .tabular import *
-
-mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
+from .util import MPL_VERSION
 
 try:
     from pandas.plotting import register_matplotlib_converters
@@ -39,9 +37,9 @@ except ImportError:
 
 
 def set_style(key):
-    """
-    Select a style by name, e.g. set_style('default'). To revert to the
+    """Select a style by name, e.g. set_style('default'). To revert to the
     previous style use the key 'unset' or False.
+
     """
     if key is None:
         return
@@ -62,7 +60,7 @@ def set_style(key):
 
 # Define matplotlib based style cycles and Palettes
 def get_color_cycle():
-    if mpl_ge_150:
+    if MPL_VERSION >= (1, 5, 0):
         cyl = mpl.rcParams['axes.prop_cycle']
         # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
         # but no guarantee that there's a `color` key.
@@ -182,6 +180,7 @@ Store.register({Curve: CurvePlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
+                Dendrogram: PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
 
@@ -284,6 +283,8 @@ options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Dendrogram = Options('style', color="black")
+options.Dendrogram = Options('plot', xaxis=None, yaxis=None)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
                            cmap=dflt_cmap)
 options.Rectangles = Options('style', cmap=dflt_cmap)
@@ -314,4 +315,5 @@ options.Sankey = Options('style', edge_color='grey', node_edgecolors='black',
 # Statistics
 options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
                                alpha=0.5)
+options.Distribution = Options('plot', show_legend=True)
 options.Violin = Options('style', facecolors=Cycle(), showextrema=False, alpha=0.7)

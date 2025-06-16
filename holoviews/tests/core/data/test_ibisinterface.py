@@ -1,19 +1,24 @@
 import sqlite3
+import warnings
 from tempfile import NamedTemporaryFile
 from unittest import SkipTest
 
 try:
     import ibis
-    from ibis import sqlite
+    # Getting this Warnings on Python 3.13 and Ibis 9.5
+    # DeprecationWarning: Attribute.__init__ missing 1 required positional argument: 'value'.
+    # This will become an error in Python 3.15.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from ibis import sqlite
 except ImportError:
     raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
 
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 
 from holoviews.core.data import Dataset
-from holoviews.core.data.ibis import IbisInterface, ibis_version
+from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.spaces import HoloMap
 
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
@@ -158,7 +163,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         raise SkipTest("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
-        int_dtype = "int64" if ibis_version() >= Version("9.0") else "int32"
+        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
         ds = self.table
         self.assertEqual(ds.interface.dtype(ds, "Gender"), np.dtype("object"))
         self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype(int_dtype))
@@ -166,7 +171,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.assertEqual(ds.interface.dtype(ds, "Height"), np.dtype("float64"))
 
     def test_dataset_dtypes(self):
-        int_dtype = "int64" if ibis_version() >= Version("9.0") else "int32"
+        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
         self.assertEqual(
             self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype(int_dtype)
         )

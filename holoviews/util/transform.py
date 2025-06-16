@@ -2,7 +2,6 @@ import operator
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
-import pandas as pd
 import param
 
 from ..core.data import PandasInterface
@@ -37,13 +36,18 @@ def norm(values, min=None, max=None):
 
         (values - min) / (max - min)
 
-    Args:
-        values: Array of values to be normalized
-        min (float, optional): Lower bound of normalization range
-        max (float, optional): Upper bound of normalization range
+    Parameters
+    ----------
+    values
+        Array of values to be normalized
+    min : float, optional
+        Lower bound of normalization range
+    max : float, optional
+        Upper bound of normalization range
 
-    Returns:
-        Array of normalized values
+    Returns
+    -------
+    Array of normalized values
     """
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
@@ -54,13 +58,18 @@ def lognorm(values, min=None, max=None):
     """Unity-based normalization on log scale.
        Apply the same transformation as matplotlib.colors.LogNorm
 
-    Args:
-        values: Array of values to be normalized
-        min (float, optional): Lower bound of normalization range
-        max (float, optional): Upper bound of normalization range
+    Parameters
+    ----------
+    values
+        Array of values to be normalized
+    min : float, optional
+        Lower bound of normalization range
+    max : float, optional
+        Upper bound of normalization range
 
-    Returns:
-        Array of normalized values
+    Returns
+    -------
+    Array of normalized values
     """
     min = np.log(np.min(values)) if min is None else np.log(min)
     max = np.log(np.max(values)) if max is None else np.log(max)
@@ -69,6 +78,7 @@ def lognorm(values, min=None, max=None):
 
 class iloc:
     """Implements integer array indexing for dim expressions.
+
     """
 
     __name__ = 'iloc'
@@ -82,6 +92,7 @@ class iloc:
         return dim(self.expr, self)
 
     def __call__(self, values):
+        import pandas as pd
         if isinstance(values, (pd.Series, pd.DataFrame)):
             return values.iloc[resolve_dependent_value(self.index)]
         else:
@@ -90,6 +101,7 @@ class iloc:
 
 class loc:
     """Implements loc for dim expressions.
+
     """
 
     __name__ = 'loc'
@@ -114,14 +126,16 @@ def bin(values, bins, labels=None):
     with bin center values but an explicit list of bin labels may be
     defined.
 
-    Args:
-        values: Array of values to be binned
-        bins: List or array containing the bin boundaries
-        labels: List of labels to assign to each bin
-            If the bins are length N the labels should be length N-1
+    Parameters
+    ----------
+    values : Array of values to be binned
+    bins : List or array containing the bin boundaries
+    labels : List of labels to assign to each bin
+        If the bins are length N the labels should be length N-1
 
-    Returns:
-        Array of binned values
+    Returns
+    -------
+    Array of binned values
     """
     bins = np.asarray(bins)
     if labels is None:
@@ -130,7 +144,7 @@ def bin(values, bins, labels=None):
         labels = np.asarray(labels)
     dtype = 'float' if labels.dtype.kind == 'f' else 'O'
     binned = np.full_like(values, (np.nan if dtype == 'f' else None), dtype=dtype)
-    for lower, upper, label in zip(bins[:-1], bins[1:], labels):
+    for lower, upper, label in zip(bins[:-1], bins[1:], labels, strict=None):
         condition = (values > lower) & (values <= upper)
         binned[np.where(condition)[0]] = label
     return binned
@@ -143,13 +157,15 @@ def categorize(values, categories, default=None):
     Replaces discrete values in input array with a fixed set of
     categories defined either as a list or dictionary.
 
-    Args:
-        values: Array of values to be categorized
-        categories: List or dict of categories to map inputs to
-        default: Default value to assign if value not in categories
+    Parameters
+    ----------
+    values : Array of values to be categorized
+    categories : List or dict of categories to map inputs to
+    default : Default value to assign if value not in categories
 
-    Returns:
-        Array of categorized values
+    Returns
+    -------
+    Array of categorized values
     """
     uniq_cats = list(unique_iterator(values))
     cats = []
@@ -189,11 +205,11 @@ function_types = (
 
 
 class dim:
-    """
-    dim transform objects are a way to express deferred transforms on
+    """dim transform objects are a way to express deferred transforms on
     Datasets. dim transforms support all mathematical and bitwise
     operators, NumPy ufuncs and methods, and provide a number of
     useful methods for normalizing, binning and categorizing data.
+
     """
 
     _binary_funcs = {
@@ -259,12 +275,11 @@ class dim:
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types+(str,)) or
+            if not (isinstance(fn, (*function_types, str)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  f'found {type(fn)} type')
-            self.ops = self.ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
-                          'reverse': kwargs.pop('reverse', False)}]
+            self.ops = [*self.ops, {'args': args[1:], 'fn': fn, 'kwargs': kwargs, 'reverse': kwargs.pop('reverse', False)}]
 
     def __getstate__(self):
         return self.__dict__
@@ -325,9 +340,9 @@ class dim:
         return hash(repr(self))
 
     def clone(self, dimension=None, ops=None, dim_type=None):
-        """
-        Creates a clone of the dim expression optionally overriding
+        """Creates a clone of the dim expression optionally overriding
         the dim and ops.
+
         """
         dim_type = dim_type or type(self)
         if dimension is None:
@@ -340,9 +355,9 @@ class dim:
 
     @classmethod
     def register(cls, key, function):
-        """
-        Register a custom dim transform function which can from then
+        """Register a custom dim transform function which can from then
         on be referenced by the key.
+
         """
         cls._custom_funcs[key] = function
 
@@ -490,10 +505,12 @@ class dim:
         either computed from each bins center point or from the
         supplied labels.
 
-        Args:
-            bins: List or array containing the bin boundaries
-            labels: List of labels to assign to each bin
-                If the bins are length N the labels should be length N-1
+        Parameters
+        ----------
+        bins : List or array containing the bin boundaries
+
+        labels : List of labels to assign to each bin
+            If the bins are length N the labels should be length N-1
         """
         return type(self)(self, bin, bins, labels=labels)
 
@@ -503,9 +520,12 @@ class dim:
         Replaces discrete values in input array into a fixed set of
         categories defined either as a list or dictionary.
 
-        Args:
-            categories: List or dict of categories to map inputs to
-            default: Default value to assign if value not in categories
+        Parameters
+        ----------
+        categories
+            List or dict of categories to map inputs to
+        default
+            Default value to assign if value not in categories
         """
         return type(self)(self, categorize, categories=categories, default=default)
 
@@ -513,8 +533,10 @@ class dim:
         """Unity-based normalization log scale.
            Apply the same transformation as matplotlib.colors.LogNorm
 
-        Args:
-            limits: tuple of (min, max) defining the normalization range
+        Parameters
+        ----------
+        limits
+            tuple of (min, max) defining the normalization range
         """
         kwargs = {}
         if limits is not None:
@@ -526,8 +548,10 @@ class dim:
 
             (values - min) / (max - min)
 
-        Args:
-            limits: tuple of (min, max) defining the normalization range
+        Parameters
+        ----------
+        limits
+            tuple of (min, max) defining the normalization range
         """
         kwargs = {}
         if limits is not None:
@@ -536,10 +560,10 @@ class dim:
 
     @classmethod
     def pipe(cls, func, *args, **kwargs):
-        """
-        Wrapper to give multidimensional transforms a more intuitive syntax.
+        """Wrapper to give multidimensional transforms a more intuitive syntax.
         For a custom function 'func' with signature (*args, **kwargs), call as
         dim.pipe(func, *args, **kwargs).
+
         """
         args = list(args) # make mutable
         for k, arg in enumerate(args):
@@ -549,16 +573,18 @@ class dim:
 
     @property
     def str(self):
-        "Casts values to strings or provides str accessor."
+        """Casts values to strings or provides str accessor.
+
+        """
         return type(self)(self, 'str', accessor=True)
 
     # Other methods
 
     def applies(self, dataset, strict=False):
-        """
-        Determines whether the dim transform can be applied to the
+        """Determines whether the dim transform can be applied to the
         Dataset, i.e. whether all referenced dimensions can be
         resolved.
+
         """
         from ..element import Graph
 
@@ -657,18 +683,18 @@ class dim:
         return data
 
     def _compute_data(self, data, drop_index, compute):
-        """
-        Implements conversion of data from namespace specific object,
+        """Implements conversion of data from namespace specific object,
         e.g. pandas Series to NumPy array.
+
         """
         if hasattr(data, 'compute') and compute:
             data = data.compute()
         return data
 
     def _coerce(self, data):
-        """
-        Implements coercion of data from current data format to the
+        """Implements coercion of data from current data format to the
         namespace specific datatype.
+
         """
         return data
 
@@ -676,24 +702,35 @@ class dim:
               keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
-        Args:
-            dataset: Dataset object to evaluate the expression on
-            flat: Whether to flatten the returned array
-            expanded: Whether to use the expanded expand values
-            ranges: Dictionary for ranges for normalization
-            all_values: Whether to evaluate on all values
-               Whether to evaluate on all available values, for some
-               element types, such as Graphs, this may include values
-               not included in the referenced column
-           keep_index: For data types that support indexes, whether the index
-               should be preserved in the result.
-           compute: For data types that support lazy evaluation, whether
-               the result should be computed before it is returned.
-           strict: Whether to strictly check for dimension matches
-               (if False, counts any dimensions with matching names as the same)
+        Parameters
+        ----------
+        dataset
+            Dataset object to evaluate the expression on
+        flat
+            Whether to flatten the returned array
+        expanded
+            Whether to use the expanded expand values
+        ranges
+            Dictionary for ranges for normalization
+        all_values
+            Whether to evaluate on all values
+            Whether to evaluate on all available values, for some
+            element types, such as Graphs, this may include values
+            not included in the referenced column
+        keep_index
+            For data types that support indexes, whether the index
+            should be preserved in the result.
+        compute
+            For data types that support lazy evaluation, whether
+            the result should be computed before it is returned.
+        strict
+            Whether to strictly check for dimension matches
+            (if False, counts any dimensions with matching names as the same)
 
-        Returns:
-            values: NumPy array computed by evaluating the expression
+        Returns
+        -------
+        values
+            NumPy array computed by evaluating the expression
         """
         from ..element import Graph
 
@@ -857,10 +894,10 @@ class dim:
 
 
 class df_dim(dim):
-    """
-    A subclass of dim which provides access to the DataFrame namespace
+    """A subclass of dim which provides access to the DataFrame namespace
     along with tab-completion and type coercion allowing the expression
     to be applied on any columnar dataset.
+
     """
 
     namespace = 'dataframe'
@@ -868,6 +905,7 @@ class df_dim(dim):
     _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
+        import pandas as pd
         super().__init__(obj, *args, **kwargs)
         self._ns = pd.Series
 
@@ -898,10 +936,10 @@ class df_dim(dim):
 
 
 class xr_dim(dim):
-    """
-    A subclass of dim which provides access to the xarray DataArray
+    """A subclass of dim which provides access to the xarray DataArray
     namespace along with tab-completion and type coercion allowing
     the expression to be applied on any gridded dataset.
+
     """
 
     namespace = 'xarray'
@@ -935,32 +973,36 @@ class xr_dim(dim):
 
 
 def lon_lat_to_easting_northing(longitude, latitude):
-    """
-    Projects the given longitude, latitude values into Web Mercator
+    """Projects the given longitude, latitude values into Web Mercator
     (aka Pseudo-Mercator or EPSG:3857) coordinates.
 
     Longitude and latitude can be provided as scalars, Pandas columns,
     or Numpy arrays, and will be returned in the same form.  Lists
     or tuples will be converted to Numpy arrays.
 
-    Args:
-        longitude
-        latitude
+    Parameters
+    ----------
+    longitude
 
-    Returns:
-        (easting, northing)
+    latitude
 
-    Examples:
-       easting, northing = lon_lat_to_easting_northing(-74,40.71)
+    Returns
+    -------
+    (easting, northing)
 
-       easting, northing = lon_lat_to_easting_northing(
-           np.array([-74]),np.array([40.71])
-       )
+    Examples
+    --------
+    >>> easting, northing = lon_lat_to_easting_northing(-74,40.71)
 
-       df=pandas.DataFrame(dict(longitude=np.array([-74]),latitude=np.array([40.71])))
-       df.loc[:, 'longitude'], df.loc[:, 'latitude'] = lon_lat_to_easting_northing(
-           df.longitude,df.latitude
-       )
+    >>> easting, northing = lon_lat_to_easting_northing(
+        np.array([-74]),np.array([40.71])
+    )
+
+    >>> df=pandas.DataFrame(dict(longitude=np.array([-74]),latitude=np.array([40.71])))
+
+    >>> df.loc[:, 'longitude'], df.loc[:, 'latitude'] = lon_lat_to_easting_northing(
+        df.longitude,df.latitude
+    )
     """
     if isinstance(longitude, (list, tuple)):
         longitude = np.array(longitude)
@@ -977,19 +1019,21 @@ def lon_lat_to_easting_northing(longitude, latitude):
 
 
 def easting_northing_to_lon_lat(easting, northing):
-    """
-    Projects the given easting, northing values into
+    """Projects the given easting, northing values into
     longitude, latitude coordinates.
 
     easting and northing values are assumed to be in Web Mercator
     (aka Pseudo-Mercator or EPSG:3857) coordinates.
 
-    Args:
-        easting
-        northing
+    Parameters
+    ----------
+    easting
 
-    Returns:
-        (longitude, latitude)
+    northing
+
+    Returns
+    -------
+    (longitude, latitude)
     """
     if isinstance(easting, (list, tuple)):
         easting = np.array(easting)

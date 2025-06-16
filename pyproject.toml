@@ -7,20 +7,20 @@ name = "holoviews"
 dynamic = ["version"]
 description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
 readme = "README.md"
-license = { text = "BSD" }
-requires-python = ">=3.9"
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.10"
 authors = [
     { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
     { name = "Philipp Rudiger", email = "developers@holoviz.org" },
 ]
 maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -47,7 +47,9 @@ HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
 recommended = ["matplotlib >=3", "plotly >=4.0"]
-tests = ["pytest", "pytest-rerunfailures"]
+
+[dependency-groups]
+tests = ["pytest", "pytest-rerunfailures", "pytest-asyncio"]
 
 [project.scripts]
 holoviews = "holoviews.util.command:main"
@@ -70,6 +72,8 @@ version-file = "holoviews/_version.py"
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers", "--color=yes"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 minversion = "7"
 xfail_strict = true
 log_cli_level = "INFO"
@@ -103,13 +107,11 @@ filterwarnings = [
     # 2023-09: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning", # https://github.com/matplotlib/matplotlib/issues/25244
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning", # https://github.com/mgaitan/sphinxcontrib-mermaid/issues/119
-    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
     # 2023-10: Datetime's utctimestamp() and utcnow() is deprecated in Python 3.12
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz", # https://github.com/dateutil/dateutil/pull/1285
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
     "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
     # 2024-01: Pandas 2.2
-    "ignore:When grouping with a length-1 list::dask.dataframe.groupby", # https://github.com/dask/dask/issues/10572
     "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning", # Will go away by itself in Pandas 3.0
     "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning", # https://github.com/holoviz/spatialpandas/issues/137
     # 2024-04
@@ -121,6 +123,11 @@ filterwarnings = [
     "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
     # 2024-07
     "ignore:The (non_)?interactive_bk attribute was deprecated in Matplotlib 3.9", # OK - Only happening in debug mode
+    "ignore: Jitify is performing a one-time only warm::cupy", # OK,
+    # 2024-10
+    "ignore::ResourceWarning",
+    # 2024-11
+    "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
 ]
 
 [tool.coverage]
@@ -133,6 +140,7 @@ fix = true
 [tool.ruff.lint]
 select = [
     "B",
+    "D",
     "E",
     "F",
     "FLY",
@@ -162,8 +170,15 @@ ignore = [
     "PLR091", # Too many arguments/branches/statements
     "PLR2004", # Magic value used in comparison
     "PLW2901", # `for` loop variable is overwritten
-    "RUF005", # Consider {expr} instead of concatenation
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
+    "RUF021", # parenthesize-chained-operators
+    "D1", # Undocumented code
+    "D200", # Unnecessary-multiline-docstring
+    "D205", # Missing-blank-line-after-summary
+    "D400", # Missing-trailing-period
+    "D401", # Non-imperative-mood
+    "D404", # Docstring-starts-with-this
+    "UP038", # isinstance and issubclass uses a |-separated union
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports
@@ -178,13 +193,24 @@ extend-unsafe-fixes = [
     "RUF003", # Ambiguous unicode character
     "NPY002", # Replace legacy `np.random.rand` call with Generator
     "B904", # Within an `except` clause, raise exceptions with from err or None
+    "D", # pydocstyle
+]
+"examples/*" = [
+    "B905", # zip zip-without-explicit-strict
+    "NPY002", # Replace legacy `np.random.rand` call with Generator
+    "PLW0603", # Using global statement
+    "RUF001", # Ambiguous unicode character
+    "RUF002", # Ambiguous unicode character
+    "RUF003", # Ambiguous unicode character
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
 
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
 [tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn"
-skip = "doc/generate_modules.py"
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc"
 write-changes = true

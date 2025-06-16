@@ -1,7 +1,9 @@
 import asyncio
 import base64
+import inspect
 import time
 from collections import defaultdict
+from contextlib import suppress
 from functools import partial
 
 import numpy as np
@@ -21,11 +23,6 @@ from bokeh.models import (
 from panel.io.notebook import push_on_root
 from panel.io.state import set_curdoc, state
 from panel.pane import panel
-
-try:
-    from bokeh.models import XY, Panel
-except Exception:
-    Panel = XY = None
 
 from ...core.data import Dataset
 from ...core.options import CallbackError
@@ -50,6 +47,7 @@ from ...streams import (
     Lasso,
     MouseEnter,
     MouseLeave,
+    MultiAxisTap,
     PanEnd,
     PlotReset,
     PlotSize,
@@ -71,12 +69,25 @@ from ...streams import (
     Tap,
 )
 from ...util.warnings import warn
-from .util import bokeh33, convert_timestamp
+from .util import BOKEH_GE_3_3_0, BOKEH_GE_3_4_0, convert_timestamp
+
+if BOKEH_GE_3_4_0:
+    from bokeh.models import XY, Panel as BokehPanel
+
+POPUP_POSITION_ANCHOR = {
+    "top_right": "bottom_left",
+    "top_left": "bottom_right",
+    "bottom_left": "top_right",
+    "bottom_right": "top_left",
+    "right": "top_left",
+    "left": "top_right",
+    "top": "bottom",
+    "bottom": "top",
+}
 
 
 class Callback:
-    """
-    Provides a baseclass to define callbacks, which return data from
+    """Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback
     then makes this data available to any streams attached to it.
 
@@ -125,6 +136,7 @@ class Callback:
       of time between events.
     - debounce: Processes the message only when no new event has been
       received within the `throttle_timeout` duration.
+
     """
 
     # Attributes to sync
@@ -168,9 +180,9 @@ class Callback:
         return msg
 
     def _process_msg(self, msg):
-        """
-        Subclassable method to preprocess JSON message in callback
+        """Subclassable method to preprocess JSON message in callback
         before passing to stream.
+
         """
         return self._transform(msg)
 
@@ -196,10 +208,10 @@ class Callback:
         self._queue = []
 
     def _filter_msg(self, msg, ids):
-        """
-        Filter event values that do not originate from the plotting
+        """Filter event values that do not originate from the plotting
         handles associated with a particular stream using their
         ids to match them.
+
         """
         filtered_msg = {}
         for k, v in msg.items():
@@ -210,7 +222,7 @@ class Callback:
                 filtered_msg[k] = v
         return filtered_msg
 
-    def on_msg(self, msg):
+    async def on_msg(self, msg):
         streams = []
         for stream in self.streams:
             handle_ids = self.handle_ids[stream]
@@ -240,9 +252,9 @@ class Callback:
                 stream._metadata = {}
 
     def _init_plot_handles(self):
-        """
-        Find all requested plotting handles and cache them along
+        """Find all requested plotting handles and cache them along
         with the IDs of the models the callbacks will be attached to.
+
         """
         plots = [self.plot]
         if self.plot.subplots:
@@ -262,10 +274,10 @@ class Callback:
         return requested
 
     def _get_stream_handle_ids(self, handles):
-        """
-        Gather the ids of the plotting handles attached to this callback
+        """Gather the ids of the plotting handles attached to this callback
         This allows checking that a stream is not given the state
         of a plotting handle it wasn't attached to
+
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
@@ -277,11 +289,11 @@ class Callback:
 
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
-        """
-        Resolves a Callback attribute specification looking the
+        """Resolves a Callback attribute specification looking the
         corresponding attribute up on the cb_obj, which should be a
         bokeh model. If not model is supplied cb_obj is assumed to
         be the same as the model.
+
         """
         if not cb_obj:
             raise AttributeError(f'Bokeh plot attribute {spec} could not be found')
@@ -305,8 +317,8 @@ class Callback:
         return any(skip(msg) for skip in self.skip_changes)
 
     def _set_busy(self, busy):
-        """
-        Sets panel.state to busy if available.
+        """Sets panel.state to busy if available.
+
         """
         if 'busy' not in state.param:
             return # Check if busy state is supported
@@ -316,9 +328,9 @@ class Callback:
             state.busy = busy
 
     async def on_change(self, attr, old, new):
-        """
-        Process change events adding timeout to process multiple concerted
+        """Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
+
         """
         self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
@@ -327,9 +339,9 @@ class Callback:
             await self.process_on_change()
 
     async def on_event(self, event):
-        """
-        Process bokeh UIEvents adding timeout to process multiple concerted
+        """Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
+
         """
         self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
@@ -338,8 +350,8 @@ class Callback:
             await self.process_on_event()
 
     async def process_on_event(self, timeout=None):
-        """
-        Trigger callback change event and triggering corresponding streams.
+        """Trigger callback change event and triggering corresponding streams.
+
         """
         await asyncio.sleep(0.01)
         if not self._queue:
@@ -360,7 +372,7 @@ class Callback:
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
-            self.on_msg(msg)
+            await self.on_msg(msg)
         await self.process_on_event()
 
     async def process_on_change(self):
@@ -395,7 +407,7 @@ class Callback:
             equal = isequal(msg, self._prev_msg)
 
         if not equal or any(s.transient for s in self.streams):
-            self.on_msg(msg)
+            await self.on_msg(msg)
             self._prev_msg = msg
         await self.process_on_change()
 
@@ -418,8 +430,8 @@ class Callback:
             self.plot.document.add_next_tick_callback(partial(self.on_change, attr, old, new))
 
     def set_callback(self, handle):
-        """
-        Set up on_change events for bokeh server interactions.
+        """Set up on_change events for bokeh server interactions.
+
         """
         if self.on_events:
             for event in self.on_events:
@@ -448,8 +460,7 @@ class Callback:
 
         # Hash the plot handle with Callback type allowing multiple
         # callbacks on one handle to be merged
-        hash_ids = [id(h) for h in hash_handles]
-        cb_hash = tuple(hash_ids)+(id(type(self)),)
+        cb_hash = (*map(id, hash_handles), id(type(self)))
         if cb_hash in self._callbacks:
             # Merge callbacks if another callback has already been attached
             cb = self._callbacks[cb_hash]
@@ -465,8 +476,8 @@ class Callback:
 
 
 class PointerXYCallback(Callback):
-    """
-    Returns the mouse x/y-position on mousemove event.
+    """Returns the mouse x/y-position on mousemove event.
+
     """
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
@@ -474,7 +485,9 @@ class PointerXYCallback(Callback):
     on_events = ['mousemove']
 
     def _process_out_of_bounds(self, value, start, end):
-        "Clips out of bounds values"
+        """Clips out of bounds values
+
+        """
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -508,7 +521,8 @@ class PointerXYCallback(Callback):
             msg['y'] = convert_timestamp(msg['y'])
 
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
-            msg['x'] = x_range.factors[int(msg['x'])]
+            with suppress(IndexError): # See: https://github.com/holoviz/holoviews/pull/6438
+                msg['x'] = x_range.factors[int(msg['x'])]
         elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
@@ -520,7 +534,8 @@ class PointerXYCallback(Callback):
                 msg['x'] = x
 
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
-            msg['y'] = y_range.factors[int(msg['y'])]
+            with suppress(IndexError):
+                msg['y'] = y_range.factors[int(msg['y'])]
         elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:
@@ -535,16 +550,16 @@ class PointerXYCallback(Callback):
 
 
 class PointerXCallback(PointerXYCallback):
-    """
-    Returns the mouse x-position on mousemove event.
+    """Returns the mouse x-position on mousemove event.
+
     """
 
     attributes = {'x': 'cb_obj.x'}
 
 
 class PointerYCallback(PointerXYCallback):
-    """
-    Returns the mouse x/y-position on mousemove event.
+    """Returns the mouse x/y-position on mousemove event.
+
     """
 
     attributes = {'y': 'cb_obj.y'}
@@ -582,7 +597,7 @@ class PopupMixin:
         stream = self.streams[0]
         if not getattr(stream, 'popup', None):
             return
-        elif Panel is None:
+        elif not BOKEH_GE_3_4_0:
             raise VersionError("Popup requires Bokeh >= 3.4")
 
         close_button = Button(label="", stylesheets=[r"""
@@ -609,9 +624,10 @@ class PopupMixin:
         }
         """],
         css_classes=["popup-close-btn"])
-        self._panel = Panel(
+        self._popup_position = stream.popup_position
+        self._panel = BokehPanel(
             position=XY(x=np.nan, y=np.nan),
-            anchor="top_left",
+            anchor=stream.popup_anchor or POPUP_POSITION_ANCHOR[self._popup_position],
             elements=[close_button],
             visible=False,
             styles={"zIndex": "1000"},
@@ -625,24 +641,56 @@ class PopupMixin:
         geom_type = self.geom_type
         self.plot.state.on_event('selectiongeometry', self._update_selection_event)
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel),
+            args=dict(panel=self._panel, popup_position=self._popup_position),
             code=f"""
-            export default ({{panel}}, cb_obj, _) => {{
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
-                 return
-              }}
-              let pos;
-              if (cb_obj.geometry.type === 'point') {{
-                pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}}
-              }} else if (cb_obj.geometry.type === 'rect') {{
-                pos = {{x: cb_obj.geometry.x1, y: cb_obj.geometry.y1}}
-              }} else if (cb_obj.geometry.type === 'poly') {{
-                pos = {{x: Math.max(...cb_obj.geometry.x), y: Math.max(...cb_obj.geometry.y)}}
-              }}
-              if (pos) {{
-                panel.position.setv(pos)
-              }}
+            export default ({{panel, popup_position}}, cb_obj, _) => {{
+                const el = panel.elements[1];
+                if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
+                    return;
+                }}
+
+                let pos;
+                if (cb_obj.geometry.type === 'point') {{
+                    pos = {{x: cb_obj.geometry.x, y: cb_obj.geometry.y}};
+                }} else if (cb_obj.geometry.type === 'rect') {{
+                    let x, y;
+                    if (popup_position.includes('left')) {{
+                        x = cb_obj.geometry.x0;
+                    }} else if (popup_position.includes('right')) {{
+                        x = cb_obj.geometry.x1;
+                    }} else {{
+                        x = (cb_obj.geometry.x0 + cb_obj.geometry.x1) / 2;
+                    }}
+                    if (popup_position.includes('top')) {{
+                        y = cb_obj.geometry.y1;
+                    }} else if (popup_position.includes('bottom')) {{
+                        y = cb_obj.geometry.y0;
+                    }} else {{
+                        y = (cb_obj.geometry.y0 + cb_obj.geometry.y1) / 2;
+                    }}
+                    pos = {{x: x, y: y}};
+                }} else if (cb_obj.geometry.type === 'poly') {{
+                    let x, y;
+                    if (popup_position.includes('left')) {{
+                        x = Math.min(...cb_obj.geometry.x);
+                    }} else if (popup_position.includes('right')) {{
+                        x = Math.max(...cb_obj.geometry.x);
+                    }} else {{
+                        x = (Math.min(...cb_obj.geometry.x) + Math.max(...cb_obj.geometry.x)) / 2;
+                    }}
+                    if (popup_position.includes('top')) {{
+                        y = Math.max(...cb_obj.geometry.y);
+                    }} else if (popup_position.includes('bottom')) {{
+                        y = Math.min(...cb_obj.geometry.y);
+                    }} else {{
+                        y = (Math.min(...cb_obj.geometry.y) + Math.max(...cb_obj.geometry.y)) / 2;
+                    }}
+                    pos = {{x: x, y: y}};
+                }}
+
+                if (pos) {{
+                    panel.position.setv(pos);
+                }}
             }}""",
         ))
 
@@ -663,15 +711,17 @@ class PopupMixin:
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            self._process_selection_event()
-            self._skipped_partial_event = False
+            if self.plot.document.session_context and self.plot.document.session_context.server_context:
+                self.plot.document.add_next_tick_callback(self._process_selection_partial_event)
+            else:
+                state.execute(self._process_selection_partial_event)
 
-    def on_msg(self, msg):
-        super().on_msg(msg)
+    async def on_msg(self, msg):
+        await super().on_msg(msg)
         if hasattr(self, '_panel'):
-            self._process_selection_event()
+            await self._process_selection_event()
 
-    def _process_selection_event(self):
+    async def _process_selection_event(self):
         event = self._selection_event
         if event is not None:
             if self.geom_type not in (event.geometry["type"], "any"):
@@ -690,7 +740,10 @@ class PopupMixin:
         popup_is_callable = callable(popup)
         if popup_is_callable:
             with set_curdoc(self.plot.document):
-                popup = popup(**stream.contents)
+                if inspect.iscoroutinefunction(popup):
+                    popup = await popup(**stream.contents)
+                else:
+                    popup = popup(**stream.contents)
 
         # If no popup is defined, hide the bokeh panel wrapper
         if popup is None:
@@ -727,7 +780,7 @@ class PopupMixin:
             position = self._get_position(event) if event else None
             if position:
                 self._panel.position = XY(**position)
-                if self.plot.comm:  # update Jupyter Notebook
+                if self.plot.comm:  # update Jupyter Notebooks
                     push_on_root(self.plot.root.ref['id'])
             return
 
@@ -747,13 +800,14 @@ class PopupMixin:
             push_on_root(self.plot.root.ref['id'])
         self._existing_popup = popup_pane
 
+    async def _process_selection_partial_event(self):
+        await self._process_selection_event()
+        self._skipped_partial_event = False
+
 
 class TapCallback(PopupMixin, PointerXYCallback):
-    """
-    Returns the mouse x/y-position on tap event.
+    """Returns the mouse x/y-position on tap event.
 
-    Note: As of bokeh 0.12.5, there is no way to distinguish the
-    individual tap events within a doubletap event.
     """
 
     geom_type = 'point'
@@ -761,7 +815,9 @@ class TapCallback(PopupMixin, PointerXYCallback):
     on_events = ['tap', 'doubletap']
 
     def _process_out_of_bounds(self, value, start, end):
-        "Sets out of bounds values to None"
+        """Sets out of bounds values to None
+
+        """
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -781,60 +837,108 @@ class TapCallback(PopupMixin, PointerXYCallback):
         return value
 
 
+class MultiAxisTapCallback(TapCallback):
+    """Returns the mouse x/y-positions on tap event.
+
+    """
+
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
+
+    def _process_msg(self, msg):
+        x_range = self.plot.handles.get('x_range')
+        y_range = self.plot.handles.get('y_range')
+        extra_x = list(self.plot.handles.get('extra_x_ranges', {}).values())
+        extra_y = list(self.plot.handles.get('extra_y_ranges', {}).values())
+        xaxis = self.plot.handles.get('xaxis')
+        yaxis = self.plot.handles.get('yaxis')
+
+        # Compute x/y position relative to first axis
+        x, y = msg['x'], msg['y']
+        x0, x1 = x_range.start, x_range.end
+        y0, y1 = y_range.start, y_range.end
+        if isinstance(xaxis, DatetimeAxis):
+            x = convert_timestamp(x)
+            if isinstance(x0, (float, int)):
+                x0 = convert_timestamp(x0)
+            if isinstance(x1, (float, int)):
+                x1 = convert_timestamp(x1)
+        if isinstance(yaxis, DatetimeAxis):
+            y = convert_timestamp(y)
+            if isinstance(y0, (float, int)):
+                y0 = convert_timestamp(y0)
+            if isinstance(y1, (float, int)):
+                y1 = convert_timestamp(y1)
+        xs, ys = {x_range.name: x}, {y_range.name: y}
+        xspan, yspan = x1 - x0, y1 - y0
+        xfactor, yfactor = (x-x0) / xspan, (y-y0) / yspan
+
+        # Use computed factors to compute x/y position on other axes
+        for values, factor, ranges, axis in (
+            (xs, xfactor, extra_x, xaxis),
+            (ys, yfactor, extra_y, yaxis)
+        ):
+            for rng in ranges:
+                value = rng.start + (rng.end-rng.start) * factor
+                if isinstance(axis, DatetimeAxis) and isinstance(value, (float, int)):
+                    value = convert_timestamp(value)
+                values[rng.name] = value
+
+        return {'xs': xs, 'ys': ys}
+
 
 class SingleTapCallback(TapCallback):
-    """
-    Returns the mouse x/y-position on tap event.
+    """Returns the mouse x/y-position on tap event.
+
     """
 
     on_events = ['tap']
 
 
 class PressUpCallback(TapCallback):
-    """
-    Returns the mouse x/y-position of a pressup mouse event.
+    """Returns the mouse x/y-position of a pressup mouse event.
+
     """
 
     on_events = ['pressup']
 
 
 class PanEndCallback(TapCallback):
-    """
-    Returns the mouse x/y-position of a pan end event.
+    """Returns the mouse x/y-position of a pan end event.
+
     """
 
     on_events = ['panend']
 
 
 class DoubleTapCallback(TapCallback):
-    """
-    Returns the mouse x/y-position on doubletap event.
+    """Returns the mouse x/y-position on doubletap event.
+
     """
 
     on_events = ['doubletap']
 
 
 class MouseEnterCallback(PointerXYCallback):
-    """
-    Returns the mouse x/y-position on mouseenter event, i.e. when
+    """Returns the mouse x/y-position on mouseenter event, i.e. when
     mouse enters the plot canvas.
+
     """
 
     on_events = ['mouseenter']
 
 
 class MouseLeaveCallback(PointerXYCallback):
-    """
-    Returns the mouse x/y-position on mouseleave event, i.e. when
+    """Returns the mouse x/y-position on mouseleave event, i.e. when
     mouse leaves the plot canvas.
+
     """
 
     on_events = ['mouseleave']
 
 
 class RangeXYCallback(Callback):
-    """
-    Returns the x/y-axis ranges of a plot.
+    """Returns the x/y-axis ranges of a plot.
+
     """
 
     on_events = ['rangesupdate']
@@ -888,8 +992,8 @@ class RangeXYCallback(Callback):
 
 
 class RangeXCallback(RangeXYCallback):
-    """
-    Returns the x-axis range of a plot.
+    """Returns the x-axis range of a plot.
+
     """
 
     on_events = ['rangesupdate']
@@ -903,8 +1007,8 @@ class RangeXCallback(RangeXYCallback):
 
 
 class RangeYCallback(RangeXYCallback):
-    """
-    Returns the y-axis range of a plot.
+    """Returns the y-axis range of a plot.
+
     """
 
     on_events = ['rangesupdate']
@@ -918,9 +1022,9 @@ class RangeYCallback(RangeXYCallback):
 
 
 class PlotSizeCallback(Callback):
-    """
-    Returns the actual width and height of a plot once the layout
+    """Returns the actual width and height of a plot once the layout
     solver has executed.
+
     """
 
     models = ['plot']
@@ -956,9 +1060,10 @@ class SelectModeCallback(Callback):
 
 
 class BoundsCallback(PopupMixin, Callback):
+    """Returns the bounds of a box_select tool.
+
     """
-    Returns the bounds of a box_select tool.
-    """
+
     attributes = {'x0': 'cb_obj.geometry.x0',
                   'x1': 'cb_obj.geometry.x1',
                   'y0': 'cb_obj.geometry.y0',
@@ -985,9 +1090,9 @@ class BoundsCallback(PopupMixin, Callback):
 
 
 class SelectionXYCallback(BoundsCallback):
-    """
-    Converts a bounds selection to numeric or categorical x-range
+    """Converts a bounds selection to numeric or categorical x-range
     and y-range selections.
+
     """
 
     def _process_msg(self, msg):
@@ -998,7 +1103,7 @@ class SelectionXYCallback(BoundsCallback):
         x0, y0, x1, y1 = msg['bounds']
         x_range = self.plot.handles['x_range']
         if isinstance(x_range, FactorRange):
-            x0, x1 = int(round(x0)), int(round(x1))
+            x0, x1 = round(x0), round(x1)
             xfactors = x_range.factors[x0: x1]
             if x_range.tags and x_range.tags[0]:
                 xdim = el.get_dimension(x_range.tags[0][0][0])
@@ -1013,7 +1118,7 @@ class SelectionXYCallback(BoundsCallback):
             msg['x_selection'] = (x0, x1)
         y_range = self.plot.handles['y_range']
         if isinstance(y_range, FactorRange):
-            y0, y1 = int(round(y0)), int(round(y1))
+            y0, y1 = round(y0), round(y1)
             yfactors = y_range.factors[y0: y1]
             if y_range.tags and y_range.tags[0]:
                 ydim = el.get_dimension(y_range.tags[0][0][0])
@@ -1030,8 +1135,8 @@ class SelectionXYCallback(BoundsCallback):
 
 
 class BoundsXCallback(Callback):
-    """
-    Returns the bounds of a xbox_select tool.
+    """Returns the bounds of a xbox_select tool.
+
     """
 
     attributes = {'x0': 'cb_obj.geometry.x0', 'x1': 'cb_obj.geometry.x1'}
@@ -1053,8 +1158,8 @@ class BoundsXCallback(Callback):
 
 
 class BoundsYCallback(Callback):
-    """
-    Returns the bounds of a ybox_select tool.
+    """Returns the bounds of a ybox_select tool.
+
     """
 
     attributes = {'y0': 'cb_obj.geometry.y0', 'y1': 'cb_obj.geometry.y1'}
@@ -1101,8 +1206,8 @@ class LassoCallback(PopupMixin, Callback):
 
 
 class Selection1DCallback(PopupMixin, Callback):
-    """
-    Returns the current selection on a ColumnDataSource.
+    """Returns the current selection on a ColumnDataSource.
+
     """
 
     attributes = {'index': 'cb_obj.indices'}
@@ -1114,47 +1219,106 @@ class Selection1DCallback(PopupMixin, Callback):
         source = self.plot.handles['source']
         renderer = self.plot.handles['glyph_renderer']
         selected = self.plot.handles['selected']
+
         self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected),
+            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected, popup_position=self._popup_position),
             code="""
-            export default ({panel, renderer, source, selected}, cb_obj, _) => {
-              const el = panel.elements[1]
-              if ((el && !el.visible) || !cb_obj.final) {
-                 return
-              }
-              let x, y, xs, ys;
-              let indices = selected.indices;
-              if (cb_obj.geometry.type == 'point') {
-                indices = indices.slice(-1)
-              }
-              if (renderer.glyph.x && renderer.glyph.y) {
-                xs = source.get_column(renderer.glyph.x.field)
-                ys = source.get_column(renderer.glyph.y.field)
-              } else if (renderer.glyph.right && renderer.glyph.top) {
-                xs = source.get_column(renderer.glyph.right.field)
-                ys = source.get_column(renderer.glyph.top.field)
-              } else if (renderer.glyph.x1 && renderer.glyph.y1) {
-                xs = source.get_column(renderer.glyph.x1.field)
-                ys = source.get_column(renderer.glyph.y1.field)
-              } else if (renderer.glyph.xs && renderer.glyph.ys) {
-                xs = source.get_column(renderer.glyph.xs.field)
-                ys = source.get_column(renderer.glyph.ys.field)
-              }
-              if (!xs || !ys) { return }
-              for (const i of indices) {
-                const tx = xs[i]
-                if (!x || (tx > x)) {
-                  x = xs[i]
+            export default ({panel, renderer, source, selected, popup_position}, cb_obj, _) => {
+                panel.visible = false;  // Hide the popup panel so it doesn't show in previous location
+                const el = panel.elements[1];
+                if ((el && !el.visible) || !cb_obj.final) {
+                    return;
                 }
-                const ty = ys[i]
-                if (!y || (ty > y)) {
-                  y = ys[i]
+                let x, y, xs, ys;
+                let indices = selected.indices;
+                if (cb_obj.geometry.type == 'point') {
+                    indices = indices.slice(-1);
                 }
-              }
-              if (x && y) {
-                panel.position.setv({x, y})
-              }
-            }""",
+
+                if (renderer.glyph.x && renderer.glyph.y) {
+                    xs = source.get_column(renderer.glyph.x.field);
+                    ys = source.get_column(renderer.glyph.y.field);
+                } else if (renderer.glyph.right && renderer.glyph.top) {
+                    xs = source.get_column(renderer.glyph.right.field);
+                    ys = source.get_column(renderer.glyph.top.field);
+                } else if (renderer.glyph.x1 && renderer.glyph.y1) {
+                    xs = source.get_column(renderer.glyph.x1.field);
+                    ys = source.get_column(renderer.glyph.y1.field);
+                } else if (renderer.glyph.xs && renderer.glyph.ys) {
+                    xs = source.get_column(renderer.glyph.xs.field);
+                    ys = source.get_column(renderer.glyph.ys.field);
+                }
+
+                if (!xs || !ys || !indices.length) {
+                    return;
+                }
+
+                let minX, maxX, minY, maxY;
+
+                // Loop over each index in the selection and find the corresponding polygon coordinates
+                for (const i of indices) {
+                    let ix = xs[i];
+                    let iy = ys[i];
+                    let tx, ty;
+
+                    // Check if the values are numbers or nested arrays
+                    if (typeof ix === 'number') {
+                        tx = ix;
+                        ty = iy;
+                    } else {
+                        // Drill down into nested arrays until we find the number values
+                        while (ix.length && typeof ix[0] !== 'number') {
+                            ix = ix[0];
+                            iy = iy[0];
+                        }
+
+                        // Set tx and ty based on the popup position preferences
+                        if (popup_position.includes('left')) {
+                            tx = Math.min(...ix);
+                        } else if (popup_position.includes('right')) {
+                            tx = Math.max(...ix);
+                        } else {
+                            tx = (Math.min(...ix) + Math.max(...ix)) / 2;
+                        }
+
+                        if (popup_position.includes('top')) {
+                            ty = Math.max(...iy);
+                        } else if (popup_position.includes('bottom')) {
+                            ty = Math.min(...iy);
+                        } else {
+                            ty = (Math.min(...iy) + Math.max(...iy)) / 2;
+                        }
+                    }
+
+                    // Update the min/max values for x and y
+                    if (minX === undefined || tx < minX) { minX = tx; }
+                    if (maxX === undefined || tx > maxX) { maxX = tx; }
+                    if (minY === undefined || ty < minY) { minY = ty; }
+                    if (maxY === undefined || ty > maxY) { maxY = ty; }
+                }
+
+                // Set x and y based on popup_position preference
+                if (popup_position.includes('left')) {
+                    x = minX;
+                } else if (popup_position.includes('right')) {
+                    x = maxX;
+                } else {
+                    x = (minX + maxX) / 2;
+                }
+
+                if (popup_position.includes('top')) {
+                    y = maxY;
+                } else if (popup_position.includes('bottom')) {
+                    y = minY;
+                } else {
+                    y = (minY + maxY) / 2;
+                }
+
+                // Set the popup position and make it visible
+                panel.position.setv({x, y});
+                panel.visible = true;
+            }
+            """,
         ))
 
     def _get_position(self, event):
@@ -1183,8 +1347,8 @@ class Selection1DCallback(PopupMixin, Callback):
 
 
 class ResetCallback(Callback):
-    """
-    Signals the Reset stream if an event has been triggered.
+    """Signals the Reset stream if an event has been triggered.
+
     """
 
     models = ['plot']
@@ -1196,9 +1360,9 @@ class ResetCallback(Callback):
 
 
 class CDSCallback(Callback):
-    """
-    A Stream callback that syncs the data on a bokeh ColumnDataSource
+    """A Stream callback that syncs the data on a bokeh ColumnDataSource
     model with Python.
+
     """
 
     attributes = {'data': 'source.data'}
@@ -1243,6 +1407,7 @@ class CDSCallback(Callback):
             elif (
                 isinstance(values, list)
                 and len(values) == 4
+                and isinstance(values[2], str)
                 and values[2] in ("big", "little")
                 and isinstance(values[3], list)
             ):
@@ -1291,9 +1456,9 @@ class GlyphDrawCallback(CDSCallback):
         cds.js_on_change('data', cb)
 
     def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
+        """Add any value dimensions not already in the data ensuring the
         element can be reconstituted in entirety.
+
         """
         element = self.plot.current_frame
         stream = self.streams[0]
@@ -1369,9 +1534,9 @@ class CurveEditCallback(GlyphDrawCallback):
         return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
+        """Add any value dimensions not already in the data ensuring the
         element can be reconstituted in entirety.
+
         """
         element = self.plot.current_frame
         for d in element.vdims:
@@ -1414,9 +1579,9 @@ class PolyDrawCallback(GlyphDrawCallback):
         return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
+        """Add any value dimensions not already in the data ensuring the
         element can be reconstituted in entirety.
+
         """
         element = self.plot.current_frame
         stream = self.streams[0]
@@ -1471,7 +1636,7 @@ class BoxEditCallback(GlyphDrawCallback):
         element = self.plot.current_frame
 
         l, b, r, t =  [], [], [], []
-        for x, y in zip(data['xs'], data['ys']):
+        for x, y in zip(data['xs'], data['ys'], strict=None):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
             l.append(x0)
@@ -1508,7 +1673,7 @@ class BoxEditCallback(GlyphDrawCallback):
             renderer = self._path_initialize()
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             # First version with Quad support
             box_tool = BoxEditTool(renderers=[renderer], **kwargs)
             self.plot.state.tools.append(box_tool)
@@ -1585,5 +1750,6 @@ Stream._callbacks['bokeh'].update({
     FreehandDraw: FreehandDrawCallback,
     PolyDraw    : PolyDrawCallback,
     PolyEdit    : PolyEditCallback,
-    SelectMode  : SelectModeCallback
+    SelectMode  : SelectModeCallback,
+    MultiAxisTap: MultiAxisTapCallback
 })

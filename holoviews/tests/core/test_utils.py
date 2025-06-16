@@ -8,6 +8,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews import Dimension, Element
 from holoviews.core.util import (
@@ -22,6 +23,7 @@ from holoviews.core.util import (
     find_range,
     get_path,
     is_nan,
+    is_null_or_na_scalar,
     isfinite,
     make_path_unique,
     max_range,
@@ -456,12 +458,12 @@ class TestTreePathUtils(unittest.TestCase):
     def test_make_path_unique_clash_without_label(self):
         path = ('Element',)
         new_path = make_path_unique(path, {path: 1}, True)
-        self.assertEqual(new_path, path+('I',))
+        self.assertEqual(new_path, (*path, 'I'))
 
     def test_make_path_unique_clash_with_label(self):
         path = ('Element', 'A')
         new_path = make_path_unique(path, {path: 1}, True)
-        self.assertEqual(new_path, path+('I',))
+        self.assertEqual(new_path, (*path, 'I'))
 
     def test_make_path_unique_no_clash_old(self):
         path = ('Element', 'A')
@@ -471,7 +473,7 @@ class TestTreePathUtils(unittest.TestCase):
     def test_make_path_unique_clash_without_label_old(self):
         path = ('Element',)
         new_path = make_path_unique(path, {path: 1}, False)
-        self.assertEqual(new_path, path+('I',))
+        self.assertEqual(new_path, (*path, 'I'))
 
     def test_make_path_unique_clash_with_label_old(self):
         path = ('Element', 'A')
@@ -639,12 +641,12 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_pandas_period_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
-        daily = pd.PeriodIndex(list(daily)+[pd.NaT])
+        daily = pd.PeriodIndex([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_period_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
-        daily = pd.Series(list(daily)+[pd.NaT])
+        daily = pd.Series([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_index(self):
@@ -657,12 +659,12 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_pandas_timestamp_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
-        daily = pd.DatetimeIndex(list(daily)+[pd.NaT])
+        daily = pd.DatetimeIndex([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
-        daily = pd.Series(list(daily)+[pd.NaT])
+        daily = pd.Series([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_datetime64_array(self):
@@ -671,7 +673,7 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_datetime64_array_with_nat(self):
         dts = [np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)]
-        dt64 = np.array(dts+[np.datetime64('NaT')])
+        dt64 = np.array([*dts, np.datetime64('NaT')])
         self.assertEqual(isfinite(dt64), np.array([True, True, True, False]))
 
 
@@ -817,3 +819,30 @@ def test_is_nan():
     assert is_nan([1, 1]) == False
     assert is_nan([np.nan]) == True
     assert is_nan([np.nan, np.nan]) == False
+
+
+def test_is_null_or_na_scalar():
+    assert is_null_or_na_scalar(np.nan)
+    assert is_null_or_na_scalar(pd.NA)
+    assert is_null_or_na_scalar(pd.NaT)
+    assert is_null_or_na_scalar(None)
+    assert is_null_or_na_scalar(np.datetime64("NAT"))
+
+    assert not is_null_or_na_scalar(datetime.datetime.today())
+    assert not is_null_or_na_scalar(pd.Timestamp.now())
+    assert not is_null_or_na_scalar("AAAA")
+    assert not is_null_or_na_scalar(...)
+    assert not is_null_or_na_scalar([1, 2])
+    assert not is_null_or_na_scalar((1, 2))
+    assert not is_null_or_na_scalar({1, 2})
+    assert not is_null_or_na_scalar({"a": 1, "b": 2})
+    assert not is_null_or_na_scalar(slice(None))
+    assert not is_null_or_na_scalar(np.array([1, 2]))
+    assert not is_null_or_na_scalar(pd.DataFrame([1, 2]))
+
+
+def test_is_null_or_na_scalar_polars():
+    pl = pytest.importorskip("polars")
+    assert is_null_or_na_scalar(pl.Null)
+    assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
+    assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))

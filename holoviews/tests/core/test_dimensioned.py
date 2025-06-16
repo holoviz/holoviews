@@ -42,8 +42,8 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
             Store._options[backend] = OptionTree([], groups=groups)
             Store._custom_options[backend] = {}
         name = objtype.__name__
-        style_opts = Keywords(['style_opt1', 'style_opt2']+custom_style, name)
-        plot_opts = Keywords(['plot_opt1', 'plot_opt2']+custom_plot, name)
+        style_opts = Keywords(['style_opt1', 'style_opt2', *custom_style], name)
+        plot_opts = Keywords(['plot_opt1', 'plot_opt2', *custom_plot], name)
         opt_groups = {'plot': Options(allowed_keywords=plot_opts),
                       'style': Options(allowed_keywords=style_opts),
                       'output': Options(allowed_keywords=['backend'])}
