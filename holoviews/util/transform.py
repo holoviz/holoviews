@@ -51,7 +51,12 @@ def norm(values, min=None, max=None):
     """
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
-    if min == max:
+    try:
+        # If it cannot be compared, this could be because of dask
+        comparison = bool(min == max)
+    except TypeError:
+        comparison = False
+    if comparison:
         return values if max == 0 else (values / max)
     return (values - min) / (max-min)
 
