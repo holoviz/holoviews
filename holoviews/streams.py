@@ -63,12 +63,16 @@ def streams_list_from_dict(streams):
         v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
-        else:
+            continue
+        deps = param.parameterized.resolve_ref(v, recursive=True)
+        if deps:
             refs[k] = v
+        else:
+            raise TypeError(f'Cannot handle {k!r} value {v!r} in streams dictionary')
     streams = Params.from_params(params)
     if not refs:
         return streams
-    return [*streams, ParamRefs(refs=refs)]
+    return [*streams, ParamRefs(refs=refs, recursive=True)]
 
 
 class Stream(param.Parameterized):
