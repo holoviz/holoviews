@@ -2,7 +2,7 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.element import HLines, HSpans, VLines, VSpans
-from holoviews.plotting.mpl.util import MPL_GE_3_9
+from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -23,7 +23,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, hlines.data["y"]):
+        for source, val in zip(sources, hlines.data["y"], strict=None):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_hlines_array(self):
@@ -39,7 +39,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, hlines.data):
+        for source, val in zip(sources, hlines.data, strict=None):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_hlines_plot_invert_axes(self):
@@ -57,7 +57,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, hlines.data["y"]):
+        for source, val in zip(sources, hlines.data["y"], strict=None):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_hlines_nondefault_kdim(self):
@@ -73,7 +73,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, hlines.data["other"]):
+        for source, val in zip(sources, hlines.data["other"], strict=None):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_vlines_plot(self):
@@ -91,7 +91,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, vlines.data["x"]):
+        for source, val in zip(sources, vlines.data["x"], strict=None):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_vlines_plot_invert_axes(self):
@@ -109,7 +109,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, vlines.data["x"]):
+        for source, val in zip(sources, vlines.data["x"], strict=None):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_vlines_nondefault_kdim(self):
@@ -125,7 +125,7 @@ class TestHVLinesPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 4
-        for source, val in zip(sources, vlines.data["other"]):
+        for source, val in zip(sources, vlines.data["other"], strict=None):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_vlines_hlines_overlay(self):
@@ -146,10 +146,10 @@ class TestHVLinesPlot(TestMPLPlot):
         assert np.allclose(ylim, (0, 5.5))
 
         sources = plot.handles["fig"].axes[0].get_children()
-        for source, val in zip(sources[:4], hlines.data["y"]):
+        for source, val in zip(sources[:4], hlines.data["y"], strict=None):
             assert source.get_data() == ([0, 1], [val, val])
 
-        for source, val in zip(sources[4:], vlines.data["x"]):
+        for source, val in zip(sources[4:], vlines.data["x"], strict=None):
             assert source.get_data() == ([val, val], [0, 1])
 
 
@@ -157,7 +157,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
     def _hspans_check(self, source, v0, v1):
         # Matplotlib 3.9+ uses a rectangle instead of polygon
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             rect = [source.get_x(), source.get_y(), source.get_width(), source.get_height()]
             assert np.allclose(rect, [0, v0, 1, v1 - v0])
         else:
@@ -166,7 +166,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
     def _vspans_check(self, source, v0, v1):
         # Matplotlib 3.9+ uses a rectangle instead of polygon
-        if MPL_GE_3_9:
+        if MPL_GE_3_9_0:
             rect = [source.get_x(), source.get_y(), source.get_width(), source.get_height()]
             assert np.allclose(rect, [v0, 0, v1 - v0, 1])
         else:
@@ -189,7 +189,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 3
-        for source, v0, v1 in zip(sources, hspans.data["y0"], hspans.data["y1"]):
+        for source, v0, v1 in zip(sources, hspans.data["y0"], hspans.data["y1"], strict=None):
             self._hspans_check(source, v0, v1)
 
     def test_hspans_inverse_plot(self):
@@ -208,7 +208,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 3
-        for source, v0, v1 in zip(sources, hspans.data["y0"], hspans.data["y1"]):
+        for source, v0, v1 in zip(sources, hspans.data["y0"], hspans.data["y1"], strict=None):
             self._vspans_check(source, v0, v1)
 
     def test_dynamicmap_overlay_hspans(self):
@@ -242,7 +242,7 @@ class TestHVSpansPlot(TestMPLPlot):
         sources = plot.handles["annotations"]
         assert len(sources) == 3
         for source, v0, v1 in zip(
-            sources, hspans.data["other0"], hspans.data["other1"]
+            sources, hspans.data["other0"], hspans.data["other1"], strict=None
         ):
             self._hspans_check(source, v0, v1)
 
@@ -262,7 +262,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 3
-        for source, v0, v1 in zip(sources, vspans.data["x0"], vspans.data["x1"]):
+        for source, v0, v1 in zip(sources, vspans.data["x0"], vspans.data["x1"], strict=None):
             self._vspans_check(source, v0, v1)
 
     def test_vspans_inverse_plot(self):
@@ -281,7 +281,7 @@ class TestHVSpansPlot(TestMPLPlot):
 
         sources = plot.handles["annotations"]
         assert len(sources) == 3
-        for source, v0, v1 in zip(sources, vspans.data["x0"], vspans.data["x1"]):
+        for source, v0, v1 in zip(sources, vspans.data["x0"], vspans.data["x1"], strict=None):
             self._hspans_check(source, v0, v1)
 
     def test_vspans_nondefault_kdims(self):
@@ -300,7 +300,7 @@ class TestHVSpansPlot(TestMPLPlot):
         sources = plot.handles["annotations"]
         assert len(sources) == 3
         for source, v0, v1 in zip(
-            sources, vspans.data["other0"], vspans.data["other1"]
+            sources, vspans.data["other0"], vspans.data["other1"], strict=None
         ):
             self._vspans_check(source, v0, v1)
 
@@ -323,10 +323,10 @@ class TestHVSpansPlot(TestMPLPlot):
         assert np.allclose(ylim, (0, 6.5))
 
         sources = plot.handles["fig"].axes[0].get_children()
-        for source, v0, v1 in zip(sources[:3], hspans.data["y0"], hspans.data["y1"]):
+        for source, v0, v1 in zip(sources[:3], hspans.data["y0"], hspans.data["y1"], strict=None):
             self._hspans_check(source, v0, v1)
 
-        for source, v0, v1 in zip(sources[3:6], vspans.data["x0"], vspans.data["x1"]):
+        for source, v0, v1 in zip(sources[3:6], vspans.data["x0"], vspans.data["x1"], strict=None):
             self._vspans_check(source, v0, v1)
 
     def test_dynamicmap_overlay_vspans(self):

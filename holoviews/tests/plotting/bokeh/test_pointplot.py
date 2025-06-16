@@ -2,8 +2,15 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
-from bokeh.models import CategoricalColorMapper, FactorRange, LinearColorMapper, Scatter
+from bokeh.models import (
+    CategoricalColorMapper,
+    Circle,
+    FactorRange,
+    LinearColorMapper,
+    Scatter,
+)
 
+import holoviews as hv
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Points
@@ -182,7 +189,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
         self.assertIsInstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
+        self.assertEqual(x_range.factors, [*map(str, range(10)), 'A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
@@ -270,7 +277,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     def test_points_padding_datetime_square(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(points)
@@ -281,7 +288,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_datetime_nonsquare(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(points)
@@ -501,7 +508,7 @@ class TestPointPlot(TestBokehPlot):
         markers = ['circle', 'triangle']
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
+        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers, strict=None):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
 
@@ -540,3 +547,37 @@ class TestPointPlot(TestBokehPlot):
             "size_index; ignoring the size_index.\n"
         )
         self.assertEqual(log_msg, warning)
+
+    def test_point_radius(self):
+        x, y = 4, 5
+        xs = np.arange(x)
+        ys = np.arange(y)
+        zs = np.arange(x * y).reshape(y, x)
+        plot = Points((xs, ys, zs,), kdims=["xs", "ys"], vdims="zs")
+        plot.opts(radius=hv.dim("zs").norm() / 2)
+
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+        assert glyph.radius_dimension == "min"
+
+        norm = zs.T.ravel() / np.max(zs) / 2
+        np.testing.assert_array_equal(handles["cds"].data["radius"], norm)
+
+    def test_point_radius_then_size_then_radius(self):
+        plot = Points([1, 2, 3])
+        plot.opts(radius=1)
+
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+
+        plot.opts(radius=None, size=1)
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Scatter)
+
+        plot.opts(radius=1)
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)

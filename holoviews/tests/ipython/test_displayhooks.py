@@ -3,7 +3,8 @@ import pytest
 pytest.importorskip("IPython")
 
 from holoviews import Curve, Store
-from holoviews.ipython import IPTestCase, notebook_extension
+from holoviews.element.comparison import IPTestCase
+from holoviews.ipython import notebook_extension
 
 
 class TestDisplayHooks(IPTestCase):
@@ -17,7 +18,6 @@ class TestDisplayHooks(IPTestCase):
 
     def tearDown(self):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
-        del self.ip
         Store.display_hooks = self.backup
         notebook_extension._loaded = False
         super().tearDown()

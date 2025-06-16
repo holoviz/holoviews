@@ -45,7 +45,7 @@ class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
         bars = Bars([("A", 1), ("B", 2), ("C", 3)])
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.54, 2.54))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.4, 2.4))
         assert ax.patches[0].get_width() == 0.8
         np.testing.assert_equal(ax.get_xticks(), [0, 1, 2])
         np.testing.assert_equal(
@@ -69,7 +69,7 @@ class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.3233333, 3.8566667))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.1333333,  3.6666667))
         assert ax.patches[0].get_width() == 0.26666666666666666
         ticklabels = ax.get_xticklabels()
         expected = [
@@ -113,7 +113,7 @@ class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.59, 3.59))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.4, 3.4))
         assert ax.patches[0].get_width() == 0.8
         ticklabels = ax.get_xticklabels()
         expected = [
@@ -136,7 +136,7 @@ class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.34,  2.74))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.2,  2.6))
         assert ax.patches[0].get_width() == 0.4
         assert len(ax.get_xticks()) > 3
 

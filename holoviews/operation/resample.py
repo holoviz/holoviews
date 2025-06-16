@@ -9,8 +9,8 @@ from ..streams import PlotSize, RangeX, RangeXY
 
 
 class LinkableOperation(Operation):
-    """
-    Abstract baseclass for operations supporting linked inputs.
+    """Abstract baseclass for operations supporting linked inputs.
+
     """
 
     link_inputs = param.Boolean(default=True, doc="""
@@ -25,8 +25,8 @@ class LinkableOperation(Operation):
 
 
 class ResampleOperation1D(LinkableOperation):
-    """
-    Abstract baseclass for resampling operations
+    """Abstract baseclass for resampling operations
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -61,8 +61,8 @@ class ResampleOperation1D(LinkableOperation):
 
 
 class ResampleOperation2D(ResampleOperation1D):
-    """
-    Abstract baseclass for resampling operations
+    """Abstract baseclass for resampling operations
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -183,6 +183,11 @@ class ResampleOperation2D(ResampleOperation1D):
             if y and element.get_dimension_type(y[0]) in datetime_types:
                 ytype = 'datetime'
 
+        # Adjust width and height depending on pixel ratio
+        pixel_ratio = self._get_pixel_ratio()
+        width = int(width * pixel_ratio)
+        height = int(height * pixel_ratio)
+
         # Compute highest allowed sampling density
         xspan = xend - xstart
         yspan = yend - ystart
@@ -198,12 +203,11 @@ class ResampleOperation2D(ResampleOperation1D):
             yunit, height = 0, 0
         else:
             yunit = float(yspan)/height
-        xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
-                  np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        pixel_ratio = self._get_pixel_ratio()
-        width = int(width * pixel_ratio)
-        height = int(height * pixel_ratio)
+        xs, ys = (
+            np.linspace(xstart+xunit/2., xend-xunit/2., width),
+            np.linspace(ystart+yunit/2., yend-yunit/2., height)
+        )
         return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
 
     def _get_pixel_ratio(self):

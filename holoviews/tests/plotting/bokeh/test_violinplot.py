@@ -32,7 +32,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         kde = univariate_kde(violin, cut=5)
         xs, ys = (kde.dimension_values(i) for i in range(2))
         ys = (ys/ys.max())*(0.7/2.)
-        ys = [('',)+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
+        ys = [('', sign * y) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
         kde =  {'x': np.concatenate([xs, xs[::-1]]), 'y': ys}
 
         plot = bokeh_renderer.get_plot(violin)

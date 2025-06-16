@@ -1,6 +1,6 @@
-"""
-Public API for all plotting renderers supported by HoloViews,
+"""Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
+
 """
 import base64
 import os
@@ -40,7 +40,7 @@ from ..streams import Stream
 from . import Plot
 from .util import collate, displayable, initialize_dynamic
 
-panel_version = Version(pn.__version__)
+PANEL_VERSION = Version(pn.__version__).release
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -90,8 +90,7 @@ static_template = """
 """
 
 class Renderer(Exporter):
-    """
-    The job of a Renderer is to turn the plotting state held within
+    """The job of a Renderer is to turn the plotting state held within
     Plot classes into concrete, visual output in the form of the PNG,
     SVG, MP4 or WebM formats (among others). Note that a Renderer is a
     type of Exporter and must therefore follow the Exporter interface.
@@ -100,6 +99,7 @@ class Renderer(Exporter):
     appropriate Plot classes associated with that renderer in order to
     generate output. The process of 'drawing' is execute by the Plots
     and the Renderer turns the final plotting state into output.
+
     """
 
     center = param.Boolean(default=True, doc="""
@@ -112,19 +112,19 @@ class Renderer(Exporter):
     dpi = param.Integer(default=None, doc="""
         The render resolution in dpi (dots per inch)""")
 
-    fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
+    fig = param.Selector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
     fps = param.Number(default=20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['scrubber','widgets', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
-    mode = param.ObjectSelector(default='default',
+    mode = param.Selector(default='default',
                                 objects=['default', 'server'], doc="""
         Whether to render the object in regular or server mode. In server
         mode a bokeh Document will be returned which can be served as a
@@ -133,13 +133,13 @@ class Renderer(Exporter):
     size = param.Integer(default=100, doc="""
         The rendered size as a percentage size""")
 
-    widget_location = param.ObjectSelector(default=None, allow_None=True, objects=[
+    widget_location = param.Selector(default=None, allow_None=True, objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The position of the widgets relative to the plot.""")
 
-    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'], doc="""
+    widget_mode = param.Selector(default='embed', objects=['embed', 'live'], doc="""
         The widget mode determining whether frames are embedded or generated
         'live' when interacting with the widget.""")
 
@@ -201,8 +201,8 @@ class Renderer(Exporter):
 
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None, comm=None, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding plot instance.
+        """Given a HoloViews Viewable return a corresponding plot instance.
+
         """
         if isinstance(obj, DynamicMap) and obj.unbounded:
             dims = ', '.join(f'{dim!r}' for dim in obj.unbounded)
@@ -235,7 +235,7 @@ class Renderer(Exporter):
                                                    **plot_opts)
             defaults = [kd.default for kd in plot.dimensions]
             init_key = tuple(v if d is None else d for v, d in
-                             zip(plot.keys[0], defaults))
+                             zip(plot.keys[0], defaults, strict=None))
             plot.update(init_key)
         else:
             plot = obj
@@ -266,17 +266,17 @@ class Renderer(Exporter):
 
     @bothmethod
     def get_plot_state(self_or_cls, obj, renderer=None, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding plot state.
+        """Given a HoloViews Viewable return a corresponding plot state.
+
         """
         if not isinstance(obj, Plot):
             obj = self_or_cls.get_plot(obj=obj, renderer=renderer, **kwargs)
         return obj.state
 
     def _validate(self, obj, fmt, **kwargs):
-        """
-        Helper method to be used in the __call__ method to get a
+        """Helper method to be used in the __call__ method to get a
         suitable plot or widget object and the appropriate format.
+
         """
         if isinstance(obj, Viewable):
             return obj, 'html'
@@ -314,8 +314,8 @@ class Renderer(Exporter):
         return plot, fmt
 
     def _apply_post_render_hooks(self, data, obj, fmt):
-        """
-        Apply the post-render hooks to the data.
+        """Apply the post-render hooks to the data.
+
         """
         hooks = self.post_render_hooks.get(fmt,[])
         for hook in hooks:
@@ -327,10 +327,10 @@ class Renderer(Exporter):
         return data
 
     def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):
-        """
-        Renders plot or data structure and wraps the output in HTML.
+        """Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
         code to initialize a Comm, if the plot supplies one.
+
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt, **kwargs)
@@ -352,7 +352,7 @@ class Renderer(Exporter):
             figdata = figdata.encode("utf-8")
         elif fmt == 'pdf' and 'height' not in css:
             _, h = self.get_size(plot)
-            css['height'] = '%dpx' % (h*self.dpi*1.15)
+            css['height'] = f"{int(h*self.dpi*1.15)}px"
 
         if isinstance(css, dict):
             css = '; '.join(f"{k}: {v}" for k, v in css.items())
@@ -366,10 +366,10 @@ class Renderer(Exporter):
         return html
 
     def components(self, obj, fmt=None, comm=True, **kwargs):
-        """
-        Returns data and metadata dictionaries containing HTML and JS
+        """Returns data and metadata dictionaries containing HTML and JS
         components to include render in app, notebook, or standalone
         document.
+
         """
         if isinstance(obj, Plot):
             plot = obj
@@ -437,10 +437,10 @@ class Renderer(Exporter):
         return data, {}
 
     def static_html(self, obj, fmt=None, template=None):
-        """
-        Generates a static HTML with the rendered object in the
+        """Generates a static HTML with the rendered object in the
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
+
         """
         html_bytes = StringIO()
         self.save(obj, html_bytes, fmt)
@@ -465,15 +465,15 @@ class Renderer(Exporter):
     @bothmethod
     def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
                        json=False, json_path='', **kwargs):
-        """
-        Render and export object as a widget to a static HTML
+        """Render and export object as a widget to a static HTML
         file. Allows supplying a custom template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'
         containing the widget. Also provides options to export widget
         data to a json file in the supplied json_path (defaults to
         current path).
+
         """
-        if fmt not in self_or_cls.widgets+['auto', None]:
+        if fmt not in [*self_or_cls.widgets, "auto", None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
         self_or_cls.get_widget(obj, fmt).save(filename)
@@ -490,8 +490,7 @@ class Renderer(Exporter):
 
     @bothmethod
     def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
-        """
-        Creates a bokeh app from a HoloViews object or plot. By
+        """Creates a bokeh app from a HoloViews object or plot. By
         default simply attaches the plot to bokeh's curdoc and returns
         the Document, if show option is supplied creates an
         Application instance and displays it either in a browser
@@ -501,6 +500,7 @@ class Renderer(Exporter):
         websocket origin is required when launching from an existing
         tornado server (such as the notebook) and it is not on the
         default port ('localhost:8888').
+
         """
         if isinstance(plot, HoloViewsPane):
             pane = plot
@@ -515,10 +515,10 @@ class Renderer(Exporter):
 
     @bothmethod
     def server_doc(self_or_cls, obj, doc=None):
-        """
-        Get a bokeh Document with the plot attached. May supply
+        """Get a bokeh Document with the plot attached. May supply
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
+
         """
         if not isinstance(obj, HoloViewsPane):
             obj = HoloViewsPane(obj, renderer=self_or_cls, backend=self_or_cls.backend,
@@ -527,9 +527,9 @@ class Renderer(Exporter):
 
     @classmethod
     def plotting_class(cls, obj):
-        """
-        Given an object or Element class, return the suitable plotting
+        """Given an object or Element class, return the suitable plotting
         class needed to render it with the current renderer.
+
         """
         if isinstance(obj, AdjointLayout) or obj is AdjointLayout:
             obj  = Layout
@@ -547,22 +547,22 @@ class Renderer(Exporter):
 
     @classmethod
     def plot_options(cls, obj, percent_size):
-        """
-        Given an object and a percentage size (as supplied by the
+        """Given an object and a percentage size (as supplied by the
         %output magic) return all the appropriate plot options that
         would be used to instantiate a plot class for that element.
 
         Default plot sizes at the plotting class level should be taken
         into account.
+
         """
         raise NotImplementedError
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt='auto', key=None, info=None,
              options=None, resources='inline', title=None, **kwargs):
-        """
-        Save a HoloViews object to file, either using an explicitly
+        """Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
+
         """
         if info is None:
             info = {}
@@ -613,45 +613,47 @@ class Renderer(Exporter):
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
-        "Hook to prefix content for instance JS when saving HTML"
+        """Hook to prefix content for instance JS when saving HTML
+
+        """
         return
 
     @bothmethod
     def get_size(self_or_cls, plot):
-        """
-        Return the display size associated with a plot before
+        """Return the display size associated with a plot before
         rendering to any particular format. Used to generate
         appropriate HTML display.
 
         Returns a tuple of (width, height) in pixels.
+
         """
         raise NotImplementedError
 
     @classmethod
     @contextmanager
     def state(cls):
-        """
-        Context manager to handle global state for a backend,
+        """Context manager to handle global state for a backend,
         allowing Plot classes to temporarily override that state.
+
         """
         yield
 
     @classmethod
     def validate(cls, options):
-        """
-        Validate an options dictionary for the renderer.
+        """Validate an options dictionary for the renderer.
+
         """
         return options
 
     @classmethod
     def load_nb(cls, inline=False, reloading=False, enable_mathjax=False):
-        """
-        Loads any resources required for display of plots
+        """Loads any resources required for display of plots
         in the Jupyter notebook
+
         """
-        if panel_version >= Version('1.0.2'):
+        if PANEL_VERSION >= (1, 0, 2):
             load_notebook(inline, reloading=reloading, enable_mathjax=enable_mathjax)
-        elif panel_version >= Version('1.0.0'):
+        elif PANEL_VERSION >= (1, 0, 0):
             load_notebook(inline, reloading=reloading)
         elif reloading:
             return
@@ -670,8 +672,8 @@ class Renderer(Exporter):
 
     @classmethod
     def _delete_plot(cls, plot_id):
-        """
-        Deletes registered plots and calls Plot.cleanup
+        """Deletes registered plots and calls Plot.cleanup
+
         """
         plot = cls._plots.get(plot_id)
         if plot is None:

@@ -1,20 +1,24 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
-import pandas as pd
-from packaging.version import Version
-from pandas.api.types import is_numeric_dtype
 
 from .. import util
 from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import PANDAS_GE_210
+from ..util.dependencies import PANDAS_GE_2_1_0, _LazyModule
 from .interface import DataError, Interface
 from .util import finite_range
 
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    pd = _LazyModule("pandas")
+
+
 
 class PandasAPI:
-    """
-    This class is used to describe the interface as having a pandas-like API.
+    """This class is used to describe the interface as having a pandas-like API.
 
     The reason to have this class is that it is not always
     possible to directly inherit from the PandasInterface.
@@ -22,14 +26,25 @@ class PandasAPI:
     This class should not have any logic as it should be used like:
         if issubclass(interface, PandasAPI):
             ...
+
     """
 
 
 class PandasInterface(Interface, PandasAPI):
 
-    types = (pd.DataFrame,)
-
     datatype = 'dataframe'
+
+    @classmethod
+    def loaded(cls):
+        # 2025-02: As long as it is a required dependency and to not break
+        # existing behavior we will for now always return True
+        return bool(pd)
+
+    @classmethod
+    def applies(cls, obj):
+        if not cls.loaded():
+            return False
+        return type(obj) is pd.DataFrame
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -106,8 +121,8 @@ class PandasInterface(Interface, PandasAPI):
                                     "per dimension or a mapping between key and value dimension "
                                     "values.")
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                                    for k, v in column_data))
-                data = dict(((c, col) for c, col in zip(columns, column_data)))
+                                    for k, v in column_data), strict=None)
+                data = dict(((c, col) for c, col in zip(columns, column_data, strict=None)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
@@ -123,12 +138,11 @@ class PandasInterface(Interface, PandasAPI):
                 if any(d.ndim > 1 for d in data):
                     raise ValueError('PandasInterface cannot interpret multi-dimensional arrays.')
                 elif len(data) < min_dims:
-                    raise DataError('Data contains fewer columns than the %s element expects. Expected '
-                                    'at least %d columns but found only %d columns.' %
-                                    (eltype.__name__, min_dims, len(data)))
+                    raise DataError(f'Data contains fewer columns than the {eltype.__name__} element expects. Expected '
+                                    f'at least {min_dims} columns but found only {len(data)} columns.')
                 elif not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
-                data = pd.DataFrame(dict(zip(columns, data)), columns=columns)
+                data = pd.DataFrame(dict(zip(columns, data, strict=None)), columns=columns)
             elif ((isinstance(data, dict) and any(c not in data for c in columns)) or
                   (isinstance(data, list) and any(isinstance(d, dict) and c not in d for d in data for c in columns))):
                 raise ValueError('PandasInterface could not find specified dimensions in the data.')
@@ -229,7 +243,7 @@ class PandasInterface(Interface, PandasAPI):
         dataframes = []
         for key, ds in datasets:
             data = ds.data.copy()
-            for d, k in zip(dimensions, key):
+            for d, k in zip(dimensions, key, strict=None):
                 data[d.name] = k
             dataframes.append(data)
         return cls.concat_fn(dataframes)
@@ -251,14 +265,14 @@ class PandasInterface(Interface, PandasAPI):
         group_kwargs['dataset'] = dataset.dataset
 
         group_by = [d.name for d in index_dims]
-        if len(group_by) == 1 and util.pandas_version >= Version("1.5.0"):
+        if len(group_by) == 1 and util.PANDAS_VERSION >= (1, 5, 0):
             # Because of this deprecation warning from pandas 1.5.0:
             # In a future version of pandas, a length 1 tuple will be returned
             # when iterating over a groupby with a grouper equal to a list of length 1.
             # Don't supply a list with a single grouper to avoid this warning.
             group_by = group_by[0]
         groupby_kwargs = {"sort": False}
-        if PANDAS_GE_210:
+        if PANDAS_GE_2_1_0:
             groupby_kwargs["observed"] = False
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, **groupby_kwargs)]
@@ -291,18 +305,19 @@ class PandasInterface(Interface, PandasAPI):
                     c for c in reindexed.columns if c not in cols
                 ]
             else:
+                from pandas.api.types import is_numeric_dtype
                 numeric_cols = [
-                    c for c, d in zip(reindexed.columns, reindexed.dtypes)
+                    c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
                     if is_numeric_dtype(d) and c not in cols
                 ]
             groupby_kwargs = {"sort": False}
-            if PANDAS_GE_210:
+            if PANDAS_GE_2_1_0:
                 groupby_kwargs["observed"] = False
             grouped = reindexed.groupby(cols, **groupby_kwargs)
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            data = {col: [v] for col, v in zip(agg.index, agg.values)}
+            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=None)}
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []
@@ -314,9 +329,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if len(data) != 1 or len(data.columns) > 1:
             return data
@@ -411,7 +426,7 @@ class PandasInterface(Interface, PandasAPI):
                     index_sel = {}
             column_sel = {k: v for k, v in selection.items() if k not in index_sel}
             if column_sel:
-                selection_mask = cls.select_mask(dataset, column_sel)
+                selection_mask = cls.select_mask(dataset.clone(data=df), column_sel)
 
         indexed = cls.indexed(dataset, selection)
         if isinstance(selection_mask, pd.Series):
@@ -482,9 +497,9 @@ class PandasInterface(Interface, PandasAPI):
 
     @classmethod
     def as_dframe(cls, dataset):
-        """
-        Returns the data of a Dataset as a dataframe avoiding copying
+        """Returns the data of a Dataset as a dataframe avoiding copying
         if it already a dataframe type.
+
         """
         if issubclass(dataset.interface, PandasInterface):
             if any(cls.isindex(dataset, dim) for dim in dataset.dimensions()):

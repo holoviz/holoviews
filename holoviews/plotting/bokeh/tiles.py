@@ -64,8 +64,8 @@ class TilePlot(ElementPlot):
                            if k in renderer.properties()})
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         tile_source = mapping['tile_source']
         level = properties.pop('level', 'glyph')

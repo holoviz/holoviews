@@ -1,7 +1,7 @@
 import os
-from unittest import SkipTest
 
 import param
+from bokeh.settings import settings as bk_settings
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
@@ -11,8 +11,6 @@ import holoviews as hv
 from ..core.dimension import LabelledData
 from ..core.options import Store
 from ..core.tree import AttrTree
-from ..element.comparison import ComparisonTestCase
-from ..plotting.renderer import Renderer
 from ..util import extension
 from .display_hooks import display, png_display, pprint_display, svg_display
 from .magics import load_magics
@@ -20,61 +18,26 @@ from .magics import load_magics
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
 def show_traceback():
-    """
-    Display the full traceback after an abbreviated traceback has occurred.
+    """Display the full traceback after an abbreviated traceback has occurred.
+
     """
     from .display_hooks import FULL_TRACEBACK
     print(FULL_TRACEBACK)
 
 
-class IPTestCase(ComparisonTestCase):
-    """
-    This class extends ComparisonTestCase to handle IPython specific
-    objects and support the execution of cells and magic.
-    """
-
-    def setUp(self):
-        super().setUp()
-        try:
-            import IPython
-            from IPython.display import HTML, SVG
-            self.ip = IPython.InteractiveShell()
-            if self.ip is None:
-                raise TypeError()
-        except Exception as e:
-            raise SkipTest("IPython could not be started") from e
-
-        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
-        self.addTypeEqualityFunc(HTML, self.skip_comparison)
-        self.addTypeEqualityFunc(SVG,  self.skip_comparison)
-
-    def skip_comparison(self, obj1, obj2, msg): pass
-
-    def get_object(self, name):
-        obj = self.ip._object_find(name).obj
-        if obj is None:
-            raise self.failureException(f"Could not find object {name}")
-        return obj
-
-
-    def cell(self, line):
-        "Run an IPython cell"
-        self.ip.run_cell(line, silent=True)
-
-    def cell_magic(self, *args, **kwargs):
-        "Run an IPython cell magic"
-        self.ip.run_cell_magic(*args, **kwargs)
-
-
-    def line_magic(self, *args, **kwargs):
-        "Run an IPython line magic"
-        self.ip.run_line_magic(*args, **kwargs)
+def __getattr__(attr):
+    if attr == "IPTestCase":
+        from ..element.comparison import IPTestCase
+        from ..util.warnings import deprecated
+        deprecated("1.23.0", old="holoviews.ipython.IPTestCase", new="holoviews.element.comparison.IPTestCase")
+        return IPTestCase
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class notebook_extension(extension):
-    """
-    Notebook specific extension to hv.extension that offers options for
+    """Notebook specific extension to hv.extension that offers options for
     controlling the notebook environment.
+
     """
 
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
@@ -99,9 +62,7 @@ class notebook_extension(extension):
         export figures to other formats such as PDF with nbconvert.""")
 
     allow_jedi_completion = param.Boolean(default=True, doc="""
-       Whether to allow jedi tab-completion to be enabled in IPython.
-       Disabled by default because many HoloViews features rely on
-       tab-completion machinery not supported when using jedi.""")
+       Whether to allow jedi tab-completion to be enabled in IPython.""")
 
     case_sensitive_completion = param.Boolean(default=False, doc="""
        Whether to monkey patch IPython to use the correct tab-completion
@@ -138,7 +99,7 @@ class notebook_extension(extension):
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
             svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
-            hv.archive.exporters = [svg_exporter] + hv.archive.exporters
+            hv.archive.exporters = [svg_exporter, *hv.archive.exporters]
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         if p.case_sensitive_completion:
@@ -164,6 +125,7 @@ class notebook_extension(extension):
             Store.set_display_hook('html+js', LabelledData, pprint_display)
             Store.set_display_hook('png', LabelledData, png_display)
             Store.set_display_hook('svg', LabelledData, svg_display)
+            bk_settings.simple_ids.set_value(False)
             notebook_extension._loaded = True
 
         css = ''
@@ -185,6 +147,8 @@ class notebook_extension(extension):
         same_cell_execution = published = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+
+        from ..plotting.renderer import Renderer
         Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
 
         if not published and hasattr(panel_extension, "_display_globals"):
@@ -204,7 +168,9 @@ class notebook_extension(extension):
 
     @classmethod
     def completions_sorting_key(cls, word):
-        "Fixed version of IPyton.completer.completions_sorting_key"
+        """Fixed version of IPyton.completer.completions_sorting_key
+
+        """
         prio1, prio2 = 0, 0
         if word.startswith('__'):  prio1 = 2
         elif word.startswith('_'): prio1 = 1
@@ -219,13 +185,13 @@ class notebook_extension(extension):
 
 
     def _get_resources(self, args, params):
-        """
-        Finds the list of resources from the keyword parameters and pops
+        """Finds the list of resources from the keyword parameters and pops
         them out of the params dictionary.
+
         """
         resources = []
         disabled = []
-        for resource in ['holoviews'] + list(Store.renderers.keys()):
+        for resource in ['holoviews', *Store.renderers]:
             if resource in args:
                 resources.append(resource)
 
@@ -243,13 +209,13 @@ class notebook_extension(extension):
 
         resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
-            resources = ['holoviews'] + resources
+            resources = ['holoviews', *resources]
         return resources
 
     @classmethod
     def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
-        """
-        Allow to display Holoviews' logo and the plotting extensions' logo.
+        """Allow to display Holoviews' logo and the plotting extensions' logo.
+
         """
         import jinja2
 
@@ -263,7 +229,11 @@ class notebook_extension(extension):
         publish_display_data(data={'text/html': html})
 
 
-notebook_extension.add_delete_action(Renderer._delete_plot)
+def _delete_plot(plot_id):
+    from ..plotting.renderer import Renderer
+    return Renderer._delete_plot(plot_id)
+
+notebook_extension.add_delete_action(_delete_plot)
 
 
 def load_ipython_extension(ip):

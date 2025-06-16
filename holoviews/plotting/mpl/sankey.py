@@ -16,7 +16,7 @@ class SankeyPlot(GraphPlot):
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
 
-    label_position = param.ObjectSelector(default='right', objects=['left', 'right'],
+    label_position = param.Selector(default='right', objects=['left', 'right'],
                                           doc="""
         Whether node labels should be placed to the left or right.""")
 
@@ -44,11 +44,11 @@ class SankeyPlot(GraphPlot):
 
     filled = True
 
-    style_opts = GraphPlot.style_opts + ['label_text_font_size']
+    style_opts = [*GraphPlot.style_opts, 'label_text_font_size']
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """
-        A Chord plot is always drawn on a unit circle.
+        """A Chord plot is always drawn on a unit circle.
+
         """
         if range_type == 'extents':
             return element.nodes.extents

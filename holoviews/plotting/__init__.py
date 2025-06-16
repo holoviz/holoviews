@@ -1,9 +1,9 @@
-"""
-HoloViews plotting sub-system the defines the interface to be used by
+"""HoloViews plotting sub-system that defines the interface to be used by
 any third-party plotting/rendering package.
 
 This file defines the HTML tags used to wrap rendered output for
 display in the IPython Notebook (optional).
+
 """
 from ..core.options import Compositor, Cycle
 from ..element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster

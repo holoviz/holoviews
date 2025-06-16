@@ -4,6 +4,7 @@ import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
+from holoviews.core.data.pandas import PandasInterface
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Distribution, Points, Scatter
@@ -351,6 +352,16 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
         expected = self.df.loc[[2]]
         pd.testing.assert_frame_equal(selected.data, expected)
 
+    def test_select_index_and_column(self):
+        # See https://github.com/holoviz/holoviews/issues/6578
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
+        index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
+        df = pd.DataFrame({"cat": list("abab"), "values": range(4)}, index=index)
+        ds = Dataset(df, kdims=["number"], vdims=["cat", "values"])
+        selected = ds.select(number=[1], cat=["a"])
+        expected = df[(df.index.get_level_values(0) == 1) & (df["cat"] == "a")]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
     def test_sample(self):
         ds = Dataset(self.df, kdims=["number", "color"])
         sample = ds.interface.sample(ds, [1])
@@ -404,3 +415,10 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
 
         plot = Scatter(self.df, kdims="number")
         np.testing.assert_equal(plot.dimension_values('number'), self.df.index.get_level_values('number'))
+
+
+def test_no_subclasse_interface_applies():
+    spd = pytest.importorskip("spatialpandas")
+    square = spd.geometry.Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+    sdf = spd.GeoDataFrame({"geometry": spd.GeoSeries([square, square]), "name": ["A", "B"]})
+    assert PandasInterface.applies(sdf) is False
