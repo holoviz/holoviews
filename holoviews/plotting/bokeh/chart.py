@@ -867,7 +867,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         return props
 
     def _element_transform(self, transform, element, ranges):
-        if self.multi_level or self.stacked and len(element.kdims) > 1:
+        if (self.multi_level or self.stacked) and len(element.kdims) > 1:
             return transform.apply(element.groupby(element.kdims[1]).collapse(), ranges=ranges, flat=True)
         return transform.apply(element, ranges=ranges, flat=True)
 
