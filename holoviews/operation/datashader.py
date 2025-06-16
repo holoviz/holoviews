@@ -384,6 +384,8 @@ class aggregate(LineAggregationOperation):
             category = agg_fn.cat_column
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+        if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
+            sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
@@ -432,7 +434,7 @@ class aggregate(LineAggregationOperation):
                 str(sel_fn)
                 if DATASHADER_GE_0_18_1
                 else f"{type(sel_fn).__name__}({getattr(sel_fn, 'column', '...')!r})"
-            )
+            ).replace(repr(rd.SpecialColumn.RowIndex), "")
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
 
