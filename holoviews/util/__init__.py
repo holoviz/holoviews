@@ -297,7 +297,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
         backend = kwargs.get('backend')
-        expanded = cls._expand_options(merge_options_to_dict(options), backend=backend)
+        expanded = cls._expand_options(util.merge_options_to_dict(options), backend=backend)
         expanded = expanded or {}
         cls._linemagic(expanded, backend=backend)
 
