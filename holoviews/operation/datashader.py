@@ -565,27 +565,6 @@ class overlay_aggregate(aggregate):
                           x_range=(x0, x1), y_range=(y0, y1))
         bbox = (x0, y0, x1, y1)
 
-        # Optimize categorical counts by aggregating them individually
-        if isinstance(agg_fn, ds.count_cat):
-            agg_params.update(dict(dynamic=False, aggregator=ds.count()))
-            agg_fn1 = aggregate.instance(**agg_params)
-            if element.ndims == 1:
-                grouped = element
-            else:
-                grouped = element.groupby(
-                    [agg_fn.column], container_type=NdOverlay,
-                    group_type=NdOverlay
-                )
-            groups = []
-            for k, el in grouped.items():
-                if width == 0 or height == 0:
-                    agg = self._empty_agg(el, x, y, width, height, xs, ys, ds.count())
-                    groups.append((k, agg))
-                else:
-                    agg = agg_fn1(el)
-                    groups.append((k, agg.clone(agg.data, bounds=bbox)))
-            return grouped.clone(groups)
-
         # Create aggregate instance for sum, count operations, breaking mean
         # into two aggregates
         column = agg_fn.column or 'Count'
