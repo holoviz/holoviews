@@ -6,6 +6,7 @@ import param
 
 from ... import Tiles
 from ...core import util
+from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
 from ...streams import Stream
@@ -337,11 +338,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, str):
+            if isinstance(v, (Dimension, str)):
                 if k == 'marker' and v in 'xsdo':
                     continue
                 elif v in element:
-                    v = dim(v)
+                    v = dim(element.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
                     v = dim(next(d for d in self.overlay_dims if d==v))
 

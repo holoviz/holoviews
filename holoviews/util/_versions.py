@@ -17,7 +17,6 @@ PACKAGES = [
     "pandas",
     "pyarrow",
     "spatialpandas",
-    "streamz",
     "xarray",
     # Processing
     "numba",

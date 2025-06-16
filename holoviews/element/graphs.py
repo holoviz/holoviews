@@ -592,7 +592,7 @@ class TriMesh(Graph):
         """
         return self._initialize_edgepaths()
 
-    def select(self, selection_specs=None, **selection):
+    def select(self, selection_expr=None, selection_specs=None, **selection):
         """Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
         keywords mapping between the selected dimension and
@@ -603,9 +603,10 @@ class TriMesh(Graph):
 
         """
         self._initialize_edgepaths()
-        return super().select(selection_specs=None,
-                              selection_mode='nodes',
-                              **selection)
+        return super().select(
+            selection_expr=selection_expr, selection_specs=selection_specs,
+            selection_mode='nodes', **selection
+        )
 
 
 
