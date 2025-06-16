@@ -26,7 +26,6 @@ from holoviews.plotting.plotly.callbacks import (
 )
 from holoviews.plotting.plotly.util import clean_internal_figure_properties
 from holoviews.streams import Derived, History
-from holoviews.util.warnings import deprecated
 
 # Dash imports
 try:
@@ -38,8 +37,6 @@ except ImportError:
 import plotly.graph_objects as go
 from dash import callback_context
 from dash.dependencies import Input, Output, State
-
-deprecated("1.22.0", "dash")
 
 # Activate plotly as current HoloViews extension
 hv.extension("plotly")
