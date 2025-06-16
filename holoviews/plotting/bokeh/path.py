@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
+from bokeh.models import FactorRange
 
 from ...core import util
 from ...element import Contours, Polygons
@@ -52,8 +53,17 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 else:
                     new_data.append(d)
             return np.array(new_data)
-        return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
-                               for el in element.split()])
+
+        transformed = []
+        for el in element.split():
+            new_el = transform.apply(el, ranges=ranges, flat=True)
+            if len(new_el) == 1:
+                kdim_length = len(el[el.kdims[0]])
+                transformed.append(np.tile(new_el, kdim_length - 1))
+            else:
+                transformed.append(new_el)
+
+        return np.concatenate(transformed)
 
     def _hover_opts(self, element):
         cdim = element.get_dimension(self.color_index)
@@ -67,8 +77,8 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
 
     def _get_hover_data(self, data, element):
-        """
-        Initializes hover data based on Element dimension values.
+        """Initializes hover data based on Element dimension values.
+
         """
         if 'hover' not in self.handles or self.static_source:
             return
@@ -124,8 +134,8 @@ class PathPlot(LegendPlot, ColorbarPlot):
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
             alen = len(xs)
-            xpaths += [xs[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1))]
-            ypaths += [ys[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1))]
+            xpaths += [xs[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1), strict=None)]
+            ypaths += [ys[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1), strict=None)]
             if not hover:
                 continue
             for vd in element.vdims:
@@ -147,13 +157,13 @@ class PathPlot(LegendPlot, ColorbarPlot):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(element)
-        for (key, el), zorder in zip(element.data.items(), zorders):
+        for (key, el), zorder in zip(element.data.items(), zorders, strict=None):
             el_opts = self.lookup_options(el, 'plot').options
             self.param.update(**{k: v for k, v in el_opts.items()
                                     if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
-            self.overlay_dims = dict(zip(element.kdims, key))
+            self.overlay_dims = dict(zip(element.kdims, key, strict=None))
             eldata, elmapping, style = self.get_data(el, ranges, style)
             for k, eld in eldata.items():
                 data[k].extend(eld)
@@ -171,6 +181,47 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 data[k].extend(list(v))
 
         return data, elmapping, style
+
+
+class DendrogramPlot(PathPlot):
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        if self.adjoined:
+            pos = ["main", "right", "top"][len(plots)]
+            main = self.adjoined[0]
+            if pos == "right":
+                if self.width == self.param.width.default:
+                    plot.width = 80
+                self._update_adjoined_figure(main, plot, "y")
+            elif pos == "top":
+                if self.height == self.param.height.default:
+                    plot.height = 80
+                self._update_adjoined_figure(main, plot, "x")
+        return plot
+
+    def _update_adjoined_figure(self, main, side, dim):
+        main_dim = getattr(main, f"{dim}_range").name
+        side_dim = f"{dim}s"
+        data = side.renderers[0].data_source.data
+        if isinstance(getattr(main, f"{dim}_range"), FactorRange):
+            # 0.5 is the factor used by Bokeh to convert a synthetic
+            # coordinate into a categorical factor.
+            # data_min.min() will for Scipy dendogram calculation be 5.
+            data_adj = np.asarray(data[side_dim])
+            data[side_dim] = list(0.5 / data_adj.min() * data_adj)
+        else:
+            main_src = main.renderers[0].data_source.data
+            data_adj, data_main = np.asarray(data[side_dim]), np.asarray(main_src.get(main_dim, main_src.get(f"{main_dim}s")))
+            if data_adj.size and data_main.size:
+                x1, x2, y1, y2 = data_adj.min(), data_adj.max(), data_main.min(), data_main.max()
+                data[side_dim] = list((y2 - y1) / (x2 - x1) * (data_adj - x1) + y1)
+            else:
+                data[side_dim] = data_adj
+
+        # Update range and scale to match main plot
+        setattr(side, f"{dim}_range", getattr(main, f"{dim}_range"))
+        setattr(side, f"{dim}_scale", getattr(main, f"{dim}_scale"))
 
 
 class ContourPlot(PathPlot):
@@ -203,9 +254,9 @@ class ContourPlot(PathPlot):
         return dims, {}
 
     def _get_hover_data(self, data, element):
-        """
-        Initializes hover data based on Element dimension values.
+        """Initializes hover data based on Element dimension values.
         If empty initializes with no data.
+
         """
         if 'hover' not in self.handles or self.static_source:
             return
@@ -281,8 +332,8 @@ class ContourPlot(PathPlot):
         return data, mapping, style
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         plot_method = properties.pop('plot_method', None)
         properties = mpl_to_bokeh(properties)

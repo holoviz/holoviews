@@ -187,11 +187,11 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {node_indices[k]: (y, x) if self.invert_axes else (x, y)
-                      for k, (x, y) in zip(nodes, node_positions)}
+                      for k, (x, y) in zip(nodes, node_positions, strict=None)}
         else:
             index = nodes.astype(np.int32)
             layout = {k: (y, x) if self.invert_axes else (x, y)
-                      for k, (x, y) in zip(index, node_positions)}
+                      for k, (x, y) in zip(index, node_positions, strict=None)}
 
         point_data = {'index': index}
 
@@ -250,8 +250,8 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def _update_datasource(self, source, data):
-        """
-        Update datasource with data for a new frame.
+        """Update datasource with data for a new frame.
+
         """
         if isinstance(source, ColumnDataSource):
             if self.handles['static_source']:
@@ -262,7 +262,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             source.graph_layout = data
 
     def _init_filled_edges(self, renderer, properties, edge_mapping):
-        "Replace edge renderer with filled renderer"
+        """Replace edge renderer with filled renderer
+
+        """
         glyph_model = Patches if self.filled else Bezier
         allowed_properties = glyph_model.properties()
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
@@ -277,7 +279,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def _get_graph_properties(self, plot, element, data, mapping, ranges, style):
-        "Computes the args and kwargs for the GraphRenderer"
+        """Computes the args and kwargs for the GraphRenderer
+
+        """
         sources = []
         properties, mappings = {}, {}
 
@@ -315,7 +319,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         return (*sources, layout), properties
 
     def _reorder_renderers(self, plot, renderer, mapping):
-        "Reorders renderers based on the defined draw order"
+        """Reorders renderers based on the defined draw order
+
+        """
         renderers = dict({r: self.handles[r+'_glyph_renderer']
                           for r in mapping}, graph=renderer)
         other = [r for r in plot.renderers if r not in renderers.values()]
@@ -479,8 +485,8 @@ class ChordPlot(ChordMixin, GraphPlot):
 
 
 class NodePlot(PointPlot):
-    """
-    Simple subclass of PointPlot which hides x, y position on hover.
+    """Simple subclass of PointPlot which hides x, y position on hover.
+
     """
 
     def _hover_opts(self, element):

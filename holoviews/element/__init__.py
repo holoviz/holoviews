@@ -14,10 +14,10 @@ from .tiles import *
 
 
 class ElementConversion(DataConversion):
-    """
-    ElementConversion is a subclass of DataConversion providing
+    """ElementConversion is a subclass of DataConversion providing
     concrete methods to convert a Dataset to specific Element
     types.
+
     """
 
     def bars(self, kdims=None, vdims=None, groupby=None, **kwargs):

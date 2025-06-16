@@ -1,5 +1,5 @@
-"""
-Defines valid style options, validation and utilities
+"""Defines valid style options, validation and utilities
+
 """
 
 import numpy as np
@@ -73,10 +73,10 @@ markers = {
 
 
 def mpl_to_bokeh(properties):
-    """
-    Utility to process style properties converting any
+    """Utility to process style properties converting any
     matplotlib specific options to their nearest bokeh
     equivalent.
+
     """
     new_properties = {}
     for k, v in properties.items():
@@ -127,20 +127,19 @@ def get_validator(style):
 
 
 def validate(style, value, scalar=False):
-    """
-    Validates a style and associated value.
+    """Validates a style and associated value.
 
-    Arguments
-    ---------
-    style: str
+    Parameters
+    ----------
+    style : str
        The style to validate (e.g. 'color', 'size' or 'marker')
-    value:
+    value :
        The style value to validate
-    scalar: bool
+    scalar : bool
 
     Returns
     -------
-    valid: boolean or None
+    valid : boolean or None
        If validation is supported returns boolean, otherwise None
     """
     validator = get_validator(style)
@@ -155,8 +154,8 @@ def validate(style, value, scalar=False):
 # Utilities
 
 def rgba_tuple(rgba):
-    """
-    Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+    """Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+
     """
     if isinstance(rgba, tuple):
         return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
@@ -165,11 +164,11 @@ def rgba_tuple(rgba):
 
 
 def expand_batched_style(style, opts, mapping, nvals):
-    """
-    Computes styles applied to a batched plot by iterating over the
+    """Computes styles applied to a batched plot by iterating over the
     supplied list of style options and expanding any options found in
     the supplied style dictionary returning a data and mapping defining
     the data that should be added to the ColumnDataSource.
+
     """
     opts = sorted(opts, key=lambda x: x in ['color', 'alpha'])
     applied_styles = set(mapping)

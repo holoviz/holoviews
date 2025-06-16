@@ -2,6 +2,7 @@ import contextlib
 import sys
 from collections.abc import Callable
 
+import numpy as np
 import panel as pn
 import pytest
 from panel.tests.conftest import port, server_cleanup  # noqa: F401
@@ -123,6 +124,14 @@ def serve_hv(page, port):  # noqa: F811
 
     return serve_and_return_page
 
+@pytest.fixture
+def serve_panel(page, port):  # noqa: F811
+    def serve_and_return_page(pn_obj):
+        serve_and_wait(pn.panel(pn_obj), port=port)
+        page.goto(f"http://localhost:{port}")
+        return page
+
+    return serve_and_return_page
 
 @pytest.fixture(autouse=True)
 def reset_store():
@@ -136,3 +145,8 @@ def reset_store():
     hv.Store._weakrefs = {}
     hv.Store.renderers = renderers
     hv.Store.set_current_backend(current_backend)
+
+
+@pytest.fixture
+def rng():
+    return np.random.default_rng(1)

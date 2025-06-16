@@ -206,11 +206,11 @@ class QuadMeshPlot(ColorbarPlot):
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
-    """
-    RasterGridPlot evenly spaces out plots of individual projections on
+    """RasterGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single
     axis to generate all the individual plots it is much faster than the
     equivalent using subplots.
+
     """
 
     padding = param.Number(default=0.1, doc="""
@@ -273,7 +273,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.overlaid = False
         self.hmap = layout
         if layout.ndims > 1:
-            xkeys, ykeys = zip(*layout.keys())
+            xkeys, ykeys = zip(*layout.keys(), strict=None)
         else:
             xkeys = layout.keys()
             ykeys = [None]
@@ -322,7 +322,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     vmap = self.layout.get((xkey, ykey), None)
                 else:
                     vmap = self.layout.get(xkey, None)
-                pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key)
+                pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key, strict=None)
                                     if d in vmap.kdims})
                 pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
                 data = get_raster_array(pane) if pane else None

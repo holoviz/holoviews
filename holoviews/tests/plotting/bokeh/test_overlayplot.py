@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 import panel as pn
+import pytest
 from bokeh.models import FactorRange, FixedTicker, HoverTool, Range1d, Span
 
 from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
@@ -194,7 +196,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D', 'E'])
         self.assertIsInstance(y_range, Range1d)
         error_plot = plot.subplots[('ErrorBars', 'I')]
-        for xs, factor in zip(error_plot.handles['source'].data['base'], factors):
+        for xs, factor in zip(error_plot.handles['source'].data['base'], factors, strict=None):
             self.assertEqual(factor, xs)
 
     def test_overlay_categorical_two_level(self):
@@ -400,6 +402,25 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
             ydata = new_data[y_range.name]
             assert y_range.start == ydata.min()
             assert y_range.end == ydata.max()
+
+
+@pytest.mark.parametrize('order', [("str", "date"), ("date", "str")])
+def test_ndoverlay_categorical_y_ranges(order):
+    df = pd.DataFrame(
+        {
+            "str": ["apple", "banana", "cherry", "date", "elderberry"],
+            "date": pd.to_datetime(
+                ["2023-01-01", "2023-02-14", "2023-03-21", "2023-04-30", "2023-05-15"]
+            ),
+        }
+    )
+    overlay = NdOverlay(
+        {col: Scatter(df, kdims="index", vdims=col) for col in order}
+    )
+    plot = bokeh_renderer.get_plot(overlay)
+    output = plot.handles["y_range"].factors
+    expected = sorted(map(str, df.values.ravel()))
+    assert output == expected
 
 
 class TestLegends(TestBokehPlot):

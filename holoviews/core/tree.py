@@ -4,8 +4,7 @@ from .pprint import PrettyPrinter
 
 
 class AttrTree:
-    """
-    An AttrTree offers convenient, multi-level attribute access for
+    """An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined
     together using the update method or merge classmethod. Here is an
     example of adding a ViewableElement to an AttrTree and accessing it:
@@ -14,14 +13,16 @@ class AttrTree:
     >>> t.Example.Path = 1
     >>> t.Example.Path                             #doctest: +ELLIPSIS
     1
+
     """
+
     _disabled_prefixes = [] # Underscore attributes that should be
     _sanitizer = util.sanitize_identifier
 
     @classmethod
     def merge(cls, trees):
-        """
-        Merge a collection of AttrTree objects.
+        """Merge a collection of AttrTree objects.
+
         """
         first = trees[0]
         for tree in trees:
@@ -30,9 +31,9 @@ class AttrTree:
 
 
     def __dir__(self):
-        """
-        The _dir_mode may be set to 'default' or 'user' in which case
+        """The _dir_mode may be set to 'default' or 'user' in which case
         only the child nodes added by the user are listed.
+
         """
         dict_keys = self.__dict__.keys()
         if self.__dict__['_dir_mode'] == 'user':
@@ -42,13 +43,19 @@ class AttrTree:
 
     def __init__(self, items=None, identifier=None, parent=None, dir_mode='default'):
         """
-        identifier: A string identifier for the current node (if any)
-        parent:     The parent node (if any)
-        items:      Items as (path, value) pairs to construct
-                    (sub)tree down to given leaf values.
+        Parameters
+        ----------
+        items
+            Items as (path, value) pairs to construct
+            (sub)tree down to given leaf values.
+        identifier
+            A string identifier for the current node (if any)
+        parent
+            The parent node (if any)
 
         Note that the root node does not have a parent and does not
         require an identifier.
+
         """
         self.__dict__['parent'] = parent
         self.__dict__['identifier'] = type(self)._sanitizer(identifier, escape=False)
@@ -75,7 +82,9 @@ class AttrTree:
 
     @property
     def path(self):
-        "Returns the path up to the root for the current node."
+        """Returns the path up to the root for the current node.
+
+        """
         if self.parent:
             return '.'.join([self.parent.path, str(self.identifier)])
         else:
@@ -84,7 +93,9 @@ class AttrTree:
 
     @property
     def fixed(self):
-        "If fixed, no new paths can be created via attribute access"
+        """If fixed, no new paths can be created via attribute access
+
+        """
         return self.__dict__['_fixed']
 
     @fixed.setter
@@ -93,9 +104,9 @@ class AttrTree:
 
 
     def update(self, other):
-        """
-        Updated the contents of the current AttrTree with the
+        """Updated the contents of the current AttrTree with the
         contents of a second AttrTree.
+
         """
         if not isinstance(other, AttrTree):
             raise Exception('Can only update with another AttrTree type.')
@@ -110,9 +121,9 @@ class AttrTree:
 
 
     def set_path(self, path, val):
-        """
-        Set the given value at the supplied path where path is either
+        """Set the given value at the supplied path where path is either
         a tuple of strings or a string in A.B.C format.
+
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
 
@@ -128,8 +139,8 @@ class AttrTree:
 
 
     def filter(self, path_filters):
-        """
-        Filters the loaded AttrTree using the supplied path_filters.
+        """Filters the loaded AttrTree using the supplied path_filters.
+
         """
         if not path_filters: return self
 
@@ -147,15 +158,15 @@ class AttrTree:
 
 
     def _propagate(self, path, val):
-        """
-        Propagate the value up to the root node.
+        """Propagate the value up to the root node.
+
         """
         if val == '_DELETE':
             if path in self.data:
                 del self.data[path]
             else:
                 items = [(key, v) for key, v in self.data.items()
-                         if not all(k==p for k, p in zip(key, path))]
+                         if not all(k==p for k, p in zip(key, path, strict=None))]
                 self.data = dict(items)
         else:
             self.data[path] = val
@@ -164,11 +175,11 @@ class AttrTree:
 
 
     def __setitem__(self, identifier, val):
-        """
-        Set a value at a child node with given identifier. If at a root
+        """Set a value at a child node with given identifier. If at a root
         node, multi-level path specifications is allowed (i.e. 'A.B.C'
         format or tuple format) in which case the behaviour matches
         that of set_path.
+
         """
         if isinstance(identifier, str) and '.' not in identifier:
             self.__setattr__(identifier, val)
@@ -181,11 +192,11 @@ class AttrTree:
 
 
     def __getitem__(self, identifier):
-        """
-        For a given non-root node, access a child element by identifier.
+        """For a given non-root node, access a child element by identifier.
 
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
+
         """
         split_label = (tuple(identifier.split('.'))
                        if isinstance(identifier, str) else tuple(identifier))
@@ -235,9 +246,9 @@ class AttrTree:
 
 
     def __getattr__(self, identifier):
-        """
-        Access a identifier from the AttrTree or generate a new AttrTree
+        """Access a identifier from the AttrTree or generate a new AttrTree
         with the chosen attribute path.
+
         """
         try:
             return super().__getattr__(identifier)
@@ -287,12 +298,16 @@ class AttrTree:
     def get(self, identifier, default=None):
         """Get a node of the AttrTree using its path string.
 
-        Args:
-            identifier: Path string of the node to return
-            default: Value to return if no node is found
+        Parameters
+        ----------
+        identifier
+            Path string of the node to return
+        default
+            Value to return if no node is found
 
-        Returns:
-            The indexed node of the AttrTree
+        Returns
+        -------
+        The indexed node of the AttrTree
         """
         split_label = (tuple(identifier.split('.'))
                        if isinstance(identifier, str) else tuple(identifier))
@@ -307,29 +322,39 @@ class AttrTree:
         return path_item
 
     def keys(self):
-        "Keys of nodes in the AttrTree"
+        """Keys of nodes in the AttrTree
+
+        """
         return list(self.data.keys())
 
 
     def items(self):
-        "Keys and nodes of the AttrTree"
+        """Keys and nodes of the AttrTree
+
+        """
         return list(self.data.items())
 
 
     def values(self):
-        "Nodes of the AttrTree"
+        """Nodes of the AttrTree
+
+        """
         return list(self.data.values())
 
 
     def pop(self, identifier, default=None):
         """Pop a node of the AttrTree using its path string.
 
-        Args:
-            identifier: Path string of the node to return
-            default: Value to return if no node is found
+        Parameters
+        ----------
+        identifier
+            Path string of the node to return
+        default
+            Value to return if no node is found
 
-        Returns:
-            The node that was removed from the AttrTree
+        Returns
+        -------
+        The node that was removed from the AttrTree
         """
         if identifier in self.children:
             item = self[identifier]

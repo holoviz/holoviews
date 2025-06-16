@@ -29,6 +29,7 @@ from ...element import (
     Chord,
     Contours,
     Curve,
+    Dendrogram,
     Distribution,
     Div,
     EdgePaths,
@@ -107,7 +108,7 @@ from .graphs import ChordPlot, GraphPlot, NodePlot, TriMeshPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
 from .links import LinkCallback  # noqa (API import)
-from .path import ContourPlot, PathPlot, PolygonPlot
+from .path import ContourPlot, DendrogramPlot, PathPlot, PolygonPlot
 from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot
 from .raster import HSVPlot, ImageStackPlot, QuadMeshPlot, RasterPlot, RGBPlot
 from .renderer import BokehRenderer
@@ -161,6 +162,7 @@ associations = {Overlay: OverlayPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+                Dendrogram: DendrogramPlot,
 
                 # Geometry
                 Rectangles:    RectanglesPlot,
@@ -241,7 +243,7 @@ options.Curve = Options('style', color=Cycle(), line_width=2)
 options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='black',
                              box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
-options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap, radius_dimension="min")
 options.Points = Options('plot', show_frame=True)
 options.Histogram = Options('style', line_color='black', color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
@@ -351,6 +353,16 @@ options.Overlay = Options('style', click_policy='mute')
 options.NdOverlay = Options('style', click_policy='mute')
 options.Curve = Options('style', muted_alpha=0.2)
 options.Path = Options('style', muted_alpha=0.2)
+options.Dendrogram = Options('style', muted_alpha=0.2, line_color="black")
+options.Dendrogram = Options('plot',
+    xaxis=None,
+    yaxis=None,
+    show_grid=False,
+    show_title=False,
+    show_frame=False,
+    border=0,
+    default_tools=[],
+)
 options.Scatter = Options('style', muted_alpha=0.2)
 options.Points = Options('style', muted_alpha=0.2)
 options.Polygons = Options('style', muted_alpha=0.2)

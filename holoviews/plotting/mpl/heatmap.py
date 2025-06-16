@@ -86,7 +86,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         ypos = yvals[:-1] + np.diff(yvals)/2.
         plot_coords = product(xpos, ypos)
         annotations = {}
-        for plot_coord, v in zip(plot_coords, vals):
+        for plot_coord, v in zip(plot_coords, vals, strict=None):
             text = '-' if is_nan(v) else val_dim.pprint_value(v)
             annotations[plot_coord] = text
         return annotations
@@ -105,7 +105,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             if not xfactors:
                 xfactors = element.gridded.dimension_values(xdim, False)
             xlabels = [xdim.pprint_value(k) for k in xfactors]
-            xticks = list(zip(xpos, xlabels))
+            xticks = list(zip(xpos, xlabels, strict=None))
 
         yticks = opts.get('yticks')
         if yticks is None:
@@ -113,7 +113,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             if not yfactors:
                 yfactors = element.gridded.dimension_values(ydim, False)
             ylabels = [ydim.pprint_value(k) for k in yfactors]
-            yticks = list(zip(ypos, ylabels))
+            yticks = list(zip(ypos, ylabels, strict=None))
         return xticks, yticks
 
 
@@ -252,12 +252,13 @@ class RadialHeatMapPlot(ColorbarPlot):
     def _map_order_to_ticks(start, end, order, reverse=False):
         """Map elements from given `order` array to bins ranging from `start`
         to `end`.
+
         """
         size = len(order)
         bounds = np.linspace(start, end, size + 1)
         if reverse:
             bounds = bounds[::-1]
-        mapping = list(zip(bounds[:-1]%(np.pi*2), order))
+        mapping = list(zip(bounds[:-1]%(np.pi*2), order, strict=None))
         return mapping
 
     @staticmethod
@@ -289,7 +290,7 @@ class RadialHeatMapPlot(ColorbarPlot):
             ticks = ticks[::nth_mark]
         elif isinstance(ticker, (tuple, list)):
             nth_mark = max([np.ceil(len(ticks) / len(ticker)).astype(int), 1])
-            ticks = [(v, tl) for (v, l), tl in zip(ticks[::nth_mark], ticker)]
+            ticks = [(v, tl) for (v, l), tl in zip(ticks[::nth_mark], ticker, strict=None)]
         elif ticker:
             ticks = list(ticker)
         else:

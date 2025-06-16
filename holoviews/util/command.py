@@ -1,8 +1,8 @@
 #! /usr/bin/env python
-"""
-python -m holoviews.util.command Conversion_Example.ipynb
+"""python -m holoviews.util.command Conversion_Example.ipynb
 OR
 holoviews Conversion_Example.ipynb
+
 """
 
 import argparse

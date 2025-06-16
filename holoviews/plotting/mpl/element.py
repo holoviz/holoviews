@@ -19,6 +19,7 @@ from ...core import (
     NdOverlay,
     util,
 )
+from ...core.dimension import Dimension
 from ...core.options import Keywords, abbreviated_exception
 from ...element import Graph, Path
 from ...streams import Stream
@@ -115,12 +116,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
-        """
-        Applies all the axis settings before the axis or figure is returned.
+        """Applies all the axis settings before the axis or figure is returned.
         Only plots with zorder 0 get to apply their settings.
 
         When the number of the frame is supplied as n, this method looks
         up and computes the appropriate title, axis labels and axis bounds.
+
         """
         if element is None:
             element = self._get_frame(key)
@@ -205,10 +206,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._update_backend_opts()
 
     def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
-        """
-        Finalizes the ticks on the axes based on the supplied ticks
+        """Finalizes the ticks on the axes based on the supplied ticks
         and Elements. Sets the axes position as well as tick positions,
         labels and fontsize.
+
         """
         ndims = len(dimensions) if dimensions else 0
         xdim = dimensions[0] if ndims else None
@@ -244,7 +245,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axes_str += 'z'
             axes_list.append(axis.zaxis)
 
-        for ax, ax_obj in zip(axes_str, axes_list):
+        for ax, ax_obj in zip(axes_str, axes_list, strict=None):
             tick_fontsize = self._fontsize(f'{ax}ticks','labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
@@ -290,16 +291,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 )
 
     def _finalize_artist(self, element):
-        """
-        Allows extending the _finalize_axis method with Element
+        """Allows extending the _finalize_axis method with Element
         specific options.
+
         """
 
     def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
-        """
-        Sets the labels of the axes using the supplied list of dimensions.
+        """Sets the labels of the axes using the supplied list of dimensions.
         Optionally explicit labels may be supplied to override the dimension
         label.
+
         """
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions, xlabel, ylabel, zlabel)
         if self.invert_axes:
@@ -313,8 +314,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _set_axis_formatter(self, axis, dim, formatter):
-        """
-        Set axis formatter based on dimension formatter.
+        """Set axis formatter based on dimension formatter.
+
         """
         if isinstance(dim, list): dim = dim[0]
         if formatter is not None or dim is None:
@@ -328,8 +329,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def get_aspect(self, xspan, yspan):
-        """
-        Computes the aspect ratio of the plot
+        """Computes the aspect ratio of the plot
+
         """
         if isinstance(self.aspect, (int, float)):
             return self.aspect
@@ -341,8 +342,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _set_aspect(self, axes, aspect):
-        """
-        Set the aspect on the axes based on the aspect setting.
+        """Set the aspect on the axes based on the aspect setting.
+
         """
         if isinstance(self.projection, str) and self.projection == '3d':
             return
@@ -363,8 +364,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _set_axis_limits(self, axis, view, subplots, ranges):
-        """
-        Compute extents for current view and apply as axis limits
+        """Compute extents for current view and apply as axis limits
+
         """
         # Extents
         extents = self.get_extents(view, ranges)
@@ -411,7 +412,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         lims = {}
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
         if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
-            low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
+            low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
@@ -429,13 +430,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _set_axis_position(self, axes, axis, option):
-        """
-        Set the position and visibility of the xaxis or yaxis by
+        """Set the position and visibility of the xaxis or yaxis by
         supplying the axes object, the axis to set, i.e. 'x' or 'y'
         and an option to specify the position and visibility of the axis.
         The option may be None, 'bare' or positional, i.e. 'left' and
         'right' for the yaxis and 'top' and 'bottom' for the xaxis.
         May also combine positional and 'bare' into for example 'left-bare'.
+
         """
         positions = {'x': ['bottom', 'top'], 'y': ['left', 'right']}[axis]
         axis = axes.xaxis if axis == 'x' else axes.yaxis
@@ -460,13 +461,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _set_axis_ticks(self, axis, ticks, log=False, rotation=0):
-        """
-        Allows setting the ticks for a particular axis either with
+        """Allows setting the ticks for a particular axis either with
         a tuple of ticks, a tick locator object, an integer number
         of ticks, a list of tuples containing positions and labels
         or a list of positions. Also supports enabling log ticking
         if an integer number of ticks is supplied and setting a
         rotation for the ticks.
+
         """
         if isinstance(ticks, np.ndarray):
             ticks = list(ticks)
@@ -487,7 +488,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         elif isinstance(ticks, (list, tuple)):
             labels = None
             if all(isinstance(t, tuple) for t in ticks):
-                ticks, labels = zip(*ticks)
+                ticks, labels = zip(*ticks, strict=None)
             axis.set_ticks(ticks)
             if labels:
                 axis.set_ticklabels(labels)
@@ -497,13 +498,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
-        """
-        Set the plot(s) to the given frame number.  Operates by
+        """Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
         dictionary.
 
         If n is greater than the number of available frames, update
         using the last available frame.
+
         """
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
         self.prev_frame =  self.current_frame
@@ -560,7 +561,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         element = self.hmap.last
         ax = self.handles['axis']
         key = list(self.hmap.data.keys())[-1]
-        dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
+        dim_map = dict(zip((d.name for d in self.hmap.kdims), key, strict=None))
         key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         self.current_ranges = ranges
@@ -584,9 +585,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        """
-        Initializes the artist based on the plot method declared on
+        """Initializes the artist based on the plot method declared on
         the plot.
+
         """
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         plot_fn = getattr(ax, plot_method)
@@ -602,8 +603,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def update_handles(self, key, axis, element, ranges, style):
-        """
-        Update the elements of the plot.
+        """Update the elements of the plot.
+
         """
         self.teardown_handles()
         handles, axis_kwargs = self.render_artists(element, ranges, style, axis)
@@ -614,11 +615,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
-            if isinstance(v, str):
+            if isinstance(v, (Dimension, str)):
                 if validate(k, v) == True:
                     continue
-                elif v in element or (isinstance(element, Graph) and v in element.nodes):
-                    v = dim(v)
+                elif isinstance(element, Graph) and v in element.nodes:
+                    v = dim(element.nodes.get_dimension(v))
+                elif v in element:
+                    v = dim(element.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
                     v = dim(next(d for d in self.overlay_dims if d==v))
 
@@ -714,10 +717,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def teardown_handles(self):
-        """
-        If no custom update_handles method is supplied this method
+        """If no custom update_handles method is supplied this method
         is called to tear down any previous handles before replacing
         them.
+
         """
         if 'artist' in self.handles:
             self.handles['artist'].remove()
@@ -823,10 +826,10 @@ class ColorbarPlot(ElementPlot):
             cbar.ax.yaxis.set_major_locator(locator)
         elif isinstance(self.cbar_ticks, list):
             if all(isinstance(t, tuple) for t in self.cbar_ticks):
-                ticks, labels = zip(*self.cbar_ticks)
+                ticks, labels = zip(*self.cbar_ticks, strict=None)
             else:
                 ticks, labels = zip(*[(t, dim.pprint_value(t))
-                                        for t in self.cbar_ticks])
+                                        for t in self.cbar_ticks], strict=None)
             cbar.set_ticks(ticks)
             cbar.set_ticklabels(labels)
 
@@ -901,9 +904,9 @@ class ColorbarPlot(ElementPlot):
 
 
     def _norm_kwargs(self, element, ranges, opts, vdim, values=None, prefix=''):
-        """
-        Returns valid color normalization kwargs
+        """Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
+
         """
         dim_name = dim_range_key(vdim)
         if values is None:
@@ -1109,8 +1112,8 @@ class LegendPlot(ElementPlot):
 
 
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
-    """
-    OverlayPlot supports compositors processing of Overlays across maps.
+    """OverlayPlot supports compositors processing of Overlays across maps.
+
     """
 
     _passed_handles = ['fig', 'axis']
@@ -1135,9 +1138,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             subplot._finalize_artist(element)
 
     def _adjust_legend(self, overlay, axis):
-        """
-        Accumulate the legend handles and labels for all subplots
+        """Accumulate the legend handles and labels for all subplots
         and set up the legend
+
         """
         legend_data = []
         legend_plot = True
@@ -1154,17 +1157,17 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 legend_plot = True
             elif isinstance(overlay, NdOverlay):
                 label = ','.join([dim.pprint_value(k, print_unit=True)
-                                  for k, dim in zip(key, dimensions)])
+                                  for k, dim in zip(key, dimensions, strict=None)])
                 if handle:
                     legend_data.append((handle, label))
             elif isinstance(subplot, OverlayPlot):
                 legend_data += subplot.handles.get('legend_data', {}).items()
             elif element.label and handle:
                 legend_data.append((handle, labels.get(element.label, element.label)))
-        all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
+        all_handles, all_labels = list(zip(*legend_data, strict=None)) if legend_data else ([], [])
         data = {}
         used_labels = []
-        for handle, label in zip(all_handles, all_labels):
+        for handle, label in zip(all_handles, all_labels, strict=None):
             # Ensure that artists with multiple handles are supported
             if isinstance(handle, list): handle = tuple(handle)
             handle = tuple(h for h in handle if not isinstance(h, (AxesImage, list)))

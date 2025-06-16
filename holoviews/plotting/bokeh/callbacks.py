@@ -3,6 +3,7 @@ import base64
 import inspect
 import time
 from collections import defaultdict
+from contextlib import suppress
 from functools import partial
 
 import numpy as np
@@ -86,8 +87,7 @@ POPUP_POSITION_ANCHOR = {
 
 
 class Callback:
-    """
-    Provides a baseclass to define callbacks, which return data from
+    """Provides a baseclass to define callbacks, which return data from
     bokeh model callbacks, events and attribute changes. The callback
     then makes this data available to any streams attached to it.
 
@@ -136,6 +136,7 @@ class Callback:
       of time between events.
     - debounce: Processes the message only when no new event has been
       received within the `throttle_timeout` duration.
+
     """
 
     # Attributes to sync
@@ -179,9 +180,9 @@ class Callback:
         return msg
 
     def _process_msg(self, msg):
-        """
-        Subclassable method to preprocess JSON message in callback
+        """Subclassable method to preprocess JSON message in callback
         before passing to stream.
+
         """
         return self._transform(msg)
 
@@ -207,10 +208,10 @@ class Callback:
         self._queue = []
 
     def _filter_msg(self, msg, ids):
-        """
-        Filter event values that do not originate from the plotting
+        """Filter event values that do not originate from the plotting
         handles associated with a particular stream using their
         ids to match them.
+
         """
         filtered_msg = {}
         for k, v in msg.items():
@@ -251,9 +252,9 @@ class Callback:
                 stream._metadata = {}
 
     def _init_plot_handles(self):
-        """
-        Find all requested plotting handles and cache them along
+        """Find all requested plotting handles and cache them along
         with the IDs of the models the callbacks will be attached to.
+
         """
         plots = [self.plot]
         if self.plot.subplots:
@@ -273,10 +274,10 @@ class Callback:
         return requested
 
     def _get_stream_handle_ids(self, handles):
-        """
-        Gather the ids of the plotting handles attached to this callback
+        """Gather the ids of the plotting handles attached to this callback
         This allows checking that a stream is not given the state
         of a plotting handle it wasn't attached to
+
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
@@ -288,11 +289,11 @@ class Callback:
 
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
-        """
-        Resolves a Callback attribute specification looking the
+        """Resolves a Callback attribute specification looking the
         corresponding attribute up on the cb_obj, which should be a
         bokeh model. If not model is supplied cb_obj is assumed to
         be the same as the model.
+
         """
         if not cb_obj:
             raise AttributeError(f'Bokeh plot attribute {spec} could not be found')
@@ -316,8 +317,8 @@ class Callback:
         return any(skip(msg) for skip in self.skip_changes)
 
     def _set_busy(self, busy):
-        """
-        Sets panel.state to busy if available.
+        """Sets panel.state to busy if available.
+
         """
         if 'busy' not in state.param:
             return # Check if busy state is supported
@@ -327,9 +328,9 @@ class Callback:
             state.busy = busy
 
     async def on_change(self, attr, old, new):
-        """
-        Process change events adding timeout to process multiple concerted
+        """Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
+
         """
         self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
@@ -338,9 +339,9 @@ class Callback:
             await self.process_on_change()
 
     async def on_event(self, event):
-        """
-        Process bokeh UIEvents adding timeout to process multiple concerted
+        """Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
+
         """
         self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
@@ -349,8 +350,8 @@ class Callback:
             await self.process_on_event()
 
     async def process_on_event(self, timeout=None):
-        """
-        Trigger callback change event and triggering corresponding streams.
+        """Trigger callback change event and triggering corresponding streams.
+
         """
         await asyncio.sleep(0.01)
         if not self._queue:
@@ -429,8 +430,8 @@ class Callback:
             self.plot.document.add_next_tick_callback(partial(self.on_change, attr, old, new))
 
     def set_callback(self, handle):
-        """
-        Set up on_change events for bokeh server interactions.
+        """Set up on_change events for bokeh server interactions.
+
         """
         if self.on_events:
             for event in self.on_events:
@@ -475,8 +476,8 @@ class Callback:
 
 
 class PointerXYCallback(Callback):
-    """
-    Returns the mouse x/y-position on mousemove event.
+    """Returns the mouse x/y-position on mousemove event.
+
     """
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
@@ -484,7 +485,9 @@ class PointerXYCallback(Callback):
     on_events = ['mousemove']
 
     def _process_out_of_bounds(self, value, start, end):
-        "Clips out of bounds values"
+        """Clips out of bounds values
+
+        """
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -518,7 +521,8 @@ class PointerXYCallback(Callback):
             msg['y'] = convert_timestamp(msg['y'])
 
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
-            msg['x'] = x_range.factors[int(msg['x'])]
+            with suppress(IndexError): # See: https://github.com/holoviz/holoviews/pull/6438
+                msg['x'] = x_range.factors[int(msg['x'])]
         elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
@@ -530,7 +534,8 @@ class PointerXYCallback(Callback):
                 msg['x'] = x
 
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
-            msg['y'] = y_range.factors[int(msg['y'])]
+            with suppress(IndexError):
+                msg['y'] = y_range.factors[int(msg['y'])]
         elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:
@@ -545,16 +550,16 @@ class PointerXYCallback(Callback):
 
 
 class PointerXCallback(PointerXYCallback):
-    """
-    Returns the mouse x-position on mousemove event.
+    """Returns the mouse x-position on mousemove event.
+
     """
 
     attributes = {'x': 'cb_obj.x'}
 
 
 class PointerYCallback(PointerXYCallback):
-    """
-    Returns the mouse x/y-position on mousemove event.
+    """Returns the mouse x/y-position on mousemove event.
+
     """
 
     attributes = {'y': 'cb_obj.y'}
@@ -801,11 +806,8 @@ class PopupMixin:
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
-    """
-    Returns the mouse x/y-position on tap event.
+    """Returns the mouse x/y-position on tap event.
 
-    Note: As of bokeh 0.12.5, there is no way to distinguish the
-    individual tap events within a doubletap event.
     """
 
     geom_type = 'point'
@@ -813,7 +815,9 @@ class TapCallback(PopupMixin, PointerXYCallback):
     on_events = ['tap', 'doubletap']
 
     def _process_out_of_bounds(self, value, start, end):
-        "Sets out of bounds values to None"
+        """Sets out of bounds values to None
+
+        """
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -834,8 +838,8 @@ class TapCallback(PopupMixin, PointerXYCallback):
 
 
 class MultiAxisTapCallback(TapCallback):
-    """
-    Returns the mouse x/y-positions on tap event.
+    """Returns the mouse x/y-positions on tap event.
+
     """
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
@@ -883,58 +887,58 @@ class MultiAxisTapCallback(TapCallback):
 
 
 class SingleTapCallback(TapCallback):
-    """
-    Returns the mouse x/y-position on tap event.
+    """Returns the mouse x/y-position on tap event.
+
     """
 
     on_events = ['tap']
 
 
 class PressUpCallback(TapCallback):
-    """
-    Returns the mouse x/y-position of a pressup mouse event.
+    """Returns the mouse x/y-position of a pressup mouse event.
+
     """
 
     on_events = ['pressup']
 
 
 class PanEndCallback(TapCallback):
-    """
-    Returns the mouse x/y-position of a pan end event.
+    """Returns the mouse x/y-position of a pan end event.
+
     """
 
     on_events = ['panend']
 
 
 class DoubleTapCallback(TapCallback):
-    """
-    Returns the mouse x/y-position on doubletap event.
+    """Returns the mouse x/y-position on doubletap event.
+
     """
 
     on_events = ['doubletap']
 
 
 class MouseEnterCallback(PointerXYCallback):
-    """
-    Returns the mouse x/y-position on mouseenter event, i.e. when
+    """Returns the mouse x/y-position on mouseenter event, i.e. when
     mouse enters the plot canvas.
+
     """
 
     on_events = ['mouseenter']
 
 
 class MouseLeaveCallback(PointerXYCallback):
-    """
-    Returns the mouse x/y-position on mouseleave event, i.e. when
+    """Returns the mouse x/y-position on mouseleave event, i.e. when
     mouse leaves the plot canvas.
+
     """
 
     on_events = ['mouseleave']
 
 
 class RangeXYCallback(Callback):
-    """
-    Returns the x/y-axis ranges of a plot.
+    """Returns the x/y-axis ranges of a plot.
+
     """
 
     on_events = ['rangesupdate']
@@ -988,8 +992,8 @@ class RangeXYCallback(Callback):
 
 
 class RangeXCallback(RangeXYCallback):
-    """
-    Returns the x-axis range of a plot.
+    """Returns the x-axis range of a plot.
+
     """
 
     on_events = ['rangesupdate']
@@ -1003,8 +1007,8 @@ class RangeXCallback(RangeXYCallback):
 
 
 class RangeYCallback(RangeXYCallback):
-    """
-    Returns the y-axis range of a plot.
+    """Returns the y-axis range of a plot.
+
     """
 
     on_events = ['rangesupdate']
@@ -1018,9 +1022,9 @@ class RangeYCallback(RangeXYCallback):
 
 
 class PlotSizeCallback(Callback):
-    """
-    Returns the actual width and height of a plot once the layout
+    """Returns the actual width and height of a plot once the layout
     solver has executed.
+
     """
 
     models = ['plot']
@@ -1056,9 +1060,10 @@ class SelectModeCallback(Callback):
 
 
 class BoundsCallback(PopupMixin, Callback):
+    """Returns the bounds of a box_select tool.
+
     """
-    Returns the bounds of a box_select tool.
-    """
+
     attributes = {'x0': 'cb_obj.geometry.x0',
                   'x1': 'cb_obj.geometry.x1',
                   'y0': 'cb_obj.geometry.y0',
@@ -1085,9 +1090,9 @@ class BoundsCallback(PopupMixin, Callback):
 
 
 class SelectionXYCallback(BoundsCallback):
-    """
-    Converts a bounds selection to numeric or categorical x-range
+    """Converts a bounds selection to numeric or categorical x-range
     and y-range selections.
+
     """
 
     def _process_msg(self, msg):
@@ -1098,7 +1103,7 @@ class SelectionXYCallback(BoundsCallback):
         x0, y0, x1, y1 = msg['bounds']
         x_range = self.plot.handles['x_range']
         if isinstance(x_range, FactorRange):
-            x0, x1 = int(round(x0)), int(round(x1))
+            x0, x1 = round(x0), round(x1)
             xfactors = x_range.factors[x0: x1]
             if x_range.tags and x_range.tags[0]:
                 xdim = el.get_dimension(x_range.tags[0][0][0])
@@ -1113,7 +1118,7 @@ class SelectionXYCallback(BoundsCallback):
             msg['x_selection'] = (x0, x1)
         y_range = self.plot.handles['y_range']
         if isinstance(y_range, FactorRange):
-            y0, y1 = int(round(y0)), int(round(y1))
+            y0, y1 = round(y0), round(y1)
             yfactors = y_range.factors[y0: y1]
             if y_range.tags and y_range.tags[0]:
                 ydim = el.get_dimension(y_range.tags[0][0][0])
@@ -1130,8 +1135,8 @@ class SelectionXYCallback(BoundsCallback):
 
 
 class BoundsXCallback(Callback):
-    """
-    Returns the bounds of a xbox_select tool.
+    """Returns the bounds of a xbox_select tool.
+
     """
 
     attributes = {'x0': 'cb_obj.geometry.x0', 'x1': 'cb_obj.geometry.x1'}
@@ -1153,8 +1158,8 @@ class BoundsXCallback(Callback):
 
 
 class BoundsYCallback(Callback):
-    """
-    Returns the bounds of a ybox_select tool.
+    """Returns the bounds of a ybox_select tool.
+
     """
 
     attributes = {'y0': 'cb_obj.geometry.y0', 'y1': 'cb_obj.geometry.y1'}
@@ -1201,8 +1206,8 @@ class LassoCallback(PopupMixin, Callback):
 
 
 class Selection1DCallback(PopupMixin, Callback):
-    """
-    Returns the current selection on a ColumnDataSource.
+    """Returns the current selection on a ColumnDataSource.
+
     """
 
     attributes = {'index': 'cb_obj.indices'}
@@ -1342,8 +1347,8 @@ class Selection1DCallback(PopupMixin, Callback):
 
 
 class ResetCallback(Callback):
-    """
-    Signals the Reset stream if an event has been triggered.
+    """Signals the Reset stream if an event has been triggered.
+
     """
 
     models = ['plot']
@@ -1355,9 +1360,9 @@ class ResetCallback(Callback):
 
 
 class CDSCallback(Callback):
-    """
-    A Stream callback that syncs the data on a bokeh ColumnDataSource
+    """A Stream callback that syncs the data on a bokeh ColumnDataSource
     model with Python.
+
     """
 
     attributes = {'data': 'source.data'}
@@ -1402,6 +1407,7 @@ class CDSCallback(Callback):
             elif (
                 isinstance(values, list)
                 and len(values) == 4
+                and isinstance(values[2], str)
                 and values[2] in ("big", "little")
                 and isinstance(values[3], list)
             ):
@@ -1450,9 +1456,9 @@ class GlyphDrawCallback(CDSCallback):
         cds.js_on_change('data', cb)
 
     def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
+        """Add any value dimensions not already in the data ensuring the
         element can be reconstituted in entirety.
+
         """
         element = self.plot.current_frame
         stream = self.streams[0]
@@ -1528,9 +1534,9 @@ class CurveEditCallback(GlyphDrawCallback):
         return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
+        """Add any value dimensions not already in the data ensuring the
         element can be reconstituted in entirety.
+
         """
         element = self.plot.current_frame
         for d in element.vdims:
@@ -1573,9 +1579,9 @@ class PolyDrawCallback(GlyphDrawCallback):
         return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
+        """Add any value dimensions not already in the data ensuring the
         element can be reconstituted in entirety.
+
         """
         element = self.plot.current_frame
         stream = self.streams[0]
@@ -1630,7 +1636,7 @@ class BoxEditCallback(GlyphDrawCallback):
         element = self.plot.current_frame
 
         l, b, r, t =  [], [], [], []
-        for x, y in zip(data['xs'], data['ys']):
+        for x, y in zip(data['xs'], data['ys'], strict=None):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
             l.append(x0)

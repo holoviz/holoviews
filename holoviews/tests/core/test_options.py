@@ -35,7 +35,7 @@ try:
 except ImportError:
     mpl = None
 with contextlib.suppress(ImportError):
-    from holoviews.plotting import plotly # noqa : F401
+    from holoviews.plotting import plotly  # noqa: F401
 
 
 class TestOptions(ComparisonTestCase):
@@ -908,6 +908,19 @@ class TestCrossBackendOptions(ComparisonTestCase):
         with pytest.raises(ValueError) as excinfo:
             opts.Curve(foobar=3)
         assert err in str(excinfo.value)
+
+    def test_apply_opts_with_non_active_backend(self):
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.set_current_backend('bokeh')
+
+        opts.defaults(
+            opts.Curve(linewidth=5),
+            backend="matplotlib",
+        )
+
+        Store.set_current_backend('matplotlib')
+        assert Curve([]).opts.get().kwargs["linewidth"] == 5
 
 
 class TestLookupOptions(ComparisonTestCase):

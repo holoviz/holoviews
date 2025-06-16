@@ -29,20 +29,20 @@ from .util import MPL_GE_3_7_0, MPL_GE_3_9_0, MPL_VERSION
 
 
 class ChartPlot(ElementPlot):
-    """
-    Baseclass to plot Chart elements.
+    """Baseclass to plot Chart elements.
+
     """
 
 
 class CurvePlot(ChartPlot):
-    """
-    CurvePlot can plot Curve and ViewMaps of Curve, which can be
+    """CurvePlot can plot Curve and ViewMaps of Curve, which can be
     displayed as a single frame or animation. Axes, titles and legends
     are automatically generated from dim_info.
 
     If the dimension is set to cyclic in the dim_info it will rotate
     the curve so that minimum y values are at the minimum x value to
     make the plots easier to interpret.
+
     """
 
     autotick = param.Boolean(default=False, doc="""
@@ -111,10 +111,10 @@ class CurvePlot(ChartPlot):
 
 
 class ErrorPlot(ColorbarPlot):
-    """
-    ErrorPlot plots the ErrorBar Element type and supporting
+    """ErrorPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     style_opts = ['edgecolor', 'elinewidth', 'capsize', 'capthick',
@@ -259,8 +259,8 @@ class SideAreaPlot(AdjoinedPlot, AreaPlot):
 
 
 class SpreadPlot(AreaPlot):
-    """
-    SpreadPlot plots the Spread Element type.
+    """SpreadPlot plots the Spread Element type.
+
     """
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
@@ -286,10 +286,10 @@ class SpreadPlot(AreaPlot):
 
 
 class HistogramPlot(ColorbarPlot):
-    """
-    HistogramPlot can plot DataHistograms and ViewMaps of
+    """HistogramPlot can plot DataHistograms and ViewMaps of
     DataHistograms, which can be displayed as a single frame or
     animation.
+
     """
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
@@ -358,8 +358,8 @@ class HistogramPlot(ColorbarPlot):
 
 
     def _process_hist(self, hist):
-        """
-        Get data from histogram, including bin_ranges and values.
+        """Get data from histogram, including bin_ranges and values.
+
         """
         self.cyclic = hist.get_dimension(0).cyclic
         x = hist.kdims[0]
@@ -369,6 +369,8 @@ class HistogramPlot(ColorbarPlot):
         xlim = hist.range(0)
         ylim = hist.range(1)
         is_datetime = isdatetime(edges)
+        if hasattr(edges, "compute"):
+            edges = edges.compute()
         if is_datetime:
             edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
             edges = date2num(edges)
@@ -377,9 +379,9 @@ class HistogramPlot(ColorbarPlot):
         return edges[:-1], hist_vals, widths, xlim+ylim, is_datetime
 
     def _compute_ticks(self, element, edges, widths, lims):
-        """
-        Compute the ticks either as cyclic values in degrees or as roughly
+        """Compute the ticks either as cyclic values in degrees or as roughly
         evenly spaced bin centers.
+
         """
         if self.xticks is None or not isinstance(self.xticks, int):
             return None
@@ -404,26 +406,26 @@ class HistogramPlot(ColorbarPlot):
         return super().get_extents(element, ranges, range_type)
 
     def _process_axsettings(self, hist, lims, ticks):
-        """
-        Get axis settings options including ticks, x- and y-labels
+        """Get axis settings options including ticks, x- and y-labels
         and limits.
+
         """
-        axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)]))
+        axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)], strict=None))
         return axis_settings
 
     def _update_plot(self, key, hist, bars, lims, ranges):
-        """
-        Process bars can be subclassed to manually adjust bars
+        """Process bars can be subclassed to manually adjust bars
         after being plotted.
+
         """
         return bars
 
     def _update_artists(self, key, hist, edges, hvals, widths, lims, ranges):
-        """
-        Update all the artists in the histogram. Subclassable to
+        """Update all the artists in the histogram. Subclassable to
         allow updating of further artists.
+
         """
-        plot_vals = zip(self.handles['artist'], edges, hvals, widths)
+        plot_vals = zip(self.handles['artist'], edges, hvals, widths, strict=None)
         for bar, edge, height, width in plot_vals:
             if self.invert_axes:
                 bar.set_y(edge)
@@ -457,8 +459,8 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         Whether to overlay a grid on the axis.""")
 
     def _process_hist(self, hist):
-        """
-        Subclassed to offset histogram by defined amount.
+        """Subclassed to offset histogram by defined amount.
+
         """
         edges, hvals, widths, lims, isdatetime = super()._process_hist(hist)
         offset = self.offset * lims[3]
@@ -472,11 +474,11 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         self._update_plot(n, element, self.handles['artist'], lims, ranges)
 
     def _update_plot(self, key, element, bars, lims, ranges):
-        """
-        Process the bars and draw the offset line as necessary. If a
+        """Process the bars and draw the offset line as necessary. If a
         color map is set in the style of the 'main' ViewableElement object, color
         the bars appropriately, respecting the required normalization
         settings.
+
         """
         main = self.adjoined.main
         _, y1 = element.range(1)
@@ -524,22 +526,22 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         return bars
 
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
-        """
-        Use the given cmap to color the bars, applying the correct
+        """Use the given cmap to color the bars, applying the correct
         color ranges as necessary.
+
         """
         cmap_range = main_range[1] - main_range[0]
         lower_bound = main_range[0]
         colors = np.array(element.dimension_values(dim))
         colors = (colors - lower_bound) / (cmap_range)
-        for c, bar in zip(colors, bars):
+        for c, bar in zip(colors, bars, strict=None):
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
     def _update_separator(self, offset):
-        """
-        Compute colorbar offset and update separator line
+        """Compute colorbar offset and update separator line
         if map is non-zero.
+
         """
         offset_line = self.handles['offset_line']
         if offset == 0:
@@ -553,9 +555,9 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
 
 class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
-    """
-    Note that the 'cmap', 'vmin' and 'vmax' style arguments control
+    """Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
+
     """
 
     show_grid = param.Boolean(default=False, doc="""
@@ -678,8 +680,7 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
 
 
 class VectorFieldPlot(ColorbarPlot):
-    """
-    Renders vector fields in sheet coordinates. The vectors are
+    """Renders vector fields in sheet coordinates. The vectors are
     expressed in polar coordinates and may be displayed according to
     angle alone (with some common, arbitrary arrow length) or may be
     true polar vectors.
@@ -692,6 +693,7 @@ class VectorFieldPlot(ColorbarPlot):
     normalize_lengths and rescale_lengths plot option, which will
     normalize the lengths to a maximum of 1 and scale them according
     to the minimum distance respectively.
+
     """
 
     arrow_heads = param.Boolean(default=True, doc="""
@@ -866,8 +868,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     )
 
     def _get_values(self, element, ranges):
-        """
-        Get unique index value for each bar
+        """Get unique index value for each bar
+
         """
         gvals, cvals = self._get_coords(element, ranges, as_string=False)
         kdims = element.kdims
@@ -908,13 +910,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                    dimensions=[xdims, vdim], **kwargs)
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
-        """
-        Apply ticks with appropriate offsets.
+        """Apply ticks with appropriate offsets.
+
         """
         alignments = None
         ticks = xticks or yticks
         if ticks is not None:
-            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]))
+            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]), strict=None)
             ticks = (list(ticks), list(labels))
         if xticks:
             xticks = ticks
@@ -923,10 +925,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         super()._finalize_ticks(axis, element, xticks, yticks, zticks)
         if alignments:
             if xticks:
-                for t, y in zip(axis.get_xticklabels(), alignments):
+                for t, y in zip(axis.get_xticklabels(), alignments, strict=None):
                     t.set_y(y)
             elif yticks:
-                for t, x in zip(axis.get_yticklabels(), alignments):
+                for t, x in zip(axis.get_yticklabels(), alignments, strict=None):
                     t.set_x(x)
 
     def _create_bars(self, axis, element, ranges, style):
@@ -1115,7 +1117,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         if ndims > 1 and 'spike_length' not in opts:
             data = element.columns([0, 1])
             xs, ys = data[dimensions[0]], data[dimensions[1]]
-            data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys)]
+            data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys, strict=None)]
         else:
             xs = element.array([0])
             height = self.spike_length
@@ -1127,7 +1129,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         dims = element.dimensions()
         clean_spikes = []
         for spike in data:
-            xs, ys = zip(*spike)
+            xs, ys = zip(*spike, strict=None)
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)

@@ -80,9 +80,9 @@ class LinkCallback:
 
     @classmethod
     def find_links(cls, root_plot):
-        """
-        Traverses the supplied plot and searches for any Links on
+        """Traverses the supplied plot and searches for any Links on
         the plotted objects.
+
         """
         plot_fn = lambda x: isinstance(x, (GenericElementPlot, GenericOverlayPlot))
         plots = root_plot.traverse(lambda x: x, [plot_fn])
@@ -103,16 +103,20 @@ class LinkCallback:
 
     @classmethod
     def find_link(cls, plot, link=None, target=False):
-        """
-        Searches a plot for any Links declared on the sources of the plot.
+        """Searches a plot for any Links declared on the sources of the plot.
 
-        Args:
-            plot: The plot to search for Links
-            link: A Link instance to check for matches
-            target: Whether to check against the Link.target
+        Parameters
+        ----------
+        plot
+            The plot to search for Links
+        link
+            A Link instance to check for matches
+        target
+            Whether to check against the Link.target
 
-        Returns:
-            A tuple containing the matched plot and list of matching Links.
+        Returns
+        -------
+        A tuple containing the matched plot and list of matching Links.
         """
         attr = 'target' if target else 'source'
         if link is None:
@@ -136,16 +140,16 @@ class LinkCallback:
                     return (plot, links)
 
     def validate(self):
-        """
-        Should be subclassed to check if the source and target plots
+        """Should be subclassed to check if the source and target plots
         are compatible to perform the linking.
+
         """
 
 
 class RangeToolLinkCallback(LinkCallback):
-    """
-    Attaches a RangeTool to the source plot and links it to the
+    """Attaches a RangeTool to the source plot and links it to the
     specified axes on the target plot
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
@@ -229,8 +233,8 @@ class RangeToolLinkCallback(LinkCallback):
 
 
 class DataLinkCallback(LinkCallback):
-    """
-    Merges the source and target ColumnDataSource
+    """Merges the source and target ColumnDataSource
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):

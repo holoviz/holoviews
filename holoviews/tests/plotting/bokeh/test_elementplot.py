@@ -455,6 +455,12 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [])
 
+    def test_style_map_dimension_object(self):
+        x = Dimension('x')
+        y = Dimension('y')
+        scatter = Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
+        self._test_colormapping(scatter, 'x', prefix='color_')
+
     #################################################################
     # Aspect tests
     #################################################################
@@ -904,7 +910,7 @@ class TestScalebarPlot:
         scalebars = [next(sb) if e else None for e in enabled]
         assert sum(map(bool, scalebars)) == sum(enabled)
 
-        for coordinate, scalebar, idx in zip(coordinates, scalebars, "123"):
+        for coordinate, scalebar, idx in zip(coordinates, scalebars, "123", strict=None):
             assert coordinate.y_source.name == f"c{idx}"
             if scalebar is None:
                 continue

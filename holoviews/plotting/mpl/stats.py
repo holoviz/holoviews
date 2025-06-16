@@ -10,8 +10,8 @@ from .util import MPL_GE_3_9_0, MPL_GE_3_10_0
 
 
 class DistributionPlot(AreaPlot):
-    """
-    DistributionPlot visualizes a distribution of values as a KDE.
+    """DistributionPlot visualizes a distribution of values as a KDE.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -25,11 +25,11 @@ class DistributionPlot(AreaPlot):
 
 
 class BivariatePlot(PolygonPlot):
-    """
-    Bivariate plot visualizes two-dimensional kernel density
+    """Bivariate plot visualizes two-dimensional kernel density
     estimates. Additionally, by enabling the joint option, the
     marginals distributions can be plotted alongside each axis (does
     not animate or compose).
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -46,10 +46,10 @@ class BivariatePlot(PolygonPlot):
 
 
 class BoxPlot(MultiDistributionMixin, ChartPlot):
-    """
-    BoxPlot plots the ErrorBar Element type and supporting
+    """BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     style_opts = ['notch', 'sym', 'whis', 'bootstrap',
@@ -72,7 +72,7 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
         data, labels = [], []
         for key, group in groups:
             if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)])
             else:
                 label = key
             d = group[group.vdims[0]]
@@ -131,10 +131,10 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
 
 
 class ViolinPlot(BoxPlot):
-    """
-    BoxPlot plots the ErrorBar Element type and supporting
+    """BoxPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -184,7 +184,7 @@ class ViolinPlot(BoxPlot):
                              medianprops={'color': 'white'}, widths=0.1,
                              **invert_axes, **labels)
             artists.update(box)
-        for body, color in zip(artists['bodies'], facecolors):
+        for body, color in zip(artists['bodies'], facecolors, strict=None):
             body.set_facecolors(color)
             body.set_edgecolors(edgecolors)
             body.set_alpha(alpha)
@@ -205,7 +205,7 @@ class ViolinPlot(BoxPlot):
         elstyle = self.lookup_options(element, 'style')
         for i, (key, group) in enumerate(groups):
             if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)])
             else:
                 label = key
             d = group[group.vdims[0]]

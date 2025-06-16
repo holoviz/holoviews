@@ -37,9 +37,9 @@ except ImportError:
 
 
 def set_style(key):
-    """
-    Select a style by name, e.g. set_style('default'). To revert to the
+    """Select a style by name, e.g. set_style('default'). To revert to the
     previous style use the key 'unset' or False.
+
     """
     if key is None:
         return
@@ -180,6 +180,7 @@ Store.register({Curve: CurvePlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
+                Dendrogram: PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
 
@@ -282,6 +283,8 @@ options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Dendrogram = Options('style', color="black")
+options.Dendrogram = Options('plot', xaxis=None, yaxis=None)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
                            cmap=dflt_cmap)
 options.Rectangles = Options('style', cmap=dflt_cmap)
@@ -312,4 +315,5 @@ options.Sankey = Options('style', edge_color='grey', node_edgecolors='black',
 # Statistics
 options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
                                alpha=0.5)
+options.Distribution = Options('plot', show_legend=True)
 options.Violin = Options('style', facecolors=Cycle(), showextrema=False, alpha=0.7)

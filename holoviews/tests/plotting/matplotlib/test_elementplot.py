@@ -3,6 +3,7 @@ from matplotlib import style
 from matplotlib.projections import PolarAxes
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
+from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, HeatMap, Image, Scatter, Scatter3D
 from holoviews.streams import Stream
@@ -359,6 +360,14 @@ class TestColorbarPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(scatter)
         cbar_ax = plot.handles['cax']
         self.assertEqual(cbar_ax.get_ylabel(), 'color')
+
+    def test_style_map_dimension_object(self):
+        x = Dimension('x')
+        y = Dimension('y')
+        scatter = Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
+        plot = mpl_renderer.get_plot(scatter)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_clim(), (0, 2))
 
 
 class TestOverlayPlot(TestMPLPlot):

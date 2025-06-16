@@ -1,6 +1,7 @@
-import holoviews as hv
-import panel as pn
 import numpy as np
+import panel as pn
+
+import holoviews as hv
 
 hv.extension('bokeh')
 

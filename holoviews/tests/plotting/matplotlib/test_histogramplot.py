@@ -76,7 +76,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
         self.assertEqual(x_range[1], 3.8)
-        self.assertEqual(y_range[0], 0.03348369522101712)
+        self.assertEqual(y_range[0], 0.01)
         self.assertEqual(y_range[1], 3.3483695221017129)
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
@@ -112,7 +112,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(histogram)
         artist = plot.handles['artist']
         children = artist.get_children()
-        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00']):
+        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00'], strict=None):
             self.assertEqual(c.get_facecolor(), (*(c / 255.0 for c in hex2rgb(w)), 1))
 
     def test_histogram_linear_color_op(self):
@@ -152,7 +152,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(histogram)
         artist = plot.handles['artist']
         children = artist.get_children()
-        for c, w in zip(children, np.array([1, 4, 8])):
+        for c, w in zip(children, np.array([1, 4, 8]), strict=None):
             self.assertEqual(c.get_linewidth(), w)
 
     def test_op_ndoverlay_value(self):
@@ -163,7 +163,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
                              )
         plot = mpl_renderer.get_plot(overlay)
         colors = [(0, 0, 1, 1), (1, 0, 0, 1)]
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             children = subplot.handles['artist'].get_children()
             for c in children:
                 self.assertEqual(c.get_facecolor(), color)

@@ -1,9 +1,10 @@
-"""
-Collection of either extremely generic or simple Operation
+"""Collection of either extremely generic or simple Operation
 examples.
+
 """
 import warnings
 from functools import partial
+from itertools import pairwise
 
 import numpy as np
 import param
@@ -15,8 +16,10 @@ from ..core import (
     Dataset,
     Dimension,
     Element,
+    Empty,
     GridMatrix,
     HoloMap,
+    Layout,
     NdOverlay,
     Operation,
     Overlay,
@@ -35,8 +38,8 @@ from ..core.util import (
     label_sanitizer,
 )
 from ..element.chart import Histogram, Scatter
-from ..element.path import Contours, Polygons
-from ..element.raster import RGB, Image
+from ..element.path import Contours, Dendrogram, Polygons
+from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
@@ -47,8 +50,7 @@ column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 def identity(x,k): return x
 
 class operation(Operation):
-    """
-    The most generic operation that wraps any callable into an
+    """The most generic operation that wraps any callable into an
     Operation. The callable needs to accept an HoloViews
     component and a key (that may be ignored) and must return a new
     HoloViews component.
@@ -61,6 +63,7 @@ class operation(Operation):
 
     Could be used to implement a collapse operation to subtracts the
     data between Rasters in an Overlay.
+
     """
 
     output_type = param.Parameter(default=None, doc="""
@@ -89,10 +92,10 @@ class operation(Operation):
 
 
 class factory(Operation):
-    """
-    Simple operation that constructs any element that accepts some
+    """Simple operation that constructs any element that accepts some
     other element as input. For instance, RGB and HSV elements can be
     created from overlays of Image elements.
+
     """
 
     output_type = param.Parameter(default=RGB, doc="""
@@ -133,8 +136,8 @@ class function(Operation):
 
 
 class method(Operation):
-    """
-    Operation that wraps a method call
+    """Operation that wraps a method call
+
     """
 
     output_type = param.ClassSelector(class_=type, doc="""
@@ -158,8 +161,7 @@ class method(Operation):
 
 
 class apply_when(param.ParameterizedFunction):
-    """
-    Applies a selection depending on the current zoom range. If the
+    """Applies a selection depending on the current zoom range. If the
     supplied predicate function returns a True it will apply the
     operation otherwise it will return the raw element after the
     selection. For example the following will apply datashading if
@@ -167,6 +169,7 @@ class apply_when(param.ParameterizedFunction):
     just returning the selected points element:
 
        apply_when(points, operation=datashade, predicate=lambda x: x > 1000)
+
     """
 
     operation = param.Callable(default=lambda x: x)
@@ -203,8 +206,7 @@ class apply_when(param.ParameterizedFunction):
 
 
 class chain(Operation):
-    """
-    Defining an Operation chain is an easy way to define a new
+    """Defining an Operation chain is an easy way to define a new
     Operation from a series of existing ones. The argument is a
     list of Operation (or Operation instances) that are
     called in sequence to generate the returned element.
@@ -218,6 +220,7 @@ class chain(Operation):
     Instances are only required when arguments need to be passed to
     individual operations so the resulting object is a function over a
     single argument.
+
     """
 
     output_type = param.Parameter(default=Image, doc="""
@@ -245,9 +248,9 @@ class chain(Operation):
             return processed.clone(group=self.p.group)
 
     def find(self, operation, skip_nonlinked=True):
-        """
-        Returns the first found occurrence of an operation while
+        """Returns the first found occurrence of an operation while
         performing a backward traversal of the chain pipeline.
+
         """
         found = None
         for op in self.operations[::-1]:
@@ -260,8 +263,7 @@ class chain(Operation):
 
 
 class transform(Operation):
-    """
-    Generic Operation to transform an input Image or RGBA
+    """Generic Operation to transform an input Image or RGBA
     element into an output Image. The transformation is defined by
     the supplied callable that accepts the data of the input Image
     (typically a numpy array) and returns the transformed data of the
@@ -276,6 +278,7 @@ class transform(Operation):
     autocorrelation using the scipy library with:
 
     operator=lambda x: scipy.signal.correlate2d(x, x)
+
     """
 
     output_type = Image
@@ -296,8 +299,7 @@ class transform(Operation):
 
 
 class image_overlay(Operation):
-    """
-    Operation to build a overlay of images to a specification from a
+    """Operation to build a overlay of images to a specification from a
     subset of the required elements.
 
     This is useful for reordering the elements of an overlay,
@@ -313,6 +315,7 @@ class image_overlay(Operation):
     strongest match will be used. In the case of a tie in match
     strength, the first layer in the input is used. One successful
     match is always required.
+
     """
 
     output_type = Overlay
@@ -341,8 +344,10 @@ class image_overlay(Operation):
 
     @classmethod
     def _match(cls, el, spec):
-        "Return the strength of the match (None if no match)"
-        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
+        """Return the strength of the match (None if no match)
+
+        """
+        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.'), strict=None))
         if not isinstance(el, Image) or spec_dict['type'] != 'Image':
             raise NotImplementedError("Only Image currently supported")
 
@@ -357,10 +362,10 @@ class image_overlay(Operation):
 
 
     def _match_overlay(self, raster, overlay_spec):
-        """
-        Given a raster or input overlay, generate a list of matched
+        """Given a raster or input overlay, generate a list of matched
         elements (None if no match) and corresponding tuple of match
         strength values.
+
         """
         ordering = [None]*len(overlay_spec) # Elements to overlay
         strengths = [0]*len(overlay_spec)   # Match strengths
@@ -386,9 +391,9 @@ class image_overlay(Operation):
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
-        for el, spec in zip(ordering, specs):
+        for el, spec in zip(ordering, specs, strict=None):
             if el is None:
-                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
+                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.'), strict=None))
                 el = Image(np.ones(strongest.data.shape) * self.p.fill,
                             group=spec_dict.get('group','Image'),
                             label=spec_dict.get('label',''))
@@ -399,11 +404,12 @@ class image_overlay(Operation):
 
 
 class threshold(Operation):
-    """
-    Threshold a given Image whereby all values higher than a given
+    """Threshold a given Image whereby all values higher than a given
     level map to the specified high value and all values lower than
     that level map to the specified low value.
+
     """
+
     output_type = Image
 
     level = param.Number(default=0.5, doc="""
@@ -438,11 +444,11 @@ class threshold(Operation):
 
 
 class gradient(Operation):
-    """
-    Compute the gradient plot of the supplied Image.
+    """Compute the gradient plot of the supplied Image.
 
     If the Image value dimension is cyclic, the smallest step is taken
     considered the cyclic range
+
     """
 
     output_type = Image
@@ -490,10 +496,10 @@ class gradient(Operation):
 
 
 class convolve(Operation):
-    """
-    Apply a convolution to an overlay using the top layer as the
+    """Apply a convolution to an overlay using the top layer as the
     kernel for convolving the bottom layer. Both Image elements in
     the input overlay should have a single value dimension.
+
     """
 
     output_type = Image
@@ -536,12 +542,12 @@ class convolve(Operation):
 
 
 class contours(Operation):
-    """
-    Given a Image with a single channel, annotate it with contour
+    """Given a Image with a single channel, annotate it with contour
     lines for a given set of contour levels.
 
     The return is an NdOverlay with a Contours layer for each given
     level, overlaid on top of the input Image.
+
     """
 
     output_type = Overlay
@@ -600,7 +606,7 @@ class contours(Operation):
 
             data = tuple(
                 date2num(d) if is_datetime else d
-                for d, is_datetime in zip(data, data_is_datetime)
+                for d, is_datetime in zip(data, data_is_datetime, strict=None)
             )
 
         xdim, ydim = element.dimensions('key', label=True)
@@ -665,7 +671,7 @@ class contours(Operation):
         paths = []
         if self.p.filled:
             empty = np.array([[np.nan, np.nan]])
-            for lower_level, upper_level in zip(levels[:-1], levels[1:]):
+            for lower_level, upper_level in pairwise(levels):
                 filled = cont_gen.filled(lower_level, upper_level)
                 # Only have to consider last index 0 as we are using contourpy without chunking
                 if (points := filled[0][0]) is None:
@@ -680,7 +686,7 @@ class contours(Operation):
                 outer_offsets = filled[2][0]
 
                 # Loop through exterior polygon boundaries.
-                for jstart, jend in zip(outer_offsets[:-1], outer_offsets[1:]):
+                for jstart, jend in pairwise(outer_offsets):
                     if exteriors:
                         exteriors.append(empty)
                     exteriors.append(points[offsets[jstart]:offsets[jstart + 1]])
@@ -728,10 +734,10 @@ class contours(Operation):
 
 
 class histogram(Operation):
-    """
-    Returns a Histogram of the input element data, binned into
+    """Returns a Histogram of the input element data, binned into
     num_bins over the bin_range (if specified) along the specified
     dimension.
+
     """
 
     bin_range = param.NumericTuple(default=None, length=2,  doc="""
@@ -957,11 +963,11 @@ class histogram(Operation):
 
 
 class decimate(Operation):
-    """
-    Decimates any column based Element to a specified number of random
+    """Decimates any column based Element to a specified number of random
     rows if the current element defined by the x_range and y_range
     contains more than max_samples. By default the operation returns a
     DynamicMap with a RangeXY stream allowing dynamic downsampling.
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -1018,9 +1024,9 @@ class decimate(Operation):
 
 
 class interpolate_curve(Operation):
-    """
-    Resamples a Curve using the defined interpolation method, e.g.
+    """Resamples a Curve using the defined interpolation method, e.g.
     to represent changes in y-values as steps.
+
     """
 
     interpolation = param.Selector(objects=['steps-pre', 'steps-mid',
@@ -1039,7 +1045,7 @@ class interpolate_curve(Operation):
         steps[1::2] = steps[0:-2:2]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[2::2]
             val_arrays.append(s)
@@ -1055,7 +1061,7 @@ class interpolate_curve(Operation):
         steps[0], steps[-1] = x[0], x[-1]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[0::2]
             val_arrays.append(s)
@@ -1071,7 +1077,7 @@ class interpolate_curve(Operation):
         steps[1::2] = steps[2::2]
 
         val_arrays = []
-        for v, s in zip(values, value_steps):
+        for v, s in zip(values, value_steps, strict=None):
             s[0::2] = v
             s[1::2] = s[0:-2:2]
             val_arrays.append(s)
@@ -1105,13 +1111,13 @@ class interpolate_curve(Operation):
 
 
 class collapse(Operation):
-    """
-    Given an overlay of Element types, collapse into single Element
+    """Given an overlay of Element types, collapse into single Element
     object using supplied function. Collapsing aggregates over the
     key dimensions of each object applying the supplied fn to each group.
 
     This is an example of an Operation that does not involve
     any Raster types.
+
     """
 
     fn = param.Callable(default=np.mean, doc="""
@@ -1127,13 +1133,13 @@ class collapse(Operation):
 
 
 class gridmatrix(param.ParameterizedFunction):
-    """
-    The gridmatrix operation takes an Element or HoloMap
+    """The gridmatrix operation takes an Element or HoloMap
     of Elements as input and creates a GridMatrix object,
     which plots each dimension in the Element against
     each other dimension. This provides a very useful
     overview of high-dimensional data and is inspired
     by pandas and seaborn scatter_matrix implementations.
+
     """
 
     chart_type = param.Parameter(default=Scatter, doc="""
@@ -1215,3 +1221,110 @@ class gridmatrix(param.ParameterizedFunction):
                                   datatype=[default_datatype])
             data[(d1.name, d2.name)] = el
         return data
+
+
+class dendrogram(Operation):
+    """The dendrogram operation computes one or two adjoint dendrogram of the
+    data along the specified dimension(s). The operation uses the scipy
+    dendrogram algorithm to compute the tree structure of the data. The
+    operation is typically used to visualize hierarchical clustering of the
+    data.
+    """
+
+    adjoined = param.Boolean(default=True, doc="Whether to adjoin the dendrogram(s) to the main plot")
+
+    adjoint_dims = param.List(item_type=str, doc="The adjoint dimension to cluster on")
+
+    main_dim = param.String(doc="The main dimension to cluster on")
+
+    main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False, doc="""
+        The Element type to use for the main plot if the input is a Dataset.""")
+
+    optimal_ordering = param.Boolean(default=False, doc="""
+         If True, the linkage matrix will be reordered so that the distance
+         between successive leaves is minimal. This results in a more intuitive
+         tree structure when the data are visualized. defaults to False,
+         because this algorithm can be slow, particularly on large datasets.
+         For more information:
+         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+         """)
+
+    linkage_method = param.Selector(
+        default="complete",
+        objects=["single", "complete", "average", "centroid", "median", "ward", "weighted"],
+        doc="""
+        The linkage algorithm to use. For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+
+    )
+    linkage_metric = param.Selector(
+        default="correlation",
+        objects=[
+            "braycurtis", "canberra", "chebyshev", "cityblock",
+            "correlation", "cosine", "dice", "euclidean", "hamming",
+            "jaccard", "jensenshannon", "kulczynski1",
+            "mahalanobis", "matching", "minkowski", "rogerstanimoto",
+            "russellrao", "seuclidean", "sokalmichener", "sokalsneath",
+            "sqeuclidean", "yule"
+        ],
+        doc="""
+        The distance metric to use in the case that y is a collection of observation vectors; ignored otherwise.
+        For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+    )
+
+    def _compute_linkage(self, dataset, dim, vdim):
+        try:
+            from scipy.cluster.hierarchy import dendrogram, linkage
+        except ImportError:
+            raise ImportError("scipy is needed for the dendrogram operation") from None
+
+        arrays, labels = [], []
+        for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
+            labels.append(k)
+            arrays.append(v.dimension_values(vdim))
+
+        X = np.vstack(arrays)
+        Z = linkage(
+            X,
+            method=self.p.linkage_method,
+            metric=self.p.linkage_metric,
+            optimal_ordering=self.p.optimal_ordering
+        )
+        return dendrogram(Z, labels=labels, no_plot=True)
+
+    def _process(self, element, key=None):
+        element_kdims = element.kdims
+        dataset = Dataset(element)
+        sort_dims, dendros = [], {}
+        for d in self.p.adjoint_dims:
+            ddata = self._compute_linkage(dataset, d, self.p.main_dim)
+            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
+            sort_dim = f"sort_{d}"
+            dataset = dataset.add_dimension(sort_dim, 0, order)
+            sort_dims.append(sort_dim)
+
+            # Important the kdims are unique
+            dendros[d] = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
+
+        if not self.p.adjoined:
+            if len(dendros) == 1:
+                return next(iter(dendros.values()))
+            else:
+                return Layout(dendros.values())
+
+        vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        if type(element) is not Dataset:
+            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+        else:
+            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
+
+        for dim in map(str, main.kdims[::-1]):
+            if dim not in self.p.adjoint_dims:
+                main = main << Empty()
+            else:
+                main = main << dendros[dim]
+
+        return main

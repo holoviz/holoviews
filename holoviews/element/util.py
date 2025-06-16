@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import itertools
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 import param
 
 from ..core import Dataset
@@ -19,11 +21,18 @@ from ..core.util import (
     sort_topologically,
 )
 
+if TYPE_CHECKING:
+    from typing import TypeVar
+
+    import pandas as pd
+
+    Array = TypeVar("Array", np.ndarray, pd.api.extensions.ExtensionArray)
+
 
 def split_path(path):
-    """
-    Split a Path type containing a single NaN separated path into
+    """Split a Path type containing a single NaN separated path into
     multiple subpaths.
+
     """
     path = path.split(0, 1)[0]
     values = path.dimension_values(0)
@@ -40,10 +49,10 @@ def split_path(path):
 
 
 def compute_slice_bounds(slices, scs, shape):
-    """
-    Given a 2D selection consisting of slices/coordinates, a
+    """Given a 2D selection consisting of slices/coordinates, a
     SheetCoordinateSystem and the shape of the array returns a new
     BoundingBox representing the sliced region.
+
     """
     xidx, yidx = slices
     ys, xs = shape
@@ -52,9 +61,9 @@ def compute_slice_bounds(slices, scs, shape):
     xunit = (1./xdensity)
     yunit = (1./ydensity)
     if isinstance(l, datetime_types):
-        xunit = np.timedelta64(int(round(xunit)), scs._time_unit)
+        xunit = np.timedelta64(round(xunit), scs._time_unit)
     if isinstance(b, datetime_types):
-        yunit = np.timedelta64(int(round(yunit)), scs._time_unit)
+        yunit = np.timedelta64(round(yunit), scs._time_unit)
     if isinstance(xidx, slice):
         l = l if xidx.start is None else max(l, xidx.start)
         r = r if xidx.stop is None else min(r, xidx.stop)
@@ -92,9 +101,10 @@ def compute_slice_bounds(slices, scs, shape):
 
 
 def reduce_fn(x):
+    """Aggregation function to get the first non-zero value.
+
     """
-    Aggregation function to get the first non-zero value.
-    """
+    import pandas as pd
     values = x.values if isinstance(x, pd.Series) else x
     for v in values:
         if not is_nan(v):
@@ -103,8 +113,7 @@ def reduce_fn(x):
 
 
 class categorical_aggregate2d(Operation):
-    """
-    Generates a gridded Dataset of 2D aggregate arrays indexed by the
+    """Generates a gridded Dataset of 2D aggregate arrays indexed by the
     first two dimensions of the passed Element, turning all remaining
     dimensions into value dimensions. The key dimensions of the
     gridded array are treated as categorical indices. Useful for data
@@ -120,24 +129,26 @@ class categorical_aggregate2d(Operation):
     Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
              'Population': [[ 282.2 , np.nan], [np.nan,   58.89]]},
             kdims=['Country', 'Year'], vdims=['Population'])
+
     """
 
     datatype = param.List(default=['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
     @classmethod
-    def _get_coords(cls, obj):
-        """
-        Get the coordinates of the 2D aggregate, maintaining the correct
+    def _get_coords(cls, obj: Dataset):
+        """Get the coordinates of the 2D aggregate, maintaining the correct
         sorting order.
+
         """
         xdim, ydim = obj.dimensions(label=True)[:2]
         xcoords = obj.dimension_values(xdim, False)
         ycoords = obj.dimension_values(ydim, False)
+
         if xcoords.dtype.kind not in 'SUO':
-            xcoords = np.sort(xcoords)
+            xcoords = sort_arr(xcoords)
         if ycoords.dtype.kind not in 'SUO':
-            return xcoords, np.sort(ycoords)
+            return xcoords, sort_arr(ycoords)
 
         # Determine global orderings of y-values using topological sort
         grouped = obj.groupby(xdim, container_type=dict,
@@ -149,25 +160,24 @@ class categorical_aggregate2d(Operation):
             if len(vals) == 1:
                 orderings[vals[0]] = [vals[0]]
             else:
-                for i in range(len(vals)-1):
-                    p1, p2 = vals[i:i+2]
+                for p1, p2 in itertools.pairwise(vals):
                     orderings[p1] = [p2]
             if sort:
                 if vals.dtype.kind in ('i', 'f'):
                     sort = (np.diff(vals)>=0).all()
                 else:
-                    sort = np.array_equal(np.sort(vals), vals)
+                    sort = np.array_equal(sort_arr(vals), vals)
         if sort or one_to_one(orderings, ycoords):
-            ycoords = np.sort(ycoords)
+            ycoords = sort_arr(ycoords)
         elif not is_cyclic(orderings):
             coords = list(itertools.chain(*sort_topologically(orderings)))
-            ycoords = coords if len(coords) == len(ycoords) else np.sort(ycoords)
+            ycoords = coords if len(coords) == len(ycoords) else sort_arr(ycoords)
         return np.asarray(xcoords), np.asarray(ycoords)
 
     def _aggregate_dataset(self, obj):
-        """
-        Generates a gridded Dataset from a column-based dataset and
+        """Generates a gridded Dataset from a column-based dataset and
         lists of xcoords and ycoords
+
         """
         xcoords, ycoords = self._get_coords(obj)
         dim_labels = obj.dimensions(label=True)
@@ -200,11 +210,15 @@ class categorical_aggregate2d(Operation):
                          datatype=self.p.datatype)
 
     def _aggregate_dataset_pandas(self, obj):
+        import pandas as pd
         index_cols = [d.name for d in obj.kdims]
         groupby_kwargs = {"sort": False}
         if PANDAS_GE_2_1_0:
             groupby_kwargs["observed"] = False
-        df = obj.data.set_index(index_cols).groupby(index_cols, **groupby_kwargs).first()
+        df = obj.data
+        if not all(c in df.index.names for c in index_cols):
+            df = df.set_index(index_cols)
+        df = df.groupby(index_cols, **groupby_kwargs).first()
         label = 'unique' if len(df) == len(obj) else 'non-unique'
         levels = self._get_coords(obj)
         index = pd.MultiIndex.from_product(levels, names=df.index.names)
@@ -216,10 +230,10 @@ class categorical_aggregate2d(Operation):
         return obj.clone(data, datatype=self.p.datatype, label=label)
 
     def _process(self, obj, key=None):
-        """
-        Generates a categorical 2D aggregate by inserting NaNs at all
+        """Generates a categorical 2D aggregate by inserting NaNs at all
         cross-product locations that do not already have a value assigned.
         Returns a 2D gridded Dataset object.
+
         """
         if isinstance(obj, Dataset) and obj.interface.gridded:
             return obj
@@ -234,8 +248,8 @@ class categorical_aggregate2d(Operation):
 
 
 def circular_layout(nodes):
-    """
-    Lay out nodes on a circle and add node index.
+    """Lay out nodes on a circle and add node index.
+
     """
     N = len(nodes)
     if not N:
@@ -247,9 +261,9 @@ def circular_layout(nodes):
 
 
 def quadratic_bezier(start, end, c0=(0, 0), c1=(0, 0), steps=50):
-    """
-    Compute quadratic bezier spline given start and end coordinate and
+    """Compute quadratic bezier spline given start and end coordinate and
     two control points.
+
     """
     steps = np.linspace(0, 1, steps)
     sx, sy = start
@@ -264,12 +278,13 @@ def quadratic_bezier(start, end, c0=(0, 0), c1=(0, 0), steps=50):
 
 
 def connect_edges_pd(graph):
-    """
-    Given a Graph element containing abstract edges compute edge
+    """Given a Graph element containing abstract edges compute edge
     segments directly connecting the source and target nodes. This
     operation depends on pandas and is a lot faster than the pure
     NumPy equivalent.
+
     """
+    import pandas as pd
     edges = graph.dframe()
     edges.index.name = 'graph_edge_index'
     edges = edges.reset_index()
@@ -290,12 +305,13 @@ def connect_edges_pd(graph):
 
 
 def connect_tri_edges_pd(trimesh):
-    """
-    Given a TriMesh element containing abstract edges compute edge
+    """Given a TriMesh element containing abstract edges compute edge
     segments directly connecting the source and target nodes. This
     operation depends on pandas and is a lot faster than the pure
     NumPy equivalent.
+
     """
+    import pandas as pd
     edges = trimesh.dframe().copy()
     edges.index.name = 'trimesh_edge_index'
     edges = edges.drop("color", errors="ignore", axis=1).reset_index()
@@ -316,11 +332,11 @@ def connect_tri_edges_pd(trimesh):
 
 
 def connect_edges(graph):
-    """
-    Given a Graph element containing abstract edges compute edge
+    """Given a Graph element containing abstract edges compute edge
     segments directly connecting the source and target nodes.  This
     operation just uses internal HoloViews operations and will be a
     lot slower than the pandas equivalent.
+
     """
     paths = []
     for start, end in graph.array(graph.kdims):
@@ -332,3 +348,11 @@ def connect_edges(graph):
         end = end_ds.array(end_ds.kdims[:2])
         paths.append(np.array([start[0], end[0]]))
     return paths
+
+
+def sort_arr(arr: Array) -> Array:
+    import pandas as pd
+
+    if isinstance(arr, pd.api.extensions.ExtensionArray):
+        return arr[arr.argsort()]
+    return np.sort(arr)
