@@ -466,7 +466,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         offset = self.offset * lims[3]
         hvals = hvals * (1-self.offset)
         hvals += offset
-        lims = lims[0:3] + (lims[3] + offset,)
+        lims = (*lims[0:3], lims[3] + offset)
         return edges, hvals, widths, lims, isdatetime
 
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):

@@ -196,7 +196,7 @@ class Graph(Dataset, Element2D):
         node_info_df = node_info_df[cols]
         node_df = pd.merge(node_df, node_info_df, left_on=left_on,
                             right_on=idx.name, how='left')
-        nodes = nodes.clone(node_df, kdims=nodes.kdims[:2]+[idx],
+        nodes = nodes.clone(node_df, kdims=[*nodes.kdims[:2], idx],
                             vdims=node_info.vdims)
 
         self._nodes = nodes
@@ -721,7 +721,7 @@ class layout_chords(Operation):
             if isinstance(nodes_el, Nodes):
                 kdims = nodes_el.kdims
             else:
-                kdims = Nodes.kdims[:2]+[idx_dim]
+                kdims = [*Nodes.kdims[:2], idx_dim]
             vdims = [vd for vd in nodes_el.vdims if vd not in kdims]
             values = tuple(nodes_el.dimension_values(vd) for vd in vdims)
         else:

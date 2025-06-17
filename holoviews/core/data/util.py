@@ -64,6 +64,6 @@ def cached(method):
         if cache is None:
             return method(*args, **kwargs)
         else:
-            args = (cache,)+args[2:]
+            args = (cache, *args[2:])
             return getattr(cache.interface, method.__name__)(*args, **kwargs)
     return cached

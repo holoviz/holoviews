@@ -1893,7 +1893,7 @@ def get_path(item):
             if len(path) > 1 and item.label == path[1]:
                 path = path[:2]
             else:
-                path = path[:1] + (item.label,)
+                path = (*path[:1], item.label)
         else:
             path = path[:1]
     else:

@@ -76,8 +76,9 @@ class VectorField(Selection2DExpr, Geometry):
             repackaged_dataset[vdim] = dataset[vdim]
         vdims = [
             Dimension('Angle', cyclic=True, range=(0, 2 * np.pi)),
-            Dimension('Magnitude')
-        ] + vdims[2:]
+            Dimension('Magnitude'),
+            *vdims[2:],
+        ]
         return cls(repackaged_dataset, kdims=kdims, vdims=vdims, **params)
 
 
