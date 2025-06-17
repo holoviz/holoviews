@@ -1,5 +1,6 @@
 import copy
 import types
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import wraps
 from itertools import pairwise
@@ -635,23 +636,33 @@ class Dataset(Element, metaclass=PipelineMeta):
         or a scalar if a single value was selected
         """
         from ...util.transform import dim
-        if isinstance(selection_expr, dict):
+        dimensions = self.dimensions()
+        ndims = len(dimensions)
+        sel_dims = (*dimensions, 'selection_mask')
+        if isinstance(selection_expr, Mapping):
             if selection:
                 raise ValueError("""\
                 Selections may be supplied as keyword arguments or as a positional
                 argument, never both.""")
-            selection = selection_expr
+            selection = {
+                self.get_dimension(dim).name: v
+                for dim, v in selection_expr.items()
+                if dim in sel_dims or (isinstance(dim, int) and dim < ndims)
+            }
             selection_expr = None
-        if selection_expr is not None and not isinstance(selection_expr, dim):
+        elif selection_expr is not None and not isinstance(selection_expr, dim):
             raise ValueError("""\
             The first positional argument to the Dataset.select method is expected to be a
             holoviews.util.transform.dim expression. Use the selection_specs keyword
             argument to specify a selection specification""")
+        elif selection:
+            selection = {
+                dim: sel for dim, sel in selection.items()
+                if dim in sel_dims or (isinstance(dim, int) and dim < ndims)
+            }
 
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        sel_dims = (*self.dimensions(), 'selection_mask')
-        selection = {dim: sel for dim, sel in selection.items() if dim in sel_dims}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or (not selection and not selection_expr)):
             return self
