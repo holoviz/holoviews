@@ -1311,9 +1311,10 @@ class dendrogram(Operation):
             ic = ddata["icoord"]
             if self.p.invert_dendrogram:
                 ic = np.asarray(ic)
-                # Convert the smallest to the largest, while still being
-                # positive, offset (5) so we don't divide by zero
+                # Convert the smallest value to the largest value, while still
+                # being positive, offset (5) so we don't divide by zero
                 ic = ic.max() - ic + 5
+            # Important the kdims are unique
             dendros[d] = Dendrogram(ic, ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
 
         if not self.p.adjoined:
