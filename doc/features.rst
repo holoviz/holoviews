@@ -9,7 +9,7 @@ Features
 * Create interactive visualizations that can be controlled via widgets or via custom events in Python using the 'streams' system. When using the bokeh backend, you can use streams to directly interact with your plots.
 * Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <user_guide/Indexing_and_Selecting_Data.html>`_.
 * Plotting output using the `Matplotlib <user_guide/Plotting_with_Matplotlib.html>`_, `Bokeh <user_guide/Plotting_with_Bokeh.html>`_, and `plotly <https://plot.ly/>`_ backends.
-* A variety of data interfaces to work with tabular and N-dimensional array data using `NumPy <https://www.numpy.org/>`_, `pandas <https://pandas.pydata.org/>`_, `dask <https://dask.pydata.org/en/latest/>`_, `iris <https://scitools.org.uk/iris/>`_ and `xarray <https://xarray.pydata.org/en/stable/>`_.
+* A variety of data interfaces to work with tabular and N-dimensional array data using `NumPy <https://www.numpy.org/>`_, `pandas <https://pandas.pydata.org/>`_, `dask <https://docs.dask.org/en/stable/>`_, `iris <https://scitools.org.uk/iris/>`_ and `xarray <https://xarray.dev/>`_.
 * Every parameter of every object includes easy-to-access documentation.
 * All features `available in vanilla Python 2 or 3 <user_guide/Applying_Customizations.html>`_, with minimal dependencies.
 

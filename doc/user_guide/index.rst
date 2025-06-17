@@ -36,10 +36,10 @@ concepts in HoloViews:
  Lazily generate data on the fly and generate engaging interactive visualizations.
 
 `Tabular Datasets`_
- Explore tabular data with `NumPy <https://www.numpy.org/>`_, `pandas <https://pandas.pydata.org/>`_ and `dask <https://dask.pydata.org/>`_.
+ Explore tabular data with `NumPy <https://www.numpy.org/>`_, `pandas <https://pandas.pydata.org/>`_ and `dask <https://www.dask.org/>`_.
 
 `Gridded Datasets`_
- Explore gridded data (n-dimensional arrays) with `NumPy <https://www.numpy.org/>`_ and `XArray <https://xarray.pydata.org/>`_.
+ Explore gridded data (n-dimensional arrays) with `NumPy <https://www.numpy.org/>`_ and `XArray <https://xarray.dev/>`_.
 
 `Geometry Data`_
  Represent and visualize path and polygon geometries with support for multi-geometries and value dimensions.
@@ -54,7 +54,7 @@ concepts in HoloViews:
  Allow your visualizations to respond to Python events using the 'streams' system.
 
 `Custom Interactivity`_
- Use `Bokeh <https://bokeh.pydata.org>`_ and 'linked streams' to directly interact with your visualizations.
+ Use `Bokeh <https://bokeh.org>`_ and 'linked streams' to directly interact with your visualizations.
 
 `Data Processing Pipelines`_
  Chain operations to build sophisticated, interactive and lazy data analysis pipelines.
@@ -88,10 +88,10 @@ These guides provide detail about specific additional features in HoloViews:
  Overview of colormaps available, including when and how to use each type.
 
 `Plotting with Bokeh`_
- Styling options and unique `Bokeh <https://bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
+ Styling options and unique `Bokeh <https://bokeh.org>`_ features such as plot tools and using bokeh models directly.
 
 `Deploying Bokeh Apps`_
- Using `bokeh server <https://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
+ Using `bokeh server <https://docs.bokeh.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
 
 `Linking Bokeh plots`_
  Using Links to define custom interactions on a plot without a Python server

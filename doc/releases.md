@@ -3330,8 +3330,8 @@ Changes affecting backwards compatibility:
 This version is a major new release incorporating seven months of work
 involving several hundred PRs and over 1700 commits. Highlights include
 extensive new support for easily building highly interactive
-[Bokeh](https://bokeh.pydata.org) plots, support for using
-[datashader](https://github.com/bokeh/datashader)-based plots for
+[Bokeh](https://bokeh.org) plots, support for using
+[datashader](https://github.com/holoviz/datashader)-based plots for
 working with large datasets, support for rendering images interactively
 but outside of the notebook, better error handling, and support for
 Matplotlib 2.0 and Bokeh 0.12.5. The PRs linked below serve as initial
