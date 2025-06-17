@@ -108,7 +108,15 @@ from .element import *
 from .element import __all__ as elements_list
 from .operation import Operation  # noqa (API import)
 from .selection import link_selections  # noqa (API import)
-from .util import extension, opts, output, render, renderer, save  # noqa (API import)
+from .util import (  # noqa (API import)
+    _load_rc_file,
+    extension,
+    opts,
+    output,
+    render,
+    renderer,
+    save,
+)
 from .util._versions import show_versions  # noqa: F401
 from .util.transform import dim  # noqa (API import)
 from .util.warnings import (  # noqa: F401
@@ -140,22 +148,8 @@ if TYPE_CHECKING:
     from .util import extension
 
 # A single holoviews.rc file may be executed if found.
-for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
-               os.path.abspath(os.path.join(os.path.split(__file__)[0],
-                                            '..', 'holoviews.rc')),
-               "~/.holoviews.rc",
-               "~/.config/holoviews/holoviews.rc"]:
-    filename = os.path.expanduser(rcfile)
-    if os.path.isfile(filename):
-        with open(filename, encoding='utf8') as f:
-            code = compile(f.read(), filename, 'exec')
-            try:
-                exec(code)
-            except Exception as e:
-                print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
-        del f, code
-        break
-    del filename
+# In HoloViews 1.23.0, it will need to be set with env. var. HOLOVIEWSRC
+_load_rc_file()
 
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
@@ -182,7 +176,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del builtins, os, rcfile, sys
+del builtins, os, sys, _load_rc_file
 
 def __getattr__(name):
     if name == "annotate":

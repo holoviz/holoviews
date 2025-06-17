@@ -15,14 +15,6 @@ from datashader.colors import color_lookup
 from packaging.version import Version
 from param.parameterized import bothmethod
 
-try:
-    from datashader.bundling import (
-        directly_connect_edges as connect_edges,
-        hammer_bundle,
-    )
-except ImportError:
-    hammer_bundle, connect_edges = object, object
-
 from ..core import (
     CompositeOverlay,
     Dimension,
@@ -80,8 +72,20 @@ DATASHADER_GE_0_18_1 = DATASHADER_VERSION >= (0, 18, 1)
 
 if TYPE_CHECKING:
     import dask.dataframe as dd
+
+    from ._datashader_bundling import bundle_graph, directly_connect_edges  # noqa: F401
 else:
     dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
+
+
+def __getattr__(attr):
+    if attr == "bundle_graph":
+        from ._datashader_bundling import bundle_graph
+        return bundle_graph
+    elif attr == "directly_connect_edges":
+        from ._datashader_bundling import directly_connect_edges
+        return directly_connect_edges
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class AggregationOperation(ResampleOperation2D):
@@ -380,6 +384,8 @@ class aggregate(LineAggregationOperation):
             category = agg_fn.cat_column
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+        if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
+            sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
@@ -428,7 +434,7 @@ class aggregate(LineAggregationOperation):
                 str(sel_fn)
                 if DATASHADER_GE_0_18_1
                 else f"{type(sel_fn).__name__}({getattr(sel_fn, 'column', '...')!r})"
-            )
+            ).replace(repr(rd.SpecialColumn.RowIndex), "")
         else:
             agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
 
@@ -533,19 +539,11 @@ class overlay_aggregate(aggregate):
             and sel_fn is None
             and (element.type is not Curve or line_width is None)
             and (
-                (
-                    isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
-                    and (agg_fn.column is None or agg_fn.column not in element.kdims)
-                )
-                or (
-                    (
-                        isinstance(agg_fn, ds.count_cat)
-                        or (isinstance(agg_fn, ds.by) and agg_fn.reduction is ds.count)
-                    )
-                    and agg_fn.column in element.kdims
-                )
+                isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
+                and (agg_fn.column is None or agg_fn.column not in element.kdims)
             )
         )
+
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
@@ -572,27 +570,6 @@ class overlay_aggregate(aggregate):
                            if k in aggregate.param},
                           x_range=(x0, x1), y_range=(y0, y1))
         bbox = (x0, y0, x1, y1)
-
-        # Optimize categorical counts by aggregating them individually
-        if isinstance(agg_fn, ds.count_cat):
-            agg_params.update(dict(dynamic=False, aggregator=ds.count()))
-            agg_fn1 = aggregate.instance(**agg_params)
-            if element.ndims == 1:
-                grouped = element
-            else:
-                grouped = element.groupby(
-                    [agg_fn.column], container_type=NdOverlay,
-                    group_type=NdOverlay
-                )
-            groups = []
-            for k, el in grouped.items():
-                if width == 0 or height == 0:
-                    agg = self._empty_agg(el, x, y, width, height, xs, ys, ds.count())
-                    groups.append((k, agg))
-                else:
-                    agg = agg_fn1(el)
-                    groups.append((k, agg.clone(agg.data, bounds=bbox)))
-            return grouped.clone(groups)
 
         # Create aggregate instance for sum, count operations, breaking mean
         # into two aggregates
@@ -1867,50 +1844,6 @@ def split_dataframe(path_df):
     """
     splits = np.where(path_df.iloc[:, 0].isnull())[0]+1
     return [df for df in np.split(path_df, splits) if len(df) > 1]
-
-
-class _connect_edges(Operation):
-
-    split = param.Boolean(default=False, doc="""
-        Determines whether bundled edges will be split into individual edges
-        or concatenated with NaN separators.""")
-
-    def _bundle(self, position_df, edges_df):
-        raise NotImplementedError('_connect_edges is an abstract baseclass '
-                                  'and does not implement any actual bundling.')
-
-    def _process(self, element, key=None):
-        index = element.nodes.kdims[2].name
-        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'], strict=None)}
-        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'], strict=None)}
-        position_df = element.nodes.redim(**rename_nodes).dframe([0, 1, 2]).set_index(index)
-        edges_df = element.redim(**rename_edges).dframe([0, 1])
-        paths = self._bundle(position_df, edges_df)
-        paths = paths.rename(columns={v: k for k, v in rename_nodes.items()})
-        paths = split_dataframe(paths) if self.p.split else [paths]
-        return element.clone((element.data, element.nodes, paths))
-
-
-class bundle_graph(_connect_edges, hammer_bundle):
-    """Iteratively group edges and return as paths suitable for datashading.
-
-    Breaks each edge into a path with multiple line segments, and
-    iteratively curves this path to bundle edges into groups.
-
-    """
-
-    def _bundle(self, position_df, edges_df):
-        from datashader.bundling import hammer_bundle
-        return hammer_bundle.__call__(self, position_df, edges_df, **self.p)
-
-
-class directly_connect_edges(_connect_edges, connect_edges):
-    """Given a Graph object will directly connect all nodes.
-
-    """
-
-    def _bundle(self, position_df, edges_df):
-        return connect_edges.__call__(self, position_df, edges_df)
 
 
 def identity(x): return x

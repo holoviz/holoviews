@@ -23,10 +23,10 @@ from ..core import (
 from ..core.operation import Operation, OperationCallable
 from ..core.options import Keywords, Options, options_policy
 from ..core.overlay import Overlay
-from ..core.util import merge_options_to_dict
 from ..operation.element import function
 from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
+from .warnings import deprecated
 
 Store.output_settings = OutputSettings
 
@@ -291,9 +291,10 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
-        expanded = cls._expand_options(merge_options_to_dict(options))
+        backend = kwargs.get('backend')
+        expanded = cls._expand_options(util.merge_options_to_dict(options), backend=backend)
         expanded = expanded or {}
-        cls._linemagic(expanded, backend=kwargs.get('backend'))
+        cls._linemagic(expanded, backend=backend)
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
@@ -354,7 +355,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         expanded = {}
         if isinstance(options, list):
-            options = merge_options_to_dict(options)
+            options = util.merge_options_to_dict(options)
 
         for objspec, option_values in options.items():
             objtype = objspec.split('.')[0]
@@ -703,6 +704,12 @@ class extension(_pyviz_extension):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
+            deprecated(
+                "1.23.0",
+                "Calling 'hv.extension()' without arguments",
+                'hv.extension("matplotlib")',
+                repr_old=False,
+            )
             args = ['matplotlib']
             imports = [('matplotlib', 'mpl')]
 
@@ -810,14 +817,18 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
     """
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
-    if (
-        not toolbar
-        and backend == "bokeh"
-        and (fmt == "png" or (isinstance(filename, str) and filename.endswith("png")))
-    ):
-        obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
-    elif toolbar is not None and not toolbar:
-        obj = obj.opts(toolbar=None)
+    if backend == "bokeh":
+        if toolbar is not None:
+            if toolbar:
+                toolbar_location = obj.opts.get().kwargs.get('toolbar', 'right')
+                obj = obj.opts(toolbar=toolbar_location, autohide_toolbar=False, backend="bokeh", clone=True)
+            else:
+                obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
+        elif (
+            not toolbar
+            and (fmt == "png" or (isinstance(filename, str) and filename.endswith("png")))
+        ):
+            obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
     if isinstance(filename, Path):
@@ -1085,3 +1096,32 @@ class Dynamic(param.ParameterizedFunction):
         kdims = [d.clone(values=list(util.unique_iterator(values))) for d, values in
                  zip(hmap.kdims, dim_values, strict=None)]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
+
+
+def _load_rc_file():
+    files = [
+        os.environ.get("HOLOVIEWSRC", ''),
+        os.path.abspath(os.path.join(os.path.split(__file__)[0], '..', '..', 'holoviews.rc')),
+        "~/.holoviews.rc",
+        "~/.config/holoviews/holoviews.rc"
+    ]
+
+    # A single holoviews.rc file may be executed if found.
+    for idx, file in enumerate(files):
+        filename = os.path.expanduser(file)
+        if os.path.isfile(filename):
+            with open(filename, encoding='utf8') as f:
+                try:
+                    exec(compile(f.read(), filename, 'exec'))
+                except Exception as e:
+                    print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
+
+            if idx != 0:
+                from .warnings import deprecated
+                deprecated(
+                    "1.23.0",
+                    "Automatic detections of HoloViews config file",
+                    extra=f"You can disable this warning by setting the environment variable 'HOLOVIEWSRC' to {filename!r}.",
+                    repr_old=False,
+                )
+            return

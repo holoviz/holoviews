@@ -611,10 +611,16 @@ class Dataset(Element, metaclass=PipelineMeta):
             from holoviews import dim
             ds.select(selection_expr=dim('x') % 2 == 0)
 
+        * selections dictionary: A dictionary of selections per dimension
+
+            ds.select({x: 3})
+
         Parameters
         ----------
-        selection_expr : holoviews.dim predicate expression
-            specifying selection.
+        selection_expr : A dim expression or dictionary of selections.
+            holoviews.dim predicate expression specifying selection or
+            a dictionary of selections (as an alternative to selecting
+            via keyword arguments).
         selection_specs : List of specs to match on
             A list of types, functions, or type[.group][.label]
             strings specifying which objects to apply the
@@ -629,6 +635,13 @@ class Dataset(Element, metaclass=PipelineMeta):
         or a scalar if a single value was selected
         """
         from ...util.transform import dim
+        if isinstance(selection_expr, dict):
+            if selection:
+                raise ValueError("""\
+                Selections may be supplied as keyword arguments or as a positional
+                argument, never both.""")
+            selection = selection_expr
+            selection_expr = None
         if selection_expr is not None and not isinstance(selection_expr, dim):
             raise ValueError("""\
             The first positional argument to the Dataset.select method is expected to be a

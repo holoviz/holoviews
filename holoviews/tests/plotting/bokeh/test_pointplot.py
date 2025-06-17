@@ -563,3 +563,21 @@ class TestPointPlot(TestBokehPlot):
 
         norm = zs.T.ravel() / np.max(zs) / 2
         np.testing.assert_array_equal(handles["cds"].data["radius"], norm)
+
+    def test_point_radius_then_size_then_radius(self):
+        plot = Points([1, 2, 3])
+        plot.opts(radius=1)
+
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+
+        plot.opts(radius=None, size=1)
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Scatter)
+
+        plot.opts(radius=1)
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)

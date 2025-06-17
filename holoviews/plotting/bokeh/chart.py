@@ -72,11 +72,13 @@ class PointPlot(LegendPlot, ColorbarPlot):
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
 
     def _init_glyph(self, plot, mapping, properties):
-        if "radius" in properties:
+        if properties.get("radius") is not None:
             self._plot_methods = dict(single='circle', batched='circle')
             properties.pop("size", None)
         else:
+            self._plot_methods = dict(single='scatter', batched='scatter')
             properties.pop("radius_dimension", None)
+            properties.pop("radius", None)
         return super()._init_glyph(plot, mapping, properties)
 
     def _get_size_data(self, element, ranges, style):
@@ -863,6 +865,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 props['group_text_align'] = 'right'
                 props['group_text_baseline'] = 'middle'
         return props
+
+    def _element_transform(self, transform, element, ranges):
+        if (self.multi_level or self.stacked) and len(element.kdims) > 1:
+            return transform.apply(element.groupby(element.kdims[1]).collapse(), ranges=ranges, flat=True)
+        return transform.apply(element, ranges=ranges, flat=True)
 
     def _get_factors(self, element, ranges):
         xvals, gvals = self._get_coords(element, ranges)

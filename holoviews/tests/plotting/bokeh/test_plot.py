@@ -53,10 +53,10 @@ class TestBokehPlot(ComparisonTestCase):
         for plot, padding in self._padding.items():
             plot.padding = padding
 
-    def _test_colormapping(self, element, dim, log=False):
+    def _test_colormapping(self, element, dim, log=False, prefix=''):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles[f'{prefix}color_mapper']
         low, high = element.range(dim)
         self.assertEqual(cmapper.low, low)
         self.assertEqual(cmapper.high, high)
@@ -191,3 +191,59 @@ def test_span_not_cloned_crosshair():
     tool2 = next(t for t in fig2.tools if isinstance(t, CrosshairTool))
 
     assert tool1.overlay is tool2.overlay
+
+
+def test_autohide_toolbar_single_plot():
+    curve = Curve([1, 2, 3])
+
+    # Test with autohide_toolbar=False (default)
+    plot = bokeh_renderer.get_plot(curve)
+    assert plot.autohide_toolbar is False
+    assert plot.state.toolbar.autohide is False
+
+    # Test with autohide_toolbar=True
+    plot = bokeh_renderer.get_plot(curve.opts(autohide_toolbar=True))
+    assert plot.autohide_toolbar is True
+    assert plot.state.toolbar.autohide is True
+
+
+def test_autohide_toolbar_overlay():
+    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+
+    # Test with autohide_toolbar=False (default)
+    plot = bokeh_renderer.get_plot(overlay)
+    assert plot.autohide_toolbar is False
+    assert plot.state.toolbar.autohide is False
+
+    # Test with autohide_toolbar=True
+    plot = bokeh_renderer.get_plot(overlay.opts(autohide_toolbar=True))
+    assert plot.autohide_toolbar is True
+    assert plot.state.toolbar.autohide is True
+
+
+def test_autohide_toolbar_layout():
+    layout = Curve([1, 2, 3]) + Curve([2, 3, 4])
+
+    # Test with autohide_toolbar=False (default)
+    plot = bokeh_renderer.get_plot(layout)
+    assert plot.autohide_toolbar is False
+    grid = plot.handles['plot']
+    for child, *_ in grid.children:
+        assert child.toolbar.autohide is False
+
+    # Test with autohide_toolbar=True
+    plot = bokeh_renderer.get_plot(layout.opts(autohide_toolbar=True))
+    assert plot.autohide_toolbar is True
+    grid = plot.handles['plot']
+    assert grid.toolbar.autohide is True
+
+def test_autohide_toolbar_nested():
+    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+
+    # Test with different settings for components
+    mixed_layout = overlay.opts(autohide_toolbar=True) + Curve([3, 4, 5]).opts(autohide_toolbar=False)
+    plot = bokeh_renderer.get_plot(mixed_layout)
+    grid = plot.handles['plot']
+    child1, child2 = [child for child, *_ in grid.children]
+    assert child1.toolbar.autohide is True
+    assert child2.toolbar.autohide is False

@@ -18,6 +18,7 @@ import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
+from .util.warnings import deprecated
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -68,14 +69,21 @@ def streams_list_from_dict(streams):
     """Converts a streams dictionary into a streams list
 
     """
-    params = {}
+    params, refs = {}, {}
     for k, v in streams.items():
         v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
+            continue
+        deps = param.parameterized.resolve_ref(v, recursive=True)
+        if deps:
+            refs[k] = v
         else:
-            raise TypeError(f'Cannot handle value {v!r} in streams dictionary')
-    return Params.from_params(params)
+            raise TypeError(f'Cannot handle {k!r} value {v!r} in streams dictionary')
+    streams = Params.from_params(params)
+    if not refs:
+        return streams
+    return [*streams, ParamRefs(refs=refs, recursive=True)]
 
 
 class Stream(param.Parameterized):
@@ -540,10 +548,6 @@ class Buffer(Pipe):
     by the specified ``length``. The accumulated data is then made
     available via the ``data`` parameter.
 
-    A Buffer may also be instantiated with a streamz.StreamingDataFrame
-    or a streamz.StreamingSeries, it will automatically subscribe to
-    events emitted by a streamz object.
-
     When streaming a DataFrame will reset the DataFrame index by
     default making it available to HoloViews elements as dimensions,
     this may be disabled by setting index=False.
@@ -584,6 +588,10 @@ class Buffer(Pipe):
                     loaded = True
                 except ImportError:
                     loaded = False
+            if loaded:
+                # NOTE: there could still be some code in these classes which handles
+                # the streaming interface.
+                deprecated("1.23.0", "Buffer's streamz interface")
             if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
                 raise ValueError("Buffer must be initialized with pandas DataFrame, "
                                  "streamz.StreamingDataFrame or streamz.StreamingSeries.")
@@ -696,6 +704,69 @@ class Buffer(Pipe):
     def hashkey(self):
         return {'hash': (self._count, self._memoize_counter)}
 
+
+class ParamRefs(Stream):
+    """
+    ParamRefs accepts a dictionary of parameter references, watching
+    their dependencies and returning their resolved values.
+    """
+
+    recursive = param.Boolean(default=False, constant=True, doc="Whether references should be resolved recursively.")
+
+    refs = param.Dict(doc="Dictionary of references", constant=True)
+
+    def __init__(self, refs=None, watch=True, **params):
+        super().__init__(refs=refs or {}, **params)
+        self._memoize_counter = 0
+        self._watchers = []
+        if not watch:
+            return
+
+        # Collect all dependencies of the provided references
+        parameters = []
+        for ref in self.refs.values():
+            prefs = param.parameterized.resolve_ref(ref, recursive=self.recursive)
+            parameters += [p for p in prefs if p not in parameters]
+
+        # Subscribe to parameters
+        keyfn = lambda x: id(x.owner)
+        for _, group in groupby(sorted(parameters, key=keyfn), key=keyfn):
+            group = list(group)
+            watcher = group[0].owner.param.watch(self._watcher, [p.name for p in group])
+            self._watchers.append(watcher)
+
+    def unwatch(self):
+        """Stop watching parameters."""
+        for watcher in self._watchers:
+            watcher.inst.param.unwatch(watcher)
+        self._watchers.clear()
+
+    def _watcher(self, *events):
+        try:
+            self._events = list(events)
+            self.trigger([self])
+        finally:
+            self._events = []
+
+    def _on_trigger(self):
+        if any(e.type == 'triggered' for e in self._events):
+            self._memoize_counter += 1
+
+    @property
+    def contents(self):
+        return {
+            p: param.parameterized.resolve_value(ref, recursive=self.recursive)
+            for p, ref in self.refs.items()
+        }
+
+    @property
+    def hashkey(self):
+        hashkey = dict(self.contents)
+        hashkey['_memoize_key'] = self._memoize_counter
+        return hashkey
+
+    def reset(self):
+        pass
 
 
 class Params(Stream):
