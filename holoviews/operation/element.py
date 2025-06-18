@@ -181,7 +181,7 @@ class apply_when(param.ParameterizedFunction):
         if x_range is not None and y_range is not None:
             selected = element[x_range, y_range]
         condition = self.predicate(selected)
-        if (not invert and condition) or (invert and not condition):
+        if invert ^ condition:
             return selected
         elif selected.interface.gridded:
             return selected.clone([])
