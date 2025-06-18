@@ -1274,7 +1274,8 @@ class dendrogram(Operation):
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
         """
     )
-    invert_dendrogram = param.Boolean(default=False)
+    invert_dendrogram = param.Boolean(default=False, doc="""
+        Whether to invert the dendrogram axis.""")
 
     def _compute_linkage(self, dataset, dim, vdim):
         try:
