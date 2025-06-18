@@ -1324,10 +1324,13 @@ class dendrogram(Operation):
                 return Layout(dendros.values())
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        # Adding non_sort_dims to handle unstable sorting algorithms, which can differ between OSs
+        # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+        non_sort_dims = [d for d in element_kdims[:2] if str(d) not in self.p.adjoint_dims]
         if type(element) is not Dataset:
-            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+            main = element.clone(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims), vdims=vdims)
         else:
-            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
+            main = self.p.main_element(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims[:2]), vdims=vdims)
 
         for dim in map(str, main.kdims[::-1]):
             if dim not in self.p.adjoint_dims:
