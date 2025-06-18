@@ -858,3 +858,18 @@ class TestDendrogramOperation:
             case _:
                 assert main1.y_range.factors == main2.y_range.factors[::-1]
                 assert main1.x_range.factors == main2.x_range.factors[::-1]
+
+    @pytest.mark.parametrize("adjoint_dims", (["cluster"], ["gene"],), ids=["right", "top"])
+    def test_assure_non_adjoined_axis_is_unchanged(self, adjoint_dims):
+        # See: https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+        plot = Points(self.df2, kdims=["gene", "cluster"])
+        main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
+
+        dendro = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value")
+        main2 = self.bokeh_renderer.get_plot(dendro["main"]).handles["plot"]
+
+        match adjoint_dims:
+            case ["cluster"]:
+                assert main1.x_range.factors == main2.x_range.factors
+            case ["gene"]:
+                assert main1.y_range.factors == main2.y_range.factors
