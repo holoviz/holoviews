@@ -158,9 +158,11 @@ z/8BE3VwbODCC/EAAAAASUVORK5CYII='
 </a>
 {% endif %}
 
+{% if show_tooltip %}
 <span style="float: left; margin-left: 5px; line-height: 15px; cursor: pointer; opacity: 0.7;"
-      onmouseover="this.style.opacity='1'" 
+      onmouseover="this.style.opacity='1'"
       onmouseout="this.style.opacity='0.7'"
       title="Extension loaded. This cell output contains code that enables plot interactivity, it should not be removed.">ⓘ</span>
 </div>
+{% endif %}
 {% endif %}
