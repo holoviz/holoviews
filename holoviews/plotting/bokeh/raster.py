@@ -466,6 +466,8 @@ class ImageStackPlot(RasterPlot):
             else element.dimension_values(vd, flat=False).transpose()
             for vd in element.vdims
         ])
+        if 0 in img.shape[:2]:  # Means we don't have any data
+            img = np.array([[[np.nan]]])
         # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
         if self.invert_axes:
