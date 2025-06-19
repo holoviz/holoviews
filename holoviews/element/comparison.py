@@ -166,6 +166,7 @@ class Comparison(ComparisonInterface):
 
         # Rasters
         cls.equality_type_funcs[Image] =       cls.compare_image
+        cls.equality_type_funcs[ImageStack] =  cls.compare_image
         cls.equality_type_funcs[RGB] =         cls.compare_rgb
         cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
