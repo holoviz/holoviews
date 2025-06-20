@@ -1274,7 +1274,7 @@ class dendrogram(Operation):
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
         """
     )
-    invert_dendrogram = param.Boolean(default=False, doc="""
+    invert = param.Boolean(default=False, doc="""
         Whether to invert the dendrogram axis.""")
 
     def _compute_linkage(self, dataset, dim, vdim):
@@ -1302,7 +1302,7 @@ class dendrogram(Operation):
             raise TypeError("'main_dim' cannot be None")
         element_kdims = element.kdims
         dataset = Dataset(element)
-        sign = -1 if self.p.invert_dendrogram else 1
+        sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
@@ -1312,7 +1312,7 @@ class dendrogram(Operation):
             sort_dims.append(sort_dim)
 
             ic = ddata["icoord"]
-            if self.p.invert_dendrogram:
+            if self.p.invert:
                 ic = np.asarray(ic)
                 # Convert the smallest value to the largest value, while still
                 # being positive, offset (5) so we don't divide by zero

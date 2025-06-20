@@ -843,7 +843,7 @@ class TestDendrogramOperation:
     def test_invert_dendrogram(self, adjoint_dims):
         plot = Points(self.df2, kdims=["gene", "cluster"])
         dendro1 = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value")
-        dendro2 = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value", invert_dendrogram=True)
+        dendro2 = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value", invert=True)
 
         main1 = self.bokeh_renderer.get_plot(dendro1["main"]).handles["plot"]
         main2 = self.bokeh_renderer.get_plot(dendro2["main"]).handles["plot"]
