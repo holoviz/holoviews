@@ -1235,7 +1235,7 @@ class dendrogram(Operation):
 
     adjoint_dims = param.List(item_type=str, doc="The adjoint dimension to cluster on")
 
-    main_dim = param.String(doc="The main dimension to cluster on")
+    main_dim = param.String(default=None, allow_None=False, doc="The main dimension to cluster on")
 
     main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False, doc="""
         The Element type to use for the main plot if the input is a Dataset.""")
@@ -1298,6 +1298,8 @@ class dendrogram(Operation):
         return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
+        if self.p.main_dim is None:
+            raise TypeError("'main_dim' cannot be None")
         element_kdims = element.kdims
         dataset = Dataset(element)
         sign = -1 if self.p.invert_dendrogram else 1
