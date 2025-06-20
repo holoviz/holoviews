@@ -1,4 +1,5 @@
 import colorsys
+from collections.abc import Mapping
 from copy import deepcopy
 from operator import itemgetter
 
@@ -415,7 +416,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         specs match the selected object.
 
         """
-        if isinstance(selection_expr, dict):
+        if isinstance(selection_expr, Mapping):
             if selection:
                 raise ValueError("""\
                 Selections may be supplied as keyword arguments or as a positional
