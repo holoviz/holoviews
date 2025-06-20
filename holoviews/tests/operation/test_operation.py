@@ -741,13 +741,26 @@ class TestDendrogramOperation:
             [(i, chr(65 + j), random.random()) for j in range(10) for i in range(5)],
             columns=["z", "x", "y"],
         )
+        data = [
+            [7, 8, 0, 0, 0, 0],
+            [8, 6, 0, 0, 0, 0],
+            [0, 0, 9, 8, 2, 7],
+            [0, 0, 0, 1, 8, 2],
+            [0, 7, 0, 7, 0, 0],
+        ]
+        self.df2 = pd.DataFrame([
+            {"cluster": f"clust {i}", "gene": f"gene {j}", "value": data[i][j]}
+            for j in range(6)
+            for i in range(5)
+        ])
+        self.bokeh_renderer = renderer("bokeh")
 
     def get_childrens(self, adjoint):
-        bk_childrens = renderer("bokeh").get_plot(adjoint).handles["plot"].children
+        bk_childrens = self.bokeh_renderer.get_plot(adjoint).handles["plot"].children
         (atop, *_), (amain, *_), (aright, *_) = bk_childrens
-        top = renderer("bokeh").get_plot(adjoint["top"]).handles["plot"]
-        main = renderer("bokeh").get_plot(adjoint["main"]).handles["plot"]
-        right = renderer("bokeh").get_plot(adjoint["right"]).handles["plot"]
+        top = self.bokeh_renderer.get_plot(adjoint["top"]).handles["plot"]
+        main = self.bokeh_renderer.get_plot(adjoint["main"]).handles["plot"]
+        right = self.bokeh_renderer.get_plot(adjoint["right"]).handles["plot"]
         return (atop, amain, aright), (top, main, right)
 
     def test_right_only(self):
@@ -821,3 +834,42 @@ class TestDendrogramOperation:
         assert len(dendro) == 2
         assert isinstance(dendro[0], Dendrogram)
         assert isinstance(dendro[1], Dendrogram)
+
+    @pytest.mark.parametrize(
+        "adjoint_dims",
+        (["cluster"], ["gene"], ["gene", "cluster"]),
+        ids=["right", "top", "both"],
+    )
+    def test_invert_dendrogram(self, adjoint_dims):
+        plot = Points(self.df2, kdims=["gene", "cluster"])
+        dendro1 = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value")
+        dendro2 = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value", invert=True)
+
+        main1 = self.bokeh_renderer.get_plot(dendro1["main"]).handles["plot"]
+        main2 = self.bokeh_renderer.get_plot(dendro2["main"]).handles["plot"]
+
+        match adjoint_dims:
+            case ["cluster"]:
+                assert main1.x_range.factors == main2.x_range.factors
+                assert main1.y_range.factors == main2.y_range.factors[::-1]
+            case ["gene"]:
+                assert main1.x_range.factors == main2.x_range.factors[::-1]
+                assert main1.y_range.factors == main2.y_range.factors
+            case _:
+                assert main1.y_range.factors == main2.y_range.factors[::-1]
+                assert main1.x_range.factors == main2.x_range.factors[::-1]
+
+    @pytest.mark.parametrize("adjoint_dims", (["cluster"], ["gene"],), ids=["right", "top"])
+    def test_assure_non_adjoined_axis_is_unchanged(self, adjoint_dims):
+        # See: https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+        plot = Points(self.df2, kdims=["gene", "cluster"])
+        main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
+
+        dendro = dendrogram(plot, adjoint_dims=adjoint_dims, main_dim="value")
+        main2 = self.bokeh_renderer.get_plot(dendro["main"]).handles["plot"]
+
+        match adjoint_dims:
+            case ["cluster"]:
+                assert main1.x_range.factors == main2.x_range.factors
+            case ["gene"]:
+                assert main1.y_range.factors == main2.y_range.factors

@@ -173,12 +173,9 @@ class AggregationOperation(ResampleOperation2D):
             params['xdensity'] = 1
         if height == 0:
             params['ydensity'] = 1
-        el = self.p.element_type(xarray, **params)
-        if isinstance(agg_fn, ds.count_cat):
-            vals = element.dimension_values(agg_fn.column, expanded=False)
-            dim = element.get_dimension(agg_fn.column)
-            return NdOverlay({v: el for v in vals}, dim)
-        return el
+        if isinstance(agg_fn, ds.by):
+            return ImageStack(xarray, **params)
+        return self.p.element_type(xarray, **params)
 
     def _get_agg_params(self, element, x, y, agg_fn, bounds):
         params = dict(get_param_values(element), kdims=[x, y],
@@ -386,6 +383,7 @@ class aggregate(LineAggregationOperation):
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
         if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
             sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
+        agg_state = AggState.get_state(agg_fn, sel_fn)
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
@@ -412,6 +410,8 @@ class aggregate(LineAggregationOperation):
             empty_val = 0 if isinstance(agg_fn, ds.count) else np.nan
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
+            if AggState.has_by(agg_state):
+                return ImageStack(xarray, **params)
             return self.p.element_type(xarray, **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
@@ -424,7 +424,6 @@ class aggregate(LineAggregationOperation):
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
 
-        agg_state = AggState.get_state(agg_fn, sel_fn)
         if AggState.has_sel(agg_state):
             if isinstance(params["vdims"], (Dimension, str)):
                 params["vdims"] = [params["vdims"]]

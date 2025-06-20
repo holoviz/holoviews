@@ -249,16 +249,19 @@ class notebook_extension(extension):
             import plotly
             plotly_version = plotly.__version__
 
-        html = template.render({'logo':        logo,
-                                'logo_src':    logo_src,
-                                'logo_link':   logo_link,
-                                'logo_title':  logo_title,
-                                'bokeh_logo':  bokeh_logo,
-                                'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo,
-                                'bokeh_version':  bokeh_version,
-                                'mpl_version':    mpl_version,
-                                'plotly_version': plotly_version})
+        html = template.render({
+            'logo':        logo,
+            'logo_src':    logo_src,
+            'logo_link':   logo_link,
+            'logo_title':  logo_title,
+            'bokeh_logo':  bokeh_logo,
+            'mpl_logo':    mpl_logo,
+            'plotly_logo': plotly_logo,
+            'bokeh_version':  bokeh_version,
+            'mpl_version':    mpl_version,
+            'plotly_version': plotly_version,
+            'show_tooltip': not os.getenv("HV_DOCS_BUILD")
+        })
         publish_display_data(data={'text/html': html})
 
 

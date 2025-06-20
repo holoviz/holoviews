@@ -1,4 +1,5 @@
 import colorsys
+from collections.abc import Mapping
 from copy import deepcopy
 from operator import itemgetter
 
@@ -84,9 +85,6 @@ class Raster(Element2D):
         return super().range(dim, data_range, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
-        """The set of samples available along a particular dimension.
-
-        """
         dim_idx = self.get_dimension_index(dim)
         if not expanded and dim_idx == 0:
             return np.array(range(self.data.shape[1]))
@@ -415,7 +413,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         specs match the selected object.
 
         """
-        if isinstance(selection_expr, dict):
+        if isinstance(selection_expr, Mapping):
             if selection:
                 raise ValueError("""\
                 Selections may be supplied as keyword arguments or as a positional

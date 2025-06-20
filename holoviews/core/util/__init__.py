@@ -439,12 +439,12 @@ def validate_dynamic_argspec(callback, kdims, streams):
     be merged with the stream values to pass everything to the Callable
     as keywords.
 
-    If the callbacks use *args, None is returned to indicate that kdim
+    If the callbacks use `*args`, None is returned to indicate that kdim
     values must be passed to the Callable by position. In this
-    situation, Callable passes *args and **kwargs directly to the
+    situation, Callable passes `*args` and `**kwargs` directly to the
     callback.
 
-    If the callback doesn't use **kwargs, the accepted keywords are
+    If the callback doesn't use `**kwargs`, the accepted keywords are
     validated against the stream parameter names.
 
     """
@@ -1364,15 +1364,15 @@ class ProgressIndicator(param.Parameterized):
 def sort_topologically(graph):
     """Stackless topological sorting.
 
-    graph = {
+    >>> graph = {
         3 : [1],
         5 : [3],
         4 : [2],
         6 : [4],
     }
 
-    sort_topologically(graph)
-    [[1, 2], [3, 4], [5, 6]]
+    >>> sort_topologically(graph)
+    >>> [[1, 2], [3, 4], [5, 6]]
 
     """
     levels_by_name = {}
@@ -2354,7 +2354,7 @@ def cast_array_to_int64(array):
 def flatten(line):
     """Flatten an arbitrarily nested sequence.
 
-    Inspired by: ``pd.core.common.flatten``
+    Inspired by: `pd.core.common.flatten`
 
     Parameters
     ----------

@@ -86,21 +86,6 @@ class Annotation(Element2D):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.data if np.isscalar(self.data) else self.data[index]])
@@ -139,21 +124,6 @@ class VLine(Annotation):
         super().__init__(x, x=x, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.data])
@@ -181,21 +151,6 @@ class HLine(Annotation):
         super().__init__(y, y=y, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([np.nan])
@@ -262,21 +217,6 @@ class VSpan(Annotation):
         super().__init__([x1, x2], x1=x1, x2=x2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array(self.data)
@@ -305,21 +245,6 @@ class HSpan(Annotation):
         super().__init__([y1, y2], y1=y1, y2=y2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([np.nan, np.nan])
@@ -378,21 +303,6 @@ class Spline(Annotation):
                                *args, **overrides)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index in [0, 1]:
             return np.array([point[index] for point in self.data[0]])
@@ -403,9 +313,9 @@ class Spline(Annotation):
 
 class Arrow(Annotation):
     """Draw an arrow to the given xy position with optional text at
-    distance 'points' away. The direction of the arrow may be
-    specified as well as the arrow head style.
+    distance 'points' away.
 
+    The direction of the arrow may be specified as well as the arrow head style.
     """
 
     x = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
@@ -419,13 +329,13 @@ class Arrow(Annotation):
     direction = param.Selector(default='<',
                                      objects=['<', '^', '>', 'v'], doc="""
         The cardinal direction in which the arrow is pointing. Accepted
-        arrow directions are '<', '^', '>' and 'v'.""")
+        arrow directions are ``'<'``, '^', ``'>'`` and 'v'.""")
 
     arrowstyle = param.Selector(default='->',
                                       objects=['-', '->', '-[', '-|>', '<->', '<|-|>'],
                                       doc="""
         The arrowstyle used to draw the arrow. Accepted arrow styles are
-        '-', '->', '-[', '-|>', '<->' and '<|-|>'""")
+        '-', ``'->'``, '-[', ``'-|>'``, ``'<->'`` and ``'<|-|>'``""")
 
     points = param.Number(default=40, doc="Font size of arrow text (if any).")
 
@@ -453,21 +363,6 @@ class Arrow(Annotation):
             self.data = (x, y, text, direction, points, arrowstyle)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.x])

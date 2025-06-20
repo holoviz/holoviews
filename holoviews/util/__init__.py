@@ -54,10 +54,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
 
 
 class OptsMeta(param.parameterized.ParameterizedMetaclass):
-    """Improve error message when running something
-    like : 'hv.opts.Curve()' without a plotting backend.
-
-    """
+    """Improve error message when running something like 'hv.opts.Curve()' without a plotting backend."""
 
     def __getattr__(self, attr):
         try:
@@ -77,9 +74,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
     Option objects can be generated and validated in a tab-completable
     way (in appropriate environments such as Jupyter notebooks) using
-    completers such as opts.Curve, opts.Image, opts.Overlay, etc.
+    completers such as `opts.Curve`, `opts.Image`, `opts.Overlay`, etc.
 
-    To set opts globally you can pass these option objects into opts.defaults:
+    To set opts globally you can pass these option objects into `opts.defaults`:
 
         opts.defaults(*options)
 
@@ -88,16 +85,14 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
-    objects to the .options method.
+    objects to the `.options` method.
 
     For instance:
 
         curve = hv.Curve([1,2,3])
-
         curve.options(opts.Curve(color='red'))
 
-    The options method also accepts lists of Option objects.
-
+    The `options` method also accepts lists of Option objects.
     """
 
     __original_docstring__ = None
@@ -331,7 +326,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     def _expand_options(cls, options, backend=None):
         """Validates and expands a dictionaries of options indexed by
         type[.group][.label] keys into separate style, plot, norm and
-        output options. If the backend is not loaded, ``None`` is returned.
+        output options. If the backend is not loaded, `None` is returned.
 
             opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
@@ -685,10 +680,8 @@ class extension(_pyviz_extension):
 
     ```python
     import holoviews as hv
-
     hv.extension("bokeh")
     ```
-
     """
 
     # Mapping between backend name and module name
@@ -904,7 +897,6 @@ class Dynamic(param.ParameterizedFunction):
     decorated with parameter dependencies Dynamic will automatically
     create a stream to watch the parameter changes. This default
     behavior may be disabled by setting watch=False.
-
     """
 
     operation = param.Callable(default=lambda x: x, doc="""
