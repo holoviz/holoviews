@@ -1093,7 +1093,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         for name, val in mapping.items():
             sanitized = None
             if isinstance(val, str):
-                sanitized = dimension_sanitizer(mapping[name])
+                sanitized = dimension_sanitizer(val)
                 mapping[name] = sanitized
             elif isinstance(val, dict) and 'field' in val:
                 sanitized = dimension_sanitizer(val['field'])

@@ -92,7 +92,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':
             dims = element.nodes.dimensions()
-            dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
+            dims = [(dims[2].pprint_label, '@{index_hover}'), *dims[3:]]
         elif self.inspection_policy == 'edges':
             kdims = [(kd.pprint_label, f'@{{{kd}_values}}')
                      if kd in ('start', 'end') else kd for kd in element.kdims]

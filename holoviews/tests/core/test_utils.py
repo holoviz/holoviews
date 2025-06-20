@@ -478,7 +478,7 @@ class TestTreePathUtils(unittest.TestCase):
     def test_make_path_unique_clash_with_label_old(self):
         path = ('Element', 'A')
         new_path = make_path_unique(path, {path: 1}, False)
-        self.assertEqual(new_path, path[:-1]+('I',))
+        self.assertEqual(new_path, (*path[:-1], 'I'))
 
 
 class TestDatetimeUtils(unittest.TestCase):

@@ -680,7 +680,7 @@ class spread_aggregate(area_aggregate):
         yvals = df[y.name]
         df[y.name] = yvals+df[pos.name]
         df['_lower'] = yvals-df[neg.name]
-        area = element.clone(df, vdims=[y, '_lower']+element.vdims[3:], new_type=Area)
+        area = element.clone(df, vdims=[y, '_lower', *element.vdims[3:]], new_type=Area)
         return super()._process(area, key=None)
 
 
@@ -1413,7 +1413,7 @@ class shade(LinkableOperation):
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
             if np.isnan(array.data).all():
                 xd, yd = kdims[:2]
-                arr = np.zeros(array.data.shape[:2]+(4,), dtype=np.uint8)
+                arr = np.zeros((*array.data.shape[:2], 4), dtype=np.uint8)
                 coords = {xd.name: element.data.coords[xd.name],
                           yd.name: element.data.coords[yd.name],
                           'band': [0, 1, 2, 3]}

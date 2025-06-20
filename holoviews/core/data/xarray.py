@@ -190,7 +190,7 @@ class XArrayInterface(GridInterface):
                 coords[kd.name] = coord
             xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
             if packed:
-                xr_kwargs['dims'] = list(coords)[::-1] + ['band']
+                xr_kwargs['dims'] = [*list(coords)[::-1], 'band']
                 coords['band'] = list(range(len(vdims)))
                 data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
             else:

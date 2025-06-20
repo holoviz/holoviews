@@ -311,7 +311,7 @@ class dim:
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
         else:
             new_op = dict(op, args=args, kwargs=kwargs)
-        return self.clone(self.dimension, self.ops[:-1]+[new_op])
+        return self.clone(self.dimension, [*self.ops[:-1], new_op])
 
     def __getattribute__(self, attr):
         self_dict = super().__getattribute__('__dict__')
