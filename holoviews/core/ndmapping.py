@@ -402,26 +402,6 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar: If false returns unique values
-                * Geometry: If false returns scalar values per geometry
-                * Gridded: If false returns 1D coordinates
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         dimension = self.get_dimension(dimension, strict=True)
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
