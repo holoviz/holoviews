@@ -166,6 +166,7 @@ class Comparison(ComparisonInterface):
 
         # Rasters
         cls.equality_type_funcs[Image] =       cls.compare_image
+        cls.equality_type_funcs[ImageStack] =  cls.compare_imagestack
         cls.equality_type_funcs[RGB] =         cls.compare_rgb
         cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
@@ -664,6 +665,11 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_image(cls, el1, el2, msg='Image'):
+        cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
+    def compare_imagestack(cls, el1, el2, msg='ImageStack'):
         cls.bounds_check(el1,el2)
         cls.compare_dataset(el1, el2, msg)
 

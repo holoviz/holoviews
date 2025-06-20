@@ -41,9 +41,17 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://holoviews.org"
-Source = "https://github.com/holoviz/holoviews"
+"Issue Tracker" = "https://github.com/holoviz/holoviews/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen"
+Blog = "https://blog.holoviz.org/"
+Changelog = "https://github.com/holoviz/holoviews/blob/main/doc/releases.md"
+Discord = "https://discord.gg/AXRHnJU6sP"
+Discourse = "https://discourse.holoviz.org"
+Discussions = "https://github.com/holoviz/holoviews/discussions"
+Documentation = "https://holoviews.org/"
+Funding = "https://opencollective.com/holoviz"
 HoloViz = "https://holoviz.org/"
+Homepage = "https://holoviews.org"
+Repository = "https://github.com/holoviz/holoviews"
 
 [project.optional-dependencies]
 recommended = ["matplotlib >=3", "plotly >=4.0"]
