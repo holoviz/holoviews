@@ -25,24 +25,10 @@ hv.extension.inline = False
 html_theme = 'pydata_sphinx_theme'
 html_logo = '_static/logo_horizontal.png'
 html_favicon = '_static/favicon.ico'
-
-# Without this .txt is appended to the files
-html_sourcelink_suffix = ''
+html_show_sourcelink = False
 
 html_static_path += ['_static']
-
-import pydata_sphinx_theme
-
-if pydata_sphinx_theme.__version__ == '0.16.1':
-    # See https://github.com/pydata/pydata-sphinx-theme/issues/2088
-    templates_path.append('_static/patch_templates')
-else:
-    import warnings
-    warnings.warn("Remove pydata patch for 0.16.1", RuntimeWarning, 2)
-
-html_css_files += [
-    'css/custom.css'
-]
+html_css_files += ['css/custom.css']
 
 html_theme_options = {
     'github_url': 'https://github.com/holoviz/holoviews',
