@@ -6,7 +6,7 @@
 
 **June 25, 2025**
 
-This release add support for sample information on hover for rasterized/datashaded plots, adds dendrogram plot, and adds logarithmic support for Histogram.
+This release adds support for sample information on hover for rasterized/datashaded plots, adds dendrogram plot, and adds logarithmic support for Histogram.
 Along with these new features, this release includes a number of enhancements, bug fixes, and improved documentation.
 Many thanks to the new contributors @philipc2, @NolanBrb, and @sand-hanitizer, as well as the returning contributors
 @Azaya89, @LecrisUT, @maximlt, @michaelaye, @philippjfr, and @hoxbro.
@@ -34,17 +34,14 @@ New features:
   [#6600](https://github.com/holoviz/holoviews/pull/6600))
 - Add logarithmic support for Histogram ([#6575](https://github.com/holoviz/holoviews/pull/6575))
 
-Breaking:
-
-- Minimum supported Python version is now 3.10 ([#6549](https://github.com/holoviz/holoviews/pull/6549))
-
 Deprecations and removals:
 
+- Minimum supported Python version is now 3.10 ([#6549](https://github.com/holoviz/holoviews/pull/6549))
 - Deprecate the `streamz` interface (planned removal in 1.23.0) ([#6490](https://github.com/holoviz/holoviews/pull/6490))
 - Deprecate autoloading RC file (planned removal in 1.23.0) ([#6610](https://github.com/holoviz/holoviews/pull/6610))
 - Deprecate IPython magic (planned removal in 1.23.0) ([#6610](https://github.com/holoviz/holoviews/pull/6610))
 - Deprecate `hv.extension()` for `hv.extension("matplotlib")` (planned removal in 1.23.0) ([#6610](https://github.com/holoviz/holoviews/pull/6610))
-- Remove unused `hv.config` parameter: `future_deprecations` and `warn_options_call` ([#6610](https://github.com/holoviz/holoviews/pull/6610))
+- Remove unused `hv.config` parameters: `future_deprecations` and `warn_options_call` ([#6610](https://github.com/holoviz/holoviews/pull/6610))
 
 Enhancements:
 
@@ -56,9 +53,9 @@ Enhancements:
 - Allow passing dimension as style mapping option [#6614](https://github.com/holoviz/holoviews/pull/6614)
 - Support passing selection dictionary to `Dataset.select` ([#6617](https://github.com/holoviz/holoviews/pull/6617), [#6626](https://github.com/holoviz/holoviews/pull/6626))
 - Pass the `backend` in `holoviews.opts.defaults` ([#6331](https://github.com/holoviz/holoviews/pull/6331))
-- Update norm function to handle edge caes ([#6366](https://github.com/holoviz/holoviews/pull/6366))
+- Update norm function to handle edge case ([#6366](https://github.com/holoviz/holoviews/pull/6366))
 
-Performance
+Performance:
 
 - Defer Pandas import (
   [#6476](https://github.com/holoviz/holoviews/pull/6476),
