@@ -1,5 +1,97 @@
 # Releases
 
+## Version 1.21
+
+### Version 1.21.0
+
+**June 25, 2025**
+
+This release adds support for sample information on hover for rasterized/datashaded plots, adds dendrogram plot, and adds logarithmic support for Histogram.
+Along with these new features, this release includes a number of enhancements, bug fixes, and improved documentation.
+Many thanks to the new contributors @philipc2, @NolanBrb, and @sand-hanitizer, as well as the returning contributors
+@Azaya89, @LecrisUT, @maximlt, @michaelaye, @philippjfr, and @hoxbro.
+
+This release bumps the minimum supported Python version to 3.10, deprecates the
+`streamz` interface, autoloading RC file, IPython magic, and using matplotlib
+as default backend for `hv.extension` which are all planned for removal in
+1.23.0.
+
+New features:
+
+- Sample information on hover for rasterized/datashaded Bokeh plot (
+  [#6422](https://github.com/holoviz/holoviews/pull/6422),
+  [#6479](https://github.com/holoviz/holoviews/pull/6479),
+  [#6531](https://github.com/holoviz/holoviews/pull/6531),
+  [#6553](https://github.com/holoviz/holoviews/pull/6553),
+  [#6568](https://github.com/holoviz/holoviews/pull/6568),
+  [#6581](https://github.com/holoviz/holoviews/pull/6581),
+  [#6584](https://github.com/holoviz/holoviews/pull/6584),
+  [#6593](https://github.com/holoviz/holoviews/pull/6593),
+  [#6596](https://github.com/holoviz/holoviews/pull/6596),
+  [#6609](https://github.com/holoviz/holoviews/pull/6609))
+- Add dendrogram plot ([#6511](https://github.com/holoviz/holoviews/pull/6511),
+  [#6625](https://gthub.com/holoviz/holoviews/pull/6625),
+  [#6600](https://github.com/holoviz/holoviews/pull/6600))
+- Add logarithmic support for Histogram ([#6575](https://github.com/holoviz/holoviews/pull/6575))
+
+Deprecations and removals:
+
+- Minimum supported Python version is now 3.10 ([#6549](https://github.com/holoviz/holoviews/pull/6549))
+- Deprecate the `streamz` interface (planned removal in 1.23.0) ([#6490](https://github.com/holoviz/holoviews/pull/6490))
+- Deprecate autoloading RC file (planned removal in 1.23.0) ([#6610](https://github.com/holoviz/holoviews/pull/6610))
+- Deprecate IPython magic (planned removal in 1.23.0) ([#6610](https://github.com/holoviz/holoviews/pull/6610))
+- Deprecate `hv.extension()` for `hv.extension("matplotlib")` (planned removal in 1.23.0) ([#6610](https://github.com/holoviz/holoviews/pull/6610))
+- Remove unused `hv.config` parameters: `future_deprecations` and `warn_options_call` ([#6610](https://github.com/holoviz/holoviews/pull/6610))
+
+Enhancements:
+
+- [Bokeh] Add `hide_toolbar` options ([#6602](https://github.com/holoviz/holoviews/pull/6602))
+- [Bokeh] Add `radius` and `radius_dimension` to Point plot ([#6599](https://github.com/holoviz/holoviews/pull/6599), [#6613](https://github.com/holoviz/holoviews/pull/6613))
+- [Notebook] Add details option for AbbreviatedException ([#6611](https://github.com/holoviz/holoviews/pull/6611))
+- [Notebook] Improve the content displayed when loading the extension in a notebook ([#6586](https://github.com/holoviz/holoviews/pull/6586))
+- Add basic reactive expression support in a streams dictionary ([#6563](https://github.com/holoviz/holoviews/pull/6563))
+- Allow passing dimension as style mapping option [#6614](https://github.com/holoviz/holoviews/pull/6614)
+- Support passing selection dictionary to `Dataset.select` ([#6617](https://github.com/holoviz/holoviews/pull/6617), [#6626](https://github.com/holoviz/holoviews/pull/6626))
+- Pass the `backend` in `holoviews.opts.defaults` ([#6331](https://github.com/holoviz/holoviews/pull/6331))
+- Update norm function to handle edge case ([#6366](https://github.com/holoviz/holoviews/pull/6366))
+
+Performance:
+
+- Defer Pandas import (
+  [#6476](https://github.com/holoviz/holoviews/pull/6476),
+  [#6574](https://github.com/holoviz/holoviews/pull/6574),
+  [#6582](https://github.com/holoviz/holoviews/pull/6582),
+  [#6585](https://github.com/holoviz/holoviews/pull/6585))
+- Defer `datashader.bundling` to avoid numba compile time ([#6616](https://github.com/holoviz/holoviews/pull/6616))
+- Defer Panel and Pandas imports in IPython ([#6570](https://github.com/holoviz/holoviews/pull/6570))
+
+Fixes:
+
+- Correctly apply Bars style transforms ([#6623](https://github.com/holoviz/holoviews/pull/6623))
+- Don't assume all extents are string in `max_extents` ([#6571](https://github.com/holoviz/holoviews/pull/6571))
+- Histogram error with datatype `dask.array` and backend Matplotlib ([#6542](https://github.com/holoviz/holoviews/pull/6542))
+- Wrong empty element when using `apply_when` ([#6628](https://github.com/holoviz/holoviews/pull/6628))
+- Add legend to distribution for matplotlib backend ([#6544](https://github.com/holoviz/holoviews/pull/6544))
+- Improve `multi_y` error for single element ([#6543](https://github.com/holoviz/holoviews/pull/6543))
+- `PandasInterface.select` with an index and a column ([#6579](https://github.com/holoviz/holoviews/pull/6579))
+- Skip overlay aggregate for `NdOverlays` with a count aggregator ([#6619](https://github.com/holoviz/holoviews/pull/6619))
+
+Documentation:
+
+- Use [numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for docstrings (
+  [#6506](https://github.com/holoviz/holoviews/pull/6506),
+  [#6556](https://github.com/holoviz/holoviews/pull/6556),
+  [#6583](https://github.com/holoviz/holoviews/pull/6583))
+- Reduce warnings and apply fixes when building documentation ([#6603](https://github.com/holoviz/holoviews/pull/6603), [#6639](https://github.com/holoviz/holoviews/pull/6639))
+- Small documentation corrections ([#6539](https://github.com/holoviz/holoviews/pull/6539), [#6604](https://github.com/holoviz/holoviews/pull/6604))
+- Update documentation for plotting tools affected by the Bokeh 3.4 change ([#6478](https://github.com/holoviz/holoviews/pull/6478))
+
+Build:
+
+- Add more project URLs to PyPI ([#6629](https://github.com/holoviz/holoviews/pull/6629))
+- Support PEP 639 - License Clarity ([#6564](https://github.com/holoviz/holoviews/pull/6564))
+- Support PEP 734 - Dependency Groups ([#6608](https://github.com/holoviz/holoviews/pull/6608))
+
 ## Version 1.20
 
 ### Version 1.20.2
@@ -3731,6 +3823,7 @@ optimizations for Bokeh.
 
 ```python
 from holoviews.plotting.mpl import LayoutPlot
+
 LayoutPlot.v17_layout_format = True
 LayoutPlot.vspace = 0.3
 ```
