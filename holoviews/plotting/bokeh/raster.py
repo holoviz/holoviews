@@ -155,6 +155,12 @@ class ServerHoverMixin(param.Parameterized):
             args={"position": hover_model},
             code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
+        hover.filters = {"": CustomJS(
+            args=dict(hover_model=hover_model, ),
+            # More logic is needed here, correct column, isnan vs count, safeguard against Bokeh 3.8
+            # Also investigate categorical
+            code="""export default ({hover_model}) => !isNaN(hover_model.data["x_y s"])"""
+        )}
 
         def on_change(attr, old, new):
             if np.isinf(new).all():
