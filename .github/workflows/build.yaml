@@ -143,27 +143,31 @@ jobs:
     needs: [waiting_room]
     permissions:
       contents: write
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: artifacts-*
-          path: dist/
+          path: artifacts/
           merge-multiple: true
+      - name: Set environment variable
+        run: |
+          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Extract changelog section
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          awk -v ver="### Version $VERSION" '
+          awk -v ver="### Version ${TAG#v}" '
             $0 == ver {flag=1; next}
             /^### Version / && flag {exit}
             flag && !/^(\*\*.*\*\*)$/
-          ' doc/releases.md > RELEASE_BODY.md
+          ' doc/releases.md | tee RELEASE_BODY.md
       - name: Create draft GitHub release with dist artifacts
+        if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "Version ${GITHUB_REF_NAME#v}" \
+          gh release create "$TAG" \
+            --title "Version ${TAG#v}" \
             --notes-file RELEASE_BODY.md \
             --draft \
-            dist/*
+            artifacts/*
