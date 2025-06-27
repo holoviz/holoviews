@@ -400,7 +400,7 @@ def compute_layout_properties(
     return aspect_info, dimension_info
 
 
-def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False):
+def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False, autohide=False):
     """Merges tools defined on a grid of plots into a single toolbar.
     All tools of the same type are merged unless they define one
     of the disambiguation properties. By default `name`, `icon`, `tags`
@@ -433,7 +433,10 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False
             if p not in disambiguation_properties:
                 ignore.add(p)
 
-    return Toolbar(tools=group_tools(tools, merge=merge, ignore=ignore)) if tools else Toolbar()
+    toolbar_kwargs = {"autohide": autohide}
+    if tools:
+        toolbar_kwargs["tools"] = group_tools(tools, merge=merge, ignore=ignore)
+    return Toolbar(**toolbar_kwargs)
 
 
 def sync_legends(bokeh_layout):

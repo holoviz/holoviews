@@ -19,6 +19,7 @@ from ...core import (
     NdOverlay,
     util,
 )
+from ...core.dimension import Dimension
 from ...core.options import Keywords, abbreviated_exception
 from ...element import Graph, Path
 from ...streams import Stream
@@ -411,7 +412,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         lims = {}
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
         if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
-            low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
+            low = 0.01 if high > 0.01 else 10**(np.log10(high)-2)
             self.param.warning(
                 "Logarithmic axis range encountered value less "
                 "than or equal to zero, please supply explicit "
@@ -614,11 +615,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
-            if isinstance(v, str):
+            if isinstance(v, (Dimension, str)):
                 if validate(k, v) == True:
                     continue
-                elif v in element or (isinstance(element, Graph) and v in element.nodes):
-                    v = dim(v)
+                elif isinstance(element, Graph) and v in element.nodes:
+                    v = dim(element.nodes.get_dimension(v))
+                elif v in element:
+                    v = dim(element.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
                     v = dim(next(d for d in self.overlay_dims if d==v))
 

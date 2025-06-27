@@ -44,7 +44,7 @@ class PandasInterface(Interface, PandasAPI):
     def applies(cls, obj):
         if not cls.loaded():
             return False
-        return isinstance(obj, (pd.DataFrame, pd.Series))
+        return type(obj) is pd.DataFrame
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -426,7 +426,7 @@ class PandasInterface(Interface, PandasAPI):
                     index_sel = {}
             column_sel = {k: v for k, v in selection.items() if k not in index_sel}
             if column_sel:
-                selection_mask = cls.select_mask(dataset, column_sel)
+                selection_mask = cls.select_mask(dataset.clone(data=df), column_sel)
 
         indexed = cls.indexed(dataset, selection)
         if isinstance(selection_mask, pd.Series):

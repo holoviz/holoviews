@@ -196,7 +196,7 @@ class Graph(Dataset, Element2D):
         node_info_df = node_info_df[cols]
         node_df = pd.merge(node_df, node_info_df, left_on=left_on,
                             right_on=idx.name, how='left')
-        nodes = nodes.clone(node_df, kdims=nodes.kdims[:2]+[idx],
+        nodes = nodes.clone(node_df, kdims=[*nodes.kdims[:2], idx],
                             vdims=node_info.vdims)
 
         self._nodes = nodes
@@ -592,7 +592,7 @@ class TriMesh(Graph):
         """
         return self._initialize_edgepaths()
 
-    def select(self, selection_specs=None, **selection):
+    def select(self, selection_expr=None, selection_specs=None, **selection):
         """Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
         keywords mapping between the selected dimension and
@@ -603,9 +603,10 @@ class TriMesh(Graph):
 
         """
         self._initialize_edgepaths()
-        return super().select(selection_specs=None,
-                              selection_mode='nodes',
-                              **selection)
+        return super().select(
+            selection_expr=selection_expr, selection_specs=selection_specs,
+            selection_mode='nodes', **selection
+        )
 
 
 
@@ -720,7 +721,7 @@ class layout_chords(Operation):
             if isinstance(nodes_el, Nodes):
                 kdims = nodes_el.kdims
             else:
-                kdims = Nodes.kdims[:2]+[idx_dim]
+                kdims = [*Nodes.kdims[:2], idx_dim]
             vdims = [vd for vd in nodes_el.vdims if vd not in kdims]
             values = tuple(nodes_el.dimension_values(vd) for vd in vdims)
         else:

@@ -182,7 +182,7 @@ class apply_when(param.ParameterizedFunction):
         if x_range is not None and y_range is not None:
             selected = element[x_range, y_range]
         condition = self.predicate(selected)
-        if (not invert and condition) or (invert and not condition):
+        if invert ^ condition:
             return selected
         elif selected.interface.gridded:
             return selected.clone([])
@@ -1242,7 +1242,7 @@ class dendrogram(Operation):
 
     adjoint_dims = param.List(item_type=str, doc="The adjoint dimension to cluster on")
 
-    main_dim = param.String(doc="The main dimension to cluster on")
+    main_dim = param.String(default=None, allow_None=False, doc="The main dimension to cluster on")
 
     main_element = param.ClassSelector(default=HeatMap, class_=Dataset, instantiate=False, is_instance=False, doc="""
         The Element type to use for the main plot if the input is a Dataset.""")
@@ -1252,9 +1252,37 @@ class dendrogram(Operation):
          between successive leaves is minimal. This results in a more intuitive
          tree structure when the data are visualized. defaults to False,
          because this algorithm can be slow, particularly on large datasets.
-         See for more information:
+         For more information:
          https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
          """)
+
+    linkage_method = param.Selector(
+        default="complete",
+        objects=["single", "complete", "average", "centroid", "median", "ward", "weighted"],
+        doc="""
+        The linkage algorithm to use. For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+
+    )
+    linkage_metric = param.Selector(
+        default="correlation",
+        objects=[
+            "braycurtis", "canberra", "chebyshev", "cityblock",
+            "correlation", "cosine", "dice", "euclidean", "hamming",
+            "jaccard", "jensenshannon", "kulczynski1",
+            "mahalanobis", "matching", "minkowski", "rogerstanimoto",
+            "russellrao", "seuclidean", "sokalmichener", "sokalsneath",
+            "sqeuclidean", "yule"
+        ],
+        doc="""
+        The distance metric to use in the case that y is a collection of observation vectors; ignored otherwise.
+        For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """
+    )
+    invert = param.Boolean(default=False, doc="""
+        Whether to invert the dendrogram axis.""")
 
     def _compute_linkage(self, dataset, dim, vdim):
         try:
@@ -1266,24 +1294,38 @@ class dendrogram(Operation):
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
+
         X = np.vstack(arrays)
-        Z = linkage(X, optimal_ordering=self.p.optimal_ordering)
-        ddata = dendrogram(Z, labels=labels, no_plot=True)
-        return ddata
+        Z = linkage(
+            X,
+            method=self.p.linkage_method,
+            metric=self.p.linkage_metric,
+            optimal_ordering=self.p.optimal_ordering
+        )
+        return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
+        if self.p.main_dim is None:
+            raise TypeError("'main_dim' cannot be None")
         element_kdims = element.kdims
         dataset = Dataset(element)
+        sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
-            order = [ddata["ivl"].index(v) for v in dataset.dimension_values(d)][::-1]
+            order = [sign * ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
             sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
             sort_dims.append(sort_dim)
 
+            ic = ddata["icoord"]
+            if self.p.invert:
+                ic = np.asarray(ic)
+                # Convert the smallest value to the largest value, while still
+                # being positive, offset (5) so we don't divide by zero
+                ic = ic.max() - ic + 5
             # Important the kdims are unique
-            dendros[d] = Dendrogram(ddata["icoord"], ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
+            dendros[d] = Dendrogram(ic, ddata["dcoord"], kdims=[f"__dendrogram_x_{d}", f"__dendrogram_y_{d}"])
 
         if not self.p.adjoined:
             if len(dendros) == 1:
@@ -1292,10 +1334,13 @@ class dendrogram(Operation):
                 return Layout(dendros.values())
 
         vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        # Adding non_sort_dims to handle unstable sorting algorithms, which can differ between OSs
+        # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+        non_sort_dims = [d for d in element_kdims[:2] if str(d) not in self.p.adjoint_dims]
         if type(element) is not Dataset:
-            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
+            main = element.clone(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims), vdims=vdims)
         else:
-            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
+            main = self.p.main_element(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims[:2]), vdims=vdims)
 
         for dim in map(str, main.kdims[::-1]):
             if dim not in self.p.adjoint_dims:

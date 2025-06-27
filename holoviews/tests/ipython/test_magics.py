@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 from pyviz_comms import CommManager
 
@@ -6,7 +8,8 @@ from holoviews.core.options import Store
 from holoviews.operation import Compositor
 
 try:
-    from holoviews.ipython import IPTestCase
+    import holoviews.ipython
+    from holoviews.element.comparison import IPTestCase
 except ImportError:
     pytest.skip("IPython required to test IPython magics", allow_module_level=True)
 
@@ -21,8 +24,21 @@ class ExtensionTestCase(IPTestCase):
 
     def tearDown(self):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
-        del self.ip
         super().tearDown()
+
+    def cell_magic(self, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            output = super().cell_magic(*args, **kwargs)
+        assert str(w[0].message).startswith("IPython magic is deprecated")
+        return output
+
+    def line_magic(self, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            output = super().line_magic(*args, **kwargs)
+        assert str(w[0].message).startswith("IPython magic is deprecated")
+        return output
 
 
 class TestOptsMagic(ExtensionTestCase):

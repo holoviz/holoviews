@@ -36,11 +36,11 @@ Check out the [HoloViews web site](https://holoviews.org) for extensive examples
 
 <div >
   <a href="https://holoviews.org/gallery/demos/bokeh/square_limit.html">
-    <img src="https://holoviews.org/_images/square_limit_large.png" width='20%'> </a>
+    <img src="https://holoviews.org/_images/square_limit.png" width='20%'> </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/bars_economic.html">
     <img src="https://holoviews.org/_images/bars_economic.png" width='20%'> </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
-    <img src="https://holoviews.org/_images/texas_choropleth_example_large.png" width='20%'> </a>
+    <img src="https://holoviews.org/_images/texas_choropleth_example.png" width='20%'> </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
     <img src="https://holoviews.org/_images/verhulst_mandelbrot.png" width='20%'> </a>
 </div>

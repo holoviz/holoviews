@@ -714,6 +714,20 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEqual(row, indexed)
 
+    def test_dataset_select_rows_gender_male_dict(self):
+        row = self.table.select({"Gender": 'M'})
+        indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(row, indexed)
+
+    def test_dataset_select_rows_gender_male_dimension_dict(self):
+        row = self.table.select({self.table.kdims[0]: 'M'})
+        indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(row, indexed)
+
     def test_dataset_select_rows_gender_male_expr(self):
         row = self.table.select(selection_expr=dim('Gender') == 'M')
         indexed = Dataset({'Gender': ['M', 'M'], 'Age': [10, 16],
@@ -724,6 +738,15 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_select_rows_gender_male_alias(self):
         row = self.alias_table.select(Gender='M')
         alias_row = self.alias_table.select(gender='M')
+        indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
+                           'weight':[15,18], 'height':[0.8,0.6]},
+                          kdims=self.alias_kdims, vdims=self.alias_vdims)
+        self.assertEqual(row, indexed)
+        self.assertEqual(alias_row, indexed)
+
+    def test_dataset_select_rows_gender_male_alias_dict(self):
+        row = self.alias_table.select({"Gender": 'M'})
+        alias_row = self.alias_table.select({"gender": 'M'})
         indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
                            'weight':[15,18], 'height':[0.8,0.6]},
                           kdims=self.alias_kdims, vdims=self.alias_vdims)
@@ -994,11 +1017,35 @@ class GriddedInterfaceTests:
         )
         self.assertEqual(self.dataset_grid.select(y=slice(0, 0.25)), ds)
 
+    def test_select_slice_as_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({"y": slice(0, 0.25)}), ds)
+
+    def test_select_slice_as_dimension_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({self.dataset_grid.kdims[1]: slice(0, 0.25)}), ds)
+
     def test_select_tuple(self):
         ds = self.element(
             (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
         )
         self.assertEqual(self.dataset_grid.select(y=(0, 0.25)), ds)
+
+    def test_select_tuple_as_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({"y": (0, 0.25)}), ds)
+
+    def test_select_tuple_as_dimension_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({self.dataset_grid.kdims[1]: (0, 0.25)}), ds)
 
     def test_nodata_range(self):
         ds = self.dataset_grid.clone(vdims=[Dimension('z', nodata=0)])

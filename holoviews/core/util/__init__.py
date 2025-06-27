@@ -24,6 +24,7 @@ import narwhals as nw
 import numpy as np
 import param
 
+from ...util.warnings import warn
 from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
     NUMPY_VERSION,
@@ -32,6 +33,7 @@ from .dependencies import (  # noqa: F401
     PANDAS_VERSION,
     PARAM_VERSION,
     VersionError,
+    _LazyModule,
 )
 from .types import (
     arraylike_types,
@@ -43,6 +45,14 @@ from .types import (
     pandas_timedelta_types,
     timedelta_types,
 )
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import pandas as pd
+    import polars as pl
+else:
+    pd = _LazyModule("pandas", bool_use_sys_modules=True)
+    pl = _LazyModule("polars", bool_use_sys_modules=True)
 
 # Python 2 builtins
 basestring = str
@@ -103,9 +113,6 @@ class Config(param.ParameterizedFunction):
 
     """
 
-    future_deprecations = param.Boolean(default=False, doc="""
-       Whether to warn about future deprecations""")
-
     image_rtol = param.Number(default=10e-4, doc="""
       The tolerance used to enforce regular sampling for regular,
       gridded data where regular sampling is expected. Expressed as the
@@ -114,12 +121,6 @@ class Config(param.ParameterizedFunction):
 
     no_padding = param.Boolean(default=False, doc="""
        Disable default padding (introduced in 1.13.0).""")
-
-    warn_options_call = param.Boolean(default=True, doc="""
-       Whether to warn when the deprecated __call__ options syntax is
-       used (the opts method should now be used instead). It is
-       recommended that users switch this on to update any uses of
-       __call__ as it will be deprecated in future.""")
 
     default_cmap = param.String(default='kbc_r', doc="""
        Global default colormap. Prior to HoloViews 1.14.0, the default
@@ -136,6 +137,12 @@ class Config(param.ParameterizedFunction):
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
     def __call__(self, **params):
+        # Old parameters, removed in HoloViews 1.21.0
+        if params.pop("future_deprecations", None):
+            warn("The 'future_deprecations' parameter has no effect.")
+        if params.pop("warn_options_call", None):
+            warn("The 'warn_options_call' parameter has no effect.")
+
         self.param.update(**params)
         return self
 
@@ -433,12 +440,12 @@ def validate_dynamic_argspec(callback, kdims, streams):
     be merged with the stream values to pass everything to the Callable
     as keywords.
 
-    If the callbacks use *args, None is returned to indicate that kdim
+    If the callbacks use `*args`, None is returned to indicate that kdim
     values must be passed to the Callable by position. In this
-    situation, Callable passes *args and **kwargs directly to the
+    situation, Callable passes `*args` and `**kwargs` directly to the
     callback.
 
-    If the callback doesn't use **kwargs, the accepted keywords are
+    If the callback doesn't use `**kwargs`, the accepted keywords are
     validated against the stream parameter names.
 
     """
@@ -801,10 +808,21 @@ label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def isscalar(val):
-    """Value is scalar or None
+    """Value is scalar or nullable
 
     """
-    return val is None or np.isscalar(val) or isinstance(val, datetime_types)
+    return is_null_or_na_scalar(val) or np.isscalar(val) or isinstance(val, datetime_types)
+
+
+def is_null_or_na_scalar(val):
+    if hasattr(val, "__len__"):
+        return False
+    return bool(
+        val is None
+        or (pd and (val is pd.NA or val is pd.NaT))
+        or (pl and val is pl.Null)
+        or (np.isscalar(val) and np.isnan(val))
+    )
 
 
 def isnumeric(val):
@@ -1089,18 +1107,20 @@ def max_extents(extents, zrange=False):
         for lidx, uidx in inds:
             lower = [v for v in arr[lidx] if v is not None and not is_nan(v)]
             upper = [v for v in arr[uidx] if v is not None and not is_nan(v)]
-            if lower and isinstance(lower[0], datetime_types):
-                extents[lidx] = np.min(lower)
-            elif any(isinstance(l, str) for l in lower):
-                extents[lidx] = np.sort(lower)[0]
-            elif lower:
-                extents[lidx] = np.nanmin(lower)
-            if upper and isinstance(upper[0], datetime_types):
-                extents[uidx] = np.max(upper)
-            elif any(isinstance(u, str) for u in upper):
-                extents[uidx] = np.sort(upper)[-1]
-            elif upper:
-                extents[uidx] = np.nanmax(upper)
+            if lower:
+                if any(isinstance(l, str) for l in lower):
+                    extents[lidx] = sorted(lower, key=str)[0]
+                elif isinstance(lower[0], datetime_types):
+                    extents[lidx] = np.min(lower)
+                else:
+                    extents[lidx] = np.nanmin(lower)
+            if upper:
+                if any(isinstance(u, str) for u in upper):
+                    extents[uidx] = sorted(upper, key=str)[-1]
+                elif isinstance(upper[0], datetime_types):
+                    extents[uidx] = np.max(upper)
+                else:
+                    extents[uidx] = np.nanmax(upper)
     return tuple(extents)
 
 
@@ -1345,15 +1365,15 @@ class ProgressIndicator(param.Parameterized):
 def sort_topologically(graph):
     """Stackless topological sorting.
 
-    graph = {
+    >>> graph = {
         3 : [1],
         5 : [3],
         4 : [2],
         6 : [4],
     }
 
-    sort_topologically(graph)
-    [[1, 2], [3, 4], [5, 6]]
+    >>> sort_topologically(graph)
+    >>> [[1, 2], [3, 4], [5, 6]]
 
     """
     levels_by_name = {}
@@ -1874,7 +1894,7 @@ def get_path(item):
             if len(path) > 1 and item.label == path[1]:
                 path = path[:2]
             else:
-                path = path[:1] + (item.label,)
+                path = (*path[:1], item.label)
         else:
             path = path[:1]
     else:
@@ -2335,7 +2355,7 @@ def cast_array_to_int64(array):
 def flatten(line):
     """Flatten an arbitrarily nested sequence.
 
-    Inspired by: ``pd.core.common.flatten``
+    Inspired by: `pd.core.common.flatten`
 
     Parameters
     ----------

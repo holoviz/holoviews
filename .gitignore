@@ -17,6 +17,7 @@
 /doc/_build
 /doc/Reference_Manual/*
 !/doc/Reference_Manual/index.rst
+builtdocs/
 .ipynb_checkpoints
 .coverage
 .pytest_cache
@@ -38,3 +39,4 @@ holoviews/.vscode/settings.json
 dist
 
 examples/getting_started/*.html
+*.log

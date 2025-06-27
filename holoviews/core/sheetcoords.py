@@ -293,8 +293,8 @@ class SheetCoordinateSystem:
         matrix cell represents a 0.2 by 0.2 region, then the center
         location returned would be 0.1,0.1.
 
-        NOTE
-        ----
+        Notes
+        -----
         This is NOT the strict mathematical inverse of
         sheet2matrixidx(), because sheet2matrixidx() discards all but
         the integer portion of the continuous matrix coordinate.

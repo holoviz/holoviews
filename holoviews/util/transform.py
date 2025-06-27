@@ -52,6 +52,13 @@ def norm(values, min=None, max=None):
     """
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
+    try:
+        # If it cannot be compared, this could be because of dask
+        comparison = bool(min == max)
+    except TypeError:
+        comparison = False
+    if comparison:
+        return values if max == 0 else (values / max)
     return (values - min) / (max-min)
 
 
@@ -305,7 +312,7 @@ class dim:
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
         else:
             new_op = dict(op, args=args, kwargs=kwargs)
-        return self.clone(self.dimension, self.ops[:-1]+[new_op])
+        return self.clone(self.dimension, [*self.ops[:-1], new_op])
 
     def __getattribute__(self, attr):
         self_dict = super().__getattribute__('__dict__')
@@ -562,7 +569,7 @@ class dim:
     @classmethod
     def pipe(cls, func, *args, **kwargs):
         """Wrapper to give multidimensional transforms a more intuitive syntax.
-        For a custom function 'func' with signature (*args, **kwargs), call as
+        For a custom function `func` with signature (*args, **kwargs), call as
         dim.pipe(func, *args, **kwargs).
 
         """

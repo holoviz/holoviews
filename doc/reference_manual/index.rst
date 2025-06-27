@@ -61,12 +61,11 @@ HoloViews subpackages
    core <holoviews.core>
    core.data <holoviews.core.data>
    element <holoviews.element>
-   interface <holoviews.interface>
    ipython <holoviews.ipython>
    operation <holoviews.operation>
    plotting <holoviews.plotting>
    plotting.bokeh <holoviews.plotting.bokeh>
-   plotting.matplotlib <holoviews.plotting.matplotlib>
+   plotting.matplotlib <holoviews.plotting.mpl>
    plotting.plotly <holoviews.plotting.plotly>
    selection <holoviews.selection>
    streams <holoviews.streams>

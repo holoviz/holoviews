@@ -25,12 +25,10 @@ hv.extension.inline = False
 html_theme = 'pydata_sphinx_theme'
 html_logo = '_static/logo_horizontal.png'
 html_favicon = '_static/favicon.ico'
+html_show_sourcelink = False
 
 html_static_path += ['_static']
-
-html_css_files += [
-    'css/custom.css'
-]
+html_css_files += ['css/custom.css']
 
 html_theme_options = {
     'github_url': 'https://github.com/holoviz/holoviews',
@@ -51,7 +49,7 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
-    "footer_items": [
+    "footer_start": [
         "copyright",
         "last-updated",
     ],
@@ -63,11 +61,24 @@ extensions += [
     'nbsite.gallery',
     'sphinx_copybutton',
     'nbsite.analytics',
+    'numpydoc',
 ]
+
+intersphinx_mapping = {
+    "panel": ("https://panel.holoviz.org/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+}
+
+numpydoc_xref_param_type = True
+numpydoc_xref_type       = True
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
+
+autodoc_mock_imports = ["dash", "holoviews.doc_convert", "js", "pytest", "pyodide"]
 
 nbsite_analytics = {
     'goatcounter_holoviz': True,
@@ -123,3 +134,13 @@ html_context.update({
 html_title = f'{project} v{version}'
 # Format of the last updated section in the footer
 html_last_updated_fmt = '%Y-%m-%d'
+
+# Exclude utility files from toctree warnings
+exclude_patterns = [
+    'assets/README.rst',
+    'features.rst',
+    'reference_manual/modules.rst',
+    'site_map.rst',
+    'test_data/README.rst',
+    'user_guide/IPython_Magics.rst', # empty file
+]

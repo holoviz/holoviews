@@ -19,7 +19,8 @@ considered different.
 """
 import contextlib
 from functools import partial
-from unittest import TestCase
+from unittest import SkipTest, TestCase
+from unittest.mock import patch
 from unittest.util import safe_repr
 
 import numpy as np
@@ -165,6 +166,7 @@ class Comparison(ComparisonInterface):
 
         # Rasters
         cls.equality_type_funcs[Image] =       cls.compare_image
+        cls.equality_type_funcs[ImageStack] =  cls.compare_imagestack
         cls.equality_type_funcs[RGB] =         cls.compare_rgb
         cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
@@ -667,6 +669,11 @@ class Comparison(ComparisonInterface):
         cls.compare_dataset(el1, el2, msg)
 
     @classmethod
+    def compare_imagestack(cls, el1, el2, msg='ImageStack'):
+        cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
     def compare_rgb(cls, el1, el2, msg='RGB'):
         cls.bounds_check(el1,el2)
         cls.compare_dataset(el1, el2, msg)
@@ -778,6 +785,63 @@ class ComparisonTestCase(Comparison, TestCase):
         registry = Comparison.register()
         for k, v in registry.items():
             self.addTypeEqualityFunc(k, v)
+
+
+class IPTestCase(ComparisonTestCase):
+    """This class extends ComparisonTestCase to handle IPython specific
+    objects and support the execution of cells and magic.
+
+    """
+
+    def setUp(self):
+        try:
+            import IPython
+            from IPython.display import HTML, SVG
+        except Exception:
+            raise SkipTest("IPython could not be imported") from None
+
+        super().setUp()
+        self.exits = []
+        with patch('atexit.register', lambda x: self.exits.append(x)):
+            self.ip = IPython.InteractiveShell(history_length=0, history_load_length=0)
+        self.addTypeEqualityFunc(HTML, self.skip_comparison)
+        self.addTypeEqualityFunc(SVG,  self.skip_comparison)
+
+    def tearDown(self) -> None:
+        # self.ip.displayhook.flush calls gc.collect
+        with patch('gc.collect', lambda: None):
+            for ex in self.exits:
+                ex()
+        del self.ip
+        super().tearDown()
+
+    def skip_comparison(self, obj1, obj2, msg): pass
+
+    def get_object(self, name):
+        obj = self.ip._object_find(name).obj
+        if obj is None:
+            raise self.failureException(f"Could not find object {name}")
+        return obj
+
+
+    def cell(self, line):
+        """Run an IPython cell
+
+        """
+        self.ip.run_cell(line, silent=True)
+
+    def cell_magic(self, *args, **kwargs):
+        """Run an IPython cell magic
+
+        """
+        self.ip.run_cell_magic(*args, **kwargs)
+
+
+    def line_magic(self, *args, **kwargs):
+        """Run an IPython line magic
+
+        """
+        self.ip.run_line_magic(*args, **kwargs)
 
 
 _assert_element_equal = ComparisonTestCase().assertEqual

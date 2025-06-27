@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 
 import numpy as np
@@ -63,11 +64,22 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     style_opts = [
         "cmap", "palette", "marker", "size", "angle", "hit_dilation",
+        "radius", "radius_dimension",
         *base_properties, *line_properties, *fill_properties
     ]
 
     _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
+
+    def _init_glyph(self, plot, mapping, properties):
+        if properties.get("radius") is not None:
+            self._plot_methods = dict(single='circle', batched='circle')
+            properties.pop("size", None)
+        else:
+            self._plot_methods = dict(single='scatter', batched='scatter')
+            properties.pop("radius_dimension", None)
+            properties.pop("radius", None)
+        return super()._init_glyph(plot, mapping, properties)
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -430,11 +442,38 @@ class HistogramPlot(ColorbarPlot):
     _nonvectorized_styles = [*base_properties, "line_dash"]
     _plot_methods = dict(single='quad')
 
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        logx = self.logx and self.invert_axes
+        logy = self.logy and not self.invert_axes
+        if logx or logy:
+            if logy:
+                range_ = plot.y_range
+                pos = "end" if self.invert_yaxis else "start"
+            else:
+                range_ = plot.x_range
+                pos = "end" if self.invert_xaxis else "start"
+            source = self.handles["source"]
+            # Insert bottom to the lower value of the axis
+            source.data['bottom'] = [getattr(range_, pos)] * len(source.data['top'])
+            callback = CustomJS(
+                args=dict(source=source, range=range_, pos=pos),
+                code="""
+                source.data['bottom'].fill(range[pos]);
+                source.change.emit();
+            """,
+            )
+            range_.js_on_change(pos, callback)
+
+        return plot
+
     def get_data(self, element, ranges, style):
         if self.invert_axes:
-            mapping = dict(top='right', bottom='left', left=0, right='top')
+            left = 'bottom' if self.logx else 0
+            mapping = dict(top='right', bottom='left', left=left, right='top')
         else:
-            mapping = dict(top='top', bottom=0, left='left', right='right')
+            bottom = 'bottom' if self.logy else 0
+            mapping = dict(top='top', bottom=bottom, left='left', right='right')
         if self.static_source:
             data = dict(top=[], left=[], right=[])
         else:
@@ -445,7 +484,7 @@ class HistogramPlot(ColorbarPlot):
                 edges = edges.compute()
             data = dict(top=values, left=edges[:-1], right=edges[1:])
             self._get_hover_data(data, element)
-        return (data, mapping, style)
+        return data, mapping, style
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
         ydim = element.get_dimension(1)
@@ -454,6 +493,12 @@ class HistogramPlot(ColorbarPlot):
         s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.label]['soft'] = (s0, s1)
         return super().get_extents(element, ranges, range_type)
+
+    def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
+        # We allow zero values with histogram
+        if log and low == 0:
+            low = 0.01 if high > 0.01 else 10**(math.log10(high)-2)
+        return super()._update_range(axis_range, low, high, factors, invert, shared, log, streaming)
 
 
 class SideHistogramPlot(HistogramPlot):
@@ -821,6 +866,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 props['group_text_baseline'] = 'middle'
         return props
 
+    def _element_transform(self, transform, element, ranges):
+        if (self.multi_level or self.stacked) and len(element.kdims) > 1:
+            return transform.apply(element.groupby(element.kdims[1]).collapse(), ranges=ranges, flat=True)
+        return transform.apply(element, ranges=ranges, flat=True)
+
     def _get_factors(self, element, ranges):
         xvals, gvals = self._get_coords(element, ranges)
         if gvals is not None:
@@ -1043,7 +1093,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         for name, val in mapping.items():
             sanitized = None
             if isinstance(val, str):
-                sanitized = dimension_sanitizer(mapping[name])
+                sanitized = dimension_sanitizer(val)
                 mapping[name] = sanitized
             elif isinstance(val, dict) and 'field' in val:
                 sanitized = dimension_sanitizer(val['field'])

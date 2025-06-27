@@ -69,7 +69,7 @@ def collate(obj):
             "access your data or control how it appears; we recommend "
             "calling .collate() on the Overlay in order to follow the "
             "recommended nesting structure shown in the Composing Data "
-            "user guide (http://goo.gl/2YS8LJ)")
+            "user guide (https://goo.gl/2YS8LJ)")
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
@@ -349,7 +349,7 @@ def undisplayable_info(obj, html=False):
 
     """
     collate = '<tt>collate</tt>' if html else 'collate'
-    info = "For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)"
+    info = "For more information, please consult the Composing Data tutorial (https://git.io/vtIQh)"
     if isinstance(obj, HoloMap):
         error = f"HoloMap of {obj.type.__name__} objects cannot be displayed."
         remedy = f"Please call the {collate} method to generate a displayable object"
@@ -1203,7 +1203,7 @@ COLOR_ALIASES = {
 
 # linear_kryw_0_100_c71 (aka "fire"):
 # A perceptually uniform equivalent of matplotlib's "hot" colormap, from
-# http://peterkovesi.com/projects/colourmaps
+# https://peterkovesi.com/projects/colourmaps
 
 fire_colors = linear_kryw_0_100_c71 = [\
 [0,        0,           0         ],  [0.027065, 2.143e-05,   0         ],

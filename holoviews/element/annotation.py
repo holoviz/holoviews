@@ -86,21 +86,6 @@ class Annotation(Element2D):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.data if np.isscalar(self.data) else self.data[index]])
@@ -128,7 +113,7 @@ class VLine(Annotation):
 
     group = param.String(default='VLine', constant=True)
 
-    x = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    x = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The x-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['x']
@@ -139,21 +124,6 @@ class VLine(Annotation):
         super().__init__(x, x=x, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.data])
@@ -170,7 +140,7 @@ class HLine(Annotation):
 
     group = param.String(default='HLine', constant=True)
 
-    y = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    y = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The y-position of the HLine which make be numeric or a timestamp.""")
 
     __pos_params = ['y']
@@ -181,21 +151,6 @@ class HLine(Annotation):
         super().__init__(y, y=y, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([np.nan])
@@ -250,10 +205,10 @@ class VSpan(Annotation):
 
     group = param.String(default='VSpan', constant=True)
 
-    x1 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    x1 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The start x-position of the VSpan which must be numeric or a timestamp.""")
 
-    x2 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    x2 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The end x-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['x1', 'x2']
@@ -262,21 +217,6 @@ class VSpan(Annotation):
         super().__init__([x1, x2], x1=x1, x2=x2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array(self.data)
@@ -293,10 +233,10 @@ class HSpan(Annotation):
 
     group = param.String(default='HSpan', constant=True)
 
-    y1 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    y1 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The start y-position of the VSpan which must be numeric or a timestamp.""")
 
-    y2 = param.ClassSelector(default=0, class_=(Number, *datetime_types), allow_None=True, doc="""
+    y2 = param.ClassSelector(default=0, class_=(Number, datetime_types), allow_None=True, doc="""
        The end y-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['y1', 'y2']
@@ -305,21 +245,6 @@ class HSpan(Annotation):
         super().__init__([y1, y2], y1=y1, y2=y2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([np.nan, np.nan])
@@ -378,21 +303,6 @@ class Spline(Annotation):
                                *args, **overrides)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index in [0, 1]:
             return np.array([point[index] for point in self.data[0]])
@@ -403,15 +313,15 @@ class Spline(Annotation):
 
 class Arrow(Annotation):
     """Draw an arrow to the given xy position with optional text at
-    distance 'points' away. The direction of the arrow may be
-    specified as well as the arrow head style.
+    distance 'points' away.
 
+    The direction of the arrow may be specified as well as the arrow head style.
     """
 
-    x = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    x = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, *datetime_types), doc="""
+    y = param.ClassSelector(default=0, class_=(Number, datetime_types), doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="Text associated with the arrow.")
@@ -419,13 +329,13 @@ class Arrow(Annotation):
     direction = param.Selector(default='<',
                                      objects=['<', '^', '>', 'v'], doc="""
         The cardinal direction in which the arrow is pointing. Accepted
-        arrow directions are '<', '^', '>' and 'v'.""")
+        arrow directions are ``'<'``, '^', ``'>'`` and 'v'.""")
 
     arrowstyle = param.Selector(default='->',
                                       objects=['-', '->', '-[', '-|>', '<->', '<|-|>'],
                                       doc="""
         The arrowstyle used to draw the arrow. Accepted arrow styles are
-        '-', '->', '-[', '-|>', '<->' and '<|-|>'""")
+        '-', ``'->'``, '-[', ``'-|>'``, ``'<->'`` and ``'<|-|>'``""")
 
     points = param.Number(default=40, doc="Font size of arrow text (if any).")
 
@@ -453,21 +363,6 @@ class Arrow(Annotation):
             self.data = (x, y, text, direction, points, arrowstyle)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.x])
@@ -484,10 +379,10 @@ class Text(Annotation):
 
     """
 
-    x = param.ClassSelector(default=0, class_=(Number, str, *datetime_types), doc="""
+    x = param.ClassSelector(default=0, class_=(Number, str, datetime_types), doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, str, *datetime_types), doc="""
+    y = param.ClassSelector(default=0, class_=(Number, str, datetime_types), doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")

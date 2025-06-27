@@ -7,7 +7,8 @@ name = "holoviews"
 dynamic = ["version"]
 description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
 readme = "README.md"
-license = { text = "BSD" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
 requires-python = ">=3.10"
 authors = [
     { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
@@ -15,7 +16,6 @@ authors = [
 ]
 maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -41,12 +41,22 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://holoviews.org"
-Source = "https://github.com/holoviz/holoviews"
+"Issue Tracker" = "https://github.com/holoviz/holoviews/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen"
+Blog = "https://blog.holoviz.org/"
+Changelog = "https://github.com/holoviz/holoviews/blob/main/doc/releases.md"
+Discord = "https://discord.gg/AXRHnJU6sP"
+Discourse = "https://discourse.holoviz.org"
+Discussions = "https://github.com/holoviz/holoviews/discussions"
+Documentation = "https://holoviews.org/"
+Funding = "https://opencollective.com/holoviz"
 HoloViz = "https://holoviz.org/"
+Homepage = "https://holoviews.org"
+Repository = "https://github.com/holoviz/holoviews"
 
 [project.optional-dependencies]
 recommended = ["matplotlib >=3", "plotly >=4.0"]
+
+[dependency-groups]
 tests = ["pytest", "pytest-rerunfailures", "pytest-asyncio"]
 
 [project.scripts]
@@ -105,7 +115,6 @@ filterwarnings = [
     # 2023-09: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning", # https://github.com/matplotlib/matplotlib/issues/25244
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning", # https://github.com/mgaitan/sphinxcontrib-mermaid/issues/119
-    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
     # 2023-10: Datetime's utctimestamp() and utcnow() is deprecated in Python 3.12
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz", # https://github.com/dateutil/dateutil/pull/1285
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
@@ -166,6 +175,7 @@ ignore = [
     "E731", # Do not assign a lambda expression, use a def
     "E741", # Ambiguous variable name
     "F405", # From star imports
+    "PLC0415", # `import` should be at the top-level of a file
     "PLE0604", # Invalid object in `__all__`, must contain only strings
     "PLE0605", # Invalid format for `__all__`
     "PLR091", # Too many arguments/branches/statements

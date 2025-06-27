@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import panel as pn
 import pytest
 
 import holoviews as hv
@@ -363,3 +364,67 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
         expect(page.locator(".bk-Tooltip")).to_contain_text('x:2020-01-01')
     if convert_y:
         expect(page.locator(".bk-Tooltip")).to_contain_text('y:2020-01-01')
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_tooltips_selector_update_plot(serve_panel):
+    import datashader as ds
+
+    from holoviews.operation.datashader import rasterize
+
+    N_OBS = 1000
+    x_data = np.random.random((N_OBS, N_OBS))
+
+    def get_plot(color_by):
+        if color_by == 'option1':
+            color_data = np.random.choice(['A', 'B', 'C', 'D'], size=N_OBS)
+        else:
+            color_data = np.random.choice(['a', 'b', 'c', 'd'], size=N_OBS)
+
+        dataset = hv.Dataset(
+            (x_data[:, 0], x_data[:, 1], color_data),
+            ['X', 'Y'],
+            color_by,
+        )
+        plot = dataset.to(hv.Points)
+        plot = rasterize(
+            plot,
+            aggregator=ds.count_cat(color_by),
+            selector=ds.first('X'),
+        )
+        plot = plot.opts(tools=["hover"], title=color_by)
+        return plot
+
+    scb = pn.widgets.Select(name="Color By", options=['option1', 'option2'])
+    layout = pn.Row(scb, pn.bind(get_plot, scb))
+
+    page = serve_panel(layout)
+    page.wait_for_timeout(500)
+
+    # Locate the plot and move mouse over it
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.wait_for_timeout(200)
+
+    tooltip = page.locator(".bk-Tooltip")
+    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_contain_text('A:')
+    expect(tooltip).to_contain_text('B:')
+    expect(tooltip).to_contain_text('C:')
+    expect(tooltip).to_contain_text('D:')
+
+    # Change the selector to 'option2'
+    scb.value = "option2"
+    page.wait_for_timeout(1000)
+
+    # Move the mouse again to trigger updated tooltip
+    page.mouse.move(bbox["x"] + bbox["width"] / 4, bbox["y"] + bbox["height"] / 4)
+    page.wait_for_timeout(200)
+    tooltip = page.locator(".bk-Tooltip")
+    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_contain_text('a:')
+    expect(tooltip).to_contain_text('b:')
+    expect(tooltip).to_contain_text('c:')
+    expect(tooltip).to_contain_text('d:')

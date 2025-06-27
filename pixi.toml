@@ -121,7 +121,6 @@ scipy = "*"
 selenium = "*"
 shapely = "*"
 spatialpandas = "*"
-streamz = ">=0.5.0"
 xarray = ">=0.10.4"
 xyzservices = "*"
 
@@ -181,9 +180,9 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "25.04.*"
+cudf = "25.06.*"
 cupy = "*"
-cuspatial = "*"
+# cuspatial = "*"  # https://github.com/rapidsai/cuspatial/issues/1563#issuecomment-2845966364
 librmm = { version = "*", channel = "rapidsai" }
 rmm = { version = "*", channel = "rapidsai" }
 
@@ -195,13 +194,14 @@ test-gpu = "pytest holoviews/tests --gpu"
 # =============================================
 [feature.doc.dependencies]
 graphviz = "*"
-nbsite = ">=0.8.4,<0.10.0"
+nbsite = ">=0.9.0a6,<0.10.0"
 numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.activation.env]
+HV_DOCS_BUILD = "1"
 MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"

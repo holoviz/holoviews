@@ -31,6 +31,7 @@ from holoviews import (
     Spikes,
     Spread,
     TriMesh,
+    renderer,
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import apply_when
@@ -207,12 +208,15 @@ class DatashaderAggregateTests(ComparisonTestCase):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 0), y_range=(0, 1),
                         aggregator=ds.count_cat('z'), height=2)
-        xs, ys = [], [0.25, 0.75]
-        params = dict(bounds=(0, 0, 0, 1), xdensity=1)
-        expected = NdOverlay({'A': Image((xs, ys, np.zeros((2, 0))), vdims=Dimension('z Count', nodata=0), **params),
-                              'B': Image((xs, ys, np.zeros((2, 0))), vdims=Dimension('z Count', nodata=0), **params),
-                              'C': Image((xs, ys, np.zeros((2, 0))), vdims=Dimension('z Count', nodata=0), **params)},
-                             kdims=['z'])
+        expected = ImageStack(
+            xr.Dataset(
+                {"z Count": (("y", "x"), [[], []])},
+                coords={"x": [], "y": [0.25, 0.75]},
+            ),
+            vdims=Dimension('z Count', nodata=0),
+            bounds=(0, 0, 0, 1),
+            xdensity=1
+        )
         self.assertEqual(img, expected)
 
     def test_aggregate_curve(self):
@@ -273,18 +277,25 @@ class DatashaderAggregateTests(ComparisonTestCase):
         curve = Curve((dates, [1, 2, 3]))
         curve2 = Curve((dates, [3, 2, 1]))
         ndoverlay = NdOverlay({0: curve, 1: curve2}, 'Cat')
-        imgs = aggregate(ndoverlay, aggregator=ds.count_cat('Cat'), width=2, height=2,
+        img = aggregate(ndoverlay, aggregator=ds.count_cat('Cat'), width=2, height=2,
                          x_range=(xstart, xend), dynamic=False)
-        bounds = (np.datetime64('2015-12-31T23:59:59.723518'), 1.0,
-                  np.datetime64('2016-01-03T00:00:00.276482'), 3.0)
-        dates = [np.datetime64('2016-01-01T11:59:59.861759000',),
-                 np.datetime64('2016-01-02T12:00:00.138241000')]
-        expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
-                         datatype=['xarray'], bounds=bounds, vdims=Dimension('Count', nodata=0))
-        expected2 = Image((dates, [1.5, 2.5], [[0, 1], [1, 1]]),
-                         datatype=['xarray'], bounds=bounds, vdims=Dimension('Count', nodata=0))
-        self.assertEqual(imgs[0], expected)
-        self.assertEqual(imgs[1], expected2)
+        assert isinstance(img, ImageStack)
+        x = pd.date_range(xstart, xend, periods=4).to_numpy()
+        y = np.array([1.25, 1.75, 2.25, 2.75])
+        cat = np.array([0.0, 1.0])
+        a = np.array([
+            [[1, 0], [0, 0], [0, 0], [0, 1]],
+            [[0, 0], [1, 0], [0, 1], [0, 0]],
+            [[0, 0], [0, 1], [1, 1], [0, 0]],
+            [[0, 1], [0, 0], [0, 0], [1, 0]],
+        ], dtype=np.uint32)
+        xrds = xr.DataArray(
+            a,
+            dims=('y', 'x', 'Cat'),
+            coords={"y": y, "Cat": cat, "x": x}
+        )
+        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["0.0", "1.0"])
+        assert (expected.data == a).all()
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
@@ -1390,6 +1401,25 @@ def test_selector_rasterize(point_plot, sel_fn):
     img_count = rasterize(point_plot, **inputs)
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
+
+@pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
+def test_selector_rasterize_empty_selector(point_plot, sel_fn):
+    point_plot.data["index_col"] = point_plot.data.index
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    # Empty selector will use index
+    img = rasterize(point_plot, selector=sel_fn(), **inputs)
+    exp = rasterize(point_plot, selector=sel_fn("index_col"), **inputs)
+
+    for c in ["s", "val", "cat", "index_col"]:
+        np.testing.assert_array_equal(img.data[c], exp.data[c], err_msg=c)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_selector_hover_in_overlay(point_plot):
+    inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
+    overlay = rasterize(point_plot, selector=ds.first("val"), **inputs).opts(tools=["hover"]) * Points([])
+    renderer("bokeh").get_plot(overlay)
+
 @pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
 def test_selector_datashade(point_plot, sel_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
@@ -1459,6 +1489,16 @@ def test_selector_datashade_bad_column_name(point_data):
     msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
     with pytest.raises(ValueError, match=msg):
         datashade(point_plot, selector=ds.min("val"), **inputs)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_selector_single_categorical():
+    # Test for https://github.com/holoviz/holoviews/issues/6595
+    plot = Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
+    plot = rasterize(plot, aggregator=ds.count_cat("C"), selector=ds.first("X"))
+    plot = dynspread(plot)
+    # Should not fail
+    renderer("bokeh").get_plot(plot)
 
 
 class DatashaderSpreadTests(ComparisonTestCase):

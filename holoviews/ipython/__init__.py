@@ -1,5 +1,4 @@
 import os
-from unittest import SkipTest
 
 import param
 from bokeh.settings import settings as bk_settings
@@ -12,8 +11,6 @@ import holoviews as hv
 from ..core.dimension import LabelledData
 from ..core.options import Store
 from ..core.tree import AttrTree
-from ..element.comparison import ComparisonTestCase
-from ..plotting.renderer import Renderer
 from ..util import extension
 from .display_hooks import display, png_display, pprint_display, svg_display
 from .magics import load_magics
@@ -28,54 +25,13 @@ def show_traceback():
     print(FULL_TRACEBACK)
 
 
-class IPTestCase(ComparisonTestCase):
-    """This class extends ComparisonTestCase to handle IPython specific
-    objects and support the execution of cells and magic.
-
-    """
-
-    def setUp(self):
-        super().setUp()
-        try:
-            import IPython
-            from IPython.display import HTML, SVG
-            self.ip = IPython.InteractiveShell()
-            if self.ip is None:
-                raise TypeError()
-        except Exception as e:
-            raise SkipTest("IPython could not be started") from e
-
-        self.ip.displayhook.flush = lambda: None  # To avoid gc.collect called in it
-        self.addTypeEqualityFunc(HTML, self.skip_comparison)
-        self.addTypeEqualityFunc(SVG,  self.skip_comparison)
-
-    def skip_comparison(self, obj1, obj2, msg): pass
-
-    def get_object(self, name):
-        obj = self.ip._object_find(name).obj
-        if obj is None:
-            raise self.failureException(f"Could not find object {name}")
-        return obj
-
-
-    def cell(self, line):
-        """Run an IPython cell
-
-        """
-        self.ip.run_cell(line, silent=True)
-
-    def cell_magic(self, *args, **kwargs):
-        """Run an IPython cell magic
-
-        """
-        self.ip.run_cell_magic(*args, **kwargs)
-
-
-    def line_magic(self, *args, **kwargs):
-        """Run an IPython line magic
-
-        """
-        self.ip.run_line_magic(*args, **kwargs)
+def __getattr__(attr):
+    if attr == "IPTestCase":
+        from ..element.comparison import IPTestCase
+        from ..util.warnings import deprecated
+        deprecated("1.23.0", old="holoviews.ipython.IPTestCase", new="holoviews.element.comparison.IPTestCase")
+        return IPTestCase
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class notebook_extension(extension):
@@ -86,7 +42,9 @@ class notebook_extension(extension):
 
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
 
-    logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
+    logo = param.ClassSelector(default=True, class_=(bool, dict), doc="""
+        Controls logo display. Dictionary option must include the keys
+        `logo_link`, `logo_src`, and `logo_title`.""")
 
     inline = param.Boolean(default=False, doc="""
         Whether to inline JS and CSS resources.
@@ -191,6 +149,8 @@ class notebook_extension(extension):
         same_cell_execution = published = getattr(self, '_repeat_execution_in_cell', False)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+
+        from ..plotting.renderer import Renderer
         Renderer.load_nb(inline=p.inline, reloading=same_cell_execution, enable_mathjax=p.enable_mathjax)
 
         if not published and hasattr(panel_extension, "_display_globals"):
@@ -255,7 +215,7 @@ class notebook_extension(extension):
         return resources
 
     @classmethod
-    def load_logo(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
+    def load_logo(cls, logo: dict | bool = False, bokeh_logo=False, mpl_logo=False, plotly_logo=False):
         """Allow to display Holoviews' logo and the plotting extensions' logo.
 
         """
@@ -264,18 +224,56 @@ class notebook_extension(extension):
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
-        html = template.render({'logo':        logo,
-                                'bokeh_logo':  bokeh_logo,
-                                'mpl_logo':    mpl_logo,
-                                'plotly_logo': plotly_logo})
+        if isinstance(logo, dict):
+            logo_src = logo['logo_src']
+            logo_link = logo['logo_link']
+            logo_title = logo['logo_title']
+        elif not logo:
+            logo_src = logo_link = logo_title = ''
+        else:
+            from .. import __version__
+
+            logo_src = None  # holoviews logo available in the template
+            logo_link = 'https://holoviews.org'
+            logo_title = f'HoloViews {__version__}'
+
+        bokeh_version = mpl_version = plotly_version = ''
+        # Backends are already imported at this stage.
+        if bokeh_logo:
+            import bokeh
+            bokeh_version = bokeh.__version__
+        if mpl_logo:
+            import matplotlib as mpl
+            mpl_version = mpl.__version__
+        if plotly_logo:
+            import plotly
+            plotly_version = plotly.__version__
+
+        html = template.render({
+            'logo':        logo,
+            'logo_src':    logo_src,
+            'logo_link':   logo_link,
+            'logo_title':  logo_title,
+            'bokeh_logo':  bokeh_logo,
+            'mpl_logo':    mpl_logo,
+            'plotly_logo': plotly_logo,
+            'bokeh_version':  bokeh_version,
+            'mpl_version':    mpl_version,
+            'plotly_version': plotly_version,
+            'show_tooltip': not os.getenv("HV_DOCS_BUILD")
+        })
         publish_display_data(data={'text/html': html})
 
 
-notebook_extension.add_delete_action(Renderer._delete_plot)
+def _delete_plot(plot_id):
+    from ..plotting.renderer import Renderer
+    return Renderer._delete_plot(plot_id)
+
+notebook_extension.add_delete_action(_delete_plot)
 
 
 def load_ipython_extension(ip):
-    notebook_extension(ip=ip)
+    notebook_extension("matplotlib", ip=ip)
 
 def unload_ipython_extension(ip):
     notebook_extension._loaded = False
