@@ -61,7 +61,8 @@ class NarwhalsInterface(Interface):
     @classmethod
     def applies(cls, obj):
         return (
-            is_into_dataframe(obj)
+            isinstance(obj, (nw.Series, nw.DataFrame, nw.LazyFrame))
+            or is_into_dataframe(obj)
             or is_into_series(obj)
             or (cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
         )
