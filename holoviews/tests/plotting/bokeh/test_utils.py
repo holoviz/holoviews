@@ -1,10 +1,12 @@
 import pytest
+from bokeh.models import Tool
 
 import holoviews as hv
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.styles import expand_batched_style
 from holoviews.plotting.bokeh.util import (
+    TOOL_TYPES,
     filter_batched_data,
     glyph_order,
     select_legends,
@@ -106,3 +108,12 @@ def test_select_legends_figure_index(figure_index, expected):
     select_legends(layout, figure_index)
     output = [ol.opts["show_legend"] for ol in overlays]
     assert expected == output
+
+
+def test_bokeh_tools_types():
+    bk_tools = Tool._known_aliases
+    assert len(bk_tools) == len(TOOL_TYPES)
+    assert sorted(bk_tools) == sorted(TOOL_TYPES)
+
+    for key in bk_tools:
+        assert isinstance(bk_tools[key](), TOOL_TYPES[key]), key
