@@ -73,14 +73,6 @@ TOOL_TYPES = {
     'pan': tools.PanTool,
     'xpan': tools.PanTool,
     'ypan': tools.PanTool,
-    'pan_down': tools.ClickPanTool,
-    'pan_east': tools.ClickPanTool,
-    'pan_left': tools.ClickPanTool,
-    'pan_north': tools.ClickPanTool,
-    'pan_right': tools.ClickPanTool,
-    'pan_south': tools.ClickPanTool,
-    'pan_up': tools.ClickPanTool,
-    'pan_west': tools.ClickPanTool,
     'xwheel_pan': tools.WheelPanTool,
     'ywheel_pan': tools.WheelPanTool,
     'wheel_zoom': tools.WheelZoomTool,
@@ -123,6 +115,18 @@ TOOL_TYPES = {
     'fullscreen': tools.FullscreenTool,
     'line_edit': tools.LineEditTool,
 }
+
+if BOKEH_GE_3_6_0:
+    TOOL_TYPES.update({
+        'pan_down': tools.ClickPanTool,
+        'pan_east': tools.ClickPanTool,
+        'pan_left': tools.ClickPanTool,
+        'pan_north': tools.ClickPanTool,
+        'pan_right': tools.ClickPanTool,
+        'pan_south': tools.ClickPanTool,
+        'pan_up': tools.ClickPanTool,
+        'pan_west': tools.ClickPanTool,
+    })
 
 
 def convert_timestamp(timestamp):
