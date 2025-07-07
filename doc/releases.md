@@ -2852,7 +2852,7 @@ Features:
 - n-dimensional Dask arrays are now supported directly via the gridded
   dictionary data interface
   ([#2305](https://github.com/pyviz/holoviews/pull/2305))
-- Added new [Styling Plots](https://holoviews.org/user_guide/Styling_Plots.html)
+- Added new [Styling Plots](https://holoviews.org/user_guide/Style_Mapping.html)
   and [Colormaps](https://holoviews.org/user_guide/Colormaps.html)
   user guides, including new functionality for working with colormaps.
 
