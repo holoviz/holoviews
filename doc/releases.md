@@ -3948,7 +3948,7 @@ A minor bugfix release to patch a number of small but important issues.
 Fixes and improvements:
 
 - Added a [DynamicMap
-  Tutorial](https://holoviews.org/reference/containers/bokeh/DynamicMap.html) to
+  Tutorial](https://holoviews.org/user_guide/Live_Data.html) to
   explain how to explore very large or continuous parameter spaces in
   HoloViews ([PR
   \#470](https://github.com/pyviz/holoviews/issues/470)).
