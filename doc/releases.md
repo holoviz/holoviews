@@ -3896,7 +3896,7 @@ Features and improvements:
   data easily (PR
   [\#562](https://github.com/pyviz/holoviews/pull/542)).
 - Added data interface based on [iris
-  Cubes](https://scitools.org.uk/iris/docs/v1.9.2/index.html) (PR
+  Cubes](https://scitools-iris.readthedocs.io/en/stable/) (PR
   [\#624](https://github.com/pyviz/holoviews/pull/624)).
 - Added support for dynamic operations and overlaying of DynamicMaps
   (PR [\#588](https://github.com/pyviz/holoviews/pull/588)).
@@ -3948,7 +3948,7 @@ A minor bugfix release to patch a number of small but important issues.
 Fixes and improvements:
 
 - Added a [DynamicMap
-  Tutorial](https://holoviews.org/Tutorials/Dynamic_Map.html) to
+  Tutorial](https://holoviews.org/reference/containers/bokeh/DynamicMap.html) to
   explain how to explore very large or continuous parameter spaces in
   HoloViews ([PR
   \#470](https://github.com/pyviz/holoviews/issues/470)).
