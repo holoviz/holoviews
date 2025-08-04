@@ -961,7 +961,7 @@ def find_range(values, soft_range=None):
     try:
         values = np.array(values)
         values = np.squeeze(values) if len(values.shape) > 1 else values
-        if len(soft_range):
+        if soft_range:
             values = np.concatenate([values, soft_range])
         if values.dtype.kind == 'M':
             return values.min(), values.max()
