@@ -4298,7 +4298,6 @@ API changes:
 - Interface to Pandas improved (1a7cd3d)
 - Removed `xlim`, `ylim` and `zlim` to eliminate redundancy.
 - Renaming of various plot and style options including:
-
   - `figure_*` to `fig_*`
   - `vertical_spacing` and `horizontal_spacing` to `vspace` and
     `hspace` respectively
