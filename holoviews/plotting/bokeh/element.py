@@ -1715,7 +1715,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or column.dtype.kind not in 'SU')):
+                (isinstance(column, list) or util.dtype_kind(column.dtype) not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
