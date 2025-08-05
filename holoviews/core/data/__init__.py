@@ -1056,7 +1056,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if dimensions is None:
             dimensions = []
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        if not len(dimensions): dimensions = self.dimensions('key', True)
+        if not dimensions: dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
 
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]

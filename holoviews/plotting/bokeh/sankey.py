@@ -171,7 +171,7 @@ class SankeyPlot(GraphPlot):
             xs = np.array([node['x0'] for node in nodes]) - offset
 
         for i, node in enumerate(nodes):
-            if len(text):
+            if text:
                 label = text[i]
             else:
                 label = ''

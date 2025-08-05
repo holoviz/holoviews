@@ -424,7 +424,7 @@ class Interface(param.Parameterized):
                     return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
-                if not len(column):
+                if not column:
                     return np.nan, np.nan
                 return column[0], column[-1]
 
