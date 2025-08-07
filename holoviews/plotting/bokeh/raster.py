@@ -21,6 +21,7 @@ from .util import (
     BOKEH_GE_3_3_0,
     BOKEH_GE_3_4_0,
     BOKEH_GE_3_7_0,
+    BOKEH_GE_3_8_0,
     BOKEH_VERSION,
     colormesh,
 )
@@ -155,12 +156,25 @@ class ServerHoverMixin(param.Parameterized):
             args={"position": hover_model},
             code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
-        hover.filters = {"": CustomJS(
-            args=dict(hover_model=hover_model, ),
-            # More logic is needed here, correct column, isnan vs count, safeguard against Bokeh 3.8
-            # Also investigate categorical
-            code="""export default ({hover_model}) => !isNaN(hover_model.data["x_y s"])"""
-        )}
+
+        # More logic is needed here, correct column, isnan vs count, safeguard against Bokeh 3.8
+        # Also investigate categorical
+        if BOKEH_GE_3_8_0:
+            hover.filters = {"": CustomJS(
+                args=dict(hover_model=hover_model, agg_col=str(element.vdims[0])),
+                code="""
+                  export default ({hover_model, agg_col}) => {
+                    const types = Bokeh.require("core/util/types");
+                    const value = hover_model.data[agg_col];
+
+                    if (types.isInteger(value)) {
+                      return value != 0
+                    } else if (types.isNumber(value)){
+                      return !isNaN(value)
+                    }
+                    return true
+                }"""
+            )}
 
         def on_change(attr, old, new):
             if np.isinf(new).all():
