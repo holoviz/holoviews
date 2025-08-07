@@ -87,7 +87,6 @@ class ServerHoverMixin(param.Parameterized):
 
         # Get dimensions
         coords, vars = list(data.coords), list(data.data_vars)
-        vars.remove("__index__")
         ht = self.hover_tooltips or {}
         if ht:
             ht = [ht] if isinstance(ht, str) else ht
@@ -103,13 +102,12 @@ class ServerHoverMixin(param.Parameterized):
         hover_model = HoverModel(data={})
         dims = (*coords, *vars)
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
-        dtype_kinds = {k: v.kind for k, v in dtypes.items()}
         is_datetime = [dtypes[c].kind == "M" for c in data.coords]
         def _create_row(attr):
             kwargs = {
                 "format": "@{custom}",
                 "formatter": CustomJS(
-                    args=dict(hover_model=hover_model, attr=attr, fmt=dtype_kinds[attr]),
+                    args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
                     code=HoverModel.code_js
                 )
             }
@@ -117,7 +115,7 @@ class ServerHoverMixin(param.Parameterized):
                 Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
             )
-        children = [el for dim in dims for el in _create_row(dim)]
+        children = [el for dim in dims for el in _create_row(dim) if dim != "__index__"]
 
         # Add a horizontal ruler and show the selector if available
         selector_columns = data.attrs["selector_columns"]
@@ -158,28 +156,10 @@ class ServerHoverMixin(param.Parameterized):
             code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
 
-        # More logic is needed here, correct column, isnan vs count, safeguard against Bokeh 3.8
-        # Also investigate categorical
         if BOKEH_GE_3_8_0:
             hover.filters = {"": CustomJS(
-                args=dict(
-                    hover_model=hover_model,
-                    agg_cols=list(map(str, element.vdims)),
-                    kinds=dtype_kinds
-                ),
-                code="""
-                  export default ({hover_model, agg_cols, kinds}) => {
-                    for (let i = 0; i < agg_cols.length; i++) {
-                      const value = hover_model.data[agg_cols[i]];
-                      const kind = kinds[agg_cols[i]]
-                      if ((kind == "i" || kind == "u") && value != 0) {
-                        return true
-                      } else if (kind == "f" && !isNaN(value)){
-                        return true
-                      }
-                    }
-                    return false
-                }"""
+                args=dict(hover_model=hover_model),
+                code="""export default ({hover_model}) => hover_model.data["__index__"] != -1"""
             )}
 
         def on_change(attr, old, new):
