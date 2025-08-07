@@ -103,12 +103,13 @@ class ServerHoverMixin(param.Parameterized):
         hover_model = HoverModel(data={})
         dims = (*coords, *vars)
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
+        dtype_kinds = {k: v.kind for k, v in dtypes.items()}
         is_datetime = [dtypes[c].kind == "M" for c in data.coords]
         def _create_row(attr):
             kwargs = {
                 "format": "@{custom}",
                 "formatter": CustomJS(
-                    args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
+                    args=dict(hover_model=hover_model, attr=attr, fmt=dtype_kinds[attr]),
                     code=HoverModel.code_js
                 )
             }
@@ -161,18 +162,23 @@ class ServerHoverMixin(param.Parameterized):
         # Also investigate categorical
         if BOKEH_GE_3_8_0:
             hover.filters = {"": CustomJS(
-                args=dict(hover_model=hover_model, agg_col=str(element.vdims[0])),
+                args=dict(
+                    hover_model=hover_model,
+                    agg_cols=list(map(str, element.vdims)),
+                    kinds=dtype_kinds
+                ),
                 code="""
-                  export default ({hover_model, agg_col}) => {
-                    const types = Bokeh.require("core/util/types");
-                    const value = hover_model.data[agg_col];
-
-                    if (types.isInteger(value)) {
-                      return value != 0
-                    } else if (types.isNumber(value)){
-                      return !isNaN(value)
+                  export default ({hover_model, agg_cols, kinds}) => {
+                    for (let i = 0; i < agg_cols.length; i++) {
+                      const value = hover_model.data[agg_cols[i]];
+                      const kind = kinds[agg_cols[i]]
+                      if ((kind == "i" || kind == "u") && value != 0) {
+                        return true
+                      } else if (kind == "f" && !isNaN(value)){
+                        return true
+                      }
                     }
-                    return true
+                    return false
                 }"""
             )}
 
