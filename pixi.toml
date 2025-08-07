@@ -179,9 +179,9 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "12.2.*"
-cudf = "25.06.*"
+cudf = "25.08.*"
 cupy = "*"
-# cuspatial = "*"  # https://github.com/rapidsai/cuspatial/issues/1563#issuecomment-2845966364
+# cuspatial = "*"  # Paused development: https://docs.rapids.ai/notices/rsn0045/
 librmm = { version = "*", channel = "rapidsai" }
 rmm = { version = "*", channel = "rapidsai" }
 
