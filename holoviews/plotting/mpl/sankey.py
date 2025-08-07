@@ -96,7 +96,7 @@ class SankeyPlot(GraphPlot):
             x0, x1, y0, y1 = (node[a+i] for a in 'xy' for i in '01')
             rect = {'height': y1-y0, 'width': x1-x0, 'xy': (x0, y0)}
             rects.append(rect)
-            if len(text):
+            if text:
                 label = text[i]
             else:
                 label = ''

@@ -484,7 +484,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                         coords = [(0, c) if idx else (c, 0) for c in v]
                     if len(coords) not in [0, len(v)]:
                         raise ValueError("Length of samples must match")
-                    elif len(coords):
+                    elif coords:
                         coords = [(t[abs(idx-1)], c) if idx else (c, t[abs(idx-1)])
                                   for c, t in zip(v, coords, strict=None)]
                 getter.append(idx)

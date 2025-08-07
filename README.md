@@ -27,30 +27,30 @@ Check out the [HoloViews web site](https://holoviews.org) for extensive examples
 <div>
 <div >
   <a href="https://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
-    <img src="https://holoviews.org/_images/iris_splom_example_large.png" width='20%'> </img> </a>
+    <img src="https://holoviews.org/_images/iris_splom_example.png" width='24%'>    </img> </a>
   <a href="https://holoviews.org/getting_started/Gridded_Datasets.html">
-    <img src="https://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
+    <img src="https://assets.holoviews.org/collage/cells.png" width='27%'> </img>  </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
-    <img src="https://holoviews.org/_images/scatter_economic_large.png" width='43%'> </img> </a>
+    <img src="https://holoviews.org/_images/scatter_economic.png" width='47%' style="height: 350px;object-fit: cover;margin-bottom: 10px;"> </img>    </a>
 </div>
 
 <div >
   <a href="https://holoviews.org/gallery/demos/bokeh/square_limit.html">
-    <img src="https://holoviews.org/_images/square_limit_large.png" width='20%'> </a>
+    <img src="https://holoviews.org/_images/square_limit.png" width='24%'> </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/bars_economic.html">
-    <img src="https://holoviews.org/_images/bars_economic.png" width='20%'> </a>
+    <img src="https://holoviews.org/_images/bars_economic.png" width='24%'> </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
-    <img src="https://holoviews.org/_images/texas_choropleth_example_large.png" width='20%'> </a>
+    <img src="https://holoviews.org/_images/texas_choropleth_example.png"    width='24%'> </a>
   <a href="https://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
-    <img src="https://holoviews.org/_images/verhulst_mandelbrot.png" width='20%'> </a>
+    <img src="https://holoviews.org/_images/verhulst_mandelbrot.png" width='24%'>    </a>
 </div>
 <div >
     <a href="https://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
-      <img src="https://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
+      <img src="https://assets.holoviews.org/collage/dropdown.gif" width='33%'> </a>
     <a href="https://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
-      <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
+      <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='30%'> </a>
     <a href="https://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
-      <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
+      <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='33%'> </a>
 </div>
 </div>
 
