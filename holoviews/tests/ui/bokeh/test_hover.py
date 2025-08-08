@@ -4,11 +4,14 @@ import panel as pn
 import pytest
 
 import holoviews as hv
-from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0, BOKEH_GE_3_8_0
 
 from .. import expect
 
 pytestmark = pytest.mark.ui
+
+bokeh_3_7_0 = pytest.mark.skipif(not BOKEH_GE_3_7_0, reason="Added in Bokeh 3.7")
+bokeh_3_8_0 = pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Added in Bokeh 3.8")
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_list(serve_hv):
@@ -225,6 +228,7 @@ def test_hover_tooltips_dimension_unit(serve_hv, hover_tooltip):
     expect(page.locator(".bk-Tooltip")).to_contain_text("Amplitude (µV): 10")
 
 
+@bokeh_3_7_0
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     import datashader as ds
@@ -263,6 +267,7 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     expect(page.locator(".bk-Tooltip")).to_contain_text("cat:cat1")
 
 
+@bokeh_3_7_0
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
     "hover_tooltips",
@@ -316,6 +321,7 @@ def test_hover_tooltips_rasterize_server_hover_selector_ux(serve_hv, rng, hover_
         line_expect.to_have_count(1)
 
 
+@bokeh_3_7_0
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize("convert_x", [True, False])
 @pytest.mark.parametrize("convert_y", [True, False])
@@ -362,6 +368,7 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
         expect(page.locator(".bk-Tooltip")).to_contain_text('y:2020-01-01')
 
 
+@bokeh_3_7_0
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_selector_update_plot(serve_panel):
     import datashader as ds
@@ -426,7 +433,7 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
     expect(tooltip).to_contain_text('d:')
 
 
-@pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Added in Bokeh 3.8")
+@bokeh_3_8_0
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng):
     import datashader as ds
