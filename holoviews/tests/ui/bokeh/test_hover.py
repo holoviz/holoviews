@@ -238,7 +238,7 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
         "val": 10,
         "cat": "cat1",
     })
-    img = rasterize(hv.Points(df), selector=ds.first("val")).opts(tools=["hover"])
+    img = rasterize(hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False).opts(tools=["hover"])
 
     page = serve_hv(img)
     hv_plot = page.locator(".bk-events")
@@ -253,18 +253,14 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
     page.wait_for_timeout(100)
 
-    page.mouse.move(bbox["x"] + bbox["width"] / 4, bbox["y"] + bbox["height"] / 4)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
-    expect(page.locator(".bk-Tooltip")).to_contain_text('x:4')
-    expect(page.locator(".bk-Tooltip")).to_contain_text('y:8')
-    if BOKEH_GE_3_7_0:
-        expect(page.locator(".bk-Tooltip")).to_contain_text("val:-NaN")
-        expect(page.locator(".bk-Tooltip")).to_contain_text('cat:-')
-    else:
-        expect(page.locator(".bk-Tooltip")).to_contain_text("val:NaN")
-        expect(page.locator(".bk-Tooltip")).to_contain_text('cat:"-"')
+    expect(page.locator(".bk-Tooltip")).to_contain_text("x:4")
+    expect(page.locator(".bk-Tooltip")).to_contain_text("y:8")
+    expect(page.locator(".bk-Tooltip")).to_contain_text("val:10")
+    expect(page.locator(".bk-Tooltip")).to_contain_text("cat:cat1")
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -286,7 +282,7 @@ def test_hover_tooltips_rasterize_server_hover_selector_ux(serve_hv, rng, hover_
         "val": 10,
         "cat": "cat1",
     })
-    img = rasterize(hv.Points(df), selector=ds.first("val"))
+    img = rasterize(hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False)
     img.opts(tools=["hover"], hover_tooltips=hover_tooltips, selector_in_hovertool=selector_in_hovertool)
 
     page = serve_hv(img)
@@ -302,7 +298,7 @@ def test_hover_tooltips_rasterize_server_hover_selector_ux(serve_hv, rng, hover_
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
     page.wait_for_timeout(100)
 
-    page.mouse.move(bbox["x"] + bbox["width"] / 4, bbox["y"] + bbox["height"] / 4)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
 
 
@@ -341,7 +337,7 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
         df['x'] = pd.Timestamp(2020, 1, 1, 12) + (df['x'] * 5e8).apply(pd.Timedelta)
     if convert_y:
         df['y'] = pd.Timestamp(2020, 1, 1, 12) + (df['y'] * 5e8).apply(pd.Timedelta)
-    img = rasterize(hv.Points(df), selector=ds.first("val")).opts(tools=["hover"])
+    img = rasterize(hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False).opts(tools=["hover"])
 
     page = serve_hv(img)
     hv_plot = page.locator(".bk-events")
