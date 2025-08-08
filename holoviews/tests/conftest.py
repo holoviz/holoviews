@@ -43,7 +43,9 @@ def pytest_collection_modifyitems(config, items):
             skipped.append(item)
 
     config.hook.pytest_deselected(items=skipped)
-    items[:] = selected
+    # Sorted because pytest 8.4.0 and pytest-playwright
+    # https://github.com/pytest-dev/pytest/issues/13541
+    items[:] = sorted(selected, key=lambda x: x.path)
 
 
 with contextlib.suppress(ImportError):
