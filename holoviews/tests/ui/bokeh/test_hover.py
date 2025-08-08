@@ -424,3 +424,59 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
     expect(tooltip).to_contain_text('b:')
     expect(tooltip).to_contain_text('c:')
     expect(tooltip).to_contain_text('d:')
+
+
+@pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Added in Bokeh 3.8")
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng):
+    import datashader as ds
+
+    from holoviews.operation.datashader import rasterize
+
+    df = pd.DataFrame({
+        "x": rng.normal(45, 1, 100),
+        "y": rng.normal(85, 1, 100),
+        "s": 1,
+        "val": 10,
+        "cat": "cat1",
+    })
+
+    hover_models = []
+    def watch_hook(plot, element):
+        hover_models[:] = [plot.handles["hover"].filters[""].args["hover_model"]]
+
+    img = rasterize(
+        hv.Points(df),
+        selector=ds.first("val"),
+        width=10,
+        height=10,
+        dynamic=False
+    ).opts(tools=["hover"], hooks=[watch_hook])
+
+    page = serve_hv(img)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over the plot, first time the hovertool only have null
+    # we then timeout and hover again to get hovertool with actual values
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    page.wait_for_timeout(100)
+
+    assert len(hover_models) == 1
+    assert hover_models[0].data["__index__"] != -1
+
+    # Move to no data part of the plot
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 3 / 4)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 3 / 4)
+    page.mouse.up()
+
+    # Should not show anything
+    expect(page.locator(".bk-Tooltip")).to_have_count(0)
+    page.wait_for_timeout(100)
+
+    assert len(hover_models) == 1
+    assert hover_models[0].data["__index__"] == -1
