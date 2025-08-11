@@ -1010,8 +1010,12 @@ class decimate(Operation):
 
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
-        sliced = element.select(**{xdim: (xstart, xend),
-                                   ydim: (ystart, yend)})
+        select_dict = {}
+        if xstart != xend:
+            select_dict[xdim] = (xstart, xend)
+        if ystart != yend:
+            select_dict[ydim] = (ystart, yend)
+        sliced = element.select(**select_dict)
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
