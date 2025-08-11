@@ -44,7 +44,7 @@ def pytest_collection_modifyitems(config, items):
 
     config.hook.pytest_deselected(items=skipped)
     # Sorted because pytest 8.4.0 and pytest-playwright
-    # https://github.com/pytest-dev/pytest/issues/13541
+    # https://github.com/microsoft/playwright-pytest/pull/284
     items[:] = sorted(selected, key=lambda x: x.path)
 
 
