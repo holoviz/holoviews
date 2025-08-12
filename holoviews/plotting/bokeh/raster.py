@@ -307,7 +307,7 @@ class SyntheticLegendMixin(LegendPlot):
             return
         try:
             style = self.lookup_options(element, 'style')
-            legend = categorical_legend(element, backend=self.backend, style=style.options)
+            legend = categorical_legend(element, backend=self.backend, cmap=style.options.get('cmap'))
         except Exception:
             return
         if legend is None:

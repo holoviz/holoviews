@@ -1348,16 +1348,14 @@ class categorical_legend(Operation):
 
     backend = param.String()
 
+    cmap = param.Parameter()
+
     def _process(self, element, key=None):
         import datashader as ds
 
         from ..operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
-        if isinstance(rasterize_op, datashade):
-            shade_op = rasterize_op
-        else:
-            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
-        if None in (shade_op, rasterize_op):
+        if rasterize_op is None:
             return None
         hvds = element.dataset
         input_el = element.pipeline.operations[0](hvds)
@@ -1375,7 +1373,15 @@ class categorical_legend(Operation):
                 cats = list(hvds.data[column].cat.as_known().categories)
         else:
             cats = list(hvds.dimension_values(column, expanded=False))
-        colors = shade_op.color_key or ds.colors.Sets1to3
+
+        if isinstance(rasterize_op, datashade):
+            shade_op = rasterize_op
+        else:
+            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
+        if shade_op is None:
+            colors = process_cmap(self.p.cmap, ncolors=len(cats), categorical=True)
+        else:
+            colors = shade_op.color_key or ds.colors.Sets1to3
         color_data = [(0, 0, cat) for cat in cats]
         if isinstance(colors, list):
             ncolors = len(colors)
