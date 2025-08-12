@@ -479,13 +479,10 @@ class TestSyntheticLegendPlot(TestBokehPlot):
     __test__ = True
 
     def setUp(self):
-        try:
-            import datashader as ds
+        super().setUp()
+        ds = pytest.importorskip("datashader")
 
-            from holoviews.operation.datashader import datashade, rasterize
-        except Exception as e:
-            print(e)
-            raise SkipTest('Datashader not available')
+        from holoviews.operation.datashader import datashade, rasterize
         points = Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])
         kwargs = dict(aggregator=ds.by('Label'), dynamic=False, width=10, height=10)
         self.img_stack = rasterize(points, **kwargs).opts(show_legend=True)
