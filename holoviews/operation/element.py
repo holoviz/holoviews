@@ -1015,7 +1015,7 @@ class decimate(Operation):
             select_dict[xdim] = (xstart, xend)
         if ystart != yend:
             select_dict[ydim] = (ystart, yend)
-        sliced = element.select(**select_dict)
+        sliced = element.select(**select_dict) if select_dict else element
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
