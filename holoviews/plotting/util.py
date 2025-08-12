@@ -1369,6 +1369,8 @@ class categorical_legend(Operation):
             except TypeError:
                 # Issue #5619, cudf.core.index.StringIndex is not iterable.
                 cats = list(hvds.data.dtypes[column].categories.to_pandas())
+            except AttributeError:
+                cats = list(unique_iterator(hvds.data[column]))
             if cats == ['__UNKNOWN_CATEGORIES__']:
                 cats = list(hvds.data[column].cat.as_known().categories)
         else:
@@ -1379,7 +1381,10 @@ class categorical_legend(Operation):
         else:
             shade_op = element.pipeline.find(shade, skip_nonlinked=False)
         if shade_op is None:
-            colors = process_cmap(self.p.cmap, ncolors=len(cats), categorical=True)
+            if self.p.cmap is None:
+                colors = ds.colors.Sets1to3
+            else:
+                colors = process_cmap(self.p.cmap, ncolors=len(cats), categorical=True)
         else:
             colors = shade_op.color_key or ds.colors.Sets1to3
         color_data = [(0, 0, cat) for cat in cats]
