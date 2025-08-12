@@ -1378,7 +1378,7 @@ class categorical_legend(Operation):
         colors = shade_op.color_key or ds.colors.Sets1to3
         color_data = [(0, 0, cat) for cat in cats]
         if isinstance(colors, list):
-            cat_colors = {cat: colors[i] for i, cat in enumerate(cats)}
+            cat_colors = {cat: colors[i % len(colors)] for i, cat in enumerate(cats)}
         else:
             cat_colors = {cat: colors[cat] for cat in cats}
         cmap = {}
