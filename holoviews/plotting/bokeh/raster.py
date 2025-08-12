@@ -300,7 +300,28 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
         return (data, mapping, style)
 
 
-class RGBPlot(ServerHoverMixin, LegendPlot):
+class SyntheticLegendMixin(LegendPlot):
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super()._init_glyphs(plot, element, ranges, source)
+        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
+            return
+        try:
+            style = self.lookup_options(element, 'style')
+            legend = categorical_legend(element, backend=self.backend, style=style.options)
+        except Exception:
+            return
+        if legend is None:
+            return
+        legend_params = {k: v for k, v in self.param.values().items()
+                         if k.startswith('legend')}
+        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
+        self._legend_plot.initialize_plot(plot=plot)
+        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
+        self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
+
+
+class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -392,7 +413,7 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
         return (data, mapping, style)
 
 
-class ImageStackPlot(RasterPlot):
+class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
 
     _plot_methods = dict(single='image_stack')
 
