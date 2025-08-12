@@ -131,7 +131,6 @@ class ServerHoverMixin(param.Parameterized):
         else:
             divider = ()
 
-
         if first_selector is not None and data.attrs.get("selector") and self.selector_in_hovertool:
             selector_row = (
                 Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
@@ -318,7 +317,7 @@ class SyntheticLegendMixin(LegendPlot):
         self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)
         self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
-        self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
+        self.handles['synthetic_color_mapper'] = self._legend_plot.handles['color_color_mapper']
 
 
 class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
@@ -341,23 +340,6 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
         xdim, ydim = element.kdims
         return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
                 ('RGBA', '@image')], {}
-
-    def _init_glyphs(self, plot, element, ranges, source):
-        super()._init_glyphs(plot, element, ranges, source)
-        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
-            return
-        try:
-            legend = categorical_legend(element, backend=self.backend)
-        except Exception:
-            return
-        if legend is None:
-            return
-        legend_params = {k: v for k, v in self.param.values().items()
-                         if k.startswith('legend')}
-        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
-        self._legend_plot.initialize_plot(plot=plot)
-        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
-        self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
