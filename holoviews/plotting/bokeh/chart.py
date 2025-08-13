@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, CustomJS, Scatter, Whisker
+from bokeh.models import CategoricalColorMapper, CustomJS, Whisker
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -79,7 +79,7 @@ class SizeBarMixin(LegendPlot):
         from bokeh.models.glyph import RadialGlyph
 
         if not isinstance(glyph, RadialGlyph):
-            if isinstance(glyph, Scatter):
+            if isinstance(self, PointPlot):
                 # PointPlot have both Scatter and Circle plot methods
                 msg = "For sizebar to work you need to have radius set"
                 warn(msg, category=RuntimeWarning)
