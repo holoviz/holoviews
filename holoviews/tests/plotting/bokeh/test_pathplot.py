@@ -214,6 +214,72 @@ class TestPathPlot(TestBokehPlot):
         np.testing.assert_equal(source.data['ys'], [np.array([0, 0]), np.array([0, 1]), np.array([0, 1]), np.array([1, 1])])
         assert list(cds.data['line_color']) == ['#FF0000', '#FF0000', '#0000FF', '#0000FF']
 
+    def test_path_style_mapped_scalar_segments_lengths_match(self):
+        # Five paths, scalar 'c' per geometry; style-mapped color
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        glyph = plot.handles['glyph']
+
+        # Expect 5 * (3-1) = 10 segments
+        assert len(source.data['xs']) == 10
+        assert len(source.data['ys']) == 10
+        # Color column should be present and aligned to segments
+        assert 'c' in source.data
+        assert len(source.data['c']) == 10
+        # line_color should map to the 'c' field with a transform
+        assert property_to_dict(glyph.line_color).get('field') == 'c'
+        assert 'transform' in property_to_dict(glyph.line_color)
+
+    def test_path_style_mapped_per_vertex_segments_lengths_match(self):
+        # Five paths, per-vertex 'c' values; style-mapped color
+        n_pts = 7
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': np.full(n_pts, x * 10)}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+
+        # Expect 5 * (7-1) = 30 segments
+        assert len(source.data['xs']) == 30
+        assert len(source.data['ys']) == 30
+        assert 'c' in source.data
+        assert len(source.data['c']) == 30
+
+    def test_path_categorical_color_mapper_matches_mapping(self):
+        # Use categorical mapping so expected colors are exact
+        n_pts = 3
+        cats = ['A','B','C','D','E']
+        cmap = {'A': "#1616C8", 'B': "#DC1212", 'C': "#1E8E2F", 'D': "#C0E178", 'E': "#EFE6E6"}
+        data = [
+            {'x': np.arange(n_pts) + i,
+             'y': np.arange(n_pts) + 1,
+             'c': cats[i]}
+            for i in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap=cmap, colorbar=False)
+        plot = bokeh_renderer.get_plot(path)
+
+        glyph = plot.handles['glyph']
+        prop = property_to_dict(glyph.line_color)
+        assert prop.get('field') == 'c'
+        assert 'transform' in prop
+        cmapper = prop['transform']
+        assert isinstance(cmapper, CategoricalColorMapper)
+        # The order of factors should match encountered categories
+        assert cmapper.factors == cats
+        assert list(cmapper.palette) == [cmap[k] for k in cats]
 
 class TestPolygonPlot(TestBokehPlot):
 
