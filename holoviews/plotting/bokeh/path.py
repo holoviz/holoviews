@@ -104,7 +104,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
             not (not isinstance(v, dim) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
-        if (not cdim or scalar) and not style_mapping and 'hover' not in self.handles:
+        if (not cdim) and not style_mapping and 'hover' not in self.handles:
             if self.static_source:
                 data = {}
             else:
@@ -119,7 +119,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         vals = defaultdict(list)
         if hover:
             vals.update({util.dimension_sanitizer(vd.name): [] for vd in element.vdims})
-        if cdim and self.color_index is not None:
+        if cdim:
             dim_name = util.dimension_sanitizer(cdim.name)
             cmapper = self._get_colormapper(cdim, element, ranges, style)
             mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
@@ -127,13 +127,21 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
         xpaths, ypaths = [], []
         for path in element.split():
-            if cdim and self.color_index is not None:
-                scalar = path.interface.isunique(path, cdim, per_geom=True)
-                cvals = path.dimension_values(cdim, not scalar)
-                vals[dim_name].append(cvals[:-1])
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
             alen = len(xs)
+
+            if cdim:
+                scalar = path.interface.isunique(path, cdim, per_geom=True)
+                if scalar:
+                    # one value per geometry; repeat per segment
+                    cval = path.dimension_values(cdim, expanded=False)[0]
+                    vals[dim_name].append(np.full(alen-1, cval))
+                else:
+                    # per-vertex values; drop last to match segments
+                    cvals = path.dimension_values(cdim, expanded=True)
+                    vals[dim_name].append(cvals[:-1])
+
             xpaths += [xs[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1), strict=None)]
             ypaths += [ys[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1), strict=None)]
             if not hover:
